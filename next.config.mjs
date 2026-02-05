@@ -12,16 +12,27 @@ const nextConfig = {
   async rewrites() {
     return {
       beforeFiles: [
-        // Détection sous-domaine
+        // Dev local: radisson.localhost → /sites/radisson
         {
           source: '/:path*',
           has: [
             {
               type: 'host',
-              value: '(?<site>.*)\\.attabl\\.com',
+              value: '(?<site>[^.]+)\\.localhost(?::\\d+)?',
             },
           ],
-          destination: '/_sites/:site/:path*',
+          destination: '/sites/:site/:path*',
+        },
+        // Production: radisson.attabl.com → /sites/radisson
+        {
+          source: '/:path*',
+          has: [
+            {
+              type: 'host',
+              value: '(?<site>[^.]+)\\.attabl\\.com',
+            },
+          ],
+          destination: '/sites/:site/:path*',
         },
       ],
     };
