@@ -72,26 +72,26 @@ export function PricingCard({
             )}
 
             <div className={`relative flex flex-col h-full overflow-hidden transition-all duration-300 rounded-[22px] border ${details.highlight
-                    ? 'bg-[#121212] border-transparent'
-                    : 'bg-[#0A0A0A] border-white/10'
+                ? 'bg-white dark:bg-[#121212] border-transparent shadow-xl dark:shadow-none'
+                : 'bg-white dark:bg-[#0A0A0A] border-gray-100 dark:border-white/10 shadow-sm dark:shadow-none'
                 } group-hover:border-[#CCFF00]/30`}>
 
                 {/* Inner Gradient for "Pro" feel on Dark Mode */}
                 {details.highlight && (
-                    <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#CCFF00]/10 to-transparent pointer-events-none" />
+                    <div className="absolute bottom-0 inset-x-0 h-32 bg-gradient-to-t from-[#CCFF00]/10 to-transparent pointer-events-none hidden dark:block" />
                 )}
 
                 <div className="p-8 flex flex-col h-full relative z-10">
 
                     {/* Header */}
                     <div className="mb-6">
-                        <h3 className={`text-xl font-medium mb-2 ${details.highlight ? 'text-white' : 'text-gray-300'
+                        <h3 className={`text-xl font-medium mb-2 ${details.highlight ? 'text-black dark:text-white' : 'text-gray-900 dark:text-gray-300'
                             }`}>
                             {details.name}
                         </h3>
 
                         <div className="flex items-baseline gap-1">
-                            <span className={`text-5xl font-bold tracking-tighter ${details.highlight ? 'text-white' : 'text-white'
+                            <span className={`text-5xl font-bold tracking-tighter ${details.highlight ? 'text-black dark:text-white' : 'text-black dark:text-white'
                                 }`}>
                                 {displayPrice.toLocaleString('fr-FR')}
                             </span>
@@ -109,9 +109,9 @@ export function PricingCard({
                     <div className="space-y-4 flex-grow mb-8">
                         {details.features.map((feature, i) => (
                             <div key={i} className="flex items-start gap-3 text-sm text-gray-400">
-                                <Check className={`h-4 w-4 shrink-0 mt-0.5 ${details.highlight ? 'text-[#CCFF00]' : 'text-gray-600'
+                                <Check className={`h-4 w-4 shrink-0 mt-0.5 ${details.highlight ? 'text-[#CCFF00]' : 'text-gray-600 dark:text-gray-600'
                                     }`} />
-                                <span>{feature}</span>
+                                <span className="text-gray-600 dark:text-gray-400">{feature}</span>
                             </div>
                         ))}
                     </div>
@@ -121,8 +121,8 @@ export function PricingCard({
                         onClick={() => onSelect(plan, billingInterval)}
                         disabled={isLoading || isCurrentPlan}
                         className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 ${details.highlight
-                                ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-[0_0_20px_rgba(204,255,0,0.3)]'
-                                : 'bg-white/10 hover:bg-white/20 text-white border border-white/5'
+                            ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-[0_0_20px_rgba(204,255,0,0.3)]'
+                            : 'bg-black dark:bg-white/10 text-white hover:bg-gray-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5'
                             }`}
                     >
                         {isCurrentPlan ? "Plan Actuel" : (isLoading ? "Chargement..." : (
