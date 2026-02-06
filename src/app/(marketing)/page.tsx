@@ -195,7 +195,7 @@ export default function HomePage() {
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden transition-colors duration-300">
 
       {/* HEADER */}
-      <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled || mobileMenuOpen ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
+      <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
         <div className="container mx-auto px-6 max-w-7xl flex justify-between items-center relative z-50">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group" onClick={closeMobileMenu}>
@@ -238,38 +238,39 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <button className="md:hidden p-2 text-black dark:text-white" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+          <button className="md:hidden p-2 text-black dark:text-white z-[60]" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
         </div>
 
-        {/* MOBILE MENU OVERLAY */}
+        {/* MOBILE MENU OVERLAY - FULL SCREEN */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.2 }}
-              className="fixed inset-0 top-[72px] z-40 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5 p-6 md:hidden flex flex-col gap-6 overflow-y-auto"
+              initial={{ opacity: 0, x: '100%' }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed inset-0 z-[55] bg-white dark:bg-black p-6 md:hidden flex flex-col pt-24"
+              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
             >
-              <nav className="flex flex-col gap-4 text-lg font-medium">
+              <nav className="flex flex-col gap-2 text-2xl font-bold">
                 <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.features}</Link>
                 <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.pricing}</Link>
                 <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.about}</Link>
                 <Link href="#contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
               </nav>
 
-              <div className="h-px bg-gray-100 dark:bg-white/5 my-2"></div>
+              <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
 
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-white/10">
-                  <span className="text-gray-500 dark:text-gray-400">Thème</span>
+                  <span className="text-gray-500 dark:text-gray-400 font-medium">Thème</span>
                   <button
                     onClick={toggleTheme}
                     className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors"
                   >
-                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    {theme === 'dark' ? <Sun className="h-6 w-6" /> : <Moon className="h-6 w-6" />}
                   </button>
                 </div>
 
@@ -443,7 +444,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NEW TESTIMONIALS SECTION (Bankis Style) */}
+      {/* NEW TESTIMONIALS SECTION (Smaller, Bankis Style) */}
       <section className="py-20 md:py-32 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5 relative overflow-hidden">
         {/* Background Elements */}
         <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gray-50 dark:from-zinc-900/50 to-transparent pointer-events-none"></div>
@@ -469,8 +470,8 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right: Masonry Grid of Cards */}
-            <div className="lg:col-span-2 grid md:grid-cols-2 gap-6">
+            {/* Right: Masonry Grid of Cards (REDUCED SIZE) */}
+            <div className="lg:col-span-2 grid md:grid-cols-2 gap-4 md:gap-6">
               {t.testimonials.reviews.map((review, i) => (
                 <motion.div
                   key={i}
@@ -479,21 +480,21 @@ export default function HomePage() {
                   viewport={{ once: true }} /* Ensure it triggers on mobile scroll */
                   whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
                   transition={{ delay: i * 0.1 }}
-                  className={`p-6 rounded-[1.5rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-12' /* Staggered effect */
-                    } ${theme === 'light' ? 'bg-gray-50 border-gray-200 hover:bg-white hover:shadow-xl' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
+                  className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8' /* Reduced stagger */
+                    } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
                     }`}
                 >
-                  <Quote className="h-6 w-6 text-[#CCFF00] mb-4 opacity-50 group-hover:opacity-100 transition-opacity" />
-                  <p className="text-base font-medium text-gray-800 dark:text-gray-200 mb-6 leading-relaxed">
+                  <Quote className="h-5 w-5 text-[#CCFF00] mb-3 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-4 leading-relaxed">
                     "{review.text}"
                   </p>
-                  <div className="flex items-center gap-4">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 dark:bg-gray-800 border border-[#CCFF00] flex items-center justify-center font-bold text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-800 border border-[#CCFF00] flex items-center justify-center font-bold text-[10px]">
                       {review.author.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-gray-900 dark:text-white">{review.author}</div>
-                      <div className="text-xs text-gray-500 uppercase tracking-wide font-bold">{review.role}</div>
+                      <div className="font-bold text-sm text-gray-900 dark:text-white">{review.author}</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide font-bold">{review.role}</div>
                     </div>
                   </div>
                 </motion.div>
@@ -503,7 +504,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PRICING */}
+      {/* PRICING (Softer Shadows) */}
       <section id="pricing" className="py-20 md:py-32 bg-gray-50 dark:bg-[#050505] relative transition-colors duration-300 border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 max-w-7xl">
           <div className="text-center mb-16 md:mb-20">
@@ -531,7 +532,7 @@ export default function HomePage() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              <div className="border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-xl dark:shadow-none">
+              <div className="border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-lg dark:shadow-none">
                 <div>
                   <h3 className="text-xl font-medium mb-1 text-gray-900 dark:text-gray-300">{t.pricing.cards.enterprise.name}</h3>
                   <p className="text-sm text-gray-500 mb-6">{t.pricing.cards.enterprise.desc}</p>
