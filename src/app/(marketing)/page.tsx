@@ -21,7 +21,8 @@ import {
   Users,
   Moon,
   Sun,
-  Quote
+  Quote,
+  Globe
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
@@ -36,18 +37,23 @@ const translations = {
       features: "Fonctionnalités",
       pricing: "Tarifs",
       about: "À propos",
-      contact: "Contact", // Should link to /contact now? Or keep scroll? User said "Le bouton contacter doit conduire sur une page".
+      contact: "Contact",
       login: "Connexion",
       signup: "S'inscrire"
     },
     hero: {
-      pill: "Nouveau : Service en Chambre Intuitif",
+      pills: [
+        "Nouveau : Service en Chambre Intuitif",
+        "Nouveau : Paiement QR Code Instantané",
+        "Nouveau : Gestion de Stock IA"
+      ],
       title_line1: "ATTABL",
       title_line2: "Commander",
-      title_highlight: "mieux", // "mieux" gets the underline
+      title_highlight: "mieux",
       subtitle: "Transformez l'expérience client de prise de commande de votre établissement. De la sélection à la facturation à table, Attabl vous donne une solution clé en main.",
-      email_placeholder: "Entrez votre email professionnel", // Improved prompt? "Entrez votre..." -> "Entrez votre email pro"
-      cta_primary: "Démarrer un essai gratuit",
+      email_placeholder: "Entrez votre email pro",
+      cta_primary: "Essai gratuit", // Shortened as requested
+      cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
       partners: "partenaires de confiance"
     },
@@ -92,13 +98,18 @@ const translations = {
       signup: "Sign Up"
     },
     hero: {
-      pill: "New: Intuitive Room Service",
+      pills: [
+        "New: Intuitive Room Service",
+        "New: Instant QR Code Payment",
+        "New: AI Inventory Management"
+      ],
       title_line1: "ATTABL",
       title_line2: "Order",
       title_highlight: "Better",
       subtitle: "Transform the ordering experience of your establishment. From selection to billing at the table, Attabl provides a turnkey solution.",
       email_placeholder: "Enter work email",
-      cta_primary: "Start Free Trial",
+      cta_primary: "Free Trial",
+      cta_desc: "No credit card required",
       users_active: "luxury hotels",
       partners: "trusted partners"
     },
@@ -144,8 +155,9 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { scrollY } = useScroll();
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
+  const [pillIndex, setPillIndex] = useState(0); // Animated Pill State
 
-  // Disable parallax on mobile to prevent performance issues / weirdness, or adjust values
+  // Disable parallax on mobile to prevent performance issues
   const phoneY = useTransform(scrollY, [0, 600], [0, -20]);
   const textY = useTransform(scrollY, [0, 600], [0, 20]);
 
@@ -164,6 +176,14 @@ export default function HomePage() {
     };
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Badge Text Rotation Interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setPillIndex((prev) => (prev + 1) % 3); // Cycle through 0, 1, 2
+    }, 4000); // Change every 4 seconds
+    return () => clearInterval(interval);
   }, []);
 
   // Close mobile menu when route changes or resizing to desktop
@@ -194,6 +214,10 @@ export default function HomePage() {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
+
+  const toggleLang = () => {
+    setLang(lang === 'fr' ? 'en' : 'fr');
+  }
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
@@ -241,15 +265,22 @@ export default function HomePage() {
               <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
 
               <div className="flex flex-col gap-4 mt-auto pb-8">
-                {/* Simplified Theme Toggle */}
+                {/* Language & Theme Toggles Mobile */}
                 <div className="flex justify-between items-center px-4">
-                  <span className="text-lg font-medium text-gray-500 dark:text-gray-400">Mode</span>
-                  <button
-                    onClick={toggleTheme}
-                    className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
-                  >
-                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                  </button>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={toggleLang}
+                      className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-sm"
+                    >
+                      {lang === 'fr' ? 'EN' : 'FR'}
+                    </button>
+                    <button
+                      onClick={toggleTheme}
+                      className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
+                    >
+                      {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="h-4"></div>
@@ -289,7 +320,17 @@ export default function HomePage() {
           </nav>
 
           {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            {/* Lang Switcher */}
+            <button
+              onClick={toggleLang}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors font-bold text-xs w-10 h-10 flex items-center justify-center border border-transparent hover:border-gray-200 dark:hover:border-white/10"
+              aria-label="Switch Language"
+            >
+              {lang.toUpperCase()}
+            </button>
+
+            {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
               className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors"
@@ -297,6 +338,8 @@ export default function HomePage() {
             >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
+
+            <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
 
             <Link href="/login">
               <Button variant="ghost" className="rounded-full text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 font-semibold px-6 h-11 border border-gray-200 dark:border-white/20 transition-all">
@@ -326,21 +369,33 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="relative z-20"
+            className="relative z-20 flex flex-col justify-center"
           >
-
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors">
-              <span className="relative flex h-2 w-2">
-                {/* Etoile/Etincelle icon as requested for Badge */}
+            {/* ANIMATED PILL BADGE */}
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors w-fit">
+              <span className="relative flex h-2 w-2 shrink-0">
                 <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
-              {t.hero.pill}
+              <div className="relative h-4 w-60 overflow-hidden">
+                <AnimatePresence mode='wait'>
+                  <motion.span
+                    key={pillIndex}
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: -20, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute left-0 top-0 whitespace-nowrap"
+                  >
+                    {t.hero.pills[pillIndex]}
+                  </motion.span>
+                </AnimatePresence>
+              </div>
             </div>
 
             <div className="mb-8 pl-1">
               {/* Line 1: Massive Bold */}
               <motion.h1
-                className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white mb-2"
+                className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white mb-2 leading-none"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
@@ -348,21 +403,21 @@ export default function HomePage() {
                 {t.hero.title_line1}
               </motion.h1>
 
-              {/* Line 2 was removed as requested */}
-
-              {/* Line 3: "Commander mieux." with simplified underline on "mieux" */}
-              <div className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter">
+              {/* Line 2 ("Commander") + Highlight ("mieux") + Green Dot */}
+              <div className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter leading-tight">
                 {t.hero.title_line2} <span className="relative inline-block text-[#CCFF00]">
                   {t.hero.title_highlight}
                   {/* Short, pretty underline on "mieux" only */}
                   <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
                     <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                   </svg>
-                </span>.
+                </span>
+                <span className="text-[#CCFF00]">.</span> {/* The dot is now explicitly green */}
               </div>
             </div>
 
-            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-lg leading-relaxed">
+            {/* Subtitle with Max Width to Match "Commander mieux" visual width aprox, avoiding overflow */}
+            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-[90%] md:max-w-[480px] leading-relaxed">
               {t.hero.subtitle}
             </p>
 
@@ -370,22 +425,21 @@ export default function HomePage() {
               {/* Email Input + Button */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-grow">
-                  {/* Improved visibility: white bg on dark, dark bg on light (adjust), or just clear border */}
+                  {/* Input visibility fix and full width content */}
                   <input
                     type="email"
                     placeholder={t.hero.email_placeholder}
-                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-white/10 text-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-gray-200 dark:border-white/20 shadow-sm"
+                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-gray-200 dark:border-white/10 shadow-sm"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Layout className="h-5 w-5" />
                   </div>
                 </div>
-                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto">
+                {/* Shortened Button Text */}
+                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto shrink-0">
                   {t.hero.cta_primary}
                 </Button>
               </div>
-
-              {/* Secondary CTA REMOVED as requested */}
             </div>
 
             <div className="flex items-center gap-6 md:gap-8">
