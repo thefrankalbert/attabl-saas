@@ -225,45 +225,45 @@ export default function HomePage() {
     if (!el) return;
 
     let animationId: number;
-    const speed = 0.5; // Base speed
     let isDragging = false;
     let startX = 0;
     let scrollLeftStart = 0;
 
-    // Accumulator for sub-pixel scrolling precision
-    let autoScrollPos = el.scrollLeft;
+    // Use a Ref to hold the current float position to avoid closure staleness
+    // and allow the loop to read the latest value without dependency issues.
+    let currentPos = el.scrollLeft;
+    const speed = 1; // Increased to 1px for reliability
 
     const step = () => {
       if (!el) return;
-      if (isDragging) {
-        // Sync accumulator with current actual scroll when dragging ends
-        autoScrollPos = el.scrollLeft;
-        return;
-      }
 
-      if (autoScrollPos >= el.scrollWidth / 2) {
-        // Reset for infinite illusion
-        autoScrollPos = 0;
+      // If dragging, we stop auto-incrementing, but we keep the loop alive 
+      // or we rely on the drag events. Here we check isDragging.
+      if (isDragging) return;
+
+      // Infinite loop logic
+      // We assume content is duplicated enough that scrollWidth/2 is a safe reset point
+      if (currentPos >= el.scrollWidth / 2) {
+        currentPos = 0;
         el.scrollLeft = 0;
       } else {
-        autoScrollPos += speed;
-        el.scrollLeft = autoScrollPos;
+        currentPos += speed;
+        el.scrollLeft = currentPos;
       }
+
       animationId = requestAnimationFrame(step);
     };
 
     const start = () => {
-      if (!isDragging) {
-        cancelAnimationFrame(animationId);
-        // Sync accumulator before starting to avoid jumps
-        if (el) autoScrollPos = el.scrollLeft;
-        animationId = requestAnimationFrame(step);
-      }
-    }
+      cancelAnimationFrame(animationId);
+      // Resync with actual DOM in case manual scroll/drag happened
+      if (el) currentPos = el.scrollLeft;
+      animationId = requestAnimationFrame(step);
+    };
 
     const stop = () => cancelAnimationFrame(animationId);
 
-    // Mouse/Touch Events for Dragging
+    // EVENTS
     const onMouseDown = (e: MouseEvent) => {
       isDragging = true;
       startX = e.pageX - el.offsetLeft;
@@ -272,28 +272,38 @@ export default function HomePage() {
       el.style.cursor = 'grabbing';
     };
 
-    const onMouseLeave = () => {
+    const onMouseUp = () => {
+      if (!isDragging) return;
       isDragging = false;
       el.style.cursor = 'grab';
       start();
     };
 
-    const onMouseUp = () => {
-      isDragging = false;
-      el.style.cursor = 'grab';
+    // If mouse leaves window/div while dragging
+    const onMouseLeave = () => {
+      if (isDragging) {
+        isDragging = false;
+        el.style.cursor = 'grab';
+      }
+      // Always resume on leave (pause-on-hover logic)
       start();
+    };
+
+    const onMouseEnter = () => {
+      // Pause on hover
+      if (!isDragging) stop();
     };
 
     const onMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
       e.preventDefault();
       const x = e.pageX - el.offsetLeft;
-      const walk = (x - startX) * 2; // Scroll-fast
+      const walk = (x - startX) * 2;
       el.scrollLeft = scrollLeftStart - walk;
-      autoScrollPos = el.scrollLeft; // Sync accumulator
+      currentPos = el.scrollLeft; // Update float ref
     };
 
-    // Touch events
+    // TOUCH
     const onTouchStart = (e: TouchEvent) => {
       isDragging = true;
       startX = e.touches[0].pageX - el.offsetLeft;
@@ -302,6 +312,7 @@ export default function HomePage() {
     };
 
     const onTouchEnd = () => {
+      if (!isDragging) return;
       isDragging = false;
       start();
     };
@@ -311,34 +322,33 @@ export default function HomePage() {
       const x = e.touches[0].pageX - el.offsetLeft;
       const walk = (x - startX) * 2;
       el.scrollLeft = scrollLeftStart - walk;
-      autoScrollPos = el.scrollLeft; // Sync accumulator
+      currentPos = el.scrollLeft;
     };
 
+    // Attach
     el.addEventListener('mousedown', onMouseDown);
-    el.addEventListener('mouseleave', onMouseLeave);
     el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('mouseleave', onMouseLeave);
+    el.addEventListener('mouseenter', onMouseEnter);
     el.addEventListener('mousemove', onMouseMove);
-
     el.addEventListener('touchstart', onTouchStart);
     el.addEventListener('touchend', onTouchEnd);
     el.addEventListener('touchmove', onTouchMove);
 
-    // Pause on hover
-    el.addEventListener('mouseenter', stop);
-
+    // Initial Start
     start();
 
     return () => {
       stop();
       el.removeEventListener('mousedown', onMouseDown);
-      el.removeEventListener('mouseleave', onMouseLeave);
       el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('mouseleave', onMouseLeave);
+      el.removeEventListener('mouseenter', onMouseEnter);
       el.removeEventListener('mousemove', onMouseMove);
       el.removeEventListener('touchstart', onTouchStart);
       el.removeEventListener('touchend', onTouchEnd);
       el.removeEventListener('touchmove', onTouchMove);
-      el.removeEventListener('mouseenter', stop);
-    }
+    };
   }, []);
 
   if (!mounted) return null;
