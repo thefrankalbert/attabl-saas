@@ -61,7 +61,8 @@ const translations = {
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners: "années d'expérience clients" // Updated text
+      partners_line1: "années",
+      partners_line2: "d'expérience clients"
     },
     features: {
       security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
@@ -117,8 +118,9 @@ const translations = {
       email_placeholder: "Enter work email",
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
-      users_active: "luxury hotels",
-      partners: "years client experience"
+      users_active: "hôtels de luxe",
+      partners_line1: "années",
+      partners_line2: "d'expérience clients"
     },
     features: {
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
@@ -498,9 +500,9 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Subtitle - Justified and Width Constrained to Align with Title */}
-            <div className="max-w-[90%] md:max-w-[480px] mb-10"> {/* Adjusted max-width to align with text end */}
-              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+            {/* Subtitle - Optimized for EN/FR */}
+            <div className={`max-w-[90%] mb-10 ${lang === 'en' ? 'md:max-w-[540px]' : 'md:max-w-[500px]'}`}>
+              <p className={`text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-balance ${lang === 'en' ? 'text-left' : 'text-justify'}`}>
                 {t.hero.subtitle}
               </p>
             </div>
@@ -538,9 +540,10 @@ export default function HomePage() {
                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{t.hero.users_active}</p>
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
-              <div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">15+</p>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t.hero.partners}</p>
+              <div className="flex flex-col justify-center">
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-1">15+ {t.hero.partners_line1}</p>
+                {/* Add whitespace-pre-line to allow \n to break lines */}
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none whitespace-pre-line">{t.hero.partners_line2}</p>
               </div>
             </div>
           </motion.div>
@@ -577,15 +580,15 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* MARQUEE - Draggable & Clean & Auto-Scrolled & Infinite illusion (Duplicated) */}
+      {/* MARQUEE */}
       <section className="py-8 bg-transparent overflow-hidden border-b border-gray-100 dark:border-white/5">
         <style jsx>{`
             .no-scrollbar::-webkit-scrollbar {
                 display: none;
             }
             .no-scrollbar {
-                -ms-overflow-style: none;  /* IE and Edge */
-                scrollbar-width: none;  /* Firefox */
+                -ms-overflow-style: none; /* IE and Edge */
+                scrollbar-width: none; /* Firefox */
             }
           `}</style>
         <div
@@ -597,10 +600,10 @@ export default function HomePage() {
           }}
         >
           <div className="flex gap-16 px-6 min-w-max">
-            {/* REPEAT LOGOS 3 TIMES to ensure infinite scroll illusion logic works */}
-            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
-              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 hover:scale-110 transition-all duration-300">
-                <logo.icon className="h-5 w-5 md:h-6 md:w-6" />
+            {/* REPEAT LOGOS to ensure infinite scroll illusion logic works */}
+            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
+              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 hover:scale-110 transition-all duration-300 transform">
+                <logo.icon className="h-5 w-5 md:h-6 w-6" />
                 <span className="text-sm md:text-base font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
               </div>
             ))}

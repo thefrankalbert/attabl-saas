@@ -17,6 +17,8 @@ interface PricingCardProps {
     isLoading?: boolean;
 }
 
+// ... imports
+
 const PLAN_DETAILS = {
     essentiel: {
         name: "Essentiel",
@@ -31,7 +33,7 @@ const PLAN_DETAILS = {
         highlight: false,
     },
     premium: {
-        name: "Premium",
+        name: "Prime",
         description: "Le plus populaire",
         features: [
             "3 espaces (Restaurant, Bar...)",
@@ -54,11 +56,21 @@ export function PricingCard({
 }: PricingCardProps) {
     const details = PLAN_DETAILS[plan];
 
-    // Prix en FCFA (Updated per user request)
-    const monthlyPrice = plan === 'essentiel' ? 32900 : 79800;
-    const yearlyPriceMetadata = plan === 'essentiel' ? 60000 : 120000;
-    const displayPrice = billingInterval === 'monthly' ? monthlyPrice : yearlyPriceMetadata;
-    const yearlyTotal = displayPrice * 12;
+    // Base Monthly Price (Essential updated to 39,800)
+    const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
+
+    // Calculate Annual Styling
+    // 15% Discount on Yearly
+    const annualDiscountRate = 0.15;
+    const yearlyTotalRaw = baseMonthlyPrice * 12;
+    const yearlyTotalDiscounted = yearlyTotalRaw * (1 - annualDiscountRate);
+    const monthlyEquivalentYearly = yearlyTotalDiscounted / 12;
+
+    const displayPrice = billingInterval === 'monthly' ? baseMonthlyPrice : monthlyEquivalentYearly;
+    // Round to nearest 100 or keep precise? Usually prices are clean. 
+    // 39800 * 12 * 0.85 / 12 = 33830. Let's keep it exact integers.
+    const displayPriceRounded = Math.round(displayPrice);
+    const yearlyTotalRounded = Math.round(yearlyTotalDiscounted);
 
     return (
         <motion.div
@@ -93,14 +105,19 @@ export function PricingCard({
                         <div className="flex items-baseline gap-1">
                             <span className={`text-5xl font-bold tracking-tighter ${details.highlight ? 'text-black dark:text-white' : 'text-black dark:text-white'
                                 }`}>
-                                {displayPrice.toLocaleString('fr-FR')}
+                                {displayPriceRounded.toLocaleString('fr-FR')}
                             </span>
                             <span className="text-gray-500 font-medium">/mois</span>
                         </div>
                         {billingInterval === 'yearly' && (
-                            <p className="text-[#CCFF00] text-xs font-bold mt-2">
-                                Facturé {yearlyTotal.toLocaleString('fr-FR')} F/an
-                            </p>
+                            <div className="mt-2 text-xs font-bold">
+                                <span className="text-green-600 dark:text-[#CCFF00] bg-green-50 dark:bg-[#CCFF00]/10 px-2 py-0.5 rounded">
+                                    -15% appliqué
+                                </span>
+                                <span className="text-gray-400 block mt-1">
+                                    Facturé {yearlyTotalRounded.toLocaleString('fr-FR')} F/an
+                                </span>
+                            </div>
                         )}
                         <p className="text-sm text-gray-500 mt-4 h-10">{details.description}</p>
                     </div>
@@ -126,7 +143,7 @@ export function PricingCard({
                             }`}
                     >
                         {isCurrentPlan ? "Plan Actuel" : (isLoading ? "Chargement..." : (
-                            details.highlight ? "Passer au Premium" : "Commencer Gratuitement"
+                            details.highlight ? "Passer au Premium" : "Commencer gratuitement"
                         ))}
                     </Button>
                 </div>
