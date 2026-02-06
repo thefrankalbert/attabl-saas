@@ -64,6 +64,10 @@ export async function POST(request: Request) {
       );
     }
 
+    // Calculate trial end date (14 days from now)
+    const trialEndsAt = new Date();
+    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+
     // 3. Créer le tenant (restaurant)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
@@ -72,6 +76,7 @@ export async function POST(request: Request) {
         name: restaurantName,
         subscription_plan: plan,
         subscription_status: 'trial',
+        trial_ends_at: trialEndsAt.toISOString(),
         is_active: true,
       })
       .select()

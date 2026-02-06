@@ -1,239 +1,73 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, CheckCircle } from 'lucide-react';
-import Link from 'next/link';
+import { AuthForm } from '@/components/auth/AuthForm';
+import { Layout, ShieldCheck, Zap, Users, Check } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function SignupPage() {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [step, setStep] = useState<'form' | 'success'>('form');
-  const [createdSlug, setCreatedSlug] = useState('');
-
-  const [formData, setFormData] = useState({
-    restaurantName: '',
-    email: '',
-    password: '',
-    phone: '',
-    plan: 'starter',
-  });
-
-  // Générer le slug en temps réel
-  const generateSlug = (name: string) => {
-    return name
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '') // Remove accents
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-|-$/g, '');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-
-    try {
-      // 1. Créer le restaurant
-      const signupResponse = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const signupData = await signupResponse.json();
-
-      if (!signupResponse.ok) {
-        throw new Error(signupData.error || 'Erreur lors de l\'inscription');
-      }
-
-      // Sauvegarder le slug pour la page de succès
-      setCreatedSlug(signupData.slug);
-
-      // 2. Créer la session Stripe Checkout
-      const priceId = formData.plan === 'pro'
-        ? process.env.NEXT_PUBLIC_STRIPE_PRICE_PRO
-        : process.env.NEXT_PUBLIC_STRIPE_PRICE_STARTER;
-
-      const checkoutResponse = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          priceId,
-          tenantId: signupData.tenantId,
-          email: formData.email,
-        }),
-      });
-
-      const checkoutData = await checkoutResponse.json();
-
-      if (!checkoutResponse.ok) {
-        // Si Stripe échoue, on redirige quand même vers le dashboard (mode trial)
-        console.error('Stripe error:', checkoutData.error);
-        setStep('success');
-        setTimeout(() => {
-          const isDev = window.location.hostname === 'localhost';
-          if (isDev) {
-            window.location.href = `http://${signupData.slug}.localhost:3000/admin`;
-          } else {
-            window.location.href = `https://${signupData.slug}.attabl.com/admin`;
-          }
-        }, 3000);
-        return;
-      }
-
-      // 3. Rediriger vers Stripe Checkout
-      window.location.href = checkoutData.url;
-
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
-      setError(errorMessage);
-      setLoading(false);
-    }
-  };
-
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-        <Card className="w-full max-w-md">
-          <CardContent className="pt-6 text-center">
-            <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Inscription réussie !</h2>
-            <p className="text-gray-600 mb-4">
-              Votre restaurant a été créé avec succès.
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              Votre URL : <strong>{createdSlug}.attabl.com</strong>
-            </p>
-            <p className="text-sm text-gray-500">
-              Redirection vers votre dashboard...
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4 py-12">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <Link href="/" className="text-center block mb-4">
-            <span className="text-2xl font-bold">ATTABL</span>
-          </Link>
-          <CardTitle>Créez votre compte</CardTitle>
-          <CardDescription>
-            Commencez votre essai gratuit de 14 jours
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Nom du restaurant */}
-            <div>
-              <Label htmlFor="restaurantName">Nom du restaurant *</Label>
-              <Input
-                id="restaurantName"
-                type="text"
-                placeholder="Ex: Radisson Blu N'Djamena"
-                value={formData.restaurantName}
-                onChange={(e) => setFormData({ ...formData, restaurantName: e.target.value })}
-                required
-              />
-              {formData.restaurantName && (
-                <p className="text-xs text-gray-500 mt-1">
-                  Votre URL sera : <strong>{generateSlug(formData.restaurantName)}.attabl.com</strong>
-                </p>
-              )}
+    <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white">
+      {/* Left Column: Form */}
+      <div className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 bg-white z-10 py-12">
+        <AuthForm mode="signup" />
+      </div>
+
+      {/* Right Column: Visual */}
+      <div className="hidden lg:flex relative bg-black overflow-hidden items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
+        <div className="absolute top-1/4 right-1/4 w-[500px] h-[500px] bg-[#CCFF00]/20 rounded-full blur-[150px] pointer-events-none" />
+        <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-[#CCFF00]/10 rounded-full blur-[120px] pointer-events-none" />
+
+        <div className="relative z-10 px-12 text-center max-w-lg">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+          >
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/30 bg-[#CCFF00]/10 text-sm font-bold text-[#CCFF00] mb-8">
+              <Check className="h-4 w-4" />
+              14 jours d'essai gratuit
             </div>
 
-            {/* Email */}
-            <div>
-              <Label htmlFor="email">Email professionnel *</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="votre@email.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                required
-              />
-            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
+              Commencez votre{' '}
+              <span className="text-[#CCFF00]">transformation</span>{' '}
+              digitale.
+            </h2>
 
-            {/* Mot de passe */}
-            <div>
-              <Label htmlFor="password">Mot de passe *</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Minimum 8 caractères"
-                value={formData.password}
-                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                required
-                minLength={8}
-              />
-            </div>
-
-            {/* Téléphone */}
-            <div>
-              <Label htmlFor="phone">Téléphone</Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder="+235 XX XX XX XX"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-
-            {/* Plan */}
-            <div>
-              <Label htmlFor="plan">Plan</Label>
-              <select
-                id="plan"
-                className="w-full px-3 py-2 border rounded-md"
-                value={formData.plan}
-                onChange={(e) => setFormData({ ...formData, plan: e.target.value })}
-              >
-                <option value="starter">Starter - 15,000 FCFA/mois</option>
-                <option value="pro">Pro - 35,000 FCFA/mois</option>
-              </select>
-            </div>
-
-            {/* Erreur */}
-            {error && (
-              <Alert variant="destructive">
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-
-            {/* Submit */}
-            <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Création en cours...
-                </>
-              ) : (
-                'Créer mon compte'
-              )}
-            </Button>
-
-            <p className="text-sm text-center text-gray-600">
-              Vous avez déjà un compte ?{' '}
-              <Link href="/login" className="text-blue-600 hover:underline">
-                Se connecter
-              </Link>
+            <p className="text-lg text-gray-400 mb-12 leading-relaxed">
+              Rejoignez des centaines d'établissements qui ont modernisé leur service avec Attabl.
             </p>
-          </form>
-        </CardContent>
-      </Card>
+
+            <div className="space-y-4 text-left">
+              {[
+                "Menu digital illimité",
+                "Commandes en temps réel",
+                "Paiements sécurisés",
+                "Support prioritaire",
+              ].map((feature, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 + i * 0.1 }}
+                  className="flex items-center gap-3 text-white/80"
+                >
+                  <div className="h-6 w-6 rounded-full bg-[#CCFF00] flex items-center justify-center">
+                    <Check className="h-4 w-4 text-black" />
+                  </div>
+                  {feature}
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="absolute bottom-8 left-8 flex items-center gap-2 text-white/30 text-xs font-medium">
+          <Layout className="h-4 w-4" />
+          ATTABL © 2026
+        </div>
+      </div>
     </div>
   );
 }
