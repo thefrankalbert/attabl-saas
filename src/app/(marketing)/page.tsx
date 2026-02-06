@@ -230,15 +230,24 @@ export default function HomePage() {
     let startX = 0;
     let scrollLeftStart = 0;
 
-    const step = () => {
-      if (!el || isDragging) return; // Pause auto-scroll while dragging
+    // Accumulator for sub-pixel scrolling precision
+    let autoScrollPos = el.scrollLeft;
 
-      if (el.scrollLeft >= el.scrollWidth / 2) {
-        // If we scrolled past half (where content repeats), reset to 0 for infinite illusion
-        // This requires the content to be duplicated exactly 
+    const step = () => {
+      if (!el) return;
+      if (isDragging) {
+        // Sync accumulator with current actual scroll when dragging ends
+        autoScrollPos = el.scrollLeft;
+        return;
+      }
+
+      if (autoScrollPos >= el.scrollWidth / 2) {
+        // Reset for infinite illusion
+        autoScrollPos = 0;
         el.scrollLeft = 0;
       } else {
-        el.scrollLeft += speed;
+        autoScrollPos += speed;
+        el.scrollLeft = autoScrollPos;
       }
       animationId = requestAnimationFrame(step);
     };
@@ -246,6 +255,8 @@ export default function HomePage() {
     const start = () => {
       if (!isDragging) {
         cancelAnimationFrame(animationId);
+        // Sync accumulator before starting to avoid jumps
+        if (el) autoScrollPos = el.scrollLeft;
         animationId = requestAnimationFrame(step);
       }
     }
@@ -279,6 +290,7 @@ export default function HomePage() {
       const x = e.pageX - el.offsetLeft;
       const walk = (x - startX) * 2; // Scroll-fast
       el.scrollLeft = scrollLeftStart - walk;
+      autoScrollPos = el.scrollLeft; // Sync accumulator
     };
 
     // Touch events
@@ -299,6 +311,7 @@ export default function HomePage() {
       const x = e.touches[0].pageX - el.offsetLeft;
       const walk = (x - startX) * 2;
       el.scrollLeft = scrollLeftStart - walk;
+      autoScrollPos = el.scrollLeft; // Sync accumulator
     };
 
     el.addEventListener('mousedown', onMouseDown);
@@ -310,9 +323,8 @@ export default function HomePage() {
     el.addEventListener('touchend', onTouchEnd);
     el.addEventListener('touchmove', onTouchMove);
 
-    // Pause on hover (desktop only usually desired behavior for readability)
+    // Pause on hover
     el.addEventListener('mouseenter', stop);
-    // Resume on leave handled by onMouseLeave above
 
     start();
 
@@ -577,7 +589,7 @@ export default function HomePage() {
           <div className="flex gap-16 px-6 min-w-max">
             {/* REPEAT LOGOS 3 TIMES to ensure infinite scroll illusion logic works */}
             {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
-              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 transition-opacity duration-300">
+              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 hover:scale-110 transition-all duration-300">
                 <logo.icon className="h-5 w-5 md:h-6 md:w-6" />
                 <span className="text-sm md:text-base font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
               </div>
