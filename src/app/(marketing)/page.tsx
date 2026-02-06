@@ -54,40 +54,40 @@ const translations = {
         "Gestion de Stock IA"
       ],
       title_line1: "ATTABL",
-      title_line2: "Commander",
+      title_line2: "commander", // Lowercase per request
       title_highlight: "mieux",
-      subtitle: "Transformer votre expérience client de prise de commande au sein de votre établissement. De la sélection de menus rapide à la facturation, Attabl vous donne une solution clé en main.",
-      email_placeholder: "Entrez votre email pro",
+      subtitle: "Transformez l'expérience de prise de commande au sein de votre établissement. De la sélection rapide des menus jusqu'à la facturation, Attabl vous offre une solution clé en main.",
+      email_placeholder: "Adresse e-mail professionnelle", // More professional
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners: "ans d'expérience client" // Updated from "partenaires de confiance"
+      partners: "années d'expérience clients" // Updated text
     },
     features: {
-      security: { title: "Securité Garantie", desc: "Paiements cryptés et données protégées. Vos clients commandent en toute confiance." },
-      allinone: { title: "Tout-en-un", desc: "Menu, commande, paiement, KDS. Une seule app pour tout gérer." },
-      privacy: { title: "Confidentialité", desc: "Nous ne vendons pas les données de vos clients. Vos infos restent les vôtres." }
+      security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
+      allinone: { title: "Tout-en-un", desc: "Menu, commande, paiement, KDS. Une seule application pour tout piloter." },
+      privacy: { title: "Confidentialité", desc: "Nous ne commercialisons pas les données de vos clients. Vos informations vous appartiennent." }
     },
     pricing: {
       title: "Tarification Simple",
       monthly: "Mensuel",
       yearly: "Annuel",
       cards: {
-        essentiel: { name: "Essentiel", desc: "Pour démarrer", cta: "Commencer Gratuitement" },
-        premium: { name: "Prime", desc: "Le plus populaire", cta: "Passer au Premium" }, // Changed Premium to Prime
-        enterprise: { name: "Entreprise", desc: "Pour les grands groupes.", price: "Sur mesure", cta: "Contacter" }
+        essentiel: { name: "Essentiel", desc: "Pour démarrer", cta: "Commencer gratuitement" },
+        premium: { name: "Prime", desc: "Le plus populaire", cta: "Passer au plan Prime" },
+        enterprise: { name: "Entreprise", desc: "Pour les grands comptes", price: "Sur mesure", cta: "Nous contacter" }
       }
     },
     testimonials: {
-      title: "Ce que disent nos utilisateurs",
-      subtitle: "Découvrez comment d'autres transforment leur gestion.",
+      title: "L'avis de nos utilisateurs", // Better header
+      subtitle: "Découvrez comment ils ont transformé leur gestion quotidienne.",
       reviews: [
-        { text: "Je l'utilise tous les jours, c'est comme le centre de commande de mon business.", author: "Thomas R.", role: "Manager" },
-        { text: "Interface épurée, fonctionnalités puissantes, pas de superflu. 10/10.", author: "Sarah L.", role: "Directrice" },
-        { text: "Les factures sont si simples maintenant...", author: "Marc D.", role: "Freelance" },
-        { text: "J'ai enfin trouvé un outil qui s'adapte parfaitement à mon workflow.", author: "Julie M.", role: "Consultante" },
-        { text: "Le suivi client et les relances de paiement n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
-        { text: "I stopped juggling 4 apps... Everything is here.", author: "Sophie K.", role: "Gérante" }
+        { text: "Je l'utilise au quotidien, c'est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
+        { text: "Interface épurée, fonctionnalités puissantes, l'essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
+        { text: "La facturation est devenue un jeu d'enfant...", author: "Marc D.", role: "Freelance" },
+        { text: "J'ai enfin trouvé l'outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
+        { text: "Le suivi client et les relances n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
+        { text: "J'ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
       ]
     },
     footer: {
@@ -219,7 +219,7 @@ export default function HomePage() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
-  // Updated Marquee Logic: Auto-scroll + Drag support + Seamless Loop
+  // Updated Marquee Logic: Reverse Logic for Left -> Right Movement
   useEffect(() => {
     const el = marqueeRef.current;
     if (!el) return;
@@ -229,25 +229,30 @@ export default function HomePage() {
     let startX = 0;
     let scrollLeftStart = 0;
 
-    // Use a Ref to hold the current float position to avoid closure staleness
-    // and allow the loop to read the latest value without dependency issues.
+    // We start at scrollWidth / 2 to allow scrolling "backwards" (Left -> Right appearance)
+    // Actually, to make elements move Left -> Right, we need to scroll towards 0.
+    // So we init near the middle/end and decrease.
+
+    // Initialize scroll position safely
+    if (el.scrollLeft === 0) {
+      el.scrollLeft = el.scrollWidth / 2;
+    }
+
     let currentPos = el.scrollLeft;
-    const speed = 1; // Increased to 1px for reliability
+    const speed = 1;
 
     const step = () => {
       if (!el) return;
 
-      // If dragging, we stop auto-incrementing, but we keep the loop alive 
-      // or we rely on the drag events. Here we check isDragging.
       if (isDragging) return;
 
-      // Infinite loop logic
-      // We assume content is duplicated enough that scrollWidth/2 is a safe reset point
-      if (currentPos >= el.scrollWidth / 2) {
-        currentPos = 0;
-        el.scrollLeft = 0;
+      // Reverse Logic: Decrease scrollLeft to move viewport Left (Content moves Right)
+      if (currentPos <= 0) {
+        // Reset to middle
+        currentPos = el.scrollWidth / 2;
+        el.scrollLeft = currentPos;
       } else {
-        currentPos += speed;
+        currentPos -= speed;
         el.scrollLeft = currentPos;
       }
 
@@ -256,7 +261,6 @@ export default function HomePage() {
 
     const start = () => {
       cancelAnimationFrame(animationId);
-      // Resync with actual DOM in case manual scroll/drag happened
       if (el) currentPos = el.scrollLeft;
       animationId = requestAnimationFrame(step);
     };
@@ -279,18 +283,15 @@ export default function HomePage() {
       start();
     };
 
-    // If mouse leaves window/div while dragging
     const onMouseLeave = () => {
       if (isDragging) {
         isDragging = false;
         el.style.cursor = 'grab';
       }
-      // Always resume on leave (pause-on-hover logic)
       start();
     };
 
     const onMouseEnter = () => {
-      // Pause on hover
       if (!isDragging) stop();
     };
 
@@ -300,7 +301,7 @@ export default function HomePage() {
       const x = e.pageX - el.offsetLeft;
       const walk = (x - startX) * 2;
       el.scrollLeft = scrollLeftStart - walk;
-      currentPos = el.scrollLeft; // Update float ref
+      currentPos = el.scrollLeft;
     };
 
     // TOUCH
@@ -335,7 +336,6 @@ export default function HomePage() {
     el.addEventListener('touchend', onTouchEnd);
     el.addEventListener('touchmove', onTouchMove);
 
-    // Initial Start
     start();
 
     return () => {
