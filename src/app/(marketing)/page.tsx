@@ -204,6 +204,70 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden transition-colors duration-300">
 
+      {/* MOBILE MENU OVERLAY - MOVED OUTSIDE HEADER TO FIX BACKDROP-FILTER CONTEXT TRAP */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: '100%' }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: '100%' }}
+            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            className="fixed inset-0 z-[999] bg-white dark:bg-black md:hidden flex flex-col"
+          >
+            {/* Menu Header with Close Button */}
+            <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
+              <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2">
+                <div className="bg-black dark:bg-transparent rounded-md p-0.5">
+                  <Layout className="h-6 w-6 text-[#CCFF00]" />
+                </div>
+                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
+              </Link>
+
+              <button
+                className="p-2 text-black dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
+                onClick={closeMobileMenu}
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
+              <nav className="flex flex-col gap-2 text-2xl font-bold">
+                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.features}</Link>
+                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.pricing}</Link>
+                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.about}</Link>
+                <Link href="#contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
+              </nav>
+
+              <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
+
+              <div className="flex flex-col gap-4 mt-auto pb-8">
+                {/* Simplified Theme Toggle */}
+                <div className="flex justify-between items-center px-4">
+                  <span className="text-lg font-medium text-gray-500 dark:text-gray-400">Mode</span>
+                  <button
+                    onClick={toggleTheme}
+                    className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
+                  >
+                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </button>
+                </div>
+
+                <div className="h-4"></div>
+
+                <Link href="/login" onClick={closeMobileMenu}>
+                  <Button variant="ghost" className="w-full justify-center text-lg h-14 rounded-xl border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white">{t.nav.login}</Button>
+                </Link>
+                <Link href="/signup" onClick={closeMobileMenu}>
+                  <Button className="w-full text-lg h-14 rounded-xl bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold">{t.nav.signup}</Button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* HEADER */}
       <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
         <div className="container mx-auto px-6 max-w-7xl flex justify-between items-center relative z-50">
@@ -253,69 +317,6 @@ export default function HomePage() {
           </button>
         </div>
 
-        {/* MOBILE MENU OVERLAY - FULL SCREEN */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, x: '100%' }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: '100%' }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed inset-0 z-[999] bg-white dark:bg-black md:hidden flex flex-col"
-            >
-              {/* Menu Header with Close Button */}
-              <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
-                <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2">
-                  <div className="bg-black dark:bg-transparent rounded-md p-0.5">
-                    <Layout className="h-6 w-6 text-[#CCFF00]" />
-                  </div>
-                  <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
-                </Link>
-
-                <button
-                  className="p-2 text-black dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
-                  onClick={closeMobileMenu}
-                >
-                  <X className="h-6 w-6" />
-                </button>
-              </div>
-
-              {/* Scrollable Content */}
-              <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
-                <nav className="flex flex-col gap-2 text-2xl font-bold">
-                  <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.features}</Link>
-                  <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.pricing}</Link>
-                  <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.about}</Link>
-                  <Link href="#contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
-                </nav>
-
-                <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
-
-                <div className="flex flex-col gap-4 mt-auto pb-8">
-                  {/* Simplified Theme Toggle */}
-                  <div className="flex justify-between items-center px-4">
-                    <span className="text-lg font-medium text-gray-500 dark:text-gray-400">Mode</span>
-                    <button
-                      onClick={toggleTheme}
-                      className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
-                    >
-                      {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                    </button>
-                  </div>
-
-                  <div className="h-4"></div>
-
-                  <Link href="/login" onClick={closeMobileMenu}>
-                    <Button variant="ghost" className="w-full justify-center text-lg h-14 rounded-xl border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white">{t.nav.login}</Button>
-                  </Link>
-                  <Link href="/signup" onClick={closeMobileMenu}>
-                    <Button className="w-full text-lg h-14 rounded-xl bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold">{t.nav.signup}</Button>
-                  </Link>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </header>
 
       {/* HERO SECTION */}
