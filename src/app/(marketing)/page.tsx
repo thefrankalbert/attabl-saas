@@ -22,7 +22,12 @@ import {
   Moon,
   Sun,
   Quote,
-  Globe
+  Globe,
+  Hexagon,
+  Triangle,
+  Circle,
+  Square,
+  Award
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
@@ -52,7 +57,7 @@ const translations = {
       title_highlight: "mieux",
       subtitle: "Transformez l'expérience client de prise de commande de votre établissement. De la sélection à la facturation à table, Attabl vous donne une solution clé en main.",
       email_placeholder: "Entrez votre email pro",
-      cta_primary: "Essai gratuit", // Shortened as requested
+      cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
       partners: "partenaires de confiance"
@@ -146,6 +151,17 @@ const translations = {
   }
 };
 
+const LOGOS = [
+  { name: "Grand Luxe", icon: StarIcon },
+  { name: "Royal Palace", icon: Award },
+  { name: "Ocean Resort", icon: Sun },
+  { name: "Urban Suites", icon: Layout },
+  { name: "Mountain View", icon: Triangle },
+  { name: "Sapphire Hotel", icon: Hexagon },
+  { name: "Emerald Bay", icon: Circle },
+  { name: "Golden Plaza", icon: Square },
+];
+
 export default function HomePage() {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
@@ -155,7 +171,7 @@ export default function HomePage() {
   const [mounted, setMounted] = useState(false);
   const { scrollY } = useScroll();
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
-  const [pillIndex, setPillIndex] = useState(0); // Animated Pill State
+  const [pillIndex, setPillIndex] = useState(0);
 
   // Disable parallax on mobile to prevent performance issues
   const phoneY = useTransform(scrollY, [0, 600], [0, -20]);
@@ -181,8 +197,8 @@ export default function HomePage() {
   // Badge Text Rotation Interval
   useEffect(() => {
     const interval = setInterval(() => {
-      setPillIndex((prev) => (prev + 1) % 3); // Cycle through 0, 1, 2
-    }, 4000); // Change every 4 seconds
+      setPillIndex((prev) => (prev + 1) % 3);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -416,7 +432,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Subtitle with Max Width to Match "Commander mieux" visual width aprox, avoiding overflow */}
+            {/* Subtitle with Max Width to Match title block */}
             <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-[90%] md:max-w-[480px] leading-relaxed">
               {t.hero.subtitle}
             </p>
@@ -501,6 +517,34 @@ export default function HomePage() {
               </div>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      {/* SCROLLING LOGO MARQUEE */}
+      <section className="py-10 border-t border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-zinc-900/20 overflow-hidden">
+        <div className="relative w-full overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-gray-50 dark:from-black to-transparent z-10"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-gray-50 dark:from-black to-transparent z-10"></div>
+
+          <div className="flex w-full">
+            <motion.div
+              initial={{ x: 0 }}
+              animate={{ x: "-50%" }}
+              transition={{
+                repeat: Infinity,
+                ease: "linear",
+                duration: 30
+              }}
+              className="flex whitespace-nowrap min-w-full"
+            >
+              {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
+                <div key={i} className="flex items-center gap-3 px-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                  <logo.icon className="h-8 w-8" />
+                  <span className="text-xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">{logo.name}</span>
+                </div>
+              ))}
+            </motion.div>
+          </div>
         </div>
       </section>
 
