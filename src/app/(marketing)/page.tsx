@@ -62,7 +62,7 @@ const translations = {
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
       partners_line1: "années",
-      partners_line2: "d'expérience clients"
+      partners_line2: "d'expérience\nclients"
     },
     features: {
       security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
@@ -118,9 +118,9 @@ const translations = {
       email_placeholder: "Enter work email",
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
-      users_active: "hôtels de luxe",
-      partners_line1: "années",
-      partners_line2: "d'expérience clients"
+      users_active: "luxury hotels",
+      partners_line1: "years",
+      partners_line2: "client\nexperience"
     },
     features: {
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
@@ -501,8 +501,8 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle - Optimized for EN/FR */}
-            <div className={`max-w-[90%] mb-10 ${lang === 'en' ? 'md:max-w-[540px]' : 'md:max-w-[500px]'}`}>
-              <p className={`text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-balance ${lang === 'en' ? 'text-left' : 'text-justify'}`}>
+            <div className="max-w-[90%] md:max-w-xl mb-10">
+              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-balance text-left">
                 {t.hero.subtitle}
               </p>
             </div>
