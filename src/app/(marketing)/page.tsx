@@ -41,16 +41,16 @@ const translations = {
       signup: "S'inscrire"
     },
     hero: {
-      tag: "#1 Solution Restaurant",
-      pill: "Nouveau : Room Service 2.0",
-      title_start: "Gérez votre",
-      title_highlight: "service",
-      title_end: "simplement avec Attabl",
-      subtitle: "Avec Attabl, vous pouvez vendre, gérer et analyser vos performances de la manière la plus simple et rapide.",
+      pill: "Nouveau : Service en Chambre Intuitif",
+      title_line1: "ATTABL",
+      title_line2: "pour un service d'exception",
+      title_line3: "Commander mieux.",
+      subtitle: "Transformez l'expérience de commande et la gestion de votre établissement de luxe. De la sélection à la satisfaction, Attabl redéfinit l'excellence du service.",
       email_placeholder: "Entrez votre email pro",
-      cta: "Démarrer",
-      users_active: "Utilisateurs actifs",
-      partners: "Partenaires"
+      cta_primary: "Démarrer un essai gratuit",
+      cta_secondary: "Voir une démo personnalisée",
+      users_active: "hôtels de luxe",
+      partners: "partenaires de confiance"
     },
     features: {
       security: { title: "Securité Garantie", desc: "Paiements cryptés et données protégées. Vos clients commandent en toute confiance." },
@@ -93,16 +93,16 @@ const translations = {
       signup: "Sign Up"
     },
     hero: {
-      tag: "#1 Restaurant Solution",
-      pill: "New: Room Service 2.0",
-      title_start: "Manage your",
-      title_highlight: "service",
-      title_end: "simply with Attabl",
-      subtitle: "With Attabl, you can sell, manage, and analyze your performance in the simplest and fastest way.",
+      pill: "New: Intuitive Room Service",
+      title_line1: "ATTABL",
+      title_line2: "for exceptional service",
+      title_line3: "Order better.",
+      subtitle: "Transform the ordering experience and management of your luxury establishment. From selection to satisfaction, Attabl redefines service excellence.",
       email_placeholder: "Enter work email",
-      cta: "Get Started",
-      users_active: "Active Users",
-      partners: "Partners"
+      cta_primary: "Start Free Trial",
+      cta_secondary: "See Custom Demo",
+      users_active: "luxury hotels",
+      partners: "trusted partners"
     },
     features: {
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
@@ -333,42 +333,78 @@ export default function HomePage() {
 
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#CCFF00] opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-[#CCFF00]"></span>
+                {/* Etoile/Etincelle icon as requested for Badge */}
+                <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
               {t.hero.pill}
-              <ChevronRight className="h-3 w-3 ml-1" />
             </div>
 
-            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold leading-[1.1] mb-6 md:mb-8 text-gray-900 dark:text-white">
-              {t.hero.title_start} <br />
-              <span className="relative inline-block">
-                {t.hero.title_highlight}
-                <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
+            <div className="mb-8 pl-1">
+              {/* Line 1: Massive Bold */}
+              <motion.h1
+                className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white mb-2"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                {t.hero.title_line1}
+              </motion.h1>
+
+              {/* Line 2: Less bold, opacity */}
+              <motion.p
+                className="text-3xl md:text-4xl font-light text-gray-500 dark:text-gray-400 mb-4 tracking-tight"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                {t.hero.title_line2}
+              </motion.p>
+
+              {/* Line 3: Massive Extra Bold, Highlighted */}
+              <motion.div
+                className="relative inline-block"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <span className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter relative z-10">
+                  {t.hero.title_line3}
+                </span>
+                {/* Underline effect */}
+                <svg className="absolute w-full h-4 -bottom-2 left-0 text-gray-900 dark:text-white opacity-10" viewBox="0 0 100 10" preserveAspectRatio="none">
                   <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="5" fill="none" />
                 </svg>
-              </span> {t.hero.title_end.split(' ').slice(0, 1).join(' ')} <br />
-              {t.hero.title_end.split(' ').slice(1).join(' ')}
-            </h1>
+              </motion.div>
+            </div>
 
             <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-lg leading-relaxed">
               {t.hero.subtitle}
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-3 max-w-md mb-10 md:mb-12">
-              <div className="relative flex-grow">
-                <input
-                  type="email"
-                  placeholder={t.hero.email_placeholder}
-                  className="w-full h-12 md:h-14 pl-12 pr-4 bg-gray-100 dark:bg-white text-black rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-transparent dark:border-none"
-                />
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                  <Layout className="h-5 w-5" />
+            <div className="flex flex-col gap-6 max-w-md mb-10 md:mb-12">
+              {/* Email Input + Button */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <div className="relative flex-grow">
+                  <input
+                    type="email"
+                    placeholder={t.hero.email_placeholder}
+                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-gray-100 dark:bg-white text-black rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-transparent dark:border-none"
+                  />
+                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                    <Layout className="h-5 w-5" />
+                  </div>
                 </div>
+                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto">
+                  {t.hero.cta_primary}
+                </Button>
               </div>
-              <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto">
-                {t.hero.cta}
-              </Button>
+
+              {/* Secondary Link/Button */}
+              <div>
+                <Link href="/demo" className="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-[#CCFF00] dark:hover:text-[#CCFF00] transition-colors border-b border-dashed border-gray-400 dark:border-gray-600 hover:border-[#CCFF00] pb-0.5">
+                  {t.hero.cta_secondary} <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </div>
             </div>
 
             <div className="flex items-center gap-6 md:gap-8">
@@ -380,11 +416,11 @@ export default function HomePage() {
                     </div>
                   ))}
                   <div className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-black dark:bg-[#CCFF00] flex items-center justify-center text-white dark:text-black font-bold text-xs">
-                    5.0
+                    20+
                   </div>
                 </div>
                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                  <span className="text-black dark:text-white text-lg mr-1">20k+</span> {t.hero.users_active}
+                  {t.hero.users_active}
                 </p>
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
