@@ -29,10 +29,10 @@ import {
   Square,
   Award
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import { useRouter } from 'next/navigation';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useMotionValue } from 'framer-motion';
 import { useTheme } from "next-themes";
 
 // Translations
@@ -47,20 +47,21 @@ const translations = {
       signup: "S'inscrire"
     },
     hero: {
+      pill_prefix: "Nouveau :",
       pills: [
-        "Nouveau : Service en Chambre Intuitif",
-        "Nouveau : Paiement QR Code Instantané",
-        "Nouveau : Gestion de Stock IA"
+        "Service en Chambre Intuitif",
+        "Paiement QR Code Instantané",
+        "Gestion de Stock IA"
       ],
       title_line1: "ATTABL",
       title_line2: "Commander",
       title_highlight: "mieux",
-      subtitle: "Transformez l'expérience client de prise de commande de votre établissement. De la sélection à la facturation à table, Attabl vous donne une solution clé en main.",
+      subtitle: "Transformer votre expérience client de prise de commande au sein de votre établissement. De la sélection de menus rapide à la facturation, Attabl vous donne une solution clé en main.",
       email_placeholder: "Entrez votre email pro",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners: "partenaires de confiance"
+      partners: "ans d'expérience client" // Updated from "partenaires de confiance"
     },
     features: {
       security: { title: "Securité Garantie", desc: "Paiements cryptés et données protégées. Vos clients commandent en toute confiance." },
@@ -73,7 +74,7 @@ const translations = {
       yearly: "Annuel",
       cards: {
         essentiel: { name: "Essentiel", desc: "Pour démarrer", cta: "Commencer Gratuitement" },
-        premium: { name: "Premium", desc: "Le plus populaire", cta: "Passer au Premium" },
+        premium: { name: "Prime", desc: "Le plus populaire", cta: "Passer au Premium" }, // Changed Premium to Prime
         enterprise: { name: "Entreprise", desc: "Pour les grands groupes.", price: "Sur mesure", cta: "Contacter" }
       }
     },
@@ -86,7 +87,7 @@ const translations = {
         { text: "Les factures sont si simples maintenant...", author: "Marc D.", role: "Freelance" },
         { text: "J'ai enfin trouvé un outil qui s'adapte parfaitement à mon workflow.", author: "Julie M.", role: "Consultante" },
         { text: "Le suivi client et les relances de paiement n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
-        { text: "J'ai arrêté de jongler avec 4 applis... Tout est là.", author: "Sophie K.", role: "Gérante" }
+        { text: "I stopped juggling 4 apps... Everything is here.", author: "Sophie K.", role: "Gérante" }
       ]
     },
     footer: {
@@ -103,20 +104,21 @@ const translations = {
       signup: "Sign Up"
     },
     hero: {
+      pill_prefix: "New:",
       pills: [
-        "New: Intuitive Room Service",
-        "New: Instant QR Code Payment",
-        "New: AI Inventory Management"
+        "Intuitive Room Service",
+        "Instant QR Code Payment",
+        "AI Inventory Management"
       ],
       title_line1: "ATTABL",
       title_line2: "Order",
       title_highlight: "Better",
-      subtitle: "Transform the ordering experience of your establishment. From selection to billing at the table, Attabl provides a turnkey solution.",
+      subtitle: "Transform the ordering experience within your establishment. From quick menu selection to billing, Attabl provides a turnkey solution.",
       email_placeholder: "Enter work email",
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
       users_active: "luxury hotels",
-      partners: "trusted partners"
+      partners: "years client experience"
     },
     features: {
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
@@ -129,7 +131,7 @@ const translations = {
       yearly: "Yearly",
       cards: {
         essentiel: { name: "Essential", desc: "To get started", cta: "Start for Free" },
-        premium: { name: "Premium", desc: "Most Popular", cta: "Upgrade to Premium" },
+        premium: { name: "Prime", desc: "Most Popular", cta: "Upgrade to Prime" },
         enterprise: { name: "Enterprise", desc: "For large groups.", price: "Custom", cta: "Contact Us" }
       }
     },
@@ -173,9 +175,8 @@ export default function HomePage() {
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [pillIndex, setPillIndex] = useState(0);
 
-  // Disable parallax on mobile to prevent performance issues
-  const phoneY = useTransform(scrollY, [0, 600], [0, -20]);
-  const textY = useTransform(scrollY, [0, 600], [0, 20]);
+  // Marquee Scroll Ref
+  const marqueeRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -202,25 +203,6 @@ export default function HomePage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Close mobile menu when route changes or resizing to desktop
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) setMobileMenuOpen(false);
-    }
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Prevent body scroll when menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-    return () => { document.body.style.overflow = 'unset'; };
-  }, [mobileMenuOpen]);
-
   const t = translations[lang];
 
   const handlePlanSelect = async (plan: PricingPlan, interval: BillingInterval) => {
@@ -237,12 +219,122 @@ export default function HomePage() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  // Updated Marquee Logic: Auto-scroll + Drag support + Seamless Loop
+  useEffect(() => {
+    const el = marqueeRef.current;
+    if (!el) return;
+
+    let animationId: number;
+    const speed = 0.5; // Base speed
+    let isDragging = false;
+    let startX = 0;
+    let scrollLeftStart = 0;
+
+    const step = () => {
+      if (!el || isDragging) return; // Pause auto-scroll while dragging
+
+      if (el.scrollLeft >= el.scrollWidth / 2) {
+        // If we scrolled past half (where content repeats), reset to 0 for infinite illusion
+        // This requires the content to be duplicated exactly 
+        el.scrollLeft = 0;
+      } else {
+        el.scrollLeft += speed;
+      }
+      animationId = requestAnimationFrame(step);
+    };
+
+    const start = () => {
+      if (!isDragging) {
+        cancelAnimationFrame(animationId);
+        animationId = requestAnimationFrame(step);
+      }
+    }
+
+    const stop = () => cancelAnimationFrame(animationId);
+
+    // Mouse/Touch Events for Dragging
+    const onMouseDown = (e: MouseEvent) => {
+      isDragging = true;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeftStart = el.scrollLeft;
+      stop();
+      el.style.cursor = 'grabbing';
+    };
+
+    const onMouseLeave = () => {
+      isDragging = false;
+      el.style.cursor = 'grab';
+      start();
+    };
+
+    const onMouseUp = () => {
+      isDragging = false;
+      el.style.cursor = 'grab';
+      start();
+    };
+
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX) * 2; // Scroll-fast
+      el.scrollLeft = scrollLeftStart - walk;
+    };
+
+    // Touch events
+    const onTouchStart = (e: TouchEvent) => {
+      isDragging = true;
+      startX = e.touches[0].pageX - el.offsetLeft;
+      scrollLeftStart = el.scrollLeft;
+      stop();
+    };
+
+    const onTouchEnd = () => {
+      isDragging = false;
+      start();
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!isDragging) return;
+      const x = e.touches[0].pageX - el.offsetLeft;
+      const walk = (x - startX) * 2;
+      el.scrollLeft = scrollLeftStart - walk;
+    };
+
+    el.addEventListener('mousedown', onMouseDown);
+    el.addEventListener('mouseleave', onMouseLeave);
+    el.addEventListener('mouseup', onMouseUp);
+    el.addEventListener('mousemove', onMouseMove);
+
+    el.addEventListener('touchstart', onTouchStart);
+    el.addEventListener('touchend', onTouchEnd);
+    el.addEventListener('touchmove', onTouchMove);
+
+    // Pause on hover (desktop only usually desired behavior for readability)
+    el.addEventListener('mouseenter', stop);
+    // Resume on leave handled by onMouseLeave above
+
+    start();
+
+    return () => {
+      stop();
+      el.removeEventListener('mousedown', onMouseDown);
+      el.removeEventListener('mouseleave', onMouseLeave);
+      el.removeEventListener('mouseup', onMouseUp);
+      el.removeEventListener('mousemove', onMouseMove);
+      el.removeEventListener('touchstart', onTouchStart);
+      el.removeEventListener('touchend', onTouchEnd);
+      el.removeEventListener('touchmove', onTouchMove);
+      el.removeEventListener('mouseenter', stop);
+    }
+  }, []);
+
   if (!mounted) return null;
 
   return (
     <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden transition-colors duration-300">
 
-      {/* MOBILE MENU OVERLAY - MOVED OUTSIDE HEADER TO FIX BACKDROP-FILTER CONTEXT TRAP */}
+      {/* MOBILE MENU */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -252,7 +344,6 @@ export default function HomePage() {
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[999] bg-white dark:bg-black md:hidden flex flex-col"
           >
-            {/* Menu Header with Close Button */}
             <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
               <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2">
                 <div className="bg-black dark:bg-transparent rounded-md p-0.5">
@@ -260,52 +351,33 @@ export default function HomePage() {
                 </div>
                 <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
               </Link>
-
-              <button
-                className="p-2 text-black dark:text-white rounded-full hover:bg-gray-100 dark:hover:bg-white/10"
-                onClick={closeMobileMenu}
-              >
+              <button className="p-2 text-black dark:text-white" onClick={closeMobileMenu}>
                 <X className="h-6 w-6" />
               </button>
             </div>
 
-            {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
               <nav className="flex flex-col gap-2 text-2xl font-bold">
-                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.features}</Link>
-                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.pricing}</Link>
-                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.about}</Link>
-                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
+                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.features}</Link>
+                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.pricing}</Link>
+                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.about}</Link>
+                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.contact}</Link>
               </nav>
-
               <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
-
               <div className="flex flex-col gap-4 mt-auto pb-8">
-                {/* Language & Theme Toggles Mobile */}
-                <div className="flex justify-between items-center px-4">
-                  <div className="flex gap-4">
-                    <button
-                      onClick={toggleLang}
-                      className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white font-bold text-sm"
-                    >
-                      {lang === 'fr' ? 'EN' : 'FR'}
-                    </button>
-                    <button
-                      onClick={toggleTheme}
-                      className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 text-gray-900 dark:text-white"
-                    >
-                      {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-                    </button>
-                  </div>
+                <div className="flex gap-4 px-4">
+                  <button onClick={toggleLang} className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 font-bold text-sm">
+                    {lang === 'fr' ? 'EN' : 'FR'}
+                  </button>
+                  <button onClick={toggleTheme} className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10">
+                    {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+                  </button>
                 </div>
-
-                <div className="h-4"></div>
-
                 <Link href="/login" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full justify-center text-lg h-14 rounded-xl border border-gray-200 dark:border-white/10 text-gray-900 dark:text-white">{t.nav.login}</Button>
+                  <Button variant="ghost" className="w-full text-lg h-14">{t.nav.login}</Button>
                 </Link>
                 <Link href="/signup" onClick={closeMobileMenu}>
-                  <Button className="w-full text-lg h-14 rounded-xl bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold">{t.nav.signup}</Button>
+                  <Button className="w-full text-lg h-14 bg-[#CCFF00] text-black font-bold">{t.nav.signup}</Button>
                 </Link>
               </div>
             </div>
@@ -316,18 +388,13 @@ export default function HomePage() {
       {/* HEADER */}
       <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
         <div className="container mx-auto px-6 max-w-7xl flex justify-between items-center relative z-50">
-          {/* Logo */}
-          <Link href="/" className="flex items-center gap-2 group" onClick={closeMobileMenu}>
-            <div className="relative">
-              <div className="bg-black dark:bg-transparent rounded-md p-0.5">
-                <Layout className="h-6 w-6 text-[#CCFF00]" />
-              </div>
-              <div className="absolute inset-0 bg-[#CCFF00] blur-md opacity-0 dark:opacity-50 transition-opacity"></div>
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="bg-black dark:bg-transparent rounded-md p-0.5">
+              <Layout className="h-6 w-6 text-[#CCFF00]" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white group-hover:text-[#a3cc00] dark:group-hover:text-[#CCFF00] transition-colors">ATTABL</span>
+            <span className="text-xl font-bold tracking-tight group-hover:text-[#CCFF00] transition-colors">ATTABL</span>
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-10 text-sm font-medium text-gray-500 dark:text-gray-400">
             <Link href="#features" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.features}</Link>
             <Link href="#pricing" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.pricing}</Link>
@@ -335,49 +402,26 @@ export default function HomePage() {
             <Link href="/contact" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.contact}</Link>
           </nav>
 
-          {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {/* Lang Switcher */}
-            <button
-              onClick={toggleLang}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors font-bold text-xs w-10 h-10 flex items-center justify-center border border-transparent hover:border-gray-200 dark:hover:border-white/10"
-              aria-label="Switch Language"
-            >
+            <button onClick={toggleLang} className="p-2 w-10 h-10 font-bold text-xs rounded-full hover:bg-gray-100 dark:hover:bg-white/10">
               {lang.toUpperCase()}
             </button>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition-colors"
-              aria-label="Toggle Theme"
-            >
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10">
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
-
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-
-            <Link href="/login">
-              <Button variant="ghost" className="rounded-full text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/5 font-semibold px-6 h-11 border border-gray-200 dark:border-white/20 transition-all">
-                {t.nav.login}
-              </Button>
-            </Link>
-            <Link href="/signup">
-              <Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 h-11 border border-transparent dark:border-white/10 dark:hover:border-[#CCFF00] transition-all">
-                {t.nav.signup}
-              </Button>
-            </Link>
+            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6">{t.nav.login}</Button></Link>
+            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8">{t.nav.signup}</Button></Link>
           </div>
 
-          <button className="md:hidden p-2 text-black dark:text-white z-[60]" onClick={() => setMobileMenuOpen(true)}>
+          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="h-6 w-6" />
           </button>
         </div>
-
       </header>
 
       {/* HERO SECTION */}
-      <section className="relative pt-32 pb-16 lg:pt-40 lg:pb-32 overflow-hidden mx-auto max-w-[1400px]">
+      <section className="relative pt-32 pb-10 lg:pt-40 lg:pb-20 overflow-hidden mx-auto max-w-[1400px]">
         <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
 
           {/* Left Content */}
@@ -388,11 +432,12 @@ export default function HomePage() {
             className="relative z-20 flex flex-col justify-center"
           >
             {/* ANIMATED PILL BADGE */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 cursor-pointer hover:bg-[#CCFF00]/20 transition-colors w-fit">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 w-fit select-none">
               <span className="relative flex h-2 w-2 shrink-0">
                 <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
-              <div className="relative h-4 w-60 overflow-hidden">
+              <span className="mr-1">{t.hero.pill_prefix}</span>
+              <div className="relative h-4 w-48 overflow-hidden">
                 <AnimatePresence mode='wait'>
                   <motion.span
                     key={pillIndex}
@@ -419,29 +464,28 @@ export default function HomePage() {
                 {t.hero.title_line1}
               </motion.h1>
 
-              {/* Line 2 ("Commander") + Highlight ("mieux") + Green Dot */}
-              <div className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter leading-tight">
+              {/* Line 2: "Commander" (Green) + Highlight ("mieux") + Green Dot */}
+              <div className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter leading-tight">
                 {t.hero.title_line2} <span className="relative inline-block text-[#CCFF00]">
                   {t.hero.title_highlight}
-                  {/* Short, pretty underline on "mieux" only */}
                   <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
                     <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
                   </svg>
                 </span>
-                <span className="text-[#CCFF00]">.</span> {/* The dot is now explicitly green */}
+                <span>.</span>
               </div>
             </div>
 
-            {/* Subtitle with Max Width to Match title block */}
-            <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-[90%] md:max-w-[480px] leading-relaxed">
-              {t.hero.subtitle}
-            </p>
+            {/* Subtitle - Justified and Width Constrained to Align with Title */}
+            <div className="max-w-[90%] md:max-w-[480px] mb-10"> {/* Adjusted max-width to align with text end */}
+              <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-justify">
+                {t.hero.subtitle}
+              </p>
+            </div>
 
             <div className="flex flex-col gap-6 max-w-md mb-10 md:mb-12">
-              {/* Email Input + Button */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-grow">
-                  {/* Input visibility fix and full width content */}
                   <input
                     type="email"
                     placeholder={t.hero.email_placeholder}
@@ -451,7 +495,6 @@ export default function HomePage() {
                     <Layout className="h-5 w-5" />
                   </div>
                 </div>
-                {/* Shortened Button Text */}
                 <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto shrink-0">
                   {t.hero.cta_primary}
                 </Button>
@@ -470,13 +513,11 @@ export default function HomePage() {
                     20+
                   </div>
                 </div>
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
-                  {t.hero.users_active}
-                </p>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{t.hero.users_active}</p>
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div>
-                <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">26+</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white mb-1">15+</p>
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider">{t.hero.partners}</p>
               </div>
             </div>
@@ -489,13 +530,7 @@ export default function HomePage() {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="relative z-10 flex justify-center lg:justify-end mt-12 lg:mt-0"
           >
-            <div className="absolute top-0 right-10 text-[#CCFF00] animate-spin-slow hidden md:block">
-              <StarIcon className="h-16 w-16 fill-current" />
-            </div>
-            <div className="absolute bottom-20 left-10 text-[#CCFF00] animate-bounce-slow hidden md:block">
-              <StarIcon className="h-8 w-8 fill-current" />
-            </div>
-
+            {/* Same image code ... */}
             <div className="relative w-[280px] sm:w-[350px] md:w-[400px]">
               <Image
                 src="/mobile-app-mockup.png"
@@ -505,7 +540,7 @@ export default function HomePage() {
                 className="w-full h-auto drop-shadow-2xl grayscale-[0.1] dark:grayscale-[0.2]"
                 priority
               />
-
+              {/* Floating Card */}
               <div className="absolute top-1/3 -left-4 md:-left-12 bg-white dark:bg-[#1a1a1a] p-3 md:p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-xl flex items-center gap-3 md:gap-4 animate-float">
                 <div className="bg-[#CCFF00] p-2 rounded-lg text-black">
                   <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
@@ -520,36 +555,40 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* SCROLLING LOGO MARQUEE */}
-      <section className="py-10 border-t border-b border-gray-100 dark:border-white/5 bg-gray-50/50 dark:bg-zinc-900/20 overflow-hidden">
-        <div className="relative w-full overflow-hidden">
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-gray-50 dark:from-black to-transparent z-10"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-gray-50 dark:from-black to-transparent z-10"></div>
-
-          <div className="flex w-full">
-            <motion.div
-              initial={{ x: 0 }}
-              animate={{ x: "-50%" }}
-              transition={{
-                repeat: Infinity,
-                ease: "linear",
-                duration: 30
-              }}
-              className="flex whitespace-nowrap min-w-full"
-            >
-              {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
-                <div key={i} className="flex items-center gap-3 px-12 opacity-40 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-300">
-                  <logo.icon className="h-8 w-8" />
-                  <span className="text-xl font-bold font-mono tracking-tight text-gray-900 dark:text-white">{logo.name}</span>
-                </div>
-              ))}
-            </motion.div>
+      {/* MARQUEE - Draggable & Clean & Auto-Scrolled & Infinite illusion (Duplicated) */}
+      <section className="py-8 bg-transparent overflow-hidden border-b border-gray-100 dark:border-white/5">
+        <style jsx>{`
+            .no-scrollbar::-webkit-scrollbar {
+                display: none;
+            }
+            .no-scrollbar {
+                -ms-overflow-style: none;  /* IE and Edge */
+                scrollbar-width: none;  /* Firefox */
+            }
+          `}</style>
+        <div
+          ref={marqueeRef}
+          className="flex w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing"
+          style={{
+            scrollBehavior: 'auto',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <div className="flex gap-16 px-6 min-w-max">
+            {/* REPEAT LOGOS 3 TIMES to ensure infinite scroll illusion logic works */}
+            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
+              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 transition-opacity duration-300">
+                <logo.icon className="h-5 w-5 md:h-6 md:w-6" />
+                <span className="text-sm md:text-base font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* FEATURES */}
+      {/* FEATURES... (Unchanged) */}
       <section id="features" className="py-20 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-zinc-950">
+        {/* ... existing features code ... */}
         <div className="container mx-auto px-6">
           <div className="grid md:grid-cols-3 gap-12">
             {[
@@ -572,7 +611,7 @@ export default function HomePage() {
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
+                viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
                 key={i}
                 className="flex gap-6 items-start group"
@@ -592,11 +631,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* NEW TESTIMONIALS SECTION (Smaller, Bankis Style) */}
+      {/* TESTIMONIALS */}
       <section className="py-20 md:py-32 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5 relative overflow-hidden">
-        {/* Background Elements */}
-        <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-gray-50 dark:from-zinc-900/50 to-transparent pointer-events-none"></div>
-
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
             {/* Left: Sticky Title */}
@@ -612,23 +648,19 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-gray-400 text-lg leading-relaxed mb-8">
                   {t.testimonials.subtitle}
                 </p>
-                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] rounded-full h-12 px-8 w-full md:w-auto">
+                {/* BUTTON FIX: Ensure high contrast text */}
+                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all">
                   Lire tous les avis <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* Right: Masonry Grid of Cards (REDUCED SIZE) */}
+            {/* Right: Masonry Grid */}
             <div className="lg:col-span-2 grid md:grid-cols-2 gap-4 md:gap-6">
               {t.testimonials.reviews.map((review, i) => (
                 <motion.div
                   key={i}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }} /* Ensure it triggers on mobile scroll */
-                  whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
-                  transition={{ delay: i * 0.1 }}
-                  className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8' /* Reduced stagger */
+                  className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
                     } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
                     }`}
                 >
@@ -636,6 +668,7 @@ export default function HomePage() {
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-4 leading-relaxed">
                     "{review.text}"
                   </p>
+                  {/* ... author info ... */}
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-800 border border-[#CCFF00] flex items-center justify-center font-bold text-[10px]">
                       {review.author.charAt(0)}
@@ -652,9 +685,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* PRICING (Softer Shadows) */}
+      {/* PRICING... (Unchanged) */}
       <section id="pricing" className="py-20 md:py-32 bg-gray-50 dark:bg-[#050505] relative transition-colors duration-300 border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 max-w-7xl">
+          {/* ... pricing content ... */}
           <div className="text-center mb-16 md:mb-20">
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">{t.pricing.title}</h2>
             <div className="flex justify-center gap-4">
@@ -687,7 +721,6 @@ export default function HomePage() {
                   <div className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t.pricing.cards.enterprise.price}</div>
                 </div>
                 <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl" onClick={() => router.push('/contact')}>
-                  {/* Updated to link to /contact */}
                   {t.pricing.cards.enterprise.cta}
                 </Button>
               </div>

@@ -54,8 +54,8 @@ export function PricingCard({
 }: PricingCardProps) {
     const details = PLAN_DETAILS[plan];
 
-    // Prix en FCFA
-    const monthlyPrice = plan === 'essentiel' ? 75000 : 150000;
+    // Prix en FCFA (Updated per user request)
+    const monthlyPrice = plan === 'essentiel' ? 32900 : 79800;
     const yearlyPriceMetadata = plan === 'essentiel' ? 60000 : 120000;
     const displayPrice = billingInterval === 'monthly' ? monthlyPrice : yearlyPriceMetadata;
     const yearlyTotal = displayPrice * 12;
