@@ -295,7 +295,7 @@ export default function HomePage() {
     };
 
     const onMouseEnter = () => {
-      if (!isDragging) stop();
+      // Don't stop on hover - keep animating
     };
 
     const onMouseMove = (e: MouseEvent) => {
@@ -686,7 +686,7 @@ export default function HomePage() {
               {t.testimonials.reviews.map((review, i) => (
                 <motion.div
                   key={i}
-                  whileHover={{ scale: 1.03 }}
+                  whileHover={{ scale: 1.08 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
                     } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
