@@ -248,13 +248,14 @@ export default function HomePage() {
 
       if (isDragging) return;
 
-      // Reverse Logic: Decrease scrollLeft to move viewport Left (Content moves Right)
-      if (currentPos <= 0) {
-        // Reset to middle
-        currentPos = el.scrollWidth / 2;
+      // Forward Logic: Increase scrollLeft to move viewport Right (Content moves Left)
+      const maxScroll = el.scrollWidth / 2;
+      if (currentPos >= maxScroll) {
+        // Reset to start
+        currentPos = 0;
         el.scrollLeft = currentPos;
       } else {
-        currentPos -= speed;
+        currentPos += speed;
         el.scrollLeft = currentPos;
       }
 
@@ -685,6 +686,8 @@ export default function HomePage() {
               {t.testimonials.reviews.map((review, i) => (
                 <motion.div
                   key={i}
+                  whileHover={{ scale: 1.03 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                   className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
                     } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
                     }`}
