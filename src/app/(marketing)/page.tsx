@@ -36,19 +36,18 @@ const translations = {
       features: "Fonctionnalités",
       pricing: "Tarifs",
       about: "À propos",
-      contact: "Contact",
+      contact: "Contact", // Should link to /contact now? Or keep scroll? User said "Le bouton contacter doit conduire sur une page".
       login: "Connexion",
       signup: "S'inscrire"
     },
     hero: {
       pill: "Nouveau : Service en Chambre Intuitif",
       title_line1: "ATTABL",
-      title_line2: "pour un service d'exception",
-      title_line3: "Commander mieux.",
-      subtitle: "Transformez l'expérience de commande et la gestion de votre établissement de luxe. De la sélection à la satisfaction, Attabl redéfinit l'excellence du service.",
-      email_placeholder: "Entrez votre email pro",
+      title_line2: "Commander",
+      title_highlight: "mieux", // "mieux" gets the underline
+      subtitle: "Transformez l'expérience client de prise de commande de votre établissement. De la sélection à la facturation à table, Attabl vous donne une solution clé en main.",
+      email_placeholder: "Entrez votre email professionnel", // Improved prompt? "Entrez votre..." -> "Entrez votre email pro"
       cta_primary: "Démarrer un essai gratuit",
-      cta_secondary: "Voir une démo personnalisée",
       users_active: "hôtels de luxe",
       partners: "partenaires de confiance"
     },
@@ -95,12 +94,11 @@ const translations = {
     hero: {
       pill: "New: Intuitive Room Service",
       title_line1: "ATTABL",
-      title_line2: "for exceptional service",
-      title_line3: "Order better.",
-      subtitle: "Transform the ordering experience and management of your luxury establishment. From selection to satisfaction, Attabl redefines service excellence.",
+      title_line2: "Order",
+      title_highlight: "Better",
+      subtitle: "Transform the ordering experience of your establishment. From selection to billing at the table, Attabl provides a turnkey solution.",
       email_placeholder: "Enter work email",
       cta_primary: "Start Free Trial",
-      cta_secondary: "See Custom Demo",
       users_active: "luxury hotels",
       partners: "trusted partners"
     },
@@ -237,7 +235,7 @@ export default function HomePage() {
                 <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.features}</Link>
                 <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.pricing}</Link>
                 <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.about}</Link>
-                <Link href="#contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
+                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5 text-gray-900 dark:text-white">{t.nav.contact}</Link>
               </nav>
 
               <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
@@ -287,7 +285,7 @@ export default function HomePage() {
             <Link href="#features" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.features}</Link>
             <Link href="#pricing" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.pricing}</Link>
             <Link href="#about" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.about}</Link>
-            <Link href="#contact" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.contact}</Link>
+            <Link href="/contact" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.contact}</Link>
           </nav>
 
           {/* Desktop Actions */}
@@ -350,31 +348,18 @@ export default function HomePage() {
                 {t.hero.title_line1}
               </motion.h1>
 
-              {/* Line 2: Less bold, opacity */}
-              <motion.p
-                className="text-3xl md:text-4xl font-light text-gray-500 dark:text-gray-400 mb-4 tracking-tight"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {t.hero.title_line2}
-              </motion.p>
+              {/* Line 2 was removed as requested */}
 
-              {/* Line 3: Massive Extra Bold, Highlighted */}
-              <motion.div
-                className="relative inline-block"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-              >
-                <span className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter relative z-10">
-                  {t.hero.title_line3}
-                </span>
-                {/* Underline effect */}
-                <svg className="absolute w-full h-4 -bottom-2 left-0 text-gray-900 dark:text-white opacity-10" viewBox="0 0 100 10" preserveAspectRatio="none">
-                  <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="5" fill="none" />
-                </svg>
-              </motion.div>
+              {/* Line 3: "Commander mieux." with simplified underline on "mieux" */}
+              <div className="text-5xl md:text-7xl font-black text-gray-900 dark:text-white tracking-tighter">
+                {t.hero.title_line2} <span className="relative inline-block text-[#CCFF00]">
+                  {t.hero.title_highlight}
+                  {/* Short, pretty underline on "mieux" only */}
+                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
+                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
+                  </svg>
+                </span>.
+              </div>
             </div>
 
             <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 mb-8 md:mb-10 max-w-lg leading-relaxed">
@@ -385,10 +370,11 @@ export default function HomePage() {
               {/* Email Input + Button */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-grow">
+                  {/* Improved visibility: white bg on dark, dark bg on light (adjust), or just clear border */}
                   <input
                     type="email"
                     placeholder={t.hero.email_placeholder}
-                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-gray-100 dark:bg-white text-black rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-transparent dark:border-none"
+                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-white/10 text-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-gray-200 dark:border-white/20 shadow-sm"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Layout className="h-5 w-5" />
@@ -399,12 +385,7 @@ export default function HomePage() {
                 </Button>
               </div>
 
-              {/* Secondary Link/Button */}
-              <div>
-                <Link href="/demo" className="inline-flex items-center text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-[#CCFF00] dark:hover:text-[#CCFF00] transition-colors border-b border-dashed border-gray-400 dark:border-gray-600 hover:border-[#CCFF00] pb-0.5">
-                  {t.hero.cta_secondary} <ArrowRight className="ml-1 h-3 w-3" />
-                </Link>
-              </div>
+              {/* Secondary CTA REMOVED as requested */}
             </div>
 
             <div className="flex items-center gap-6 md:gap-8">
@@ -607,7 +588,8 @@ export default function HomePage() {
                   <p className="text-sm text-gray-500 mb-6">{t.pricing.cards.enterprise.desc}</p>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t.pricing.cards.enterprise.price}</div>
                 </div>
-                <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl">
+                <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl" onClick={() => router.push('/contact')}>
+                  {/* Updated to link to /contact */}
                   {t.pricing.cards.enterprise.cta}
                 </Button>
               </div>
