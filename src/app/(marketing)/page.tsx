@@ -50,15 +50,15 @@ const translations = {
         "Gestion de Stock IA"
       ],
       title_line1: "ATTABL",
-      title_line2: "commander",
-      title_highlight: "mieux",
+      title_line2: "Commander",
+      title_highlight: "Mieux",
       subtitle: <>Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir.</span></>,
       email_placeholder: "Adresse e-mail professionnelle",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
       stats_line1_num: "15+",
-      stats_line1_text: "années",
+      stats_line1_text: "ans",
       stats_line2: "d'expériences",
       stats_line3: "clients"
     },
@@ -266,7 +266,7 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden relative">
+    <div className="min-h-screen bg-[linear-gradient(to_right,#f5f4f7_0%,#e0ecfe_100%)] dark:bg-none dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden relative">
       {/* Global Top-Left Halo - Increased Opacity */}
       <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#CCFF00]/20 rounded-full blur-[100px] pointer-events-none z-0" />
 
@@ -396,20 +396,28 @@ export default function HomePage() {
             </motion.div>
 
             <div className="mb-8 pl-1">
-              {/* Line 1: Massive Bold */}
+              {/* Line 1: Massive Bold - ATTABL */}
               <motion.h1
                 variants={itemVariants}
-                className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white mb-2 leading-none"
+                className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white leading-[0.95] z-10 relative mb-[-0.2em] md:mb-[-0.1em]"
               >
                 {t.hero.title_line1}
               </motion.h1>
 
-              {/* Line 2: "Commander" (Green) + Highlight ("mieux") + Green Dot */}
+              {/* Line 2: Commander (Green) */}
               <motion.div
                 variants={itemVariants}
-                className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter leading-tight"
+                className="text-6xl md:text-8xl font-black text-[#CCFF00] tracking-tighter leading-[0.95] relative z-20 mb-[-0.2em] md:mb-[-0.1em]"
               >
-                {t.hero.title_line2} <span className="relative inline-block text-[#CCFF00]">
+                {t.hero.title_line2}
+              </motion.div>
+
+              {/* Line 3: Mieux (Green + Underline + Dot) */}
+              <motion.div
+                variants={itemVariants}
+                className="text-6xl md:text-8xl font-black text-[#CCFF00] tracking-tighter leading-[0.95] inline-block relative z-20"
+              >
+                <span className="relative inline-block text-[#CCFF00]">
                   {t.hero.title_highlight}
                   <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
                     <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
@@ -472,8 +480,8 @@ export default function HomePage() {
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
                 <div className="flex items-baseline gap-1 mb-0.5 leading-none">
-                  <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
-                  <span className="text-base font-medium text-gray-600 dark:text-gray-400">{t.hero.stats_line1_text}</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_text}</span>
                 </div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none mb-0.5">{t.hero.stats_line2}</p>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none">{t.hero.stats_line3}</p>
