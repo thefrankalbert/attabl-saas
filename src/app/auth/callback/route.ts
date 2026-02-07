@@ -53,7 +53,7 @@ export async function GET(request: Request) {
                     body: JSON.stringify({
                         userId: session.user.id,
                         email: session.user.email,
-                        restaurantName: decodeURIComponent(restaurantName),
+                        restaurantName: restaurantName, // Already decoded by searchParams
                         plan,
                     }),
                 });
@@ -61,13 +61,15 @@ export async function GET(request: Request) {
                 const signupData = await signupResponse.json();
 
                 if (signupResponse.ok && signupData.slug) {
-                    // New signup via OAuth - redirect to onboarding wizard
                     return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+                } else {
+                    console.error('Signup OAuth API error:', signupData.error);
+                    return NextResponse.redirect(`${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}`);
                 }
             }
 
-            // No tenant and no signup data - redirect to signup to complete
-            return NextResponse.redirect(`${requestUrl.origin}/signup?oauth=incomplete`);
+            // No tenant and no signup data
+            return NextResponse.redirect(`${requestUrl.origin}/signup?error=incomplete_oauth_data`);
         }
     }
 
