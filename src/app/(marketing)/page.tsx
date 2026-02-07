@@ -688,13 +688,10 @@ export default function HomePage() {
       <NewsletterSection lang={lang} />
 
       {/* FOOTER */}
-      <footer className="py-12 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
+      <footer className="py-12 bg-transparent border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 active:scale-95 transition-transform cursor-pointer">
-            <div className="bg-black dark:bg-transparent rounded-md p-0.5">
-              <Layout className="h-6 w-6 text-[#CCFF00]" />
-            </div>
-            <span className="font-bold text-gray-900 dark:text-white">ATTABL</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">ATTABL</span>
           </div>
           <div className="text-sm text-gray-500">{t.footer.rights}</div>
         </div>
