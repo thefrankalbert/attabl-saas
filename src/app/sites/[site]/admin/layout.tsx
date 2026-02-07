@@ -9,6 +9,7 @@ import {
   CreditCard,
   LogOut,
   ChevronRight,
+  QrCode,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -94,6 +95,7 @@ export default async function AdminLayout({
     { name: 'Dashboard', href: `/admin`, icon: LayoutDashboard },
     { name: 'Commandes', href: `/admin/orders`, icon: ShoppingBag },
     { name: 'Menus', href: `/admin/menus`, icon: UtensilsCrossed },
+    { name: 'QR Codes', href: `/admin/qr-codes`, icon: QrCode },
     { name: 'Abonnement', href: `/admin/subscription`, icon: CreditCard },
     { name: 'Paramètres', href: `/admin/settings`, icon: Settings },
   ];

@@ -1,6 +1,7 @@
 'use client';
 
-import { Rocket, Check, QrCode, ExternalLink, Download, Layout } from 'lucide-react';
+import { Rocket, Check, ExternalLink, Layout } from 'lucide-react';
+import { LaunchQR } from '@/components/qr/LaunchQR';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface LaunchStepProps {
@@ -93,26 +94,12 @@ export function LaunchStep({ data }: LaunchStepProps) {
             </div>
 
             {/* QR Code */}
-            <div className="p-5 rounded-xl border border-gray-200 bg-white">
-                <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                        <QrCode className="h-10 w-10 text-gray-300" />
-                    </div>
-                    <div className="flex-1">
-                        <h3 className="font-semibold text-gray-900 mb-1">QR Code</h3>
-                        <p className="text-sm text-gray-500 mb-3">
-                            Imprimez-le pour vos tables.
-                        </p>
-                        <button
-                            type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-                        >
-                            <Download className="h-4 w-4" />
-                            Télécharger
-                        </button>
-                    </div>
-                </div>
-            </div>
+            <LaunchQR
+                url={menuUrl}
+                tenantName={data.tenantName}
+                logoUrl={data.logoUrl}
+                primaryColor={data.primaryColor}
+            />
 
             {/* Trial Info */}
             <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
