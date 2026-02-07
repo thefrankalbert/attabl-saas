@@ -135,7 +135,7 @@ export default async function MenuPage({
           ) : (
             <h1
               className="text-2xl font-bold"
-              style={{ color: tenant.primary_color || '#1f2937' }}
+              style={{ color: 'var(--tenant-primary)' }}
             >
               {tenant.name}
             </h1>

@@ -192,7 +192,10 @@ export default function MenuItemCard({
                 </p>
 
                 <div className="flex items-center gap-2 mt-auto">
-                    <span className={`text-[16px] font-bold ${accentColor}`}>
+                    <span
+                        className="text-[16px] font-bold"
+                        style={{ color: 'var(--tenant-primary)' }}
+                    >
                         {currentPrice > 0 ? formatPrice(currentPrice, currency) : (language === 'en' ? 'Included' : 'Inclus')}
                     </span>
                 </div>
@@ -205,7 +208,8 @@ export default function MenuItemCard({
                                 e.stopPropagation();
                                 setShowVariantDropdown(!showVariantDropdown);
                             }}
-                            className="flex items-center gap-1 text-[12px] text-orange-600 bg-orange-50 px-2 py-1 rounded-md"
+                            className="flex items-center gap-1 text-[12px] bg-gray-50 px-2 py-1 rounded-md"
+                            style={{ color: 'var(--tenant-primary)' }}
                         >
                             {getVariantName(selectedVariant!)}
                             <ChevronDown size={12} className={`transition-transform ${showVariantDropdown ? 'rotate-180' : ''}`} />
@@ -220,7 +224,8 @@ export default function MenuItemCard({
                                             setSelectedVariant(variant);
                                             setShowVariantDropdown(false);
                                         }}
-                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 ${selectedVariant?.id === variant.id ? 'text-orange-600 font-bold bg-orange-50' : 'text-gray-700'}`}
+                                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 ${selectedVariant?.id === variant.id ? 'font-bold bg-gray-50' : 'text-gray-700'}`}
+                                        style={selectedVariant?.id === variant.id ? { color: 'var(--tenant-primary)' } : undefined}
                                     >
                                         {getVariantName(variant)} - {formatPrice(variant.price, currency)}
                                     </button>
@@ -258,7 +263,8 @@ export default function MenuItemCard({
                                     e.stopPropagation();
                                     updateQuantity(getCartKey(), cartItem.quantity - 1);
                                 }}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center ${accentColor} hover:bg-gray-50 active:scale-90 transition-all`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                                style={{ backgroundColor: 'var(--tenant-primary)' }}
                             >
                                 <Minus size={16} strokeWidth={2.5} />
                             </button>
@@ -270,7 +276,8 @@ export default function MenuItemCard({
                                     e.stopPropagation();
                                     updateQuantity(getCartKey(), cartItem.quantity + 1);
                                 }}
-                                className={`w-8 h-8 rounded-full flex items-center justify-center ${accentColor} hover:bg-gray-50 active:scale-90 transition-all`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                                style={{ backgroundColor: 'var(--tenant-primary)' }}
                             >
                                 <Plus size={16} strokeWidth={2.5} />
                             </button>
@@ -282,7 +289,8 @@ export default function MenuItemCard({
                                 handleAdd();
                             }}
                             disabled={isUnavailable}
-                            className={`w-10 h-10 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center ${accentColor} shadow-md hover:border-current/30 active:scale-90 transition-all ${isAnimating ? "scale-110 bg-current/10" : ""}`}
+                            className={`w-10 h-10 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-md hover:border-current/30 active:scale-90 transition-all ${isAnimating ? "scale-110 bg-current/10" : ""}`}
+                            style={{ color: 'var(--tenant-primary)' }}
                         >
                             <Plus size={20} strokeWidth={2.5} />
                         </button>

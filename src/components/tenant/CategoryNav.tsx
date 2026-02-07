@@ -128,11 +128,14 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
                             className={`
                                 whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]
                                 ${isActive
-                                    ? "bg-[#002C5F] text-white border-[#002C5F]"
+                                    ? "text-white"
                                     : "bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200"
                                 }
                             `}
-
+                            style={isActive ? {
+                                backgroundColor: 'var(--tenant-primary)',
+                                borderColor: 'var(--tenant-primary)',
+                            } : undefined}
                         >
                             {category.name}
                         </button>
