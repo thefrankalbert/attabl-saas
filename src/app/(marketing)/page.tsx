@@ -343,8 +343,8 @@ export default function HomePage() {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50">{t.nav.login}</Button></Link>
-            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95 shadow-none border border-transparent focus-visible:ring-0">{t.nav.signup}</Button></Link>
+            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50 shadow-none"><span className="text-gray-700 dark:text-gray-300">{t.nav.login}</span></Button></Link>
+            <Link href="/signup"><Button className="rounded-full bg-[#CCFF00] text-black hover:bg-[#b8e600] font-semibold px-8 active:scale-95 shadow-none border-0 focus-visible:ring-0">{t.nav.signup}</Button></Link>
           </div>
 
           <button className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={() => setMobileMenuOpen(true)}>
@@ -355,9 +355,9 @@ export default function HomePage() {
 
       {/* HERO SECTION */}
       <section className="relative pt-32 pb-10 lg:pt-40 lg:pb-20 overflow-hidden mx-auto max-w-[1400px]">
-        {/* Hero Halos - Increased Opacity & Adjusted Positioning */}
-        <div className="absolute top-1/2 right-[-5%] -translate-y-1/2 w-[500px] h-[500px] bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
-        <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
+        {/* Hero Halos - Subtle in Light Mode (5%), More visible in Dark Mode (15%) */}
+        <div className="absolute top-1/2 right-[-5%] -translate-y-1/2 w-[500px] h-[500px] bg-[#CCFF00]/5 dark:bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-[#CCFF00]/5 dark:bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
 
         <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
 
