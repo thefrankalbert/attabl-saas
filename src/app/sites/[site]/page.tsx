@@ -5,6 +5,7 @@ import Image from 'next/image';
 import CategoryNav from '@/components/tenant/CategoryNav';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CartSummary from '@/components/tenant/CartSummary';
+import NewsletterSection from '@/components/tenant/NewsletterSection';
 
 // Types pour les données
 interface Category {
@@ -207,6 +208,12 @@ export default async function MenuPage({
           </div>
         )}
       </main>
+
+      {/* Newsletter Section */}
+      <NewsletterSection
+        primaryColor={tenant.primary_color}
+        logoUrl={tenant.logo_url}
+      />
 
       {/* Cart Summary (floating) */}
       <CartSummary />
