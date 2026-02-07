@@ -84,8 +84,8 @@ export function PricingCard({
             )}
 
             <div className={`relative flex flex-col h-full overflow-hidden transition-all duration-300 rounded-[22px] border ${details.highlight
-                ? 'bg-white dark:bg-[#121212] border-transparent shadow-xl dark:shadow-none'
-                : 'bg-white dark:bg-[#0A0A0A] border-gray-100 dark:border-white/10 shadow-sm dark:shadow-none'
+                ? 'bg-white dark:bg-[#121212] border-transparent shadow-none'
+                : 'bg-white dark:bg-[#0A0A0A] border-gray-100 dark:border-white/10 shadow-none'
                 } group-hover:border-[#CCFF00]/30`}>
 
                 {/* Inner Gradient for "Pro" feel on Dark Mode */}
@@ -138,7 +138,7 @@ export function PricingCard({
                         onClick={() => onSelect(plan, billingInterval)}
                         disabled={isLoading || isCurrentPlan}
                         className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 ${details.highlight
-                            ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-[0_0_20px_rgba(204,255,0,0.3)]'
+                            ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-none'
                             : 'bg-black dark:bg-white/10 text-white hover:bg-gray-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5'
                             }`}
                     >

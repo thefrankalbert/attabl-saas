@@ -130,7 +130,7 @@ export default function NewsletterSection({
                     {/* Right side: Form */}
                     <div className="w-full lg:w-1/2 flex flex-col gap-4 relative z-10 lg:pl-12">
                         {/* Input group */}
-                        <form onSubmit={handleSubmit} className="flex w-full items-center p-1.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus-within:border-gray-300 dark:focus-within:border-white/20 transition-all shadow-sm dark:shadow-inner">
+                        <form onSubmit={handleSubmit} className="flex w-full items-center p-1.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus-within:border-[#CCFF00] dark:focus-within:border-[#CCFF00] transition-all shadow-none">
                             <Input
                                 type="email"
                                 placeholder={t.placeholder}

@@ -56,8 +56,8 @@ const translations = {
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners_line1: "années",
-      partners_line2: "d&apos;expérience\nclients"
+      partners_line1: "ans",
+      partners_line2: "d'expertise\nclient"
     },
     features: {
       security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
@@ -241,7 +241,9 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
+    <div className="min-h-screen bg-[#F9FAFB] dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden relative">
+      {/* Global Top-Left Halo */}
+      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#CCFF00]/10 rounded-full blur-[120px] pointer-events-none z-0" />
 
       {/* MOBILE MENU */}
       <AnimatePresence>
@@ -319,8 +321,8 @@ export default function HomePage() {
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95">{t.nav.login}</Button></Link>
-            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95">{t.nav.signup}</Button></Link>
+            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50">{t.nav.login}</Button></Link>
+            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95 shadow-none border border-transparent">{t.nav.signup}</Button></Link>
           </div>
 
           <button className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={() => setMobileMenuOpen(true)}>
@@ -331,7 +333,11 @@ export default function HomePage() {
 
       {/* HERO SECTION */}
       <section className="relative pt-32 pb-10 lg:pt-40 lg:pb-20 overflow-hidden mx-auto max-w-[1400px]">
-        <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center">
+        {/* Hero Halos */}
+        <div className="absolute top-1/2 right-[-10%] -translate-y-1/2 w-[500px] h-[500px] bg-[#CCFF00]/10 rounded-full blur-[120px] pointer-events-none z-0" />
+        <div className="absolute bottom-[-10%] right-[20%] w-[400px] h-[400px] bg-[#CCFF00]/5 rounded-full blur-[120px] pointer-events-none z-0" />
+
+        <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
 
           {/* Left Content */}
           <motion.div
@@ -410,7 +416,7 @@ export default function HomePage() {
                     placeholder={t.hero.email_placeholder}
                     value={heroEmail}
                     onChange={(e) => setHeroEmail(e.target.value)}
-                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-gray-200 dark:border-white/10 shadow-sm"
+                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none border border-gray-200 focus:border-[#CCFF00] dark:border-white/10 font-medium placeholder:text-gray-500 shadow-none transition-colors"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Layout className="h-5 w-5" />
@@ -418,7 +424,7 @@ export default function HomePage() {
                 </div>
                 <Button
                   onClick={() => router.push(`/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`)}
-                  className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all hover:scale-105 active:scale-95 border-0 w-full sm:w-auto shrink-0"
+                  className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600]/90 text-black font-bold text-base shadow-none transition-all hover:scale-105 active:scale-95 border border-transparent w-full sm:w-auto shrink-0"
                 >
                   {t.hero.cta_primary}
                 </Button>
@@ -432,11 +438,11 @@ export default function HomePage() {
               <div className="active:scale-95 transition-transform cursor-pointer">
                 <div className="flex -space-x-3 mb-2">
                   {[1, 2, 3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
+                    <div key={i} className="w-10 h-10 rounded-full border border-white dark:border-black bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-none">
                       <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" />
                     </div>
                   ))}
-                  <div className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-black dark:bg-[#CCFF00] flex items-center justify-center text-white dark:text-black font-bold text-xs">
+                  <div className="w-10 h-10 rounded-full border border-white dark:border-black bg-black dark:bg-[#CCFF00] flex items-center justify-center text-white dark:text-black font-bold text-xs shadow-none">
                     20+
                   </div>
                 </div>
@@ -475,12 +481,11 @@ export default function HomePage() {
                 alt="App Interface"
                 width={800}
                 height={1600}
-                className="w-full h-auto drop-shadow-2xl grayscale-[0.1] dark:grayscale-[0.2]"
+                className="w-full h-auto shadow-none grayscale-[0.1] dark:grayscale-[0.2]"
                 priority
               />
-              {/* Floating Card */}
-              <div className="absolute top-1/3 -left-4 md:-left-12 bg-white dark:bg-[#1a1a1a] p-3 md:p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-xl flex items-center gap-3 md:gap-4 animate-float hover:scale-105 transition-transform duration-300">
-                <div className="bg-[#CCFF00] p-2 rounded-lg text-black">
+              <div className="absolute top-1/3 -left-4 md:-left-12 bg-white dark:bg-[#1a1a1a] p-3 md:p-4 rounded-xl border border-gray-200/60 dark:border-white/10 shadow-none flex items-center gap-3 md:gap-4 animate-float hover:scale-105 transition-transform duration-300">
+                <div className="bg-[#CCFF00] p-2 rounded-lg text-black shadow-none">
                   <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
                 <div>
@@ -542,9 +547,9 @@ export default function HomePage() {
               <motion.div
                 variants={itemVariants}
                 key={i}
-                className="flex gap-6 items-start group active:scale-[0.98] transition-all p-4 rounded-2xl hover:bg-white dark:hover:bg-white/5 duration-300"
+                className="flex gap-6 items-start group active:scale-[0.98] transition-all p-4 rounded-2xl border border-transparent hover:border-gray-200/60 dark:hover:border-white/5 hover:bg-white dark:hover:bg-white/5 duration-300 shadow-none"
               >
-                <div className="h-12 w-12 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#CCFF00] flex items-center justify-center shrink-0 group-hover:bg-[#CCFF00] transition-colors duration-500 shadow-sm">
+                <div className="h-12 w-12 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#CCFF00] flex items-center justify-center shrink-0 group-hover:bg-[#CCFF00] transition-colors duration-500 shadow-none">
                   <div className="text-[#CCFF00] group-hover:text-black transition-colors duration-500">
                     <item.icon className="h-6 w-6 fill-current" />
                   </div>
@@ -601,8 +606,8 @@ export default function HomePage() {
                   key={i}
                   whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`p-5 rounded-[1.25rem] border transition-all duration-300 hover:border-[#CCFF00]/50 group cursor-default active:scale-[0.98] ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
-                    } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
+                  className={`p-5 rounded-[1.25rem] border transition-all duration-300 hover:border-[#CCFF00]/50 group cursor-default active:scale-[0.98] shadow-none ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
+                    } ${theme === 'light' ? 'bg-white border-gray-200/60 hover:border-gray-300' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
                     }`}
                 >
                   <Quote className="h-5 w-5 text-[#CCFF00] mb-3 opacity-50 group-hover:opacity-100 transition-opacity" />
@@ -667,7 +672,7 @@ export default function HomePage() {
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              <div className="border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-lg dark:shadow-none active:scale-[0.99]">
+              <div className="border border-gray-200/60 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-none active:scale-[0.99]">
                 <div>
                   <h3 className="text-xl font-medium mb-1 text-gray-900 dark:text-gray-300">{t.pricing.cards.enterprise.name}</h3>
                   <p className="text-sm text-gray-500 mb-6">{t.pricing.cards.enterprise.desc}</p>
