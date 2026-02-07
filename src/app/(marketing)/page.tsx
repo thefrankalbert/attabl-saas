@@ -294,7 +294,7 @@ export default function HomePage() {
 
             <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
               <nav className="flex flex-col gap-2 text-2xl font-bold">
-                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.features}</Link>
+                <Link href="/features" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.features}</Link>
                 <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.pricing}</Link>
                 <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.about}</Link>
                 <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.contact}</Link>
@@ -332,7 +332,7 @@ export default function HomePage() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-10 text-sm font-medium text-gray-500 dark:text-gray-400">
-            <Link href="#features" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.features}</Link>
+            <Link href="/features" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.features}</Link>
             <Link href="#pricing" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.pricing}</Link>
             <Link href="#about" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.about}</Link>
             <Link href="/contact" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.contact}</Link>
