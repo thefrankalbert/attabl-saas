@@ -16,23 +16,23 @@ interface NewsletterSectionProps {
 
 const translations = {
     fr: {
-        title: "Restez informé",
-        subtitle: "nouvelles idées",
-        description: "Recevez les mises à jour produits, les meilleures pratiques et des conseils de croissance directement dans votre boîte mail.",
+        title: "Restez à la pointe",
+        subtitle: "de l'hospitalité",
+        description: "Recevez nos conseils pour optimiser votre établissement et offrir une expérience client exceptionnelle.",
         placeholder: "Votre email",
-        button: "Envoyer",
-        disclaimer: "Ne vous inquiétez pas, nous ne spammons pas.",
+        button: "S'abonner",
+        disclaimer: "Pas de spam, promis.",
         success: "Merci de votre inscription !",
         error: "Une erreur est survenue.",
         invalid: "Email invalide."
     },
     en: {
-        title: "Stay updated with",
-        subtitle: "new insights",
-        description: "Get product updates, best practices, and smart growth tips straight to your inbox.",
+        title: "Stay ahead in",
+        subtitle: "hospitality",
+        description: "Get tips to optimize your establishment and deliver an exceptional guest experience.",
         placeholder: "Your email",
-        button: "Send",
-        disclaimer: "Don't worry, we're not spamming.",
+        button: "Subscribe",
+        disclaimer: "No spam, we promise.",
         success: "Thank you for subscribing!",
         error: "Something went wrong.",
         invalid: "Invalid email."

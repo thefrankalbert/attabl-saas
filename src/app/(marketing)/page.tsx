@@ -49,15 +49,15 @@ const translations = {
         "Gestion de Stock IA"
       ],
       title_line1: "ATTABL",
-      title_line2: "commander", // Lowercase per request
+      title_line2: "commander",
       title_highlight: "mieux",
-      subtitle: <>Offrez à vos clients la liberté de <span className="text-gray-900 dark:text-white font-semibold">commander mieux</span>. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l&apos;essentiel : <span className="text-[#CCFF00] font-bold">l&apos;art de recevoir</span>.</>,
-      email_placeholder: "Adresse e-mail professionnelle", // More professional
+      subtitle: "Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l'essentiel : l'art de recevoir.",
+      email_placeholder: "Adresse e-mail professionnelle",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners_line1: "ans",
-      partners_line2: "d'expertise\nclient"
+      partners_line1: "d'expertise",
+      partners_line2: "au service des clients"
     },
     features: {
       security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
@@ -75,15 +75,15 @@ const translations = {
       }
     },
     testimonials: {
-      title: "L&apos;avis de nos utilisateurs", // Better header
+      title: "Ce que disent nos partenaires",
       subtitle: "Découvrez comment ils ont transformé leur gestion quotidienne.",
       reviews: [
-        { text: "Je l&apos;utilise au quotidien, c&apos;est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
-        { text: "Interface épurée, fonctionnalités puissantes, l&apos;essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
-        { text: "La facturation est devenue un jeu d&apos;enfant...", author: "Marc D.", role: "Freelance" },
-        { text: "J&apos;ai enfin trouvé l&apos;outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
-        { text: "Le suivi client et les relances n&apos;ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
-        { text: "J&apos;ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
+        { text: "Je l'utilise au quotidien, c'est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
+        { text: "Interface épurée, fonctionnalités puissantes, l'essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
+        { text: "La facturation est devenue un jeu d'enfant...", author: "Marc D.", role: "Freelance" },
+        { text: "J'ai enfin trouvé l'outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
+        { text: "Le suivi client et les relances n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
+        { text: "J'ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
       ]
     },
     footer: {
@@ -114,8 +114,8 @@ const translations = {
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
       users_active: "luxury hotels",
-      partners_line1: "years",
-      partners_line2: "client\nexperience"
+      partners_line1: "of expertise",
+      partners_line2: "serving clients"
     },
     features: {
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
@@ -133,7 +133,7 @@ const translations = {
       }
     },
     testimonials: {
-      title: "What Our Users Are Saying",
+      title: "Trusted by industry leaders",
       subtitle: "See how others are transforming the way they manage clients.",
       reviews: [
         { text: "I use it every day, it's like my business command center.", author: "Thomas R.", role: "Manager" },
