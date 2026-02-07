@@ -20,6 +20,8 @@ export const metadata: Metadata = {
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
 
+import ScrollRestoration from "@/components/shared/ScrollRestoration";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,6 +38,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ScrollRestoration />
           {children}
           <Toaster />
         </ThemeProvider>
