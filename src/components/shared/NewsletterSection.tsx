@@ -116,14 +116,14 @@ export default function NewsletterSection({
                             <defs>
                                 <linearGradient id="arrow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
                                     <stop offset="0%" stopColor={primaryColor || "#CCFF00"} stopOpacity="0" />
-                                    <stop offset="50%" stopColor={primaryColor || "#CCFF00"} stopOpacity="1" />
+                                    <stop offset="40%" stopColor={primaryColor || "#CCFF00"} stopOpacity="1" />
                                     <stop offset="100%" stopColor={primaryColor || "#CCFF00"} stopOpacity="1" />
                                 </linearGradient>
                             </defs>
                             {/* Long line */}
-                            <path d="M0,20 L195,20" stroke="url(#arrow-gradient)" strokeWidth="2" strokeLinecap="round" />
+                            <path d="M0,20 L195,20" stroke="url(#arrow-gradient)" strokeWidth="1.5" strokeLinecap="round" />
                             {/* Arrow head */}
-                            <path d="M190,15 L200,20 L190,25" stroke={primaryColor || "#CCFF00"} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                            <path d="M190,15 L200,20 L190,25" stroke={primaryColor || "#CCFF00"} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                     </div>
 
@@ -141,7 +141,7 @@ export default function NewsletterSection({
                             />
                             <Button
                                 type="submit"
-                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-white dark:text-black transition-transform hover:scale-105 active:scale-95 shadow-md dark:shadow-[0_0_15px_rgba(204,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-white dark:text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: primaryColor }}
                                 disabled={isPending}
                             >
