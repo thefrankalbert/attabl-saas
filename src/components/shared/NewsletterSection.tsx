@@ -76,14 +76,14 @@ export default function NewsletterSection({
     };
 
     return (
-        <section className="w-full bg-[#0a0a0a] py-16 px-4 md:px-8 border-t border-gray-800">
+        <section className="w-full bg-gray-50 dark:bg-[#0a0a0a] py-16 px-4 md:px-8 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300">
             <div className="container mx-auto max-w-6xl">
-                <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-12 relative">
                     {/* Left side: Text */}
-                    <div className="w-full lg:w-1/2 space-y-6">
+                    <div className="w-full lg:w-1/2 space-y-6 relative z-10">
                         <div className="flex items-center gap-3">
                             {logoUrl ? (
-                                <div className="h-10 w-10 relative bg-white/10 rounded-lg p-1 overflow-hidden">
+                                <div className="h-10 w-10 relative bg-white dark:bg-white/10 rounded-lg p-1 overflow-hidden shadow-sm">
                                     <Image
                                         src={logoUrl}
                                         alt="Logo"
@@ -97,45 +97,58 @@ export default function NewsletterSection({
                                     <div className="h-10 w-10 rounded-lg flex items-center justify-center font-bold text-black text-xl shadow-[0_0_15px_rgba(204,255,0,0.3)]" style={{ backgroundColor: primaryColor }}>
                                         <span>A</span>
                                     </div>
-                                    <span className="text-xl font-bold tracking-tight text-white">ATTABL</span>
+                                    <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
                                 </div>
                             )}
                         </div>
-                        <h2 className="text-4xl md:text-5xl font-serif text-white leading-[1.1]">
+                        <h2 className="text-4xl md:text-5xl font-serif text-gray-900 dark:text-white leading-[1.1]">
                             {t.title} <br />
-                            <span className="italic font-light text-gray-300">{t.subtitle}</span>
+                            <span className="italic font-light text-gray-500 dark:text-gray-300">{t.subtitle}</span>
                         </h2>
-                        <p className="text-gray-400 text-sm md:text-base max-w-md leading-relaxed">
+                        <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base max-w-md leading-relaxed">
                             {t.description}
                         </p>
                     </div>
 
-                    {/* Right side: Form */}
-                    <div className="w-full lg:w-1/2 flex flex-col gap-4 relative">
-                        <div className="hidden lg:block absolute -left-16 top-1/2 -translate-y-1/2 text-gray-600">
-                            <ArrowRight className="w-12 h-6" />
-                        </div>
+                    {/* Arrow (Desktop only) */}
+                    <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 xl:w-64 h-12 pointer-events-none z-0">
+                        <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none" className="overflow-visible">
+                            <defs>
+                                <linearGradient id="arrow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor={primaryColor || "#CCFF00"} stopOpacity="0" />
+                                    <stop offset="50%" stopColor={primaryColor || "#CCFF00"} stopOpacity="1" />
+                                    <stop offset="100%" stopColor={primaryColor || "#CCFF00"} stopOpacity="1" />
+                                </linearGradient>
+                            </defs>
+                            {/* Long line */}
+                            <path d="M0,20 L195,20" stroke="url(#arrow-gradient)" strokeWidth="2" strokeLinecap="round" />
+                            {/* Arrow head */}
+                            <path d="M190,15 L200,20 L190,25" stroke={primaryColor || "#CCFF00"} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                    </div>
 
+                    {/* Right side: Form */}
+                    <div className="w-full lg:w-1/2 flex flex-col gap-4 relative z-10 lg:pl-12">
                         {/* Input group */}
-                        <form onSubmit={handleSubmit} className="flex w-full items-center p-1.5 rounded-xl bg-white/5 border border-white/10 focus-within:border-white/20 transition-all shadow-inner">
+                        <form onSubmit={handleSubmit} className="flex w-full items-center p-1.5 rounded-xl bg-white dark:bg-white/5 border border-gray-200 dark:border-white/10 focus-within:border-gray-300 dark:focus-within:border-white/20 transition-all shadow-sm dark:shadow-inner">
                             <Input
                                 type="email"
                                 placeholder={t.placeholder}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="bg-transparent border-none text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 h-10 md:h-12 flex-grow"
+                                className="bg-transparent border-none text-gray-900 dark:text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 h-10 md:h-12 flex-grow"
                                 disabled={isPending}
                             />
                             <Button
                                 type="submit"
-                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-black transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(204,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-white dark:text-black transition-transform hover:scale-105 active:scale-95 shadow-md dark:shadow-[0_0_15px_rgba(204,255,0,0.2)] disabled:opacity-50 disabled:cursor-not-allowed"
                                 style={{ backgroundColor: primaryColor }}
                                 disabled={isPending}
                             >
                                 {isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : t.button}
                             </Button>
                         </form>
-                        <p className="text-xs text-gray-600 pl-2">
+                        <p className="text-xs text-gray-500 dark:text-gray-600 pl-2">
                             {t.disclaimer}
                         </p>
                     </div>
