@@ -1,7 +1,14 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { SupabaseClient } from '@supabase/supabase-js';
 
-export async function updateSession(request: NextRequest) {
+// Type pour le retour de createMiddlewareClient
+interface MiddlewareClientResult {
+  response: NextResponse;
+  supabase: SupabaseClient;
+}
+
+export async function createMiddlewareClient(request: NextRequest): Promise<MiddlewareClientResult> {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -54,7 +61,15 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Rafraîchir la session
   await supabase.auth.getUser();
 
+  return { response, supabase };
+}
+
+// Fonction legacy pour compatibilité
+export async function updateSession(request: NextRequest) {
+  const { response } = await createMiddlewareClient(request);
   return response;
 }
+

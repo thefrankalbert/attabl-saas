@@ -104,7 +104,7 @@ export function LaunchStep({ data }: LaunchStepProps) {
             {/* Trial Info */}
             <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
                 <p className="text-sm text-gray-600">
-                    <strong>14 jours d'essai gratuit</strong> — Profitez de toutes les fonctionnalités.
+                    <strong>14 jours d&apos;essai gratuit</strong> — Profitez de toutes les fonctionnalités.
                 </p>
             </div>
         </div>

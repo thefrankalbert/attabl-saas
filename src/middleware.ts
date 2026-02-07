@@ -1,22 +1,49 @@
-import { updateSession } from '@/lib/supabase/middleware';
+import { createMiddlewareClient } from '@/lib/supabase/middleware';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+
+// Routes qui nécessitent une authentification
+const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard'];
 
 export async function middleware(request: NextRequest) {
   // 1. Extract subdomain
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);
 
-  // 2. Si subdomain détecté, réécrire l'URL vers /sites/[site]
+  // 2. Toujours rafraîchir la session en premier (pour éviter expiration des tokens)
+  const { response: sessionResponse, supabase } = await createMiddlewareClient(request);
+
+  // 3. Vérifier l'authentification pour les routes protégées
+  const pathname = request.nextUrl.pathname;
+  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path));
+
+  if (isProtectedPath) {
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      // Rediriger vers login avec URL de retour
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  // 4. Si subdomain détecté, réécrire l'URL vers /sites/[site]
   if (subdomain && subdomain !== 'www') {
     const url = request.nextUrl.clone();
-    const pathname = url.pathname;
 
     // Réécrire vers /sites/[subdomain]/[path]
     url.pathname = `/sites/${subdomain}${pathname}`;
 
-    // Créer la réponse de rewrite
-    const response = NextResponse.rewrite(url);
+    // Créer la réponse de rewrite avec les cookies de session
+    const response = NextResponse.rewrite(url, {
+      headers: sessionResponse.headers,
+    });
+
+    // Copier les cookies de session vers la nouvelle réponse
+    sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
 
     // Ajouter le header tenant
     response.headers.set('x-tenant-slug', subdomain);
@@ -24,9 +51,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 3. Pas de subdomain → landing page, juste mettre à jour la session
-  const response = await updateSession(request);
-  return response;
+  // 5. Pas de subdomain → retourner la réponse avec session rafraîchie
+  return sessionResponse;
 }
 
 function extractSubdomain(hostname: string): string | null {

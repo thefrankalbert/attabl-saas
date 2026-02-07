@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layout, Check, ArrowRight, ArrowLeft, Building2, Palette, UtensilsCrossed, Rocket } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 
 // Step Components
 import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
@@ -42,7 +41,6 @@ export interface OnboardingData {
 }
 
 export default function OnboardingPage() {
-    const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -179,18 +177,18 @@ export default function OnboardingPage() {
                                 <div
                                     key={step.id}
                                     className={`flex items-center gap-4 p-3 rounded-xl transition-all ${isCurrent
-                                            ? 'bg-[#CCFF00]/10 border border-[#CCFF00]/30'
-                                            : isCompleted
-                                                ? 'opacity-60'
-                                                : 'opacity-40'
+                                        ? "bg-[#CCFF00]/10 border border-[#CCFF00]/30"
+                                        : isCompleted
+                                            ? "opacity-60"
+                                            : "opacity-40"
                                         }`}
                                 >
                                     <div
                                         className={`w-10 h-10 rounded-xl flex items-center justify-center ${isCompleted
-                                                ? 'bg-[#CCFF00] text-black'
-                                                : isCurrent
-                                                    ? 'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50'
-                                                    : 'bg-white/10 text-white/50'
+                                            ? 'bg-[#CCFF00] text-black'
+                                            : isCurrent
+                                                ? 'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50'
+                                                : 'bg-white/10 text-white/50'
                                             }`}
                                     >
                                         {isCompleted ? (
@@ -220,7 +218,7 @@ export default function OnboardingPage() {
                                 <br />
                             </>
                         )}
-                        14 jours d'essai gratuit
+                        14 jours d&apos;essai gratuit
                     </p>
                 </div>
             </div>
@@ -281,8 +279,8 @@ export default function OnboardingPage() {
                             onClick={prevStep}
                             disabled={currentStep === 1}
                             className={`flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all ${currentStep === 1
-                                    ? 'opacity-0 pointer-events-none'
-                                    : 'text-gray-600 hover:bg-gray-100'
+                                ? 'opacity-0 pointer-events-none'
+                                : 'text-gray-600 hover:bg-gray-100'
                                 }`}
                         >
                             <ArrowLeft className="h-5 w-5" />
@@ -304,7 +302,7 @@ export default function OnboardingPage() {
                                 disabled={saving}
                                 className="flex items-center gap-2 px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#CCFF00]/30"
                             >
-                                {saving ? 'Lancement...' : 'Accéder au Dashboard'}
+                                {saving ? "Lancement..." : "Accéder au Dashboard"}
                                 <Rocket className="h-5 w-5" />
                             </button>
                         )}

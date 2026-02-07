@@ -45,8 +45,8 @@ export default async function AdminLayout({
   let isDevMode = false;
 
   if (authError || !user) {
-    // En dev, on permet l'accès sans auth
-    if (process.env.NODE_ENV === 'development') {
+    // ✅ SECURITY FIX: Require explicit env var for dev bypass
+    if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true') {
       isDevMode = true;
       adminUser = {
         id: 'dev',
@@ -56,7 +56,7 @@ export default async function AdminLayout({
         name: 'Dev User'
       };
     } else {
-      // En production, rediriger vers login
+      // En production OU si bypass non explicitement activé
       redirect(`/admin/login`);
     }
   } else {

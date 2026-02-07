@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Layout, Mail } from 'lucide-react';
+import { Loader2, ArrowRight, Layout } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -171,7 +171,7 @@ function AuthForm({ mode }: AuthFormProps) {
                     <div className="p-1 rounded-full group-hover:bg-gray-100 transition-colors">
                         <ArrowRight className="h-4 w-4 rotate-180" />
                     </div>
-                    Retour à l'accueil
+                    Retour à l&apos;accueil
                 </Link>
             </div>
 
@@ -191,7 +191,7 @@ function AuthForm({ mode }: AuthFormProps) {
                 <p className="text-gray-500">
                     {isLogin
                         ? 'Connectez-vous pour gérer votre établissement.'
-                        : '14 jours d\'essai gratuit sur tous les plans.'}
+                        : '14 jours d&apos;essai gratuit sur tous les plans.'}
                 </p>
             </div>
 
@@ -244,7 +244,7 @@ function AuthForm({ mode }: AuthFormProps) {
                 {!isLogin && (
                     <div className="space-y-2">
                         <Label htmlFor="restaurantName" className="text-gray-700 font-semibold text-sm">
-                            Nom de l'établissement
+                            Nom de l&apos;établissement
                         </Label>
                         <Input
                             id="restaurantName"

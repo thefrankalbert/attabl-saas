@@ -120,7 +120,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
 
                             {tenant.subscription_current_period_end && (
                                 <div>
-                                    <p className="text-sm text-gray-500">Prochain renouvellement / Fin d'essai</p>
+                                    <p className="text-sm text-gray-500">Prochain renouvellement / Fin d&apos;essai</p>
                                     <p className="font-medium">
                                         {new Date(tenant.subscription_current_period_end).toLocaleDateString('fr-FR', {
                                             day: 'numeric',
@@ -137,7 +137,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                 {/* Limites (Mockées pour l'instant basé sur le plan) */}
                 <Card>
                     <CardHeader>
-                        <CardTitle>Limites d'utilisation</CardTitle>
+                        <CardTitle>Limites d&apos;utilisation</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4">

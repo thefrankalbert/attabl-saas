@@ -3,14 +3,109 @@
 import { useCart } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useState } from 'react';
 
 export default function CartPage() {
   const { items, updateQuantity, removeFromCart, totalPrice, totalItems, clearCart, notes, setNotes } = useCart();
   useTenant(); // Ensure tenant context is available
 
+  // États pour la soumission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
+
+  // Générer une clé unique pour chaque item (avec options/variantes)
+  const getItemKey = (item: typeof items[0]) => {
+    let key = item.id;
+    if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
+    if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
+    return key;
+  };
+
+  // Soumettre la commande
+  const handleSubmitOrder = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    setValidationErrors([]);
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          items: items.map(item => ({
+            id: item.id,
+            name: item.name,
+            name_en: item.name_en,
+            price: item.price,
+            quantity: item.quantity,
+            category_name: item.category_name,
+            selectedOption: item.selectedOption,
+            selectedVariant: item.selectedVariant,
+          })),
+          notes,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.details && Array.isArray(data.details)) {
+          setValidationErrors(data.details);
+        }
+        setError(data.error || 'Erreur lors de la commande');
+        return;
+      }
+
+      // Succès !
+      setOrderSuccess({
+        orderNumber: data.orderNumber,
+        total: data.total,
+      });
+
+      // Vider le panier après succès
+      clearCart();
+
+    } catch (err) {
+      console.error('Order submission error:', err);
+      setError('Erreur de connexion. Veuillez réessayer.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Affichage succès
+  if (orderSuccess) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-green-600" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Commande envoyée !</h2>
+          <p className="text-gray-600 mb-2">
+            Votre commande <span className="font-semibold">{orderSuccess.orderNumber}</span> a été transmise à la cuisine.
+          </p>
+          <p className="text-2xl font-bold text-amber-600 mb-6">
+            {orderSuccess.total.toLocaleString('fr-FR')} F
+          </p>
+          <Link href={`/`}>
+            <Button className="bg-amber-600 hover:bg-amber-700">
+              Retour au menu
+            </Button>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  // Panier vide
   if (items.length === 0) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -33,14 +128,6 @@ export default function CartPage() {
     );
   }
 
-  // Générer une clé unique pour chaque item (avec options/variantes)
-  const getItemKey = (item: typeof items[0]) => {
-    let key = item.id;
-    if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
-    if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
-    return key;
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -57,6 +144,25 @@ export default function CartPage() {
       </header>
 
       <main className="container mx-auto px-4 py-6 max-w-4xl">
+        {/* Erreurs de validation */}
+        {(error || validationErrors.length > 0) && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                {error && <p className="font-medium text-red-800">{error}</p>}
+                {validationErrors.length > 0 && (
+                  <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                    {validationErrors.map((err, i) => (
+                      <li key={i}>{err}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-3 gap-6">
           {/* Items List */}
           <div className="md:col-span-2 space-y-3">
@@ -187,20 +293,33 @@ export default function CartPage() {
               </div>
 
               {/* Actions */}
-              <Button className="w-full bg-amber-600 hover:bg-amber-700" size="lg">
-                Valider la commande
+              <Button
+                className="w-full bg-amber-600 hover:bg-amber-700"
+                size="lg"
+                onClick={handleSubmitOrder}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Envoi en cours...
+                  </>
+                ) : (
+                  'Valider la commande'
+                )}
               </Button>
 
               <Button
                 variant="outline"
                 className="w-full mt-3"
                 onClick={clearCart}
+                disabled={isSubmitting}
               >
                 Vider le panier
               </Button>
 
               <Link href={`/`} className="block mt-3">
-                <Button variant="ghost" className="w-full">
+                <Button variant="ghost" className="w-full" disabled={isSubmitting}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Continuer mes achats
                 </Button>
@@ -212,3 +331,4 @@ export default function CartPage() {
     </div>
   );
 }
+

@@ -16,7 +16,7 @@ interface MenuItem {
     price: string;
 }
 
-export function MenuStep({ data, updateData }: MenuStepProps) {
+export function MenuStep({ updateData }: MenuStepProps) {
     const [categoryName, setCategoryName] = useState('');
     const [items, setItems] = useState<MenuItem[]>([
         { name: '', price: '' },
@@ -74,7 +74,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                     Votre première catégorie
                 </h1>
                 <p className="text-gray-500">
-                    Créez une catégorie avec quelques articles pour démarrer. Vous pourrez en ajouter d'autres plus tard.
+                    Créez une catégorie avec quelques articles pour démarrer. Vous pourrez en ajouter d&apos;autres plus tard.
                 </p>
             </div>
 
@@ -124,8 +124,8 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                             onClick={() => removeItem(index)}
                             disabled={items.length === 1}
                             className={`p-3 rounded-xl transition-colors ${items.length === 1
-                                    ? 'text-gray-300 cursor-not-allowed'
-                                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                ? 'text-gray-300 cursor-not-allowed'
+                                : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                                 }`}
                         >
                             <Trash2 className="h-5 w-5" />

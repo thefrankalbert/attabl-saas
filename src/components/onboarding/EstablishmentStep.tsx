@@ -39,7 +39,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
             {/* Establishment Type */}
             <div className="mb-8">
                 <Label className="text-gray-700 font-semibold mb-3 block">
-                    Type d'établissement
+                    Type d&apos;établissement
                 </Label>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {establishmentTypes.map((type) => (
@@ -48,8 +48,8 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                             type="button"
                             onClick={() => updateData({ establishmentType: type.id })}
                             className={`p-4 rounded-xl border-2 text-left transition-all ${data.establishmentType === type.id
-                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                ? 'border-[#CCFF00] bg-[#CCFF00]/10'
+                                : 'border-gray-200 hover:border-gray-300'
                                 }`}
                         >
                             <span className="text-2xl mb-2 block">{type.emoji}</span>
@@ -84,7 +84,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                         <Input
                             id="city"
                             type="text"
-                            placeholder="N'Djamena"
+                            placeholder="N&apos;Djamena"
                             value={data.city}
                             onChange={(e) => updateData({ city: e.target.value })}
                             className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl"

@@ -9,8 +9,6 @@ import {
     Sun,
     Moon,
     Mail,
-    Phone,
-    MapPin,
     Calendar,
     CheckCircle2,
     Loader2,
@@ -52,7 +50,8 @@ export default function ContactPage() {
     const [formState, formAction] = useFormState(submitContactForm, { success: false, message: '' });
 
     useEffect(() => {
-        setMounted(true);
+        const frame = requestAnimationFrame(() => setMounted(true));
+        return () => cancelAnimationFrame(frame);
     }, []);
 
     const toggleTheme = () => {
@@ -182,7 +181,7 @@ export default function ContactPage() {
                         </h1>
 
                         <p className="text-lg text-gray-600 dark:text-gray-400 mb-12 leading-relaxed max-w-lg">
-                            Vous souhaitez transformer l'expérience client de votre établissement ? Discutons de vos besoins et planifions une démo personnalisée.
+                            Vous souhaitez transformer l&apos;expérience client de votre établissement ? Discutons de vos besoins et planifions une démo personnalisée.
                         </p>
 
                         <div className="flex flex-col gap-8">
@@ -299,7 +298,7 @@ export default function ContactPage() {
                                     <SubmitButton />
 
                                     <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-2">
-                                        En envoyant ce formulaire, vous acceptez d'être contacté par notre équipe.
+                                        En envoyant ce formulaire, vous acceptez d&apos;être contacté par notre équipe.
                                     </p>
                                 </form>
                             )}

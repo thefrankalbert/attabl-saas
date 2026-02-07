@@ -6,7 +6,6 @@ import {
   Layout,
   ShieldCheck,
   Zap,
-  Users,
   Check,
   Mail,
   Lock,
@@ -240,7 +239,7 @@ export default function SignupPage() {
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm font-bold text-[#CCFF00] mb-8">
               <Check className="h-4 w-4" />
-              14 jours d'essai gratuit. Aucune carte bancaire requise.
+              14 jours d&apos;essai gratuit. Aucune carte bancaire requise.
             </div>
 
             <h2 className="text-5xl font-black text-white mb-8 leading-[1.1] tracking-tighter text-balance">

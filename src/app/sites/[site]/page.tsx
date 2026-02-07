@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import Image from 'next/image';
 import CategoryNav from '@/components/tenant/CategoryNav';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CartSummary from '@/components/tenant/CartSummary';
@@ -51,7 +52,7 @@ export default async function MenuPage({
 
   const supabase = await createClient();
 
-  // 1. Récupérer le tenant
+  // 1. Récupérer le tenant (requis avant les autres requêtes)
   const { data: tenant, error: tenantError } = await supabase
     .from('tenants')
     .select('*')
@@ -87,32 +88,39 @@ export default async function MenuPage({
     );
   }
 
-  // 2. Récupérer les venues (optionnel)
-  const { data: venues } = await supabase
-    .from('venues')
-    .select('*')
-    .eq('tenant_id', tenant.id)
-    .eq('is_active', true)
-    .order('created_at', { ascending: true });
+  // ✅ OPTIMISATION: Requêtes parallèles avec Promise.all (~3x plus rapide)
+  const [venuesResult, categoriesResult, menuItemsResult] = await Promise.all([
+    // Venues (optionnel)
+    supabase
+      .from('venues')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .order('created_at', { ascending: true }),
 
-  // 3. Récupérer les catégories
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('tenant_id', tenant.id)
-    .eq('is_active', true)
-    .order('display_order', { ascending: true });
+    // Catégories
+    supabase
+      .from('categories')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
 
-  // 4. Récupérer les menu items
-  const { data: menuItems } = await supabase
-    .from('menu_items')
-    .select(`
-      *,
-      category:categories(id, name, name_en)
-    `)
-    .eq('tenant_id', tenant.id)
-    .eq('is_available', true)
-    .order('display_order', { ascending: true });
+    // Menu items avec catégorie
+    supabase
+      .from('menu_items')
+      .select(`
+        *,
+        category:categories(id, name, name_en)
+      `)
+      .eq('tenant_id', tenant.id)
+      .eq('is_available', true)
+      .order('display_order', { ascending: true }),
+  ]);
+
+  const venues = venuesResult.data;
+  const categories = categoriesResult.data;
+  const menuItems = menuItemsResult.data;
 
   // Grouper les items par catégorie
   const itemsByCategory = (categories || []).map((category: Category) => ({
@@ -126,11 +134,13 @@ export default async function MenuPage({
       <header className="bg-white shadow-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           {tenant.logo_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <Image
               src={tenant.logo_url}
               alt={tenant.name}
-              className="h-12 object-contain"
+              width={200}
+              height={48}
+              className="h-12 w-auto object-contain"
+              priority
             />
           ) : (
             <h1

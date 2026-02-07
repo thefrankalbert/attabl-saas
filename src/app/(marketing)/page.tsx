@@ -3,16 +3,10 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
-  Check,
-  ChevronRight,
   Menu,
   X,
-  PlayCircle,
   Smartphone,
-  ChefHat,
-  Zap,
   Layout,
   CreditCard,
   ArrowRight,
@@ -29,10 +23,10 @@ import {
   Square,
   Award
 } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import { useRouter } from 'next/navigation';
-import { motion, useTransform, AnimatePresence, useMotionValue, Variants, Easing } from 'framer-motion';
+import { motion, AnimatePresence, Variants, Easing } from 'framer-motion';
 import { useTheme } from "next-themes";
 
 // Translations
@@ -56,13 +50,13 @@ const translations = {
       title_line1: "ATTABL",
       title_line2: "commander", // Lowercase per request
       title_highlight: "mieux",
-      subtitle: <>Offrez à vos clients la liberté de <span className="text-gray-900 dark:text-white font-semibold">commander mieux</span>. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir</span>.</>,
+      subtitle: <>Offrez à vos clients la liberté de <span className="text-gray-900 dark:text-white font-semibold">commander mieux</span>. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l&apos;essentiel : <span className="text-[#CCFF00] font-bold">l&apos;art de recevoir</span>.</>,
       email_placeholder: "Adresse e-mail professionnelle", // More professional
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
       partners_line1: "années",
-      partners_line2: "d'expérience\nclients"
+      partners_line2: "d&apos;expérience\nclients"
     },
     features: {
       security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
@@ -80,15 +74,15 @@ const translations = {
       }
     },
     testimonials: {
-      title: "L'avis de nos utilisateurs", // Better header
+      title: "L&apos;avis de nos utilisateurs", // Better header
       subtitle: "Découvrez comment ils ont transformé leur gestion quotidienne.",
       reviews: [
-        { text: "Je l'utilise au quotidien, c'est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
-        { text: "Interface épurée, fonctionnalités puissantes, l'essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
-        { text: "La facturation est devenue un jeu d'enfant...", author: "Marc D.", role: "Freelance" },
-        { text: "J'ai enfin trouvé l'outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
-        { text: "Le suivi client et les relances n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
-        { text: "J'ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
+        { text: "Je l&apos;utilise au quotidien, c&apos;est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
+        { text: "Interface épurée, fonctionnalités puissantes, l&apos;essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
+        { text: "La facturation est devenue un jeu d&apos;enfant...", author: "Marc D.", role: "Freelance" },
+        { text: "J&apos;ai enfin trouvé l&apos;outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
+        { text: "Le suivi client et les relances n&apos;ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
+        { text: "J&apos;ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
       ]
     },
     footer: {
@@ -179,14 +173,17 @@ export default function HomePage() {
 
   // Auto-detect language
   useEffect(() => {
-    setMounted(true);
-    const userLang = navigator.language || navigator.languages[0];
-    if (userLang.startsWith('en')) {
-      setLang('en');
-    } else {
-      setLang('fr');
-    }
+    const userLang = typeof navigator !== "undefined" ? (navigator.language || (navigator as { readonly languages?: readonly string[] }).languages?.[0] || "") : "";
+    const detectedLang = (userLang || "").startsWith('en') ? 'en' : 'fr';
 
+    const frame = requestAnimationFrame(() => {
+      setMounted(true);
+      setLang(detectedLang);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
+  useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
     };
@@ -609,7 +606,7 @@ export default function HomePage() {
                 >
                   <Quote className="h-5 w-5 text-[#CCFF00] mb-3 opacity-50 group-hover:opacity-100 transition-opacity" />
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-4 leading-relaxed">
-                    "{review.text}"
+                    &quot;{review.text}&quot;
                   </p>
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-800 border border-[#CCFF00] flex items-center justify-center font-bold text-[10px]">

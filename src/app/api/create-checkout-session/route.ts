@@ -1,25 +1,51 @@
 import { NextResponse } from 'next/server';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
+import { createClient } from '@/lib/supabase/server';
 
 export async function POST(request: Request) {
   try {
+    const supabase = await createClient();
+
+    // ✅ SECURITY FIX: Get user from server-side auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        { error: 'Non authentifié' },
+        { status: 401 }
+      );
+    }
+
+    // ✅ SECURITY FIX: Derive tenantId from authenticated user
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('tenant_id, tenants(name)')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!adminUser?.tenant_id) {
+      return NextResponse.json(
+        { error: 'Tenant non trouvé pour cet utilisateur' },
+        { status: 404 }
+      );
+    }
+
+    const tenantId = adminUser.tenant_id;
+    const email = user.email!;
+
     const body = await request.json();
     const {
       plan,
       billingInterval = 'monthly',
-      tenantId,
-      email
     }: {
       plan: 'essentiel' | 'premium';
       billingInterval?: 'monthly' | 'yearly';
-      tenantId: string;
-      email: string;
     } = body;
 
     // Validation
-    if (!plan || !tenantId || !email) {
+    if (!plan) {
       return NextResponse.json(
-        { error: 'Paramètres manquants (plan, tenantId, email requis)' },
+        { error: 'Paramètre manquant (plan requis)' },
         { status: 400 }
       );
     }
@@ -60,13 +86,13 @@ export async function POST(request: Request) {
       customer_email: email,
       metadata: {
         tenant_id: tenantId,
-        plan: plan, // Stocker le plan pour le webhook
+        plan: plan,
         billing_interval: billingInterval,
       },
       success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${baseUrl}/checkout/cancel`,
       subscription_data: {
-        trial_period_days: 14, // Essai gratuit 14 jours
+        trial_period_days: 14,
         metadata: {
           tenant_id: tenantId,
           plan: plan,
@@ -89,3 +115,4 @@ export async function POST(request: Request) {
     );
   }
 }
+
