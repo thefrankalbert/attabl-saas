@@ -1,6 +1,8 @@
 'use client';
 
 import { AuthForm } from '@/components/auth/AuthForm';
+import { Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import { Layout, ShieldCheck, Zap, Users, Check } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -9,7 +11,13 @@ export default function SignupPage() {
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white">
       {/* Left Column: Form */}
       <div className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 bg-white z-10 py-12">
-        <AuthForm mode="signup" />
+        <Suspense fallback={
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-[#CCFF00]" />
+          </div>
+        }>
+          <AuthForm mode="signup" />
+        </Suspense>
       </div>
 
       {/* Right Column: Visual */}

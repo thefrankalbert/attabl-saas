@@ -176,6 +176,7 @@ export default function HomePage() {
   const { scrollY } = useScroll();
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [pillIndex, setPillIndex] = useState(0);
+  const [heroEmail, setHeroEmail] = useState('');
 
   // Auto-detect language
   useEffect(() => {
@@ -205,7 +206,8 @@ export default function HomePage() {
   const t = translations[lang];
 
   const handlePlanSelect = async (plan: PricingPlan, interval: BillingInterval) => {
-    router.push(`/signup?plan=${plan}&interval=${interval}`);
+    const emailParam = heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : '';
+    router.push(`/signup?plan=${plan}&interval=${interval}${emailParam}`);
   };
 
   const toggleTheme = () => {
@@ -409,13 +411,18 @@ export default function HomePage() {
                   <input
                     type="email"
                     placeholder={t.hero.email_placeholder}
+                    value={heroEmail}
+                    onChange={(e) => setHeroEmail(e.target.value)}
                     className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none focus:ring-2 focus:ring-[#CCFF00] font-medium placeholder:text-gray-500 border border-gray-200 dark:border-white/10 shadow-sm"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Layout className="h-5 w-5" />
                   </div>
                 </div>
-                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all hover:scale-105 active:scale-95 border-0 w-full sm:w-auto shrink-0">
+                <Button
+                  onClick={() => router.push(`/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`)}
+                  className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all hover:scale-105 active:scale-95 border-0 w-full sm:w-auto shrink-0"
+                >
                   {t.hero.cta_primary}
                 </Button>
               </div>

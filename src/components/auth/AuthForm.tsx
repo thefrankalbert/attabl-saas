@@ -9,6 +9,7 @@ import { Loader2, ArrowRight, Layout, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 
 // Google Icon SVG
 const GoogleIcon = () => (
@@ -35,13 +36,17 @@ interface AuthFormProps {
 }
 
 function AuthForm({ mode }: AuthFormProps) {
+    const searchParams = useSearchParams();
+    const urlEmail = searchParams.get('email') || '';
+    const urlPlan = searchParams.get('plan') as 'essentiel' | 'premium' | null;
+
     const [loading, setLoading] = useState(false);
     const [oauthLoading, setOauthLoading] = useState<'google' | 'azure' | null>(null);
     const [error, setError] = useState('');
-    const [email, setEmail] = useState('');
+    const [email, setEmail] = useState(urlEmail);
     const [password, setPassword] = useState('');
     const [restaurantName, setRestaurantName] = useState('');
-    const [selectedPlan, setSelectedPlan] = useState<'essentiel' | 'premium'>('essentiel');
+    const [selectedPlan, setSelectedPlan] = useState<'essentiel' | 'premium'>(urlPlan || 'essentiel');
 
     const supabase = createClient();
 
@@ -155,10 +160,23 @@ function AuthForm({ mode }: AuthFormProps) {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="mx-auto w-full max-w-md"
+            className="mx-auto w-full max-w-md relative"
         >
+            {/* Back Home Link */}
+            <div className="absolute -top-16 left-0">
+                <Link
+                    href="/"
+                    className="flex items-center gap-2 text-sm text-gray-400 hover:text-black transition-colors group"
+                >
+                    <div className="p-1 rounded-full group-hover:bg-gray-100 transition-colors">
+                        <ArrowRight className="h-4 w-4 rotate-180" />
+                    </div>
+                    Retour à l'accueil
+                </Link>
+            </div>
+
             {/* Logo */}
-            <Link href="/" className="flex items-center gap-3 mb-12 group">
+            <Link href="/" className="flex items-center gap-3 mb-10 group">
                 <div className="bg-black rounded-xl p-2 group-hover:bg-[#CCFF00] transition-colors duration-300">
                     <Layout className="h-6 w-6 text-[#CCFF00] group-hover:text-black transition-colors duration-300" />
                 </div>
@@ -278,36 +296,45 @@ function AuthForm({ mode }: AuthFormProps) {
                     />
                 </div>
 
-                {/* Plan Selection (Signup only) */}
+                {/* Plan Selection (Signup only) - Simplified if pre-selected */}
                 {!isLogin && (
                     <div className="space-y-3">
-                        <Label className="text-gray-700 font-semibold text-sm">
-                            Choisissez votre plan
-                        </Label>
+                        <div className="flex items-center justify-between">
+                            <Label className="text-gray-700 font-semibold text-sm">
+                                {urlPlan ? 'Votre plan sélectionné' : 'Choisissez votre plan'}
+                            </Label>
+                            {urlPlan && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedPlan(selectedPlan === 'essentiel' ? 'premium' : 'essentiel')}
+                                    className="text-xs font-bold text-[#CCFF00] hover:underline"
+                                >
+                                    Modifier
+                                </button>
+                            )}
+                        </div>
                         <div className="grid grid-cols-2 gap-3">
                             <button
                                 type="button"
                                 onClick={() => setSelectedPlan('essentiel')}
-                                className={`p-4 rounded-xl border-2 text-left transition-all ${selectedPlan === 'essentiel'
-                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                className={`p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] ${selectedPlan === 'essentiel'
+                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10 ring-2 ring-[#CCFF00]/20'
+                                    : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'
                                     }`}
                             >
-                                <div className="font-bold text-gray-900">Essentiel</div>
-                                <div className="text-sm text-gray-500">39 800 F/mois</div>
-                                <div className="text-xs text-[#CCFF00] font-bold mt-1">14 jours gratuits</div>
+                                <div className="font-bold text-gray-900 leading-none mb-1">Essentiel</div>
+                                <div className="text-xs text-gray-500">39 800 F / mois</div>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setSelectedPlan('premium')}
-                                className={`p-4 rounded-xl border-2 text-left transition-all ${selectedPlan === 'premium'
-                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                className={`p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] ${selectedPlan === 'premium'
+                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10 ring-2 ring-[#CCFF00]/20'
+                                    : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'
                                     }`}
                             >
-                                <div className="font-bold text-gray-900">Prime</div>
-                                <div className="text-sm text-gray-500">79 800 F/mois</div>
-                                <div className="text-xs text-[#CCFF00] font-bold mt-1">14 jours gratuits</div>
+                                <div className="font-bold text-gray-900 leading-none mb-1">Prime</div>
+                                <div className="text-xs text-gray-500">79 800 F / mois</div>
                             </button>
                         </div>
                     </div>
@@ -342,13 +369,13 @@ function AuthForm({ mode }: AuthFormProps) {
 
             {/* Footer Link */}
             <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                <p className="text-gray-500">
+                <p className="text-sm text-gray-500">
                     {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
                     <Link
                         href={isLogin ? '/signup' : '/login'}
-                        className="font-bold text-black hover:text-[#CCFF00] transition-colors"
+                        className="font-bold text-black border-b-2 border-[#CCFF00] hover:bg-[#CCFF00] transition-all px-1"
                     >
-                        {isLogin ? 'Créer un compte' : 'Se connecter'}
+                        {isLogin ? 'Inscrivez-vous gratuitement' : 'Connectez-vous ici'}
                     </Link>
                 </p>
             </div>
