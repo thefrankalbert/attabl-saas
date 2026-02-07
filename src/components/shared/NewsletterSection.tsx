@@ -11,7 +11,7 @@ interface NewsletterSectionProps {
 }
 
 export default function NewsletterSection({
-    primaryColor = "#eab308", // default to yellow-500/gold if not provided
+    primaryColor = "#CCFF00", // Attabl Neon Green
     logoUrl
 }: NewsletterSectionProps) {
     return (
@@ -31,11 +31,12 @@ export default function NewsletterSection({
                                     />
                                 </div>
                             ) : (
-                                <div
-                                    className="h-10 w-10 rounded-lg flex items-center justify-center font-bold text-white text-xl shadow-lg"
-                                    style={{ backgroundColor: primaryColor }}
-                                >
-                                    <span>A</span>
+                                // Default Attabl Branding if no logo provided (Landing Page Mode)
+                                <div className="flex items-center gap-2">
+                                    <div className="h-10 w-10 rounded-lg flex items-center justify-center font-bold text-black text-xl shadow-[0_0_15px_rgba(204,255,0,0.3)]" style={{ backgroundColor: primaryColor }}>
+                                        <span>A</span>
+                                    </div>
+                                    <span className="text-xl font-bold tracking-tight text-white">ATTABL</span>
                                 </div>
                             )}
                         </div>
@@ -62,7 +63,7 @@ export default function NewsletterSection({
                                 className="bg-transparent border-none text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 h-10 md:h-12 flex-grow"
                             />
                             <Button
-                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-medium text-white transition-transform hover:scale-105 active:scale-95 shadow-lg"
+                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-black transition-transform hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(204,255,0,0.2)]"
                                 style={{ backgroundColor: primaryColor }}
                             >
                                 Send

@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
+import NewsletterSection from '@/components/shared/NewsletterSection';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Variants, Easing } from 'framer-motion';
 import { useTheme } from "next-themes";
@@ -680,6 +681,9 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* NEWSLETTER */}
+      <NewsletterSection />
 
       {/* FOOTER */}
       <footer className="py-12 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
