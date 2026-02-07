@@ -15,29 +15,22 @@ export const STRIPE_PRICES = {
   },
 };
 
-// Montants en FCFA (pour affichage client)
+// Montants en FCFA (pour affichage client) - Alignés avec landing page
 export const PLAN_AMOUNTS = {
   essentiel: {
-    monthly: 75000,
-    yearly: 60000, // Par mois (720k/an)
+    monthly: 39800,
+    yearly: 33830, // Par mois (405,960 FCFA/an) - 15% de réduction
   },
   premium: {
-    monthly: 150000,
-    yearly: 120000, // Par mois (1.44M/an)
+    monthly: 79800,
+    yearly: 67830, // Par mois (813,960 FCFA/an) - 15% de réduction
   },
 };
 
-// Conversion FCFA → USD (pour Stripe)
-// 1 USD ≈ 600 FCFA
-export const PLAN_AMOUNTS_USD = {
-  essentiel: {
-    monthly: 125, // 75k FCFA
-    yearly: 100, // 60k FCFA/mois
-  },
-  premium: {
-    monthly: 250, // 150k FCFA
-    yearly: 200, // 120k FCFA/mois
-  },
+// Montants annuels totaux en FCFA
+export const PLAN_AMOUNTS_YEARLY_TOTAL = {
+  essentiel: 405960, // 33,830 × 12
+  premium: 813960,   // 67,830 × 12
 };
 
 // Helper pour obtenir le Price ID correct
