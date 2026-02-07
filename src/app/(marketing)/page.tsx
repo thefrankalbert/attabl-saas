@@ -51,12 +51,13 @@ const translations = {
       title_line1: "ATTABL",
       title_line2: "commander",
       title_highlight: "mieux",
-      subtitle: "Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : l'art de recevoir.",
+      subtitle: <>Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir</span>.</>,
       email_placeholder: "Adresse e-mail professionnelle",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      stats_line1: "15+ années",
+      stats_line1_num: "15+",
+      stats_line1_text: "années",
       stats_line2: "d'expériences",
       stats_line3: "clients"
     },
@@ -125,7 +126,8 @@ const translations = {
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
       users_active: "luxury hotels",
-      stats_line1: "15+ years",
+      stats_line1_num: "15+",
+      stats_line1_text: "years",
       stats_line2: "of experience",
       stats_line3: "serving clients"
     },
@@ -469,9 +471,12 @@ export default function HomePage() {
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line1}</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line2}</p>
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{t.hero.stats_line3}</p>
+                <div className="flex items-baseline gap-1.5 mb-0.5 leading-none">
+                  <span className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
+                  <span className="text-lg font-medium text-gray-600 dark:text-gray-400">{t.hero.stats_line1_text}</span>
+                </div>
+                <p className="text-lg font-medium text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line2}</p>
+                <p className="text-lg font-medium text-gray-900 dark:text-white leading-none">{t.hero.stats_line3}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -546,7 +551,7 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{t.features.sectionTitle}</h2>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">{t.features.sectionTitle}</h2>
             <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">{t.features.sectionSubtitle}</p>
           </motion.div>
 
@@ -564,13 +569,15 @@ export default function HomePage() {
                 <motion.div
                   variants={itemVariants}
                   key={i}
-                  className="group p-6 rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white dark:bg-[#0A0A0A] hover:border-[#CCFF00]/50 transition-all duration-300 shadow-none"
+                  className="group relative p-8 rounded-3xl border border-gray-100 dark:border-white/5 bg-white/50 dark:bg-zinc-900/50 hover:bg-white dark:hover:bg-zinc-900 backdrop-blur-sm transition-all duration-500 hover:-translate-y-1 shadow-none overflow-hidden"
                 >
-                  <div className="h-12 w-12 rounded-xl border border-[#CCFF00] bg-transparent flex items-center justify-center mb-5 group-hover:bg-[#CCFF00] transition-colors duration-300 shadow-none">
-                    <Icon className="h-6 w-6 text-[#CCFF00] group-hover:text-black transition-colors duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-[#CCFF00]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"></div>
+
+                  <div className="relative h-14 w-14 rounded-2xl bg-[#CCFF00]/10 dark:bg-[#CCFF00]/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-none">
+                    <Icon className="h-7 w-7 text-[#CCFF00] dark:text-[#ccff00] transition-colors duration-300" />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#CCFF00] transition-colors">{item.title}</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="relative text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-[#CCFF00] transition-colors">{item.title}</h3>
+                  <p className="relative text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{item.desc}</p>
                 </motion.div>
               );
             })}
