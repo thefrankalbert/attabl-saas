@@ -29,6 +29,7 @@ import NewsletterSection from '@/components/shared/NewsletterSection';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Variants, Easing } from 'framer-motion';
 import { useTheme } from "next-themes";
+import AttablHubIntegration from "@/components/shared/AttablHubIntegration";
 
 // Translations
 const translations = {
@@ -51,7 +52,7 @@ const translations = {
       title_line1: "ATTABL",
       title_line2: "commander",
       title_highlight: "mieux",
-      subtitle: <>Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir</span>.</>,
+      subtitle: <>Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir.</span></>,
       email_placeholder: "Adresse e-mail professionnelle",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
@@ -373,13 +374,12 @@ export default function HomePage() {
             {/* ANIMATED PILL BADGE */}
             <motion.div
               variants={itemVariants}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 w-fit select-none active:scale-95 transition-transform cursor-default"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-sm font-medium tracking-wide text-black dark:text-[#CCFF00] mb-8 w-fit select-none active:scale-95 transition-transform cursor-default"
             >
               <span className="relative flex h-2 w-2 shrink-0">
                 <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
-              <span className="mr-1">{t.hero.pill_prefix}</span>
-              <div className="relative h-4 w-48 overflow-hidden">
+              <div className="relative h-5 w-52 overflow-hidden">
                 <AnimatePresence mode='wait'>
                   <motion.span
                     key={pillIndex}
@@ -471,12 +471,12 @@ export default function HomePage() {
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
-                <div className="flex items-baseline gap-1.5 mb-0.5 leading-none">
-                  <span className="text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
-                  <span className="text-lg font-medium text-gray-600 dark:text-gray-400">{t.hero.stats_line1_text}</span>
+                <div className="flex items-baseline gap-1 mb-0.5 leading-none">
+                  <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
+                  <span className="text-base font-medium text-gray-600 dark:text-gray-400">{t.hero.stats_line1_text}</span>
                 </div>
-                <p className="text-lg font-medium text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line2}</p>
-                <p className="text-lg font-medium text-gray-900 dark:text-white leading-none">{t.hero.stats_line3}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none mb-0.5">{t.hero.stats_line2}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none">{t.hero.stats_line3}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -584,6 +584,9 @@ export default function HomePage() {
           </motion.div>
         </div>
       </section>
+
+      {/* HUB INTEGRATION */}
+      <AttablHubIntegration lang={lang} />
 
       {/* TESTIMONIALS */}
       <section className="py-20 md:py-32 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5 relative overflow-hidden">
