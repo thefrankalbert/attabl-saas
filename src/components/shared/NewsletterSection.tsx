@@ -136,12 +136,12 @@ export default function NewsletterSection({
                                 placeholder={t.placeholder}
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
-                                className="bg-transparent border-none text-gray-900 dark:text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 h-10 md:h-12 flex-grow"
+                                className="bg-transparent border-none text-gray-900 dark:text-white placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0 h-10 md:h-12 flex-grow shadow-none"
                                 disabled={isPending}
                             />
                             <Button
                                 type="submit"
-                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-white dark:text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="h-10 md:h-12 px-6 md:px-8 rounded-lg font-bold text-white dark:text-black transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed shadow-none focus-visible:ring-0"
                                 style={{ backgroundColor: primaryColor }}
                                 disabled={isPending}
                             >

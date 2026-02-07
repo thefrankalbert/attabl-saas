@@ -242,8 +242,8 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-[#F9FAFB] dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden relative">
-      {/* Global Top-Left Halo */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-[#CCFF00]/10 rounded-full blur-[120px] pointer-events-none z-0" />
+      {/* Global Top-Left Halo - Increased Opacity */}
+      <div className="absolute top-[-10%] left-[-10%] w-[600px] h-[600px] bg-[#CCFF00]/20 rounded-full blur-[100px] pointer-events-none z-0" />
 
       {/* MOBILE MENU */}
       <AnimatePresence>
@@ -322,7 +322,7 @@ export default function HomePage() {
             </button>
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
             <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50">{t.nav.login}</Button></Link>
-            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95 shadow-none border border-transparent">{t.nav.signup}</Button></Link>
+            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95 shadow-none border border-transparent focus-visible:ring-0">{t.nav.signup}</Button></Link>
           </div>
 
           <button className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={() => setMobileMenuOpen(true)}>
@@ -333,9 +333,9 @@ export default function HomePage() {
 
       {/* HERO SECTION */}
       <section className="relative pt-32 pb-10 lg:pt-40 lg:pb-20 overflow-hidden mx-auto max-w-[1400px]">
-        {/* Hero Halos */}
-        <div className="absolute top-1/2 right-[-10%] -translate-y-1/2 w-[500px] h-[500px] bg-[#CCFF00]/10 rounded-full blur-[120px] pointer-events-none z-0" />
-        <div className="absolute bottom-[-10%] right-[20%] w-[400px] h-[400px] bg-[#CCFF00]/5 rounded-full blur-[120px] pointer-events-none z-0" />
+        {/* Hero Halos - Increased Opacity & Adjusted Positioning */}
+        <div className="absolute top-1/2 right-[-5%] -translate-y-1/2 w-[500px] h-[500px] bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
+        <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
 
         <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
 
@@ -416,7 +416,7 @@ export default function HomePage() {
                     placeholder={t.hero.email_placeholder}
                     value={heroEmail}
                     onChange={(e) => setHeroEmail(e.target.value)}
-                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none border border-gray-200 focus:border-[#CCFF00] dark:border-white/10 font-medium placeholder:text-gray-500 shadow-none transition-colors"
+                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none border border-gray-200 focus:border-[#CCFF00] dark:border-white/10 font-medium placeholder:text-gray-500 shadow-none transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                     <Layout className="h-5 w-5" />
@@ -424,7 +424,7 @@ export default function HomePage() {
                 </div>
                 <Button
                   onClick={() => router.push(`/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`)}
-                  className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600]/90 text-black font-bold text-base shadow-none transition-all hover:scale-105 active:scale-95 border border-transparent w-full sm:w-auto shrink-0"
+                  className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600]/90 text-black font-bold text-base shadow-none transition-all hover:scale-105 active:scale-95 border border-transparent w-full sm:w-auto shrink-0 focus-visible:ring-0"
                 >
                   {t.hero.cta_primary}
                 </Button>
@@ -451,7 +451,7 @@ export default function HomePage() {
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
                 <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-1">15+ {t.hero.partners_line1}</p>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none whitespace-pre-line">{t.hero.partners_line2}</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none">{t.hero.partners_line2}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -586,7 +586,7 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-gray-400 text-lg leading-relaxed mb-8">
                   {t.testimonials.subtitle}
                 </p>
-                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all active:scale-95 shadow-sm">
+                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all active:scale-95 shadow-none focus-visible:ring-0">
                   Lire tous les avis <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>

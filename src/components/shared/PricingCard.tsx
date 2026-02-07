@@ -137,9 +137,9 @@ export function PricingCard({
                     <Button
                         onClick={() => onSelect(plan, billingInterval)}
                         disabled={isLoading || isCurrentPlan}
-                        className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 ${details.highlight
+                        className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 focus-visible:ring-0 ${details.highlight
                             ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-none'
-                            : 'bg-black dark:bg-white/10 text-white hover:bg-gray-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5'
+                            : 'bg-black dark:bg-white/10 text-white hover:bg-gray-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5 shadow-none'
                             }`}
                     >
                         {isCurrentPlan ? "Plan Actuel" : (isLoading ? "Chargement..." : (
