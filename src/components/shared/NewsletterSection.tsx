@@ -83,7 +83,7 @@ export default function NewsletterSection({
                     <div className="w-full lg:w-1/2 space-y-6 relative z-10">
                         <div className="flex items-center gap-3">
                             {logoUrl ? (
-                                <div className="h-10 w-10 relative bg-white dark:bg-white/10 rounded-lg p-1 overflow-hidden shadow-sm">
+                                <div className="h-10 w-10 relative bg-white dark:bg-white/10 rounded-lg p-1 overflow-hidden shadow-none">
                                     <Image
                                         src={logoUrl}
                                         alt="Logo"
@@ -92,13 +92,8 @@ export default function NewsletterSection({
                                     />
                                 </div>
                             ) : (
-                                // Default Attabl Branding if no logo provided (Landing Page Mode)
-                                <div className="flex items-center gap-2">
-                                    <div className="h-10 w-10 rounded-lg flex items-center justify-center font-bold text-black text-xl shadow-[0_0_15px_rgba(204,255,0,0.3)]" style={{ backgroundColor: primaryColor }}>
-                                        <span>A</span>
-                                    </div>
-                                    <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
-                                </div>
+                                // Default Attabl Branding - Text Only (No Icon)
+                                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
                             )}
                         </div>
                         <h2 className="text-4xl md:text-5xl font-serif text-gray-900 dark:text-white leading-[1.1]">

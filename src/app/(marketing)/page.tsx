@@ -416,11 +416,8 @@ export default function HomePage() {
                     placeholder={t.hero.email_placeholder}
                     value={heroEmail}
                     onChange={(e) => setHeroEmail(e.target.value)}
-                    className="w-full h-12 md:h-14 pl-12 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none border border-gray-200 focus:border-[#CCFF00] dark:border-white/10 font-medium placeholder:text-gray-500 shadow-none transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="w-full h-12 md:h-14 pl-5 pr-4 bg-white dark:bg-zinc-900 text-black dark:text-white rounded-full focus:outline-none border border-gray-200 focus:border-[#CCFF00] dark:border-white/10 font-medium placeholder:text-gray-500 shadow-none transition-colors focus-visible:ring-0 focus-visible:ring-offset-0"
                   />
-                  <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
-                    <Layout className="h-5 w-5" />
-                  </div>
                 </div>
                 <Button
                   onClick={() => router.push(`/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`)}
@@ -499,11 +496,11 @@ export default function HomePage() {
       </section>
 
       {/* MARQUEE */}
-      <section className="py-8 bg-transparent overflow-hidden border-b border-gray-100 dark:border-white/5">
+      <section className="py-8 bg-transparent overflow-hidden border-b border-gray-100/50 dark:border-white/5 relative z-10">
         <div className="relative w-full overflow-hidden">
-          {/* Gradient Masks for fading effect */}
-          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white dark:from-black to-transparent z-10 pointer-events-none"></div>
-          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white dark:from-black to-transparent z-10 pointer-events-none"></div>
+          {/* Gradient Masks - using page bg color to blend with halos */}
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#F9FAFB] dark:from-black to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#F9FAFB] dark:from-black to-transparent z-10 pointer-events-none"></div>
 
           <div className="flex gap-16 min-w-max animate-scroll">
             {/* REPEAT LOGOS 2 TIMES for smooth infinite loop (enough for width) */}
