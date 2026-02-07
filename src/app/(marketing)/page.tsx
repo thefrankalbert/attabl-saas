@@ -51,7 +51,7 @@ const translations = {
       title_line1: "ATTABL",
       title_line2: "commander",
       title_highlight: "mieux",
-      subtitle: "Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l'essentiel : l'art de recevoir.",
+      subtitle: "Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : l'art de recevoir.",
       email_placeholder: "Adresse e-mail professionnelle",
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
@@ -470,8 +470,8 @@ export default function HomePage() {
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
                 <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line1}</p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 leading-none mb-0.5">{t.hero.stats_line2}</p>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none">{t.hero.stats_line3}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line2}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none">{t.hero.stats_line3}</p>
               </div>
             </motion.div>
           </motion.div>
