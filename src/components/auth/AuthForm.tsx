@@ -94,13 +94,8 @@ function AuthForm({ mode }: AuthFormProps) {
                     throw new Error(data.error || 'Erreur lors de l\'inscription');
                 }
 
-                // Redirect to admin
-                const isDev = window.location.hostname === 'localhost';
-                if (isDev) {
-                    window.location.href = `http://${data.slug}.localhost:3000/admin`;
-                } else {
-                    window.location.href = `https://${data.slug}.attabl.com/admin`;
-                }
+                // Redirect to onboarding wizard
+                window.location.href = '/onboarding';
             } else {
                 // Login flow
                 const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -294,8 +289,8 @@ function AuthForm({ mode }: AuthFormProps) {
                                 type="button"
                                 onClick={() => setSelectedPlan('essentiel')}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${selectedPlan === 'essentiel'
-                                        ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10'
+                                    : 'border-gray-200 hover:border-gray-300'
                                     }`}
                             >
                                 <div className="font-bold text-gray-900">Essentiel</div>
@@ -306,8 +301,8 @@ function AuthForm({ mode }: AuthFormProps) {
                                 type="button"
                                 onClick={() => setSelectedPlan('premium')}
                                 className={`p-4 rounded-xl border-2 text-left transition-all ${selectedPlan === 'premium'
-                                        ? 'border-[#CCFF00] bg-[#CCFF00]/10'
-                                        : 'border-gray-200 hover:border-gray-300'
+                                    ? 'border-[#CCFF00] bg-[#CCFF00]/10'
+                                    : 'border-gray-200 hover:border-gray-300'
                                     }`}
                             >
                                 <div className="font-bold text-gray-900">Prime</div>
