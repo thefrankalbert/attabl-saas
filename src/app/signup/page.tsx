@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { createClient } from '@/lib/supabase/client';
 
 // --- Icons ---
 const GoogleIcon = () => (
@@ -48,6 +49,33 @@ function FrictionlessSignupForm() {
   const [email, setEmail] = useState(searchParams.get('email') || '');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState<'google' | 'azure' | null>(null);
+
+  const supabase = createClient();
+
+  const handleOAuthLogin = async (provider: 'google' | 'azure') => {
+    setOauthLoading(provider);
+    setError('');
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
+          queryParams: {
+            plan: searchParams.get('plan') || 'essentiel',
+            restaurant_name: 'Mon Nouvel Établissement', // Default name for frictionless OAuth
+          },
+        },
+      });
+
+      if (error) throw error;
+    } catch (err) {
+      console.error(err);
+      setError('Erreur de connexion. Veuillez réessayer.');
+      setOauthLoading(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -191,12 +219,24 @@ function FrictionlessSignupForm() {
       </div>
 
       <div className="grid grid-cols-2 gap-4">
-        <Button variant="outline" className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3">
-          <GoogleIcon />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthLogin('google')}
+          disabled={oauthLoading !== null || loading}
+          className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3"
+        >
+          {oauthLoading === 'google' ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleIcon />}
           Google
         </Button>
-        <Button variant="outline" className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3">
-          <MicrosoftIcon />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthLogin('azure')}
+          disabled={oauthLoading !== null || loading}
+          className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3"
+        >
+          {oauthLoading === 'azure' ? <Loader2 className="h-5 w-5 animate-spin" /> : <MicrosoftIcon />}
           Outlook
         </Button>
       </div>
