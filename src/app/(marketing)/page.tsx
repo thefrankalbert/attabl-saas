@@ -32,7 +32,7 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import { useRouter } from 'next/navigation';
-import { motion, useScroll, useTransform, AnimatePresence, useMotionValue } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, Variants, Easing } from 'framer-motion';
 import { useTheme } from "next-themes";
 
 // Translations
@@ -218,6 +218,27 @@ export default function HomePage() {
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
+  // Animation Variants
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+        delayChildren: 0.2
+      }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" as Easing }
+    }
+  };
+
   if (!mounted) return null;
 
   return (
@@ -234,39 +255,39 @@ export default function HomePage() {
             className="fixed inset-0 z-[999] bg-white dark:bg-black md:hidden flex flex-col"
           >
             <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
-              <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2">
+              <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2 active:scale-95 transition-transform">
                 <div className="bg-black dark:bg-transparent rounded-md p-0.5">
                   <Layout className="h-6 w-6 text-[#CCFF00]" />
                 </div>
                 <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
               </Link>
-              <button className="p-2 text-black dark:text-white" onClick={closeMobileMenu}>
+              <button className="p-2 text-black dark:text-white active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={closeMobileMenu}>
                 <X className="h-6 w-6" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
               <nav className="flex flex-col gap-2 text-2xl font-bold">
-                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.features}</Link>
-                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.pricing}</Link>
-                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.about}</Link>
-                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-white/5">{t.nav.contact}</Link>
+                <Link href="#features" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.features}</Link>
+                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.pricing}</Link>
+                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.about}</Link>
+                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.contact}</Link>
               </nav>
               <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
               <div className="flex flex-col gap-4 mt-auto pb-8">
                 <div className="flex gap-4 px-4">
-                  <button onClick={toggleLang} className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 font-bold text-sm">
+                  <button onClick={toggleLang} className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 font-bold text-sm active:scale-95 transition-transform">
                     {lang === 'fr' ? 'EN' : 'FR'}
                   </button>
-                  <button onClick={toggleTheme} className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10">
+                  <button onClick={toggleTheme} className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-95 transition-transform">
                     {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                   </button>
                 </div>
                 <Link href="/login" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full text-lg h-14">{t.nav.login}</Button>
+                  <Button variant="ghost" className="w-full text-lg h-14 active:scale-[0.98]">{t.nav.login}</Button>
                 </Link>
                 <Link href="/signup" onClick={closeMobileMenu}>
-                  <Button className="w-full text-lg h-14 bg-[#CCFF00] text-black font-bold">{t.nav.signup}</Button>
+                  <Button className="w-full text-lg h-14 bg-[#CCFF00] text-black font-bold active:scale-[0.98]">{t.nav.signup}</Button>
                 </Link>
               </div>
             </div>
@@ -277,7 +298,7 @@ export default function HomePage() {
       {/* HEADER */}
       <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
         <div className="container mx-auto px-6 max-w-7xl flex justify-between items-center relative z-50">
-          <Link href="/" className="flex items-center gap-2 group">
+          <Link href="/" className="flex items-center gap-2 group active:scale-95 transition-transform">
             <div className="bg-black dark:bg-transparent rounded-md p-0.5">
               <Layout className="h-6 w-6 text-[#CCFF00]" />
             </div>
@@ -292,18 +313,18 @@ export default function HomePage() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <button onClick={toggleLang} className="p-2 w-10 h-10 font-bold text-xs rounded-full hover:bg-gray-100 dark:hover:bg-white/10">
+            <button onClick={toggleLang} className="p-2 w-10 h-10 font-bold text-xs rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform">
               {lang.toUpperCase()}
             </button>
-            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10">
+            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform">
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6">{t.nav.login}</Button></Link>
-            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8">{t.nav.signup}</Button></Link>
+            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95">{t.nav.login}</Button></Link>
+            <Link href="/signup"><Button className="rounded-full bg-black dark:bg-[#1a1a1a] text-white hover:bg-gray-800 dark:hover:bg-[#CCFF00] dark:hover:text-black font-semibold px-8 active:scale-95">{t.nav.signup}</Button></Link>
           </div>
 
-          <button className="md:hidden p-2" onClick={() => setMobileMenuOpen(true)}>
+          <button className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={() => setMobileMenuOpen(true)}>
             <Menu className="h-6 w-6" />
           </button>
         </div>
@@ -315,13 +336,16 @@ export default function HomePage() {
 
           {/* Left Content */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
             className="relative z-20 flex flex-col justify-center"
           >
             {/* ANIMATED PILL BADGE */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 w-fit select-none">
+            <motion.div
+              variants={itemVariants}
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#CCFF00]/50 bg-[#CCFF00]/10 text-xs font-bold tracking-wide text-black dark:text-[#CCFF00] mb-8 w-fit select-none active:scale-95 transition-transform cursor-default"
+            >
               <span className="relative flex h-2 w-2 shrink-0">
                 <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
@@ -340,21 +364,22 @@ export default function HomePage() {
                   </motion.span>
                 </AnimatePresence>
               </div>
-            </div>
+            </motion.div>
 
             <div className="mb-8 pl-1">
               {/* Line 1: Massive Bold */}
               <motion.h1
+                variants={itemVariants}
                 className="text-6xl md:text-8xl font-black tracking-tighter text-gray-900 dark:text-white mb-2 leading-none"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
               >
                 {t.hero.title_line1}
               </motion.h1>
 
               {/* Line 2: "Commander" (Green) + Highlight ("mieux") + Green Dot */}
-              <div className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter leading-tight">
+              <motion.div
+                variants={itemVariants}
+                className="text-5xl md:text-7xl font-black text-[#CCFF00] tracking-tighter leading-tight"
+              >
                 {t.hero.title_line2} <span className="relative inline-block text-[#CCFF00]">
                   {t.hero.title_highlight}
                   <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
@@ -362,17 +387,23 @@ export default function HomePage() {
                   </svg>
                 </span>
                 <span>.</span>
-              </div>
+              </motion.div>
             </div>
 
             {/* Subtitle - Optimized for EN/FR */}
-            <div className="max-w-[90%] md:max-w-xl mb-10">
+            <motion.div
+              variants={itemVariants}
+              className="max-w-[95%] md:max-w-xl mb-10"
+            >
               <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-balance text-left">
                 {t.hero.subtitle}
               </p>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-col gap-6 max-w-md mb-10 md:mb-12">
+            <motion.div
+              variants={itemVariants}
+              className="flex flex-col gap-6 max-w-md mb-10 md:mb-12"
+            >
               <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-grow">
                   <input
@@ -384,14 +415,17 @@ export default function HomePage() {
                     <Layout className="h-5 w-5" />
                   </div>
                 </div>
-                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-transform hover:scale-105 border-0 w-full sm:w-auto shrink-0">
+                <Button className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-base shadow-[0_0_20px_rgba(204,255,0,0.3)] transition-all hover:scale-105 active:scale-95 border-0 w-full sm:w-auto shrink-0">
                   {t.hero.cta_primary}
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="flex items-center gap-6 md:gap-8">
-              <div>
+            <motion.div
+              variants={itemVariants}
+              className="flex items-center gap-6 md:gap-8"
+            >
+              <div className="active:scale-95 transition-transform cursor-pointer">
                 <div className="flex -space-x-3 mb-2">
                   {[1, 2, 3].map(i => (
                     <div key={i} className="w-10 h-10 rounded-full border-2 border-white dark:border-black bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden">
@@ -405,22 +439,32 @@ export default function HomePage() {
                 <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{t.hero.users_active}</p>
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
-              <div className="flex flex-col justify-center">
+              <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
                 <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-1">15+ {t.hero.partners_line1}</p>
-                {/* Add whitespace-pre-line to allow \n to break lines */}
                 <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none whitespace-pre-line">{t.hero.partners_line2}</p>
               </div>
-            </div>
+            </motion.div>
           </motion.div>
 
           {/* Right Image */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{
+              opacity: 1,
+              scale: 1,
+              y: [0, -15, 0]
+            }}
+            transition={{
+              opacity: { duration: 0.5, delay: 0.2 },
+              scale: { duration: 0.5, delay: 0.2 },
+              y: {
+                duration: 5,
+                repeat: Infinity,
+                ease: "easeInOut"
+              }
+            }}
             className="relative z-10 flex justify-center lg:justify-end mt-12 lg:mt-0"
           >
-            {/* Same image code ... */}
             <div className="relative w-[280px] sm:w-[350px] md:w-[400px]">
               <Image
                 src="/mobile-app-mockup.png"
@@ -431,7 +475,7 @@ export default function HomePage() {
                 priority
               />
               {/* Floating Card */}
-              <div className="absolute top-1/3 -left-4 md:-left-12 bg-white dark:bg-[#1a1a1a] p-3 md:p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-xl flex items-center gap-3 md:gap-4 animate-float">
+              <div className="absolute top-1/3 -left-4 md:-left-12 bg-white dark:bg-[#1a1a1a] p-3 md:p-4 rounded-xl border border-gray-200 dark:border-white/10 shadow-xl flex items-center gap-3 md:gap-4 animate-float hover:scale-105 transition-transform duration-300">
                 <div className="bg-[#CCFF00] p-2 rounded-lg text-black">
                   <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
@@ -455,7 +499,7 @@ export default function HomePage() {
           <div className="flex gap-16 min-w-max animate-scroll">
             {/* REPEAT LOGOS 4 TIMES for smooth infinite loop */}
             {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
-              <div key={i} className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300">
+              <div key={i} className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 active:scale-110">
                 <logo.icon className="h-6 w-6" />
                 <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
               </div>
@@ -464,11 +508,16 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FEATURES... (Unchanged) */}
+      {/* FEATURES */}
       <section id="features" className="py-20 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-zinc-950">
-        {/* ... existing features code ... */}
         <div className="container mx-auto px-6">
-          <div className="grid md:grid-cols-3 gap-12">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="grid md:grid-cols-3 gap-12"
+          >
             {[
               {
                 title: t.features.security.title,
@@ -487,12 +536,9 @@ export default function HomePage() {
               }
             ].map((item, i) => (
               <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
+                variants={itemVariants}
                 key={i}
-                className="flex gap-6 items-start group"
+                className="flex gap-6 items-start group active:scale-[0.98] transition-all p-4 rounded-2xl hover:bg-white dark:hover:bg-white/5 duration-300"
               >
                 <div className="h-12 w-12 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#CCFF00] flex items-center justify-center shrink-0 group-hover:bg-[#CCFF00] transition-colors duration-500 shadow-sm">
                   <div className="text-[#CCFF00] group-hover:text-black transition-colors duration-500">
@@ -505,7 +551,7 @@ export default function HomePage() {
                 </div>
               </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
@@ -514,7 +560,12 @@ export default function HomePage() {
         <div className="container mx-auto px-6 max-w-7xl relative z-10">
           <div className="grid lg:grid-cols-3 gap-12 lg:gap-16">
             {/* Left: Sticky Title */}
-            <div className="lg:col-span-1">
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="lg:col-span-1"
+            >
               <div className="lg:sticky lg:top-32 mb-10 lg:mb-0">
                 <div className="inline-flex items-center gap-2 mb-6 text-[#CCFF00] font-bold uppercase tracking-widest text-xs">
                   <StarIcon className="h-4 w-4 fill-current" />
@@ -526,21 +577,27 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-gray-400 text-lg leading-relaxed mb-8">
                   {t.testimonials.subtitle}
                 </p>
-                {/* BUTTON FIX: Ensure high contrast text */}
-                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all">
+                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all active:scale-95 shadow-sm">
                   Lire tous les avis <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
-            </div>
+            </motion.div>
 
             {/* Right: Masonry Grid */}
-            <div className="lg:col-span-2 grid md:grid-cols-2 gap-4 md:gap-6">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, amount: 0.1 }}
+              className="lg:col-span-2 grid md:grid-cols-2 gap-4 md:gap-6"
+            >
               {t.testimonials.reviews.map((review, i) => (
                 <motion.div
+                  variants={itemVariants}
                   key={i}
-                  whileHover={{ scale: 1.08 }}
+                  whileHover={{ scale: 1.05 }}
                   transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`p-5 rounded-[1.25rem] border transition-colors duration-300 hover:border-[#CCFF00]/50 group cursor-default ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
+                  className={`p-5 rounded-[1.25rem] border transition-all duration-300 hover:border-[#CCFF00]/50 group cursor-default active:scale-[0.98] ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
                     } ${theme === 'light' ? 'bg-gray-50 border-gray-100 hover:bg-white hover:shadow-lg' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
                     }`}
                 >
@@ -548,7 +605,6 @@ export default function HomePage() {
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-4 leading-relaxed">
                     "{review.text}"
                   </p>
-                  {/* ... author info ... */}
                   <div className="flex items-center gap-3">
                     <div className="h-8 w-8 rounded-full bg-gray-200 dark:bg-gray-800 border border-[#CCFF00] flex items-center justify-center font-bold text-[10px]">
                       {review.author.charAt(0)}
@@ -560,59 +616,72 @@ export default function HomePage() {
                   </div>
                 </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* PRICING... (Unchanged) */}
+      {/* PRICING */}
       <section id="pricing" className="py-20 md:py-32 bg-gray-50 dark:bg-[#050505] relative transition-colors duration-300 border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 max-w-7xl">
-          {/* ... pricing content ... */}
-          <div className="text-center mb-16 md:mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16 md:mb-20"
+          >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">{t.pricing.title}</h2>
             <div className="flex justify-center gap-4">
-              <button onClick={() => setBillingInterval('monthly')} className={`text-sm font-bold ${billingInterval === 'monthly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
+              <button onClick={() => setBillingInterval('monthly')} className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'monthly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
                 {t.pricing.monthly}
               </button>
               <div className="w-px h-4 bg-gray-300 dark:bg-gray-800"></div>
-              <button onClick={() => setBillingInterval('yearly')} className={`text-sm font-bold ${billingInterval === 'yearly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
+              <button onClick={() => setBillingInterval('yearly')} className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'yearly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
                 {t.pricing.yearly}
               </button>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8 items-center">
-            <PricingCard plan="essentiel" billingInterval={billingInterval} onSelect={handlePlanSelect} />
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.1 }}
+            className="grid md:grid-cols-3 gap-8 items-center"
+          >
+            <motion.div variants={itemVariants}>
+              <PricingCard plan="essentiel" billingInterval={billingInterval} onSelect={handlePlanSelect} />
+            </motion.div>
 
-            <div className="transform md:scale-105 z-10 my-8 md:my-0">
+            <motion.div variants={itemVariants} className="transform md:scale-105 z-10 my-8 md:my-0">
               <PricingCard plan="premium" billingInterval={billingInterval} onSelect={handlePlanSelect} />
-            </div>
+            </motion.div>
 
             <motion.div
+              variants={itemVariants}
               whileHover={{ y: -8 }}
               transition={{ duration: 0.3, ease: "easeOut" }}
               className="h-full"
             >
-              <div className="border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-lg dark:shadow-none">
+              <div className="border border-gray-100 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-lg dark:shadow-none active:scale-[0.99]">
                 <div>
                   <h3 className="text-xl font-medium mb-1 text-gray-900 dark:text-gray-300">{t.pricing.cards.enterprise.name}</h3>
                   <p className="text-sm text-gray-500 mb-6">{t.pricing.cards.enterprise.desc}</p>
                   <div className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t.pricing.cards.enterprise.price}</div>
                 </div>
-                <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl" onClick={() => router.push('/contact')}>
+                <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl active:scale-95 transition-all" onClick={() => router.push('/contact')}>
                   {t.pricing.cards.enterprise.cta}
                 </Button>
               </div>
             </motion.div>
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* FOOTER */}
       <footer className="py-12 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 active:scale-95 transition-transform cursor-pointer">
             <div className="bg-black dark:bg-transparent rounded-md p-0.5">
               <Layout className="h-6 w-6 text-[#CCFF00]" />
             </div>
