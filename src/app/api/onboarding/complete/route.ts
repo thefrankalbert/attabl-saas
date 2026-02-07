@@ -65,50 +65,39 @@ export async function POST(request: Request) {
                 onConflict: 'tenant_id',
             });
 
-        // If template menu was selected, create sample menu items
-        if (data.menuOption === 'template') {
-            // Create a default category
+        // Create category and menu items if provided during onboarding
+        if (data.menuItems && data.menuItems.length > 0 && data.menuItems.some((item: { name: string }) => item.name)) {
+            // Get category name from first item or use default
+            const categoryName = data.menuItems[0]?.category || 'Menu';
+
+            // Create the category
             const { data: category } = await supabase
                 .from('categories')
                 .insert({
                     tenant_id: tenantId,
-                    name: 'Plats principaux',
-                    name_en: 'Main Dishes',
+                    name: categoryName,
                     sort_order: 1,
                 })
                 .select()
                 .single();
 
             if (category) {
-                // Create sample menu items
-                await supabase
-                    .from('menu_items')
-                    .insert([
-                        {
-                            tenant_id: tenantId,
-                            category_id: category.id,
-                            name: 'Plat du jour',
-                            name_en: 'Daily Special',
-                            price: 5000,
-                            is_available: true,
-                        },
-                        {
-                            tenant_id: tenantId,
-                            category_id: category.id,
-                            name: 'Entrée signature',
-                            name_en: 'Signature Starter',
-                            price: 3500,
-                            is_available: true,
-                        },
-                        {
-                            tenant_id: tenantId,
-                            category_id: category.id,
-                            name: 'Dessert maison',
-                            name_en: 'House Dessert',
-                            price: 2500,
-                            is_available: true,
-                        },
-                    ]);
+                // Filter out empty items and create menu items
+                const validItems = data.menuItems.filter((item: { name: string; price: number }) => item.name && item.name.trim());
+
+                if (validItems.length > 0) {
+                    await supabase
+                        .from('menu_items')
+                        .insert(
+                            validItems.map((item: { name: string; price: number }) => ({
+                                tenant_id: tenantId,
+                                category_id: category.id,
+                                name: item.name,
+                                price: item.price || 0,
+                                is_available: true,
+                            }))
+                        );
+                }
             }
         }
 

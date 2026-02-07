@@ -16,44 +16,44 @@ export function LaunchStep({ data }: LaunchStepProps) {
 
     const completedItems = [
         { label: 'Compte créé', done: true },
-        { label: 'Établissement configuré', done: !!data.establishmentType },
+        { label: 'Identité configurée', done: !!data.establishmentType },
         { label: 'Branding personnalisé', done: !!data.primaryColor },
-        { label: 'Menu préparé', done: data.menuOption !== 'skip' },
+        { label: 'Menu initialisé', done: data.menuOption !== 'skip' || true },
     ];
 
     return (
         <div>
             {/* Header */}
             <div className="mb-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 text-[#CCFF00] text-sm font-bold mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 text-gray-600 text-sm font-medium mb-4">
                     <Rocket className="h-4 w-4" />
                     Étape 4/4
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Vous êtes prêt ! 🎉
+                    Prêt à lancer
                 </h1>
                 <p className="text-gray-500">
-                    Votre établissement est configuré. Voici un récapitulatif.
+                    Votre établissement est configuré. Vérifiez les informations ci-dessous.
                 </p>
             </div>
 
             {/* Summary Card */}
-            <div className="p-6 rounded-2xl border-2 border-[#CCFF00] bg-[#CCFF00]/5 mb-8">
+            <div className="p-6 rounded-2xl border border-gray-200 bg-white mb-6">
                 <div className="flex items-center gap-4 mb-6">
                     <div
                         className="w-16 h-16 rounded-2xl flex items-center justify-center"
-                        style={{ backgroundColor: data.primaryColor }}
+                        style={{ backgroundColor: data.primaryColor || '#000' }}
                     >
                         {data.logoUrl ? (
                             <img src={data.logoUrl} alt="Logo" className="w-full h-full rounded-2xl object-cover" />
                         ) : (
-                            <Layout className="h-8 w-8" style={{ color: data.secondaryColor }} />
+                            <Layout className="h-8 w-8 text-white" />
                         )}
                     </div>
                     <div>
                         <h2 className="text-xl font-bold text-gray-900">{data.tenantName}</h2>
                         <p className="text-gray-500 capitalize">
-                            {data.establishmentType} • {data.city || 'Non défini'}, {data.country}
+                            {data.establishmentType} • {data.city || 'Non défini'}
                         </p>
                     </div>
                 </div>
@@ -62,9 +62,9 @@ export function LaunchStep({ data }: LaunchStepProps) {
                 <div className="space-y-3">
                     {completedItems.map((item, i) => (
                         <div key={i} className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${item.done ? 'bg-[#CCFF00] text-black' : 'bg-gray-200 text-gray-400'
+                            <div className={`w-5 h-5 rounded-full flex items-center justify-center ${item.done ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'
                                 }`}>
-                                <Check className="h-4 w-4" />
+                                <Check className="h-3 w-3" />
                             </div>
                             <span className={item.done ? 'text-gray-900' : 'text-gray-400'}>
                                 {item.label}
@@ -75,52 +75,49 @@ export function LaunchStep({ data }: LaunchStepProps) {
             </div>
 
             {/* Menu URL */}
-            <div className="p-6 rounded-2xl border border-gray-200 bg-gray-50 mb-6">
-                <p className="text-sm text-gray-500 mb-2">Votre menu client sera accessible à :</p>
+            <div className="p-5 rounded-xl border border-gray-200 bg-gray-50 mb-5">
+                <p className="text-sm text-gray-500 mb-2">Votre menu client :</p>
                 <div className="flex items-center gap-3">
-                    <div className="flex-1 px-4 py-3 bg-white rounded-xl border border-gray-200 font-mono text-sm break-all">
+                    <div className="flex-1 px-4 py-2.5 bg-white rounded-lg border border-gray-200 font-mono text-sm text-gray-700 truncate">
                         {menuUrl}
                     </div>
                     <a
                         href={menuUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-3 bg-white rounded-xl border border-gray-200 hover:border-[#CCFF00] transition-colors"
+                        className="p-2.5 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
                     >
-                        <ExternalLink className="h-5 w-5 text-gray-600" />
+                        <ExternalLink className="h-4 w-4 text-gray-500" />
                     </a>
                 </div>
             </div>
 
-            {/* QR Code Section */}
-            <div className="p-6 rounded-2xl border border-gray-200 bg-white mb-6">
-                <div className="flex items-start gap-6">
-                    <div className="w-32 h-32 bg-gray-100 rounded-xl flex items-center justify-center">
-                        <QrCode className="h-16 w-16 text-gray-400" />
+            {/* QR Code */}
+            <div className="p-5 rounded-xl border border-gray-200 bg-white">
+                <div className="flex items-center gap-5">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <QrCode className="h-10 w-10 text-gray-300" />
                     </div>
                     <div className="flex-1">
-                        <h3 className="font-bold text-gray-900 mb-2">QR Code de votre menu</h3>
-                        <p className="text-sm text-gray-500 mb-4">
-                            Imprimez ce QR code et placez-le sur vos tables. Vos clients peuvent scanner
-                            pour accéder au menu et commander directement.
+                        <h3 className="font-semibold text-gray-900 mb-1">QR Code</h3>
+                        <p className="text-sm text-gray-500 mb-3">
+                            Imprimez-le pour vos tables.
                         </p>
                         <button
                             type="button"
-                            className="flex items-center gap-2 px-4 py-2 bg-black text-white rounded-xl font-medium hover:bg-gray-800 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                         >
                             <Download className="h-4 w-4" />
-                            Télécharger le QR Code
+                            Télécharger
                         </button>
                     </div>
                 </div>
             </div>
 
-            {/* Trial Reminder */}
-            <div className="p-4 rounded-xl bg-[#CCFF00]/10 border border-[#CCFF00]/30">
-                <p className="text-sm text-gray-700">
-                    <strong className="text-black">🎁 14 jours d'essai gratuit</strong> — Profitez de
-                    toutes les fonctionnalités sans engagement. Vous pourrez choisir votre plan après
-                    dans les paramètres de facturation.
+            {/* Trial Info */}
+            <div className="mt-6 p-4 rounded-xl bg-gray-50 border border-gray-100 text-center">
+                <p className="text-sm text-gray-600">
+                    <strong>14 jours d'essai gratuit</strong> — Profitez de toutes les fonctionnalités.
                 </p>
             </div>
         </div>

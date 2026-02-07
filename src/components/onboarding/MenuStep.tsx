@@ -1,6 +1,9 @@
 'use client';
 
-import { UtensilsCrossed, Plus, FileSpreadsheet, LayoutTemplate, FastForward } from 'lucide-react';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { UtensilsCrossed, Plus, Trash2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface MenuStepProps {
@@ -8,143 +11,146 @@ interface MenuStepProps {
     updateData: (data: Partial<OnboardingData>) => void;
 }
 
-const menuOptions = [
-    {
-        id: 'manual',
-        title: 'Créer manuellement',
-        description: 'Ajoutez vos articles un par un',
-        icon: Plus,
-        recommended: false,
-    },
-    {
-        id: 'template',
-        title: 'Utiliser un template',
-        description: 'Commencez avec un menu pré-rempli',
-        icon: LayoutTemplate,
-        recommended: true,
-    },
-    {
-        id: 'import',
-        title: 'Importer un fichier',
-        description: 'CSV ou Excel avec vos articles',
-        icon: FileSpreadsheet,
-        recommended: false,
-    },
-    {
-        id: 'skip',
-        title: 'Passer pour l\'instant',
-        description: 'Je configurerai le menu plus tard',
-        icon: FastForward,
-        recommended: false,
-    },
-];
-
-const menuTemplates = [
-    { id: 'restaurant-africain', name: 'Restaurant Africain', items: 15, emoji: '🍲' },
-    { id: 'restaurant-francais', name: 'Restaurant Français', items: 20, emoji: '🥐' },
-    { id: 'fast-food', name: 'Fast Food', items: 12, emoji: '🍔' },
-    { id: 'cafe', name: 'Café & Pâtisserie', items: 18, emoji: '☕' },
-    { id: 'bar', name: 'Bar & Cocktails', items: 25, emoji: '🍸' },
-    { id: 'hotel', name: 'Room Service Hôtel', items: 30, emoji: '🏨' },
-];
+interface MenuItem {
+    name: string;
+    price: string;
+}
 
 export function MenuStep({ data, updateData }: MenuStepProps) {
+    const [categoryName, setCategoryName] = useState('');
+    const [items, setItems] = useState<MenuItem[]>([
+        { name: '', price: '' },
+    ]);
+
+    const addItem = () => {
+        if (items.length < 5) {
+            setItems([...items, { name: '', price: '' }]);
+        }
+    };
+
+    const removeItem = (index: number) => {
+        if (items.length > 1) {
+            setItems(items.filter((_, i) => i !== index));
+        }
+    };
+
+    const updateItem = (index: number, field: 'name' | 'price', value: string) => {
+        const newItems = [...items];
+        newItems[index][field] = value;
+        setItems(newItems);
+
+        // Update parent data
+        updateData({
+            menuItems: newItems.map(item => ({
+                name: item.name,
+                price: parseFloat(item.price) || 0,
+                category: categoryName,
+            })),
+            menuOption: categoryName ? 'manual' : 'skip',
+        });
+    };
+
+    const updateCategoryName = (value: string) => {
+        setCategoryName(value);
+        updateData({
+            menuItems: items.map(item => ({
+                name: item.name,
+                price: parseFloat(item.price) || 0,
+                category: value,
+            })),
+            menuOption: value ? 'manual' : 'skip',
+        });
+    };
+
     return (
         <div>
             {/* Header */}
             <div className="mb-8">
-                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 text-[#CCFF00] text-sm font-bold mb-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 text-gray-600 text-sm font-medium mb-4">
                     <UtensilsCrossed className="h-4 w-4" />
                     Étape 3/4
                 </div>
                 <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    Créez votre premier menu
+                    Votre première catégorie
                 </h1>
                 <p className="text-gray-500">
-                    Choisissez comment vous souhaitez commencer.
+                    Créez une catégorie avec quelques articles pour démarrer. Vous pourrez en ajouter d'autres plus tard.
                 </p>
             </div>
 
-            {/* Menu Options */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-                {menuOptions.map((option) => (
-                    <button
-                        key={option.id}
-                        type="button"
-                        onClick={() => updateData({ menuOption: option.id as OnboardingData['menuOption'] })}
-                        className={`p-6 rounded-2xl border-2 text-left transition-all relative ${data.menuOption === option.id
-                                ? 'border-[#CCFF00] bg-[#CCFF00]/5'
-                                : 'border-gray-200 hover:border-gray-300'
-                            }`}
-                    >
-                        {option.recommended && (
-                            <span className="absolute -top-2 right-4 px-2 py-0.5 bg-[#CCFF00] text-black text-xs font-bold rounded-full">
-                                Recommandé
-                            </span>
-                        )}
-                        <div
-                            className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${data.menuOption === option.id
-                                    ? 'bg-[#CCFF00] text-black'
-                                    : 'bg-gray-100 text-gray-600'
-                                }`}
-                        >
-                            <option.icon className="h-6 w-6" />
-                        </div>
-                        <h3 className="font-bold text-gray-900 mb-1">{option.title}</h3>
-                        <p className="text-sm text-gray-500">{option.description}</p>
-                    </button>
-                ))}
+            {/* Category Name */}
+            <div className="mb-8">
+                <Label htmlFor="categoryName" className="text-gray-700 font-semibold">
+                    Nom de la catégorie
+                </Label>
+                <Input
+                    id="categoryName"
+                    type="text"
+                    placeholder="Ex: Plats principaux, Entrées, Boissons..."
+                    value={categoryName}
+                    onChange={(e) => updateCategoryName(e.target.value)}
+                    className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+                />
             </div>
 
-            {/* Template Selection (shown when template option is selected) */}
-            {data.menuOption === 'template' && (
-                <div className="mt-8">
-                    <h3 className="font-bold text-gray-900 mb-4">Choisissez un template</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {menuTemplates.map((template) => (
-                            <button
-                                key={template.id}
-                                type="button"
-                                className="p-4 rounded-xl border border-gray-200 hover:border-[#CCFF00] hover:bg-[#CCFF00]/5 text-left transition-all"
-                            >
-                                <span className="text-3xl mb-2 block">{template.emoji}</span>
-                                <h4 className="font-medium text-gray-900 text-sm">{template.name}</h4>
-                                <p className="text-xs text-gray-500">{template.items} articles</p>
-                            </button>
-                        ))}
+            {/* Items */}
+            <div className="space-y-4">
+                <Label className="text-gray-700 font-semibold">
+                    Articles (optionnel)
+                </Label>
+
+                {items.map((item, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                        <div className="flex-1">
+                            <Input
+                                type="text"
+                                placeholder="Nom de l'article"
+                                value={item.name}
+                                onChange={(e) => updateItem(index, 'name', e.target.value)}
+                                className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+                            />
+                        </div>
+                        <div className="w-32">
+                            <Input
+                                type="number"
+                                placeholder="Prix"
+                                value={item.price}
+                                onChange={(e) => updateItem(index, 'price', e.target.value)}
+                                className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+                            />
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => removeItem(index)}
+                            disabled={items.length === 1}
+                            className={`p-3 rounded-xl transition-colors ${items.length === 1
+                                    ? 'text-gray-300 cursor-not-allowed'
+                                    : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                                }`}
+                        >
+                            <Trash2 className="h-5 w-5" />
+                        </button>
                     </div>
-                </div>
-            )}
+                ))}
 
-            {/* Skip Message */}
-            {data.menuOption === 'skip' && (
-                <div className="mt-8 p-6 rounded-2xl bg-gray-50 border border-gray-100">
-                    <p className="text-gray-600">
-                        <strong>Pas de problème !</strong> Vous pourrez créer votre menu depuis le dashboard
-                        dans la section <span className="font-medium">Menus</span>.
-                    </p>
-                </div>
-            )}
+                {items.length < 5 && (
+                    <button
+                        type="button"
+                        onClick={addItem}
+                        className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors"
+                    >
+                        <Plus className="h-5 w-5" />
+                        Ajouter un article
+                    </button>
+                )}
+            </div>
 
-            {/* Manual Entry (simplified for onboarding) */}
-            {data.menuOption === 'manual' && (
-                <div className="mt-8 p-6 rounded-2xl bg-gray-50 border border-gray-100">
-                    <p className="text-gray-600">
-                        Vous pourrez ajouter vos articles en détail depuis le dashboard.
-                        Pour l'instant, continuez vers l'étape suivante.
-                    </p>
-                </div>
-            )}
-
-            {/* Import (simplified for onboarding) */}
-            {data.menuOption === 'import' && (
-                <div className="mt-8 p-6 rounded-2xl bg-gray-50 border border-gray-100">
-                    <p className="text-gray-600">
-                        L'import de fichier sera disponible depuis le dashboard dans la section <span className="font-medium">Menus</span>.
-                        Continuez pour l'instant.
-                    </p>
-                </div>
-            )}
+            {/* Skip Info */}
+            <div className="mt-8 p-4 rounded-xl bg-gray-50 border border-gray-100">
+                <p className="text-sm text-gray-600">
+                    <strong>💡 Astuce :</strong> Vous pouvez laisser cette étape vide et ajouter votre menu complet depuis le Dashboard.
+                </p>
+            </div>
         </div>
     );
 }
