@@ -683,7 +683,7 @@ export default function HomePage() {
       </section>
 
       {/* NEWSLETTER */}
-      <NewsletterSection />
+      <NewsletterSection lang={lang} />
 
       {/* FOOTER */}
       <footer className="py-12 bg-white dark:bg-black border-t border-gray-100 dark:border-white/5">
