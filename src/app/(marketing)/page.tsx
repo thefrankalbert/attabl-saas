@@ -56,7 +56,7 @@ const translations = {
       title_line1: "ATTABL",
       title_line2: "commander", // Lowercase per request
       title_highlight: "mieux",
-      subtitle: "Transformez l'expérience de prise de commande au sein de votre établissement. De la sélection rapide des menus jusqu'à la facturation, Attabl vous offre une solution clé en main.",
+      subtitle: <>Offrez à vos clients la liberté de <span className="text-gray-900 dark:text-white font-semibold">commander mieux</span>. Attabl réinvente la gestion de votre table pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir</span>.</>,
       email_placeholder: "Adresse e-mail professionnelle", // More professional
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
@@ -177,12 +177,9 @@ export default function HomePage() {
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [pillIndex, setPillIndex] = useState(0);
 
-  // Marquee Scroll Ref
-  const marqueeRef = useRef<HTMLDivElement>(null);
-
+  // Auto-detect language
   useEffect(() => {
     setMounted(true);
-    // Auto-detect language
     const userLang = navigator.language || navigator.languages[0];
     if (userLang.startsWith('en')) {
       setLang('en');
@@ -220,139 +217,6 @@ export default function HomePage() {
   }
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
-
-  // Updated Marquee Logic: Reverse Logic for Left -> Right Movement
-  useEffect(() => {
-    const el = marqueeRef.current;
-    if (!el) return;
-
-    let animationId: number;
-    let isDragging = false;
-    let startX = 0;
-    let scrollLeftStart = 0;
-
-    // We start at scrollWidth / 2 to allow scrolling "backwards" (Left -> Right appearance)
-    // Actually, to make elements move Left -> Right, we need to scroll towards 0.
-    // So we init near the middle/end and decrease.
-
-    // Initialize scroll position safely
-    if (el.scrollLeft === 0) {
-      el.scrollLeft = el.scrollWidth / 2;
-    }
-
-    let currentPos = el.scrollLeft;
-    const speed = 1;
-
-    const step = () => {
-      if (!el) return;
-
-      if (isDragging) return;
-
-      // Forward Logic: Increase scrollLeft to move viewport Right (Content moves Left)
-      const maxScroll = el.scrollWidth / 2;
-      if (currentPos >= maxScroll) {
-        // Reset to start
-        currentPos = 0;
-        el.scrollLeft = currentPos;
-      } else {
-        currentPos += speed;
-        el.scrollLeft = currentPos;
-      }
-
-      animationId = requestAnimationFrame(step);
-    };
-
-    const start = () => {
-      cancelAnimationFrame(animationId);
-      if (el) currentPos = el.scrollLeft;
-      animationId = requestAnimationFrame(step);
-    };
-
-    const stop = () => cancelAnimationFrame(animationId);
-
-    // EVENTS
-    const onMouseDown = (e: MouseEvent) => {
-      isDragging = true;
-      startX = e.pageX - el.offsetLeft;
-      scrollLeftStart = el.scrollLeft;
-      stop();
-      el.style.cursor = 'grabbing';
-    };
-
-    const onMouseUp = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      el.style.cursor = 'grab';
-      start();
-    };
-
-    const onMouseLeave = () => {
-      if (isDragging) {
-        isDragging = false;
-        el.style.cursor = 'grab';
-      }
-      start();
-    };
-
-    const onMouseEnter = () => {
-      // Don't stop on hover - keep animating
-    };
-
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const x = e.pageX - el.offsetLeft;
-      const walk = (x - startX) * 2;
-      el.scrollLeft = scrollLeftStart - walk;
-      currentPos = el.scrollLeft;
-    };
-
-    // TOUCH
-    const onTouchStart = (e: TouchEvent) => {
-      isDragging = true;
-      startX = e.touches[0].pageX - el.offsetLeft;
-      scrollLeftStart = el.scrollLeft;
-      stop();
-    };
-
-    const onTouchEnd = () => {
-      if (!isDragging) return;
-      isDragging = false;
-      start();
-    };
-
-    const onTouchMove = (e: TouchEvent) => {
-      if (!isDragging) return;
-      const x = e.touches[0].pageX - el.offsetLeft;
-      const walk = (x - startX) * 2;
-      el.scrollLeft = scrollLeftStart - walk;
-      currentPos = el.scrollLeft;
-    };
-
-    // Attach
-    el.addEventListener('mousedown', onMouseDown);
-    el.addEventListener('mouseup', onMouseUp);
-    el.addEventListener('mouseleave', onMouseLeave);
-    el.addEventListener('mouseenter', onMouseEnter);
-    el.addEventListener('mousemove', onMouseMove);
-    el.addEventListener('touchstart', onTouchStart);
-    el.addEventListener('touchend', onTouchEnd);
-    el.addEventListener('touchmove', onTouchMove);
-
-    start();
-
-    return () => {
-      stop();
-      el.removeEventListener('mousedown', onMouseDown);
-      el.removeEventListener('mouseup', onMouseUp);
-      el.removeEventListener('mouseleave', onMouseLeave);
-      el.removeEventListener('mouseenter', onMouseEnter);
-      el.removeEventListener('mousemove', onMouseMove);
-      el.removeEventListener('touchstart', onTouchStart);
-      el.removeEventListener('touchend', onTouchEnd);
-      el.removeEventListener('touchmove', onTouchMove);
-    };
-  }, []);
 
   if (!mounted) return null;
 
@@ -583,29 +447,17 @@ export default function HomePage() {
 
       {/* MARQUEE */}
       <section className="py-8 bg-transparent overflow-hidden border-b border-gray-100 dark:border-white/5">
-        <style jsx>{`
-            .no-scrollbar::-webkit-scrollbar {
-                display: none;
-            }
-            .no-scrollbar {
-                -ms-overflow-style: none; /* IE and Edge */
-                scrollbar-width: none; /* Firefox */
-            }
-          `}</style>
-        <div
-          ref={marqueeRef}
-          className="flex w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing"
-          style={{
-            scrollBehavior: 'auto',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <div className="flex gap-16 px-6 min-w-max">
-            {/* REPEAT LOGOS to ensure infinite scroll illusion logic works */}
-            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
-              <div key={i} className="flex items-center gap-2 opacity-30 hover:opacity-100 hover:scale-110 transition-all duration-300 transform">
-                <logo.icon className="h-5 w-5 md:h-6 w-6" />
-                <span className="text-sm md:text-base font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
+        <div className="relative w-full overflow-hidden">
+          {/* Gradient Masks for fading effect */}
+          <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-white dark:from-black to-transparent z-10 pointer-events-none"></div>
+          <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white dark:from-black to-transparent z-10 pointer-events-none"></div>
+
+          <div className="flex gap-16 min-w-max animate-scroll">
+            {/* REPEAT LOGOS 4 TIMES for smooth infinite loop */}
+            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
+              <div key={i} className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300">
+                <logo.icon className="h-6 w-6" />
+                <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
               </div>
             ))}
           </div>
