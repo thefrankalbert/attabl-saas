@@ -21,11 +21,19 @@ export async function GET(request: Request) {
             // Check if user already has a tenant (existing user login)
             const { data: existingAdmin } = await supabase
                 .from('admin_users')
-                .select('tenant_id, tenants(slug, onboarding_completed)')
+                .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
                 .eq('user_id', session.user.id)
                 .single();
 
             if (existingAdmin) {
+                // Check if user is Super Admin
+                const isSuperAdmin = existingAdmin.is_super_admin === true || existingAdmin.role === 'super_admin';
+
+                // Super Admin: redirect to tenant selector
+                if (isSuperAdmin) {
+                    return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
+                }
+
                 const tenantsData = existingAdmin.tenants as unknown as { slug: string; onboarding_completed: boolean } | null;
 
                 if (tenantsData?.slug) {
