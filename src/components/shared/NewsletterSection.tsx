@@ -106,7 +106,7 @@ export default function NewsletterSection({
                     </div>
 
                     {/* Arrow (Desktop only) */}
-                    <div className="hidden lg:block absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 xl:w-64 h-12 pointer-events-none z-0">
+                    <div className="hidden lg:block absolute left-[42%] top-1/2 -translate-x-1/2 -translate-y-1/2 w-48 xl:w-64 h-12 pointer-events-none z-0">
                         <svg width="100%" height="100%" viewBox="0 0 200 40" preserveAspectRatio="none" className="overflow-visible">
                             <defs>
                                 <linearGradient id="arrow-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
