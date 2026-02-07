@@ -40,6 +40,12 @@ export default async function AdminLayout({
     .eq('slug', tenantSlug)
     .single();
 
+  // ⚡ Vérifier si onboarding est terminé
+  // Si non, rediriger vers le wizard d'onboarding
+  if (tenant && tenant.onboarding_completed === false) {
+    redirect('/onboarding');
+  }
+
   // Vérifier l'authentification
   const { data: { user }, error: authError } = await supabase.auth.getUser();
 

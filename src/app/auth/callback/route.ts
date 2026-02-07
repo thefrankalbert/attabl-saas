@@ -21,27 +21,25 @@ export async function GET(request: Request) {
             // Check if user already has a tenant (existing user login)
             const { data: existingAdmin } = await supabase
                 .from('admin_users')
-                .select('tenant_id, tenants(slug)')
+                .select('tenant_id, tenants(slug, onboarding_completed)')
                 .eq('user_id', session.user.id)
                 .single();
 
             if (existingAdmin) {
-                // Existing user - redirect to their dashboard
-                const tenantsData = existingAdmin.tenants as unknown;
-                let tenantSlug: string | undefined;
+                const tenantsData = existingAdmin.tenants as unknown as { slug: string; onboarding_completed: boolean } | null;
 
-                if (Array.isArray(tenantsData) && tenantsData.length > 0) {
-                    tenantSlug = (tenantsData[0] as { slug: string }).slug;
-                } else if (tenantsData && typeof tenantsData === 'object') {
-                    tenantSlug = (tenantsData as { slug: string }).slug;
-                }
+                if (tenantsData?.slug) {
+                    // Check if onboarding is completed
+                    if (tenantsData.onboarding_completed === false) {
+                        return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+                    }
 
-                if (tenantSlug) {
+                    // Existing user with completed onboarding - redirect to dashboard
                     const isDev = requestUrl.hostname === 'localhost';
                     if (isDev) {
-                        return NextResponse.redirect(`http://${tenantSlug}.localhost:3000/admin`);
+                        return NextResponse.redirect(`http://${tenantsData.slug}.localhost:3000/admin`);
                     } else {
-                        return NextResponse.redirect(`https://${tenantSlug}.attabl.com/admin`);
+                        return NextResponse.redirect(`https://${tenantsData.slug}.attabl.com/admin`);
                     }
                 }
             }
@@ -63,12 +61,8 @@ export async function GET(request: Request) {
                 const signupData = await signupResponse.json();
 
                 if (signupResponse.ok && signupData.slug) {
-                    const isDev = requestUrl.hostname === 'localhost';
-                    if (isDev) {
-                        return NextResponse.redirect(`http://${signupData.slug}.localhost:3000/admin`);
-                    } else {
-                        return NextResponse.redirect(`https://${signupData.slug}.attabl.com/admin`);
-                    }
+                    // New signup via OAuth - redirect to onboarding wizard
+                    return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
                 }
             }
 
