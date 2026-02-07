@@ -56,11 +56,22 @@ const translations = {
       cta_primary: "Essai gratuit",
       cta_desc: "Aucune carte requise",
       users_active: "hôtels de luxe",
-      partners_line1: "d'expertise",
-      partners_line2: "au service des clients"
+      stats_line1: "15+ années",
+      stats_line2: "d'expériences",
+      stats_line3: "clients"
     },
     features: {
-      security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." }, // Accent fixed, better wording
+      sectionTitle: "Fonctionnalités",
+      sectionSubtitle: "Tout ce dont vous avez besoin pour transformer l'expérience client.",
+      items: [
+        { title: "Menu Digital Interactif", desc: "Photos haute définition, gestion multilingue automatique et mise à jour des prix en un clic." },
+        { title: "Room Service 2.0", desc: "Permettez à vos clients de commander depuis leur chambre avec une interface dédiée aux services hôteliers." },
+        { title: "Prise de commande instantanée", desc: "QR Codes uniques par table pour une commande sans attente et sans erreur." },
+        { title: "Tableau de Bord Temps Réel", desc: "Visualisez vos commandes, vos revenus et vos performances en direct depuis n'importe quel appareil." },
+        { title: "Personnalisation Marque Blanche", desc: "Intégrez vos couleurs, votre logo et votre typographie pour une expérience 100% fidèle à votre image." },
+        { title: "Paiement Fluide", desc: "Intégration des solutions de paiement sécurisées pour clôturer les tables plus rapidement." }
+      ],
+      security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." },
       allinone: { title: "Tout-en-un", desc: "Menu, commande, paiement, KDS. Une seule application pour tout piloter." },
       privacy: { title: "Confidentialité", desc: "Nous ne commercialisons pas les données de vos clients. Vos informations vous appartiennent." }
     },
@@ -114,10 +125,21 @@ const translations = {
       cta_primary: "Free Trial",
       cta_desc: "No credit card required",
       users_active: "luxury hotels",
-      partners_line1: "of expertise",
-      partners_line2: "serving clients"
+      stats_line1: "15+ years",
+      stats_line2: "of experience",
+      stats_line3: "serving clients"
     },
     features: {
+      sectionTitle: "Features",
+      sectionSubtitle: "Everything you need to transform the guest experience.",
+      items: [
+        { title: "Interactive Digital Menu", desc: "High-definition photos, automatic multilingual management, and one-click price updates." },
+        { title: "Room Service 2.0", desc: "Let your guests order from their room with a dedicated hotel services interface." },
+        { title: "Instant Ordering", desc: "Unique QR codes per table for seamless, error-free ordering." },
+        { title: "Real-Time Dashboard", desc: "View your orders, revenue, and performance live from any device." },
+        { title: "White Label Customization", desc: "Integrate your colors, logo, and typography for a 100% on-brand experience." },
+        { title: "Seamless Payments", desc: "Secure payment integration to close tables faster." }
+      ],
       security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
       allinone: { title: "All-in-One", desc: "Menu, ordering, payment, KDS. One app to manage everything." },
       privacy: { title: "Privacy First", desc: "We don't sell your customer data. Your info stays yours." }
@@ -447,8 +469,9 @@ export default function HomePage() {
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
-                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-1">15+ {t.hero.partners_line1}</p>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none">{t.hero.partners_line2}</p>
+                <p className="text-lg font-bold text-gray-900 dark:text-white leading-none mb-0.5">{t.hero.stats_line1}</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 leading-none mb-0.5">{t.hero.stats_line2}</p>
+                <p className="text-xs text-gray-500 font-bold uppercase tracking-wider leading-none">{t.hero.stats_line3}</p>
               </div>
             </motion.div>
           </motion.div>
@@ -514,49 +537,43 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FEATURES */}
-      <section id="features" className="py-20 border-t border-gray-100 dark:border-white/5 bg-gray-50 dark:bg-zinc-950">
-        <div className="container mx-auto px-6">
+      {/* DETAILED FEATURES GRID */}
+      <section id="features" className="py-20 md:py-28 border-t border-gray-100 dark:border-white/5 bg-transparent">
+        <div className="container mx-auto px-6 max-w-7xl">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4">{t.features.sectionTitle}</h2>
+            <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">{t.features.sectionSubtitle}</p>
+          </motion.div>
+
           <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-            className="grid md:grid-cols-3 gap-12"
+            viewport={{ once: true, amount: 0.1 }}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
           >
-            {[
-              {
-                title: t.features.security.title,
-                desc: t.features.security.desc,
-                icon: ShieldCheck
-              },
-              {
-                title: t.features.allinone.title,
-                desc: t.features.allinone.desc,
-                icon: Smartphone
-              },
-              {
-                title: t.features.privacy.title,
-                desc: t.features.privacy.desc,
-                icon: Users
-              }
-            ].map((item, i) => (
-              <motion.div
-                variants={itemVariants}
-                key={i}
-                className="flex gap-6 items-start group active:scale-[0.98] transition-all p-4 rounded-2xl border border-transparent hover:border-gray-200/60 dark:hover:border-white/5 hover:bg-white dark:hover:bg-white/5 duration-300 shadow-none"
-              >
-                <div className="h-12 w-12 rounded-full bg-white dark:bg-[#1a1a1a] border border-[#CCFF00] flex items-center justify-center shrink-0 group-hover:bg-[#CCFF00] transition-colors duration-500 shadow-none">
-                  <div className="text-[#CCFF00] group-hover:text-black transition-colors duration-500">
-                    <item.icon className="h-6 w-6 fill-current" />
+            {t.features.items.map((item, i) => {
+              const icons = [Layout, Users, CreditCard, Smartphone, Hexagon, ShieldCheck];
+              const Icon = icons[i % icons.length];
+              return (
+                <motion.div
+                  variants={itemVariants}
+                  key={i}
+                  className="group p-6 rounded-2xl border border-gray-200/60 dark:border-white/10 bg-white dark:bg-[#0A0A0A] hover:border-[#CCFF00]/50 transition-all duration-300 shadow-none"
+                >
+                  <div className="h-12 w-12 rounded-xl border border-[#CCFF00] bg-transparent flex items-center justify-center mb-5 group-hover:bg-[#CCFF00] transition-colors duration-300 shadow-none">
+                    <Icon className="h-6 w-6 text-[#CCFF00] group-hover:text-black transition-colors duration-300" />
                   </div>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#CCFF00] transition-colors">{item.title}</h3>
-                  <p className="text-gray-500 text-sm leading-relaxed">{item.desc}</p>
-                </div>
-              </motion.div>
-            ))}
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-[#CCFF00] transition-colors">{item.title}</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                </motion.div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
