@@ -32,7 +32,7 @@ import {
 import { useState, useEffect, useRef } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import { useRouter } from 'next/navigation';
-import { motion, useScroll, useTransform, AnimatePresence, useMotionValue, Variants, Easing } from 'framer-motion';
+import { motion, useTransform, AnimatePresence, useMotionValue, Variants, Easing } from 'framer-motion';
 import { useTheme } from "next-themes";
 
 // Translations
@@ -173,7 +173,6 @@ export default function HomePage() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const { scrollY } = useScroll();
   const [lang, setLang] = useState<'fr' | 'en'>('fr');
   const [pillIndex, setPillIndex] = useState(0);
   const [heroEmail, setHeroEmail] = useState('');
@@ -244,7 +243,7 @@ export default function HomePage() {
   if (!mounted) return null;
 
   return (
-    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-black text-gray-900 dark:text-white font-sans selection:bg-[#CCFF00] selection:text-black overflow-x-hidden">
 
       {/* MOBILE MENU */}
       <AnimatePresence>
@@ -504,8 +503,8 @@ export default function HomePage() {
           <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-white dark:from-black to-transparent z-10 pointer-events-none"></div>
 
           <div className="flex gap-16 min-w-max animate-scroll">
-            {/* REPEAT LOGOS 4 TIMES for smooth infinite loop */}
-            {[...LOGOS, ...LOGOS, ...LOGOS, ...LOGOS].map((logo, i) => (
+            {/* REPEAT LOGOS 2 TIMES for smooth infinite loop (enough for width) */}
+            {[...LOGOS, ...LOGOS].map((logo, i) => (
               <div key={i} className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 active:scale-110">
                 <logo.icon className="h-6 w-6" />
                 <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
