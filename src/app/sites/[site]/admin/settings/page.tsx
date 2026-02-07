@@ -1,34 +1,49 @@
+import { createClient } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
+import { SettingsForm } from '@/components/admin/settings/SettingsForm';
+import { notFound } from 'next/navigation';
+
 interface SettingsPageProps {
   params: Promise<{ site: string }>
 }
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
-  const { site } = await params
+  const { site } = await params;
+  const headersList = await headers();
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
+
+  const supabase = await createClient();
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('slug', tenantSlug)
+    .single();
+
+  if (!tenant) notFound();
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Paramètres</h1>
-      <p className="mt-2 text-gray-600">
-        Configuration du restaurant {site}
-      </p>
-
-      {/* Settings form placeholder */}
-      <div className="mt-8 rounded-lg bg-white p-6 shadow">
-        <h2 className="text-lg font-medium">Informations générales</h2>
-        <div className="mt-4 space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">
-              Nom du restaurant
-            </label>
-            <input
-              type="text"
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder={site}
-              disabled
-            />
-          </div>
-        </div>
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
+        <p className="text-gray-500">
+          Gérez les informations et le branding de votre établissement.
+        </p>
       </div>
+
+      <SettingsForm
+        tenant={{
+          id: tenant.id,
+          slug: tenant.slug,
+          name: tenant.name,
+          description: tenant.description,
+          logo_url: tenant.logo_url,
+          primary_color: tenant.primary_color,
+          secondary_color: tenant.secondary_color,
+          address: tenant.address,
+          phone: tenant.phone,
+        }}
+      />
     </div>
   )
 }

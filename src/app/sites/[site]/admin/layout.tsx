@@ -1,17 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import {
-  LayoutDashboard,
-  ShoppingBag,
-  UtensilsCrossed,
-  Settings,
-  CreditCard,
-  LogOut,
-  ChevronRight,
-  QrCode,
-} from 'lucide-react';
-import Link from 'next/link';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
 
 interface AdminUser {
   id: string;
@@ -91,14 +81,7 @@ export default async function AdminLayout({
     };
   }
 
-  const navigation = [
-    { name: 'Dashboard', href: `/admin`, icon: LayoutDashboard },
-    { name: 'Commandes', href: `/admin/orders`, icon: ShoppingBag },
-    { name: 'Menus', href: `/admin/menus`, icon: UtensilsCrossed },
-    { name: 'QR Codes', href: `/admin/qr-codes`, icon: QrCode },
-    { name: 'Abonnement', href: `/admin/subscription`, icon: CreditCard },
-    { name: 'Paramètres', href: `/admin/settings`, icon: Settings },
-  ];
+
 
   const roleLabels: Record<string, string> = {
     owner: 'Propriétaire',
@@ -117,81 +100,19 @@ export default async function AdminLayout({
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 w-64 bg-white shadow-lg z-40 ${isDevMode ? 'pt-6' : ''}`}>
-        {/* Header */}
-        <div className="p-6 border-b">
-          <div className="flex items-center gap-3">
-            {tenant?.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={tenant.logo_url}
-                alt={tenant?.name || tenantSlug}
-                className="w-10 h-10 rounded-lg object-contain"
-              />
-            ) : (
-              <div
-                className="w-10 h-10 rounded-lg flex items-center justify-center text-white font-bold"
-                style={{ backgroundColor: tenant?.primary_color || '#374151' }}
-              >
-                {(tenant?.name || tenantSlug).charAt(0).toUpperCase()}
-              </div>
-            )}
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-bold text-gray-900 truncate">
-                {tenant?.name || tenantSlug}
-              </h2>
-              <p className="text-xs text-gray-500">
-                {adminUser ? roleLabels[adminUser.role] || adminUser.role : 'Admin'}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Navigation */}
-        <nav className="p-4 space-y-1">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition-colors group"
-            >
-              <item.icon className="h-5 w-5 text-gray-400 group-hover:text-gray-600" />
-              <span className="font-medium">{item.name}</span>
-              <ChevronRight className="h-4 w-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" />
-            </Link>
-          ))}
-        </nav>
-
-        {/* Footer */}
-        <div className="absolute bottom-0 w-full p-4 border-t bg-white">
-          {/* User Info */}
-          {adminUser && (
-            <div className="flex items-center gap-3 px-4 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-600">
-                  {(adminUser.name || 'A').charAt(0).toUpperCase()}
-                </span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {adminUser.name || 'Admin'}
-                </p>
-              </div>
-            </div>
-          )}
-
-          {/* Logout */}
-          <form action="/api/auth/signout" method="post">
-            <button
-              type="submit"
-              className="flex items-center gap-3 px-4 py-3 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-            >
-              <LogOut className="h-5 w-5" />
-              <span className="font-medium">Déconnexion</span>
-            </button>
-          </form>
-        </div>
-      </aside>
+      <AdminSidebar
+        tenant={tenant ? {
+          name: tenant.name,
+          slug: tenant.slug,
+          logo_url: tenant.logo_url,
+          primary_color: tenant.primary_color,
+        } : { name: tenantSlug, slug: tenantSlug }}
+        adminUser={adminUser ? {
+          name: adminUser.name,
+          role: adminUser.role,
+        } : undefined}
+        className={isDevMode ? 'pt-6' : ''}
+      />
 
       {/* Main Content */}
       <main className={`ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
