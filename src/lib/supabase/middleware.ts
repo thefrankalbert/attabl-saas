@@ -24,6 +24,10 @@ export async function createMiddlewareClient(request: NextRequest): Promise<Midd
           return request.cookies.get(name)?.value;
         },
         set(name: string, value: string, options: CookieOptions) {
+          if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
+            options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
+            options.sameSite = 'lax';
+          }
           request.cookies.set({
             name,
             value,
