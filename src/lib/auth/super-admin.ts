@@ -24,7 +24,8 @@ export async function getSuperAdminInfo(userId: string) {
 
   const { data } = await supabase
     .from('admin_users')
-    .select(`
+    .select(
+      `
       id,
       email,
       full_name,
@@ -36,7 +37,8 @@ export async function getSuperAdminInfo(userId: string) {
         slug,
         name
       )
-    `)
+    `,
+    )
     .eq('user_id', userId)
     .single();
 
@@ -63,7 +65,7 @@ export async function getAllTenants() {
  */
 export async function getSuperAdminAccessibleTenant(
   userId: string,
-  requestedSlug?: string
+  requestedSlug?: string,
 ): Promise<string | null> {
   const isAdmin = await isSuperAdmin(userId);
 

@@ -27,7 +27,9 @@ export default function SuperAdminTenantsPage() {
   useEffect(() => {
     async function checkAccessAndLoadTenants() {
       // Vérifier l'utilisateur
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         router.push('/login');
@@ -65,9 +67,9 @@ export default function SuperAdminTenantsPage() {
   const handleSelectTenant = (slug: string) => {
     const isDev = window.location.hostname === 'localhost';
     if (isDev) {
-      window.location.href = `http://${slug}.localhost:3000/admin`;
+      window.location.assign(`http://${slug}.localhost:3000/admin`);
     } else {
-      window.location.href = `https://${slug}.attabl.com/admin`;
+      window.location.assign(`https://${slug}.attabl.com/admin`);
     }
   };
 
@@ -111,11 +113,7 @@ export default function SuperAdminTenantsPage() {
               <p className="text-gray-500">Accès universel à tous les établissements</p>
             </div>
           </div>
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            className="gap-2"
-          >
+          <Button variant="outline" onClick={handleLogout} className="gap-2">
             <LogOut className="h-4 w-4" />
             Déconnexion
           </Button>
@@ -162,8 +160,8 @@ export default function SuperAdminTenantsPage() {
                       tenant.subscription_status === 'active'
                         ? 'border-green-500 text-green-700'
                         : tenant.subscription_status === 'trial'
-                        ? 'border-blue-500 text-blue-700'
-                        : 'border-gray-500'
+                          ? 'border-blue-500 text-blue-700'
+                          : 'border-gray-500'
                     }`}
                   >
                     {tenant.subscription_status}

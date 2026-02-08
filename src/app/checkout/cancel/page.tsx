@@ -17,14 +17,10 @@ export default function CheckoutCancelPage() {
           </p>
           <div className="space-y-3">
             <Button asChild size="lg" className="w-full">
-              <Link href="/signup">
-                Réessayer
-              </Link>
+              <Link href="/signup">Réessayer</Link>
             </Button>
             <Button asChild variant="outline" className="w-full">
-              <Link href="/">
-                Retour à l&apos;accueil
-              </Link>
+              <Link href="/">Retour à l&apos;accueil</Link>
             </Button>
           </div>
         </CardContent>

@@ -64,27 +64,20 @@ function CheckoutSuccessContent() {
           </div>
           <h2 className="text-2xl font-bold mb-2">Paiement réussi !</h2>
           <p className="text-gray-600 mb-6">
-            Votre abonnement est maintenant actif.
-            Vous bénéficiez de 14 jours d&apos;essai gratuit.
+            Votre abonnement est maintenant actif. Vous bénéficiez de 14 jours d&apos;essai gratuit.
           </p>
           <div className="space-y-3">
             {tenantSlug ? (
               <Button asChild size="lg" className="w-full">
-                <Link href={getDashboardUrl(tenantSlug)}>
-                  Accéder à mon dashboard
-                </Link>
+                <Link href={getDashboardUrl(tenantSlug)}>Accéder à mon dashboard</Link>
               </Button>
             ) : (
               <Button asChild size="lg" className="w-full">
-                <Link href="/login">
-                  Se connecter
-                </Link>
+                <Link href="/login">Se connecter</Link>
               </Button>
             )}
             <Button asChild variant="outline" className="w-full">
-              <Link href="/">
-                Retour à l&apos;accueil
-              </Link>
+              <Link href="/">Retour à l&apos;accueil</Link>
             </Button>
           </div>
         </CardContent>

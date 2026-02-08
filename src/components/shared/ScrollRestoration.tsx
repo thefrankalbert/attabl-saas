@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useScrollRestoration } from "@/hooks/useScrollRestoration";
+import { useScrollRestoration } from '@/hooks/useScrollRestoration';
 
 export default function ScrollRestoration() {
-    useScrollRestoration();
-    return null;
+  useScrollRestoration();
+  return null;
 }

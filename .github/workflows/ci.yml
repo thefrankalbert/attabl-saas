@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Cache pnpm modules
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Gate 1: TypeScript type checking
+      - name: Typecheck
+        run: pnpm typecheck
+
+      # Gate 2: ESLint
+      - name: Lint
+        run: pnpm lint
+
+      # Gate 3: Prettier formatting
+      - name: Format check
+        run: pnpm format:check
+
+      # Gate 4: Tests (placeholder for Phase 6)
+      - name: Test
+        run: pnpm test
+
+      # Gate 5: Next.js build
+      - name: Build
+        run: pnpm build
+        env:
+          # Supabase
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          # Stripe
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY }}
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          NEXT_PUBLIC_STRIPE_PRICE_ESSENTIEL: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIEL }}
+          NEXT_PUBLIC_STRIPE_PRICE_ESSENTIEL_YEARLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_ESSENTIEL_YEARLY }}
+          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM }}
+          NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_YEARLY: ${{ secrets.NEXT_PUBLIC_STRIPE_PRICE_PREMIUM_YEARLY }}
+          # App
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}

@@ -36,11 +36,7 @@ interface Venue {
   is_active: boolean;
 }
 
-export default async function MenuPage({
-  params,
-}: {
-  params: Promise<{ site: string }>;
-}) {
+export default async function MenuPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   // Use header if available (from middleware), otherwise use route params
@@ -66,16 +62,12 @@ export default async function MenuPage({
       <div className="min-h-screen bg-gray-50">
         <header className="bg-white shadow-sm sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold text-gray-900 capitalize">
-              {tenantSlug}
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 capitalize">{tenantSlug}</h1>
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">
-              Restaurant non configuré
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-700 mb-2">Restaurant non configuré</h2>
             <p className="text-gray-500">
               Le tenant &quot;{tenantSlug}&quot; n&apos;existe pas encore dans la base de données.
             </p>
@@ -109,10 +101,12 @@ export default async function MenuPage({
     // Menu items avec catégorie
     supabase
       .from('menu_items')
-      .select(`
+      .select(
+        `
         *,
         category:categories(id, name, name_en)
-      `)
+      `,
+      )
       .eq('tenant_id', tenant.id)
       .eq('is_available', true)
       .order('display_order', { ascending: true }),
@@ -125,7 +119,7 @@ export default async function MenuPage({
   // Grouper les items par catégorie
   const itemsByCategory = (categories || []).map((category: Category) => ({
     ...category,
-    items: (menuItems || []).filter((item: MenuItem) => item.category_id === category.id)
+    items: (menuItems || []).filter((item: MenuItem) => item.category_id === category.id),
   }));
 
   return (
@@ -143,10 +137,7 @@ export default async function MenuPage({
               priority
             />
           ) : (
-            <h1
-              className="text-2xl font-bold"
-              style={{ color: 'var(--tenant-primary)' }}
-            >
+            <h1 className="text-2xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
               {tenant.name}
             </h1>
           )}
@@ -154,9 +145,7 @@ export default async function MenuPage({
       </header>
 
       {/* Category Navigation */}
-      {categories && categories.length > 0 && (
-        <CategoryNav categories={categories} />
-      )}
+      {categories && categories.length > 0 && <CategoryNav categories={categories} />}
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 pb-32">
@@ -180,26 +169,29 @@ export default async function MenuPage({
         {/* Menu Items par catégorie */}
         {itemsByCategory.length > 0 ? (
           <div className="space-y-8">
-            {itemsByCategory.map((category) => (
-              category.items.length > 0 && (
-                <section key={category.id} id={`cat-${category.id}`}>
-                  <h2 className="text-xl font-bold text-gray-900 mb-4 px-2">
-                    {category.name}
-                  </h2>
-                  <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
-                    {category.items.map((item: MenuItem) => (
-                      <MenuItemCard
-                        key={item.id}
-                        item={item}
-                        restaurantId={tenant.id}
-                        category={category.name}
-                        accentColor={tenant.primary_color ? `text-[${tenant.primary_color}]` : 'text-amber-600'}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )
-            ))}
+            {itemsByCategory.map(
+              (category) =>
+                category.items.length > 0 && (
+                  <section key={category.id} id={`cat-${category.id}`}>
+                    <h2 className="text-xl font-bold text-gray-900 mb-4 px-2">{category.name}</h2>
+                    <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
+                      {category.items.map((item: MenuItem) => (
+                        <MenuItemCard
+                          key={item.id}
+                          item={item}
+                          restaurantId={tenant.id}
+                          category={category.name}
+                          accentColor={
+                            tenant.primary_color
+                              ? `text-[${tenant.primary_color}]`
+                              : 'text-amber-600'
+                          }
+                        />
+                      ))}
+                    </div>
+                  </section>
+                ),
+            )}
           </div>
         ) : (
           <div className="text-center py-12 bg-white rounded-lg shadow-sm">

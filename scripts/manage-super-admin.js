@@ -25,7 +25,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DATABASE_URL = process.env.DATABASE_URL;
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !DATABASE_URL) {
-  console.error('❌ Variables d\'environnement manquantes.');
+  console.error("❌ Variables d'environnement manquantes.");
   console.error('Exécutez: source .env.local && node scripts/manage-super-admin.js [action]');
   process.exit(1);
 }
@@ -35,13 +35,13 @@ const SUPER_ADMIN_EMAIL = 'superadmin@attabl.com';
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 const pgClient = new Client({
   connectionString: DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+  ssl: { rejectUnauthorized: false },
 });
 
 async function prompt(question) {
   const rl = readline.createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
   return new Promise((resolve) => {
     rl.question(question, (answer) => {
@@ -54,7 +54,8 @@ async function prompt(question) {
 async function getStatus() {
   await pgClient.connect();
 
-  const result = await pgClient.query(`
+  const result = await pgClient.query(
+    `
     SELECT
       au.email,
       au.role,
@@ -64,7 +65,9 @@ async function getStatus() {
     FROM admin_users au
     LEFT JOIN tenants t ON au.tenant_id = t.id
     WHERE au.email = $1
-  `, [SUPER_ADMIN_EMAIL]);
+  `,
+    [SUPER_ADMIN_EMAIL],
+  );
 
   await pgClient.end();
 
@@ -87,11 +90,14 @@ async function getStatus() {
 async function disableSuperAdmin() {
   await pgClient.connect();
 
-  await pgClient.query(`
+  await pgClient.query(
+    `
     UPDATE admin_users
     SET is_super_admin = false, role = 'admin'
     WHERE email = $1
-  `, [SUPER_ADMIN_EMAIL]);
+  `,
+    [SUPER_ADMIN_EMAIL],
+  );
 
   await pgClient.end();
 
@@ -102,11 +108,14 @@ async function disableSuperAdmin() {
 async function enableSuperAdmin() {
   await pgClient.connect();
 
-  await pgClient.query(`
+  await pgClient.query(
+    `
     UPDATE admin_users
     SET is_super_admin = true, role = 'super_admin'
     WHERE email = $1
-  `, [SUPER_ADMIN_EMAIL]);
+  `,
+    [SUPER_ADMIN_EMAIL],
+  );
 
   await pgClient.end();
 
@@ -121,8 +130,10 @@ async function changePassword() {
     return;
   }
 
-  const { data: { users } } = await supabase.auth.admin.listUsers();
-  const user = users?.find(u => u.email === SUPER_ADMIN_EMAIL);
+  const {
+    data: { users },
+  } = await supabase.auth.admin.listUsers();
+  const user = users?.find((u) => u.email === SUPER_ADMIN_EMAIL);
 
   if (!user) {
     console.log('❌ Utilisateur non trouvé dans Supabase Auth');
@@ -130,7 +141,7 @@ async function changePassword() {
   }
 
   const { error } = await supabase.auth.admin.updateUserById(user.id, {
-    password: newPassword
+    password: newPassword,
   });
 
   if (error) {
@@ -142,7 +153,9 @@ async function changePassword() {
 }
 
 async function deleteSuperAdmin() {
-  const confirm = await prompt('⚠️ ATTENTION: Cette action est irréversible. Tapez "SUPPRIMER" pour confirmer: ');
+  const confirm = await prompt(
+    '⚠️ ATTENTION: Cette action est irréversible. Tapez "SUPPRIMER" pour confirmer: ',
+  );
 
   if (confirm !== 'SUPPRIMER') {
     console.log('❌ Opération annulée');
@@ -155,8 +168,10 @@ async function deleteSuperAdmin() {
   await pgClient.end();
 
   // Supprimer de auth.users
-  const { data: { users } } = await supabase.auth.admin.listUsers();
-  const user = users?.find(u => u.email === SUPER_ADMIN_EMAIL);
+  const {
+    data: { users },
+  } = await supabase.auth.admin.listUsers();
+  const user = users?.find((u) => u.email === SUPER_ADMIN_EMAIL);
 
   if (user) {
     await supabase.auth.admin.deleteUser(user.id);

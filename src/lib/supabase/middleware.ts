@@ -8,7 +8,9 @@ interface MiddlewareClientResult {
   supabase: SupabaseClient;
 }
 
-export async function createMiddlewareClient(request: NextRequest): Promise<MiddlewareClientResult> {
+export async function createMiddlewareClient(
+  request: NextRequest,
+): Promise<MiddlewareClientResult> {
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -62,7 +64,7 @@ export async function createMiddlewareClient(request: NextRequest): Promise<Midd
           });
         },
       },
-    }
+    },
   );
 
   // Rafraîchir la session
@@ -76,4 +78,3 @@ export async function updateSession(request: NextRequest) {
   const { response } = await createMiddlewareClient(request);
   return response;
 }
-

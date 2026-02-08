@@ -15,10 +15,12 @@ export async function middleware(request: NextRequest) {
 
   // 3. Vérifier l'authentification pour les routes protégées
   const pathname = request.nextUrl.pathname;
-  const isProtectedPath = PROTECTED_PATHS.some(path => pathname.startsWith(path));
+  const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 
   if (isProtectedPath) {
-    const { data: { user } } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
     if (!user) {
       // Rediriger vers login avec URL de retour
