@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import Image from 'next/image';
@@ -16,174 +16,277 @@ import {
   Moon,
   Sun,
   Quote,
-  Globe,
   Hexagon,
   Triangle,
   Circle,
   Square,
-  Award
+  Award,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import NewsletterSection from '@/components/shared/NewsletterSection';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence, Variants, Easing } from 'framer-motion';
-import { useTheme } from "next-themes";
-import AttablHubIntegration from "@/components/shared/AttablHubIntegration";
+import { useTheme } from 'next-themes';
+import AttablHubIntegration from '@/components/shared/AttablHubIntegration';
 
 // Translations
 const translations = {
   fr: {
     nav: {
-      features: "Fonctionnalités",
-      pricing: "Tarifs",
-      about: "À propos",
-      contact: "Contact",
-      login: "Connexion",
-      signup: "S'inscrire"
+      features: 'Fonctionnalités',
+      pricing: 'Tarifs',
+      about: 'À propos',
+      contact: 'Contact',
+      login: 'Connexion',
+      signup: "S'inscrire",
     },
     hero: {
-      pill_prefix: "Nouveau :",
-      pills: [
-        "Service en Chambre Intuitif",
-        "Paiement QR Code Instantané",
-        "Gestion de Stock IA"
-      ],
-      title_line1: "ATTABL",
-      title_line2: "Commander",
-      title_highlight: "Mieux",
-      subtitle: <>Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos points de vente pour que vous puissiez vous concentrer sur l'essentiel : <span className="text-[#CCFF00] font-bold">l'art de recevoir.</span></>,
-      email_placeholder: "Adresse e-mail professionnelle",
-      cta_primary: "Essai gratuit",
-      cta_desc: "Aucune carte requise",
-      users_active: "hôtels de luxe",
-      stats_line1_num: "15+",
-      stats_line1_text: "ans",
+      pill_prefix: 'Nouveau :',
+      pills: ['Service en Chambre Intuitif', 'Paiement QR Code Instantané', 'Gestion de Stock IA'],
+      title_line1: 'ATTABL',
+      title_line2: 'Commander',
+      title_highlight: 'Mieux',
+      subtitle: (
+        <>
+          Offrez à vos clients la liberté de commander mieux. Attabl réinvente la gestion de vos
+          points de vente pour que vous puissiez vous concentrer sur l&apos;essentiel :{' '}
+          <span className="text-[#CCFF00] font-bold">l&apos;art de recevoir.</span>
+        </>
+      ),
+      email_placeholder: 'Adresse e-mail professionnelle',
+      cta_primary: 'Essai gratuit',
+      cta_desc: 'Aucune carte requise',
+      users_active: 'hôtels de luxe',
+      stats_line1_num: '15+',
+      stats_line1_text: 'ans',
       stats_line2: "d'expériences",
-      stats_line3: "clients"
+      stats_line3: 'clients',
     },
     features: {
-      sectionTitle: "Fonctionnalités",
+      sectionTitle: 'Fonctionnalités',
       sectionSubtitle: "Tout ce dont vous avez besoin pour transformer l'expérience client.",
       items: [
-        { title: "Menu Digital Interactif", desc: "Photos haute définition, gestion multilingue automatique et mise à jour des prix en un clic." },
-        { title: "Room Service 2.0", desc: "Permettez à vos clients de commander depuis leur chambre avec une interface dédiée aux services hôteliers." },
-        { title: "Prise de commande instantanée", desc: "QR Codes uniques par table pour une commande sans attente et sans erreur." },
-        { title: "Tableau de Bord Temps Réel", desc: "Visualisez vos commandes, vos revenus et vos performances en direct depuis n'importe quel appareil." },
-        { title: "Personnalisation Marque Blanche", desc: "Intégrez vos couleurs, votre logo et votre typographie pour une expérience 100% fidèle à votre image." },
-        { title: "Paiement Fluide", desc: "Intégration des solutions de paiement sécurisées pour clôturer les tables plus rapidement." }
+        {
+          title: 'Menu Digital Interactif',
+          desc: 'Photos haute définition, gestion multilingue automatique et mise à jour des prix en un clic.',
+        },
+        {
+          title: 'Room Service 2.0',
+          desc: 'Permettez à vos clients de commander depuis leur chambre avec une interface dédiée aux services hôteliers.',
+        },
+        {
+          title: 'Prise de commande instantanée',
+          desc: 'QR Codes uniques par table pour une commande sans attente et sans erreur.',
+        },
+        {
+          title: 'Tableau de Bord Temps Réel',
+          desc: "Visualisez vos commandes, vos revenus et vos performances en direct depuis n'importe quel appareil.",
+        },
+        {
+          title: 'Personnalisation Marque Blanche',
+          desc: 'Intégrez vos couleurs, votre logo et votre typographie pour une expérience 100% fidèle à votre image.',
+        },
+        {
+          title: 'Paiement Fluide',
+          desc: 'Intégration des solutions de paiement sécurisées pour clôturer les tables plus rapidement.',
+        },
       ],
-      security: { title: "Sécurité Garantie", desc: "Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité." },
-      allinone: { title: "Tout-en-un", desc: "Menu, commande, paiement, KDS. Une seule application pour tout piloter." },
-      privacy: { title: "Confidentialité", desc: "Nous ne commercialisons pas les données de vos clients. Vos informations vous appartiennent." }
+      security: {
+        title: 'Sécurité Garantie',
+        desc: 'Paiements chiffrés et données protégées. Vos clients commandent en toute sérénité.',
+      },
+      allinone: {
+        title: 'Tout-en-un',
+        desc: 'Menu, commande, paiement, KDS. Une seule application pour tout piloter.',
+      },
+      privacy: {
+        title: 'Confidentialité',
+        desc: 'Nous ne commercialisons pas les données de vos clients. Vos informations vous appartiennent.',
+      },
     },
     pricing: {
-      title: "Tarification Simple",
-      monthly: "Mensuel",
-      yearly: "Annuel",
+      title: 'Tarification Simple',
+      monthly: 'Mensuel',
+      yearly: 'Annuel',
       cards: {
-        essentiel: { name: "Essentiel", desc: "Pour démarrer", cta: "Commencer gratuitement" },
-        premium: { name: "Prime", desc: "Le plus populaire", cta: "Passer au plan Prime" },
-        enterprise: { name: "Entreprise", desc: "Pour les grands comptes", price: "Sur mesure", cta: "Nous contacter" }
-      }
+        essentiel: { name: 'Essentiel', desc: 'Pour démarrer', cta: 'Commencer gratuitement' },
+        premium: { name: 'Prime', desc: 'Le plus populaire', cta: 'Passer au plan Prime' },
+        enterprise: {
+          name: 'Entreprise',
+          desc: 'Pour les grands comptes',
+          price: 'Sur mesure',
+          cta: 'Nous contacter',
+        },
+      },
     },
     testimonials: {
-      title: "Ce que disent nos partenaires",
-      subtitle: "Découvrez comment ils ont transformé leur gestion quotidienne.",
+      title: 'Ce que disent nos partenaires',
+      subtitle: 'Découvrez comment ils ont transformé leur gestion quotidienne.',
       reviews: [
-        { text: "Je l'utilise au quotidien, c'est le véritable centre de pilotage de mon activité.", author: "Thomas R.", role: "Manager" },
-        { text: "Interface épurée, fonctionnalités puissantes, l'essentiel est là. 10/10.", author: "Sarah L.", role: "Directrice" },
-        { text: "La facturation est devenue un jeu d'enfant...", author: "Marc D.", role: "Freelance" },
-        { text: "J'ai enfin trouvé l'outil parfaitement adapté à mes processus.", author: "Julie M.", role: "Consultante" },
-        { text: "Le suivi client et les relances n'ont jamais été aussi fluides.", author: "Alex B.", role: "Restaurateur" },
-        { text: "J'ai arrêté de jongler avec 4 applications... Tout est centralisé ici.", author: "Sophie K.", role: "Gérante" }
-      ]
+        {
+          text: "Je l'utilise au quotidien, c'est le véritable centre de pilotage de mon activité.",
+          author: 'Thomas R.',
+          role: 'Manager',
+        },
+        {
+          text: "Interface épurée, fonctionnalités puissantes, l'essentiel est là. 10/10.",
+          author: 'Sarah L.',
+          role: 'Directrice',
+        },
+        {
+          text: "La facturation est devenue un jeu d'enfant...",
+          author: 'Marc D.',
+          role: 'Freelance',
+        },
+        {
+          text: "J'ai enfin trouvé l'outil parfaitement adapté à mes processus.",
+          author: 'Julie M.',
+          role: 'Consultante',
+        },
+        {
+          text: "Le suivi client et les relances n'ont jamais été aussi fluides.",
+          author: 'Alex B.',
+          role: 'Restaurateur',
+        },
+        {
+          text: "J'ai arrêté de jongler avec 4 applications... Tout est centralisé ici.",
+          author: 'Sophie K.',
+          role: 'Gérante',
+        },
+      ],
     },
     footer: {
-      rights: "© 2026 Attabl Inc."
-    }
+      rights: '© 2026 Attabl Inc.',
+    },
   },
   en: {
     nav: {
-      features: "Features",
-      pricing: "Pricing",
-      about: "About",
-      contact: "Contact",
-      login: "Login",
-      signup: "Sign Up"
+      features: 'Features',
+      pricing: 'Pricing',
+      about: 'About',
+      contact: 'Contact',
+      login: 'Login',
+      signup: 'Sign Up',
     },
     hero: {
-      pill_prefix: "New:",
-      pills: [
-        "Intuitive Room Service",
-        "Instant QR Code Payment",
-        "AI Inventory Management"
-      ],
-      title_line1: "ATTABL",
-      title_line2: "Order",
-      title_highlight: "Better",
-      subtitle: "Transform the ordering experience within your establishment. From quick menu selection to billing, Attabl provides a turnkey solution.",
-      email_placeholder: "Enter work email",
-      cta_primary: "Free Trial",
-      cta_desc: "No credit card required",
-      users_active: "luxury hotels",
-      stats_line1_num: "15+",
-      stats_line1_text: "years",
-      stats_line2: "of experience",
-      stats_line3: "serving clients"
+      pill_prefix: 'New:',
+      pills: ['Intuitive Room Service', 'Instant QR Code Payment', 'AI Inventory Management'],
+      title_line1: 'ATTABL',
+      title_line2: 'Order',
+      title_highlight: 'Better',
+      subtitle:
+        'Transform the ordering experience within your establishment. From quick menu selection to billing, Attabl provides a turnkey solution.',
+      email_placeholder: 'Enter work email',
+      cta_primary: 'Free Trial',
+      cta_desc: 'No credit card required',
+      users_active: 'luxury hotels',
+      stats_line1_num: '15+',
+      stats_line1_text: 'years',
+      stats_line2: 'of experience',
+      stats_line3: 'serving clients',
     },
     features: {
-      sectionTitle: "Features",
-      sectionSubtitle: "Everything you need to transform the guest experience.",
+      sectionTitle: 'Features',
+      sectionSubtitle: 'Everything you need to transform the guest experience.',
       items: [
-        { title: "Interactive Digital Menu", desc: "High-definition photos, automatic multilingual management, and one-click price updates." },
-        { title: "Room Service 2.0", desc: "Let your guests order from their room with a dedicated hotel services interface." },
-        { title: "Instant Ordering", desc: "Unique QR codes per table for seamless, error-free ordering." },
-        { title: "Real-Time Dashboard", desc: "View your orders, revenue, and performance live from any device." },
-        { title: "White Label Customization", desc: "Integrate your colors, logo, and typography for a 100% on-brand experience." },
-        { title: "Seamless Payments", desc: "Secure payment integration to close tables faster." }
+        {
+          title: 'Interactive Digital Menu',
+          desc: 'High-definition photos, automatic multilingual management, and one-click price updates.',
+        },
+        {
+          title: 'Room Service 2.0',
+          desc: 'Let your guests order from their room with a dedicated hotel services interface.',
+        },
+        {
+          title: 'Instant Ordering',
+          desc: 'Unique QR codes per table for seamless, error-free ordering.',
+        },
+        {
+          title: 'Real-Time Dashboard',
+          desc: 'View your orders, revenue, and performance live from any device.',
+        },
+        {
+          title: 'White Label Customization',
+          desc: 'Integrate your colors, logo, and typography for a 100% on-brand experience.',
+        },
+        { title: 'Seamless Payments', desc: 'Secure payment integration to close tables faster.' },
       ],
-      security: { title: "Guaranteed Security", desc: "Encrypted payments and protected data. Your customers order with confidence." },
-      allinone: { title: "All-in-One", desc: "Menu, ordering, payment, KDS. One app to manage everything." },
-      privacy: { title: "Privacy First", desc: "We don't sell your customer data. Your info stays yours." }
+      security: {
+        title: 'Guaranteed Security',
+        desc: 'Encrypted payments and protected data. Your customers order with confidence.',
+      },
+      allinone: {
+        title: 'All-in-One',
+        desc: 'Menu, ordering, payment, KDS. One app to manage everything.',
+      },
+      privacy: {
+        title: 'Privacy First',
+        desc: "We don't sell your customer data. Your info stays yours.",
+      },
     },
     pricing: {
-      title: "Simple Pricing",
-      monthly: "Monthly",
-      yearly: "Yearly",
+      title: 'Simple Pricing',
+      monthly: 'Monthly',
+      yearly: 'Yearly',
       cards: {
-        essentiel: { name: "Essential", desc: "To get started", cta: "Start for Free" },
-        premium: { name: "Prime", desc: "Most Popular", cta: "Upgrade to Prime" },
-        enterprise: { name: "Enterprise", desc: "For large groups.", price: "Custom", cta: "Contact Us" }
-      }
+        essentiel: { name: 'Essential', desc: 'To get started', cta: 'Start for Free' },
+        premium: { name: 'Prime', desc: 'Most Popular', cta: 'Upgrade to Prime' },
+        enterprise: {
+          name: 'Enterprise',
+          desc: 'For large groups.',
+          price: 'Custom',
+          cta: 'Contact Us',
+        },
+      },
     },
     testimonials: {
-      title: "Trusted by industry leaders",
-      subtitle: "See how others are transforming the way they manage clients.",
+      title: 'Trusted by industry leaders',
+      subtitle: 'See how others are transforming the way they manage clients.',
       reviews: [
-        { text: "I use it every day, it's like my business command center.", author: "Thomas R.", role: "Manager" },
-        { text: "Clean UI, powerful features, and no clutter. 10/10.", author: "Sarah L.", role: "Director" },
-        { text: "Invoices are so easy now...", author: "Marc D.", role: "Freelance" },
-        { text: "Finally found a tool that fits my freelance workflow perfectly.", author: "Julie M.", role: "Consultant" },
-        { text: "Client tracking and payment follow-ups have never been this smooth.", author: "Alex B.", role: "Restaurateur" },
-        { text: "I stopped juggling 4 apps... Everything is here.", author: "Sophie K.", role: "Manager" }
-      ]
+        {
+          text: "I use it every day, it's like my business command center.",
+          author: 'Thomas R.',
+          role: 'Manager',
+        },
+        {
+          text: 'Clean UI, powerful features, and no clutter. 10/10.',
+          author: 'Sarah L.',
+          role: 'Director',
+        },
+        { text: 'Invoices are so easy now...', author: 'Marc D.', role: 'Freelance' },
+        {
+          text: 'Finally found a tool that fits my freelance workflow perfectly.',
+          author: 'Julie M.',
+          role: 'Consultant',
+        },
+        {
+          text: 'Client tracking and payment follow-ups have never been this smooth.',
+          author: 'Alex B.',
+          role: 'Restaurateur',
+        },
+        {
+          text: 'I stopped juggling 4 apps... Everything is here.',
+          author: 'Sophie K.',
+          role: 'Manager',
+        },
+      ],
     },
     footer: {
-      rights: "© 2026 Attabl Inc."
-    }
-  }
+      rights: '© 2026 Attabl Inc.',
+    },
+  },
 };
 
 const LOGOS = [
-  { name: "Grand Luxe", icon: StarIcon },
-  { name: "Royal Palace", icon: Award },
-  { name: "Ocean Resort", icon: Sun },
-  { name: "Urban Suites", icon: Layout },
-  { name: "Mountain View", icon: Triangle },
-  { name: "Sapphire Hotel", icon: Hexagon },
-  { name: "Emerald Bay", icon: Circle },
-  { name: "Golden Plaza", icon: Square },
+  { name: 'Grand Luxe', icon: StarIcon },
+  { name: 'Royal Palace', icon: Award },
+  { name: 'Ocean Resort', icon: Sun },
+  { name: 'Urban Suites', icon: Layout },
+  { name: 'Mountain View', icon: Triangle },
+  { name: 'Sapphire Hotel', icon: Hexagon },
+  { name: 'Emerald Bay', icon: Circle },
+  { name: 'Golden Plaza', icon: Square },
 ];
 
 export default function HomePage() {
@@ -199,8 +302,13 @@ export default function HomePage() {
 
   // Auto-detect language
   useEffect(() => {
-    const userLang = typeof navigator !== "undefined" ? (navigator.language || (navigator as { readonly languages?: readonly string[] }).languages?.[0] || "") : "";
-    const detectedLang = (userLang || "").startsWith('en') ? 'en' : 'fr';
+    const userLang =
+      typeof navigator !== 'undefined'
+        ? navigator.language ||
+          (navigator as { readonly languages?: readonly string[] }).languages?.[0] ||
+          ''
+        : '';
+    const detectedLang = (userLang || '').startsWith('en') ? 'en' : 'fr';
 
     const frame = requestAnimationFrame(() => {
       setMounted(true);
@@ -238,7 +346,7 @@ export default function HomePage() {
 
   const toggleLang = () => {
     setLang(lang === 'fr' ? 'en' : 'fr');
-  }
+  };
 
   const closeMobileMenu = () => setMobileMenuOpen(false);
 
@@ -249,9 +357,9 @@ export default function HomePage() {
       opacity: 1,
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
-    }
+        delayChildren: 0.2,
+      },
+    },
   };
 
   const itemVariants: Variants = {
@@ -259,8 +367,8 @@ export default function HomePage() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.5, ease: "easeOut" as Easing }
-    }
+      transition: { duration: 0.5, ease: 'easeOut' as Easing },
+    },
   };
 
   if (!mounted) return null;
@@ -277,43 +385,86 @@ export default function HomePage() {
             initial={{ opacity: 0, x: '100%' }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: '100%' }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
             className="fixed inset-0 z-[999] bg-white dark:bg-black md:hidden flex flex-col"
           >
             <div className="flex justify-between items-center p-6 border-b border-gray-100 dark:border-white/5">
-              <Link href="/" onClick={closeMobileMenu} className="flex items-center gap-2 active:scale-95 transition-transform">
+              <Link
+                href="/"
+                onClick={closeMobileMenu}
+                className="flex items-center gap-2 active:scale-95 transition-transform"
+              >
                 <div className="bg-black dark:bg-transparent rounded-md p-0.5">
                   <Layout className="h-6 w-6 text-[#CCFF00]" />
                 </div>
-                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">ATTABL</span>
+                <span className="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+                  ATTABL
+                </span>
               </Link>
-              <button className="p-2 text-black dark:text-white active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={closeMobileMenu}>
+              <button
+                className="p-2 text-black dark:text-white active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors"
+                onClick={closeMobileMenu}
+              >
                 <X className="h-6 w-6" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-6 flex flex-col h-full">
               <nav className="flex flex-col gap-2 text-2xl font-bold">
-                <Link href="/features" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.features}</Link>
-                <Link href="#pricing" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.pricing}</Link>
-                <Link href="#about" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.about}</Link>
-                <Link href="/contact" onClick={closeMobileMenu} className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors">{t.nav.contact}</Link>
+                <Link
+                  href="/features"
+                  onClick={closeMobileMenu}
+                  className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors"
+                >
+                  {t.nav.features}
+                </Link>
+                <Link
+                  href="#pricing"
+                  onClick={closeMobileMenu}
+                  className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors"
+                >
+                  {t.nav.pricing}
+                </Link>
+                <Link
+                  href="#about"
+                  onClick={closeMobileMenu}
+                  className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors"
+                >
+                  {t.nav.about}
+                </Link>
+                <Link
+                  href="/contact"
+                  onClick={closeMobileMenu}
+                  className="p-4 rounded-xl active:bg-gray-100 dark:active:bg-white/10 transition-colors"
+                >
+                  {t.nav.contact}
+                </Link>
               </nav>
               <div className="h-px bg-gray-100 dark:bg-white/5 my-6"></div>
               <div className="flex flex-col gap-4 mt-auto pb-8">
                 <div className="flex gap-4 px-4">
-                  <button onClick={toggleLang} className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 font-bold text-sm active:scale-95 transition-transform">
+                  <button
+                    onClick={toggleLang}
+                    className="h-10 px-4 rounded-full bg-gray-100 dark:bg-white/10 font-bold text-sm active:scale-95 transition-transform"
+                  >
                     {lang === 'fr' ? 'EN' : 'FR'}
                   </button>
-                  <button onClick={toggleTheme} className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-95 transition-transform">
+                  <button
+                    onClick={toggleTheme}
+                    className="h-10 w-10 flex items-center justify-center rounded-full bg-gray-100 dark:bg-white/10 active:scale-95 transition-transform"
+                  >
                     {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                   </button>
                 </div>
                 <Link href="/login" onClick={closeMobileMenu}>
-                  <Button variant="ghost" className="w-full text-lg h-14 active:scale-[0.98]">{t.nav.login}</Button>
+                  <Button variant="ghost" className="w-full text-lg h-14 active:scale-[0.98]">
+                    {t.nav.login}
+                  </Button>
                 </Link>
                 <Link href="/signup" onClick={closeMobileMenu}>
-                  <Button className="w-full text-lg h-14 bg-[#CCFF00] text-black font-bold active:scale-[0.98]">{t.nav.signup}</Button>
+                  <Button className="w-full text-lg h-14 bg-[#CCFF00] text-black font-bold active:scale-[0.98]">
+                    {t.nav.signup}
+                  </Button>
                 </Link>
               </div>
             </div>
@@ -322,35 +473,82 @@ export default function HomePage() {
       </AnimatePresence>
 
       {/* HEADER */}
-      <header className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}>
+      <header
+        className={`fixed top-0 z-50 w-full transition-all duration-300 ${isScrolled ? 'bg-white/90 dark:bg-black/90 backdrop-blur-md py-4 border-b border-gray-100 dark:border-white/5' : 'bg-transparent py-4 md:py-8'}`}
+      >
         <div className="container mx-auto px-6 max-w-7xl flex justify-between items-center relative z-50">
-          <Link href="/" className="flex items-center gap-2 group active:scale-95 transition-transform">
+          <Link
+            href="/"
+            className="flex items-center gap-2 group active:scale-95 transition-transform"
+          >
             <div className="bg-black dark:bg-transparent rounded-md p-0.5">
               <Layout className="h-6 w-6 text-[#CCFF00]" />
             </div>
-            <span className="text-xl font-bold tracking-tight group-hover:text-[#CCFF00] transition-colors">ATTABL</span>
+            <span className="text-xl font-bold tracking-tight group-hover:text-[#CCFF00] transition-colors">
+              ATTABL
+            </span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-10 text-sm font-medium text-gray-500 dark:text-gray-400">
-            <Link href="/features" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.features}</Link>
-            <Link href="#pricing" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.pricing}</Link>
-            <Link href="#about" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.about}</Link>
-            <Link href="/contact" className="hover:text-black dark:hover:text-white transition-colors">{t.nav.contact}</Link>
+            <Link
+              href="/features"
+              className="hover:text-black dark:hover:text-white transition-colors"
+            >
+              {t.nav.features}
+            </Link>
+            <Link
+              href="#pricing"
+              className="hover:text-black dark:hover:text-white transition-colors"
+            >
+              {t.nav.pricing}
+            </Link>
+            <Link
+              href="#about"
+              className="hover:text-black dark:hover:text-white transition-colors"
+            >
+              {t.nav.about}
+            </Link>
+            <Link
+              href="/contact"
+              className="hover:text-black dark:hover:text-white transition-colors"
+            >
+              {t.nav.contact}
+            </Link>
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <button onClick={toggleLang} className="p-2 w-10 h-10 font-bold text-xs rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform">
+            <button
+              onClick={toggleLang}
+              className="p-2 w-10 h-10 font-bold text-xs rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform"
+            >
               {lang.toUpperCase()}
             </button>
-            <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform">
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 active:scale-90 transition-transform"
+            >
               {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
             <div className="w-px h-6 bg-gray-200 dark:bg-white/10 mx-1"></div>
-            <Link href="/login"><Button variant="ghost" className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50 shadow-none"><span className="text-gray-700 dark:text-gray-300">{t.nav.login}</span></Button></Link>
-            <Link href="/signup"><Button className="rounded-full bg-[#CCFF00] text-black hover:bg-[#b8e600] font-semibold px-8 active:scale-95 shadow-none border-0 focus-visible:ring-0">{t.nav.signup}</Button></Link>
+            <Link href="/login">
+              <Button
+                variant="ghost"
+                className="rounded-full font-semibold px-6 active:scale-95 hover:bg-gray-200/50 shadow-none"
+              >
+                <span className="text-gray-700 dark:text-gray-300">{t.nav.login}</span>
+              </Button>
+            </Link>
+            <Link href="/signup">
+              <Button className="rounded-full bg-[#CCFF00] text-black hover:bg-[#b8e600] font-semibold px-8 active:scale-95 shadow-none border-0 focus-visible:ring-0">
+                {t.nav.signup}
+              </Button>
+            </Link>
           </div>
 
-          <button className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors" onClick={() => setMobileMenuOpen(true)}>
+          <button
+            className="md:hidden p-2 active:bg-gray-100 dark:active:bg-white/5 rounded-full transition-colors"
+            onClick={() => setMobileMenuOpen(true)}
+          >
             <Menu className="h-6 w-6" />
           </button>
         </div>
@@ -363,7 +561,6 @@ export default function HomePage() {
         <div className="absolute bottom-[-10%] right-[10%] w-[400px] h-[400px] bg-[#CCFF00]/5 dark:bg-[#CCFF00]/15 rounded-full blur-[100px] pointer-events-none z-0" />
 
         <div className="container mx-auto px-6 grid lg:grid-cols-2 gap-12 items-center relative z-10">
-
           {/* Left Content */}
           <motion.div
             variants={containerVariants}
@@ -380,7 +577,7 @@ export default function HomePage() {
                 <StarIcon className="h-3 w-3 fill-current text-[#CCFF00]" />
               </span>
               <div className="relative h-5 w-52 overflow-hidden">
-                <AnimatePresence mode='wait'>
+                <AnimatePresence mode="wait">
                   <motion.span
                     key={pillIndex}
                     initial={{ y: 20, opacity: 0 }}
@@ -419,8 +616,17 @@ export default function HomePage() {
               >
                 <span className="relative inline-block text-[#CCFF00]">
                   {t.hero.title_highlight}
-                  <svg className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]" viewBox="0 0 100 10" preserveAspectRatio="none">
-                    <path d="M0 5 Q 50 10 100 5" stroke="currentColor" strokeWidth="4" fill="none" />
+                  <svg
+                    className="absolute w-full h-3 -bottom-1 left-0 text-[#CCFF00]"
+                    viewBox="0 0 100 10"
+                    preserveAspectRatio="none"
+                  >
+                    <path
+                      d="M0 5 Q 50 10 100 5"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
                   </svg>
                 </span>
                 <span>.</span>
@@ -428,10 +634,7 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle - Optimized for EN/FR */}
-            <motion.div
-              variants={itemVariants}
-              className="max-w-[95%] md:max-w-xl mb-10"
-            >
+            <motion.div variants={itemVariants} className="max-w-[95%] md:max-w-xl mb-10">
               <p className="text-base md:text-lg text-gray-600 dark:text-gray-400 leading-relaxed text-balance text-left">
                 {t.hero.subtitle}
               </p>
@@ -452,7 +655,11 @@ export default function HomePage() {
                   />
                 </div>
                 <Button
-                  onClick={() => router.push(`/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`)}
+                  onClick={() =>
+                    router.push(
+                      `/signup?plan=essentiel${heroEmail ? `&email=${encodeURIComponent(heroEmail)}` : ''}`,
+                    )
+                  }
                   className="h-12 md:h-14 px-8 rounded-full bg-[#CCFF00] hover:bg-[#b3e600]/90 text-black font-bold text-base shadow-none transition-all hover:scale-105 active:scale-95 border border-transparent w-full sm:w-auto shrink-0 focus-visible:ring-0"
                 >
                   {t.hero.cta_primary}
@@ -460,31 +667,45 @@ export default function HomePage() {
               </div>
             </motion.div>
 
-            <motion.div
-              variants={itemVariants}
-              className="flex items-center gap-6 md:gap-8"
-            >
+            <motion.div variants={itemVariants} className="flex items-center gap-6 md:gap-8">
               <div className="active:scale-95 transition-transform cursor-pointer">
                 <div className="flex -space-x-3 mb-2">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-10 h-10 rounded-full border border-white dark:border-black bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-none">
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`} alt="User" />
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="w-10 h-10 rounded-full border border-white dark:border-black bg-gray-200 dark:bg-gray-800 flex items-center justify-center overflow-hidden shadow-none"
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${i}`}
+                        alt="User"
+                      />
                     </div>
                   ))}
                   <div className="w-10 h-10 rounded-full border border-white dark:border-black bg-black dark:bg-[#CCFF00] flex items-center justify-center text-white dark:text-black font-bold text-xs shadow-none">
                     20+
                   </div>
                 </div>
-                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">{t.hero.users_active}</p>
+                <p className="text-xs font-bold text-gray-500 dark:text-gray-400">
+                  {t.hero.users_active}
+                </p>
               </div>
               <div className="h-10 w-px bg-gray-200 dark:bg-white/10"></div>
               <div className="flex flex-col justify-center active:scale-95 transition-transform cursor-pointer">
                 <div className="flex items-baseline gap-1 mb-0.5 leading-none">
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_num}</span>
-                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{t.hero.stats_line1_text}</span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    {t.hero.stats_line1_num}
+                  </span>
+                  <span className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">
+                    {t.hero.stats_line1_text}
+                  </span>
                 </div>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none mb-0.5">{t.hero.stats_line2}</p>
-                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none">{t.hero.stats_line3}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none mb-0.5">
+                  {t.hero.stats_line2}
+                </p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400 leading-none">
+                  {t.hero.stats_line3}
+                </p>
               </div>
             </motion.div>
           </motion.div>
@@ -495,7 +716,7 @@ export default function HomePage() {
             animate={{
               opacity: 1,
               scale: 1,
-              y: [0, -15, 0]
+              y: [0, -15, 0],
             }}
             transition={{
               opacity: { duration: 0.5, delay: 0.2 },
@@ -503,8 +724,8 @@ export default function HomePage() {
               y: {
                 duration: 5,
                 repeat: Infinity,
-                ease: "easeInOut"
-              }
+                ease: 'easeInOut',
+              },
             }}
             className="relative z-10 flex justify-center lg:justify-end mt-12 lg:mt-0"
           >
@@ -522,8 +743,12 @@ export default function HomePage() {
                   <CreditCard className="h-5 w-5 md:h-6 md:w-6" />
                 </div>
                 <div>
-                  <div className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs uppercase tracking-wider font-bold">Revenus</div>
-                  <div className="text-gray-900 dark:text-white font-mono text-lg md:text-xl font-bold">$12,450</div>
+                  <div className="text-gray-500 dark:text-gray-400 text-[10px] md:text-xs uppercase tracking-wider font-bold">
+                    Revenus
+                  </div>
+                  <div className="text-gray-900 dark:text-white font-mono text-lg md:text-xl font-bold">
+                    $12,450
+                  </div>
                 </div>
               </div>
             </div>
@@ -541,9 +766,14 @@ export default function HomePage() {
           <div className="flex gap-16 min-w-max animate-scroll">
             {/* REPEAT LOGOS 2 TIMES for smooth infinite loop (enough for width) */}
             {[...LOGOS, ...LOGOS].map((logo, i) => (
-              <div key={i} className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 active:scale-110">
+              <div
+                key={i}
+                className="flex items-center gap-2 opacity-40 hover:opacity-100 grayscale hover:grayscale-0 transition-all duration-300 active:scale-110"
+              >
                 <logo.icon className="h-6 w-6" />
-                <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white font-sans">{logo.name}</span>
+                <span className="text-lg font-bold tracking-tight text-gray-900 dark:text-white font-sans">
+                  {logo.name}
+                </span>
               </div>
             ))}
           </div>
@@ -551,7 +781,10 @@ export default function HomePage() {
       </section>
 
       {/* DETAILED FEATURES GRID */}
-      <section id="features" className="py-20 md:py-28 border-t border-gray-100 dark:border-white/5 bg-transparent">
+      <section
+        id="features"
+        className="py-20 md:py-28 border-t border-gray-100 dark:border-white/5 bg-transparent"
+      >
         <div className="container mx-auto px-6 max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -559,8 +792,12 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">{t.features.sectionTitle}</h2>
-            <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">{t.features.sectionSubtitle}</p>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">
+              {t.features.sectionTitle}
+            </h2>
+            <p className="text-gray-500 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+              {t.features.sectionSubtitle}
+            </p>
           </motion.div>
 
           <motion.div
@@ -584,8 +821,12 @@ export default function HomePage() {
                   <div className="relative h-14 w-14 rounded-2xl bg-[#CCFF00]/10 dark:bg-[#CCFF00]/5 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-none">
                     <Icon className="h-7 w-7 text-[#CCFF00] dark:text-[#ccff00] transition-colors duration-300" />
                   </div>
-                  <h3 className="relative text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-[#CCFF00] transition-colors">{item.title}</h3>
-                  <p className="relative text-gray-500 dark:text-gray-400 text-sm leading-relaxed">{item.desc}</p>
+                  <h3 className="relative text-xl font-bold text-gray-900 dark:text-white mb-3 group-hover:text-[#CCFF00] transition-colors">
+                    {item.title}
+                  </h3>
+                  <p className="relative text-gray-500 dark:text-gray-400 text-sm leading-relaxed">
+                    {item.desc}
+                  </p>
                 </motion.div>
               );
             })}
@@ -618,7 +859,10 @@ export default function HomePage() {
                 <p className="text-gray-500 dark:text-gray-400 text-lg leading-relaxed mb-8">
                   {t.testimonials.subtitle}
                 </p>
-                <Button variant="outline" className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all active:scale-95 shadow-none focus-visible:ring-0">
+                <Button
+                  variant="outline"
+                  className="border-gray-200 dark:border-white/10 hover:border-[#CCFF00] text-black dark:text-white hover:text-black rounded-full h-12 px-8 w-full md:w-auto font-bold bg-white dark:bg-black hover:bg-[#CCFF00] dark:hover:bg-[#CCFF00] transition-all active:scale-95 shadow-none focus-visible:ring-0"
+                >
                   Lire tous les avis <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </div>
@@ -637,10 +881,14 @@ export default function HomePage() {
                   variants={itemVariants}
                   key={i}
                   whileHover={{ scale: 1.05 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                  className={`p-5 rounded-[1.25rem] border transition-all duration-300 hover:border-[#CCFF00]/50 group cursor-default active:scale-[0.98] shadow-none ${i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
-                    } ${theme === 'light' ? 'bg-white border-gray-200/60 hover:border-gray-300' : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
-                    }`}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  className={`p-5 rounded-[1.25rem] border transition-all duration-300 hover:border-[#CCFF00]/50 group cursor-default active:scale-[0.98] shadow-none ${
+                    i % 2 === 0 ? 'md:mt-0' : 'md:mt-8'
+                  } ${
+                    theme === 'light'
+                      ? 'bg-white border-gray-200/60 hover:border-gray-300'
+                      : 'bg-[#0A0A0A] border-white/10 hover:bg-[#121212]'
+                  }`}
                 >
                   <Quote className="h-5 w-5 text-[#CCFF00] mb-3 opacity-50 group-hover:opacity-100 transition-opacity" />
                   <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-4 leading-relaxed">
@@ -651,8 +899,12 @@ export default function HomePage() {
                       {review.author.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-sm text-gray-900 dark:text-white">{review.author}</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-wide font-bold">{review.role}</div>
+                      <div className="font-bold text-sm text-gray-900 dark:text-white">
+                        {review.author}
+                      </div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-wide font-bold">
+                        {review.role}
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -663,7 +915,10 @@ export default function HomePage() {
       </section>
 
       {/* PRICING */}
-      <section id="pricing" className="py-20 md:py-32 bg-gray-50 dark:bg-[#050505] relative transition-colors duration-300 border-t border-gray-100 dark:border-white/5">
+      <section
+        id="pricing"
+        className="py-20 md:py-32 bg-gray-50 dark:bg-[#050505] relative transition-colors duration-300 border-t border-gray-100 dark:border-white/5"
+      >
         <div className="container mx-auto px-6 max-w-7xl">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -671,13 +926,21 @@ export default function HomePage() {
             viewport={{ once: true }}
             className="text-center mb-16 md:mb-20"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">{t.pricing.title}</h2>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-gray-900 dark:text-white">
+              {t.pricing.title}
+            </h2>
             <div className="flex justify-center gap-4">
-              <button onClick={() => setBillingInterval('monthly')} className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'monthly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
+              <button
+                onClick={() => setBillingInterval('monthly')}
+                className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'monthly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}
+              >
                 {t.pricing.monthly}
               </button>
               <div className="w-px h-4 bg-gray-300 dark:bg-gray-800"></div>
-              <button onClick={() => setBillingInterval('yearly')} className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'yearly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}>
+              <button
+                onClick={() => setBillingInterval('yearly')}
+                className={`text-sm font-bold transition-all active:scale-95 ${billingInterval === 'yearly' ? 'text-[#CCFF00] dark:text-[#CCFF00]' : 'text-gray-400'}`}
+              >
                 {t.pricing.yearly}
               </button>
             </div>
@@ -691,26 +954,45 @@ export default function HomePage() {
             className="grid md:grid-cols-3 gap-8 items-center"
           >
             <motion.div variants={itemVariants}>
-              <PricingCard plan="essentiel" billingInterval={billingInterval} onSelect={handlePlanSelect} />
+              <PricingCard
+                plan="essentiel"
+                billingInterval={billingInterval}
+                onSelect={handlePlanSelect}
+              />
             </motion.div>
 
-            <motion.div variants={itemVariants} className="transform md:scale-105 z-10 my-8 md:my-0">
-              <PricingCard plan="premium" billingInterval={billingInterval} onSelect={handlePlanSelect} />
+            <motion.div
+              variants={itemVariants}
+              className="transform md:scale-105 z-10 my-8 md:my-0"
+            >
+              <PricingCard
+                plan="premium"
+                billingInterval={billingInterval}
+                onSelect={handlePlanSelect}
+              />
             </motion.div>
 
             <motion.div
               variants={itemVariants}
               whileHover={{ y: -8 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
               className="h-full"
             >
               <div className="border border-gray-200/60 dark:border-white/10 bg-white dark:bg-[#0A0A0A] rounded-[22px] p-8 flex flex-col h-full hover:border-[#CCFF00]/30 transition-all group shadow-none active:scale-[0.99]">
                 <div>
-                  <h3 className="text-xl font-medium mb-1 text-gray-900 dark:text-gray-300">{t.pricing.cards.enterprise.name}</h3>
+                  <h3 className="text-xl font-medium mb-1 text-gray-900 dark:text-gray-300">
+                    {t.pricing.cards.enterprise.name}
+                  </h3>
                   <p className="text-sm text-gray-500 mb-6">{t.pricing.cards.enterprise.desc}</p>
-                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-8">{t.pricing.cards.enterprise.price}</div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+                    {t.pricing.cards.enterprise.price}
+                  </div>
                 </div>
-                <Button variant="outline" className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl active:scale-95 transition-all" onClick={() => router.push('/contact')}>
+                <Button
+                  variant="outline"
+                  className="mt-auto w-full border-gray-200 dark:border-white/10 hover:border-[#CCFF00] hover:text-[#CCFF00] bg-transparent h-12 rounded-xl active:scale-95 transition-all"
+                  onClick={() => router.push('/contact')}
+                >
                   {t.pricing.cards.enterprise.cta}
                 </Button>
               </div>
@@ -726,7 +1008,9 @@ export default function HomePage() {
       <footer className="py-12 bg-transparent border-t border-gray-100 dark:border-white/5">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6">
           <div className="flex items-center gap-2 active:scale-95 transition-transform cursor-pointer">
-            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">ATTABL</span>
+            <span className="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+              ATTABL
+            </span>
           </div>
           <div className="text-sm text-gray-500">{t.footer.rights}</div>
         </div>

@@ -57,8 +57,8 @@ export default async function OrdersPage() {
               <div>
                 <p className="font-medium text-yellow-800">Configuration requise</p>
                 <p className="text-sm text-yellow-700 mt-1">
-                  Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré.
-                  Les commandes apparaîtront ici une fois la base de données configurée.
+                  Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré. Les commandes
+                  apparaîtront ici une fois la base de données configurée.
                 </p>
               </div>
             </div>
@@ -73,7 +73,8 @@ export default async function OrdersPage() {
   // Récupérer les commandes du restaurant
   const { data: orders } = await supabase
     .from('orders')
-    .select(`
+    .select(
+      `
       *,
       order_items (
         id,
@@ -83,7 +84,8 @@ export default async function OrdersPage() {
         item_name_en,
         notes
       )
-    `)
+    `,
+    )
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
     .limit(50);
@@ -98,8 +100,10 @@ export default async function OrdersPage() {
   };
 
   // Grouper les commandes par statut
-  const activeOrders = orders?.filter(o => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)) || [];
-  const completedOrders = orders?.filter(o => ['delivered', 'cancelled'].includes(o.status)) || [];
+  const activeOrders =
+    orders?.filter((o) => ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)) || [];
+  const completedOrders =
+    orders?.filter((o) => ['delivered', 'cancelled'].includes(o.status)) || [];
 
   return (
     <div>
@@ -145,9 +149,7 @@ export default async function OrdersPage() {
             <CardContent className="py-12 text-center">
               <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">Aucune commande pour le moment</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Les nouvelles commandes apparaîtront ici
-              </p>
+              <p className="text-sm text-gray-400 mt-1">Les nouvelles commandes apparaîtront ici</p>
             </CardContent>
           </Card>
         ) : (
@@ -161,12 +163,16 @@ export default async function OrdersPage() {
 // Composant pour une carte de commande
 function OrderCard({
   order,
-  statusConfig
+  statusConfig,
 }: {
   order: Order;
   statusConfig: Record<string, { label: string; color: string; bgColor: string }>;
 }) {
-  const status = statusConfig[order.status] || { label: order.status, color: 'text-gray-800', bgColor: 'bg-gray-100' };
+  const status = statusConfig[order.status] || {
+    label: order.status,
+    color: 'text-gray-800',
+    bgColor: 'bg-gray-100',
+  };
 
   return (
     <Card className="border-0 shadow-sm hover:shadow-md transition-shadow">
@@ -181,11 +187,13 @@ function OrderCard({
                 day: '2-digit',
                 month: 'short',
                 hour: '2-digit',
-                minute: '2-digit'
+                minute: '2-digit',
               })}
             </p>
           </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}>
+          <span
+            className={`px-3 py-1 rounded-full text-xs font-medium ${status.bgColor} ${status.color}`}
+          >
             {status.label}
           </span>
         </div>
@@ -209,16 +217,17 @@ function OrderCard({
 
         {/* Items de la commande */}
         <div className="space-y-2 mb-4 bg-gray-50 rounded-lg p-3">
-          {order.order_items && order.order_items.map((item: OrderItem) => (
-            <div key={item.id} className="flex justify-between text-sm">
-              <span className="text-gray-700">
-                <span className="font-medium">{item.quantity}x</span> {item.item_name}
-              </span>
-              <span className="font-medium text-gray-900">
-                {(item.quantity * Number(item.price_at_order)).toLocaleString('fr-FR')} F
-              </span>
-            </div>
-          ))}
+          {order.order_items &&
+            order.order_items.map((item: OrderItem) => (
+              <div key={item.id} className="flex justify-between text-sm">
+                <span className="text-gray-700">
+                  <span className="font-medium">{item.quantity}x</span> {item.item_name}
+                </span>
+                <span className="font-medium text-gray-900">
+                  {(item.quantity * Number(item.price_at_order)).toLocaleString('fr-FR')} F
+                </span>
+              </div>
+            ))}
         </div>
 
         {/* Notes */}
@@ -230,9 +239,7 @@ function OrderCard({
 
         {/* Total */}
         <div className="pt-3 border-t flex justify-between items-center">
-          <div className="text-sm text-gray-500">
-            {order.order_items?.length || 0} article(s)
-          </div>
+          <div className="text-sm text-gray-500">{order.order_items?.length || 0} article(s)</div>
           <div className="text-xl font-bold">
             {Number(order.total || 0).toLocaleString('fr-FR')} F
           </div>
@@ -257,7 +264,7 @@ function DemoOrders() {
       order_items: [
         { id: '1', quantity: 2, price_at_order: 4500, item_name: 'Poulet Yassa' },
         { id: '2', quantity: 1, price_at_order: 6500, item_name: 'Thieboudienne' },
-      ]
+      ],
     },
     {
       id: '2',
@@ -266,10 +273,8 @@ function DemoOrders() {
       total: 8000,
       created_at: '2026-02-05T11:30:00.000Z',
       table_number: '3',
-      order_items: [
-        { id: '3', quantity: 2, price_at_order: 4000, item_name: 'Brochettes' },
-      ]
-    }
+      order_items: [{ id: '3', quantity: 2, price_at_order: 4000, item_name: 'Brochettes' }],
+    },
   ];
 
   const statusConfig: Record<string, { label: string; color: string; bgColor: string }> = {
@@ -285,11 +290,7 @@ function DemoOrders() {
       </h2>
       <div className="grid gap-4">
         {demoOrders.map((order) => (
-          <OrderCard
-            key={order.id}
-            order={order as Order}
-            statusConfig={statusConfig}
-          />
+          <OrderCard key={order.id} order={order as Order} statusConfig={statusConfig} />
         ))}
       </div>
     </div>

@@ -30,13 +30,13 @@ export const PLAN_AMOUNTS = {
 // Montants annuels totaux en FCFA
 export const PLAN_AMOUNTS_YEARLY_TOTAL = {
   essentiel: 405960, // 33,830 × 12
-  premium: 813960,   // 67,830 × 12
+  premium: 813960, // 67,830 × 12
 };
 
 // Helper pour obtenir le Price ID correct
 export function getStripePriceId(
   plan: 'essentiel' | 'premium',
-  interval: 'monthly' | 'yearly'
+  interval: 'monthly' | 'yearly',
 ): string {
   return STRIPE_PRICES[plan][interval];
 }
@@ -44,7 +44,7 @@ export function getStripePriceId(
 // Helper pour obtenir le montant en FCFA
 export function getPlanAmount(
   plan: 'essentiel' | 'premium',
-  interval: 'monthly' | 'yearly'
+  interval: 'monthly' | 'yearly',
 ): number {
   return PLAN_AMOUNTS[plan][interval];
 }

@@ -7,13 +7,13 @@ export async function POST(request: Request) {
     const supabase = await createClient();
 
     // ✅ SECURITY FIX: Get user from server-side auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json(
-        { error: 'Non authentifié' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
     // ✅ SECURITY FIX: Derive tenantId from authenticated user
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     if (!adminUser?.tenant_id) {
       return NextResponse.json(
         { error: 'Tenant non trouvé pour cet utilisateur' },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -44,23 +44,20 @@ export async function POST(request: Request) {
 
     // Validation
     if (!plan) {
-      return NextResponse.json(
-        { error: 'Paramètre manquant (plan requis)' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Paramètre manquant (plan requis)' }, { status: 400 });
     }
 
     if (!['essentiel', 'premium'].includes(plan)) {
       return NextResponse.json(
         { error: 'Plan invalide. Doit être "essentiel" ou "premium"' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!['monthly', 'yearly'].includes(billingInterval)) {
       return NextResponse.json(
         { error: 'Intervalle invalide. Doit être "monthly" ou "yearly"' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,10 +65,9 @@ export async function POST(request: Request) {
     const priceId = getStripePriceId(plan, billingInterval);
 
     // Déterminer l'URL de base selon l'environnement
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL ||
-      (process.env.NODE_ENV === 'development'
-        ? 'http://localhost:3000'
-        : 'https://attabl.com');
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
 
     // Créer la session Stripe Checkout
     const session = await stripe.checkout.sessions.create({
@@ -105,14 +101,9 @@ export async function POST(request: Request) {
       sessionId: session.id,
       url: session.url,
     });
-
   } catch (error: unknown) {
     console.error('Stripe checkout error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Erreur Stripe';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
-

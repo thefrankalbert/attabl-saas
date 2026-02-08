@@ -1,26 +1,26 @@
-import { TenantProvider } from '@/contexts/TenantContext'
-import { CartProvider } from '@/contexts/CartContext'
-import { ThemeProvider } from '@/components/theme/ThemeProvider'
-import { createClient } from '@/lib/supabase/server'
+import { TenantProvider } from '@/contexts/TenantContext';
+import { CartProvider } from '@/contexts/CartContext';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { createClient } from '@/lib/supabase/server';
 
 export default async function SiteLayout({
   children,
   params,
 }: {
-  children: React.ReactNode
-  params: Promise<{ site: string }>
+  children: React.ReactNode;
+  params: Promise<{ site: string }>;
 }) {
-  const { site } = await params
+  const { site } = await params;
 
   // Fetch tenant from database
-  const supabase = await createClient()
+  const supabase = await createClient();
   const { data: tenant } = await supabase
     .from('tenants')
     .select('id, primary_color, secondary_color')
     .eq('slug', site)
-    .single()
+    .single();
 
-  const tenantId = tenant?.id || null
+  const tenantId = tenant?.id || null;
 
   return (
     <TenantProvider slug={site} tenantId={tenantId}>
@@ -31,11 +31,9 @@ export default async function SiteLayout({
         }}
       >
         <CartProvider>
-          <div className="min-h-screen bg-gray-50">
-            {children}
-          </div>
+          <div className="min-h-screen bg-gray-50">{children}</div>
         </CartProvider>
       </ThemeProvider>
     </TenantProvider>
-  )
+  );
 }

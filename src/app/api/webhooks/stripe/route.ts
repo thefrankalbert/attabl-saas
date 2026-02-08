@@ -31,7 +31,10 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const tenantId = session.metadata?.tenant_id;
         const plan = session.metadata?.plan as 'essentiel' | 'premium' | undefined;
-        const billingInterval = session.metadata?.billing_interval as 'monthly' | 'yearly' | undefined;
+        const billingInterval = session.metadata?.billing_interval as
+          | 'monthly'
+          | 'yearly'
+          | undefined;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
 
@@ -53,12 +56,11 @@ export async function POST(request: Request) {
             updateData.billing_interval = billingInterval;
           }
 
-          await supabase
-            .from('tenants')
-            .update(updateData)
-            .eq('id', tenantId);
+          await supabase.from('tenants').update(updateData).eq('id', tenantId);
 
-          console.log(`✅ Tenant ${tenantId} activé avec succès (Plan: ${plan}, Interval: ${billingInterval})`);
+          console.log(
+            `✅ Tenant ${tenantId} activé avec succès (Plan: ${plan}, Interval: ${billingInterval})`,
+          );
         }
         break;
       }
@@ -84,16 +86,17 @@ export async function POST(request: Request) {
           };
 
           if (currentPeriodStart) {
-            updateData.subscription_current_period_start = new Date(currentPeriodStart * 1000).toISOString();
+            updateData.subscription_current_period_start = new Date(
+              currentPeriodStart * 1000,
+            ).toISOString();
           }
           if (currentPeriodEnd) {
-            updateData.subscription_current_period_end = new Date(currentPeriodEnd * 1000).toISOString();
+            updateData.subscription_current_period_end = new Date(
+              currentPeriodEnd * 1000,
+            ).toISOString();
           }
 
-          await supabase
-            .from('tenants')
-            .update(updateData)
-            .eq('id', tenant.id);
+          await supabase.from('tenants').update(updateData).eq('id', tenant.id);
 
           console.log(`✅ Subscription updated for tenant ${tenant.id}`);
         }
@@ -154,12 +157,8 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ received: true });
-
   } catch (error: unknown) {
     console.error('Webhook error:', error);
-    return NextResponse.json(
-      { error: 'Webhook handler failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }

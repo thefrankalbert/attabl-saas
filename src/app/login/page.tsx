@@ -11,11 +11,13 @@ export default function LoginPage() {
     <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white">
       {/* Left Column: Form */}
       <div className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 bg-white z-10">
-        <Suspense fallback={
-          <div className="flex items-center justify-center p-12">
-            <Loader2 className="h-8 w-8 animate-spin text-[#CCFF00]" />
-          </div>
-        }>
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center p-12">
+              <Loader2 className="h-8 w-8 animate-spin text-[#CCFF00]" />
+            </div>
+          }
+        >
           <AuthForm mode="login" />
         </Suspense>
       </div>
@@ -41,8 +43,7 @@ export default function LoginPage() {
             </div>
 
             <h2 className="text-4xl md:text-5xl font-bold text-white mb-6 leading-tight">
-              Gérez votre établissement{' '}
-              <span className="text-[#CCFF00]">simplement.</span>
+              Gérez votre établissement <span className="text-[#CCFF00]">simplement.</span>
             </h2>
 
             <p className="text-lg text-gray-400 mb-12 leading-relaxed">
@@ -51,9 +52,9 @@ export default function LoginPage() {
 
             <div className="flex flex-wrap justify-center gap-4">
               {[
-                { icon: ShieldCheck, text: "Sécurisé" },
-                { icon: Zap, text: "Rapide" },
-                { icon: Users, text: "Simple" },
+                { icon: ShieldCheck, text: 'Sécurisé' },
+                { icon: Zap, text: 'Rapide' },
+                { icon: Users, text: 'Simple' },
               ].map((item, i) => (
                 <motion.div
                   key={i}

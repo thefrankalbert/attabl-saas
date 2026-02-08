@@ -20,18 +20,18 @@ export async function createClient() {
               options.sameSite = 'lax';
             }
             cookieStore.set({ name, value, ...options });
-          } catch (error) {
+          } catch {
             // Handle error (route handler context)
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
-          } catch (error) {
+          } catch {
             // Handle error
           }
         },
       },
-    }
+    },
   );
 }

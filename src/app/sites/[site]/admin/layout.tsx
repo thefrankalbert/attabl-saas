@@ -38,7 +38,10 @@ export default async function AdminLayout({
   }
 
   // Vérifier l'authentification
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
   // Mode développement : si pas d'auth configurée, afficher quand même
   let adminUser: AdminUser | null = null;
@@ -53,7 +56,7 @@ export default async function AdminLayout({
         user_id: 'dev',
         tenant_id: tenant?.id || 'dev',
         role: 'owner',
-        name: 'Dev User'
+        name: 'Dev User',
       };
     } else {
       // En production OU si bypass non explicitement activé
@@ -77,17 +80,16 @@ export default async function AdminLayout({
       user_id: user.id,
       tenant_id: tenant?.id || '',
       role: 'admin' as const,
-      name: user.email
+      name: user.email,
     };
   }
 
-
-
-  const roleLabels: Record<string, string> = {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _roleLabels: Record<string, string> = {
     owner: 'Propriétaire',
     admin: 'Administrateur',
     manager: 'Manager',
-    staff: 'Équipe'
+    staff: 'Équipe',
   };
 
   return (
@@ -101,24 +103,30 @@ export default async function AdminLayout({
 
       {/* Sidebar */}
       <AdminSidebar
-        tenant={tenant ? {
-          name: tenant.name,
-          slug: tenant.slug,
-          logo_url: tenant.logo_url,
-          primary_color: tenant.primary_color,
-        } : { name: tenantSlug, slug: tenantSlug }}
-        adminUser={adminUser ? {
-          name: adminUser.name,
-          role: adminUser.role,
-        } : undefined}
+        tenant={
+          tenant
+            ? {
+                name: tenant.name,
+                slug: tenant.slug,
+                logo_url: tenant.logo_url,
+                primary_color: tenant.primary_color,
+              }
+            : { name: tenantSlug, slug: tenantSlug }
+        }
+        adminUser={
+          adminUser
+            ? {
+                name: adminUser.name,
+                role: adminUser.role,
+              }
+            : undefined
+        }
         className={isDevMode ? 'pt-6' : ''}
       />
 
       {/* Main Content */}
       <main className={`ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
-        <div className="p-8">
-          {children}
-        </div>
+        <div className="p-8">{children}</div>
       </main>
     </div>
   );

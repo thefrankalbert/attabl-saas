@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -11,7 +11,7 @@
 }
 
 :root {
-  --background: #F9FAFB;
+  --background: #f9fafb;
   --foreground: #09090b;
   --border: #e4e4e7;
   --input: #e4e4e7;

@@ -30,8 +30,8 @@ export default async function AdminDashboard() {
               <div>
                 <p className="font-medium text-yellow-800">Configuration requise</p>
                 <p className="text-sm text-yellow-700 mt-1">
-                  Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré dans la base de données.
-                  Les statistiques ci-dessous sont des données de démonstration.
+                  Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré dans la base de
+                  données. Les statistiques ci-dessous sont des données de démonstration.
                 </p>
               </div>
             </div>
@@ -91,7 +91,7 @@ export default async function AdminDashboard() {
       title: 'Commandes du jour',
       value: ordersToday || 0,
       icon: ShoppingBag,
-      description: 'Commandes reçues aujourd\'hui',
+      description: "Commandes reçues aujourd'hui",
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
     },
@@ -99,7 +99,7 @@ export default async function AdminDashboard() {
       title: 'Revenu du jour',
       value: `${revenueToday.toLocaleString('fr-FR')} F`,
       icon: Banknote,
-      description: 'Chiffre d\'affaires du jour',
+      description: "Chiffre d'affaires du jour",
       color: 'text-green-600',
       bgColor: 'bg-green-50',
     },
@@ -141,7 +141,7 @@ export default async function AdminDashboard() {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
-            day: 'numeric'
+            day: 'numeric',
           })}
         </div>
       </div>
@@ -191,14 +191,16 @@ export default async function AdminDashboard() {
                       <p className="text-sm text-gray-500">
                         {new Date(order.created_at).toLocaleTimeString('fr-FR', {
                           hour: '2-digit',
-                          minute: '2-digit'
+                          minute: '2-digit',
                         })}
                         {order.table_number && ` • Table ${order.table_number}`}
                       </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusLabels[order.status]?.color || 'bg-gray-100'}`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${statusLabels[order.status]?.color || 'bg-gray-100'}`}
+                    >
                       {statusLabels[order.status]?.label || order.status}
                     </span>
                     <span className="font-semibold">
@@ -212,9 +214,7 @@ export default async function AdminDashboard() {
             <div className="text-center py-8">
               <ShoppingBag className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500">Aucune commande pour le moment</p>
-              <p className="text-sm text-gray-400 mt-1">
-                Les nouvelles commandes apparaîtront ici
-              </p>
+              <p className="text-sm text-gray-400 mt-1">Les nouvelles commandes apparaîtront ici</p>
             </div>
           )}
         </CardContent>

@@ -4,7 +4,7 @@ import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { notFound } from 'next/navigation';
 
 interface SettingsPageProps {
-  params: Promise<{ site: string }>
+  params: Promise<{ site: string }>;
 }
 
 export default async function SettingsPage({ params }: SettingsPageProps) {
@@ -45,5 +45,5 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         }}
       />
     </div>
-  )
+  );
 }

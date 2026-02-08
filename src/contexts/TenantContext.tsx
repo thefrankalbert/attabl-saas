@@ -21,11 +21,7 @@ export function TenantProvider({
   slug: string | null;
   tenantId: string | null;
 }) {
-  return (
-    <TenantContext.Provider value={{ slug, tenantId }}>
-      {children}
-    </TenantContext.Provider>
-  );
+  return <TenantContext.Provider value={{ slug, tenantId }}>{children}</TenantContext.Provider>;
 }
 
 export function useTenant() {

@@ -3,23 +3,43 @@
 import { useCart } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { Button } from '@/components/ui/button';
-import { Trash2, Plus, Minus, ArrowLeft, ShoppingBag, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Trash2,
+  Plus,
+  Minus,
+  ArrowLeft,
+  ShoppingBag,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 
 export default function CartPage() {
-  const { items, updateQuantity, removeFromCart, totalPrice, totalItems, clearCart, notes, setNotes } = useCart();
+  const {
+    items,
+    updateQuantity,
+    removeFromCart,
+    totalPrice,
+    totalItems,
+    clearCart,
+    notes,
+    setNotes,
+  } = useCart();
   useTenant(); // Ensure tenant context is available
 
   // États pour la soumission
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; total: number } | null>(null);
+  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; total: number } | null>(
+    null,
+  );
 
   // Générer une clé unique pour chaque item (avec options/variantes)
-  const getItemKey = (item: typeof items[0]) => {
+  const getItemKey = (item: (typeof items)[0]) => {
     let key = item.id;
     if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
     if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
@@ -39,7 +59,7 @@ export default function CartPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          items: items.map(item => ({
+          items: items.map((item) => ({
             id: item.id,
             name: item.name,
             name_en: item.name_en,
@@ -71,7 +91,6 @@ export default function CartPage() {
 
       // Vider le panier après succès
       clearCart();
-
     } catch (err) {
       console.error('Order submission error:', err);
       setError('Erreur de connexion. Veuillez réessayer.');
@@ -90,15 +109,14 @@ export default function CartPage() {
           </div>
           <h2 className="text-2xl font-bold mb-2">Commande envoyée !</h2>
           <p className="text-gray-600 mb-2">
-            Votre commande <span className="font-semibold">{orderSuccess.orderNumber}</span> a été transmise à la cuisine.
+            Votre commande <span className="font-semibold">{orderSuccess.orderNumber}</span> a été
+            transmise à la cuisine.
           </p>
           <p className="text-2xl font-bold text-amber-600 mb-6">
             {orderSuccess.total.toLocaleString('fr-FR')} F
           </p>
           <Link href={`/`}>
-            <Button className="bg-amber-600 hover:bg-amber-700">
-              Retour au menu
-            </Button>
+            <Button className="bg-amber-600 hover:bg-amber-700">Retour au menu</Button>
           </Link>
         </div>
       </div>
@@ -114,9 +132,7 @@ export default function CartPage() {
             <ShoppingBag className="w-10 h-10 text-gray-400" />
           </div>
           <h2 className="text-2xl font-bold mb-4">Votre panier est vide</h2>
-          <p className="text-gray-600 mb-6">
-            Commencez à ajouter des articles pour continuer
-          </p>
+          <p className="text-gray-600 mb-6">Commencez à ajouter des articles pour continuer</p>
           <Link href={`/`}>
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -174,12 +190,7 @@ export default function CartPage() {
                     {/* Image */}
                     <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
                       {item.image_url ? (
-                        <Image
-                          src={item.image_url}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
+                        <Image src={item.image_url} alt={item.name} fill className="object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <ShoppingBag className="w-8 h-8 text-gray-300" />
@@ -272,7 +283,8 @@ export default function CartPage() {
                   return (
                     <div key={itemKey} className="flex justify-between">
                       <span className="text-gray-600">
-                        {item.quantity}x {item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name}
+                        {item.quantity}x{' '}
+                        {item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name}
                       </span>
                       <span className="font-medium">
                         {(item.price * item.quantity).toLocaleString('fr-FR')} F
@@ -331,4 +343,3 @@ export default function CartPage() {
     </div>
   );
 }
-

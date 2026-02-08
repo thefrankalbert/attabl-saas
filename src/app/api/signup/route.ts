@@ -8,10 +8,7 @@ export async function POST(request: Request) {
 
     // Validation
     if (!restaurantName || !email || !password) {
-      return NextResponse.json(
-        { error: 'Champs requis manquants' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 });
     }
 
     // Utiliser le client admin pour bypass RLS
@@ -50,18 +47,12 @@ export async function POST(request: Request) {
     });
 
     if (authError) {
-      return NextResponse.json(
-        { error: `Erreur Auth: ${authError.message}` },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: `Erreur Auth: ${authError.message}` }, { status: 400 });
     }
 
     const userId = authData.user?.id;
     if (!userId) {
-      return NextResponse.json(
-        { error: 'Erreur lors de la création du compte' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Erreur lors de la création du compte' }, { status: 500 });
     }
 
     // Calculate trial end date (14 days from now)
@@ -85,45 +76,35 @@ export async function POST(request: Request) {
     if (tenantError) {
       // Rollback: supprimer l'utilisateur créé
       await supabase.auth.admin.deleteUser(userId);
-      return NextResponse.json(
-        { error: `Erreur Tenant: ${tenantError.message}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `Erreur Tenant: ${tenantError.message}` }, { status: 500 });
     }
 
     // 4. Créer l'admin user
-    const { error: adminError } = await supabase
-      .from('admin_users')
-      .insert({
-        tenant_id: tenant.id,
-        user_id: userId,
-        email,
-        full_name: restaurantName,
-        role: 'superadmin',
-        is_active: true,
-      });
+    const { error: adminError } = await supabase.from('admin_users').insert({
+      tenant_id: tenant.id,
+      user_id: userId,
+      email,
+      full_name: restaurantName,
+      role: 'superadmin',
+      is_active: true,
+    });
 
     if (adminError) {
       // Rollback
       await supabase.from('tenants').delete().eq('id', tenant.id);
       await supabase.auth.admin.deleteUser(userId);
-      return NextResponse.json(
-        { error: `Erreur Admin: ${adminError.message}` },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: `Erreur Admin: ${adminError.message}` }, { status: 500 });
     }
 
     // 5. Créer une venue par défaut
-    await supabase
-      .from('venues')
-      .insert({
-        tenant_id: tenant.id,
-        slug: 'main',
-        name: 'Salle principale',
-        name_en: 'Main Dining',
-        type: 'restaurant',
-        is_active: true,
-      });
+    await supabase.from('venues').insert({
+      tenant_id: tenant.id,
+      slug: 'main',
+      name: 'Salle principale',
+      name_en: 'Main Dining',
+      type: 'restaurant',
+      is_active: true,
+    });
 
     // 6. TODO: Envoyer email de bienvenue (Resend)
     // await sendWelcomeEmail(email, tenant.slug);
@@ -135,12 +116,8 @@ export async function POST(request: Request) {
       tenantId: tenant.id,
       message: 'Restaurant créé avec succès !',
     });
-
   } catch (error: unknown) {
     console.error('Signup error:', error);
-    return NextResponse.json(
-      { error: 'Erreur serveur' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

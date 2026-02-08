@@ -25,7 +25,9 @@ export default async function SubscriptionPage() {
 
   // Pour l'instant, on mock l'email s'il n'est pas dispo, le checkout demandera
   // En production, il faut récupérer l'email de l'utilisateur connecté via auth.users
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const tenantWithEmail = { ...tenant, email: user?.email };
 
   return (

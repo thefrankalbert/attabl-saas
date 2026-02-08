@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,32 +11,25 @@ import {
   Smartphone,
   QrCode,
   BarChart3,
-  Bell,
   Globe,
   CreditCard,
-  Users,
   Building2,
   ShoppingCart,
   ClipboardList,
   Settings,
-  Palette,
   Menu as MenuIcon,
-  Image as ImageIcon,
-  Languages,
-  Clock,
   CheckCircle2,
   Zap,
   Database,
   Lock,
   Wifi,
   Star,
-  ChevronRight,
   Moon,
   Sun,
-  ArrowLeft
+  ArrowLeft,
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useTheme } from "next-themes";
+import { useTheme } from 'next-themes';
 import { useState } from 'react';
 
 // ============================================
@@ -45,153 +38,153 @@ import { useState } from 'react';
 
 const newFeatures = [
   {
-    title: "Super Admin",
-    description: "Accès universel pour tester tous les établissements",
-    date: "Février 2026",
+    title: 'Super Admin',
+    description: 'Accès universel pour tester tous les établissements',
+    date: 'Février 2026',
     icon: Shield,
-    tag: "Admin"
+    tag: 'Admin',
   },
   {
-    title: "Dark Mode",
-    description: "Interface sombre par défaut, plus immersive",
-    date: "Février 2026",
+    title: 'Dark Mode',
+    description: 'Interface sombre par défaut, plus immersive',
+    date: 'Février 2026',
     icon: Moon,
-    tag: "UI"
+    tag: 'UI',
   },
   {
-    title: "Prix Stripe Synchronisés",
-    description: "Gestion automatique des prix en FCFA",
-    date: "Février 2026",
+    title: 'Prix Stripe Synchronisés',
+    description: 'Gestion automatique des prix en FCFA',
+    date: 'Février 2026',
     icon: CreditCard,
-    tag: "Paiement"
-  }
+    tag: 'Paiement',
+  },
 ];
 
 const adminFeatures = [
   {
-    category: "Tableau de Bord",
+    category: 'Tableau de Bord',
     icon: BarChart3,
     features: [
-      { name: "Statistiques temps réel", desc: "Commandes, revenus, items populaires" },
-      { name: "Commandes du jour", desc: "Compteur et liste en direct" },
-      { name: "Revenus journaliers", desc: "Chiffre d'affaires en FCFA" },
-      { name: "Commandes actives", desc: "Pending, preparing, ready" },
-      { name: "Dernières commandes", desc: "5 plus récentes avec statut" }
-    ]
+      { name: 'Statistiques temps réel', desc: 'Commandes, revenus, items populaires' },
+      { name: 'Commandes du jour', desc: 'Compteur et liste en direct' },
+      { name: 'Revenus journaliers', desc: "Chiffre d'affaires en FCFA" },
+      { name: 'Commandes actives', desc: 'Pending, preparing, ready' },
+      { name: 'Dernières commandes', desc: '5 plus récentes avec statut' },
+    ],
   },
   {
-    category: "Gestion des Commandes",
+    category: 'Gestion des Commandes',
     icon: ClipboardList,
     features: [
-      { name: "Workflow complet", desc: "Pending → Preparing → Ready → Delivered" },
-      { name: "Validation serveur", desc: "Vérification prix et disponibilité" },
-      { name: "Numéro de table/chambre", desc: "Attribution automatique" },
-      { name: "Notes pour la cuisine", desc: "Instructions spéciales" },
-      { name: "Historique complet", desc: "Toutes les commandes passées" }
-    ]
+      { name: 'Workflow complet', desc: 'Pending → Preparing → Ready → Delivered' },
+      { name: 'Validation serveur', desc: 'Vérification prix et disponibilité' },
+      { name: 'Numéro de table/chambre', desc: 'Attribution automatique' },
+      { name: 'Notes pour la cuisine', desc: 'Instructions spéciales' },
+      { name: 'Historique complet', desc: 'Toutes les commandes passées' },
+    ],
   },
   {
-    category: "Gestion des Menus",
+    category: 'Gestion des Menus',
     icon: MenuIcon,
     features: [
-      { name: "Support bilingue", desc: "Français et Anglais" },
-      { name: "Photos HD", desc: "Images haute définition" },
-      { name: "Options & Variantes", desc: "Tailles, préparations, prix différents" },
-      { name: "Catégories", desc: "Organisation personnalisable" },
-      { name: "Indicateurs", desc: "Végétarien, épicé, disponibilité" }
-    ]
+      { name: 'Support bilingue', desc: 'Français et Anglais' },
+      { name: 'Photos HD', desc: 'Images haute définition' },
+      { name: 'Options & Variantes', desc: 'Tailles, préparations, prix différents' },
+      { name: 'Catégories', desc: 'Organisation personnalisable' },
+      { name: 'Indicateurs', desc: 'Végétarien, épicé, disponibilité' },
+    ],
   },
   {
-    category: "QR Codes",
+    category: 'QR Codes',
     icon: QrCode,
     features: [
-      { name: "3 templates", desc: "Standard, Chevalet, Carte de visite" },
-      { name: "Export PDF", desc: "Téléchargement haute résolution" },
-      { name: "Personnalisation", desc: "Logo et couleurs de marque" },
-      { name: "Impression directe", desc: "Via le navigateur" }
-    ]
+      { name: '3 templates', desc: 'Standard, Chevalet, Carte de visite' },
+      { name: 'Export PDF', desc: 'Téléchargement haute résolution' },
+      { name: 'Personnalisation', desc: 'Logo et couleurs de marque' },
+      { name: 'Impression directe', desc: 'Via le navigateur' },
+    ],
   },
   {
-    category: "Paramètres",
+    category: 'Paramètres',
     icon: Settings,
     features: [
-      { name: "Branding complet", desc: "Logo, couleurs, description" },
-      { name: "Informations établissement", desc: "Adresse, téléphone, type" },
-      { name: "Gestion équipe", desc: "Admins multiples avec rôles" },
-      { name: "Notifications", desc: "Alertes sonores configurables" }
-    ]
+      { name: 'Branding complet', desc: 'Logo, couleurs, description' },
+      { name: 'Informations établissement', desc: 'Adresse, téléphone, type' },
+      { name: 'Gestion équipe', desc: 'Admins multiples avec rôles' },
+      { name: 'Notifications', desc: 'Alertes sonores configurables' },
+    ],
   },
   {
-    category: "Abonnement & Facturation",
+    category: 'Abonnement & Facturation',
     icon: CreditCard,
     features: [
-      { name: "3 plans disponibles", desc: "Essentiel, Premium, Entreprise" },
-      { name: "Paiement Stripe", desc: "Sécurisé et automatique" },
-      { name: "Essai gratuit 14 jours", desc: "Sans engagement" },
-      { name: "Factures automatiques", desc: "Mensuelles ou annuelles" }
-    ]
-  }
+      { name: '3 plans disponibles', desc: 'Essentiel, Premium, Entreprise' },
+      { name: 'Paiement Stripe', desc: 'Sécurisé et automatique' },
+      { name: 'Essai gratuit 14 jours', desc: 'Sans engagement' },
+      { name: 'Factures automatiques', desc: 'Mensuelles ou annuelles' },
+    ],
+  },
 ];
 
 const clientFeatures = [
   {
-    category: "Navigation Menu",
+    category: 'Navigation Menu',
     icon: Smartphone,
     features: [
-      { name: "Catégories visuelles", desc: "Navigation intuitive" },
-      { name: "Photos des plats", desc: "Images HD appétissantes" },
-      { name: "Prix en FCFA", desc: "Formatage local" },
-      { name: "Indicateurs alimentaires", desc: "Végétarien, épicé" },
-      { name: "Disponibilité temps réel", desc: "Stock mis à jour" }
-    ]
+      { name: 'Catégories visuelles', desc: 'Navigation intuitive' },
+      { name: 'Photos des plats', desc: 'Images HD appétissantes' },
+      { name: 'Prix en FCFA', desc: 'Formatage local' },
+      { name: 'Indicateurs alimentaires', desc: 'Végétarien, épicé' },
+      { name: 'Disponibilité temps réel', desc: 'Stock mis à jour' },
+    ],
   },
   {
-    category: "Sélection & Panier",
+    category: 'Sélection & Panier',
     icon: ShoppingCart,
     features: [
-      { name: "Options & variantes", desc: "Choix via dropdown" },
-      { name: "Contrôles quantité", desc: "Boutons +/- intuitifs" },
-      { name: "Panier persistant", desc: "Sauvegarde localStorage" },
-      { name: "Notes spéciales", desc: "Instructions pour la cuisine" },
-      { name: "Calcul dynamique", desc: "Total en temps réel" }
-    ]
+      { name: 'Options & variantes', desc: 'Choix via dropdown' },
+      { name: 'Contrôles quantité', desc: 'Boutons +/- intuitifs' },
+      { name: 'Panier persistant', desc: 'Sauvegarde localStorage' },
+      { name: 'Notes spéciales', desc: 'Instructions pour la cuisine' },
+      { name: 'Calcul dynamique', desc: 'Total en temps réel' },
+    ],
   },
   {
-    category: "Checkout & Confirmation",
+    category: 'Checkout & Confirmation',
     icon: CheckCircle2,
     features: [
-      { name: "Revue complète", desc: "Récapitulatif avant commande" },
-      { name: "Modification facile", desc: "Quantités et items" },
-      { name: "Numéro de commande", desc: "Suivi unique" },
-      { name: "Confirmation instantanée", desc: "Page de succès" }
-    ]
+      { name: 'Revue complète', desc: 'Récapitulatif avant commande' },
+      { name: 'Modification facile', desc: 'Quantités et items' },
+      { name: 'Numéro de commande', desc: 'Suivi unique' },
+      { name: 'Confirmation instantanée', desc: 'Page de succès' },
+    ],
   },
   {
-    category: "Multi-langues",
+    category: 'Multi-langues',
     icon: Globe,
     features: [
-      { name: "Français & Anglais", desc: "Interface complète" },
-      { name: "Détection automatique", desc: "Selon le navigateur" },
-      { name: "Toggle manuel", desc: "Changement instantané" },
-      { name: "Contenu bilingue", desc: "Menus traduits" }
-    ]
-  }
+      { name: 'Français & Anglais', desc: 'Interface complète' },
+      { name: 'Détection automatique', desc: 'Selon le navigateur' },
+      { name: 'Toggle manuel', desc: 'Changement instantané' },
+      { name: 'Contenu bilingue', desc: 'Menus traduits' },
+    ],
+  },
 ];
 
 const technicalFeatures = [
-  { icon: Database, name: "Multi-tenant", desc: "Isolation complète des données" },
-  { icon: Lock, name: "Authentification", desc: "Email, Google, Microsoft" },
-  { icon: Wifi, name: "Temps réel", desc: "Mises à jour instantanées" },
-  { icon: Smartphone, name: "Mobile-first", desc: "Responsive design" },
-  { icon: Zap, name: "Performance", desc: "Next.js 16 + Turbopack" },
-  { icon: Shield, name: "Sécurité", desc: "RLS Supabase + validation" }
+  { icon: Database, name: 'Multi-tenant', desc: 'Isolation complète des données' },
+  { icon: Lock, name: 'Authentification', desc: 'Email, Google, Microsoft' },
+  { icon: Wifi, name: 'Temps réel', desc: 'Mises à jour instantanées' },
+  { icon: Smartphone, name: 'Mobile-first', desc: 'Responsive design' },
+  { icon: Zap, name: 'Performance', desc: 'Next.js 16 + Turbopack' },
+  { icon: Shield, name: 'Sécurité', desc: 'RLS Supabase + validation' },
 ];
 
 // ============================================
 // COMPONENTS
 // ============================================
 
-const FeatureCard = ({ feature, index }: { feature: typeof adminFeatures[0], index: number }) => (
+const FeatureCard = ({ feature, index }: { feature: (typeof adminFeatures)[0]; index: number }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
@@ -240,7 +233,10 @@ export default function FeaturesPage() {
           </Link>
 
           <div className="flex items-center gap-4">
-            <Link href="/" className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2">
+            <Link
+              href="/"
+              className="text-sm text-gray-400 hover:text-white transition-colors flex items-center gap-2"
+            >
               <ArrowLeft className="h-4 w-4" />
               Retour
             </Link>
@@ -273,13 +269,14 @@ export default function FeaturesPage() {
             </Badge>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Une plateforme <span className="text-[#CCFF00]">complète</span><br />
+              Une plateforme <span className="text-[#CCFF00]">complète</span>
+              <br />
               pour votre établissement
             </h1>
 
             <p className="text-xl text-gray-400 max-w-2xl mx-auto mb-12">
-              Découvrez toutes les fonctionnalités qui font d'ATTABL la solution idéale
-              pour digitaliser votre restaurant ou hôtel.
+              Découvrez toutes les fonctionnalités qui font d&apos;ATTABL la solution idéale pour
+              digitaliser votre restaurant ou hôtel.
             </p>
           </motion.div>
         </div>
@@ -369,8 +366,8 @@ export default function FeaturesPage() {
                   Fonctionnalités <span className="text-[#CCFF00]">Dashboard Admin</span>
                 </h2>
                 <p className="text-gray-400 max-w-2xl mx-auto">
-                  Gérez votre établissement avec un tableau de bord puissant et intuitif.
-                  Toutes les fonctionnalités dont vous avez besoin pour piloter votre activité.
+                  Gérez votre établissement avec un tableau de bord puissant et intuitif. Toutes les
+                  fonctionnalités dont vous avez besoin pour piloter votre activité.
                 </p>
               </div>
 
@@ -398,8 +395,8 @@ export default function FeaturesPage() {
                   Fonctionnalités <span className="text-[#CCFF00]">Application Client</span>
                 </h2>
                 <p className="text-gray-400 max-w-2xl mx-auto">
-                  Une expérience de commande fluide et moderne pour vos clients.
-                  Scan, commande, paiement - tout en quelques taps.
+                  Une expérience de commande fluide et moderne pour vos clients. Scan, commande,
+                  paiement - tout en quelques taps.
                 </p>
               </div>
 
@@ -457,8 +454,8 @@ export default function FeaturesPage() {
               Prêt à digitaliser votre établissement ?
             </h2>
             <p className="text-gray-400 mb-8 max-w-xl mx-auto">
-              Rejoignez les restaurants et hôtels qui font confiance à ATTABL.
-              14 jours d'essai gratuit, sans engagement.
+              Rejoignez les restaurants et hôtels qui font confiance à ATTABL. 14 jours d&apos;essai
+              gratuit, sans engagement.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
               <Link href="/signup">
@@ -468,7 +465,10 @@ export default function FeaturesPage() {
                 </Button>
               </Link>
               <Link href="/contact">
-                <Button variant="outline" className="border-white/20 hover:bg-white/10 rounded-xl px-8 h-12">
+                <Button
+                  variant="outline"
+                  className="border-white/20 hover:bg-white/10 rounded-xl px-8 h-12"
+                >
                   Nous contacter
                 </Button>
               </Link>
@@ -484,9 +484,7 @@ export default function FeaturesPage() {
             <Layout className="h-5 w-5 text-[#CCFF00]" />
             <span className="font-bold">ATTABL</span>
           </div>
-          <div className="text-sm text-gray-500">
-            © 2026 ATTABL. Tous droits réservés.
-          </div>
+          <div className="text-sm text-gray-500">© 2026 ATTABL. Tous droits réservés.</div>
         </div>
       </footer>
     </div>
