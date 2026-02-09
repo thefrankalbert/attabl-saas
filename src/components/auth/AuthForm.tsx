@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'next/navigation';
+import { logger } from '@/lib/logger';
 
 // Google Icon SVG
 const GoogleIcon = () => (
@@ -112,6 +113,19 @@ function AuthForm({ mode }: AuthFormProps) {
 
         if (!response.ok) {
           throw new Error(data.error || "Erreur lors de l'inscription");
+        }
+
+        // Auto-login after successful signup (to establish session before /onboarding)
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          logger.error('Auto-login failed after signup', signInError);
+          // If auto-login fails, redirect to login with a message
+          window.location.href = `/login?email=${encodeURIComponent(email)}&error=${encodeURIComponent(signInError.message)}`;
+          return;
         }
 
         // Redirect to onboarding wizard
