@@ -70,15 +70,37 @@ src/
 ## Commandes
 
 ```bash
-pnpm dev          # Lancer le serveur de dev
-pnpm build        # Build production
-pnpm start        # Demarrer en production
-pnpm lint         # Verifier ESLint
-pnpm format       # Formater avec Prettier
-pnpm format:check # Verifier le formatage sans modifier
-pnpm typecheck    # Verifier les types TypeScript
-pnpm test         # Lancer les tests Vitest
+# Developpement
+pnpm dev              # Lancer le serveur de dev
+pnpm build            # Build production
+pnpm start            # Demarrer en production
+
+# Qualite du code
+pnpm lint             # Verifier ESLint (0 erreurs, 0 warnings requis)
+pnpm format           # Formater avec Prettier
+pnpm format:check     # Verifier le formatage sans modifier
+pnpm typecheck        # Verifier les types TypeScript (mode strict)
+
+# Tests
+pnpm test             # Lancer les tests unitaires (Vitest)
+pnpm test:watch       # Tests en mode watch
+pnpm test:coverage    # Tests avec rapport de couverture
+pnpm test:e2e         # Tests E2E (Playwright — necessite le serveur dev)
+pnpm test:e2e:ui      # Tests E2E avec UI interactive
+
+# Base de donnees
+pnpm db:migrate       # Appliquer les migrations Supabase (supabase db push)
 ```
+
+### Pipeline CI/CD (GitHub Actions)
+
+5 portes de qualite automatiques sur chaque PR vers `main` :
+
+1. `pnpm typecheck` — Types TypeScript
+2. `pnpm lint` — ESLint
+3. `pnpm format:check` — Prettier
+4. `pnpm test` — Tests unitaires (99 tests Vitest)
+5. `pnpm build` — Build Next.js
 
 ## Multi-tenant : Flux de donnees
 
@@ -90,6 +112,56 @@ pnpm test         # Lancer les tests Vitest
 6. Toutes les requetes DB filtrent par `tenant_id`
 7. Le RLS Supabase ajoute une couche de securite supplementaire
 
+## Service Layer
+
+### Pattern d'injection de dependances
+
+Les services recoivent un client Supabase en parametre (testable, pas de couplage) :
+
+```typescript
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+export function createOrderService(supabase: SupabaseClient) {
+  return {
+    async validateTenant(slug: string) { ... },
+    async validateOrderItems(tenantId: string, items: OrderItemInput[]) { ... },
+    async createOrderWithItems(input: CreateOrderInput) { ... },
+  };
+}
+```
+
+### Services disponibles (`src/services/`)
+
+| Service                 | Responsabilite                                   |
+| ----------------------- | ------------------------------------------------ |
+| `errors.ts`             | Classe ServiceError + mapping code → HTTP status |
+| `slug.service.ts`       | Generation de slugs uniques URL-safe             |
+| `signup.service.ts`     | Inscription email + OAuth (avec rollback)        |
+| `order.service.ts`      | Validation commandes + verification prix serveur |
+| `tenant.service.ts`     | Mise a jour parametres tenant                    |
+| `onboarding.service.ts` | Flux onboarding multi-etapes                     |
+
+### Pattern des routes API (controleurs fins)
+
+```
+Rate limiting → Zod validation → Service call → JSON response
+```
+
+Les routes attrapent `ServiceError` et le convertissent en reponse HTTP via `serviceErrorToStatus()`.
+
+## Monitoring et Logging
+
+- **Sentry** : Capture automatique des erreurs client + serveur + edge
+- **Logger centralise** (`src/lib/logger.ts`) : Utiliser `logger.error()`, `logger.warn()`, `logger.info()` — jamais `console.*`
+- **Rate limiting** : Upstash Redis (sliding window) sur toutes les routes publiques
+
+## Tests
+
+- **Vitest** : Tests unitaires des services et schemas Zod (99 tests)
+- **Playwright** : Tests E2E (configuration de base)
+- Les tests des services utilisent des mocks Supabase injectes
+- Les tests Zod verifient les cas limites de validation
+
 ## Securite
 
 - Ne JAMAIS exposer `SUPABASE_SERVICE_ROLE_KEY` cote client
@@ -97,6 +169,7 @@ pnpm test         # Lancer les tests Vitest
 - Valider les entrees avec Zod AVANT toute operation en base
 - Le RLS est active sur toutes les tables multi-tenant
 - Les Server Actions protegees doivent deriver le tenant_id de la session, pas l'accepter en parametre
+- Rate limiting sur TOUS les endpoints publics (anti brute-force, anti spam)
 
 ## Documentation supplementaire
 
