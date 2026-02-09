@@ -141,7 +141,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         const { data: adminUser } = await supabase
           .from('admin_users')
-          .select('tenant_id, is_super_admin, role, tenants(slug)')
+          .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
           .eq('user_id', authData.user.id)
           .single();
 
@@ -152,25 +152,33 @@ function AuthForm({ mode }: AuthFormProps) {
         // Check if user is Super Admin
         const isSuperAdmin = adminUser.is_super_admin === true || adminUser.role === 'super_admin';
 
-        const tenantsData = adminUser.tenants as unknown;
-        let tenantSlug: string | undefined;
+        const tenantsData = adminUser.tenants as unknown as {
+          slug: string;
+          onboarding_completed: boolean;
+        } | null;
 
-        if (Array.isArray(tenantsData) && tenantsData.length > 0) {
-          tenantSlug = (tenantsData[0] as { slug: string }).slug;
-        } else if (tenantsData && typeof tenantsData === 'object') {
-          tenantSlug = (tenantsData as { slug: string }).slug;
-        }
+        const tenantSlug = tenantsData?.slug;
+        const onboardingCompleted = tenantsData?.onboarding_completed;
 
         if (!tenantSlug && !isSuperAdmin) {
           throw new Error('Restaurant non trouvé');
         }
 
-        const isDev = window.location.hostname === 'localhost';
-
         // Super Admin: redirect to tenant selector
         if (isSuperAdmin) {
           window.location.href = '/admin/tenants';
-        } else if (isDev) {
+          return;
+        }
+
+        // Onboarding not completed: redirect to onboarding
+        if (onboardingCompleted === false) {
+          window.location.href = '/onboarding';
+          return;
+        }
+
+        const isDev = window.location.hostname === 'localhost';
+
+        if (isDev) {
           window.location.href = `http://${tenantSlug}.localhost:3000/admin`;
         } else {
           window.location.href = `https://${tenantSlug}.attabl.com/admin`;

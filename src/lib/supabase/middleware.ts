@@ -11,11 +11,8 @@ interface MiddlewareClientResult {
 export async function createMiddlewareClient(
   request: NextRequest,
 ): Promise<MiddlewareClientResult> {
-  let response = NextResponse.next({
-    request: {
-      headers: request.headers,
-    },
-  });
+  // Accumuler tous les cookies modifiés pour les appliquer à la response finale
+  const cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = [];
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -30,38 +27,14 @@ export async function createMiddlewareClient(
             options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
             options.sameSite = 'lax';
           }
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          });
+          // Mettre à jour le cookie sur la request (pour les lectures suivantes)
+          request.cookies.set({ name, value, ...options });
+          // Accumuler pour la response finale
+          cookiesToSet.push({ name, value, options });
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          });
+          request.cookies.set({ name, value: '', ...options });
+          cookiesToSet.push({ name, value: '', options });
         },
       },
     },
@@ -69,6 +42,18 @@ export async function createMiddlewareClient(
 
   // Rafraîchir la session
   await supabase.auth.getUser();
+
+  // Créer la response UNE SEULE FOIS avec les headers de la request
+  const response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  // Appliquer TOUS les cookies accumulés sur la response finale
+  cookiesToSet.forEach(({ name, value, options }) => {
+    response.cookies.set({ name, value, ...options });
+  });
 
   return { response, supabase };
 }
