@@ -68,34 +68,41 @@ export async function GET(request: Request) {
         }
       }
 
-      // New user via OAuth - need to create tenant
-      if (plan && restaurantName) {
-        // Call signup API to create tenant
-        const signupResponse = await fetch(`${requestUrl.origin}/api/signup-oauth`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
+      // User has no tenant — need to create one via OAuth signup
+      // Use provided plan/restaurantName or defaults
+      const signupPlan = plan || 'essentiel';
+      const signupName = restaurantName || 'Mon Établissement';
+
+      // Call signup API to create tenant
+      const signupResponse = await fetch(`${requestUrl.origin}/api/signup-oauth`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: session.user.id,
+          email: session.user.email,
+          restaurantName: signupName,
+          plan: signupPlan,
+        }),
+      });
+
+      const signupData = await signupResponse.json();
+
+      if (signupResponse.ok && signupData.slug) {
+        return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+      } else {
+        // If user already exists error (duplicate), try to find their tenant again
+        if (signupData.error?.includes('already') || signupData.error?.includes('existe')) {
+          logger.warn('OAuth user exists but has no tenant — redirecting to signup', {
             userId: session.user.id,
             email: session.user.email,
-            restaurantName: restaurantName, // Already decoded by searchParams
-            plan,
-          }),
-        });
-
-        const signupData = await signupResponse.json();
-
-        if (signupResponse.ok && signupData.slug) {
-          return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+          });
         } else {
           logger.error('Signup OAuth API error', { error: signupData.error });
-          return NextResponse.redirect(
-            `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}`,
-          );
         }
+        return NextResponse.redirect(
+          `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}&email=${encodeURIComponent(session.user.email || '')}`,
+        );
       }
-
-      // No tenant and no signup data
-      return NextResponse.redirect(`${requestUrl.origin}/signup?error=incomplete_oauth_data`);
     }
   }
 
