@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -16,8 +17,16 @@ export async function GET(request: Request) {
     } = await supabase.auth.exchangeCodeForSession(code);
 
     if (error) {
-      console.error('OAuth callback error:', error);
-      return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`);
+      logger.error('OAuth callback - exchangeCodeForSession failed', {
+        errorMessage: error.message,
+        errorCode: error.code,
+        errorStatus: error.status,
+        origin: requestUrl.origin,
+        hasCode: !!code,
+      });
+      return NextResponse.redirect(
+        `${requestUrl.origin}/login?error=oauth_failed&reason=${encodeURIComponent(error.message)}`,
+      );
     }
 
     if (session?.user) {
@@ -78,7 +87,7 @@ export async function GET(request: Request) {
         if (signupResponse.ok && signupData.slug) {
           return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
         } else {
-          console.error('Signup OAuth API error:', signupData.error);
+          logger.error('Signup OAuth API error', { error: signupData.error });
           return NextResponse.redirect(
             `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}`,
           );
