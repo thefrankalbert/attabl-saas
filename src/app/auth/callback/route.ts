@@ -59,12 +59,7 @@ export async function GET(request: Request) {
           }
 
           // Existing user with completed onboarding - redirect to dashboard
-          const isDev = requestUrl.hostname === 'localhost';
-          if (isDev) {
-            return NextResponse.redirect(`http://${tenantsData.slug}.localhost:3000/admin`);
-          } else {
-            return NextResponse.redirect(`https://${tenantsData.slug}.attabl.com/admin`);
-          }
+          return NextResponse.redirect(`${requestUrl.origin}/sites/${tenantsData.slug}/admin`);
         }
       }
 

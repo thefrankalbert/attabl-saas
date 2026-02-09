@@ -176,13 +176,9 @@ function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        const isDev = window.location.hostname === 'localhost';
-
-        if (isDev) {
-          window.location.href = `http://${tenantSlug}.localhost:3000/admin`;
-        } else {
-          window.location.href = `https://${tenantSlug}.attabl.com/admin`;
-        }
+        // Redirect to admin dashboard using /sites/{slug}/admin path
+        const origin = window.location.origin;
+        window.location.href = `${origin}/sites/${tenantSlug}/admin`;
       }
     } catch (err) {
       console.error(err);

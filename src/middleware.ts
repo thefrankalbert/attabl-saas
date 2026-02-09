@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Routes qui nécessitent une authentification
-const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard'];
+const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard', '/sites'];
 
 export async function middleware(request: NextRequest) {
   // 1. Extract subdomain
@@ -35,7 +35,15 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. Si subdomain détecté, réécrire l'URL vers /sites/[site]
+  // 4. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
+  const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
+  if (sitesMatch) {
+    const tenantSlug = sitesMatch[1];
+    sessionResponse.headers.set('x-tenant-slug', tenantSlug);
+    return sessionResponse;
+  }
+
+  // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
   if (subdomain && subdomain !== 'www') {
     const url = request.nextUrl.clone();
 
@@ -58,7 +66,7 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  // 5. Pas de subdomain → retourner la réponse avec session rafraîchie
+  // 6. Pas de subdomain → retourner la réponse avec session rafraîchie
   return sessionResponse;
 }
 
