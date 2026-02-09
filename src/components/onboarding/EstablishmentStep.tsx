@@ -23,46 +23,51 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/10 text-[#CCFF00] text-sm font-bold mb-4">
-          <Building2 className="h-4 w-4" />
+      <div className="mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#CCFF00]/10 text-[#CCFF00] text-sm font-bold mb-2">
+          <Building2 className="h-3.5 w-3.5" />
           Étape 1/4
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">
           Parlez-nous de votre établissement
         </h1>
-        <p className="text-gray-500">
+        <p className="text-gray-500 text-sm">
           Ces informations nous aident à personnaliser votre expérience.
         </p>
       </div>
 
       {/* Establishment Type */}
-      <div className="mb-8">
-        <Label className="text-gray-700 font-semibold mb-3 block">Type d&apos;établissement</Label>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+      <div className="mb-4">
+        <Label className="text-gray-700 font-semibold mb-2 block text-sm">
+          Type d&apos;établissement
+        </Label>
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           {establishmentTypes.map((type) => (
             <button
               key={type.id}
               type="button"
               onClick={() => updateData({ establishmentType: type.id })}
-              className={`p-4 rounded-xl border-2 text-left transition-all ${
+              className={`p-2.5 rounded-xl border-2 text-center transition-all ${
                 data.establishmentType === type.id
                   ? 'border-[#CCFF00] bg-[#CCFF00]/10'
                   : 'border-gray-200 hover:border-gray-300'
               }`}
             >
-              <span className="text-2xl mb-2 block">{type.emoji}</span>
-              <span className="font-medium text-gray-900">{type.label}</span>
+              <span className="text-lg block">{type.emoji}</span>
+              <span className="font-medium text-gray-900 text-xs">{type.label}</span>
             </button>
           ))}
         </div>
       </div>
 
       {/* Address */}
-      <div className="space-y-4 mb-6">
+      <div className="space-y-3 mb-4">
         <div>
-          <Label htmlFor="address" className="text-gray-700 font-semibold flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+          <Label
+            htmlFor="address"
+            className="text-gray-700 font-semibold flex items-center gap-2 text-sm"
+          >
+            <MapPin className="h-3.5 w-3.5" />
             Adresse
           </Label>
           <Input
@@ -71,13 +76,13 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
             placeholder="123 Rue Principale"
             value={data.address}
             onChange={(e) => updateData({ address: e.target.value })}
-            className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl"
+            className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl text-sm"
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           <div>
-            <Label htmlFor="city" className="text-gray-700 font-semibold">
+            <Label htmlFor="city" className="text-gray-700 font-semibold text-sm">
               Ville
             </Label>
             <Input
@@ -86,56 +91,62 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               placeholder="N'Djamena"
               value={data.city}
               onChange={(e) => updateData({ city: e.target.value })}
-              className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl"
+              className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl text-sm"
             />
           </div>
           <div>
-            <Label htmlFor="country" className="text-gray-700 font-semibold">
+            <Label htmlFor="country" className="text-gray-700 font-semibold text-sm">
               Pays
             </Label>
             <Input
               id="country"
               type="text"
-              placeholder="Tchad"
+              placeholder="Cameroun"
               value={data.country}
               onChange={(e) => updateData({ country: e.target.value })}
-              className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl"
+              className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl text-sm"
             />
           </div>
         </div>
       </div>
 
-      {/* Phone */}
-      <div className="mb-6">
-        <Label htmlFor="phone" className="text-gray-700 font-semibold flex items-center gap-2">
-          <Phone className="h-4 w-4" />
-          Téléphone
-        </Label>
-        <Input
-          id="phone"
-          type="tel"
-          placeholder="+235 XX XX XX XX"
-          value={data.phone}
-          onChange={(e) => updateData({ phone: e.target.value })}
-          className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl"
-        />
-      </div>
-
-      {/* Table Count */}
-      <div>
-        <Label htmlFor="tableCount" className="text-gray-700 font-semibold flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Nombre de tables (approximatif)
-        </Label>
-        <Input
-          id="tableCount"
-          type="number"
-          min="1"
-          max="500"
-          value={data.tableCount}
-          onChange={(e) => updateData({ tableCount: parseInt(e.target.value) || 10 })}
-          className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl w-32"
-        />
+      {/* Phone & Table Count inline */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <Label
+            htmlFor="phone"
+            className="text-gray-700 font-semibold flex items-center gap-2 text-sm"
+          >
+            <Phone className="h-3.5 w-3.5" />
+            Téléphone
+          </Label>
+          <Input
+            id="phone"
+            type="tel"
+            placeholder="+235 XX XX XX XX"
+            value={data.phone}
+            onChange={(e) => updateData({ phone: e.target.value })}
+            className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl text-sm"
+          />
+        </div>
+        <div>
+          <Label
+            htmlFor="tableCount"
+            className="text-gray-700 font-semibold flex items-center gap-2 text-sm"
+          >
+            <Users className="h-3.5 w-3.5" />
+            Nombre de tables
+          </Label>
+          <Input
+            id="tableCount"
+            type="number"
+            min="1"
+            max="500"
+            value={data.tableCount}
+            onChange={(e) => updateData({ tableCount: parseInt(e.target.value) || 10 })}
+            className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] rounded-xl text-sm"
+          />
+        </div>
       </div>
     </div>
   );

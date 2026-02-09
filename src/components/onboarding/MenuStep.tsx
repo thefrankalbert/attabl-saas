@@ -63,21 +63,21 @@ export function MenuStep({ updateData }: MenuStepProps) {
   return (
     <div>
       {/* Header */}
-      <div className="mb-8">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/5 text-gray-600 text-sm font-medium mb-4">
-          <UtensilsCrossed className="h-4 w-4" />
+      <div className="mb-4">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-gray-600 text-sm font-medium mb-2">
+          <UtensilsCrossed className="h-3.5 w-3.5" />
           Étape 3/4
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Votre première catégorie</h1>
-        <p className="text-gray-500">
+        <h1 className="text-2xl font-bold text-gray-900 mb-1">Votre première catégorie</h1>
+        <p className="text-gray-500 text-sm">
           Créez une catégorie avec quelques articles pour démarrer. Vous pourrez en ajouter
           d&apos;autres plus tard.
         </p>
       </div>
 
       {/* Category Name */}
-      <div className="mb-8">
-        <Label htmlFor="categoryName" className="text-gray-700 font-semibold">
+      <div className="mb-4">
+        <Label htmlFor="categoryName" className="text-gray-700 font-semibold text-sm">
           Nom de la catégorie
         </Label>
         <Input
@@ -86,45 +86,45 @@ export function MenuStep({ updateData }: MenuStepProps) {
           placeholder="Ex: Plats principaux, Entrées, Boissons..."
           value={categoryName}
           onChange={(e) => updateCategoryName(e.target.value)}
-          className="mt-2 h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+          className="mt-1.5 h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl text-sm"
         />
       </div>
 
       {/* Items */}
-      <div className="space-y-4">
-        <Label className="text-gray-700 font-semibold">Articles (optionnel)</Label>
+      <div className="space-y-2.5">
+        <Label className="text-gray-700 font-semibold text-sm">Articles (optionnel)</Label>
 
         {items.map((item, index) => (
-          <div key={index} className="flex items-center gap-3">
+          <div key={index} className="flex items-center gap-2">
             <div className="flex-1">
               <Input
                 type="text"
                 placeholder="Nom de l'article"
                 value={item.name}
                 onChange={(e) => updateItem(index, 'name', e.target.value)}
-                className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+                className="h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl text-sm"
               />
             </div>
-            <div className="w-32">
+            <div className="w-28">
               <Input
                 type="number"
                 placeholder="Prix"
                 value={item.price}
                 onChange={(e) => updateItem(index, 'price', e.target.value)}
-                className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl"
+                className="h-10 bg-gray-50 border-gray-200 focus:bg-white focus:border-gray-900 rounded-xl text-sm"
               />
             </div>
             <button
               type="button"
               onClick={() => removeItem(index)}
               disabled={items.length === 1}
-              className={`p-3 rounded-xl transition-colors ${
+              className={`p-2 rounded-lg transition-colors ${
                 items.length === 1
                   ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
               }`}
             >
-              <Trash2 className="h-5 w-5" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         ))}
@@ -133,17 +133,17 @@ export function MenuStep({ updateData }: MenuStepProps) {
           <button
             type="button"
             onClick={addItem}
-            className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors"
+            className="flex items-center gap-2 px-3 py-2.5 w-full rounded-xl border-2 border-dashed border-gray-200 text-gray-500 hover:border-gray-300 hover:text-gray-700 transition-colors text-sm"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-4 w-4" />
             Ajouter un article
           </button>
         )}
       </div>
 
       {/* Skip Info */}
-      <div className="mt-8 p-4 rounded-xl bg-gray-50 border border-gray-100">
-        <p className="text-sm text-gray-600">
+      <div className="mt-4 p-3 rounded-xl bg-gray-50 border border-gray-100">
+        <p className="text-xs text-gray-600">
           <strong>💡 Astuce :</strong> Vous pouvez laisser cette étape vide et ajouter votre menu
           complet depuis le Dashboard.
         </p>

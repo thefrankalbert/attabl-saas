@@ -279,7 +279,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-12">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-8 lg:pt-6">
           <div className="max-w-2xl mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
@@ -345,7 +345,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={nextStep}
                   disabled={saving}
-                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#CCFF00]/30"
+                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] "
                 >
                   {saving ? 'Enregistrement...' : 'Continuer'}
                   <ArrowRight className="h-5 w-5" />
@@ -354,7 +354,7 @@ export default function OnboardingPage() {
                 <button
                   onClick={completeOnboarding}
                   disabled={saving}
-                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-[#CCFF00]/30"
+                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] "
                 >
                   {saving ? 'Lancement...' : 'Accéder au Dashboard'}
                   <Rocket className="h-5 w-5" />
