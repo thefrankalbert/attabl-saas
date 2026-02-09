@@ -155,9 +155,9 @@ describe('SignupService', () => {
       });
 
       // auth.admin.createUser should NOT have been called
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- mock access
       expect(
-        (supabase as unknown as Record<string, any>).auth.admin.createUser,
+        (supabase as unknown as Record<string, Record<string, Record<string, unknown>>>).auth.admin
+          .createUser,
       ).not.toHaveBeenCalled();
     });
 
