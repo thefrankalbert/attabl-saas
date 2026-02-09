@@ -12,10 +12,8 @@ interface LaunchStepProps {
 export function LaunchStep({ data }: LaunchStepProps) {
   const menuUrl =
     typeof window !== 'undefined'
-      ? window.location.hostname === 'localhost'
-        ? `http://${data.tenantSlug}.localhost:3000`
-        : `https://${data.tenantSlug}.attabl.com`
-      : `https://${data.tenantSlug}.attabl.com`;
+      ? `${window.location.origin}/sites/${data.tenantSlug}`
+      : `https://attabl.com/sites/${data.tenantSlug}`;
 
   const completedItems = [
     { label: 'Compte créé', done: true },

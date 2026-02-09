@@ -33,7 +33,11 @@ export default async function AdminLayout({
 
   // ⚡ Vérifier si onboarding est terminé
   // Si non, rediriger vers le wizard d'onboarding
-  if (tenant && tenant.onboarding_completed === false) {
+  if (!tenant) {
+    redirect('/login');
+  }
+
+  if (tenant.onboarding_completed === false) {
     redirect('/onboarding');
   }
 
