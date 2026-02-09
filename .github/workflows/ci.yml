@@ -59,7 +59,7 @@ jobs:
       - name: Format check
         run: pnpm format:check
 
-      # Gate 4: Tests (placeholder for Phase 6)
+      # Gate 4: Unit tests (Vitest — services + Zod schemas)
       - name: Test
         run: pnpm test
 
@@ -82,3 +82,9 @@ jobs:
           # App
           NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
           NEXT_PUBLIC_APP_DOMAIN: ${{ secrets.NEXT_PUBLIC_APP_DOMAIN }}
+          # Sentry
+          NEXT_PUBLIC_SENTRY_DSN: ${{ secrets.NEXT_PUBLIC_SENTRY_DSN }}
+          SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
+          # Upstash Redis (rate limiting)
+          UPSTASH_REDIS_REST_URL: ${{ secrets.UPSTASH_REDIS_REST_URL }}
+          UPSTASH_REDIS_REST_TOKEN: ${{ secrets.UPSTASH_REDIS_REST_TOKEN }}
