@@ -110,7 +110,19 @@ function FrictionlessSignupForm() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Erreur d'inscription");
 
-      // Successful signup redirects to onboarding
+      // Auto-login to establish session before redirecting to /onboarding
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // If auto-login fails, redirect to login page
+        window.location.href = `/login?email=${encodeURIComponent(email)}`;
+        return;
+      }
+
+      // Successful signup + login → redirect to onboarding
       window.location.href = '/onboarding';
     } catch (err) {
       console.error(err);
