@@ -1,90 +1,84 @@
 import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { signupOAuthSchema } from '@/lib/validations/auth.schema';
+import { oauthSignupLimiter, getClientIp } from '@/lib/rate-limit';
+import { createSignupService } from '@/services/signup.service';
+import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const { userId, email, restaurantName, plan } = body;
-
-    if (!userId || !email || !restaurantName) {
-      return NextResponse.json({ error: 'Champs requis manquants' }, { status: 400 });
+    // 1. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await oauthSignupLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429 },
+      );
     }
 
+    // 2. Parse and validate input with Zod
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+    }
+
+    const parseResult = signupOAuthSchema.safeParse(body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      return NextResponse.json({ error: firstError }, { status: 400 });
+    }
+
+    const { userId, email, restaurantName, phone, plan } = parseResult.data;
+
+    // 3. SECURITY: Verify userId matches authenticated user (IDOR prevention)
+    const supabaseAuth = await createClient();
+    const {
+      data: { user: authenticatedUser },
+      error: authCheckError,
+    } = await supabaseAuth.auth.getUser();
+
+    if (authCheckError || !authenticatedUser) {
+      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
+    }
+
+    if (authenticatedUser.id !== userId) {
+      logger.warn('OAuth signup: userId mismatch — possible IDOR attempt', {
+        authenticatedUserId: authenticatedUser.id,
+        requestedUserId: userId,
+      });
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
+    }
+
+    // 4. Execute signup via service
     const supabase = createAdminClient();
+    const signupService = createSignupService(supabase);
 
-    // Generate unique slug
-    const baseSlug = restaurantName
-      .toLowerCase()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '');
-
-    const { data: existingTenant } = await supabase
-      .from('tenants')
-      .select('slug')
-      .eq('slug', baseSlug)
-      .single();
-
-    let finalSlug = baseSlug;
-    if (existingTenant) {
-      finalSlug = `${baseSlug}-${Math.floor(Math.random() * 1000)}`;
-    }
-
-    // Calculate trial end date (14 days from now)
-    const trialEndsAt = new Date();
-    trialEndsAt.setDate(trialEndsAt.getDate() + 14);
-
-    // Create tenant
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenants')
-      .insert({
-        slug: finalSlug,
-        name: restaurantName,
-        subscription_plan: plan || 'essentiel',
-        subscription_status: 'trial',
-        trial_ends_at: trialEndsAt.toISOString(),
-        is_active: true,
-      })
-      .select()
-      .single();
-
-    if (tenantError) {
-      return NextResponse.json({ error: `Erreur Tenant: ${tenantError.message}` }, { status: 500 });
-    }
-
-    // Create admin user
-    const { error: adminError } = await supabase.from('admin_users').insert({
-      tenant_id: tenant.id,
-      user_id: userId,
+    const result = await signupService.completeOAuthSignup({
+      userId,
       email,
-      full_name: restaurantName,
-      role: 'superadmin',
-      is_active: true,
-    });
-
-    if (adminError) {
-      await supabase.from('tenants').delete().eq('id', tenant.id);
-      return NextResponse.json({ error: `Erreur Admin: ${adminError.message}` }, { status: 500 });
-    }
-
-    // Create default venue
-    await supabase.from('venues').insert({
-      tenant_id: tenant.id,
-      slug: 'main',
-      name: 'Salle principale',
-      name_en: 'Main Dining',
-      type: 'restaurant',
-      is_active: true,
+      restaurantName,
+      phone,
+      plan,
     });
 
     return NextResponse.json({
       success: true,
-      slug: finalSlug,
-      tenantId: tenant.id,
+      slug: result.slug,
+      tenantId: result.tenantId,
     });
   } catch (error) {
-    console.error('OAuth Signup error:', error);
+    if (error instanceof ServiceError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: serviceErrorToStatus(error.code) },
+      );
+    }
+    logger.error('OAuth Signup error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

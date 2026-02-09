@@ -106,8 +106,6 @@ export default function NewsletterSection({
             </p>
           </div>
 
-
-
           {/* Right side: Form */}
           <div className="w-full lg:w-1/2 flex flex-col gap-4 relative z-10 lg:pl-12">
             {/* Input group */}

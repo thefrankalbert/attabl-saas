@@ -2,6 +2,9 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { headers } from 'next/headers';
+import { logger } from '@/lib/logger';
+import { newsletterLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 
 const schema = z.object({
   email: z.string().email({ message: 'Invalid email address' }),
@@ -11,6 +14,14 @@ export async function subscribeToNewsletter(
   prevState: { success: boolean; message: string } | null,
   formData: FormData,
 ) {
+  // Rate limiting
+  const headersList = await headers();
+  const ip = getClientIpFromHeaders(headersList);
+  const { success: allowed } = await newsletterLimiter.check(ip);
+  if (!allowed) {
+    return { success: false, message: 'Too many requests. Please try again later.' };
+  }
+
   const email = formData.get('email');
 
   // Validate email
@@ -23,7 +34,7 @@ export async function subscribeToNewsletter(
     };
   }
 
-  const supabase = await createClient(); // Use createClient (admin client preferable for checking uniqueness if RLS prevents select, but insert constraints handle unique violation)
+  const supabase = await createClient();
 
   try {
     const { error } = await supabase
@@ -32,13 +43,14 @@ export async function subscribeToNewsletter(
 
     if (error) {
       if (error.code === '23505') {
-        // Unique violation
+        // SECURITY: Same success message whether already subscribed or not
+        // Prevents email enumeration attacks
         return {
-          success: false,
-          message: 'You are already subscribed!',
+          success: true,
+          message: 'Thank you for subscribing!',
         };
       }
-      console.error('Newsletter error:', error);
+      logger.error('Newsletter subscription error', error);
       return {
         success: false,
         message: 'Something went wrong. Please try again.',
@@ -50,7 +62,7 @@ export async function subscribeToNewsletter(
       message: 'Thank you for subscribing!',
     };
   } catch (error) {
-    console.error('Newsletter error:', error);
+    logger.error('Newsletter subscription error', error);
     return {
       success: false,
       message: 'Something went wrong. Please try again.',

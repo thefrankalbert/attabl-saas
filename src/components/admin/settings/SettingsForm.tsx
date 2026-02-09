@@ -118,7 +118,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('phone', data.phone || '');
       if (finalLogoUrl) formData.append('logoUrl', finalLogoUrl);
 
-      const result = await updateTenantSettings(tenant.id, formData);
+      const result = await updateTenantSettings(formData);
 
       if (result.success) {
         toast({

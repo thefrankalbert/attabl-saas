@@ -1,12 +1,36 @@
 import { NextResponse } from 'next/server';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
+import { logger } from '@/lib/logger';
+import { z } from 'zod';
+import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
+
+/**
+ * Checkout schema — simplified since tenantId and email are derived from session.
+ * We only need plan and billingInterval from the client.
+ */
+const checkoutBodySchema = z.object({
+  plan: z.enum(['essentiel', 'premium'], {
+    error: 'Plan invalide. Choisissez essentiel ou premium.',
+  }),
+  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
+});
 
 export async function POST(request: Request) {
   try {
+    // 0. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await checkoutLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429 },
+      );
+    }
+
     const supabase = await createClient();
 
-    // ✅ SECURITY FIX: Get user from server-side auth
+    // ✅ SECURITY: Get user from server-side auth
     const {
       data: { user },
       error: authError,
@@ -16,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // ✅ SECURITY FIX: Derive tenantId from authenticated user
+    // ✅ SECURITY: Derive tenantId from authenticated user
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('tenant_id, tenants(name)')
@@ -33,33 +57,22 @@ export async function POST(request: Request) {
     const tenantId = adminUser.tenant_id;
     const email = user.email!;
 
-    const body = await request.json();
-    const {
-      plan,
-      billingInterval = 'monthly',
-    }: {
-      plan: 'essentiel' | 'premium';
-      billingInterval?: 'monthly' | 'yearly';
-    } = body;
-
-    // Validation
-    if (!plan) {
-      return NextResponse.json({ error: 'Paramètre manquant (plan requis)' }, { status: 400 });
+    // ✅ Validate body with Zod (replaces manual .includes() checks)
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
     }
 
-    if (!['essentiel', 'premium'].includes(plan)) {
-      return NextResponse.json(
-        { error: 'Plan invalide. Doit être "essentiel" ou "premium"' },
-        { status: 400 },
-      );
+    const parseResult = checkoutBodySchema.safeParse(body);
+
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
-    if (!['monthly', 'yearly'].includes(billingInterval)) {
-      return NextResponse.json(
-        { error: 'Intervalle invalide. Doit être "monthly" ou "yearly"' },
-        { status: 400 },
-      );
-    }
+    const { plan, billingInterval } = parseResult.data;
 
     // Obtenir le Price ID Stripe correspondant
     const priceId = getStripePriceId(plan, billingInterval);
@@ -102,7 +115,7 @@ export async function POST(request: Request) {
       url: session.url,
     });
   } catch (error: unknown) {
-    console.error('Stripe checkout error:', error);
+    logger.error('Stripe checkout error', error);
     const errorMessage = error instanceof Error ? error.message : 'Erreur Stripe';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

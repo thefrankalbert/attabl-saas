@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { logger } from '@/lib/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
       event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      console.error('Webhook signature verification failed:', errorMessage);
+      logger.error('Webhook signature verification failed', err, { errorMessage });
       return NextResponse.json({ error: 'Invalid signature' }, { status: 400 });
     }
 
@@ -58,9 +59,11 @@ export async function POST(request: Request) {
 
           await supabase.from('tenants').update(updateData).eq('id', tenantId);
 
-          console.log(
-            `✅ Tenant ${tenantId} activé avec succès (Plan: ${plan}, Interval: ${billingInterval})`,
-          );
+          logger.info('Tenant activated via checkout', {
+            tenantId,
+            plan,
+            billingInterval,
+          });
         }
         break;
       }
@@ -98,7 +101,7 @@ export async function POST(request: Request) {
 
           await supabase.from('tenants').update(updateData).eq('id', tenant.id);
 
-          console.log(`✅ Subscription updated for tenant ${tenant.id}`);
+          logger.info('Subscription updated', { tenantId: tenant.id, status: subscription.status });
         }
         break;
       }
@@ -123,7 +126,7 @@ export async function POST(request: Request) {
             })
             .eq('id', tenant.id);
 
-          console.log(`❌ Tenant ${tenant.id} suspendu (abonnement annulé)`);
+          logger.warn('Tenant suspended — subscription cancelled', { tenantId: tenant.id });
         }
         break;
       }
@@ -147,18 +150,18 @@ export async function POST(request: Request) {
             })
             .eq('id', tenant.id);
 
-          console.log(`⚠️ Payment failed for tenant ${tenant.id}`);
+          logger.warn('Payment failed for tenant', { tenantId: tenant.id });
         }
         break;
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.info('Unhandled Stripe event type', { eventType: event.type });
     }
 
     return NextResponse.json({ received: true });
   } catch (error: unknown) {
-    console.error('Webhook error:', error);
+    logger.error('Webhook error', error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
 }
