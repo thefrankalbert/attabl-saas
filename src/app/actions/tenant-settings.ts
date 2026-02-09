@@ -1,43 +1,55 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
+import { logger } from '@/lib/logger';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
+import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
+import { createTenantService } from '@/services/tenant.service';
 
-export async function updateTenantSettings(tenantId: string, formData: FormData) {
-  const supabase = await createClient();
-
-  const name = formData.get('name') as string;
-  const description = formData.get('description') as string;
-  const primaryColor = formData.get('primaryColor') as string;
-  const secondaryColor = formData.get('secondaryColor') as string;
-  const address = formData.get('address') as string;
-  const phone = formData.get('phone') as string;
-  const logoUrl = formData.get('logoUrl') as string;
-
+/**
+ * Update tenant settings.
+ *
+ * SECURITY: tenantId is derived from the authenticated user's session
+ * to prevent unauthorized cross-tenant modifications (IDOR prevention).
+ */
+export async function updateTenantSettings(formData: FormData) {
   try {
-    const { error } = await supabase
-      .from('tenants')
-      .update({
-        name,
-        description,
-        primary_color: primaryColor,
-        secondary_color: secondaryColor,
-        address,
-        phone,
-        logo_url: logoUrl || undefined,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', tenantId);
+    // 1. Authenticate + get tenant from session (NOT from client)
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
-    if (error) throw error;
+    // 2. Extract and validate form data with Zod
+    const rawData = {
+      name: formData.get('name') as string,
+      description: (formData.get('description') as string) || undefined,
+      primaryColor: formData.get('primaryColor') as string,
+      secondaryColor: formData.get('secondaryColor') as string,
+      address: (formData.get('address') as string) || undefined,
+      phone: (formData.get('phone') as string) || undefined,
+      logoUrl: (formData.get('logoUrl') as string) || undefined,
+    };
 
+    const parseResult = updateTenantSettingsSchema.safeParse(rawData);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      return { success: false, error: firstError };
+    }
+
+    // 3. Update via service
+    const tenantService = createTenantService(supabase);
+    await tenantService.updateSettings(tenantId, parseResult.data);
+
+    // 4. Revalidate caches
     revalidatePath('/admin');
     revalidatePath('/admin/settings');
-    revalidatePath('/', 'layout'); // Refresh client menu layout as well
+    revalidatePath('/', 'layout');
 
     return { success: true };
   } catch (error) {
-    console.error('Error updating settings:', error);
+    if (error instanceof AuthError) {
+      return { success: false, error: error.message };
+    }
+
+    logger.error('Error updating tenant settings', error);
     return { success: false, error: 'Une erreur est survenue lors de la mise à jour.' };
   }
 }

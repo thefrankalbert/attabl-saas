@@ -1,0 +1,27 @@
+import { z } from 'zod';
+
+/**
+ * Zod schemas for tenant validation.
+ * Used in tenant-settings server action.
+ */
+
+const hexColorRegex = /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/;
+
+export const updateTenantSettingsSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Le nom doit contenir au moins 2 caractères')
+    .max(100, 'Le nom ne doit pas dépasser 100 caractères'),
+  description: z.string().max(500, 'La description ne doit pas dépasser 500 caractères').optional(),
+  primaryColor: z
+    .string()
+    .regex(hexColorRegex, 'Couleur primaire invalide (format: #RGB ou #RRGGBB)'),
+  secondaryColor: z
+    .string()
+    .regex(hexColorRegex, 'Couleur secondaire invalide (format: #RGB ou #RRGGBB)'),
+  address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
+  phone: z.string().max(20, 'Le téléphone ne doit pas dépasser 20 caractères').optional(),
+  logoUrl: z.string().url().optional().or(z.literal('')),
+});
+
+export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

@@ -1,13 +1,41 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
+import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
+import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
+import { createOnboardingService } from '@/services/onboarding.service';
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient();
-    const body = await request.json();
-    const { step, data } = body;
+    // 1. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await onboardingLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429 },
+      );
+    }
 
-    // Get current user
+    const supabase = await createClient();
+
+    // 2. Validate input with Zod
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+    }
+
+    const parseResult = onboardingSaveSchema.safeParse(body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      return NextResponse.json({ error: firstError }, { status: 400 });
+    }
+
+    const { step, data } = parseResult.data;
+
+    // 3. Authenticate
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -16,7 +44,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
     }
 
-    // Get the user's tenant
+    // 4. Get the user's tenant
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('tenant_id')
@@ -27,46 +55,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 
-    const tenantId = adminUser.tenant_id;
-
-    // Update tenant with data based on current step
-    const tenantUpdate: Record<string, unknown> = {};
-
-    if (step === 1) {
-      tenantUpdate.establishment_type = data.establishmentType;
-      tenantUpdate.address = data.address;
-      tenantUpdate.city = data.city;
-      tenantUpdate.country = data.country;
-      tenantUpdate.phone = data.phone;
-      tenantUpdate.table_count = data.tableCount;
-    } else if (step === 2) {
-      tenantUpdate.logo_url = data.logoUrl;
-      tenantUpdate.primary_color = data.primaryColor;
-      tenantUpdate.secondary_color = data.secondaryColor;
-      tenantUpdate.description = data.description;
-    }
-    // Step 3 (menu) is handled separately
-    // Step 4 uses the /complete endpoint
-
-    if (Object.keys(tenantUpdate).length > 0) {
-      await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
-    }
-
-    // Update or insert onboarding progress
-    await supabase.from('onboarding_progress').upsert(
-      {
-        tenant_id: tenantId,
-        step: step + 1, // Next step
-        updated_at: new Date().toISOString(),
-      },
-      {
-        onConflict: 'tenant_id',
-      },
-    );
+    // 5. Save step via service
+    const onboardingService = createOnboardingService(supabase);
+    await onboardingService.saveStep(adminUser.tenant_id, step, data);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Onboarding save error:', error);
+    logger.error('Onboarding save error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

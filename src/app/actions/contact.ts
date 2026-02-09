@@ -1,6 +1,9 @@
 'use server';
 
 import { z } from 'zod';
+import { headers } from 'next/headers';
+import { logger } from '@/lib/logger';
+import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 
 const contactSchema = z.object({
   name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -23,6 +26,14 @@ export type ContactState = {
 };
 
 export async function submitContactForm(prevState: ContactState, formData: FormData) {
+  // Rate limiting
+  const headersList = await headers();
+  const ip = getClientIpFromHeaders(headersList);
+  const { success: allowed } = await contactLimiter.check(ip);
+  if (!allowed) {
+    return { success: false, message: 'Trop de requêtes. Réessayez plus tard.' };
+  }
+
   const validatedFields = contactSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
@@ -42,15 +53,15 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
   const { name, email, company, date, message } = validatedFields.data;
 
   // HERE: Integration with Email Provider (Resend, Nodemailer, etc.)
-  // For now, we simulate a successful email sending.
+  // For now, we log and simulate a successful email sending.
   // In production, use: await resend.emails.send({ ... })
 
-  console.log('--- NEW APPOINTMENT REQUEST ---');
-  console.log(`From: ${name} (${email})`);
-  console.log(`Company: ${company}`);
-  console.log(`Preferred Date: ${date}`);
-  console.log(`Message: ${message}`);
-  console.log('-------------------------------');
+  logger.info('New appointment request', {
+    from: `${name} (${email})`,
+    company,
+    preferredDate: date,
+    messageLength: message.length,
+  });
 
   // Simulate delay
   await new Promise((resolve) => setTimeout(resolve, 1000));
