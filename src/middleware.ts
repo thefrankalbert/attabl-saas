@@ -26,7 +26,12 @@ export async function middleware(request: NextRequest) {
       // Rediriger vers login avec URL de retour
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(loginUrl);
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      // Copier les cookies de session rafraîchie vers la redirection
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return redirectResponse;
     }
   }
 
