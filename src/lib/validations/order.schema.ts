@@ -16,6 +16,11 @@ const orderItemVariantSchema = z.object({
   price: z.number().min(0),
 });
 
+const orderItemModifierSchema = z.object({
+  name: z.string().min(1).max(200),
+  price: z.number().min(0),
+});
+
 export const orderItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, 'Le nom est requis').max(200),
@@ -29,6 +34,10 @@ export const orderItemSchema = z.object({
   category_name: z.string().max(200).optional(),
   selectedOption: orderItemOptionSchema.optional(),
   selectedVariant: orderItemVariantSchema.optional(),
+  // ─── Production upgrade ──────────────────────────────
+  modifiers: z.array(orderItemModifierSchema).max(20).optional(),
+  customerNotes: z.string().max(500).optional(),
+  course: z.enum(['appetizer', 'main', 'dessert', 'drink']).optional(),
 });
 
 export const createOrderSchema = z.object({
@@ -40,6 +49,11 @@ export const createOrderSchema = z.object({
   tableNumber: z.string().max(10).optional(),
   customerName: z.string().max(100).optional(),
   customerPhone: z.string().max(20).optional(),
+  // ─── Production upgrade ──────────────────────────────
+  service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
+  room_number: z.string().max(20).optional(),
+  delivery_address: z.string().max(500).optional(),
+  coupon_code: z.string().max(50).optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

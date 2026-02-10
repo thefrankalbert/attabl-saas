@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Loader2, Save, Store, Palette, MapPin, Bell } from 'lucide-react';
+import { Upload, Loader2, Save, Store, Palette, MapPin, Bell, Receipt } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +14,7 @@ import { updateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { SoundSettings } from './SoundSettings';
+import type { CurrencyCode } from '@/types/admin.types';
 
 const settingsSchema = z.object({
   name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -22,6 +23,12 @@ const settingsSchema = z.object({
   secondaryColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, 'Couleur invalide'),
   address: z.string().optional(),
   phone: z.string().optional(),
+  // Facturation fields
+  currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+  enableTax: z.boolean().optional(),
+  taxRate: z.number().min(0).max(100).optional(),
+  enableServiceCharge: z.boolean().optional(),
+  serviceChargeRate: z.number().min(0).max(100).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -38,6 +45,11 @@ interface SettingsFormProps {
     address?: string;
     phone?: string;
     notification_sound_id?: string;
+    currency?: CurrencyCode;
+    enable_tax?: boolean;
+    tax_rate?: number;
+    enable_service_charge?: boolean;
+    service_charge_rate?: number;
   };
 }
 
@@ -46,7 +58,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedSoundId, setSelectedSoundId] = useState(tenant.notification_sound_id || 'classic-bell');
+  const [selectedSoundId, setSelectedSoundId] = useState(
+    tenant.notification_sound_id || 'classic-bell',
+  );
   const { toast } = useToast();
 
   const {
@@ -63,10 +77,17 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       secondaryColor: tenant.secondary_color || '#FFFFFF',
       address: tenant.address || '',
       phone: tenant.phone || '',
+      currency: tenant.currency || 'XAF',
+      enableTax: tenant.enable_tax ?? false,
+      taxRate: tenant.tax_rate ?? 0,
+      enableServiceCharge: tenant.enable_service_charge ?? false,
+      serviceChargeRate: tenant.service_charge_rate ?? 0,
     },
   });
 
   const watchedPrimaryColor = watch('primaryColor');
+  const watchEnableTax = watch('enableTax');
+  const watchEnableServiceCharge = watch('enableServiceCharge');
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -93,7 +114,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     try {
       let finalLogoUrl = tenant.logo_url || '';
 
-      // Upload logo if changed — via Supabase Storage directement
+      // Upload logo if changed
       if (logoFile) {
         setUploading(true);
         const supabase = createClient();
@@ -106,7 +127,9 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
         if (uploadError) throw new Error(`Erreur upload logo: ${uploadError.message}`);
 
-        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('images').getPublicUrl(fileName);
         finalLogoUrl = publicUrl;
         setUploading(false);
       }
@@ -121,6 +144,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('phone', data.phone || '');
       if (finalLogoUrl) formData.append('logoUrl', finalLogoUrl);
       formData.append('notificationSoundId', selectedSoundId);
+      // Facturation fields
+      formData.append('currency', data.currency || 'XAF');
+      formData.append('enableTax', data.enableTax ? 'true' : 'false');
+      formData.append('taxRate', String(data.taxRate ?? 0));
+      formData.append('enableServiceCharge', data.enableServiceCharge ? 'true' : 'false');
+      formData.append('serviceChargeRate', String(data.serviceChargeRate ?? 0));
 
       const result = await updateTenantSettings(formData);
 
@@ -271,6 +300,138 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   Commander (1200 F)
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Facturation */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-emerald-50 rounded-lg">
+              <Receipt className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Facturation</h2>
+              <p className="text-sm text-gray-500">Devise, taxes et frais de service</p>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            {/* Currency Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="currency">Devise</Label>
+              <select
+                id="currency"
+                {...register('currency')}
+                className="flex h-10 w-full max-w-xs rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="XAF">Franc CFA (XAF)</option>
+                <option value="EUR">Euro (EUR)</option>
+                <option value="USD">Dollar US (USD)</option>
+              </select>
+              <p className="text-xs text-gray-500">{"Devise utilisée pour l'affichage des prix"}</p>
+            </div>
+
+            {/* Tax Toggle + Rate */}
+            <div className="space-y-3 p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label htmlFor="enableTax" className="text-sm font-medium text-gray-900">
+                    Activer la TVA
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Appliquer une taxe sur les commandes
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    id="enableTax"
+                    {...register('enableTax')}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              {watchEnableTax && (
+                <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                  <Label htmlFor="taxRate" className="text-sm text-gray-600 whitespace-nowrap">
+                    Taux TVA
+                  </Label>
+                  <div className="relative w-32">
+                    <Input
+                      id="taxRate"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      {...register('taxRate', { valueAsNumber: true })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                      %
+                    </span>
+                  </div>
+                  {errors.taxRate && (
+                    <p className="text-xs text-red-500">{errors.taxRate.message}</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Service Charge Toggle + Rate */}
+            <div className="space-y-3 p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label
+                    htmlFor="enableServiceCharge"
+                    className="text-sm font-medium text-gray-900"
+                  >
+                    Activer les frais de service
+                  </Label>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Ajouter des frais de service aux commandes
+                  </p>
+                </div>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    id="enableServiceCharge"
+                    {...register('enableServiceCharge')}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                </label>
+              </div>
+
+              {watchEnableServiceCharge && (
+                <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                  <Label
+                    htmlFor="serviceChargeRate"
+                    className="text-sm text-gray-600 whitespace-nowrap"
+                  >
+                    Taux frais de service
+                  </Label>
+                  <div className="relative w-32">
+                    <Input
+                      id="serviceChargeRate"
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.1}
+                      {...register('serviceChargeRate', { valueAsNumber: true })}
+                      className="pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                      %
+                    </span>
+                  </div>
+                  {errors.serviceChargeRate && (
+                    <p className="text-xs text-red-500">{errors.serviceChargeRate.message}</p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -15,11 +15,12 @@ import {
   LogOut,
   ChefHat,
   Megaphone,
+  Tag,
   Laptop,
   BarChart3,
   Users,
   Menu,
-  X
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -47,14 +48,13 @@ const roleLabels: Record<string, string> = {
 
 export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps) {
   const pathname = usePathname();
-  const [isOpen, setIsOpen] = useState(false);
+  const [openForPath, setOpenForPath] = useState<string | null>(null);
 
-  // Close sidebar on route change (mobile)
-  useEffect(() => {
-    setIsOpen(false);
-  }, [pathname]);
+  // Sidebar is open only if it was toggled for the current pathname
+  // Navigating to a new route automatically "closes" it since openForPath won't match
+  const isOpen = openForPath === pathname;
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
+  const toggleSidebar = () => setOpenForPath(isOpen ? null : pathname);
 
   const NAV_GROUPS = [
     {
@@ -67,16 +67,31 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
     {
       title: 'Organisation',
       items: [
-        { href: `/sites/${tenant.slug}/admin/categories`, icon: UtensilsCrossed, label: 'Catégories' },
+        {
+          href: `/sites/${tenant.slug}/admin/categories`,
+          icon: UtensilsCrossed,
+          label: 'Catégories',
+        },
         { href: `/sites/${tenant.slug}/admin/items`, icon: BookOpen, label: 'Plats & Articles' },
         { href: `/sites/${tenant.slug}/admin/announcements`, icon: Megaphone, label: 'Annonces' },
+        { href: `/sites/${tenant.slug}/admin/coupons`, icon: Tag, label: 'Coupons' },
       ],
     },
     {
       title: 'Outils',
       items: [
-        { href: `/sites/${tenant.slug}/admin/pos`, icon: Laptop, label: 'Caisse (POS)', highlight: true },
-        { href: `/sites/${tenant.slug}/admin/kitchen`, icon: ChefHat, label: 'Cuisine (KDS)', highlight: true },
+        {
+          href: `/sites/${tenant.slug}/admin/pos`,
+          icon: Laptop,
+          label: 'Caisse (POS)',
+          highlight: true,
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/kitchen`,
+          icon: ChefHat,
+          label: 'Cuisine (KDS)',
+          highlight: true,
+        },
         { href: `/sites/${tenant.slug}/admin/qr-codes`, icon: QrCode, label: 'QR Codes' },
         { href: `/sites/${tenant.slug}/admin/reports`, icon: BarChart3, label: 'Rapports' },
       ],
@@ -107,7 +122,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
       {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 lg:hidden backdrop-blur-sm"
-          onClick={() => setIsOpen(false)}
+          onClick={() => setOpenForPath(null)}
         />
       )}
 
@@ -116,7 +131,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
         className={cn(
           'fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0',
           isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
-          className
+          className,
         )}
       >
         {/* Header */}
@@ -169,9 +184,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                         isActive
                           ? 'bg-gray-50 text-gray-900 font-semibold'
                           : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium',
-                        isHighlight &&
-                        !isActive &&
-                        'bg-blue-50/50 border border-blue-100/50',
+                        isHighlight && !isActive && 'bg-blue-50/50 border border-blue-100/50',
                       )}
                     >
                       {isActive && (
@@ -189,11 +202,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                               ? 'text-blue-600'
                               : 'text-gray-400 group-hover:text-gray-600',
                         )}
-                        style={
-                          isActive
-                            ? { color: tenant.primary_color || '#000000' }
-                            : undefined
-                        }
+                        style={isActive ? { color: tenant.primary_color || '#000000' } : undefined}
                       />
                       <span
                         className={cn(
@@ -203,9 +212,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                       >
                         {item.label}
                       </span>
-                      {isActive && (
-                        <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />
-                      )}
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />}
                     </Link>
                   );
                 })}

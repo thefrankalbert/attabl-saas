@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
+import type { CurrencyCode } from '@/types/admin.types';
 
 interface TenantSettings {
   name: string;
@@ -10,6 +11,12 @@ interface TenantSettings {
   phone?: string;
   logoUrl?: string;
   notificationSoundId?: string;
+  // Facturation fields
+  currency?: CurrencyCode;
+  enableTax?: boolean;
+  taxRate?: number;
+  enableServiceCharge?: boolean;
+  serviceChargeRate?: number;
 }
 
 /**
@@ -35,6 +42,12 @@ export function createTenantService(supabase: SupabaseClient) {
           phone: settings.phone ?? null,
           logo_url: settings.logoUrl || null,
           notification_sound_id: settings.notificationSoundId ?? null,
+          // Facturation fields
+          currency: settings.currency ?? 'XAF',
+          enable_tax: settings.enableTax ?? false,
+          tax_rate: settings.taxRate ?? 0,
+          enable_service_charge: settings.enableServiceCharge ?? false,
+          service_charge_rate: settings.serviceChargeRate ?? 0,
           updated_at: new Date().toISOString(),
         })
         .eq('id', tenantId);

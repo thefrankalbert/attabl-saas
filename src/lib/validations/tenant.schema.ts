@@ -23,6 +23,20 @@ export const updateTenantSettingsSchema = z.object({
   phone: z.string().max(20, 'Le téléphone ne doit pas dépasser 20 caractères').optional(),
   logoUrl: z.string().url().optional().or(z.literal('')),
   notificationSoundId: z.string().max(50).optional(),
+  // ─── Production upgrade: business config ─────────────────
+  currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+  taxRate: z
+    .number()
+    .min(0, 'Le taux ne peut pas être négatif')
+    .max(100, 'Le taux ne peut pas dépasser 100%')
+    .optional(),
+  serviceChargeRate: z
+    .number()
+    .min(0, 'Le taux ne peut pas être négatif')
+    .max(100, 'Le taux ne peut pas dépasser 100%')
+    .optional(),
+  enableTax: z.boolean().optional(),
+  enableServiceCharge: z.boolean().optional(),
 });
 
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

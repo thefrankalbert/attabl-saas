@@ -134,7 +134,7 @@ const translations: Translations = {
   item_name_en: { fr: 'Nom (EN)', en: 'Name (EN)' },
   description_fr: { fr: 'Description (FR)', en: 'Description (FR)' },
   description_en: { fr: 'Description (EN)', en: 'Description (EN)' },
-  price_cfa: { fr: 'Prix (FCFA)', en: 'Price (FCFA)' },
+  price_cfa: { fr: 'Prix', en: 'Price' },
   category: { fr: 'Catégorie', en: 'Category' },
   availability: { fr: 'Disponibilité', en: 'Availability' },
   featured: { fr: 'Mise en avant (FRONT)', en: 'Featured (FRONT)' },

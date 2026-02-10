@@ -265,24 +265,52 @@ describe('OrderService', () => {
   });
 
   describe('generateOrderNumber', () => {
-    it('should generate a number starting with CMD-', () => {
+    it('should generate a number starting with CMD- via RPC', async () => {
       const supabase = createMockSupabase();
+      // Mock the rpc call for next_order_number
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi.fn().mockResolvedValue({
+        data: 'CMD-20260210-001',
+        error: null,
+      });
       const service = createOrderService(asSupabase(supabase));
 
-      const orderNumber = service.generateOrderNumber();
+      const orderNumber = await service.generateOrderNumber('tenant-123');
+      expect(orderNumber).toMatch(/^CMD-/);
+    });
+
+    it('should fallback to timestamp-based when RPC fails', async () => {
+      const supabase = createMockSupabase();
+      // Mock the rpc call to fail
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi.fn().mockResolvedValue({
+        data: null,
+        error: { message: 'RPC not available' },
+      });
+      const service = createOrderService(asSupabase(supabase));
+
+      const orderNumber = await service.generateOrderNumber('tenant-123');
       expect(orderNumber).toMatch(/^CMD-[A-Z0-9]+$/);
     });
 
-    it('should generate unique numbers on successive calls', () => {
+    it('should generate unique numbers on successive calls', async () => {
       const supabase = createMockSupabase();
+      let callCount = 0;
+      (supabase as unknown as { rpc: ReturnType<typeof vi.fn> }).rpc = vi
+        .fn()
+        .mockImplementation(() => {
+          callCount++;
+          return Promise.resolve({
+            data: `CMD-20260210-${String(callCount).padStart(3, '0')}`,
+            error: null,
+          });
+        });
       const service = createOrderService(asSupabase(supabase));
 
-      const num1 = service.generateOrderNumber();
-      const num2 = service.generateOrderNumber();
+      const num1 = await service.generateOrderNumber('tenant-123');
+      const num2 = await service.generateOrderNumber('tenant-123');
 
-      // They might be the same within the same millisecond, but the format should be correct
       expect(num1).toMatch(/^CMD-/);
       expect(num2).toMatch(/^CMD-/);
+      expect(num1).not.toBe(num2);
     });
   });
 });
