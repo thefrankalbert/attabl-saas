@@ -10,7 +10,7 @@ export const ROLE_DESCRIPTIONS: Record<
 > = {
   owner: {
     label: 'Propriétaire',
-    description: "Accès complet - propriétaire du restaurant",
+    description: 'Accès complet - propriétaire du restaurant',
     level: 100,
   },
   admin: {
@@ -40,8 +40,14 @@ export const ROLE_DESCRIPTIONS: Record<
   },
 } as const;
 
-// ─── Statuts de commande ───────────────────────────────────
+// ─── Statuts & Enums ─────────────────────────────────────────
 export type OrderStatus = 'pending' | 'preparing' | 'ready' | 'delivered' | 'cancelled';
+export type ServiceType = 'dine_in' | 'takeaway' | 'delivery' | 'room_service';
+export type PaymentMethod = 'cash' | 'card' | 'mobile_money';
+export type PaymentStatus = 'pending' | 'paid' | 'refunded';
+export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
+export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
+export type CurrencyCode = 'XAF' | 'EUR' | 'USD';
 
 // ─── Types principaux (avec tenant_id) ─────────────────────
 
@@ -62,6 +68,12 @@ export interface Tenant {
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
   billing_interval?: 'monthly' | 'yearly';
+  // ─── Business config ──────────────────────────────────
+  currency?: CurrencyCode;
+  tax_rate?: number;
+  service_charge_rate?: number;
+  enable_tax?: boolean;
+  enable_service_charge?: boolean;
   // ─── Extras ────────────────────────────────────────────
   description?: string;
   address?: string;
@@ -89,20 +101,47 @@ export interface OrderItem {
   price: number;
   menu_item_id?: string;
   notes?: string;
+  // ─── Production upgrade ────────────────────────────────
+  customer_notes?: string;
+  item_status?: ItemStatus;
+  course?: Course;
+  modifiers?: Array<{ name: string; price: number }>;
 }
 
 export interface Order {
   id: string;
   tenant_id: string;
+  order_number?: string;
   table_number: string;
   total_price: number;
+  total?: number;
   total_amount?: number;
   status: OrderStatus;
   created_at: string;
   venue_id?: string;
   table_id?: string;
   items?: OrderItem[];
+  notes?: string;
+  customer_name?: string;
+  customer_phone?: string;
+  // ─── Service type & metadata ───────────────────────────
+  service_type?: ServiceType;
+  room_number?: string;
+  delivery_address?: string;
+  // ─── Financial breakdown ───────────────────────────────
+  subtotal?: number;
+  tax_amount?: number;
+  service_charge_amount?: number;
+  discount_amount?: number;
+  // ─── Payment tracking ─────────────────────────────────
+  payment_method?: PaymentMethod;
+  payment_status?: PaymentStatus;
+  paid_at?: string;
+  // ─── Coupon ────────────────────────────────────────────
+  coupon_id?: string;
 }
+
+// ─── Menu ────────────────────────────────────────────────────
 
 export interface Category {
   id: string;
@@ -135,6 +174,7 @@ export interface MenuItem {
   created_at: string;
   options?: ItemOption[];
   price_variants?: ItemPriceVariant[];
+  modifiers?: ItemModifier[];
 }
 
 // Option sélectionnable (ex: saveurs de jus - même prix)
@@ -160,6 +200,40 @@ export interface ItemPriceVariant {
   created_at: string;
 }
 
+// Modificateur payant (ex: sauce truffe +5€, double portion +8€)
+export interface ItemModifier {
+  id: string;
+  tenant_id: string;
+  menu_item_id: string;
+  name: string;
+  name_en?: string;
+  price: number;
+  is_available: boolean;
+  display_order: number;
+  created_at: string;
+}
+
+// ─── Coupons ─────────────────────────────────────────────────
+
+export interface Coupon {
+  id: string;
+  tenant_id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  min_order_amount?: number;
+  max_discount_amount?: number;
+  valid_from?: string;
+  valid_until?: string;
+  max_uses?: number;
+  current_uses: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+// ─── Promotions & Ads ────────────────────────────────────────
+
 export interface Announcement {
   id: string;
   tenant_id: string;
@@ -183,6 +257,8 @@ export interface Ad {
   is_active: boolean;
   created_at: string;
 }
+
+// ─── Dashboard ───────────────────────────────────────────────
 
 export interface DashboardStats {
   ordersToday: number;
@@ -253,7 +329,7 @@ export interface Setting {
 
 export interface SettingsMap {
   restaurant_name: string;
-  currency: string;
+  currency: CurrencyCode;
   currency_symbol: string;
   default_language: 'fr' | 'en';
   notification_sound: boolean;
@@ -285,3 +361,12 @@ export type FormErrors<T> = Partial<Record<keyof T, string>>;
 
 // ─── Language Support ──────────────────────────────────────
 export type Language = 'fr' | 'en';
+
+// ─── Pricing ───────────────────────────────────────────────
+export interface PricingBreakdown {
+  subtotal: number;
+  taxAmount: number;
+  serviceChargeAmount: number;
+  discountAmount: number;
+  total: number;
+}

@@ -303,6 +303,10 @@ export default function ContactPage() {
                 </div>
               ) : (
                 <form action={formAction} className="flex flex-col gap-6">
+                  {/* Honeypot field — hidden from humans, bots fill it */}
+                  <div className="absolute -left-[9999px]" aria-hidden="true">
+                    <input type="text" name="website" tabIndex={-1} autoComplete="off" />
+                  </div>
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-2">
                       <label

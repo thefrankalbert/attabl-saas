@@ -5,6 +5,8 @@ import { logger } from '@/lib/logger';
 import { createOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOrderService } from '@/services/order.service';
+import { createCouponService } from '@/services/coupon.service';
+import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
@@ -49,19 +51,79 @@ export async function POST(request: Request) {
 
     const { id: tenantId } = await orderService.validateTenant(tenantSlug);
 
-    const { items, notes, tableNumber, customerName, customerPhone } = parseResult.data;
+    const {
+      items,
+      notes,
+      tableNumber,
+      customerName,
+      customerPhone,
+      service_type,
+      room_number,
+      delivery_address,
+      coupon_code,
+    } = parseResult.data;
 
     const { validatedTotal } = await orderService.validateOrderItems(tenantId, items);
 
+    // 4. Validate coupon if provided
+    let discountAmount = 0;
+    let couponResult: { couponId?: string } | null = null;
+    const couponService = createCouponService(supabase);
+
+    if (coupon_code) {
+      const validation = await couponService.validateCoupon(coupon_code, tenantId, validatedTotal);
+      if (!validation.valid) {
+        return NextResponse.json(
+          { error: validation.error || 'Code promo invalide' },
+          { status: 400 },
+        );
+      }
+      discountAmount = validation.discountAmount;
+      couponResult = { couponId: validation.coupon?.id };
+    }
+
+    // 5. Fetch tenant config for tax & service charge
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge')
+      .eq('id', tenantId)
+      .single();
+
+    // 6. Calculate pricing breakdown
+    const pricing = calculateOrderTotal(
+      validatedTotal,
+      {
+        tax_rate: tenant?.tax_rate || 0,
+        service_charge_rate: tenant?.service_charge_rate || 0,
+        enable_tax: tenant?.enable_tax || false,
+        enable_service_charge: tenant?.enable_service_charge || false,
+      },
+      discountAmount,
+    );
+
+    // 7. Create order with all fields
     const result = await orderService.createOrderWithItems({
       tenantId,
       items,
-      total: validatedTotal,
+      total: pricing.total,
       tableNumber,
       customerName,
       customerPhone,
       notes,
+      service_type,
+      room_number,
+      delivery_address,
+      subtotal: pricing.subtotal,
+      tax_amount: pricing.taxAmount,
+      service_charge_amount: pricing.serviceChargeAmount,
+      discount_amount: pricing.discountAmount,
+      coupon_id: couponResult?.couponId,
     });
+
+    // 8. Increment coupon usage after successful order
+    if (couponResult?.couponId) {
+      await couponService.incrementUsage(couponResult.couponId);
+    }
 
     return NextResponse.json({
       success: true,

@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import ReportsClient from '@/components/admin/ReportsClient';
+import CouponsClient from '@/components/admin/CouponsClient';
 import { AlertCircle } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ReportsPage() {
+export default async function CouponsPage() {
   const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug');
@@ -29,5 +29,17 @@ export default async function ReportsPage() {
     );
   }
 
-  return <ReportsClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />;
+  const { data: coupons } = await supabase
+    .from('coupons')
+    .select('*')
+    .eq('tenant_id', tenant.id)
+    .order('created_at', { ascending: false });
+
+  return (
+    <CouponsClient
+      tenantId={tenant.id}
+      initialCoupons={coupons || []}
+      currency={tenant.currency || 'XAF'}
+    />
+  );
 }

@@ -34,6 +34,17 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
     return { success: false, message: 'Trop de requêtes. Réessayez plus tard.' };
   }
 
+  // Honeypot check — bots fill this hidden field, humans don't
+  const honeypot = formData.get('website');
+  if (honeypot) {
+    // Silently accept to avoid revealing the trap
+    logger.info('Honeypot triggered — bot submission blocked');
+    return {
+      success: true,
+      message: 'Votre demande de rendez-vous a été envoyée !',
+    };
+  }
+
   const validatedFields = contactSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),

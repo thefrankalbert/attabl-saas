@@ -8,6 +8,26 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
+/**
+ * Mappe le statut Stripe vers le statut interne du tenant.
+ */
+function mapStripeStatus(stripeStatus: string): 'trial' | 'active' | 'past_due' | 'cancelled' {
+  switch (stripeStatus) {
+    case 'trialing':
+      return 'trial';
+    case 'active':
+      return 'active';
+    case 'past_due':
+      return 'past_due';
+    case 'canceled':
+      return 'cancelled';
+    case 'unpaid':
+      return 'past_due';
+    default:
+      return 'active';
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.text();
@@ -40,11 +60,28 @@ export async function POST(request: Request) {
         const subscriptionId = session.subscription as string;
 
         if (tenantId) {
+          // Récupérer le vrai statut de l'abonnement Stripe
+          let mappedStatus: 'trial' | 'active' | 'past_due' | 'cancelled' = 'active';
+          if (subscriptionId) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+              mappedStatus = mapStripeStatus(subscription.status);
+            } catch (err) {
+              logger.warn(
+                "Impossible de récupérer le statut de l'abonnement, utilisation du statut par défaut",
+                {
+                  subscriptionId,
+                  error: err,
+                },
+              );
+            }
+          }
+
           // Mettre à jour le tenant avec les infos Stripe
           const updateData: Record<string, unknown> = {
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-            subscription_status: 'trial', // Mode trial pendant 14 jours
+            subscription_status: mappedStatus,
           };
 
           // Ajouter le plan si fourni
@@ -63,6 +100,7 @@ export async function POST(request: Request) {
             tenantId,
             plan,
             billingInterval,
+            subscriptionStatus: mappedStatus,
           });
         }
         break;
@@ -84,8 +122,11 @@ export async function POST(request: Request) {
           const currentPeriodStart = subscription.items?.data?.[0]?.current_period_start;
           const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
 
+          // Mapper le statut Stripe vers le statut interne
+          const mappedStatus = mapStripeStatus(subscription.status);
+
           const updateData: Record<string, unknown> = {
-            subscription_status: subscription.status,
+            subscription_status: mappedStatus,
           };
 
           if (currentPeriodStart) {
@@ -101,7 +142,11 @@ export async function POST(request: Request) {
 
           await supabase.from('tenants').update(updateData).eq('id', tenant.id);
 
-          logger.info('Subscription updated', { tenantId: tenant.id, status: subscription.status });
+          logger.info('Subscription updated', {
+            tenantId: tenant.id,
+            stripeStatus: subscription.status,
+            mappedStatus,
+          });
         }
         break;
       }

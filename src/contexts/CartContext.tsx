@@ -1,7 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useTenant } from './TenantContext';
+import { calculateOrderTotal } from '@/lib/pricing/tax';
+import type { ServiceType, PricingBreakdown, CurrencyCode } from '@/types/admin.types';
 
 // Définition des types
 export type CartItem = {
@@ -16,7 +18,17 @@ export type CartItem = {
   selectedVariant?: { name_fr: string; name_en?: string; price: number };
   category_id?: string;
   category_name?: string;
+  // ─── Phase 3: modifiers, notes, course ────────────────
+  modifiers?: { name: string; price: number }[];
+  customerNotes?: string;
+  course?: string;
 };
+
+export type AppliedCoupon = {
+  code: string;
+  discountAmount: number;
+  couponId: string;
+} | null;
 
 type CartContextType = {
   items: CartItem[];
@@ -25,7 +37,7 @@ type CartContextType = {
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
   totalItems: number;
-  totalPrice: number;
+  totalPrice: number; // backward compat = subtotal
   currentRestaurantId: string | null;
   restaurantId: string | null;
   lastVisitedMenuUrl: string | null;
@@ -36,11 +48,31 @@ type CartContextType = {
   notes: string;
   setNotes: (notes: string) => void;
   canAddToCart: (restaurantId: string) => boolean;
+  // ─── Phase 3: new state & methods ────────────────────
+  appliedCoupon: AppliedCoupon;
+  serviceType: ServiceType;
+  roomNumber: string;
+  deliveryAddress: string;
+  subtotal: number;
+  taxAmount: number;
+  serviceChargeAmount: number;
+  discountAmount: number;
+  grandTotal: number;
+  currencyCode: CurrencyCode;
+  enableTax: boolean;
+  enableServiceCharge: boolean;
+  taxRate: number;
+  serviceChargeRate: number;
+  applyCoupon: (code: string, tenantId: string) => Promise<{ success: boolean; error?: string }>;
+  removeCoupon: () => void;
+  setServiceType: (type: ServiceType) => void;
+  setRoomNumber: (num: string) => void;
+  setDeliveryAddress: (addr: string) => void;
 };
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Génère une clé unique pour identifier un item du panier (inclut option/variante)
+// Génère une clé unique pour identifier un item du panier (inclut option/variante/modifiers)
 const getCartItemKey = (item: CartItem): string => {
   let key = item.id;
   if (item.selectedOption) {
@@ -48,6 +80,13 @@ const getCartItemKey = (item: CartItem): string => {
   }
   if (item.selectedVariant) {
     key += `-var-${item.selectedVariant.name_fr}`;
+  }
+  if (item.modifiers && item.modifiers.length > 0) {
+    const modKey = item.modifiers
+      .map((m) => m.name)
+      .sort()
+      .join(',');
+    key += `-mod-${modKey}`;
   }
   return key;
 };
@@ -58,7 +97,7 @@ interface CartProviderProps {
 
 export const CartProvider = ({ children }: CartProviderProps) => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { tenantId: _tenantId, slug: tenantSlug } = useTenant();
+  const { tenantId: _tenantId, slug: tenantSlug, tenant } = useTenant();
 
   const [items, setItems] = useState<CartItem[]>([]);
   const [currentRestaurantId, setCurrentRestaurantId] = useState<string | null>(null);
@@ -69,6 +108,19 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   } | null>(null);
   const [notes, setNotes] = useState<string>('');
   const [isHydrated, setIsHydrated] = useState(false);
+
+  // ─── Phase 3: new state ─────────────────────────────────
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon>(null);
+  const [serviceType, setServiceTypeState] = useState<ServiceType>('dine_in');
+  const [roomNumber, setRoomNumberState] = useState<string>('');
+  const [deliveryAddress, setDeliveryAddressState] = useState<string>('');
+
+  // Tenant config for pricing (from TenantContext)
+  const currencyCode: CurrencyCode = (tenant?.currency as CurrencyCode) || 'XAF';
+  const enableTax = tenant?.enable_tax ?? false;
+  const enableServiceCharge = tenant?.enable_service_charge ?? false;
+  const taxRate = tenant?.tax_rate ?? 0;
+  const serviceChargeRate = tenant?.service_charge_rate ?? 0;
 
   // Clés localStorage avec namespace tenant
   const getStorageKey = useCallback(
@@ -85,6 +137,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     const savedResto = localStorage.getItem(getStorageKey('cart_restaurant_id'));
     const savedLastMenu = localStorage.getItem(getStorageKey('last_menu'));
     const savedNotes = localStorage.getItem(getStorageKey('cart_notes'));
+    const savedCoupon = localStorage.getItem(getStorageKey('cart_coupon'));
+    const savedServiceType = localStorage.getItem(getStorageKey('cart_service_type'));
+    const savedRoomNumber = localStorage.getItem(getStorageKey('cart_room_number'));
+    const savedDeliveryAddress = localStorage.getItem(getStorageKey('cart_delivery_address'));
 
     if (savedCart) {
       try {
@@ -96,6 +152,16 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     if (savedResto) setCurrentRestaurantId(savedResto);
     if (savedLastMenu) setLastVisitedMenuUrlState(savedLastMenu);
     if (savedNotes) setNotes(savedNotes);
+    if (savedCoupon) {
+      try {
+        setAppliedCoupon(JSON.parse(savedCoupon));
+      } catch (e) {
+        console.error('Error parsing coupon from localStorage:', e);
+      }
+    }
+    if (savedServiceType) setServiceTypeState(savedServiceType as ServiceType);
+    if (savedRoomNumber) setRoomNumberState(savedRoomNumber);
+    if (savedDeliveryAddress) setDeliveryAddressState(savedDeliveryAddress);
 
     setIsHydrated(true);
   }, [getStorageKey]);
@@ -120,7 +186,36 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     }
 
     localStorage.setItem(getStorageKey('cart_notes'), notes);
-  }, [items, currentRestaurantId, lastVisitedMenuUrl, notes, isHydrated, getStorageKey]);
+
+    // Phase 3: persist new state
+    if (appliedCoupon) {
+      localStorage.setItem(getStorageKey('cart_coupon'), JSON.stringify(appliedCoupon));
+    } else {
+      localStorage.removeItem(getStorageKey('cart_coupon'));
+    }
+    localStorage.setItem(getStorageKey('cart_service_type'), serviceType);
+    if (roomNumber) {
+      localStorage.setItem(getStorageKey('cart_room_number'), roomNumber);
+    } else {
+      localStorage.removeItem(getStorageKey('cart_room_number'));
+    }
+    if (deliveryAddress) {
+      localStorage.setItem(getStorageKey('cart_delivery_address'), deliveryAddress);
+    } else {
+      localStorage.removeItem(getStorageKey('cart_delivery_address'));
+    }
+  }, [
+    items,
+    currentRestaurantId,
+    lastVisitedMenuUrl,
+    notes,
+    appliedCoupon,
+    serviceType,
+    roomNumber,
+    deliveryAddress,
+    isHydrated,
+    getStorageKey,
+  ]);
 
   // SaaS V1 : 1 panier = 1 restaurant uniquement (pas de cross-venue)
   const canAddToCart = useCallback(
@@ -152,7 +247,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           return [{ ...newItem, quantity: 1, restaurant_id: restaurantId }];
         }
 
-        // Vérifier si l'item existe déjà (avec même option/variante)
+        // Vérifier si l'item existe déjà (avec même option/variante/modifiers)
         const cartItemKey = getCartItemKey(newItem);
         const existingItem = prevItems.find((i) => getCartItemKey(i) === cartItemKey);
 
@@ -206,17 +301,109 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setItems([]);
     setCurrentRestaurantId(null);
     setNotes('');
+    setAppliedCoupon(null);
+    setServiceTypeState('dine_in');
+    setRoomNumberState('');
+    setDeliveryAddressState('');
     localStorage.removeItem(getStorageKey('cart'));
     localStorage.removeItem(getStorageKey('cart_restaurant_id'));
     localStorage.removeItem(getStorageKey('cart_notes'));
+    localStorage.removeItem(getStorageKey('cart_coupon'));
+    localStorage.removeItem(getStorageKey('cart_service_type'));
+    localStorage.removeItem(getStorageKey('cart_room_number'));
+    localStorage.removeItem(getStorageKey('cart_delivery_address'));
   }, [getStorageKey]);
 
   const setLastVisitedMenuUrl = useCallback((url: string) => {
     setLastVisitedMenuUrlState(url);
   }, []);
 
+  // ─── Phase 3: new methods ────────────────────────────────
+
+  const setServiceType = useCallback((type: ServiceType) => {
+    setServiceTypeState(type);
+    // Clear room/address when switching away
+    if (type !== 'room_service') setRoomNumberState('');
+    if (type !== 'delivery') setDeliveryAddressState('');
+  }, []);
+
+  const setRoomNumber = useCallback((num: string) => {
+    setRoomNumberState(num);
+  }, []);
+
+  const setDeliveryAddress = useCallback((addr: string) => {
+    setDeliveryAddressState(addr);
+  }, []);
+
+  const applyCoupon = useCallback(
+    async (code: string, tenantId: string): Promise<{ success: boolean; error?: string }> => {
+      try {
+        const response = await fetch('/api/coupons/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            tenantId,
+            subtotal: items.reduce((acc, item) => {
+              const modifiersTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) || 0;
+              return acc + (item.price + modifiersTotal) * item.quantity;
+            }, 0),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.valid) {
+          return { success: false, error: data.error || 'Code promo invalide' };
+        }
+
+        setAppliedCoupon({
+          code: code.toUpperCase().trim(),
+          discountAmount: data.discountAmount,
+          couponId: data.couponId,
+        });
+
+        return { success: true };
+      } catch {
+        return { success: false, error: 'Erreur de connexion. Veuillez réessayer.' };
+      }
+    },
+    [items],
+  );
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+  }, []);
+
+  // ─── Derived pricing calculations ────────────────────────
   const totalItems = items.reduce((acc, item) => acc + item.quantity, 0);
-  const totalPrice = items.reduce((acc, item) => acc + item.price * item.quantity, 0);
+
+  // Subtotal: sum of (item price + modifiers) * quantity
+  const subtotal = useMemo(() => {
+    return items.reduce((acc, item) => {
+      const modifiersTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) || 0;
+      return acc + (item.price + modifiersTotal) * item.quantity;
+    }, 0);
+  }, [items]);
+
+  // Full pricing breakdown using calculateOrderTotal
+
+  const pricing: PricingBreakdown = useMemo(() => {
+    const discount = appliedCoupon?.discountAmount ?? 0;
+    return calculateOrderTotal(
+      subtotal,
+      {
+        enable_tax: enableTax,
+        tax_rate: taxRate,
+        enable_service_charge: enableServiceCharge,
+        service_charge_rate: serviceChargeRate,
+      },
+      discount,
+    );
+  }, [subtotal, enableTax, taxRate, enableServiceCharge, serviceChargeRate, appliedCoupon]);
+
+  // Backward compat: totalPrice = subtotal
+  const totalPrice = subtotal;
 
   return (
     <CartContext.Provider
@@ -238,6 +425,26 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         notes,
         setNotes,
         canAddToCart,
+        // Phase 3
+        appliedCoupon,
+        serviceType,
+        roomNumber,
+        deliveryAddress,
+        subtotal: pricing.subtotal,
+        taxAmount: pricing.taxAmount,
+        serviceChargeAmount: pricing.serviceChargeAmount,
+        discountAmount: pricing.discountAmount,
+        grandTotal: pricing.total,
+        currencyCode,
+        enableTax,
+        enableServiceCharge,
+        taxRate,
+        serviceChargeRate,
+        applyCoupon,
+        removeCoupon,
+        setServiceType,
+        setRoomNumber,
+        setDeliveryAddress,
       }}
     >
       {children}

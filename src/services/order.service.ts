@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { OrderItemInput } from '@/lib/validations/order.schema';
+import type { ServiceType } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -11,6 +12,15 @@ interface CreateOrderInput {
   customerName?: string;
   customerPhone?: string;
   notes?: string;
+  // ─── Production upgrade ────────────────────────────────
+  service_type?: ServiceType;
+  room_number?: string;
+  delivery_address?: string;
+  subtotal?: number;
+  tax_amount?: number;
+  service_charge_amount?: number;
+  discount_amount?: number;
+  coupon_id?: string;
 }
 
 interface CreateOrderResult {
@@ -99,7 +109,9 @@ export function createOrderService(supabase: SupabaseClient) {
           validationErrors.push(`Prix de "${menuItem.name}" a changé`);
         }
 
-        calculatedTotal += item.price * item.quantity;
+        // Include modifiers in total calculation
+        const modifiersTotal = item.modifiers?.reduce((sum, m) => sum + m.price, 0) || 0;
+        calculatedTotal += (item.price + modifiersTotal) * item.quantity;
       }
 
       if (validationErrors.length > 0) {
@@ -118,10 +130,28 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Generates a unique order number using base36 timestamp.
+     * Generates a unique, sequential order number per tenant per day.
+     * Uses PostgreSQL advisory locks to prevent race conditions.
+     * Format: CMD-YYYYMMDD-001
+     *
+     * Falls back to timestamp-based if RPC unavailable.
      */
-    generateOrderNumber(): string {
-      return `CMD-${Date.now().toString(36).toUpperCase()}`;
+    async generateOrderNumber(tenantId: string): Promise<string> {
+      try {
+        const { data, error } = await supabase.rpc('next_order_number', {
+          p_tenant_id: tenantId,
+        });
+
+        if (error || !data) {
+          logger.warn('Order number RPC failed, using fallback', { rpcError: error?.message });
+          return `CMD-${Date.now().toString(36).toUpperCase()}`;
+        }
+
+        return data as string;
+      } catch {
+        // Fallback to timestamp-based
+        return `CMD-${Date.now().toString(36).toUpperCase()}`;
+      }
     },
 
     /**
@@ -129,7 +159,7 @@ export function createOrderService(supabase: SupabaseClient) {
      * Rolls back the order if item insertion fails.
      */
     async createOrderWithItems(input: CreateOrderInput): Promise<CreateOrderResult> {
-      const orderNumber = this.generateOrderNumber();
+      const orderNumber = await this.generateOrderNumber(input.tenantId);
 
       // Create the main order
       const { data: order, error: orderError } = await supabase
@@ -143,6 +173,16 @@ export function createOrderService(supabase: SupabaseClient) {
           customer_name: input.customerName || null,
           customer_phone: input.customerPhone || null,
           notes: input.notes || null,
+          // ─── Production upgrade ──────────────────────────────
+          service_type: input.service_type || 'dine_in',
+          room_number: input.room_number || null,
+          delivery_address: input.delivery_address || null,
+          subtotal: input.subtotal ?? input.total,
+          tax_amount: input.tax_amount ?? 0,
+          service_charge_amount: input.service_charge_amount ?? 0,
+          discount_amount: input.discount_amount ?? 0,
+          payment_status: 'pending',
+          coupon_id: input.coupon_id || null,
         })
         .select('id, order_number')
         .single();
@@ -152,20 +192,34 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la création de la commande', 'INTERNAL', orderError);
       }
 
-      // Create order items
-      const orderItems = input.items.map((item) => ({
-        order_id: order.id,
-        menu_item_id: item.id,
-        item_name: item.name,
-        item_name_en: item.name_en || null,
-        quantity: item.quantity,
-        price_at_order: item.price,
-        notes: item.selectedOption
-          ? `${item.selectedOption.name_fr}${item.selectedVariant ? ' - ' + item.selectedVariant.name_fr : ''}`
-          : item.selectedVariant
-            ? item.selectedVariant.name_fr
-            : null,
-      }));
+      // Create order items — with proper notes separation
+      const orderItems = input.items.map((item) => {
+        // Build variant/option info (stored in `notes` column)
+        let variantInfo: string | null = null;
+        if (item.selectedOption) {
+          variantInfo = item.selectedOption.name_fr;
+          if (item.selectedVariant) {
+            variantInfo += ' - ' + item.selectedVariant.name_fr;
+          }
+        } else if (item.selectedVariant) {
+          variantInfo = item.selectedVariant.name_fr;
+        }
+
+        return {
+          order_id: order.id,
+          menu_item_id: item.id,
+          item_name: item.name,
+          item_name_en: item.name_en || null,
+          quantity: item.quantity,
+          price_at_order: item.price,
+          notes: variantInfo,
+          // ─── Production upgrade: separate customer notes ────
+          customer_notes: item.customerNotes || null,
+          modifiers: item.modifiers || [],
+          course: item.course || null,
+          item_status: 'pending',
+        };
+      });
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
 
