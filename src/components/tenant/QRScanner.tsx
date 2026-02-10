@@ -9,6 +9,7 @@ type ScanStatus = 'loading' | 'scanning' | 'success' | 'error';
 
 export interface QRScanResult {
   tableNumber: string | null;
+  menuSlug: string | null;
   rawData: string;
   isUrl: boolean;
 }
@@ -34,27 +35,28 @@ export const preloadScanner = () => {
 function parseQRData(decodedText: string): QRScanResult {
   const cleanText = decodedText.trim().replace(/\s+/g, '');
 
-  // Case 1: URL — extract ?table= or ?t= parameter
+  // Case 1: URL — extract ?table= or ?t= and ?menu= parameters
   if (cleanText.startsWith('http://') || cleanText.startsWith('https://')) {
     try {
       const scannedUrl = new URL(cleanText);
-      const tableParam =
-        scannedUrl.searchParams.get('table') ||
-        scannedUrl.searchParams.get('t');
+      const tableParam = scannedUrl.searchParams.get('table') || scannedUrl.searchParams.get('t');
+      const menuParam = scannedUrl.searchParams.get('menu');
 
       return {
         tableNumber: tableParam || null,
+        menuSlug: menuParam || null,
         rawData: cleanText,
         isUrl: true,
       };
     } catch {
-      return { tableNumber: null, rawData: cleanText, isUrl: true };
+      return { tableNumber: null, menuSlug: null, rawData: cleanText, isUrl: true };
     }
   }
 
   // Case 2: Plain text — treat as table number directly
   return {
     tableNumber: cleanText || null,
+    menuSlug: null,
     rawData: cleanText,
     isUrl: false,
   };
@@ -63,9 +65,9 @@ function parseQRData(decodedText: string): QRScanResult {
 // ─── Component ──────────────────────────────────────────
 export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScannerProps) {
   const scannerRef = useRef<HTMLDivElement>(null);
-  const html5QrCodeRef = useRef<InstanceType<
-    typeof import('html5-qrcode').Html5Qrcode
-  > | null>(null);
+  const html5QrCodeRef = useRef<InstanceType<typeof import('html5-qrcode').Html5Qrcode> | null>(
+    null,
+  );
   const hasScannedRef = useRef(false);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
@@ -116,8 +118,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
 
     const loadScanner = async () => {
       try {
-        const qrModule =
-          html5QrcodeModule || (await import('html5-qrcode'));
+        const qrModule = html5QrcodeModule || (await import('html5-qrcode'));
         html5QrcodeModule = qrModule;
 
         if (!scannerRef.current || !isOpen) return;
@@ -213,9 +214,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
                   <CheckCircle2 className="w-16 h-16 text-green-400" />
                   {matchedTable && (
-                    <p className="text-green-400 font-bold text-lg mt-2">
-                      Table {matchedTable}
-                    </p>
+                    <p className="text-green-400 font-bold text-lg mt-2">Table {matchedTable}</p>
                   )}
                 </div>
               )}
@@ -235,24 +234,18 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
           )}
 
           {scanStatus === 'scanning' && (
-            <p className="text-white/80 text-sm">
-              Placez le QR code de votre table dans le cadre
-            </p>
+            <p className="text-white/80 text-sm">Placez le QR code de votre table dans le cadre</p>
           )}
 
           {scanStatus === 'success' && (
-            <p className="text-green-400 text-sm font-semibold">
-              ✓ Code scanné avec succès !
-            </p>
+            <p className="text-green-400 text-sm font-semibold">✓ Code scanné avec succès !</p>
           )}
 
           {scanStatus === 'error' && (
             <div className="text-center">
               <div className="flex flex-col items-center gap-3">
                 <AlertCircle className="w-8 h-8 text-red-400" />
-                <p className="text-red-400 text-sm">
-                  {errorMessage || 'Erreur lors du scan'}
-                </p>
+                <p className="text-red-400 text-sm">{errorMessage || 'Erreur lors du scan'}</p>
               </div>
               <button
                 onClick={onClose}

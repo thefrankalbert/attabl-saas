@@ -17,6 +17,7 @@ import {
   Megaphone,
   Tag,
   Laptop,
+  ClipboardList,
   BarChart3,
   Users,
   Menu,
@@ -67,6 +68,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
     {
       title: 'Organisation',
       items: [
+        { href: `/sites/${tenant.slug}/admin/menus`, icon: ClipboardList, label: 'Cartes / Menus' },
         {
           href: `/sites/${tenant.slug}/admin/categories`,
           icon: UtensilsCrossed,

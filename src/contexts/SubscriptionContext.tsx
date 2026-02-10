@@ -28,7 +28,10 @@ interface SubscriptionContextType {
   /** Check if a boolean feature is available */
   canAccess: (feature: FeatureKey) => boolean;
   /** Check if a numeric limit is reached */
-  isLimitReached: (limitKey: 'maxAdmins' | 'maxVenues' | 'maxItems' | 'maxSounds', currentCount: number) => boolean;
+  isLimitReached: (
+    limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
+    currentCount: number,
+  ) => boolean;
   /** Whether the tenant is in active trial */
   isInTrial: boolean;
   /** Days remaining in trial (0 if not in trial) */
@@ -75,7 +78,7 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
         return true;
       },
       isLimitReached: (
-        limitKey: 'maxAdmins' | 'maxVenues' | 'maxItems' | 'maxSounds',
+        limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
         currentCount: number,
       ) => {
         return currentCount >= limits[limitKey];
@@ -88,11 +91,7 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
     };
   }, [tenant?.subscription_plan, tenant?.subscription_status, tenant?.trial_ends_at]);
 
-  return (
-    <SubscriptionContext.Provider value={value}>
-      {children}
-    </SubscriptionContext.Provider>
-  );
+  return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }
 
 // ─── Hook ───────────────────────────────────────────────

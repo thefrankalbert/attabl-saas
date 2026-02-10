@@ -141,11 +141,35 @@ export interface Order {
   coupon_id?: string;
 }
 
-// ─── Menu ────────────────────────────────────────────────────
+// ─── Menus / Cartes ─────────────────────────────────────────
+
+export interface Menu {
+  id: string;
+  tenant_id: string;
+  venue_id: string | null;
+  parent_menu_id: string | null;
+  name: string;
+  name_en?: string;
+  slug: string;
+  description?: string;
+  description_en?: string;
+  image_url?: string;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at?: string;
+  // Joined fields
+  venue?: Venue;
+  children?: Menu[];
+  categories?: Category[];
+}
+
+// ─── Categories ─────────────────────────────────────────────
 
 export interface Category {
   id: string;
   tenant_id: string;
+  menu_id?: string;
   name: string;
   name_en?: string;
   display_order?: number;

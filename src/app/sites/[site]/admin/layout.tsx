@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { TrialBanner } from '@/components/admin/TrialBanner';
 
 interface AdminUser {
   id: string;
@@ -111,19 +112,19 @@ export default async function AdminLayout({
         tenant={
           tenant
             ? {
-              name: tenant.name,
-              slug: tenant.slug,
-              logo_url: tenant.logo_url,
-              primary_color: tenant.primary_color,
-            }
+                name: tenant.name,
+                slug: tenant.slug,
+                logo_url: tenant.logo_url,
+                primary_color: tenant.primary_color,
+              }
             : { name: tenantSlug, slug: tenantSlug }
         }
         adminUser={
           adminUser
             ? {
-              name: adminUser.name,
-              role: adminUser.role,
-            }
+                name: adminUser.name,
+                role: adminUser.role,
+              }
             : undefined
         }
         className={isDevMode ? 'pt-6' : ''}
@@ -142,7 +143,10 @@ export default async function AdminLayout({
               : null
           }
         >
-          <div className="p-4 lg:p-8 pt-16 lg:pt-8">{children}</div>
+          <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+            <TrialBanner tenantSlug={tenantSlug} />
+            {children}
+          </div>
         </SubscriptionProvider>
       </main>
     </div>
