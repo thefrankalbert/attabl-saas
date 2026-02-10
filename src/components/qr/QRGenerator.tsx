@@ -17,6 +17,7 @@ interface QRGeneratorProps {
   primaryColor?: string;
   secondaryColor?: string;
   description?: string;
+  tableName?: string;
 }
 
 export function QRGenerator({
@@ -26,6 +27,7 @@ export function QRGenerator({
   primaryColor = '#000000',
   secondaryColor = '#FFFFFF',
   description,
+  tableName,
 }: QRGeneratorProps) {
   const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>('standard');
   const [downloading, setDownloading] = useState(false);
@@ -64,7 +66,13 @@ export function QRGenerator({
       const pdfHeight = pdf.internal.pageSize.getHeight();
 
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`qrcode-${tenantName.toLowerCase().replace(/\s/g, '-')}-${selectedTemplate}.pdf`);
+      const filenameParts = [
+        'qrcode',
+        tenantName.toLowerCase().replace(/\s/g, '-'),
+        tableName ? tableName.toLowerCase().replace(/\s/g, '-') : null,
+        selectedTemplate,
+      ].filter(Boolean);
+      pdf.save(`${filenameParts.join('-')}.pdf`);
     } catch (error) {
       console.error('Error generating PDF:', error);
     } finally {
@@ -120,6 +128,7 @@ export function QRGenerator({
               logoUrl={logoUrl}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
+              tableName={tableName}
             />
           )}
           {selectedTemplate === 'chevalet' && (
@@ -130,6 +139,7 @@ export function QRGenerator({
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
               description={description}
+              tableName={tableName}
             />
           )}
           {selectedTemplate === 'carte' && (
@@ -138,6 +148,7 @@ export function QRGenerator({
               tenantName={tenantName}
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
+              tableName={tableName}
             />
           )}
         </div>
@@ -172,6 +183,7 @@ function StandardTemplate({
   logoUrl,
   primaryColor,
   secondaryColor,
+  tableName,
 }: Omit<QRGeneratorProps, 'description'>) {
   return (
     <div
@@ -195,11 +207,21 @@ function StandardTemplate({
         </span>
       </div>
 
+      {/* Table Name */}
+      {tableName && (
+        <div
+          className="mb-3 px-4 py-1.5 rounded-full text-sm font-bold"
+          style={{ backgroundColor: primaryColor, color: secondaryColor }}
+        >
+          {tableName}
+        </div>
+      )}
+
       {/* QR Code */}
       <div className="p-4 bg-white rounded-2xl shadow-inner">
         <QRCodeSVG
           value={url}
-          size={200}
+          size={tableName ? 170 : 200}
           level="H"
           includeMargin={false}
           fgColor="#000000"
@@ -223,6 +245,7 @@ function ChevaletTemplate({
   primaryColor,
   secondaryColor,
   description,
+  tableName,
 }: QRGeneratorProps) {
   return (
     <div
@@ -230,7 +253,7 @@ function ChevaletTemplate({
       style={{ backgroundColor: primaryColor }}
     >
       {/* Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         {logoUrl ? (
           <img src={logoUrl} alt={tenantName} className="h-12 w-auto object-contain mx-auto mb-2" />
         ) : (
@@ -251,11 +274,21 @@ function ChevaletTemplate({
         )}
       </div>
 
+      {/* Table Name Badge */}
+      {tableName && (
+        <div
+          className="mb-3 px-5 py-1.5 rounded-full text-sm font-bold"
+          style={{ backgroundColor: secondaryColor, color: primaryColor }}
+        >
+          {tableName}
+        </div>
+      )}
+
       {/* QR Code */}
       <div className="p-4 bg-white rounded-2xl shadow-lg flex-1 flex items-center">
         <QRCodeSVG
           value={url}
-          size={180}
+          size={tableName ? 150 : 180}
           level="H"
           includeMargin={false}
           fgColor="#000000"
@@ -264,7 +297,7 @@ function ChevaletTemplate({
       </div>
 
       {/* Instructions */}
-      <div className="mt-6 text-center" style={{ color: secondaryColor }}>
+      <div className="mt-4 text-center" style={{ color: secondaryColor }}>
         <p className="text-lg font-bold mb-1">Scannez pour commander</p>
         <p className="text-xs opacity-70">Menu digital • Commande rapide</p>
       </div>
@@ -278,6 +311,7 @@ function CarteTemplate({
   tenantName,
   primaryColor,
   secondaryColor,
+  tableName,
 }: Omit<QRGeneratorProps, 'logoUrl' | 'description'>) {
   return (
     <div
@@ -289,7 +323,16 @@ function CarteTemplate({
         <h3 className="text-base font-bold mb-1" style={{ color: primaryColor }}>
           {tenantName}
         </h3>
-        <p className="text-xs text-gray-500 mb-3">Room Service</p>
+        {tableName ? (
+          <div
+            className="inline-block px-2.5 py-1 rounded-md text-xs font-bold mb-3"
+            style={{ backgroundColor: primaryColor, color: secondaryColor }}
+          >
+            {tableName}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-500 mb-3">Room Service</p>
+        )}
         <div
           className="inline-block px-3 py-1.5 rounded-lg text-xs font-medium"
           style={{ backgroundColor: primaryColor, color: secondaryColor }}

@@ -13,6 +13,7 @@ export interface PlanLimits {
   // Quantitative limits
   maxAdmins: number;
   maxVenues: number;
+  maxMenus: number;
   maxItems: number;
   maxSounds: number;
   // Feature flags
@@ -32,6 +33,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   essentiel: {
     maxAdmins: 2,
     maxVenues: 1,
+    maxMenus: 2,
     maxItems: 100,
     maxSounds: 3,
     customSoundUpload: false,
@@ -46,6 +48,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   premium: {
     maxAdmins: 5,
     maxVenues: 3,
+    maxMenus: 10,
     maxItems: 500,
     maxSounds: 10,
     customSoundUpload: true,
@@ -60,6 +63,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   enterprise: {
     maxAdmins: 99,
     maxVenues: 99,
+    maxMenus: 99,
     maxItems: 9999,
     maxSounds: 10,
     customSoundUpload: true,
@@ -129,7 +133,17 @@ export function getPlanLimits(
  * Check if a specific boolean feature is accessible
  */
 export function canAccessFeature(
-  feature: keyof Pick<PlanLimits, 'customSoundUpload' | 'advancedStats' | 'whatsappSupport' | 'tableOrdering' | 'qrCodes' | 'realtimeKDS' | 'customBranding' | 'multiLanguage'>,
+  feature: keyof Pick<
+    PlanLimits,
+    | 'customSoundUpload'
+    | 'advancedStats'
+    | 'whatsappSupport'
+    | 'tableOrdering'
+    | 'qrCodes'
+    | 'realtimeKDS'
+    | 'customBranding'
+    | 'multiLanguage'
+  >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
   trialEndsAt?: string | null,
@@ -142,7 +156,7 @@ export function canAccessFeature(
  * Check if a numeric limit has been reached
  */
 export function hasReachedLimit(
-  limitKey: 'maxAdmins' | 'maxVenues' | 'maxItems' | 'maxSounds',
+  limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
   currentCount: number,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

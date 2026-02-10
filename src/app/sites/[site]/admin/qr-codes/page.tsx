@@ -23,6 +23,19 @@ export default async function QRCodesPage() {
     );
   }
 
+  // Fetch tables, zones, and menus in parallel
+  const [{ data: zones }, { data: tables }, { data: menus }] = await Promise.all([
+    supabase.from('zones').select('*').eq('tenant_id', tenant.id).order('name'),
+    supabase.from('tables').select('*').eq('tenant_id', tenant.id).order('table_number'),
+    supabase
+      .from('menus')
+      .select('id, name, slug, is_active')
+      .eq('tenant_id', tenant.id)
+      .is('parent_menu_id', null)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+  ]);
+
   // Construct menu URL
   const menuUrl =
     process.env.NODE_ENV === 'development'
@@ -40,6 +53,9 @@ export default async function QRCodesPage() {
         description: tenant.description,
       }}
       menuUrl={menuUrl}
+      zones={zones || []}
+      tables={tables || []}
+      menus={(menus || []) as { id: string; name: string; slug: string; is_active: boolean }[]}
     />
   );
 }

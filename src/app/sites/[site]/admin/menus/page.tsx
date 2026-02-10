@@ -1,26 +1,51 @@
+import { createClient } from '@/lib/supabase/server';
+import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import MenusClient from '@/components/admin/MenusClient';
+
+export const dynamic = 'force-dynamic';
+
 interface MenusPageProps {
   params: Promise<{ site: string }>;
 }
 
 export default async function MenusPage({ params }: MenusPageProps) {
   const { site } = await params;
+  const headersList = await headers();
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
+
+  const supabase = await createClient();
+
+  const { data: tenant } = await supabase
+    .from('tenants')
+    .select('*')
+    .eq('slug', tenantSlug)
+    .single();
+
+  if (!tenant) redirect('/login');
+
+  const { data: menus } = await supabase
+    .from('menus')
+    .select(
+      '*, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
+    )
+    .eq('tenant_id', tenant.id)
+    .is('parent_menu_id', null)
+    .order('display_order', { ascending: true });
+
+  const { data: venues } = await supabase
+    .from('venues')
+    .select('*')
+    .eq('tenant_id', tenant.id)
+    .eq('is_active', true)
+    .order('name');
 
   return (
-    <div>
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold">Menus</h1>
-          <p className="mt-2 text-gray-600">Gestion du menu pour {site}</p>
-        </div>
-        <button className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700">
-          Ajouter un article
-        </button>
-      </div>
-
-      {/* Menu items placeholder */}
-      <div className="mt-8 rounded-lg bg-white p-6 shadow">
-        <p className="text-center text-gray-500">Aucun article au menu</p>
-      </div>
-    </div>
+    <MenusClient
+      tenantId={tenant.id}
+      tenantSlug={tenant.slug}
+      initialMenus={menus || []}
+      venues={venues || []}
+    />
   );
 }
