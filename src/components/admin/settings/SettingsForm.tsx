@@ -4,14 +4,16 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Loader2, Save, Store, Palette, MapPin } from 'lucide-react';
+import { Upload, Loader2, Save, Store, Palette, MapPin, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import { updateTenantSettings } from '@/app/actions/tenant-settings';
+import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
+import { SoundSettings } from './SoundSettings';
 
 const settingsSchema = z.object({
   name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
@@ -35,6 +37,7 @@ interface SettingsFormProps {
     secondary_color?: string;
     address?: string;
     phone?: string;
+    notification_sound_id?: string;
   };
 }
 
@@ -43,6 +46,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [selectedSoundId, setSelectedSoundId] = useState(tenant.notification_sound_id || 'classic-bell');
   const { toast } = useToast();
 
   const {
@@ -89,22 +93,21 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     try {
       let finalLogoUrl = tenant.logo_url || '';
 
-      // Upload logo if changed
+      // Upload logo if changed — via Supabase Storage directement
       if (logoFile) {
         setUploading(true);
-        const formData = new FormData();
-        formData.append('file', logoFile);
-        formData.append('bucket', 'logos');
-        formData.append('path', `${tenant.slug}-${Date.now()}.png`);
+        const supabase = createClient();
+        const fileExt = logoFile.name.split('.').pop() || 'png';
+        const fileName = `${tenant.slug}/logo-${Date.now()}.${fileExt}`;
 
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
+        const { error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(fileName, logoFile, { upsert: true });
 
-        if (!response.ok) throw new Error('Erreur upload logo');
-        const { url } = await response.json();
-        finalLogoUrl = url;
+        if (uploadError) throw new Error(`Erreur upload logo: ${uploadError.message}`);
+
+        const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(fileName);
+        finalLogoUrl = publicUrl;
         setUploading(false);
       }
 
@@ -117,6 +120,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('address', data.address || '');
       formData.append('phone', data.phone || '');
       if (finalLogoUrl) formData.append('logoUrl', finalLogoUrl);
+      formData.append('notificationSoundId', selectedSoundId);
 
       const result = await updateTenantSettings(formData);
 
@@ -269,6 +273,25 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Notification Sounds */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-amber-50 rounded-lg">
+              <Bell className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Sons de notification</h2>
+              <p className="text-sm text-gray-500">Son joué lors de la réception de commandes</p>
+            </div>
+          </div>
+
+          <SoundSettings
+            currentSoundId={selectedSoundId}
+            onSoundChange={setSelectedSoundId}
+            tenantId={tenant.id}
+          />
         </div>
 
         {/* Contact */}

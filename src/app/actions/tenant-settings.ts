@@ -26,6 +26,7 @@ export async function updateTenantSettings(formData: FormData) {
       address: (formData.get('address') as string) || undefined,
       phone: (formData.get('phone') as string) || undefined,
       logoUrl: (formData.get('logoUrl') as string) || undefined,
+      notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);

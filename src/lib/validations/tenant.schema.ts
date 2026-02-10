@@ -22,6 +22,7 @@ export const updateTenantSettingsSchema = z.object({
   address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
   phone: z.string().max(20, 'Le téléphone ne doit pas dépasser 20 caractères').optional(),
   logoUrl: z.string().url().optional().or(z.literal('')),
+  notificationSoundId: z.string().max(50).optional(),
 });
 
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

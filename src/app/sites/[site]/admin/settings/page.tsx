@@ -42,6 +42,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           secondary_color: tenant.secondary_color,
           address: tenant.address,
           phone: tenant.phone,
+          notification_sound_id: tenant.notification_sound_id,
         }}
       />
     </div>

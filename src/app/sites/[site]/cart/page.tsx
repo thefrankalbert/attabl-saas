@@ -28,7 +28,8 @@ export default function CartPage() {
     notes,
     setNotes,
   } = useCart();
-  useTenant(); // Ensure tenant context is available
+  const { slug: tenantSlug, tenantId } = useTenant();
+  const menuPath = `/sites/${tenantSlug}`;
 
   // États pour la soumission
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -59,6 +60,8 @@ export default function CartPage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          tenant_id: tenantId,
+          table_number: localStorage.getItem('attabl_table') || undefined,
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -115,7 +118,7 @@ export default function CartPage() {
           <p className="text-2xl font-bold text-amber-600 mb-6">
             {orderSuccess.total.toLocaleString('fr-FR')} F
           </p>
-          <Link href={`/`}>
+          <Link href={menuPath}>
             <Button className="bg-amber-600 hover:bg-amber-700">Retour au menu</Button>
           </Link>
         </div>
@@ -133,7 +136,7 @@ export default function CartPage() {
           </div>
           <h2 className="text-2xl font-bold mb-4">Votre panier est vide</h2>
           <p className="text-gray-600 mb-6">Commencez à ajouter des articles pour continuer</p>
-          <Link href={`/`}>
+          <Link href={menuPath}>
             <Button>
               <ArrowLeft className="w-4 h-4 mr-2" />
               Retour au menu
@@ -150,7 +153,7 @@ export default function CartPage() {
       <header className="bg-white shadow-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Link href={`/`} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+            <Link href={menuPath} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <h1 className="text-xl font-bold">Votre panier</h1>
@@ -159,7 +162,7 @@ export default function CartPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-4xl">
+      <main className="container mx-auto px-4 py-6 max-w-4xl pb-32 md:pb-6">
         {/* Erreurs de validation */}
         {(error || validationErrors.length > 0) && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -330,7 +333,7 @@ export default function CartPage() {
                 Vider le panier
               </Button>
 
-              <Link href={`/`} className="block mt-3">
+              <Link href={menuPath} className="block mt-3">
                 <Button variant="ghost" className="w-full" disabled={isSubmitting}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Continuer mes achats
@@ -340,6 +343,33 @@ export default function CartPage() {
           </div>
         </div>
       </main>
+
+      {/* Mobile Sticky Bottom Bar — visible only on phones */}
+      <div
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 z-50 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-500">Total</span>
+          <span className="text-lg font-bold text-amber-600">
+            {totalPrice.toLocaleString('fr-FR')} F
+          </span>
+        </div>
+        <Button
+          className="w-full bg-amber-600 hover:bg-amber-700 h-12 text-base font-semibold"
+          onClick={handleSubmitOrder}
+          disabled={isSubmitting}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Envoi en cours...
+            </>
+          ) : (
+            'Valider la commande'
+          )}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { loadStripe } from '@stripe/stripe-js';
 import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
+import { PLAN_LIMITS } from '@/lib/plans/features';
 
 // Initialiser Stripe
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -64,12 +65,14 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
   };
 
   const currentPlan = tenant.subscription_plan as PricingPlan;
-  // TODO: Récupérer les vraies limites depuis la DB ou des constantes
+
+  // Use centralized plan limits from features.ts
+  const planLimits = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.essentiel;
   const limits = {
-    essentiel: { admins: 2, venues: 1, items: 100 },
-    premium: { admins: 5, venues: 3, items: 500 },
-    enterprise: { admins: 99, venues: 99, items: 9999 },
-  }[currentPlan] || { admins: 0, venues: 0, items: 0 };
+    admins: planLimits.maxAdmins,
+    venues: planLimits.maxVenues,
+    items: planLimits.maxItems,
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {

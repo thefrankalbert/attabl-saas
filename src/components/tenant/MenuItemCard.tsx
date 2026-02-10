@@ -5,40 +5,7 @@ import { useCart } from '@/contexts/CartContext';
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 
-// Types pour options et variantes
-interface ItemOption {
-  id: string;
-  name_fr: string;
-  name_en?: string;
-  display_order: number;
-  is_default: boolean;
-}
-
-interface ItemPriceVariant {
-  id: string;
-  variant_name_fr: string;
-  variant_name_en?: string;
-  price: number;
-  display_order: number;
-  is_default: boolean;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-  name_en?: string | null;
-  description: string;
-  description_en?: string | null;
-  price: number;
-  image_url?: string;
-  is_vegetarian?: boolean;
-  is_spicy?: boolean;
-  is_available?: boolean;
-  is_drink?: boolean;
-  category_id?: string;
-  options?: ItemOption[];
-  price_variants?: ItemPriceVariant[];
-}
+import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -154,16 +121,16 @@ export default function MenuItemCard({
       category_name: category,
       selectedOption: selectedOption
         ? {
-            name_fr: selectedOption.name_fr,
-            name_en: selectedOption.name_en,
-          }
+          name_fr: selectedOption.name_fr,
+          name_en: selectedOption.name_en,
+        }
         : undefined,
       selectedVariant: selectedVariant
         ? {
-            name_fr: selectedVariant.variant_name_fr,
-            name_en: selectedVariant.variant_name_en,
-            price: selectedVariant.price,
-          }
+          name_fr: selectedVariant.variant_name_fr,
+          name_en: selectedVariant.variant_name_en,
+          price: selectedVariant.price,
+        }
         : undefined,
     };
 
@@ -204,7 +171,7 @@ export default function MenuItemCard({
         </div>
 
         <p className="text-[13px] text-gray-500 leading-snug line-clamp-2 mb-2">
-          {getTranslatedContent(language, item.description, item.description_en)}
+          {getTranslatedContent(language, item.description || '', item.description_en)}
         </p>
 
         <div className="flex items-center gap-2 mt-auto">
