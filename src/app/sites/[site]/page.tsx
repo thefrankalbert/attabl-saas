@@ -1,10 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import Image from 'next/image';
-import CategoryNav from '@/components/tenant/CategoryNav';
-import MenuItemCard from '@/components/tenant/MenuItemCard';
-import CartSummary from '@/components/tenant/CartSummary';
+import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 
 // Types pour les données
 interface Category {
@@ -81,7 +78,7 @@ export default async function MenuPage({ params }: { params: Promise<{ site: str
   }
 
   // ✅ OPTIMISATION: Requêtes parallèles avec Promise.all (~3x plus rapide)
-  const [venuesResult, categoriesResult, menuItemsResult] = await Promise.all([
+  const [venuesResult, categoriesResult, menuItemsResult, adsResult] = await Promise.all([
     // Venues (optionnel)
     supabase
       .from('venues')
@@ -110,11 +107,20 @@ export default async function MenuPage({ params }: { params: Promise<{ site: str
       .eq('tenant_id', tenant.id)
       .eq('is_available', true)
       .order('display_order', { ascending: true }),
+
+    // Ads / Banners
+    supabase
+      .from('ads')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true }),
   ]);
 
   const venues = venuesResult.data;
   const categories = categoriesResult.data;
   const menuItems = menuItemsResult.data;
+  const ads = adsResult.data;
 
   // Grouper les items par catégorie
   const itemsByCategory = (categories || []).map((category: Category) => ({
@@ -122,86 +128,24 @@ export default async function MenuPage({ params }: { params: Promise<{ site: str
     items: (menuItems || []).filter((item: MenuItem) => item.category_id === category.id),
   }));
 
+  // Fetch zones and tables (for TablePicker)
+  const [zonesResult, tablesResult] = await Promise.all([
+    supabase.from('zones').select('*').eq('tenant_id', tenant.id),
+    supabase.from('tables').select('*').eq('tenant_id', tenant.id)
+  ]);
+
+  const zones = zonesResult.data || [];
+  const tables = tablesResult.data || [];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          {tenant.logo_url ? (
-            <Image
-              src={tenant.logo_url}
-              alt={tenant.name}
-              width={200}
-              height={48}
-              className="h-12 w-auto object-contain"
-              priority
-            />
-          ) : (
-            <h1 className="text-2xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
-              {tenant.name}
-            </h1>
-          )}
-        </div>
-      </header>
-
-      {/* Category Navigation */}
-      {categories && categories.length > 0 && <CategoryNav categories={categories} />}
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 pb-32">
-        {/* Venues Selector (si plusieurs) */}
-        {venues && venues.length > 1 && (
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold mb-4">Nos espaces</h2>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {venues.map((venue: Venue) => (
-                <button
-                  key={venue.id}
-                  className="px-4 py-2 bg-white rounded-lg shadow-sm whitespace-nowrap hover:shadow-md transition-shadow"
-                >
-                  {venue.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Menu Items par catégorie */}
-        {itemsByCategory.length > 0 ? (
-          <div className="space-y-8">
-            {itemsByCategory.map(
-              (category) =>
-                category.items.length > 0 && (
-                  <section key={category.id} id={`cat-${category.id}`}>
-                    <h2 className="text-xl font-bold text-gray-900 mb-4 px-2">{category.name}</h2>
-                    <div className="bg-white rounded-xl shadow-sm divide-y divide-gray-100">
-                      {category.items.map((item: MenuItem) => (
-                        <MenuItemCard
-                          key={item.id}
-                          item={item}
-                          restaurantId={tenant.id}
-                          category={category.name}
-                          accentColor={
-                            tenant.primary_color
-                              ? `text-[${tenant.primary_color}]`
-                              : 'text-amber-600'
-                          }
-                        />
-                      ))}
-                    </div>
-                  </section>
-                ),
-            )}
-          </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <p className="text-gray-500">Aucun menu disponible pour le moment.</p>
-          </div>
-        )}
-      </main>
-
-      {/* Cart Summary (floating) */}
-      <CartSummary />
-    </div>
+    <ClientMenuPage
+      tenant={tenant}
+      venues={venues || []}
+      categories={categories || []}
+      itemsByCategory={itemsByCategory}
+      ads={ads || []}
+      zones={zones}
+      tables={tables}
+    />
   );
 }

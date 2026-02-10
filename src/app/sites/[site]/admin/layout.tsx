@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 
 interface AdminUser {
   id: string;
@@ -110,27 +111,39 @@ export default async function AdminLayout({
         tenant={
           tenant
             ? {
-                name: tenant.name,
-                slug: tenant.slug,
-                logo_url: tenant.logo_url,
-                primary_color: tenant.primary_color,
-              }
+              name: tenant.name,
+              slug: tenant.slug,
+              logo_url: tenant.logo_url,
+              primary_color: tenant.primary_color,
+            }
             : { name: tenantSlug, slug: tenantSlug }
         }
         adminUser={
           adminUser
             ? {
-                name: adminUser.name,
-                role: adminUser.role,
-              }
+              name: adminUser.name,
+              role: adminUser.role,
+            }
             : undefined
         }
         className={isDevMode ? 'pt-6' : ''}
       />
 
       {/* Main Content */}
-      <main className={`ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
-        <div className="p-8">{children}</div>
+      <main className={`lg:ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
+        <SubscriptionProvider
+          tenant={
+            tenant
+              ? {
+                  subscription_plan: tenant.subscription_plan,
+                  subscription_status: tenant.subscription_status,
+                  trial_ends_at: tenant.trial_ends_at,
+                }
+              : null
+          }
+        >
+          <div className="p-4 lg:p-8 pt-16 lg:pt-8">{children}</div>
+        </SubscriptionProvider>
       </main>
     </div>
   );

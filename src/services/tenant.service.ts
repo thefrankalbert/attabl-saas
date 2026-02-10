@@ -9,6 +9,7 @@ interface TenantSettings {
   address?: string;
   phone?: string;
   logoUrl?: string;
+  notificationSoundId?: string;
 }
 
 /**
@@ -33,6 +34,7 @@ export function createTenantService(supabase: SupabaseClient) {
           address: settings.address ?? null,
           phone: settings.phone ?? null,
           logo_url: settings.logoUrl || null,
+          notification_sound_id: settings.notificationSoundId ?? null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', tenantId);
