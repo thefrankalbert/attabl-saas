@@ -34,6 +34,15 @@ export default async function AdminDashboard() {
     );
   }
 
+  let initialStats: DashboardStats = {
+    ordersToday: 0,
+    revenueToday: 0,
+    activeItems: 0,
+    activeCards: 0,
+  };
+  let initialRecentOrders: Order[] = [];
+  let initialPopularItems: PopularItem[] = [];
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -82,7 +91,7 @@ export default async function AdminDashboard() {
 
     // Stats
     const ordersData = ordersRes.data || [];
-    const initialStats: DashboardStats = {
+    initialStats = {
       ordersToday: ordersData.length,
       revenueToday: ordersData
         .filter((o) => o.status === 'delivered')
@@ -92,25 +101,22 @@ export default async function AdminDashboard() {
     };
 
     // Recent Orders
-    const initialRecentOrders: Order[] = (recentOrdersRes.data || []).map(
-      (order: Record<string, unknown>) => ({
-        id: order.id as string,
-        tenant_id: tenant.id,
-        table_number: (order.table_number as string) || 'N/A',
-        status: ((order.status as string) || 'pending') as Order['status'],
-        total_price: Number(order.total_price || order.total || 0),
-        created_at: order.created_at as string,
-        items: (
-          (order.order_items as Array<Record<string, unknown>>) || []
-        ).map((item: Record<string, unknown>) => ({
+    initialRecentOrders = (recentOrdersRes.data || []).map((order: Record<string, unknown>) => ({
+      id: order.id as string,
+      tenant_id: tenant.id,
+      table_number: (order.table_number as string) || 'N/A',
+      status: ((order.status as string) || 'pending') as Order['status'],
+      total_price: Number(order.total_price || order.total || 0),
+      created_at: order.created_at as string,
+      items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
+        (item: Record<string, unknown>) => ({
           id: item.id as string,
-          name:
-            ((item.menu_items as Record<string, unknown>)?.name as string) || 'Item inconnu',
+          name: ((item.menu_items as Record<string, unknown>)?.name as string) || 'Item inconnu',
           quantity: item.quantity as number,
           price: item.price_at_order as number,
-        })),
-      }),
-    );
+        }),
+      ),
+    }));
 
     // Popular Items
     const itemCounts: Record<string, PopularItem> = {};
@@ -132,31 +138,21 @@ export default async function AdminDashboard() {
       },
     );
 
-    const initialPopularItems = Object.values(itemCounts)
+    initialPopularItems = Object.values(itemCounts)
       .sort((a, b) => b.order_count - a.order_count)
       .slice(0, 5);
-
-    return (
-      <DashboardClient
-        tenantId={tenant.id}
-        tenantSlug={tenant.slug}
-        tenantName={tenant.name}
-        initialStats={initialStats}
-        initialRecentOrders={initialRecentOrders}
-        initialPopularItems={initialPopularItems}
-      />
-    );
   } catch {
-    // Fallback avec données vides
-    return (
-      <DashboardClient
-        tenantId={tenant.id}
-        tenantSlug={tenant.slug}
-        tenantName={tenant.name}
-        initialStats={{ ordersToday: 0, revenueToday: 0, activeItems: 0, activeCards: 0 }}
-        initialRecentOrders={[]}
-        initialPopularItems={[]}
-      />
-    );
+    // Fallback avec données vides (already initialized above)
   }
+
+  return (
+    <DashboardClient
+      tenantId={tenant.id}
+      tenantSlug={tenant.slug}
+      tenantName={tenant.name}
+      initialStats={initialStats}
+      initialRecentOrders={initialRecentOrders}
+      initialPopularItems={initialPopularItems}
+    />
+  );
 }

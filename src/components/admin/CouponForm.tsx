@@ -27,7 +27,8 @@ export default function CouponForm({
   tenantId,
   onClose,
   onSuccess,
-  currency: _currency,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  currency,
 }: CouponFormProps) {
   const [code, setCode] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
