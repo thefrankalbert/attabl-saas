@@ -8,6 +8,9 @@ import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { createInventoryService } from '@/services/inventory.service';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export async function POST(request: Request) {
   try {
@@ -85,7 +88,9 @@ export async function POST(request: Request) {
     // 5. Fetch tenant config for tax & service charge
     const { data: tenant } = await supabase
       .from('tenants')
-      .select('currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge')
+      .select(
+        'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
+      )
       .eq('id', tenantId)
       .single();
 
@@ -123,6 +128,20 @@ export async function POST(request: Request) {
     // 8. Increment coupon usage after successful order
     if (couponResult?.couponId) {
       await couponService.incrementUsage(couponResult.couponId);
+    }
+
+    // 9. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
+    const hasInventory = canAccessFeature(
+      'inventoryTracking',
+      tenant?.subscription_plan as SubscriptionPlan | null,
+      tenant?.subscription_status as SubscriptionStatus | null,
+      tenant?.trial_ends_at as string | null,
+    );
+    if (hasInventory) {
+      const inventoryService = createInventoryService(supabase);
+      inventoryService.destockOrder(result.orderId, tenantId).catch((err) => {
+        logger.error('Auto-destock failed (non-blocking)', err);
+      });
     }
 
     return NextResponse.json({

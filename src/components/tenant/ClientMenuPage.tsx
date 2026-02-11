@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Venue, Category, MenuItem, Ad, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
@@ -68,6 +69,41 @@ export default function ClientMenuPage({
   });
   // Suppress unused var warning — tableToastShown is only used as a run-once guard
   void tableToastShown;
+
+  // Realtime: track availability changes for menu items
+  const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    const supabase = createClient();
+    const channel = supabase
+      .channel('menu_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `tenant_id=eq.${tenant.id}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; is_available: boolean };
+          setDisabledItemIds((prev) => {
+            const next = new Set(prev);
+            if (!updated.is_available) {
+              next.add(updated.id);
+            } else {
+              next.delete(updated.id);
+            }
+            return next;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenant.id]);
 
   // Derive active menu from slug
   const activeMenu = menus.find((m) => m.slug === activeMenuSlug) || null;
@@ -306,23 +342,29 @@ export default function ClientMenuPage({
                       <div className="h-px bg-gray-200 flex-1"></div>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
-                      {category.items.map((item: MenuItem) => (
-                        <div
-                          key={item.id}
-                          className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
-                        >
-                          <MenuItemCard
-                            item={item}
-                            restaurantId={tenant.id}
-                            category={category.name}
-                            accentColor={
-                              tenant.primary_color
-                                ? `text-[${tenant.primary_color}]`
-                                : 'text-amber-600'
-                            }
-                          />
-                        </div>
-                      ))}
+                      {category.items.map((item: MenuItem) => {
+                        const isRealtimeDisabled = disabledItemIds.has(item.id);
+                        const effectiveItem = isRealtimeDisabled
+                          ? { ...item, is_available: false }
+                          : item;
+                        return (
+                          <div
+                            key={item.id}
+                            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+                          >
+                            <MenuItemCard
+                              item={effectiveItem}
+                              restaurantId={tenant.id}
+                              category={category.name}
+                              accentColor={
+                                tenant.primary_color
+                                  ? `text-[${tenant.primary_color}]`
+                                  : 'text-amber-600'
+                              }
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </section>
                 ),
