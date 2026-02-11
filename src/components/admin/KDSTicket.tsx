@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, ItemStatus, OrderStatus } from '@/types/admin.types';
+import RuptureButton from '@/components/admin/RuptureButton';
 
 interface KDSTicketProps {
   order: Order;
@@ -349,7 +350,16 @@ export default function KDSTicket({
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-white leading-tight">{item.name}</p>
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-white leading-tight">{item.name}</p>
+                          {!isMock && item.menu_item_id && (
+                            <RuptureButton
+                              menuItemId={item.menu_item_id}
+                              itemName={item.name}
+                              onRupture={onUpdate}
+                            />
+                          )}
+                        </div>
 
                         {/* Modifiers in blue */}
                         {item.modifiers && item.modifiers.length > 0 && (

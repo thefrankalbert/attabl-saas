@@ -12,6 +12,7 @@ import {
   SearchX,
   ArrowRight,
   Printer,
+  Lightbulb,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -30,6 +31,14 @@ type CartItem = MenuItem & {
   quantity: number;
   notes?: string;
 };
+
+interface POSSuggestion {
+  menu_item_id: string;
+  suggested_item_id: string;
+  suggested_item_name: string;
+  suggestion_type: string;
+  description: string | null;
+}
 
 const SERVICE_TYPES: { value: ServiceType; label: string; emoji: string }[] = [
   { value: 'dine_in', label: 'Sur place', emoji: '\ud83c\udf7d\ufe0f' },
@@ -52,6 +61,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const [serviceType, setServiceType] = useState<ServiceType>('dine_in');
   const [roomNumber, setRoomNumber] = useState<string>('');
   const [deliveryAddress, setDeliveryAddress] = useState<string>('');
+
+  // Suggestions
+  const [suggestions, setSuggestions] = useState<POSSuggestion[]>([]);
 
   // Modals
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -97,7 +109,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   const loadData = useCallback(async () => {
     try {
-      const [catsRes, itemsRes, tenantRes] = await Promise.all([
+      const [catsRes, itemsRes, tenantRes, suggestionsRes] = await Promise.all([
         supabase.from('categories').select('*').eq('tenant_id', tenantId).order('display_order'),
         supabase
           .from('menu_items')
@@ -106,11 +118,30 @@ export default function POSClient({ tenantId }: POSClientProps) {
           .eq('is_available', true)
           .order('name'),
         supabase.from('tenants').select('currency').eq('id', tenantId).single(),
+        supabase
+          .from('item_suggestions')
+          .select(
+            'menu_item_id, suggested_item_id, suggestion_type, description, suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(name)',
+          )
+          .eq('tenant_id', tenantId)
+          .eq('is_active', true),
       ]);
 
       if (catsRes.data) setCategories(catsRes.data);
       if (itemsRes.data) setMenuItems(itemsRes.data);
       if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
+      if (suggestionsRes.data) {
+        setSuggestions(
+          suggestionsRes.data.map((s: Record<string, unknown>) => ({
+            menu_item_id: s.menu_item_id as string,
+            suggested_item_id: s.suggested_item_id as string,
+            suggested_item_name:
+              ((s.suggested_item as Record<string, unknown>)?.name as string) || '',
+            suggestion_type: s.suggestion_type as string,
+            description: s.description as string | null,
+          })),
+        );
+      }
     } catch {
       toast({ title: 'Erreur de chargement', variant: 'destructive' });
     } finally {
@@ -120,8 +151,37 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   useEffect(() => {
     loadData();
-    // Realtime subscription could go here
-  }, [loadData]);
+
+    // Realtime: listen for menu_items availability changes
+    const channel = supabase
+      .channel('pos_menu_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'menu_items',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; is_available: boolean };
+          setMenuItems((prev) => {
+            if (!updated.is_available) {
+              // Remove unavailable item from POS grid
+              return prev.filter((i) => i.id !== updated.id);
+            }
+            // If item becomes available again, reload data to get full item
+            loadData();
+            return prev;
+          });
+        },
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, supabase, tenantId]);
 
   const filteredItems = useMemo(() => {
     let items = menuItems;
@@ -437,6 +497,31 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   {item.notes ? 'Modifier' : 'Note cuisine'}
                 </button>
               </div>
+
+              {/* Suggestion badge */}
+              {suggestions
+                .filter((s) => s.menu_item_id === item.id)
+                .slice(0, 1)
+                .map((s) => (
+                  <button
+                    key={s.suggested_item_id}
+                    onClick={() => {
+                      const suggestedItem = menuItems.find((mi) => mi.id === s.suggested_item_id);
+                      if (suggestedItem) addToCart(suggestedItem);
+                    }}
+                    className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-medium hover:bg-amber-100 transition-colors w-full"
+                  >
+                    <Lightbulb className="w-3 h-3 shrink-0" />
+                    <span className="truncate">
+                      {s.suggestion_type === 'pairing'
+                        ? 'Accompagner'
+                        : s.suggestion_type === 'upsell'
+                          ? 'Suggérer'
+                          : 'Alternative'}{' '}
+                      : {s.suggested_item_name}
+                    </span>
+                  </button>
+                ))}
             </div>
           ))}
           {cart.length === 0 && (

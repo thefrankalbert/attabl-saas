@@ -33,6 +33,13 @@ export interface PlanLimits {
   qrPremiumTemplates: boolean;
   qrAdvancedExport: boolean;
   qrEnterpriseDesign: boolean;
+  // Inventory flags
+  inventoryTracking: boolean;
+  maxIngredients: number;
+  ruptureWorkflow: boolean;
+  patronDashboard: boolean;
+  stockAlerts: boolean;
+  waiterSuggestions: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
@@ -59,6 +66,12 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     qrPremiumTemplates: false,
     qrAdvancedExport: false,
     qrEnterpriseDesign: false,
+    inventoryTracking: false,
+    maxIngredients: 0,
+    ruptureWorkflow: false,
+    patronDashboard: false,
+    stockAlerts: false,
+    waiterSuggestions: false,
   },
   premium: {
     maxAdmins: 5,
@@ -81,6 +94,12 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     qrPremiumTemplates: true,
     qrAdvancedExport: true,
     qrEnterpriseDesign: false,
+    inventoryTracking: true,
+    maxIngredients: 200,
+    ruptureWorkflow: true,
+    patronDashboard: true,
+    stockAlerts: false,
+    waiterSuggestions: false,
   },
   enterprise: {
     maxAdmins: 99,
@@ -103,6 +122,12 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     qrPremiumTemplates: true,
     qrAdvancedExport: true,
     qrEnterpriseDesign: true,
+    inventoryTracking: true,
+    maxIngredients: 9999,
+    ruptureWorkflow: true,
+    patronDashboard: true,
+    stockAlerts: true,
+    waiterSuggestions: true,
   },
 };
 
@@ -179,6 +204,11 @@ export function canAccessFeature(
     | 'qrPremiumTemplates'
     | 'qrAdvancedExport'
     | 'qrEnterpriseDesign'
+    | 'inventoryTracking'
+    | 'ruptureWorkflow'
+    | 'patronDashboard'
+    | 'stockAlerts'
+    | 'waiterSuggestions'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
@@ -192,7 +222,7 @@ export function canAccessFeature(
  * Check if a numeric limit has been reached
  */
 export function hasReachedLimit(
-  limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
+  limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds' | 'maxIngredients',
   currentCount: number,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

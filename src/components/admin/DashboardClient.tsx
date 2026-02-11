@@ -16,6 +16,8 @@ import {
   Eye,
   CheckCircle2,
   Utensils,
+  Package,
+  AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import StatsCard, { StatsCardSkeleton } from '@/components/admin/StatsCard';
@@ -24,6 +26,15 @@ import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
+import { cn } from '@/lib/utils';
+
+interface StockItem {
+  id: string;
+  name: string;
+  unit: string;
+  current_stock: number;
+  min_stock_alert: number;
+}
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -83,6 +94,7 @@ export default function DashboardClient({
   const [recentOrders, setRecentOrders] = useState<Order[]>(initialRecentOrders);
   const [popularItems] = useState<PopularItem[]>(initialPopularItems);
   const [loading] = useState(false);
+  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const { toast } = useToast();
   const supabase = createClient();
 
@@ -160,6 +172,21 @@ export default function DashboardClient({
     }
   }, [supabase, tenantId]);
 
+  const loadStock = useCallback(async () => {
+    try {
+      const { data } = await supabase
+        .from('ingredients')
+        .select('id, name, unit, current_stock, min_stock_alert')
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true)
+        .order('current_stock', { ascending: true })
+        .limit(10);
+      setStockItems((data as StockItem[]) || []);
+    } catch {
+      /* non-critical */
+    }
+  }, [supabase, tenantId]);
+
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     try {
       const { error } = await supabase
@@ -177,6 +204,8 @@ export default function DashboardClient({
   };
 
   useEffect(() => {
+    loadStock();
+
     const channel = supabase
       .channel(`dashboard-${tenantId}`)
       .on(
@@ -194,10 +223,28 @@ export default function DashboardClient({
       )
       .subscribe();
 
+    // Realtime for stock changes
+    const stockChannel = supabase
+      .channel(`dashboard-stock-${tenantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ingredients',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          loadStock();
+        },
+      )
+      .subscribe();
+
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(stockChannel);
     };
-  }, [supabase, tenantId, loadStats, loadRecentOrders]);
+  }, [supabase, tenantId, loadStats, loadRecentOrders, loadStock]);
 
   if (loading) {
     return (
@@ -278,6 +325,91 @@ export default function DashboardClient({
           subtitle="Actifs"
         />
       </div>
+
+      {/* Stock en direct */}
+      {stockItems.length > 0 && (
+        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-gray-600" />
+              <div>
+                <h2 className="text-lg font-bold text-gray-900">Stock en direct</h2>
+                <p className="text-sm text-gray-500">Top 10 produits (tri par stock croissant)</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              {stockItems.filter((s) => s.current_stock <= 0).length > 0 && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
+                  <AlertTriangle className="w-3 h-3" />
+                  {stockItems.filter((s) => s.current_stock <= 0).length} rupture
+                </span>
+              )}
+              {stockItems.filter((s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert)
+                .length > 0 && (
+                <span className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold">
+                  <AlertTriangle className="w-3 h-3" />
+                  {
+                    stockItems.filter(
+                      (s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert,
+                    ).length
+                  }{' '}
+                  bas
+                </span>
+              )}
+              <Link
+                href={`${adminBase}/inventory`}
+                className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+              >
+                Voir tout <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+          </div>
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {stockItems.map((item) => {
+              const isOut = item.current_stock <= 0;
+              const isLow = item.current_stock > 0 && item.current_stock <= item.min_stock_alert;
+              const maxStock = Math.max(item.min_stock_alert * 3, item.current_stock, 1);
+              const pct = Math.min((item.current_stock / maxStock) * 100, 100);
+
+              return (
+                <div
+                  key={item.id}
+                  className={cn(
+                    'p-3 rounded-xl border transition-colors',
+                    isOut
+                      ? 'border-red-200 bg-red-50/50'
+                      : isLow
+                        ? 'border-amber-200 bg-amber-50/50'
+                        : 'border-gray-100 bg-gray-50/50',
+                  )}
+                >
+                  <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
+                  <div className="mt-2 flex items-end justify-between">
+                    <span
+                      className={cn(
+                        'text-lg font-black',
+                        isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-gray-900',
+                      )}
+                    >
+                      {item.current_stock}
+                    </span>
+                    <span className="text-[10px] text-gray-400 font-medium">{item.unit}</span>
+                  </div>
+                  <div className="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className={cn(
+                        'h-full rounded-full transition-all',
+                        isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500',
+                      )}
+                      style={{ width: `${Math.max(pct, 2)}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Orders + Popular Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
