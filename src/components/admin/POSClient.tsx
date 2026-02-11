@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import PaymentModal from '@/components/admin/PaymentModal';
-import type { Category, MenuItem, ServiceType } from '@/types/admin.types';
+import type { Category, MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
 interface POSClientProps {
   tenantId: string;
@@ -43,6 +43,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,7 +97,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   const loadData = useCallback(async () => {
     try {
-      const [catsRes, itemsRes] = await Promise.all([
+      const [catsRes, itemsRes, tenantRes] = await Promise.all([
         supabase.from('categories').select('*').eq('tenant_id', tenantId).order('display_order'),
         supabase
           .from('menu_items')
@@ -104,10 +105,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
           .eq('tenant_id', tenantId)
           .eq('is_available', true)
           .order('name'),
+        supabase.from('tenants').select('currency').eq('id', tenantId).single(),
       ]);
 
       if (catsRes.data) setCategories(catsRes.data);
       if (itemsRes.data) setMenuItems(itemsRes.data);
+      if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
     } catch {
       toast({ title: 'Erreur de chargement', variant: 'destructive' });
     } finally {
@@ -298,7 +301,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                       {item.name}
                     </h3>
                     <p className="text-xs font-bold text-gray-500 mt-auto">
-                      {formatCurrency(item.price, 'XAF')}
+                      {formatCurrency(item.price, currency)}
                     </p>
                   </div>
                 </button>
@@ -393,7 +396,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-gray-500">{formatCurrency(item.price, 'XAF')}</p>
+                    <p className="text-xs text-gray-500">{formatCurrency(item.price, currency)}</p>
                     {item.notes && (
                       <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
                         {item.notes}
@@ -402,7 +405,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   </div>
                 </div>
                 <p className="text-sm font-bold text-gray-900">
-                  {formatCurrency(item.price * item.quantity, 'XAF')}
+                  {formatCurrency(item.price * item.quantity, currency)}
                 </p>
               </div>
 
@@ -450,7 +453,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             <span className="text-sm text-gray-500 font-medium">Total</span>
             <div className="text-right">
               <span className="text-2xl font-black text-gray-900">
-                {formatCurrency(total, 'XAF')}
+                {formatCurrency(total, currency)}
               </span>
             </div>
           </div>

@@ -1,5 +1,5 @@
 import type { Order, Tenant } from '@/types/admin.types';
-import { formatCurrency } from '@/lib/utils/currency';
+import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 
 /**
  * Génère le HTML d'un reçu client pour impression.
@@ -28,7 +28,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
       (item) => `
       <tr>
         <td style="text-align:left;">${item.quantity}x ${item.name}</td>
-        <td style="text-align:right;">${formatCurrency(item.price * item.quantity, currency)}</td>
+        <td style="text-align:right;">${formatAmount(item.price * item.quantity, currency)}</td>
       </tr>
       ${
         item.notes
@@ -45,7 +45,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
           ? item.modifiers
               .map(
                 (m) =>
-                  `<tr><td colspan="2" style="font-size:11px;color:#0066cc;padding-left:20px;">+ ${m.name} (${formatCurrency(m.price, currency)})</td></tr>`,
+                  `<tr><td colspan="2" style="font-size:11px;color:#0066cc;padding-left:20px;">+ ${m.name} (${formatAmount(m.price, currency)})</td></tr>`,
               )
               .join('')
           : ''
@@ -61,17 +61,17 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const total = order.total || order.total_price || subtotal;
 
   let breakdownHTML = `
-    <tr><td>Sous-total</td><td style="text-align:right;">${formatCurrency(subtotal, currency)}</td></tr>
+    <tr><td>Sous-total</td><td style="text-align:right;">${formatAmount(subtotal, currency)}</td></tr>
   `;
 
   if (taxAmount > 0) {
-    breakdownHTML += `<tr><td>TVA</td><td style="text-align:right;">${formatCurrency(taxAmount, currency)}</td></tr>`;
+    breakdownHTML += `<tr><td>TVA</td><td style="text-align:right;">${formatAmount(taxAmount, currency)}</td></tr>`;
   }
   if (serviceCharge > 0) {
-    breakdownHTML += `<tr><td>Service</td><td style="text-align:right;">${formatCurrency(serviceCharge, currency)}</td></tr>`;
+    breakdownHTML += `<tr><td>Service</td><td style="text-align:right;">${formatAmount(serviceCharge, currency)}</td></tr>`;
   }
   if (discount > 0) {
-    breakdownHTML += `<tr><td style="color:#dc2626;">Réduction</td><td style="text-align:right;color:#dc2626;">-${formatCurrency(discount, currency)}</td></tr>`;
+    breakdownHTML += `<tr><td style="color:#dc2626;">Réduction</td><td style="text-align:right;color:#dc2626;">-${formatAmount(discount, currency)}</td></tr>`;
   }
 
   // Payment method
@@ -137,6 +137,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     <tr><td>Service</td><td style="text-align:right;">${serviceLabel}</td></tr>
     ${order.room_number ? `<tr><td>Chambre</td><td style="text-align:right;">${order.room_number}</td></tr>` : ''}
     ${order.customer_name ? `<tr><td>Client</td><td style="text-align:right;">${order.customer_name}</td></tr>` : ''}
+    <tr><td>Devise</td><td style="text-align:right;">${getCurrencySymbol(currency)}</td></tr>
   </table>
 
   <div class="separator"></div>
@@ -156,7 +157,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   <table>
     <tr class="total-row">
       <td>TOTAL</td>
-      <td style="text-align:right;">${formatCurrency(total, currency)}</td>
+      <td style="text-align:right;">${formatAmount(total, currency)}</td>
     </tr>
   </table>
 

@@ -86,7 +86,13 @@ export default function CartPage() {
         return;
       }
 
-      // Succès !
+      // Succès — sauvegarder l'ID de commande en localStorage pour le suivi
+      const storedIds: string[] = JSON.parse(localStorage.getItem('attabl_order_ids') || '[]');
+      if (data.orderId && !storedIds.includes(data.orderId)) {
+        storedIds.push(data.orderId);
+        localStorage.setItem('attabl_order_ids', JSON.stringify(storedIds));
+      }
+
       setOrderSuccess({
         orderNumber: data.orderNumber,
         total: data.total,
@@ -118,9 +124,16 @@ export default function CartPage() {
           <p className="text-2xl font-bold text-amber-600 mb-6">
             {orderSuccess.total.toLocaleString('fr-FR')} F
           </p>
-          <Link href={menuPath}>
-            <Button className="bg-amber-600 hover:bg-amber-700">Retour au menu</Button>
-          </Link>
+          <div className="flex flex-col gap-3">
+            <Link href={`/sites/${tenantSlug}/orders`}>
+              <Button className="w-full bg-amber-600 hover:bg-amber-700">Suivre ma commande</Button>
+            </Link>
+            <Link href={menuPath}>
+              <Button variant="outline" className="w-full">
+                Retour au menu
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
