@@ -126,31 +126,14 @@ export function createInventoryService(supabase: SupabaseClient) {
           ? Math.abs(input.quantity)
           : -Math.abs(input.quantity);
 
-      // Update ingredient stock
+      // Update ingredient stock (atomic via RPC)
       const { error: updateError } = await supabase.rpc('adjust_ingredient_stock', {
         p_tenant_id: tenantId,
         p_ingredient_id: input.ingredient_id,
         p_delta: delta,
       });
 
-      // Fallback: direct update if RPC doesn't exist
-      if (updateError) {
-        const { data: current } = await supabase
-          .from('ingredients')
-          .select('current_stock')
-          .eq('id', input.ingredient_id)
-          .eq('tenant_id', tenantId)
-          .single();
-
-        const newStock =
-          ((current as { current_stock: number } | null)?.current_stock ?? 0) + delta;
-
-        await supabase
-          .from('ingredients')
-          .update({ current_stock: Math.max(0, newStock) })
-          .eq('id', input.ingredient_id)
-          .eq('tenant_id', tenantId);
-      }
+      if (updateError) throw new ServiceError('Erreur ajustement stock', 'INTERNAL', updateError);
 
       // Record movement
       const { error: movementError } = await supabase.from('stock_movements').insert({
