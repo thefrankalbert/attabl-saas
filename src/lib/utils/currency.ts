@@ -73,6 +73,23 @@ export function formatCurrencyCompact(
 }
 
 /**
+ * Format an amount WITHOUT the currency symbol (for printed receipts)
+ *
+ * @example
+ * formatAmount(1000, 'XAF')    // "1 000"
+ * formatAmount(12.5, 'EUR')    // "12,50"
+ * formatAmount(12.5, 'USD')    // "12.50"
+ */
+export function formatAmount(amount: number, currencyCode?: CurrencyCode | string | null): string {
+  const config = getCurrencyConfig(currencyCode);
+
+  return new Intl.NumberFormat(config.locale, {
+    minimumFractionDigits: config.decimals,
+    maximumFractionDigits: config.decimals,
+  }).format(amount);
+}
+
+/**
  * Get just the currency symbol
  */
 export function getCurrencySymbol(currencyCode?: CurrencyCode | string | null): string {
