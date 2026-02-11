@@ -25,6 +25,14 @@ export interface PlanLimits {
   realtimeKDS: boolean;
   customBranding: boolean;
   multiLanguage: boolean;
+  // QR Customizer flags
+  qrCustomColors: boolean;
+  qrLogoEmbed: boolean;
+  qrCustomCTA: boolean;
+  qrSizeAdjust: boolean;
+  qrPremiumTemplates: boolean;
+  qrAdvancedExport: boolean;
+  qrEnterpriseDesign: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
@@ -44,6 +52,13 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     realtimeKDS: true,
     customBranding: true,
     multiLanguage: false,
+    qrCustomColors: false,
+    qrLogoEmbed: false,
+    qrCustomCTA: false,
+    qrSizeAdjust: false,
+    qrPremiumTemplates: false,
+    qrAdvancedExport: false,
+    qrEnterpriseDesign: false,
   },
   premium: {
     maxAdmins: 5,
@@ -59,6 +74,13 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     realtimeKDS: true,
     customBranding: true,
     multiLanguage: true,
+    qrCustomColors: true,
+    qrLogoEmbed: true,
+    qrCustomCTA: true,
+    qrSizeAdjust: true,
+    qrPremiumTemplates: true,
+    qrAdvancedExport: true,
+    qrEnterpriseDesign: false,
   },
   enterprise: {
     maxAdmins: 99,
@@ -74,6 +96,13 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     realtimeKDS: true,
     customBranding: true,
     multiLanguage: true,
+    qrCustomColors: true,
+    qrLogoEmbed: true,
+    qrCustomCTA: true,
+    qrSizeAdjust: true,
+    qrPremiumTemplates: true,
+    qrAdvancedExport: true,
+    qrEnterpriseDesign: true,
   },
 };
 
@@ -143,6 +172,13 @@ export function canAccessFeature(
     | 'realtimeKDS'
     | 'customBranding'
     | 'multiLanguage'
+    | 'qrCustomColors'
+    | 'qrLogoEmbed'
+    | 'qrCustomCTA'
+    | 'qrSizeAdjust'
+    | 'qrPremiumTemplates'
+    | 'qrAdvancedExport'
+    | 'qrEnterpriseDesign'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

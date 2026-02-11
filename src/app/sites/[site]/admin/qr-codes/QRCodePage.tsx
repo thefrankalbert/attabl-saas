@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { QRGenerator } from '@/components/qr/QRGenerator';
+import { useQRDesignConfig } from '@/hooks/useQRDesignConfig';
+import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QrCode, Info, Table2, BookOpen, Layers, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { Table, Zone } from '@/types/admin.types';
+import type { QRDesignConfig } from '@/types/qr-design.types';
 
 interface QRMenu {
   id: string;
@@ -38,6 +40,12 @@ function buildQRUrl(baseUrl: string, tableName?: string, menuSlug?: string): str
 export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePageProps) {
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
+
+  // QR Design Config (centralized state for customizer)
+  const { config, updateField, setTemplate } = useQRDesignConfig(
+    tenant.primaryColor,
+    tenant.secondaryColor,
+  );
 
   // Group tables by zone
   const tablesByZone = useMemo(() => {
@@ -178,16 +186,17 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         </div>
       )}
 
-      {/* QR Generator */}
+      {/* QR Customizer — split panel layout */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <QRGenerator
+        <QRCustomizerLayout
+          config={config}
+          updateField={updateField}
+          setTemplate={setTemplate}
           url={qrUrl}
           tenantName={tenant.name}
-          logoUrl={tenant.logoUrl}
-          primaryColor={tenant.primaryColor}
-          secondaryColor={tenant.secondaryColor}
-          description={tenant.description}
+          tenantSlug={tenant.slug}
           tableName={qrSubtitle}
+          logoUrl={tenant.logoUrl}
         />
       </div>
 
@@ -215,28 +224,45 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
             menuUrl={menuUrl}
             tenantName={tenant.name}
             primaryColor={tenant.primaryColor}
+            config={config}
           />
         </div>
       )}
 
       {/* Tips */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-1">Standard</h3>
           <p className="text-sm text-gray-500">
-            Format carré classique, idéal pour les affichages muraux et comptoirs.
+            Format carré 10×10 cm, idéal pour les affichages muraux et comptoirs.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-1">Chevalet</h3>
           <p className="text-sm text-gray-500">
-            Format vertical A6, parfait pour les chevalets de table.
+            Format A6 vertical, parfait pour les chevalets de table.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
           <h3 className="font-semibold text-gray-900 mb-1">Carte</h3>
           <p className="text-sm text-gray-500">
             Format carte de visite, idéal pour le room service hôtelier.
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h3 className="font-semibold text-gray-900 mb-1">Minimal ⭐</h3>
+          <p className="text-sm text-gray-500">
+            Ultra-clean, grand QR avec une fine ligne séparatrice.
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h3 className="font-semibold text-gray-900 mb-1">Élégant ⭐</h3>
+          <p className="text-sm text-gray-500">Bordure ornementale double, style serif raffiné.</p>
+        </div>
+        <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
+          <h3 className="font-semibold text-gray-900 mb-1">Néon ⭐</h3>
+          <p className="text-sm text-gray-500">
+            Fond sombre avec accent vif et effet glow lumineux.
           </p>
         </div>
       </div>
@@ -253,6 +279,7 @@ interface BatchQRPreviewProps {
   menuUrl: string;
   tenantName: string;
   primaryColor: string;
+  config: QRDesignConfig;
 }
 
 function BatchQRPreview({
@@ -263,6 +290,7 @@ function BatchQRPreview({
   menuUrl,
   tenantName,
   primaryColor,
+  config,
 }: BatchQRPreviewProps) {
   const [generating, setGenerating] = useState(false);
 
@@ -312,10 +340,10 @@ function BatchQRPreview({
           createElement(QRCodeSVG, {
             value: tableUrl,
             size: 600,
-            level: 'H',
+            level: config.errorCorrection,
             includeMargin: true,
-            fgColor: '#000000',
-            bgColor: '#FFFFFF',
+            fgColor: config.qrFgColor,
+            bgColor: config.qrBgColor,
           }),
         );
 
@@ -336,7 +364,7 @@ function BatchQRPreview({
 
             await new Promise<void>((resolve) => {
               img.onload = () => {
-                ctx.fillStyle = '#FFFFFF';
+                ctx.fillStyle = config.qrBgColor;
                 ctx.fillRect(0, 0, 600, 600);
                 ctx.drawImage(img, 0, 0);
                 URL.revokeObjectURL(blobUrl);
@@ -365,7 +393,9 @@ function BatchQRPreview({
             // CTA
             pdf.setFontSize(14);
             pdf.setTextColor('#6B7280');
-            pdf.text('Scannez pour commander', pageWidth / 2, 155, { align: 'center' });
+            pdf.text(config.ctaText || 'Scannez pour commander', pageWidth / 2, 155, {
+              align: 'center',
+            });
 
             // URL (small)
             pdf.setFontSize(8);
