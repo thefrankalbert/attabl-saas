@@ -29,12 +29,6 @@ interface MenuItem {
   category?: Category;
 }
 
-interface Venue {
-  id: string;
-  name: string;
-  is_active: boolean;
-}
-
 export default async function MenuPage({
   params,
   searchParams,
