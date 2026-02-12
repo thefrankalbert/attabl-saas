@@ -81,9 +81,7 @@ export function SoundSettings({
           <h3 className="font-semibold text-gray-900">Sons de notification</h3>
         </div>
         {!isPremium && (
-          <span className="text-xs text-gray-500">
-            3 sons disponibles &middot; 10 avec Premium
-          </span>
+          <span className="text-xs text-gray-500">3 sons disponibles &middot; 10 avec Premium</span>
         )}
       </div>
 
@@ -121,17 +119,15 @@ export function SoundSettings({
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 }`}
               >
-                {isPlaying ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4 ml-0.5" />
-                )}
+                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
               </button>
 
               {/* Sound info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${isLocked ? 'text-gray-400' : 'text-gray-900'}`}>
+                  <span
+                    className={`text-sm font-medium ${isLocked ? 'text-gray-400' : 'text-gray-900'}`}
+                  >
                     {sound.name}
                   </span>
                   {sound.isPremium && !isPremium && <PremiumBadge />}
@@ -173,9 +169,7 @@ export function SoundSettings({
       ) : (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm">
           <Crown className="w-4 h-4 flex-shrink-0" />
-          <span>
-            L&apos;import de sons personnalisés est disponible avec le plan Premium.
-          </span>
+          <span>L&apos;import de sons personnalisés est disponible avec le plan Premium.</span>
         </div>
       )}
     </div>

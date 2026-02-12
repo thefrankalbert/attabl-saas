@@ -6,22 +6,22 @@ import type { Order } from '@/types/admin.types';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-    params: Promise<{ id: string }>;
+  params: Promise<{ id: string }>;
 }
 
 export default async function SingleOrderPage({ params }: PageProps) {
-    const { id } = await params;
-    const supabase = await createClient();
+  const { id } = await params;
+  const supabase = await createClient();
 
-    const { data: order } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('id', id)
-        .single();
+  const { data: order } = await supabase
+    .from('orders')
+    .select('*, order_items(*)')
+    .eq('id', id)
+    .single();
 
-    if (!order) {
-        notFound();
-    }
+  if (!order) {
+    notFound();
+  }
 
-    return <SingleOrderClient order={order as Order} />;
+  return <SingleOrderClient order={order as Order} />;
 }

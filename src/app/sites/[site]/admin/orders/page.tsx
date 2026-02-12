@@ -35,5 +35,11 @@ export default async function OrdersPage() {
     .order('created_at', { ascending: false })
     .limit(100);
 
-  return <OrdersClient tenantId={tenant.id} initialOrders={(orders || []) as Order[]} notificationSoundId={tenant.notification_sound_id} />;
+  return (
+    <OrdersClient
+      tenantId={tenant.id}
+      initialOrders={(orders || []) as Order[]}
+      notificationSoundId={tenant.notification_sound_id}
+    />
+  );
 }

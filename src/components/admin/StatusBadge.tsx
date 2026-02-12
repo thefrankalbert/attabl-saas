@@ -5,24 +5,24 @@ import { ORDER_STATUS } from '@/lib/constants';
 import type { OrderStatus } from '@/types/admin.types';
 
 interface StatusBadgeProps {
-    status: string;
-    className?: string;
+  status: string;
+  className?: string;
 }
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {
-    const config = ORDER_STATUS[status as OrderStatus] || ORDER_STATUS.pending;
+  const config = ORDER_STATUS[status as OrderStatus] || ORDER_STATUS.pending;
 
-    return (
-        <span
-            className={cn(
-                'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
-                config.bgClass,
-                config.textClass,
-                className,
-            )}
-        >
-            <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
-            {config.label}
-        </span>
-    );
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold',
+        config.bgClass,
+        config.textClass,
+        className,
+      )}
+    >
+      <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
+      {config.label}
+    </span>
+  );
 }

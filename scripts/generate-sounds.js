@@ -61,7 +61,15 @@ function createWav(samples, sampleRate = SAMPLE_RATE) {
 /**
  * Generate a sine tone with envelope
  */
-function sineWithEnvelope(freq, duration, attack = 0.02, decay = 0.1, sustain = 0.7, release = 0.2, volume = 0.6) {
+function sineWithEnvelope(
+  freq,
+  duration,
+  attack = 0.02,
+  decay = 0.1,
+  sustain = 0.7,
+  release = 0.2,
+  volume = 0.6,
+) {
   const totalSamples = Math.floor(SAMPLE_RATE * duration);
   const samples = new Float64Array(totalSamples);
   const attackSamples = Math.floor(SAMPLE_RATE * attack);
@@ -93,7 +101,7 @@ function sineWithEnvelope(freq, duration, attack = 0.02, decay = 0.1, sustain = 
  * Mix multiple sample arrays together
  */
 function mix(...arrays) {
-  const maxLen = Math.max(...arrays.map(a => a.length));
+  const maxLen = Math.max(...arrays.map((a) => a.length));
   const result = new Float64Array(maxLen);
   for (const arr of arrays) {
     for (let i = 0; i < arr.length; i++) {
@@ -138,7 +146,10 @@ const sounds = {
   // 2. Gentle Chime — two-note chime
   'gentle-chime': () => {
     const note1 = sineWithEnvelope(1047, 0.6, 0.01, 0.1, 0.3, 0.3, 0.5);
-    const note2 = offset(sineWithEnvelope(1319, 0.6, 0.01, 0.1, 0.3, 0.3, 0.5), Math.floor(SAMPLE_RATE * 0.15));
+    const note2 = offset(
+      sineWithEnvelope(1319, 0.6, 0.01, 0.1, 0.3, 0.3, 0.5),
+      Math.floor(SAMPLE_RATE * 0.15),
+    );
     return mix(note1, note2);
   },
 
@@ -166,8 +177,14 @@ const sounds = {
   // 6. Soft Marimba — warm wooden percussive tone
   'soft-marimba': () => {
     const note1 = sineWithEnvelope(440, 0.5, 0.002, 0.08, 0.1, 0.3, 0.6);
-    const note2 = offset(sineWithEnvelope(554, 0.5, 0.002, 0.08, 0.1, 0.3, 0.5), Math.floor(SAMPLE_RATE * 0.2));
-    const note3 = offset(sineWithEnvelope(659, 0.5, 0.002, 0.08, 0.1, 0.3, 0.4), Math.floor(SAMPLE_RATE * 0.4));
+    const note2 = offset(
+      sineWithEnvelope(554, 0.5, 0.002, 0.08, 0.1, 0.3, 0.5),
+      Math.floor(SAMPLE_RATE * 0.2),
+    );
+    const note3 = offset(
+      sineWithEnvelope(659, 0.5, 0.002, 0.08, 0.1, 0.3, 0.4),
+      Math.floor(SAMPLE_RATE * 0.4),
+    );
     return mix(note1, note2, note3);
   },
 
@@ -182,8 +199,14 @@ const sounds = {
   // 8. Luxury Chime — ascending 3-note chord
   'luxury-chime': () => {
     const note1 = sineWithEnvelope(784, 0.8, 0.01, 0.1, 0.3, 0.4, 0.5);
-    const note2 = offset(sineWithEnvelope(988, 0.8, 0.01, 0.1, 0.3, 0.4, 0.5), Math.floor(SAMPLE_RATE * 0.15));
-    const note3 = offset(sineWithEnvelope(1175, 1.0, 0.01, 0.15, 0.4, 0.5, 0.5), Math.floor(SAMPLE_RATE * 0.3));
+    const note2 = offset(
+      sineWithEnvelope(988, 0.8, 0.01, 0.1, 0.3, 0.4, 0.5),
+      Math.floor(SAMPLE_RATE * 0.15),
+    );
+    const note3 = offset(
+      sineWithEnvelope(1175, 1.0, 0.01, 0.15, 0.4, 0.5, 0.5),
+      Math.floor(SAMPLE_RATE * 0.3),
+    );
     return mix(note1, note2, note3);
   },
 
@@ -195,12 +218,13 @@ const sounds = {
       const t = i / SAMPLE_RATE;
       const env = Math.exp(-t * 25);
       // Mix of frequencies for wood-like character
-      samples[i] = env * 0.6 * (
-        0.5 * Math.sin(2 * Math.PI * 400 * t) +
-        0.3 * Math.sin(2 * Math.PI * 800 * t) +
-        0.15 * Math.sin(2 * Math.PI * 1200 * t) +
-        0.1 * (Math.random() * 2 - 1) * Math.exp(-t * 50) // noise burst
-      );
+      samples[i] =
+        env *
+        0.6 *
+        (0.5 * Math.sin(2 * Math.PI * 400 * t) +
+          0.3 * Math.sin(2 * Math.PI * 800 * t) +
+          0.15 * Math.sin(2 * Math.PI * 1200 * t) +
+          0.1 * (Math.random() * 2 - 1) * Math.exp(-t * 50)); // noise burst
     }
     return samples;
   },
@@ -213,12 +237,13 @@ const sounds = {
       const t = i / SAMPLE_RATE;
       const env = Math.exp(-t * 3);
       // Bell-like spectrum with slight inharmonicity
-      samples[i] = env * 0.5 * (
-        0.5 * Math.sin(2 * Math.PI * 523 * t) +
-        0.35 * Math.sin(2 * Math.PI * 1047 * t * 1.003) +
-        0.2 * Math.sin(2 * Math.PI * 1568 * t * 0.998) +
-        0.1 * Math.sin(2 * Math.PI * 2093 * t * 1.005)
-      );
+      samples[i] =
+        env *
+        0.5 *
+        (0.5 * Math.sin(2 * Math.PI * 523 * t) +
+          0.35 * Math.sin(2 * Math.PI * 1047 * t * 1.003) +
+          0.2 * Math.sin(2 * Math.PI * 1568 * t * 0.998) +
+          0.1 * Math.sin(2 * Math.PI * 2093 * t * 1.005));
     }
     return samples;
   },

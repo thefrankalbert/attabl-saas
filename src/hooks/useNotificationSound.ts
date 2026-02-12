@@ -147,7 +147,10 @@ export function useNotificationSound(
  */
 function playFallbackBeep(): void {
   try {
-    const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const audioCtx = new (
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
+    )();
     const now = audioCtx.currentTime;
 
     for (let i = 0; i < 2; i++) {

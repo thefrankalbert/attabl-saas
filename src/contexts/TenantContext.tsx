@@ -27,9 +27,7 @@ export function TenantProvider({
   tenant: Tenant | null;
 }) {
   return (
-    <TenantContext.Provider value={{ slug, tenantId, tenant }}>
-      {children}
-    </TenantContext.Provider>
+    <TenantContext.Provider value={{ slug, tenantId, tenant }}>{children}</TenantContext.Provider>
   );
 }
 
@@ -40,4 +38,3 @@ export function useTenant() {
   }
   return context;
 }
-

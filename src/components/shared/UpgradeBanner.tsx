@@ -34,7 +34,9 @@ export function UpgradeBanner({
 
   if (compact) {
     return (
-      <div className={`flex items-center gap-2 text-amber-700 bg-amber-50 px-3 py-2 rounded-lg text-sm ${className}`}>
+      <div
+        className={`flex items-center gap-2 text-amber-700 bg-amber-50 px-3 py-2 rounded-lg text-sm ${className}`}
+      >
         <Crown className="w-4 h-4 flex-shrink-0" />
         <span className="flex-1">{message || defaultMessage}</span>
         <Link
@@ -68,9 +70,7 @@ export function UpgradeBanner({
           </div>
         </div>
 
-        <p className="text-sm text-gray-700 mb-4">
-          {message || defaultMessage}
-        </p>
+        <p className="text-sm text-gray-700 mb-4">{message || defaultMessage}</p>
 
         <Link
           href={upgradeUrl}
