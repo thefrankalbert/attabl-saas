@@ -15,11 +15,7 @@ export default async function SiteLayout({
 
   // Fetch tenant from database
   const supabase = await createClient();
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', site)
-    .single();
+  const { data: tenant } = await supabase.from('tenants').select('*').eq('slug', site).single();
 
   const tenantId = tenant?.id || null;
 

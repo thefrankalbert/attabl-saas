@@ -32,9 +32,7 @@ export default function CartSummary() {
           />
 
           {/* Count Badge */}
-          <div
-            className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] sm:text-[11px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 border-white"
-          >
+          <div className="absolute -top-2 -right-2 bg-amber-500 text-white text-[10px] sm:text-[11px] font-black w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 border-white">
             {totalItems}
           </div>
         </div>

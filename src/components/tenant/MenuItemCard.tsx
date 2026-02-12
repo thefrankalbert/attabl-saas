@@ -121,16 +121,16 @@ export default function MenuItemCard({
       category_name: category,
       selectedOption: selectedOption
         ? {
-          name_fr: selectedOption.name_fr,
-          name_en: selectedOption.name_en,
-        }
+            name_fr: selectedOption.name_fr,
+            name_en: selectedOption.name_en,
+          }
         : undefined,
       selectedVariant: selectedVariant
         ? {
-          name_fr: selectedVariant.variant_name_fr,
-          name_en: selectedVariant.variant_name_en,
-          price: selectedVariant.price,
-        }
+            name_fr: selectedVariant.variant_name_fr,
+            name_en: selectedVariant.variant_name_en,
+            price: selectedVariant.price,
+          }
         : undefined,
     };
 
