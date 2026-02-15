@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { createInventoryService } from '@/services/inventory.service';
+import { createSupplierService } from '@/services/supplier.service';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
+import type { Supplier } from '@/types/supplier.types';
 import type {
   Ingredient,
   IngredientUnit,
@@ -49,11 +51,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [adjustQty, setAdjustQty] = useState('');
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
+  const [adjustSupplierId, setAdjustSupplierId] = useState('');
+  const [activeSuppliers, setActiveSuppliers] = useState<Supplier[]>([]);
 
   const { toast } = useToast();
   const { t } = useLanguage();
   const supabase = createClient();
   const inventoryService = createInventoryService(supabase);
+  const supplierService = createSupplierService(supabase);
 
   const loadIngredients = useCallback(async () => {
     try {
@@ -67,8 +72,19 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const data = await supplierService.getActiveSuppliers(tenantId);
+      setActiveSuppliers(data);
+    } catch {
+      // Silent fail — suppliers are optional
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
   useEffect(() => {
     loadIngredients();
+    loadSuppliers();
 
     // Realtime updates on ingredients
     const channel = supabase
@@ -91,7 +107,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, loadIngredients]);
+  }, [tenantId, loadIngredients, loadSuppliers]);
 
   // Filtered list
   const filtered = ingredients.filter((ing) => {
@@ -118,6 +134,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     setAdjustQty('');
     setAdjustType('manual_add');
     setAdjustNotes('');
+    setAdjustSupplierId('');
     setSelectedIngredient(null);
   };
 
@@ -189,6 +206,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         quantity: parseFloat(adjustQty),
         movement_type: adjustType,
         notes: adjustNotes.trim() || undefined,
+        supplier_id: adjustSupplierId || undefined,
       });
       toast({ title: 'Stock ajusté' });
       setModalMode(null);
@@ -511,6 +529,26 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   autoFocus
                 />
               </div>
+
+              {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">
+                    Fournisseur (optionnel)
+                  </label>
+                  <select
+                    value={adjustSupplierId}
+                    onChange={(e) => setAdjustSupplierId(e.target.value)}
+                    className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
+                  >
+                    <option value="">— Aucun —</option>
+                    {activeSuppliers.map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-medium text-gray-600 mb-1 block">

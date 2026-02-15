@@ -282,6 +282,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
       const inventoryService = createInventoryService(supabase);
       inventoryService.destockOrder(order.id, tenantId).catch(() => {});
 
+      // Check stock alerts (non-blocking, fire-and-forget)
+      fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
+
       toast({
         title: status === 'pending' ? 'Envoy\u00e9 en cuisine !' : 'Vente enregistr\u00e9e !',
       });

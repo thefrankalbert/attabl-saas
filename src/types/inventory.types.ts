@@ -46,9 +46,11 @@ export interface StockMovement {
   reference_id: string | null;
   notes: string | null;
   created_by: string | null;
+  supplier_id: string | null;
   created_at: string;
   // Joined fields
   ingredient?: Pick<Ingredient, 'name' | 'unit'>;
+  supplier?: { id: string; name: string } | null;
 }
 
 export interface StockStatus {
@@ -107,6 +109,7 @@ export interface AdjustStockInput {
   quantity: number;
   movement_type: MovementType;
   notes?: string;
+  supplier_id?: string;
 }
 
 // ─── Unit labels for UI ─────────────────────────────────

@@ -148,6 +148,7 @@ export function createInventoryService(supabase: SupabaseClient) {
         quantity: delta,
         notes: input.notes || null,
         created_by: user?.id || null,
+        supplier_id: input.supplier_id || null,
       });
 
       if (movementError)
@@ -181,7 +182,7 @@ export function createInventoryService(supabase: SupabaseClient) {
     ): Promise<StockMovement[]> {
       let query = supabase
         .from('stock_movements')
-        .select('*, ingredient:ingredients(name, unit)')
+        .select('*, ingredient:ingredients(name, unit), supplier:suppliers(id, name)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(200);
