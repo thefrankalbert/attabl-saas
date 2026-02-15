@@ -1,7 +1,6 @@
 'use client';
 
 import { Utensils, ShoppingBag, Bell, Search } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 

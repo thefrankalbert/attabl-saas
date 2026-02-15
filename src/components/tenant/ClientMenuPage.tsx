@@ -405,9 +405,7 @@ export default function ClientMenuPage({
       <BottomNav
         tenantSlug={tenant.slug}
         primaryColor={tenant.primary_color || '#000000'}
-        onSearchClick={() => {
-          /* TODO */
-        }}
+        onSearchClick={() => {}}
       />
     </div>
   );

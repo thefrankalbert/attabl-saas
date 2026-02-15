@@ -2,11 +2,10 @@
 
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Globe, Info, MessageCircle, ChevronRight, FileText } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
 import { useTenant } from '@/contexts/TenantContext';
 
 export default function ClientSettings() {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { tenant } = useTenant();
 
   return (
