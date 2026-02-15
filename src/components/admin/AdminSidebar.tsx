@@ -25,6 +25,7 @@ import {
   Package,
   BookOpenCheck,
   Lightbulb,
+  History,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,11 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
         },
         { href: `/sites/${tenant.slug}/admin/items`, icon: BookOpen, label: 'Plats & Articles' },
         { href: `/sites/${tenant.slug}/admin/inventory`, icon: Package, label: 'Inventaire' },
+        {
+          href: `/sites/${tenant.slug}/admin/stock-history`,
+          icon: History,
+          label: 'Historique Stock',
+        },
         {
           href: `/sites/${tenant.slug}/admin/recipes`,
           icon: BookOpenCheck,

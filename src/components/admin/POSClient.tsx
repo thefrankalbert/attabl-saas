@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
+import { createInventoryService } from '@/services/inventory.service';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { Category, MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
@@ -276,6 +277,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
+
+      // Auto-destock inventory (non-blocking — order succeeds even if destock fails)
+      const inventoryService = createInventoryService(supabase);
+      inventoryService.destockOrder(order.id, tenantId).catch(() => {});
 
       toast({
         title: status === 'pending' ? 'Envoy\u00e9 en cuisine !' : 'Vente enregistr\u00e9e !',
