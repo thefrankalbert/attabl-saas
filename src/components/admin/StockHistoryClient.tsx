@@ -133,6 +133,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Ingrédient</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
                   <th className="text-right px-4 py-3 font-medium text-gray-600">Quantité</th>
+                  <th className="text-left px-4 py-3 font-medium text-gray-600">Fournisseur</th>
                   <th className="text-left px-4 py-3 font-medium text-gray-600">Notes</th>
                 </tr>
               </thead>
@@ -166,6 +167,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                       >
                         {isPositive ? '+' : ''}
                         {m.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                        {m.supplier?.name || '—'}
                       </td>
                       <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
                         {m.notes || '—'}

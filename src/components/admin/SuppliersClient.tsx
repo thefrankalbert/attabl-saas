@@ -1,0 +1,406 @@
+'use client';
+
+import { useEffect, useState, useCallback } from 'react';
+import { Truck, Plus, Search, Pencil, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { useToast } from '@/components/ui/use-toast';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { createSupplierService } from '@/services/supplier.service';
+import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
+
+interface SuppliersClientProps {
+  tenantId: string;
+}
+
+type ModalMode = 'add' | 'edit' | null;
+
+export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+
+  // Modal state
+  const [modalMode, setModalMode] = useState<ModalMode>(null);
+  const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+
+  // Form fields
+  const [formName, setFormName] = useState('');
+  const [formContact, setFormContact] = useState('');
+  const [formPhone, setFormPhone] = useState('');
+  const [formEmail, setFormEmail] = useState('');
+  const [formAddress, setFormAddress] = useState('');
+  const [formNotes, setFormNotes] = useState('');
+
+  const { toast } = useToast();
+  const supabase = createClient();
+  const supplierService = createSupplierService(supabase);
+
+  const loadSuppliers = useCallback(async () => {
+    try {
+      const data = await supplierService.getSuppliers(tenantId);
+      setSuppliers(data);
+    } catch {
+      toast({ title: 'Erreur chargement fournisseurs', variant: 'destructive' });
+    } finally {
+      setLoading(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
+
+  useEffect(() => {
+    loadSuppliers();
+  }, [loadSuppliers]);
+
+  const filtered = suppliers.filter((s) => {
+    if (filterActive === 'active' && !s.is_active) return false;
+    if (filterActive === 'inactive' && s.is_active) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return (
+        s.name.toLowerCase().includes(q) ||
+        s.contact_name?.toLowerCase().includes(q) ||
+        s.email?.toLowerCase().includes(q) ||
+        s.phone?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
+  const resetForm = () => {
+    setFormName('');
+    setFormContact('');
+    setFormPhone('');
+    setFormEmail('');
+    setFormAddress('');
+    setFormNotes('');
+    setSelectedSupplier(null);
+  };
+
+  const openAdd = () => {
+    resetForm();
+    setModalMode('add');
+  };
+
+  const openEdit = (supplier: Supplier) => {
+    setSelectedSupplier(supplier);
+    setFormName(supplier.name);
+    setFormContact(supplier.contact_name || '');
+    setFormPhone(supplier.phone || '');
+    setFormEmail(supplier.email || '');
+    setFormAddress(supplier.address || '');
+    setFormNotes(supplier.notes || '');
+    setModalMode('edit');
+  };
+
+  const handleSave = async () => {
+    if (!formName.trim()) {
+      toast({ title: 'Nom requis', variant: 'destructive' });
+      return;
+    }
+
+    try {
+      if (modalMode === 'add') {
+        const input: CreateSupplierInput = {
+          name: formName.trim(),
+          contact_name: formContact.trim() || undefined,
+          phone: formPhone.trim() || undefined,
+          email: formEmail.trim() || undefined,
+          address: formAddress.trim() || undefined,
+          notes: formNotes.trim() || undefined,
+        };
+        await supplierService.createSupplier(tenantId, input);
+        toast({ title: 'Fournisseur ajouté' });
+      } else if (modalMode === 'edit' && selectedSupplier) {
+        await supplierService.updateSupplier(selectedSupplier.id, tenantId, {
+          name: formName.trim(),
+          contact_name: formContact.trim() || null,
+          phone: formPhone.trim() || null,
+          email: formEmail.trim() || null,
+          address: formAddress.trim() || null,
+          notes: formNotes.trim() || null,
+        });
+        toast({ title: 'Fournisseur modifié' });
+      }
+      setModalMode(null);
+      resetForm();
+      loadSuppliers();
+    } catch {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    }
+  };
+
+  const handleToggleActive = async (supplier: Supplier) => {
+    try {
+      await supplierService.updateSupplier(supplier.id, tenantId, {
+        is_active: !supplier.is_active,
+      });
+      toast({ title: supplier.is_active ? 'Fournisseur désactivé' : 'Fournisseur activé' });
+      loadSuppliers();
+    } catch {
+      toast({ title: 'Erreur', variant: 'destructive' });
+    }
+  };
+
+  const handleDelete = async (supplierId: string) => {
+    try {
+      await supplierService.deleteSupplier(supplierId, tenantId);
+      toast({ title: 'Fournisseur supprimé' });
+      setDeleteConfirm(null);
+      loadSuppliers();
+    } catch {
+      toast({ title: 'Erreur suppression', variant: 'destructive' });
+    }
+  };
+
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Chargement des fournisseurs...</div>;
+  }
+
+  return (
+    <div className="p-4 sm:p-6 space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Truck className="w-6 h-6" />
+            Fournisseurs
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {suppliers.length} fournisseur{suppliers.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <Button onClick={openAdd} className="gap-2">
+          <Plus className="w-4 h-4" />
+          Ajouter un fournisseur
+        </Button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            placeholder="Rechercher par nom, contact, email..."
+            className="pl-9"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        <div className="flex gap-2">
+          {(['all', 'active', 'inactive'] as const).map((status) => (
+            <Button
+              key={status}
+              variant={filterActive === status ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setFilterActive(status)}
+              className="rounded-full"
+            >
+              {status === 'all' ? 'Tous' : status === 'active' ? 'Actifs' : 'Inactifs'}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {/* List */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-12 text-gray-500">Aucun fournisseur trouvé</div>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {filtered.map((supplier) => (
+            <div
+              key={supplier.id}
+              className={cn(
+                'bg-white rounded-xl border p-4 transition-all hover:shadow-md',
+                supplier.is_active ? 'border-gray-200' : 'border-gray-100 opacity-60',
+              )}
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
+                  {supplier.contact_name && (
+                    <p className="text-sm text-gray-500">{supplier.contact_name}</p>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-medium',
+                    supplier.is_active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-500',
+                  )}
+                >
+                  {supplier.is_active ? 'Actif' : 'Inactif'}
+                </span>
+              </div>
+
+              <div className="space-y-1.5 text-sm text-gray-600 mb-4">
+                {supplier.phone && (
+                  <div className="flex items-center gap-2">
+                    <Phone className="w-3.5 h-3.5 text-gray-400" />
+                    {supplier.phone}
+                  </div>
+                )}
+                {supplier.email && (
+                  <div className="flex items-center gap-2">
+                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                    {supplier.email}
+                  </div>
+                )}
+                {supplier.address && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    <span className="truncate">{supplier.address}</span>
+                  </div>
+                )}
+              </div>
+
+              {supplier.notes && (
+                <p className="text-xs text-gray-400 mb-3 line-clamp-2">{supplier.notes}</p>
+              )}
+
+              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEdit(supplier)}
+                  className="gap-1 text-xs"
+                >
+                  <Pencil className="w-3 h-3" />
+                  Modifier
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleToggleActive(supplier)}
+                  className="text-xs"
+                >
+                  {supplier.is_active ? 'Désactiver' : 'Activer'}
+                </Button>
+                {deleteConfirm === supplier.id ? (
+                  <div className="flex gap-1 ml-auto">
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={() => handleDelete(supplier.id)}
+                      className="text-xs"
+                    >
+                      Confirmer
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setDeleteConfirm(null)}
+                      className="text-xs"
+                    >
+                      Annuler
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteConfirm(supplier.id)}
+                    className="text-xs text-red-600 hover:text-red-700 ml-auto"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal — Add / Edit */}
+      {modalMode && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md animate-in zoom-in-95">
+            <h3 className="font-bold text-lg mb-4">
+              {modalMode === 'add' ? 'Ajouter un fournisseur' : 'Modifier le fournisseur'}
+            </h3>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                  Nom du fournisseur *
+                </label>
+                <Input
+                  value={formName}
+                  onChange={(e) => setFormName(e.target.value)}
+                  placeholder="Ex: Metro, Makro..."
+                  autoFocus
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                  Personne de contact
+                </label>
+                <Input
+                  value={formContact}
+                  onChange={(e) => setFormContact(e.target.value)}
+                  placeholder="Nom du contact"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Téléphone</label>
+                  <Input
+                    value={formPhone}
+                    onChange={(e) => setFormPhone(e.target.value)}
+                    placeholder="+237..."
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 mb-1 block">Email</label>
+                  <Input
+                    type="email"
+                    value={formEmail}
+                    onChange={(e) => setFormEmail(e.target.value)}
+                    placeholder="contact@..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Adresse</label>
+                <Input
+                  value={formAddress}
+                  onChange={(e) => setFormAddress(e.target.value)}
+                  placeholder="Adresse du fournisseur"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-medium text-gray-600 mb-1 block">Notes</label>
+                <Input
+                  value={formNotes}
+                  onChange={(e) => setFormNotes(e.target.value)}
+                  placeholder="Notes internes..."
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setModalMode(null);
+                  resetForm();
+                }}
+              >
+                Annuler
+              </Button>
+              <Button onClick={handleSave}>Enregistrer</Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

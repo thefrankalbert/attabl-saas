@@ -139,9 +139,27 @@ export async function POST(request: Request) {
     );
     if (hasInventory) {
       const inventoryService = createInventoryService(supabase);
-      inventoryService.destockOrder(result.orderId, tenantId).catch((err) => {
-        logger.error('Auto-destock failed (non-blocking)', err);
-      });
+      inventoryService
+        .destockOrder(result.orderId, tenantId)
+        .then(() => {
+          // 10. Check stock alerts after destock (non-blocking)
+          const hasAlerts = canAccessFeature(
+            'stockAlerts',
+            tenant?.subscription_plan as SubscriptionPlan | null,
+            tenant?.subscription_status as SubscriptionStatus | null,
+            tenant?.trial_ends_at as string | null,
+          );
+          if (hasAlerts) {
+            import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
+              checkAndNotifyLowStock(tenantId).catch((err) => {
+                logger.error('Stock alert check failed (non-blocking)', err);
+              }),
+            );
+          }
+        })
+        .catch((err) => {
+          logger.error('Auto-destock failed (non-blocking)', err);
+        });
     }
 
     return NextResponse.json({

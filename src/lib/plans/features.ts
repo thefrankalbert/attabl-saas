@@ -98,7 +98,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxIngredients: 200,
     ruptureWorkflow: true,
     patronDashboard: true,
-    stockAlerts: false,
+    stockAlerts: true,
     waiterSuggestions: false,
   },
   enterprise: {
