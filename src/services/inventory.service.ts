@@ -135,6 +135,11 @@ export function createInventoryService(supabase: SupabaseClient) {
 
       if (updateError) throw new ServiceError('Erreur ajustement stock', 'INTERNAL', updateError);
 
+      // Get current user for audit trail
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
       // Record movement
       const { error: movementError } = await supabase.from('stock_movements').insert({
         tenant_id: tenantId,
@@ -142,6 +147,7 @@ export function createInventoryService(supabase: SupabaseClient) {
         movement_type: input.movement_type,
         quantity: delta,
         notes: input.notes || null,
+        created_by: user?.id || null,
       });
 
       if (movementError)
