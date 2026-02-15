@@ -17,6 +17,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
+import Image from 'next/image';
 import type { Ad } from '@/types/admin.types';
 
 interface AdsClientProps {
@@ -168,7 +169,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
             )}
           >
             <div className="aspect-video bg-gray-100 relative">
-              <img src={ad.image_url} alt="" className="w-full h-full object-cover" />
+              <Image src={ad.image_url} alt="" fill className="object-cover" />
               <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold shadow-sm">
                 Ordre: {ad.sort_order}
               </div>
@@ -244,7 +245,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               />
               {previewUrl ? (
                 <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
-                  <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+                  <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
                 </div>
               ) : (
                 <div className="py-8 text-gray-400">

@@ -77,8 +77,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  }, [tenantId, supabase, inventoryService, toast]);
 
   useEffect(() => {
     loadData();
@@ -103,9 +102,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       } finally {
         setLoadingRecipe(false);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps
     },
-    [tenantId],
+    [tenantId, inventoryService, toast],
   );
 
   const handleSelectItem = (itemId: string) => {
