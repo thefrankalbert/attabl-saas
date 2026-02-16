@@ -172,7 +172,7 @@ export default function OnboardingPage() {
       <div className="h-screen bg-white flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="h-12 w-12 bg-[#CCFF00] rounded-xl" />
-          <p className="text-gray-500">Chargement...</p>
+          <p className="text-neutral-500">Chargement...</p>
         </div>
       </div>
     );
@@ -181,79 +181,81 @@ export default function OnboardingPage() {
   return (
     <div className="h-screen bg-white flex overflow-hidden">
       {/* Sidebar - Progress */}
-      <div className="hidden lg:flex w-80 bg-black flex-col p-8 shrink-0">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3 mb-12">
-          <div className="bg-[#CCFF00] rounded-xl p-2">
-            <Layout className="h-6 w-6 text-black" />
-          </div>
-          <span className="text-2xl font-bold text-white">ATTABL</span>
-        </Link>
+      <div className="hidden lg:flex w-80 shrink-0 py-4 pl-4">
+        <div className="flex w-full flex-col rounded-[2rem] bg-neutral-900 p-8">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-3 mb-12">
+            <div className="bg-[#CCFF00] rounded-xl p-2">
+              <Layout className="h-6 w-6 text-black" />
+            </div>
+            <span className="text-2xl font-bold text-white">ATTABL</span>
+          </Link>
 
-        {/* Steps */}
-        <div className="flex-1">
-          <p className="text-gray-500 text-sm mb-6">Configuration</p>
-          <nav className="space-y-2">
-            {steps.map((step) => {
-              const isCompleted = currentStep > step.id;
-              const isCurrent = currentStep === step.id;
+          {/* Steps */}
+          <div className="flex-1">
+            <p className="text-neutral-500 text-sm mb-6">Configuration</p>
+            <nav className="space-y-2">
+              {steps.map((step) => {
+                const isCompleted = currentStep > step.id;
+                const isCurrent = currentStep === step.id;
 
-              return (
-                <button
-                  key={step.id}
-                  type="button"
-                  onClick={() => {
-                    if (isCompleted) {
-                      setError(null);
-                      setCurrentStep(step.id);
-                    }
-                  }}
-                  className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left ${
-                    isCurrent
-                      ? 'bg-[#CCFF00]/10 border border-[#CCFF00]/30'
-                      : isCompleted
-                        ? 'opacity-60 hover:opacity-80 cursor-pointer'
-                        : 'opacity-40 cursor-default'
-                  }`}
-                >
-                  <div
-                    className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                      isCompleted
-                        ? 'bg-[#CCFF00] text-black'
-                        : isCurrent
-                          ? 'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50'
-                          : 'bg-white/10 text-white/50'
+                return (
+                  <button
+                    key={step.id}
+                    type="button"
+                    onClick={() => {
+                      if (isCompleted) {
+                        setError(null);
+                        setCurrentStep(step.id);
+                      }
+                    }}
+                    className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left ${
+                      isCurrent
+                        ? 'bg-[#CCFF00]/10 border border-[#CCFF00]/30'
+                        : isCompleted
+                          ? 'opacity-60 hover:opacity-80 cursor-pointer'
+                          : 'opacity-40 cursor-default'
                     }`}
                   >
-                    {isCompleted ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <step.icon className="h-5 w-5" />
-                    )}
-                  </div>
-                  <div>
-                    <p className={`font-medium ${isCurrent ? 'text-white' : 'text-white/70'}`}>
-                      {step.name}
-                    </p>
-                    <p className="text-xs text-gray-500">{step.description}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
+                    <div
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
+                        isCompleted
+                          ? 'bg-[#CCFF00] text-black'
+                          : isCurrent
+                            ? 'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50'
+                            : 'bg-white/10 text-white/50'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-5 w-5" />
+                      ) : (
+                        <step.icon className="h-5 w-5" />
+                      )}
+                    </div>
+                    <div>
+                      <p className={`font-medium ${isCurrent ? 'text-white' : 'text-white/70'}`}>
+                        {step.name}
+                      </p>
+                      <p className="text-xs text-neutral-500">{step.description}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-        {/* Footer */}
-        <div className="pt-8 border-t border-white/10">
-          <p className="text-sm text-gray-500">
-            {data.tenantName && (
-              <>
-                <span className="text-white font-medium">{data.tenantName}</span>
-                <br />
-              </>
-            )}
-            14 jours d&apos;essai gratuit
-          </p>
+          {/* Footer */}
+          <div className="pt-8 border-t border-white/10">
+            <p className="text-sm text-neutral-500">
+              {data.tenantName && (
+                <>
+                  <span className="text-white font-medium">{data.tenantName}</span>
+                  <br />
+                </>
+              )}
+              14 jours d&apos;essai gratuit
+            </p>
+          </div>
         </div>
       </div>
 
@@ -267,11 +269,11 @@ export default function OnboardingPage() {
             </div>
             <span className="font-bold">ATTABL</span>
           </Link>
-          <span className="text-sm text-gray-500">Étape {currentStep}/4</span>
+          <span className="text-sm text-neutral-500">Étape {currentStep}/4</span>
         </div>
 
         {/* Progress Bar (Mobile) */}
-        <div className="lg:hidden h-1 bg-gray-100 shrink-0">
+        <div className="lg:hidden h-1 bg-neutral-100 shrink-0">
           <div
             className="h-full bg-[#CCFF00] transition-all duration-500"
             style={{ width: `${(currentStep / 4) * 100}%` }}
@@ -322,7 +324,7 @@ export default function OnboardingPage() {
               className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
                 currentStep === 1
                   ? 'opacity-0 pointer-events-none'
-                  : 'text-gray-600 hover:bg-gray-100'
+                  : 'text-neutral-600 hover:bg-neutral-100'
               }`}
             >
               <ArrowLeft className="h-5 w-5" />
@@ -334,7 +336,7 @@ export default function OnboardingPage() {
               {currentStep < 4 && (
                 <button
                   onClick={skipStep}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-3 rounded-xl font-medium text-gray-400 hover:text-gray-600 hover:bg-gray-50 transition-all text-sm"
+                  className="flex items-center gap-1.5 px-3 sm:px-4 py-3 rounded-xl font-medium text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all text-sm"
                 >
                   <SkipForward className="h-4 w-4" />
                   <span className="hidden sm:inline">Passer</span>
