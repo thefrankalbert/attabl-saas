@@ -105,4 +105,54 @@ describe('updateTenantSettingsSchema', () => {
     });
     expect(result.success).toBe(false);
   });
+
+  // ─── Idle timeout tests ───────────────────────────────
+
+  it('should accept valid idle timeout minutes', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      idleTimeoutMinutes: 30,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject idle timeout below 5 minutes', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      idleTimeoutMinutes: 2,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should reject idle timeout above 120 minutes', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      idleTimeoutMinutes: 200,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should accept valid screen lock mode', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      screenLockMode: 'password',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('should reject invalid screen lock mode', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      screenLockMode: 'biometric',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should accept null idle timeout (disabled)', () => {
+    const result = updateTenantSettingsSchema.safeParse({
+      ...validInput,
+      idleTimeoutMinutes: null,
+    });
+    expect(result.success).toBe(true);
+  });
 });

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Loader2, Save, Store, Palette, MapPin, Bell, Receipt } from 'lucide-react';
+import { Upload, Loader2, Save, Store, Palette, MapPin, Bell, Receipt, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -29,6 +29,9 @@ const settingsSchema = z.object({
   taxRate: z.number().min(0).max(100).optional(),
   enableServiceCharge: z.boolean().optional(),
   serviceChargeRate: z.number().min(0).max(100).optional(),
+  // Idle timeout
+  idleTimeoutMinutes: z.number().int().min(5).max(120).nullable().optional(),
+  screenLockMode: z.enum(['overlay', 'password']).optional(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -50,6 +53,8 @@ interface SettingsFormProps {
     tax_rate?: number;
     enable_service_charge?: boolean;
     service_charge_rate?: number;
+    idle_timeout_minutes?: number | null;
+    screen_lock_mode?: 'overlay' | 'password';
   };
 }
 
@@ -67,6 +72,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     register,
     handleSubmit,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -82,12 +88,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       taxRate: tenant.tax_rate ?? 0,
       enableServiceCharge: tenant.enable_service_charge ?? false,
       serviceChargeRate: tenant.service_charge_rate ?? 0,
+      idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
+      screenLockMode: tenant.screen_lock_mode ?? 'overlay',
     },
   });
 
   const watchedPrimaryColor = watch('primaryColor');
   const watchEnableTax = watch('enableTax');
   const watchEnableServiceCharge = watch('enableServiceCharge');
+  const watchIdleTimeoutMinutes = watch('idleTimeoutMinutes');
+  const watchScreenLockMode = watch('screenLockMode');
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -150,6 +160,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('taxRate', String(data.taxRate ?? 0));
       formData.append('enableServiceCharge', data.enableServiceCharge ? 'true' : 'false');
       formData.append('serviceChargeRate', String(data.serviceChargeRate ?? 0));
+      // Idle timeout
+      if (data.idleTimeoutMinutes !== null && data.idleTimeoutMinutes !== undefined) {
+        formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
+      }
+      formData.append('screenLockMode', data.screenLockMode || 'overlay');
 
       const result = await updateTenantSettings(formData);
 
@@ -453,6 +468,112 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             onSoundChange={setSelectedSoundId}
             tenantId={tenant.id}
           />
+        </div>
+
+        {/* Idle Timeout / Screen Lock */}
+        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-indigo-50 rounded-lg">
+              <Clock className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Verrouillage par inactivité</h2>
+              <p className="text-sm text-gray-500">
+                Verrouiller automatiquement le tableau de bord après une période d&apos;inactivité
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            {/* Enable/disable toggle */}
+            <div className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+              <div>
+                <Label className="text-sm font-medium text-gray-900">
+                  Activer le verrouillage automatique
+                </Label>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  L&apos;écran sera verrouillé après la période d&apos;inactivité définie
+                </p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={
+                    watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined
+                  }
+                  onChange={(e) => {
+                    setValue('idleTimeoutMinutes', e.target.checked ? 30 : null);
+                  }}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+              </label>
+            </div>
+
+            {/* Timeout duration + lock mode (shown only when enabled) */}
+            {watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
+                {/* Duration */}
+                <div className="flex items-center gap-4">
+                  <Label
+                    htmlFor="idleTimeoutMinutes"
+                    className="text-sm text-gray-600 whitespace-nowrap"
+                  >
+                    Délai d&apos;inactivité
+                  </Label>
+                  <div className="relative w-28">
+                    <Input
+                      id="idleTimeoutMinutes"
+                      type="number"
+                      min={5}
+                      max={120}
+                      step={5}
+                      {...register('idleTimeoutMinutes', { valueAsNumber: true })}
+                      className="pr-12"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                      min
+                    </span>
+                  </div>
+                  <span className="text-xs text-gray-400">5 – 120 minutes</span>
+                </div>
+                {errors.idleTimeoutMinutes && (
+                  <p className="text-xs text-red-500">{errors.idleTimeoutMinutes.message}</p>
+                )}
+
+                {/* Lock mode */}
+                <div className="space-y-2">
+                  <Label className="text-sm text-gray-600">Mode de verrouillage</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setValue('screenLockMode', 'overlay')}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        watchScreenLockMode === 'overlay'
+                          ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900">Overlay simple</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Cliquez pour déverrouiller</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setValue('screenLockMode', 'password')}
+                      className={`p-3 rounded-lg border-2 text-left transition-all ${
+                        watchScreenLockMode === 'password'
+                          ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="font-medium text-sm text-gray-900">Mot de passe requis</div>
+                      <div className="text-xs text-gray-500 mt-0.5">Re-saisir le mot de passe</div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Contact */}
