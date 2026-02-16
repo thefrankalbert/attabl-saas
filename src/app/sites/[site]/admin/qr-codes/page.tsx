@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 
-export default async function QRCodesPage() {
+export default async function QRCodesPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug');
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Get tenant data
   const { data: tenant } = await supabase
