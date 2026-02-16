@@ -3,13 +3,6 @@
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { locales, type Locale } from '@/i18n/config';
 
 const localeLabels: Record<Locale, { label: string; flag: string }> = {
@@ -27,34 +20,29 @@ export function LocaleSwitcher() {
   const locale = useLocale();
   const router = useRouter();
 
-  const handleChange = (newLocale: string) => {
+  const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLocale = e.target.value;
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
     router.refresh();
   };
 
-  const current = localeLabels[locale as Locale];
-
   return (
-    <Select value={locale} onValueChange={handleChange}>
-      <SelectTrigger className="w-full h-9 text-xs bg-transparent border-gray-200 text-gray-600 hover:bg-gray-50 focus:ring-0 focus:ring-offset-0">
-        <div className="flex items-center gap-2">
-          <Globe className="h-3.5 w-3.5 text-gray-400" />
-          <SelectValue>{current ? `${current.flag} ${current.label}` : locale}</SelectValue>
-        </div>
-      </SelectTrigger>
-      <SelectContent>
+    <div className="relative flex items-center">
+      <Globe className="absolute left-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+      <select
+        value={locale}
+        onChange={handleChange}
+        className="w-full h-9 pl-8 pr-3 text-xs bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+      >
         {locales.map((loc) => {
           const info = localeLabels[loc];
           return (
-            <SelectItem key={loc} value={loc} className="text-xs">
-              <span className="flex items-center gap-2">
-                <span>{info.flag}</span>
-                <span>{info.label}</span>
-              </span>
-            </SelectItem>
+            <option key={loc} value={loc}>
+              {info.flag} {info.label}
+            </option>
           );
         })}
-      </SelectContent>
-    </Select>
+      </select>
+    </div>
   );
 }
