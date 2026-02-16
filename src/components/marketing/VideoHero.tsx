@@ -9,14 +9,18 @@ export default function VideoHero() {
     <section className="relative h-screen w-full overflow-hidden">
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
-        <iframe
-          src="https://www.youtube.com/embed/o-Ikkh5oxuo?autoplay=1&mute=1&loop=1&playlist=o-Ikkh5oxuo&controls=0&showinfo=0&rel=0&modestbranding=1"
-          allow="autoplay; encrypted-media"
-          className="absolute left-1/2 top-1/2 h-[56.25vw] min-h-screen w-[177.77vh] min-w-full -translate-x-1/2 -translate-y-1/2"
-          style={{ border: 'none' }}
-        />
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute left-1/2 top-1/2 min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover"
+        >
+          <source src="/videos/hero.webm" type="video/webm" />
+          <source src="/videos/hero.mp4" type="video/mp4" />
+        </video>
         {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-black/30" />
+        <div className="absolute inset-0 bg-black/50" />
       </div>
 
       {/* Content */}
