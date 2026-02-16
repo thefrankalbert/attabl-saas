@@ -8,7 +8,7 @@ import { motion } from 'framer-motion';
 // --- Right Visual Panel (dark with social proof) ---
 function VisualPanel() {
   return (
-    <div className="relative flex flex-col items-center justify-center h-full overflow-hidden">
+    <div className="relative flex flex-col items-center justify-center w-full h-full overflow-hidden rounded-[2rem]">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
       <div className="absolute inset-0 bg-[url('/images/restaurant-ambiance.jpg')] bg-cover bg-center opacity-20" />
@@ -53,7 +53,7 @@ function VisualPanel() {
 // --- Main Page ---
 export default function LoginPage() {
   return (
-    <div className="min-h-screen w-full flex">
+    <div className="min-h-screen w-full flex bg-white">
       {/* Left — Form on white background */}
       <div className="w-full lg:w-[55%] flex items-center justify-center bg-white px-8 sm:px-16 lg:px-20 py-10">
         <div className="w-full max-w-[420px]">
@@ -70,7 +70,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right — Dark visual panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[45%]">
+      <div className="hidden lg:flex lg:w-[45%] items-center py-6 pr-6 pl-3">
         <VisualPanel />
       </div>
     </div>
