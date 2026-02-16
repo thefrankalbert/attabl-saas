@@ -122,7 +122,7 @@ export default function Header() {
                 Se connecter
               </Link>
               <Link
-                href="#support"
+                href="/contact"
                 className={`text-base font-semibold transition-colors ${
                   scrolled || menuOpen
                     ? 'text-neutral-900 hover:text-neutral-600'
