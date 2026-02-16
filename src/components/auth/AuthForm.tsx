@@ -412,12 +412,12 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Footer Link */}
       <p className="mt-8 text-center text-sm text-neutral-500">
         {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
-        <Link
+        <a
           href={isLogin ? '/signup' : '/login'}
           className="font-semibold text-neutral-900 hover:underline"
         >
           {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
-        </Link>
+        </a>
       </p>
     </motion.div>
   );
