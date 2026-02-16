@@ -2,18 +2,7 @@
 
 import { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
-import {
-  Layout,
-  ShieldCheck,
-  Zap,
-  Check,
-  Mail,
-  Lock,
-  Eye,
-  EyeOff,
-  Loader2,
-  ArrowRight,
-} from 'lucide-react';
+import { Loader2, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -53,7 +42,73 @@ const MicrosoftIcon = () => (
   </svg>
 );
 
-// --- Local Frictionless Signup Form ---
+// --- Right Visual Panel (dark with social proof) ---
+const features = [
+  'Menu digital intelligent avec QR code',
+  'Commandes et stocks en temps réel',
+  'Analytics et rapports avancés',
+  'Multi-devises (XAF, EUR, USD)',
+];
+
+function VisualPanel() {
+  return (
+    <div className="relative flex flex-col items-center justify-center h-full overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
+      <div className="absolute inset-0 bg-[url('/images/restaurant-ambiance.jpg')] bg-cover bg-center opacity-20" />
+      <div className="absolute inset-0 bg-black/40" />
+
+      {/* Subtle lime glow */}
+      <div className="absolute top-1/4 right-1/3 w-[400px] h-[400px] bg-[#CCFF00]/5 rounded-full blur-[160px] pointer-events-none" />
+
+      {/* Content */}
+      <div className="relative z-10 flex flex-col items-center text-center px-12 lg:px-16 max-w-lg">
+        <motion.h2
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.2 }}
+          className="text-3xl lg:text-4xl font-bold text-white tracking-tight leading-tight mb-6"
+        >
+          Marquez votre territoire. Digitalisez votre établissement.
+        </motion.h2>
+
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="text-neutral-400 text-base leading-relaxed mb-10"
+        >
+          14 jours gratuits. Aucune carte bancaire requise.
+        </motion.p>
+
+        {/* Feature points */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.7 }}
+          className="flex flex-col gap-3 text-left w-full max-w-xs"
+        >
+          {features.map((text, i) => (
+            <motion.div
+              key={text}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 + i * 0.1 }}
+              className="flex items-center gap-3 text-sm text-neutral-400"
+            >
+              <div className="flex items-center justify-center w-5 h-5 rounded-full bg-[#CCFF00]/10 shrink-0">
+                <Check className="h-3 w-3 text-[#CCFF00]" />
+              </div>
+              <span>{text}</span>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+// --- Frictionless Signup Form ---
 function FrictionlessSignupForm() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
@@ -76,7 +131,7 @@ function FrictionlessSignupForm() {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
           queryParams: {
             plan: searchParams.get('plan') || 'essentiel',
-            restaurant_name: 'Mon Nouvel Établissement', // Default name for frictionless OAuth
+            restaurant_name: 'Mon Nouvel Établissement',
           },
         },
       });
@@ -95,12 +150,11 @@ function FrictionlessSignupForm() {
     setError('');
 
     try {
-      // "Frictionless" values sent to the existing API
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          restaurantName: 'En attente...', // Temporary name
+          restaurantName: 'En attente...',
           email,
           password,
           plan: searchParams.get('plan') || 'essentiel',
@@ -110,19 +164,16 @@ function FrictionlessSignupForm() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Erreur d'inscription");
 
-      // Auto-login to establish session before redirecting to /onboarding
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (signInError) {
-        // If auto-login fails, redirect to login page
         window.location.href = `/login?email=${encodeURIComponent(email)}`;
         return;
       }
 
-      // Successful signup + login → redirect to onboarding
       window.location.href = '/onboarding';
     } catch (err) {
       console.error(err);
@@ -136,57 +187,61 @@ function FrictionlessSignupForm() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-md mx-auto"
+      transition={{ duration: 0.5 }}
+      className="w-full"
     >
-      {/* Back Home */}
-      <Link
-        href="/"
-        className="inline-flex items-center gap-2 text-sm text-gray-400 hover:text-black mb-12 transition-colors group"
-      >
-        <ArrowRight className="h-4 w-4 rotate-180 group-hover:-translate-x-1 transition-transform" />
-        Retour
-      </Link>
-
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-3 mb-10 group w-fit">
-        <div className="bg-black rounded-xl p-2 group-hover:bg-[#CCFF00] transition-colors duration-300">
-          <Layout className="h-6 w-6 text-[#CCFF00] group-hover:text-black transition-colors duration-300" />
+      <Link href="/" className="flex items-center gap-2 mb-10 w-fit">
+        <div className="bg-black rounded-lg p-1.5">
+          <svg
+            className="h-5 w-5 text-[#CCFF00]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M9 21V9" />
+          </svg>
         </div>
-        <span className="text-2xl font-bold tracking-tight text-gray-900">ATTABL</span>
+        <span className="text-xl font-bold tracking-tight text-neutral-900">ATTABL</span>
       </Link>
 
       {/* Header */}
-      <div className="mb-8 text-left">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">Créez votre compte</h1>
-        <p className="text-gray-500">Saisie simple, configuration complète juste après.</p>
+      <div className="mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 mb-2">
+          Commencer gratuitement
+        </h1>
+        <p className="text-neutral-500 text-sm">
+          Inscription rapide — aucun engagement, aucune carte requise.
+        </p>
       </div>
 
-      {/* Form */}
+      {/* Email + Password Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 font-semibold text-sm pl-1">
-            Email professionnel
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-neutral-700 font-medium text-sm">
+            Email
           </Label>
-          <div className="relative">
-            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              id="email"
-              type="email"
-              placeholder="nom@restaurant.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="h-13 pl-12 bg-gray-50 border-gray-100 focus:bg-white focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/10 rounded-2xl transition-all"
-            />
-          </div>
+          <Input
+            id="email"
+            type="email"
+            placeholder="nom@restaurant.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 rounded-lg transition-all"
+          />
         </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="password" className="text-gray-700 font-semibold text-sm pl-1">
+        <div className="space-y-1.5">
+          <Label htmlFor="password" className="text-neutral-700 font-medium text-sm">
             Mot de passe
           </Label>
           <div className="relative">
-            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
@@ -195,161 +250,115 @@ function FrictionlessSignupForm() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="h-13 pl-12 pr-12 bg-gray-50 border-gray-100 focus:bg-white focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/10 rounded-2xl transition-all"
+              className="h-12 pr-20 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 rounded-lg transition-all"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors text-sm"
             >
-              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              {showPassword ? 'Masquer' : 'Afficher'}
             </button>
           </div>
         </div>
 
         {error && (
-          <Alert variant="destructive" className="bg-red-50 text-red-800 border-red-100 rounded-xl">
-            <AlertDescription className="text-xs font-medium">{error}</AlertDescription>
+          <Alert variant="destructive" className="bg-red-50 text-red-700 border-red-200 rounded-lg">
+            <AlertDescription className="text-sm">{error}</AlertDescription>
           </Alert>
         )}
 
         <Button
           type="submit"
-          className="w-full h-14 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold text-lg rounded-2xl shadow-lg shadow-[#CCFF00]/20 transition-all hover:scale-[1.01] active:scale-[0.98] mt-4"
+          className="w-full h-12 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-lg shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
           disabled={loading}
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              Création...
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Création en cours...
             </>
           ) : (
-            <>
-              Créer mon compte
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </>
+            'Créer mon compte'
           )}
         </Button>
       </form>
 
-      <div className="relative my-10">
+      {/* Divider */}
+      <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-100" />
+          <div className="w-full border-t border-neutral-200" />
         </div>
-        <div className="relative flex justify-center text-xs text-gray-400 uppercase tracking-widest">
-          <span className="bg-white px-4">ou continuer avec</span>
+        <div className="relative flex justify-center text-xs uppercase tracking-widest">
+          <span className="bg-white px-4 text-neutral-400">ou</span>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      {/* OAuth Buttons */}
+      <div className="space-y-2.5">
         <Button
           type="button"
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null || loading}
-          className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3"
+          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
         >
           {oauthLoading === 'google' ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="mr-3 h-4 w-4 animate-spin" />
           ) : (
             <GoogleIcon />
           )}
-          Google
+          <span className="ml-3">Continuer avec Google</span>
         </Button>
         <Button
           type="button"
           variant="outline"
           onClick={() => handleOAuthLogin('azure')}
           disabled={oauthLoading !== null || loading}
-          className="h-12 rounded-xl border-gray-100 hover:bg-gray-50 font-medium transition-all active:scale-[0.98] flex gap-3"
+          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
         >
           {oauthLoading === 'azure' ? (
-            <Loader2 className="h-5 w-5 animate-spin" />
+            <Loader2 className="mr-3 h-4 w-4 animate-spin" />
           ) : (
             <MicrosoftIcon />
           )}
-          Outlook
+          <span className="ml-3">Continuer avec Outlook</span>
         </Button>
       </div>
 
-      <p className="mt-12 text-center text-sm text-gray-500">
+      {/* Footer */}
+      <p className="mt-8 text-center text-sm text-neutral-500">
         Déjà un compte ?{' '}
-        <Link
-          href="/login"
-          className="font-bold text-black border-b-2 border-[#CCFF00] hover:bg-[#CCFF00] transition-all px-1"
-        >
-          Connectez-vous ici
+        <Link href="/login" className="font-semibold text-neutral-900 hover:underline">
+          Se connecter
         </Link>
       </p>
     </motion.div>
   );
 }
 
-// --- Main Page Component ---
+// --- Main Page ---
 export default function SignupPage() {
   return (
-    <div className="min-h-screen w-full grid lg:grid-cols-2 bg-white">
-      {/* Left Column: Form */}
-      <div className="flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-28 bg-white z-10 py-12">
-        <Suspense
-          fallback={
-            <div className="flex items-center justify-center p-12">
-              <Loader2 className="h-8 w-8 animate-spin text-[#CCFF00]" />
-            </div>
-          }
-        >
-          <FrictionlessSignupForm />
-        </Suspense>
+    <div className="min-h-screen w-full flex">
+      {/* Left — Form on white background */}
+      <div className="w-full lg:w-[55%] flex items-center justify-center bg-white px-8 sm:px-16 lg:px-20 py-10">
+        <div className="w-full max-w-[420px]">
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center p-12">
+                <Loader2 className="h-8 w-8 animate-spin text-neutral-300" />
+              </div>
+            }
+          >
+            <FrictionlessSignupForm />
+          </Suspense>
+        </div>
       </div>
 
-      {/* Right Column: Visual / Marketing */}
-      <div className="hidden lg:flex relative bg-black overflow-hidden items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-br from-black via-zinc-900 to-black" />
-        <div className="absolute top-1/4 right-1/4 w-[600px] h-[600px] bg-[#CCFF00]/10 rounded-full blur-[180px] pointer-events-none" />
-
-        <div className="relative z-10 px-12 text-center max-w-lg">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.8 }}
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-sm font-bold text-[#CCFF00] mb-8">
-              <Check className="h-4 w-4" />
-              14 jours d&apos;essai gratuit. Aucune carte bancaire requise.
-            </div>
-
-            <h2 className="text-5xl font-black text-white mb-8 leading-[1.1] tracking-tighter text-balance">
-              Commencez votre <span className="text-[#CCFF00]">transformation</span> digitale.
-            </h2>
-
-            <div className="space-y-6 text-left inline-block">
-              {[
-                { text: 'Votre établissement en ligne en 2 minutes', icon: Zap },
-                { text: 'Suivi des flux et commandes en direct', icon: Layout },
-                { text: 'Transactions client fluides', icon: ShieldCheck },
-              ].map((feature, i) => (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.5 + i * 0.1 }}
-                  className="flex items-center gap-4 text-white/90"
-                >
-                  <div className="h-10 w-10 rounded-xl bg-[#CCFF00]/20 flex items-center justify-center border border-[#CCFF00]/30">
-                    <feature.icon className="h-5 w-5 text-[#CCFF00]" />
-                  </div>
-                  <span className="font-semibold text-lg">{feature.text}</span>
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        </div>
-
-        {/* Footer Branding */}
-        <div className="absolute bottom-8 left-8 flex items-center gap-2 text-white/20 text-xs font-bold tracking-widest uppercase">
-          <Layout className="h-4 w-4" />
-          ATTABL © 2026
-        </div>
+      {/* Right — Dark visual panel (hidden on mobile) */}
+      <div className="hidden lg:flex lg:w-[45%]">
+        <VisualPanel />
       </div>
     </div>
   );
