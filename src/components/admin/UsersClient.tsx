@@ -50,10 +50,14 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
-const ROLE_CONFIG: Record<
-  AdminRole,
-  { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }
-> = {
+type RoleConfigEntry = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bg: string;
+};
+
+const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
   owner: { label: 'Propriétaire', icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50' },
   admin: { label: 'Admin', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
   manager: { label: 'Manager', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -61,6 +65,17 @@ const ROLE_CONFIG: Record<
   chef: { label: 'Chef', icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
   waiter: { label: 'Serveur', icon: Coffee, color: 'text-gray-600', bg: 'bg-gray-50' },
 };
+
+const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
+  label: 'Utilisateur',
+  icon: Users,
+  color: 'text-gray-600',
+  bg: 'bg-gray-50',
+};
+
+function getRoleConfig(role: string): RoleConfigEntry {
+  return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
+}
 
 interface UsersClientProps {
   tenantId: string;
@@ -166,7 +181,8 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
         <div className="divide-y">
           {users.map((user) => {
-            const RoleIcon = ROLE_CONFIG[user.role].icon;
+            const roleConfig = getRoleConfig(user.role);
+            const RoleIcon = roleConfig.icon;
             return (
               <div
                 key={user.id}
@@ -199,12 +215,12 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                   <div
                     className={cn(
                       'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2',
-                      ROLE_CONFIG[user.role].bg,
-                      ROLE_CONFIG[user.role].color,
+                      roleConfig.bg,
+                      roleConfig.color,
                     )}
                   >
                     <RoleIcon className="w-3.5 h-3.5" />
-                    {ROLE_CONFIG[user.role].label}
+                    {roleConfig.label}
                   </div>
 
                   <div className="hidden md:block text-xs text-gray-400">
