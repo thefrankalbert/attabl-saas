@@ -1,7 +1,8 @@
 'use client';
 
 import { Mail, Calendar, ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { submitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 
@@ -29,7 +30,7 @@ function SubmitButton() {
 }
 
 export default function ContactPage() {
-  const [formState, formAction] = useFormState(submitContactForm, {
+  const [formState, formAction] = useActionState(submitContactForm, {
     success: false,
     message: '',
   });
