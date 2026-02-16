@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google';
 import './globals.css';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -15,6 +15,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+});
+
+const dmSerifDisplay = DM_Serif_Display({
+  variable: '--font-dm-serif-display',
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
 });
 
 export const viewport: Viewport = {
@@ -38,7 +45,12 @@ export default function RootLayout({
   return (
     <html lang="fr" suppressHydrationWarning>
       <body
-        className={cn(geistSans.variable, geistMono.variable, 'antialiased')}
+        className={cn(
+          geistSans.variable,
+          geistMono.variable,
+          dmSerifDisplay.variable,
+          'antialiased font-sans',
+        )}
         suppressHydrationWarning
       >
         <ThemeProvider

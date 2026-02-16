@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, ArrowRight, Layout } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -115,7 +115,7 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error(data.error || "Erreur lors de l'inscription");
         }
 
-        // Auto-login after successful signup (to establish session before /onboarding)
+        // Auto-login after successful signup
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -123,12 +123,10 @@ function AuthForm({ mode }: AuthFormProps) {
 
         if (signInError) {
           logger.error('Auto-login failed after signup', signInError);
-          // If auto-login fails, redirect to login with a message
           window.location.href = `/login?email=${encodeURIComponent(email)}&error=${encodeURIComponent(signInError.message)}`;
           return;
         }
 
-        // Redirect to onboarding wizard
         window.location.href = '/onboarding';
       } else {
         // Login flow
@@ -149,7 +147,6 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error('Aucun restaurant associé à ce compte');
         }
 
-        // Check if user is Super Admin
         const isSuperAdmin = adminUser.is_super_admin === true || adminUser.role === 'super_admin';
 
         const tenantsData = adminUser.tenants as unknown as {
@@ -164,19 +161,16 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error('Restaurant non trouvé');
         }
 
-        // Super Admin: redirect to tenant selector
         if (isSuperAdmin) {
           window.location.href = '/admin/tenants';
           return;
         }
 
-        // Onboarding not completed: redirect to onboarding
         if (onboardingCompleted === false) {
           window.location.href = '/onboarding';
           return;
         }
 
-        // Redirect to admin dashboard using /sites/{slug}/admin path
         const origin = window.location.origin;
         window.location.href = `${origin}/sites/${tenantSlug}/admin`;
       }
@@ -200,90 +194,46 @@ function AuthForm({ mode }: AuthFormProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mx-auto w-full max-w-md relative"
+      className="mx-auto w-full"
     >
-      {/* Back Home Link */}
-      <div className="absolute -top-16 left-0">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-sm text-gray-400 hover:text-black transition-colors group"
-        >
-          <div className="p-1 rounded-full group-hover:bg-gray-100 transition-colors">
-            <ArrowRight className="h-4 w-4 rotate-180" />
-          </div>
-          Retour à l&apos;accueil
-        </Link>
-      </div>
-
       {/* Logo */}
-      <Link href="/" className="flex items-center gap-3 mb-10 group">
-        <div className="bg-black rounded-xl p-2 group-hover:bg-[#CCFF00] transition-colors duration-300">
-          <Layout className="h-6 w-6 text-[#CCFF00] group-hover:text-black transition-colors duration-300" />
+      <Link href="/" className="flex items-center gap-2 mb-10 w-fit">
+        <div className="bg-black rounded-lg p-1.5">
+          <svg
+            className="h-5 w-5 text-[#CCFF00]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M3 9h18" />
+            <path d="M9 21V9" />
+          </svg>
         </div>
-        <span className="text-2xl font-bold tracking-tight text-gray-900">ATTABL</span>
+        <span className="text-xl font-bold tracking-tight text-neutral-900">ATTABL</span>
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 mb-2">
-          {isLogin ? 'Bon retour ! 👋' : 'Créez votre compte'}
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 mb-2">
+          {isLogin ? 'Accédez à votre tableau de bord' : 'Commencer gratuitement'}
         </h1>
-        <p className="text-gray-500">
+        <p className="text-neutral-500 text-sm">
           {isLogin
-            ? 'Connectez-vous pour gérer votre établissement.'
-            : '14 jours d&apos;essai gratuit sur tous les plans.'}
+            ? 'Connectez-vous pour piloter votre établissement.'
+            : 'Inscription rapide — aucun engagement, aucune carte requise.'}
         </p>
       </div>
 
-      {/* OAuth Buttons */}
-      <div className="space-y-3 mb-6">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleOAuthLogin('google')}
-          disabled={oauthLoading !== null}
-          className="w-full h-12 rounded-xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium"
-        >
-          {oauthLoading === 'google' ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <GoogleIcon />
-          )}
-          <span className="ml-3">Continuer avec Google</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleOAuthLogin('azure')}
-          disabled={oauthLoading !== null}
-          className="w-full h-12 rounded-xl border-gray-200 bg-white hover:bg-gray-50 text-gray-700 font-medium"
-        >
-          {oauthLoading === 'azure' ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : (
-            <MicrosoftIcon />
-          )}
-          <span className="ml-3">Continuer avec Outlook</span>
-        </Button>
-      </div>
-
-      {/* Divider */}
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-sm">
-          <span className="bg-white px-4 text-gray-500">ou avec email</span>
-        </div>
-      </div>
-
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         {/* Restaurant Name (Signup only) */}
         {!isLogin && (
-          <div className="space-y-2">
-            <Label htmlFor="restaurantName" className="text-gray-700 font-semibold text-sm">
+          <div className="space-y-1.5">
+            <Label htmlFor="restaurantName" className="text-neutral-700 font-medium text-sm">
               Nom de l&apos;établissement
             </Label>
             <Input
@@ -293,14 +243,14 @@ function AuthForm({ mode }: AuthFormProps) {
               value={restaurantName}
               onChange={(e) => setRestaurantName(e.target.value)}
               required
-              className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-xl"
+              className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
             />
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="email" className="text-gray-700 font-semibold text-sm">
-            Adresse e-mail
+        <div className="space-y-1.5">
+          <Label htmlFor="email" className="text-neutral-700 font-medium text-sm">
+            Email
           </Label>
           <Input
             id="email"
@@ -309,19 +259,19 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-xl"
+            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
           />
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-gray-700 font-semibold text-sm">
+            <Label htmlFor="password" className="text-neutral-700 font-medium text-sm">
               Mot de passe
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-sm text-gray-500 hover:text-[#CCFF00] transition-colors"
+                className="text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
               >
                 Mot de passe oublié ?
               </Link>
@@ -335,15 +285,15 @@ function AuthForm({ mode }: AuthFormProps) {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={isLogin ? undefined : 8}
-            className="h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-xl"
+            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
           />
         </div>
 
-        {/* Plan Selection (Signup only) - Simplified if pre-selected */}
+        {/* Plan Selection (Signup only) */}
         {!isLogin && (
-          <div className="space-y-3">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-gray-700 font-semibold text-sm">
+              <Label className="text-neutral-700 font-medium text-sm">
                 {urlPlan ? 'Votre plan sélectionné' : 'Choisissez votre plan'}
               </Label>
               {urlPlan && (
@@ -352,7 +302,7 @@ function AuthForm({ mode }: AuthFormProps) {
                   onClick={() =>
                     setSelectedPlan(selectedPlan === 'essentiel' ? 'premium' : 'essentiel')
                   }
-                  className="text-xs font-bold text-[#CCFF00] hover:underline"
+                  className="text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors"
                 >
                   Modifier
                 </button>
@@ -362,26 +312,26 @@ function AuthForm({ mode }: AuthFormProps) {
               <button
                 type="button"
                 onClick={() => setSelectedPlan('essentiel')}
-                className={`p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] ${
+                className={`p-4 rounded-lg border-2 text-left transition-all active:scale-[0.98] ${
                   selectedPlan === 'essentiel'
-                    ? 'border-[#CCFF00] bg-[#CCFF00]/10 ring-2 ring-[#CCFF00]/20'
-                    : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'
+                    ? 'border-[#CCFF00] bg-[#CCFF00]/5 ring-1 ring-[#CCFF00]/20'
+                    : 'border-neutral-200 hover:border-neutral-300'
                 }`}
               >
-                <div className="font-bold text-gray-900 leading-none mb-1">Essentiel</div>
-                <div className="text-xs text-gray-500">39 800 F / mois</div>
+                <div className="font-bold text-neutral-900 leading-none mb-1">Essentiel</div>
+                <div className="text-xs text-neutral-500">39 800 F / mois</div>
               </button>
               <button
                 type="button"
                 onClick={() => setSelectedPlan('premium')}
-                className={`p-4 rounded-xl border-2 text-left transition-all active:scale-[0.98] ${
+                className={`p-4 rounded-lg border-2 text-left transition-all active:scale-[0.98] ${
                   selectedPlan === 'premium'
-                    ? 'border-[#CCFF00] bg-[#CCFF00]/10 ring-2 ring-[#CCFF00]/20'
-                    : 'border-gray-100 hover:border-gray-200 bg-gray-50/50'
+                    ? 'border-[#CCFF00] bg-[#CCFF00]/5 ring-1 ring-[#CCFF00]/20'
+                    : 'border-neutral-200 hover:border-neutral-300'
                 }`}
               >
-                <div className="font-bold text-gray-900 leading-none mb-1">Prime</div>
-                <div className="text-xs text-gray-500">79 800 F / mois</div>
+                <div className="font-bold text-neutral-900 leading-none mb-1">Prime</div>
+                <div className="text-xs text-neutral-500">79 800 F / mois</div>
               </button>
             </div>
           </div>
@@ -391,16 +341,16 @@ function AuthForm({ mode }: AuthFormProps) {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <Alert
               variant="destructive"
-              className="bg-red-50 text-red-800 border-red-200 rounded-xl"
+              className="bg-red-50 text-red-700 border-red-200 rounded-lg"
             >
-              <AlertDescription className="font-medium">{error}</AlertDescription>
+              <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
           </motion.div>
         )}
 
         <Button
           type="submit"
-          className="w-full h-12 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl shadow-lg shadow-[#CCFF00]/30 transition-all hover:scale-[1.02] active:scale-[0.98]"
+          className="w-full h-12 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-lg shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
           disabled={loading}
         >
           {loading ? (
@@ -408,27 +358,67 @@ function AuthForm({ mode }: AuthFormProps) {
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               {isLogin ? 'Connexion...' : 'Création du compte...'}
             </>
+          ) : isLogin ? (
+            'Se connecter'
           ) : (
-            <>
-              {isLogin ? 'Se connecter' : 'Créer mon compte'}
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </>
+            'Créer mon compte'
           )}
         </Button>
       </form>
 
-      {/* Footer Link */}
-      <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-        <p className="text-sm text-gray-500">
-          {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
-          <Link
-            href={isLogin ? '/signup' : '/login'}
-            className="font-bold text-black border-b-2 border-[#CCFF00] hover:bg-[#CCFF00] transition-all px-1"
-          >
-            {isLogin ? 'Inscrivez-vous gratuitement' : 'Connectez-vous ici'}
-          </Link>
-        </p>
+      {/* Divider */}
+      <div className="relative my-6">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-neutral-200" />
+        </div>
+        <div className="relative flex justify-center text-xs uppercase tracking-widest">
+          <span className="bg-white px-4 text-neutral-400">ou</span>
+        </div>
       </div>
+
+      {/* OAuth Buttons */}
+      <div className="space-y-2.5">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthLogin('google')}
+          disabled={oauthLoading !== null}
+          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
+        >
+          {oauthLoading === 'google' ? (
+            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+          ) : (
+            <GoogleIcon />
+          )}
+          <span className="ml-3">Continuer avec Google</span>
+        </Button>
+
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => handleOAuthLogin('azure')}
+          disabled={oauthLoading !== null}
+          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
+        >
+          {oauthLoading === 'azure' ? (
+            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
+          ) : (
+            <MicrosoftIcon />
+          )}
+          <span className="ml-3">Continuer avec Outlook</span>
+        </Button>
+      </div>
+
+      {/* Footer Link */}
+      <p className="mt-8 text-center text-sm text-neutral-500">
+        {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
+        <Link
+          href={isLogin ? '/signup' : '/login'}
+          className="font-semibold text-neutral-900 hover:underline"
+        >
+          {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
+        </Link>
+      </p>
     </motion.div>
   );
 }
