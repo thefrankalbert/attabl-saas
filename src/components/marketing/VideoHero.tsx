@@ -58,7 +58,7 @@ export default function VideoHero() {
             Commencer
           </Link>
           <Link
-            href="#contact"
+            href="/contact"
             className="rounded-full bg-primary px-8 py-4 text-base font-semibold text-white transition-all hover:scale-105"
           >
             Contacter l&apos;équipe
