@@ -87,9 +87,12 @@ export interface AdminUser {
   tenant_id: string;
   email: string;
   full_name?: string;
+  phone?: string;
   role: AdminRole;
   is_active: boolean;
   last_login?: string;
+  last_login_at?: string;
+  login_count?: number;
   created_at: string;
   created_by?: string;
 }

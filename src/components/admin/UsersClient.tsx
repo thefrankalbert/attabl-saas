@@ -208,10 +208,14 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                   </div>
 
                   <div className="hidden md:block text-xs text-gray-400">
-                    {user.last_login ? (
+                    {user.last_login_at || user.last_login ? (
                       <span className="flex items-center gap-1">
                         <Activity className="w-3 h-3" />{' '}
-                        {format(new Date(user.last_login), 'dd MMM HH:mm', { locale: fr })}
+                        {format(
+                          new Date((user.last_login_at || user.last_login)!),
+                          'dd MMM HH:mm',
+                          { locale: fr },
+                        )}
                       </span>
                     ) : (
                       <span>Jamais connecté</span>

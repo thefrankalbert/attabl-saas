@@ -31,6 +31,8 @@ import {
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
+import { getRolePermissions, type NavItemPermission } from '@/lib/permissions';
+import type { AdminRole } from '@/types/admin.types';
 
 interface AdminSidebarProps {
   tenant: {
@@ -43,6 +45,7 @@ interface AdminSidebarProps {
     name?: string;
     role: string;
   };
+  role?: AdminRole;
   className?: string;
 }
 
@@ -50,10 +53,12 @@ const roleLabels: Record<string, string> = {
   owner: 'Propriétaire',
   admin: 'Administrateur',
   manager: 'Manager',
-  staff: 'Équipe',
+  chef: 'Chef',
+  waiter: 'Serveur',
+  cashier: 'Caissier',
 };
 
-export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps) {
+export function AdminSidebar({ tenant, adminUser, role, className }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openForPath, setOpenForPath] = useState<string | null>(null);
 
@@ -63,7 +68,18 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
 
   const toggleSidebar = () => setOpenForPath(isOpen ? null : pathname);
 
-  const NAV_GROUPS = [
+  const permissions = role ? getRolePermissions(role) : null;
+
+  type NavItem = {
+    href: string;
+    icon: typeof LayoutDashboard;
+    label: string;
+    highlight?: boolean;
+    requiredPermission?: NavItemPermission;
+    ownerOnly?: boolean;
+  };
+
+  const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     {
       title: 'Principal',
       items: [
@@ -74,28 +90,66 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
     {
       title: 'Organisation',
       items: [
-        { href: `/sites/${tenant.slug}/admin/menus`, icon: ClipboardList, label: 'Cartes / Menus' },
+        {
+          href: `/sites/${tenant.slug}/admin/menus`,
+          icon: ClipboardList,
+          label: 'Cartes / Menus',
+          requiredPermission: 'canManageMenus',
+        },
         {
           href: `/sites/${tenant.slug}/admin/categories`,
           icon: UtensilsCrossed,
           label: 'Catégories',
+          requiredPermission: 'canManageMenus',
         },
-        { href: `/sites/${tenant.slug}/admin/items`, icon: BookOpen, label: 'Plats & Articles' },
-        { href: `/sites/${tenant.slug}/admin/inventory`, icon: Package, label: 'Inventaire' },
+        {
+          href: `/sites/${tenant.slug}/admin/items`,
+          icon: BookOpen,
+          label: 'Plats & Articles',
+          requiredPermission: 'canManageMenus',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/inventory`,
+          icon: Package,
+          label: 'Inventaire',
+          requiredPermission: 'canViewStocks',
+        },
         {
           href: `/sites/${tenant.slug}/admin/stock-history`,
           icon: History,
           label: 'Historique Stock',
+          requiredPermission: 'canViewStocks',
         },
         {
           href: `/sites/${tenant.slug}/admin/recipes`,
           icon: BookOpenCheck,
           label: 'Fiches Techniques',
+          requiredPermission: 'canManageMenus',
         },
-        { href: `/sites/${tenant.slug}/admin/suppliers`, icon: Truck, label: 'Fournisseurs' },
-        { href: `/sites/${tenant.slug}/admin/suggestions`, icon: Lightbulb, label: 'Suggestions' },
-        { href: `/sites/${tenant.slug}/admin/announcements`, icon: Megaphone, label: 'Annonces' },
-        { href: `/sites/${tenant.slug}/admin/coupons`, icon: Tag, label: 'Coupons' },
+        {
+          href: `/sites/${tenant.slug}/admin/suppliers`,
+          icon: Truck,
+          label: 'Fournisseurs',
+          requiredPermission: 'canManageStocks',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/suggestions`,
+          icon: Lightbulb,
+          label: 'Suggestions',
+          requiredPermission: 'canManageMenus',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/announcements`,
+          icon: Megaphone,
+          label: 'Annonces',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/coupons`,
+          icon: Tag,
+          label: 'Coupons',
+          requiredPermission: 'canManageSettings',
+        },
       ],
     },
     {
@@ -106,26 +160,64 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
           icon: Laptop,
           label: 'Caisse (POS)',
           highlight: true,
+          requiredPermission: 'canConfigurePOS',
         },
         {
           href: `/sites/${tenant.slug}/admin/kitchen`,
           icon: ChefHat,
           label: 'Cuisine (KDS)',
           highlight: true,
+          requiredPermission: 'canConfigureKitchen',
         },
-        { href: `/sites/${tenant.slug}/admin/qr-codes`, icon: QrCode, label: 'QR Codes' },
-        { href: `/sites/${tenant.slug}/admin/reports`, icon: BarChart3, label: 'Rapports' },
+        {
+          href: `/sites/${tenant.slug}/admin/qr-codes`,
+          icon: QrCode,
+          label: 'QR Codes',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/reports`,
+          icon: BarChart3,
+          label: 'Rapports',
+          requiredPermission: 'canViewAllStats',
+        },
       ],
     },
     {
       title: 'Administration',
       items: [
-        { href: `/sites/${tenant.slug}/admin/users`, icon: Users, label: 'Utilisateurs' },
-        { href: `/sites/${tenant.slug}/admin/settings`, icon: Settings, label: 'Paramètres' },
-        { href: `/sites/${tenant.slug}/admin/subscription`, icon: CreditCard, label: 'Abonnement' },
+        {
+          href: `/sites/${tenant.slug}/admin/users`,
+          icon: Users,
+          label: 'Utilisateurs',
+          requiredPermission: 'canManageUsers',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/settings`,
+          icon: Settings,
+          label: 'Paramètres',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/subscription`,
+          icon: CreditCard,
+          label: 'Abonnement',
+          ownerOnly: true,
+        },
       ],
     },
   ];
+
+  // Filter nav items based on role permissions
+  const filteredNavGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.ownerOnly) return role === 'owner';
+      if (!item.requiredPermission || !permissions) return true;
+      const val = permissions[item.requiredPermission];
+      return typeof val === 'boolean' ? val : !!val;
+    }),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <>
@@ -186,7 +278,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
 
         {/* Navigation */}
         <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-6">
-          {NAV_GROUPS.map((group, groupIndex) => (
+          {filteredNavGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
               <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                 {group.title}
