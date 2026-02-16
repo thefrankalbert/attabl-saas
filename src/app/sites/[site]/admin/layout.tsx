@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { TrialBanner } from '@/components/admin/TrialBanner';
+import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 
 interface AdminUser {
   id: string;
@@ -132,22 +133,28 @@ export default async function AdminLayout({
 
       {/* Main Content */}
       <main className={`lg:ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
-        <SubscriptionProvider
-          tenant={
-            tenant
-              ? {
-                  subscription_plan: tenant.subscription_plan,
-                  subscription_status: tenant.subscription_status,
-                  trial_ends_at: tenant.trial_ends_at,
-                }
-              : null
-          }
+        <AdminIdleWrapper
+          idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+          screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+          tenantName={tenant.name}
         >
-          <div className="p-4 lg:p-8 pt-16 lg:pt-8">
-            <TrialBanner tenantSlug={tenantSlug} />
-            {children}
-          </div>
-        </SubscriptionProvider>
+          <SubscriptionProvider
+            tenant={
+              tenant
+                ? {
+                    subscription_plan: tenant.subscription_plan,
+                    subscription_status: tenant.subscription_status,
+                    trial_ends_at: tenant.trial_ends_at,
+                  }
+                : null
+            }
+          >
+            <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+              <TrialBanner tenantSlug={tenantSlug} />
+              {children}
+            </div>
+          </SubscriptionProvider>
+        </AdminIdleWrapper>
       </main>
     </div>
   );

@@ -43,6 +43,13 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           address: tenant.address,
           phone: tenant.phone,
           notification_sound_id: tenant.notification_sound_id,
+          currency: tenant.currency,
+          enable_tax: tenant.enable_tax,
+          tax_rate: tenant.tax_rate,
+          enable_service_charge: tenant.enable_service_charge,
+          service_charge_rate: tenant.service_charge_rate,
+          idle_timeout_minutes: tenant.idle_timeout_minutes,
+          screen_lock_mode: tenant.screen_lock_mode,
         }}
       />
     </div>

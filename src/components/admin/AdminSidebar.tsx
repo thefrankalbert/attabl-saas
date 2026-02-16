@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 
 interface AdminSidebarProps {
   tenant: {
@@ -257,6 +258,9 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
               </div>
             </div>
           )}
+          <div className="px-3 mb-2">
+            <LocaleSwitcher />
+          </div>
           <form action="/api/auth/signout" method="post">
             <button
               type="submit"
