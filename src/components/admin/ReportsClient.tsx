@@ -193,14 +193,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const maxRevenue = useMemo(() => Math.max(...dailyStats.map((d) => d.revenue), 1), [dailyStats]);
 
   if (loading)
-    return <div className="p-12 text-center text-gray-500">Chargement des rapports...</div>;
+    return <div className="p-12 text-center text-neutral-500">Chargement des rapports...</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Rapports & Statistiques</h1>
-          <p className="text-sm text-gray-500">Analysez la performance de votre restaurant.</p>
+          <p className="text-sm text-neutral-500">Analysez la performance de votre restaurant.</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={period} onValueChange={(v: Period) => setPeriod(v)}>
@@ -226,36 +226,36 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="p-6 bg-white border rounded-xl shadow-sm">
+        <div className="p-6 bg-white border rounded-xl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
               <DollarSign className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Chiffre d&apos;Affaires</p>
-              <p className="text-2xl font-bold text-gray-900">{fmt(summary.revenue)}</p>
+              <p className="text-sm font-medium text-neutral-500">Chiffre d&apos;Affaires</p>
+              <p className="text-2xl font-bold text-neutral-900">{fmt(summary.revenue)}</p>
             </div>
           </div>
         </div>
-        <div className="p-6 bg-white border rounded-xl shadow-sm">
+        <div className="p-6 bg-white border rounded-xl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-purple-50 text-purple-600 rounded-lg">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Volume Commandes</p>
-              <p className="text-2xl font-bold text-gray-900">{summary.orders}</p>
+              <p className="text-sm font-medium text-neutral-500">Volume Commandes</p>
+              <p className="text-2xl font-bold text-neutral-900">{summary.orders}</p>
             </div>
           </div>
         </div>
-        <div className="p-6 bg-white border rounded-xl shadow-sm">
+        <div className="p-6 bg-white border rounded-xl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-emerald-50 text-emerald-600 rounded-lg">
               <CreditCard className="w-6 h-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-500">Panier Moyen</p>
-              <p className="text-2xl font-bold text-gray-900">{fmt(summary.avgBasket)}</p>
+              <p className="text-sm font-medium text-neutral-500">Panier Moyen</p>
+              <p className="text-2xl font-bold text-neutral-900">{fmt(summary.avgBasket)}</p>
             </div>
           </div>
         </div>
@@ -264,7 +264,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       {/* Chart & Top Items */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-white border rounded-xl p-6 shadow-sm">
+        <div className="lg:col-span-2 bg-white border rounded-xl p-6">
           <h3 className="text-lg font-bold mb-6">Évolution des Revenus</h3>
           <div className="h-64 flex items-end gap-2">
             {dailyStats.map((day) => (
@@ -276,11 +276,11 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   className="w-full bg-blue-500 rounded-t-sm transition-all hover:bg-blue-600 relative"
                   style={{ height: `${(day.revenue / maxRevenue) * 100}%` }}
                 >
-                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-gray-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
+                  <div className="opacity-0 group-hover:opacity-100 absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-neutral-900 text-white text-xs py-1 px-2 rounded whitespace-nowrap z-10 pointer-events-none">
                     {fmt(day.revenue)} ({day.orders} cmds)
                   </div>
                 </div>
-                <span className="text-[10px] text-gray-400 rotate-0 truncate w-full text-center">
+                <span className="text-[10px] text-neutral-400 rotate-0 truncate w-full text-center">
                   {format(new Date(day.date), 'dd/MM')}
                 </span>
               </div>
@@ -289,29 +289,29 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* Top Items Section */}
-        <div className="bg-white border rounded-xl p-6 shadow-sm">
+        <div className="bg-white border rounded-xl p-6">
           <h3 className="text-lg font-bold mb-6">Top Produits</h3>
           <div className="space-y-4">
             {topItems.map((item, index) => (
               <div key={item.id} className="flex items-center justify-between group">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-gray-100 rounded-full text-xs font-bold text-gray-500">
+                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-neutral-100 rounded-full text-xs font-bold text-neutral-500">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-primary transition-colors">
+                    <p className="text-sm font-medium text-neutral-900 truncate group-hover:text-primary transition-colors">
                       {item.name}
                     </p>
-                    <p className="text-xs text-gray-500">{item.quantity} ventes</p>
+                    <p className="text-xs text-neutral-500">{item.quantity} ventes</p>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-gray-900 tabular-nums">
+                <span className="text-sm font-bold text-neutral-900 tabular-nums">
                   {fmt(item.revenue)}
                 </span>
               </div>
             ))}
             {topItems.length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-8">Aucune donnée disponible</p>
+              <p className="text-sm text-neutral-400 text-center py-8">Aucune donnée disponible</p>
             )}
           </div>
 

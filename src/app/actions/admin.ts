@@ -7,6 +7,7 @@ import { AdminRole, AdminUser } from '@/types/admin.types';
 import { createAdminUserSchema } from '@/lib/validations/admin-user.schema';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { ServiceError } from '@/services/errors';
+import { logger } from '@/lib/logger';
 
 type ActionResponse = {
   success?: boolean;
@@ -124,7 +125,7 @@ export async function createAdminUserAction(
   if (dbError) {
     // Rollback Auth User
     await adminClient.auth.admin.deleteUser(authUser.user.id);
-    console.error('DB Insert Error:', dbError);
+    logger.error('DB Insert Error:', { error: dbError.message });
     return { error: 'Erreur lors de la liaison au tenant: ' + dbError.message };
   }
 

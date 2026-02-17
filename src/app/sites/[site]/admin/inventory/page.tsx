@@ -5,14 +5,15 @@ import InventoryClient from '@/components/admin/InventoryClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function InventoryPage() {
+export default async function InventoryPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug');
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id, subscription_plan, subscription_status, trial_ends_at, currency')
+    .select('*')
     .eq('slug', tenantSlug)
     .single();
 

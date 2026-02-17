@@ -27,7 +27,9 @@ export default function AdminModal({
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className={sizeClasses[size]}>
         <DialogHeader>
-          <DialogTitle className="text-lg font-bold tracking-tight">{title}</DialogTitle>
+          <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900">
+            {title}
+          </DialogTitle>
         </DialogHeader>
         {children}
       </DialogContent>

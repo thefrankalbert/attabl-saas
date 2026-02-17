@@ -6,10 +6,11 @@ import type { AdminUser, AdminRole } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
-export default async function UsersPage() {
+export default async function UsersPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug');
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   const { data: tenant } = await supabase
     .from('tenants')

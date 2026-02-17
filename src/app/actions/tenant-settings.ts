@@ -27,6 +27,11 @@ export async function updateTenantSettings(formData: FormData) {
       phone: (formData.get('phone') as string) || undefined,
       logoUrl: (formData.get('logoUrl') as string) || undefined,
       notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
+      // Idle timeout
+      idleTimeoutMinutes: formData.get('idleTimeoutMinutes')
+        ? Number(formData.get('idleTimeoutMinutes'))
+        : null,
+      screenLockMode: (formData.get('screenLockMode') as string) || 'overlay',
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);

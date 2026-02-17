@@ -50,17 +50,32 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
-const ROLE_CONFIG: Record<
-  AdminRole,
-  { label: string; icon: React.ComponentType<{ className?: string }>; color: string; bg: string }
-> = {
+type RoleConfigEntry = {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  color: string;
+  bg: string;
+};
+
+const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
   owner: { label: 'Propriétaire', icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50' },
   admin: { label: 'Admin', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
   manager: { label: 'Manager', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
   cashier: { label: 'Caissier', icon: CreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50' },
   chef: { label: 'Chef', icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
-  waiter: { label: 'Serveur', icon: Coffee, color: 'text-gray-600', bg: 'bg-gray-50' },
+  waiter: { label: 'Serveur', icon: Coffee, color: 'text-neutral-600', bg: 'bg-neutral-50' },
 };
+
+const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
+  label: 'Utilisateur',
+  icon: Users,
+  color: 'text-neutral-600',
+  bg: 'bg-neutral-50',
+};
+
+function getRoleConfig(role: string): RoleConfigEntry {
+  return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
+}
 
 interface UsersClientProps {
   tenantId: string;
@@ -152,7 +167,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Équipe</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             Gérez les membres de votre équipe et leurs permissions.
           </p>
         </div>
@@ -163,16 +178,17 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
         )}
       </div>
 
-      <div className="bg-white border rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-white border rounded-xl overflow-hidden">
         <div className="divide-y">
           {users.map((user) => {
-            const RoleIcon = ROLE_CONFIG[user.role].icon;
+            const roleConfig = getRoleConfig(user.role);
+            const RoleIcon = roleConfig.icon;
             return (
               <div
                 key={user.id}
                 className={cn(
-                  'p-4 flex items-center justify-between hover:bg-gray-50 transition-colors',
-                  !user.is_active && 'opacity-60 bg-gray-50',
+                  'p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors',
+                  !user.is_active && 'opacity-60 bg-neutral-50',
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -184,14 +200,14 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                   </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-medium text-gray-900">{user.full_name}</p>
+                      <p className="font-medium text-neutral-900">{user.full_name}</p>
                       {!user.is_active && (
                         <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
                           Inactif
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500">{user.email}</p>
+                    <p className="text-sm text-neutral-500">{user.email}</p>
                   </div>
                 </div>
 
@@ -199,19 +215,23 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                   <div
                     className={cn(
                       'px-3 py-1 rounded-full text-xs font-medium flex items-center gap-2',
-                      ROLE_CONFIG[user.role].bg,
-                      ROLE_CONFIG[user.role].color,
+                      roleConfig.bg,
+                      roleConfig.color,
                     )}
                   >
                     <RoleIcon className="w-3.5 h-3.5" />
-                    {ROLE_CONFIG[user.role].label}
+                    {roleConfig.label}
                   </div>
 
-                  <div className="hidden md:block text-xs text-gray-400">
-                    {user.last_login ? (
+                  <div className="hidden md:block text-xs text-neutral-400">
+                    {user.last_login_at || user.last_login ? (
                       <span className="flex items-center gap-1">
                         <Activity className="w-3 h-3" />{' '}
-                        {format(new Date(user.last_login), 'dd MMM HH:mm', { locale: fr })}
+                        {format(
+                          new Date((user.last_login_at || user.last_login)!),
+                          'dd MMM HH:mm',
+                          { locale: fr },
+                        )}
                       </span>
                     ) : (
                       <span>Jamais connecté</span>
@@ -252,7 +272,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
             );
           })}
           {users.length === 0 && (
-            <div className="p-12 text-center text-gray-500">Aucun membre dans l&apos;équipe</div>
+            <div className="p-12 text-center text-neutral-500">Aucun membre dans l&apos;équipe</div>
           )}
         </div>
       </div>
@@ -266,7 +286,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           <div className="space-y-2">
             <Label>Nom complet</Label>
             <div className="relative">
-              <Users className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Users className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
                 className="pl-9"
                 placeholder="Jean Dupont"
@@ -279,7 +299,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           <div className="space-y-2">
             <Label>Email professionnel</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
                 className="pl-9"
                 type="email"
@@ -293,7 +313,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           <div className="space-y-2">
             <Label>Mot de passe provisoire</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
                 className="pl-9"
                 type="password"
@@ -324,7 +344,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-neutral-500 mt-1">
               Les administrateurs ont un accès complet. Les serveurs ne peuvent que prendre des
               commandes.
             </p>

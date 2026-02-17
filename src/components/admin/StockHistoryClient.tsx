@@ -70,7 +70,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Chargement de l&apos;historique...</div>;
+    return (
+      <div className="p-8 text-center text-neutral-500">Chargement de l&apos;historique...</div>
+    );
   }
 
   return (
@@ -82,8 +84,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             <History className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Historique des mouvements</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-xl font-bold text-neutral-900">Historique des mouvements</h1>
+            <p className="text-sm text-neutral-500">
               {filtered.length} mouvement{filtered.length !== 1 ? 's' : ''}
             </p>
           </div>
@@ -93,7 +95,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
           <Input
             placeholder="Rechercher par ingrédient ou note..."
             value={searchQuery}
@@ -102,7 +104,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           />
         </div>
         <div className="flex items-center gap-1.5 overflow-x-auto">
-          <Filter className="h-4 w-4 text-gray-400 flex-shrink-0" />
+          <Filter className="h-4 w-4 text-neutral-400 flex-shrink-0" />
           {MOVEMENT_FILTERS.map((f) => (
             <button
               key={f.value}
@@ -110,8 +112,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               className={cn(
                 'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
                 filterType === f.value
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
+                  ? 'bg-neutral-900 text-white'
+                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
               )}
             >
               {f.label}
@@ -122,19 +124,19 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
       {/* Table */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">Aucun mouvement trouvé</div>
+        <div className="text-center py-12 text-neutral-500">Aucun mouvement trouvé</div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-gray-100 bg-gray-50">
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Date</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Ingrédient</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                  <th className="text-right px-4 py-3 font-medium text-gray-600">Quantité</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Fournisseur</th>
-                  <th className="text-left px-4 py-3 font-medium text-gray-600">Notes</th>
+                <tr className="border-b border-neutral-100 bg-neutral-50">
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Date</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Ingrédient</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Type</th>
+                  <th className="text-right px-4 py-3 font-medium text-neutral-600">Quantité</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Fournisseur</th>
+                  <th className="text-left px-4 py-3 font-medium text-neutral-600">Notes</th>
                 </tr>
               </thead>
               <tbody>
@@ -142,19 +144,24 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   const typeInfo = MOVEMENT_TYPE_LABELS[m.movement_type];
                   const isPositive = m.quantity > 0;
                   return (
-                    <tr key={m.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                    <tr key={m.id} className="border-b border-neutral-50 hover:bg-neutral-50/50">
+                      <td className="px-4 py-3 text-neutral-500 whitespace-nowrap">
                         {formatDate(m.created_at)}
                       </td>
-                      <td className="px-4 py-3 font-medium text-gray-900">
+                      <td className="px-4 py-3 font-medium text-neutral-900">
                         {m.ingredient?.name || '—'}
                         {m.ingredient?.unit && (
-                          <span className="text-gray-400 ml-1 text-xs">({m.ingredient.unit})</span>
+                          <span className="text-neutral-400 ml-1 text-xs">
+                            ({m.ingredient.unit})
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={cn('text-xs font-medium', typeInfo?.color || 'text-gray-600')}
+                          className={cn(
+                            'text-xs font-medium',
+                            typeInfo?.color || 'text-neutral-600',
+                          )}
                         >
                           {typeInfo?.label || m.movement_type}
                         </span>
@@ -168,10 +175,10 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                         {isPositive ? '+' : ''}
                         {m.quantity}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      <td className="px-4 py-3 text-neutral-500 whitespace-nowrap">
                         {m.supplier?.name || '—'}
                       </td>
-                      <td className="px-4 py-3 text-gray-500 max-w-[200px] truncate">
+                      <td className="px-4 py-3 text-neutral-500 max-w-[200px] truncate">
                         {m.notes || '—'}
                       </td>
                     </tr>

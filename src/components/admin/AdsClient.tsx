@@ -144,7 +144,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Publicités & Bannières</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             Gérez les bannières promotionnelles de votre page d&apos;accueil.
           </p>
         </div>
@@ -164,13 +164,13 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           <div
             key={ad.id}
             className={cn(
-              'group relative bg-white border rounded-xl overflow-hidden shadow-sm transition-all hover:shadow-md',
+              'group relative bg-white border rounded-xl overflow-hidden transition-all',
               !ad.is_active && 'opacity-60',
             )}
           >
-            <div className="aspect-video bg-gray-100 relative">
+            <div className="aspect-video bg-neutral-100 relative">
               <Image src={ad.image_url} alt="" fill className="object-cover" />
-              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold shadow-sm">
+              <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold">
                 Ordre: {ad.sort_order}
               </div>
             </div>
@@ -217,10 +217,10 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           </div>
         ))}
         {ads.length === 0 && (
-          <div className="col-span-full py-12 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
-            <ImageIcon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900">Aucune publicité</h3>
-            <p className="text-xs text-gray-500 mt-1">
+          <div className="col-span-full py-12 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-xl">
+            <ImageIcon className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900">Aucune publicité</h3>
+            <p className="text-xs text-neutral-500 mt-1">
               Créez votre première bannière pour commencer.
             </p>
           </div>
@@ -236,7 +236,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           {/* Image */}
           <div className="space-y-2">
             <Label>Image de la bannière</Label>
-            <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+            <div className="border-2 border-dashed border-neutral-200 rounded-xl p-4 text-center hover:bg-neutral-50 transition-colors cursor-pointer relative">
               <input
                 type="file"
                 accept="image/*"
@@ -244,11 +244,11 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
               {previewUrl ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-100">
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-neutral-100">
                   <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="py-8 text-gray-400">
+                <div className="py-8 text-neutral-400">
                   <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs">Cliquez pour ajouter une image</p>
                 </div>
@@ -284,7 +284,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               id="active"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+              className="w-4 h-4 rounded border-neutral-300 text-primary focus:ring-primary"
             />
             <Label htmlFor="active" className="cursor-pointer">
               Activer immédiatement

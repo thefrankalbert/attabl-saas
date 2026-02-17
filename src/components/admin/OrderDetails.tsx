@@ -88,7 +88,7 @@ export default function OrderDetails({
             <h2 className="text-2xl font-bold">
               {order.order_number || `Table ${order.table_number}`}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 text-sm text-neutral-500">
               <Clock className="w-4 h-4" />
               {new Date(order.created_at).toLocaleString('fr-FR')}
             </div>
@@ -100,12 +100,12 @@ export default function OrderDetails({
             )}
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-gray-500 uppercase">Total</p>
+            <p className="text-sm font-medium text-neutral-500 uppercase">Total</p>
             <p className="text-2xl font-bold text-primary">{fmt(displayTotal)}</p>
           </div>
         </div>
 
-        <div className="border-b border-gray-100" />
+        <div className="border-b border-neutral-100" />
 
         {/* Items */}
         <div className="h-[300px] overflow-y-auto pr-4 custom-scrollbar">
@@ -113,12 +113,14 @@ export default function OrderDetails({
             {(order.items || []).map((item, i) => (
               <div key={i} className="flex justify-between items-start py-2">
                 <div className="flex gap-3">
-                  <div className="w-6 h-6 bg-gray-100 rounded flex items-center justify-center text-xs font-bold">
+                  <div className="w-6 h-6 bg-neutral-100 rounded flex items-center justify-center text-xs font-bold">
                     {item.quantity}
                   </div>
                   <div>
                     <p className="font-medium text-sm">{item.name}</p>
-                    {item.notes && <p className="text-xs text-gray-500 mt-0.5">↳ {item.notes}</p>}
+                    {item.notes && (
+                      <p className="text-xs text-neutral-500 mt-0.5">↳ {item.notes}</p>
+                    )}
                     {item.customer_notes && (
                       <p className="text-xs text-amber-600 mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded">
                         📝 {item.customer_notes}
@@ -143,23 +145,23 @@ export default function OrderDetails({
           </div>
         </div>
 
-        <div className="border-b border-gray-100" />
+        <div className="border-b border-neutral-100" />
 
         {/* Price Breakdown */}
         {hasBreakdown && (
           <div className="space-y-1 text-sm">
-            <div className="flex justify-between text-gray-500">
+            <div className="flex justify-between text-neutral-500">
               <span>Sous-total</span>
               <span>{fmt(order.subtotal || 0)}</span>
             </div>
             {(order.tax_amount ?? 0) > 0 && (
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-neutral-500">
                 <span>TVA</span>
                 <span>{fmt(order.tax_amount!)}</span>
               </div>
             )}
             {(order.service_charge_amount ?? 0) > 0 && (
-              <div className="flex justify-between text-gray-500">
+              <div className="flex justify-between text-neutral-500">
                 <span>Service</span>
                 <span>{fmt(order.service_charge_amount!)}</span>
               </div>

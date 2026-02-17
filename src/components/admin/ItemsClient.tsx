@@ -207,8 +207,8 @@ export default function ItemsClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Plats & Articles</h1>
-          <p className="text-xs text-gray-500 mt-1">Gérez votre carte complète</p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Plats & Articles</h1>
+          <p className="text-xs text-neutral-500 mt-1">Gérez votre carte complète</p>
         </div>
         <Button onClick={openNewModal} size="sm" className="gap-2">
           <Plus className="w-4 h-4" /> Nouveau plat
@@ -216,7 +216,7 @@ export default function ItemsClient({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-gray-100">
+      <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-neutral-100">
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs">
             <SelectValue placeholder="Toutes les catégories" />
@@ -240,7 +240,7 @@ export default function ItemsClient({
             <SelectItem value="unavailable">Épuisé</SelectItem>
           </SelectContent>
         </Select>
-        <span className="ml-auto text-xs text-gray-400 font-medium">
+        <span className="ml-auto text-xs text-neutral-400 font-medium">
           {items.length} article{items.length > 1 ? 's' : ''}
         </span>
       </div>
@@ -251,7 +251,7 @@ export default function ItemsClient({
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="h-20 bg-white rounded-xl border border-gray-100 animate-pulse"
+              className="h-20 bg-white rounded-xl border border-neutral-100 animate-pulse"
             />
           ))}
         </div>
@@ -260,28 +260,28 @@ export default function ItemsClient({
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors group"
+              className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group"
             >
               {item.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={item.image_url}
                   alt={item.name}
-                  className="w-12 h-12 rounded-lg object-cover border border-gray-100"
+                  className="w-12 h-12 rounded-lg object-cover border border-neutral-100"
                 />
               ) : (
-                <div className="w-12 h-12 rounded-lg bg-gray-100 flex items-center justify-center">
-                  <ImageIcon className="w-5 h-5 text-gray-300" />
+                <div className="w-12 h-12 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <ImageIcon className="w-5 h-5 text-neutral-300" />
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{item.name}</p>
-                <p className="text-xs text-gray-400 mt-0.5">
+                <p className="font-semibold text-neutral-900 text-sm truncate">{item.name}</p>
+                <p className="text-xs text-neutral-400 mt-0.5">
                   {item.category?.name || 'Sans catégorie'}
                 </p>
               </div>
               <div className="text-right">
-                <p className="font-bold text-gray-900 text-sm tabular-nums">
+                <p className="font-bold text-neutral-900 text-sm tabular-nums">
                   {formatCurrency(item.price, currency)}
                 </p>
               </div>
@@ -291,7 +291,7 @@ export default function ItemsClient({
                   'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
                   item.is_available
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                    : 'bg-gray-100 text-gray-500 border-gray-200',
+                    : 'bg-neutral-100 text-neutral-500 border-neutral-200',
                 )}
               >
                 {item.is_available ? (
@@ -312,7 +312,7 @@ export default function ItemsClient({
                   'p-2 rounded-lg transition-all',
                   item.is_featured
                     ? 'text-amber-500 bg-amber-50'
-                    : 'text-gray-300 hover:text-amber-500 hover:bg-gray-50',
+                    : 'text-neutral-300 hover:text-amber-500 hover:bg-neutral-50',
                 )}
               >
                 <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
@@ -339,12 +339,12 @@ export default function ItemsClient({
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ImageIcon className="w-8 h-8 text-gray-400" />
+        <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
+          <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <ImageIcon className="w-8 h-8 text-neutral-400" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">Aucun plat</h3>
-          <p className="text-sm text-gray-500 mt-2">Ajoutez des plats à votre carte</p>
+          <h3 className="text-lg font-bold text-neutral-900">Aucun plat</h3>
+          <p className="text-sm text-neutral-500 mt-2">Ajoutez des plats à votre carte</p>
           <Button onClick={openNewModal} className="mt-6">
             Ajouter un plat
           </Button>

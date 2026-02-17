@@ -304,12 +304,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
       {/* Products Section */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden">
         {/* Header Filters */}
-        <div className="p-4 border-b border-gray-100 space-y-4">
+        <div className="p-4 border-b border-neutral-100 space-y-4">
           <div className="flex gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
                 placeholder="Rechercher un produit..."
                 className="pl-9"
@@ -350,25 +350,25 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 <button
                   key={item.id}
                   onClick={() => addToCart(item)}
-                  className="text-left group bg-gray-50 hover:bg-white border border-gray-100 hover:border-primary/50 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full shadow-sm hover:shadow-md"
+                  className="text-left group bg-neutral-50 hover:bg-white border border-neutral-100 hover:border-primary/50 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full"
                 >
                   <div className="aspect-square bg-white rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
                     {item.image_url ? (
                       <Image src={item.image_url} alt="" fill className="object-cover" />
                     ) : (
-                      <Utensils className="w-8 h-8 text-gray-300" />
+                      <Utensils className="w-8 h-8 text-neutral-300" />
                     )}
                     {cart.find((c) => c.id === item.id) && (
-                      <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shadow-sm">
+                      <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
                         {cart.find((c) => c.id === item.id)?.quantity}
                       </div>
                     )}
                   </div>
                   <div className="flex-1 flex flex-col">
-                    <h3 className="font-semibold text-sm text-gray-900 leading-tight mb-1 line-clamp-2">
+                    <h3 className="font-semibold text-sm text-neutral-900 leading-tight mb-1 line-clamp-2">
                       {item.name}
                     </h3>
-                    <p className="text-xs font-bold text-gray-500 mt-auto">
+                    <p className="text-xs font-bold text-neutral-500 mt-auto">
                       {formatCurrency(item.price, currency)}
                     </p>
                   </div>
@@ -376,7 +376,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               ))}
             </div>
           ) : (
-            <div className="h-full flex flex-col items-center justify-center text-gray-400">
+            <div className="h-full flex flex-col items-center justify-center text-neutral-400">
               <SearchX className="w-12 h-12 mb-3 opacity-20" />
               <p className="text-sm font-medium">Aucun r\u00e9sultat</p>
             </div>
@@ -385,20 +385,20 @@ export default function POSClient({ tenantId }: POSClientProps) {
       </div>
 
       {/* Cart Section */}
-      <div className="w-full lg:w-[400px] bg-white rounded-xl shadow-sm border border-gray-100 flex flex-col overflow-hidden shrink-0 max-h-[50vh] lg:max-h-none">
-        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+      <div className="w-full lg:w-[400px] bg-white rounded-xl border border-neutral-100 flex flex-col overflow-hidden shrink-0 max-h-[50vh] lg:max-h-none">
+        <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-gray-500" />
-            <h2 className="font-semibold text-gray-900">Panier</h2>
+            <ShoppingBag className="w-5 h-5 text-neutral-500" />
+            <h2 className="font-semibold text-neutral-900">Panier</h2>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono bg-gray-200 px-2 py-1 rounded text-gray-600">
+            <span className="text-xs font-mono bg-neutral-200 px-2 py-1 rounded text-neutral-600">
               #{orderNumber}
             </span>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-red-500"
+              className="h-8 w-8 text-neutral-400 hover:text-red-500"
               onClick={() => setCart([])}
             >
               <Trash2 className="w-4 h-4" />
@@ -407,7 +407,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         </div>
 
         {/* Service Type Selection */}
-        <div className="p-3 border-b border-gray-100 space-y-2">
+        <div className="p-3 border-b border-neutral-100 space-y-2">
           <div className="grid grid-cols-4 gap-1.5">
             {SERVICE_TYPES.map((st) => (
               <button
@@ -418,7 +418,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   'flex flex-col items-center justify-center rounded-lg border p-2 transition-all text-center',
                   serviceType === st.value
                     ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary/20'
-                    : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-50',
+                    : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50',
                 )}
               >
                 <span className="text-base leading-none">{st.emoji}</span>
@@ -443,7 +443,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               placeholder="Adresse de livraison..."
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full h-16 p-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
+              className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
             />
           )}
 
@@ -462,9 +462,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
             <div key={item.id} className="group">
               <div className="flex justify-between items-start mb-2">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-900 line-clamp-1">{item.name}</p>
+                  <p className="text-sm font-medium text-neutral-900 line-clamp-1">{item.name}</p>
                   <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-gray-500">{formatCurrency(item.price, currency)}</p>
+                    <p className="text-xs text-neutral-500">
+                      {formatCurrency(item.price, currency)}
+                    </p>
                     {item.notes && (
                       <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
                         {item.notes}
@@ -472,16 +474,16 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     )}
                   </div>
                 </div>
-                <p className="text-sm font-bold text-gray-900">
+                <p className="text-sm font-bold text-neutral-900">
                   {formatCurrency(item.price * item.quantity, currency)}
                 </p>
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 bg-gray-50 rounded-lg p-0.5 border border-gray-100">
+                <div className="flex items-center gap-1 bg-neutral-50 rounded-lg p-0.5 border border-neutral-100">
                   <button
                     onClick={() => updateQuantity(item.id, -1)}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded shadow-sm text-gray-500 transition-all"
+                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
                   >
                     <Minus className="w-3 h-3" />
                   </button>
@@ -490,7 +492,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   </span>
                   <button
                     onClick={() => updateQuantity(item.id, 1)}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded shadow-sm text-gray-500 transition-all"
+                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
                   >
                     <Plus className="w-3 h-3" />
                   </button>
@@ -533,7 +535,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             </div>
           ))}
           {cart.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-gray-300">
+            <div className="flex flex-col items-center justify-center py-12 text-neutral-300">
               <ShoppingBag className="w-12 h-12 mb-2 opacity-50" />
               <p className="text-sm">Panier vide</p>
             </div>
@@ -541,11 +543,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         </div>
 
         {/* Footer */}
-        <div className="p-4 bg-gray-50 border-t border-gray-100 space-y-4">
+        <div className="p-4 bg-neutral-50 border-t border-neutral-100 space-y-4">
           <div className="flex justify-between items-end">
-            <span className="text-sm text-gray-500 font-medium">Total</span>
+            <span className="text-sm text-neutral-500 font-medium">Total</span>
             <div className="text-right">
-              <span className="text-2xl font-black text-gray-900">
+              <span className="text-2xl font-black text-neutral-900">
                 {formatCurrency(total, currency)}
               </span>
             </div>
@@ -554,7 +556,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           <div className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
-              className="h-12 border-gray-300 text-gray-600"
+              className="h-12 border-neutral-300 text-neutral-600"
               disabled={cart.length === 0}
               onClick={() => handleOrder('pending')}
               title="Envoyer en cuisine"
@@ -562,7 +564,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               <Printer className="w-5 h-5" />
             </Button>
             <Button
-              className="col-span-3 h-12 text-base font-bold shadow-lg shadow-primary/20"
+              className="col-span-3 h-12 text-base font-bold"
               disabled={cart.length === 0}
               onClick={() => setShowPaymentModal(true)}
             >
@@ -575,11 +577,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
       {/* Note Modal */}
       {editingNotes && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm animate-in zoom-in-95">
+          <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">Note pour la cuisine</h3>
             <textarea
               autoFocus
-              className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-gray-50"
+              className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
               placeholder="Ex: Sans oignon, bien cuit..."
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
