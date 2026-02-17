@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { History, Search, Filter } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,16 +15,20 @@ interface StockHistoryClientProps {
   tenantId: string;
 }
 
-const MOVEMENT_FILTERS: { value: MovementType | 'all'; label: string }[] = [
-  { value: 'all', label: 'Tous' },
-  { value: 'order_destock', label: 'Commandes' },
-  { value: 'manual_add', label: 'Ajouts' },
-  { value: 'manual_remove', label: 'Retraits' },
-  { value: 'adjustment', label: 'Ajustements' },
-  { value: 'opening', label: 'Ouverture' },
-];
-
 export default function StockHistoryClient({ tenantId }: StockHistoryClientProps) {
+  const t = useTranslations('stockHistory');
+  const tc = useTranslations('common');
+  const locale = useLocale();
+
+  const movementFilters: { value: MovementType | 'all'; label: string }[] = [
+    { value: 'all', label: t('filterAll') },
+    { value: 'order_destock', label: t('filterOrders') },
+    { value: 'manual_add', label: t('filterAdditions') },
+    { value: 'manual_remove', label: t('filterWithdrawals') },
+    { value: 'adjustment', label: t('filterAdjustments') },
+    { value: 'opening', label: t('filterOpening') },
+  ];
+
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -38,7 +43,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       const data = await inventoryService.getStockMovements(tenantId);
       setMovements(data);
     } catch {
-      toast({ title: 'Erreur chargement historique', variant: 'destructive' });
+      toast({ title: tc('errorLoading'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -60,7 +65,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('fr-FR', {
+    return d.toLocaleDateString(locale, {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
@@ -70,9 +75,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   };
 
   if (loading) {
-    return (
-      <div className="p-8 text-center text-neutral-500">Chargement de l&apos;historique...</div>
-    );
+    return <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>;
   }
 
   return (
@@ -84,9 +87,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             <History className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-neutral-900">Historique des mouvements</h1>
+            <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
             <p className="text-sm text-neutral-500">
-              {filtered.length} mouvement{filtered.length !== 1 ? 's' : ''}
+              {filtered.length} {t('movementsCount')}
             </p>
           </div>
         </div>
@@ -97,7 +100,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher par ingrédient ou note..."
+            placeholder={t('searchPlaceholder')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9"
@@ -105,7 +108,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         </div>
         <div className="flex items-center gap-1.5 overflow-x-auto">
           <Filter className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-          {MOVEMENT_FILTERS.map((f) => (
+          {movementFilters.map((f) => (
             <button
               key={f.value}
               onClick={() => setFilterType(f.value)}

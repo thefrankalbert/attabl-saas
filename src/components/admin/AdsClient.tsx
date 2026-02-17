@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   Plus,
   Loader2,
@@ -38,6 +39,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   const [isActive, setIsActive] = useState(true);
   // keepExistingImage state reserved for future edit feature
 
+  const t = useTranslations('ads');
+  const tc = useTranslations('common');
   const { toast } = useToast();
   const supabase = createClient();
 
@@ -59,7 +62,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   const handleSave = async () => {
     if (!imageFile) {
-      toast({ title: 'Image requise', variant: 'destructive' });
+      toast({ title: t('imageRequired'), variant: 'destructive' });
       return;
     }
 
@@ -94,14 +97,14 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       if (dbError) throw dbError;
 
       setAds((prev) => [...prev, newAd as Ad].sort((a, b) => a.sort_order - b.sort_order));
-      toast({ title: 'Publicité créée !' });
+      toast({ title: t('adCreated') });
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
       console.error(e);
       toast({
-        title: 'Erreur',
-        description: e instanceof Error ? e.message : 'Erreur inconnue',
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('unknownError'),
         variant: 'destructive',
       });
     } finally {
@@ -110,14 +113,14 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cette publicité ?')) return;
+    if (!confirm(t('confirmDelete'))) return;
 
     try {
       await supabase.from('ads').delete().eq('id', id);
       setAds((prev) => prev.filter((ad) => ad.id !== id));
-      toast({ title: 'Publicité supprimée' });
+      toast({ title: t('adDeleted') });
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -132,10 +135,10 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
       if (data) {
         setAds((prev) => prev.map((a) => (a.id === ad.id ? (data as Ad) : a)));
-        toast({ title: !ad.is_active ? 'Activé' : 'Désactivé' });
+        toast({ title: !ad.is_active ? t('activated') : t('deactivated') });
       }
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -143,10 +146,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Publicités & Bannières</h1>
-          <p className="text-sm text-neutral-500">
-            Gérez les bannières promotionnelles de votre page d&apos;accueil.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-neutral-500">{t('subtitle')}</p>
         </div>
         <Button
           onClick={() => {
@@ -155,7 +156,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           }}
           className="gap-2"
         >
-          <Plus className="w-4 h-4" /> Nouvelle Publicité
+          <Plus className="w-4 h-4" /> {t('newAd')}
         </Button>
       </div>
 
@@ -171,7 +172,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
             <div className="aspect-video bg-neutral-100 relative">
               <Image src={ad.image_url} alt="" fill className="object-cover" />
               <div className="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold">
-                Ordre: {ad.sort_order}
+                {t('orderLabel', { order: ad.sort_order })}
               </div>
             </div>
 
@@ -202,7 +203,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                   ) : (
                     <Eye className="w-3 h-3 mr-2" />
                   )}
-                  {ad.is_active ? 'Désactiver' : 'Activer'}
+                  {ad.is_active ? t('disable') : t('enable')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -219,23 +220,17 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
         {ads.length === 0 && (
           <div className="col-span-full py-12 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-xl">
             <ImageIcon className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900">Aucune publicité</h3>
-            <p className="text-xs text-neutral-500 mt-1">
-              Créez votre première bannière pour commencer.
-            </p>
+            <h3 className="text-sm font-semibold text-neutral-900">{t('noAds')}</h3>
+            <p className="text-xs text-neutral-500 mt-1">{t('noAdsDesc')}</p>
           </div>
         )}
       </div>
 
-      <AdminModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Nouvelle Publicité"
-      >
+      <AdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('newAd')}>
         <div className="space-y-4">
           {/* Image */}
           <div className="space-y-2">
-            <Label>Image de la bannière</Label>
+            <Label>{t('bannerImage')}</Label>
             <div className="border-2 border-dashed border-neutral-200 rounded-xl p-4 text-center hover:bg-neutral-50 transition-colors cursor-pointer relative">
               <input
                 type="file"
@@ -250,7 +245,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               ) : (
                 <div className="py-8 text-neutral-400">
                   <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-xs">Cliquez pour ajouter une image</p>
+                  <p className="text-xs">{t('clickToAddImage')}</p>
                 </div>
               )}
             </div>
@@ -258,7 +253,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
           {/* Link */}
           <div className="space-y-2">
-            <Label>Lien de redirection (optionnel)</Label>
+            <Label>{t('redirectLink')}</Label>
             <Input
               placeholder="https://..."
               value={link}
@@ -268,7 +263,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
           {/* Sort Order */}
           <div className="space-y-2">
-            <Label>Ordre d&apos;affichage</Label>
+            <Label>{t('displayOrder')}</Label>
             <Input
               type="number"
               min={1}
@@ -287,17 +282,17 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               className="w-4 h-4 rounded border-neutral-300 text-primary focus:ring-primary"
             />
             <Label htmlFor="active" className="cursor-pointer">
-              Activer immédiatement
+              {t('enableImmediately')}
             </Label>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Publier
+              {t('publish')}
             </Button>
           </div>
         </div>

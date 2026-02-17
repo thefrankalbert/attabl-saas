@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Download, Loader2, DollarSign, ShoppingBag, CreditCard, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -38,6 +39,7 @@ interface TopItem {
 }
 
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
+  const t = useTranslations('reports');
   const fmt = (amount: number) => formatCurrency(amount, currency);
   const [period, setPeriod] = useState<Period>('7d');
   const [loading, setLoading] = useState(true);
@@ -134,11 +136,11 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       });
     } catch (e) {
       console.error(e);
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
+      toast({ title: t('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId, period, toast]);
+  }, [supabase, tenantId, period, toast, t]);
 
   useEffect(() => {
     loadData();
@@ -151,40 +153,38 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       // Title
       doc.setFontSize(20);
-      doc.text("Rapport d'activité", 20, 20);
+      doc.text(t('activityReport'), 20, 20);
       doc.setFontSize(10);
-      doc.text(`Généré le ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, 28);
-      doc.text(
-        `Période : ${period === '7d' ? '7 derniers jours' : period === '30d' ? '30 derniers jours' : '90 derniers jours'}`,
-        20,
-        34,
-      );
+      doc.text(t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') }), 20, 28);
+      const periodLabel =
+        period === '7d' ? t('last7Days') : period === '30d' ? t('last30Days') : t('last3Months');
+      doc.text(t('periodLabel', { period: periodLabel }), 20, 34);
 
       // Summary
       doc.setFillColor(245, 245, 245);
       doc.rect(20, 45, 170, 30, 'F');
       doc.setFontSize(12);
-      doc.text(`Chiffre d'Affaires : ${fmt(summary.revenue)}`, 30, 65);
-      doc.text(`Commandes : ${summary.orders}`, 100, 65);
-      doc.text(`Panier Moyen : ${fmt(summary.avgBasket)}`, 150, 65);
+      doc.text(`${t('revenueLabel')} : ${fmt(summary.revenue)}`, 30, 65);
+      doc.text(`${t('orders')} : ${summary.orders}`, 100, 65);
+      doc.text(`${t('averageBasket')} : ${fmt(summary.avgBasket)}`, 150, 65);
 
       // Top Items
       doc.setFontSize(14);
-      doc.text('Top 5 Produits', 20, 90);
+      doc.text(t('top5Products'), 20, 90);
 
       let y = 100;
       topItems.forEach((item, i) => {
         doc.setFontSize(12);
         doc.text(`${i + 1}. ${item.name}`, 20, y);
-        doc.text(`${item.quantity} ventes`, 120, y);
+        doc.text(t('salesCount', { count: item.quantity }), 120, y);
         doc.text(`${fmt(item.revenue)}`, 160, y);
         y += 10;
       });
 
       doc.save(`rapport_${format(new Date(), 'yyyyMMdd')}.pdf`);
-      toast({ title: 'PDF téléchargé' });
+      toast({ title: t('pdfDownloaded') });
     } catch {
-      toast({ title: 'Erreur export PDF', variant: 'destructive' });
+      toast({ title: t('exportPdfError'), variant: 'destructive' });
     } finally {
       setExporting(false);
     }
@@ -193,14 +193,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const maxRevenue = useMemo(() => Math.max(...dailyStats.map((d) => d.revenue), 1), [dailyStats]);
 
   if (loading)
-    return <div className="p-12 text-center text-neutral-500">Chargement des rapports...</div>;
+    return <div className="p-12 text-center text-neutral-500">{t('loadingReports')}</div>;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Rapports & Statistiques</h1>
-          <p className="text-sm text-neutral-500">Analysez la performance de votre restaurant.</p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('titleClient')}</h1>
+          <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={period} onValueChange={(v: Period) => setPeriod(v)}>
@@ -208,9 +208,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
               <SelectValue placeholder="Période" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7d">7 derniers jours</SelectItem>
-              <SelectItem value="30d">30 derniers jours</SelectItem>
-              <SelectItem value="90d">3 derniers mois</SelectItem>
+              <SelectItem value="7d">{t('last7Days')}</SelectItem>
+              <SelectItem value="30d">{t('last30Days')}</SelectItem>
+              <SelectItem value="90d">{t('last3Months')}</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={handleExportPDF} disabled={exporting}>

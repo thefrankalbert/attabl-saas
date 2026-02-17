@@ -1,12 +1,17 @@
 'use client';
 
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useLocale } from 'next-intl';
 import { Globe, Info, MessageCircle, ChevronRight, FileText } from 'lucide-react';
 import { useTenant } from '@/contexts/TenantContext';
 
 export default function ClientSettings() {
-  const { language, setLanguage } = useLanguage();
+  const locale = useLocale();
   const { tenant } = useTenant();
+
+  const setLocale = (newLocale: string) => {
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+    window.location.reload();
+  };
 
   return (
     <div className="space-y-6">
@@ -19,33 +24,33 @@ export default function ClientSettings() {
 
         <div className="p-4 space-y-4">
           <button
-            onClick={() => setLanguage('fr')}
+            onClick={() => setLocale('fr-FR')}
             className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 bg-white"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇫🇷</span>
               <span
-                className={`font-medium ${language === 'fr' ? 'text-gray-900' : 'text-gray-500'}`}
+                className={`font-medium ${locale.startsWith('fr') ? 'text-gray-900' : 'text-gray-500'}`}
               >
                 Français
               </span>
             </div>
-            {language === 'fr' && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
+            {locale.startsWith('fr') && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
           </button>
 
           <button
-            onClick={() => setLanguage('en')}
+            onClick={() => setLocale('en-US')}
             className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 bg-white"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇬🇧</span>
               <span
-                className={`font-medium ${language === 'en' ? 'text-gray-900' : 'text-gray-500'}`}
+                className={`font-medium ${locale.startsWith('en') ? 'text-gray-900' : 'text-gray-500'}`}
               >
                 English
               </span>
             </div>
-            {language === 'en' && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
+            {locale.startsWith('en') && <div className="w-2 h-2 rounded-full bg-green-500"></div>}
           </button>
         </div>
       </section>
@@ -55,7 +60,7 @@ export default function ClientSettings() {
         <div className="p-4 border-b border-gray-50 flex items-center gap-3">
           <Info className="text-gray-400" size={20} />
           <h2 className="font-semibold text-gray-900">
-            {language === 'fr' ? 'À propos' : 'About'}
+            {locale.startsWith('fr') ? 'À propos' : 'About'}
           </h2>
         </div>
 

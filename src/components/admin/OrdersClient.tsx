@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,11 @@ export default function OrdersClient({
   initialOrders,
   notificationSoundId,
 }: OrdersClientProps) {
+  const t = useTranslations('orders');
+  const tc = useTranslations('common');
+  const ta = useTranslations('admin');
+  const tk = useTranslations('kitchen');
+
   const [orders, setOrders] = useState<Order[]>(initialOrders);
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -60,7 +66,7 @@ export default function OrdersClient({
             if (data) {
               setOrders((prev) => [data as Order, ...prev]);
               playNotification();
-              toast({ title: 'Nouvelle commande !', description: `Table ${data.table_number}` });
+              toast({ title: t('newOrderAlert'), description: `Table ${data.table_number}` });
             }
           } else if (payload.eventType === 'UPDATE') {
             setOrders((prev) =>
@@ -72,9 +78,10 @@ export default function OrdersClient({
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [supabase, tenantId, playNotification, toast]);
+  }, [supabase, tenantId, playNotification, toast, t]);
 
   // Filtering logic (derived state via useMemo)
   const filteredOrders = useMemo(() => {
@@ -104,7 +111,7 @@ export default function OrdersClient({
 
     const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
     if (error) {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
       // Revert if error (would need real fetch to be perfect, but ok for now)
     }
   };
@@ -117,8 +124,8 @@ export default function OrdersClient({
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Commandes</h1>
-          <p className="text-xs text-neutral-500 mt-1">Gérez les commandes en temps réel</p>
+          <h1 className="text-xl font-bold tracking-tight">{ta('ordersCount')}</h1>
+          <p className="text-xs text-neutral-500 mt-1">{t('manageRealTime')}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -127,14 +134,14 @@ export default function OrdersClient({
             size="icon"
             onClick={toggleSound}
             className={soundEnabled ? 'text-primary border-primary bg-primary/5' : ''}
-            title={soundEnabled ? 'Son activé' : 'Son désactivé'}
+            title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
           >
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
             <Input
-              placeholder="Rechercher table..."
+              placeholder={t('searchTable')}
               className="pl-9 w-full sm:w-[200px]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -147,12 +154,12 @@ export default function OrdersClient({
       <div className="flex items-center justify-between overflow-x-auto pb-2">
         <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
           <TabsList>
-            <TabsTrigger value="all">Tout</TabsTrigger>
-            <TabsTrigger value="active">En cours</TabsTrigger>
-            <TabsTrigger value="pending">En attente</TabsTrigger>
-            <TabsTrigger value="preparing">En cuisine</TabsTrigger>
-            <TabsTrigger value="ready">Prêts</TabsTrigger>
-            <TabsTrigger value="delivered">Terminés</TabsTrigger>
+            <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
+            <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
+            <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
+            <TabsTrigger value="preparing">{t('tabInKitchen')}</TabsTrigger>
+            <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
+            <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -171,10 +178,8 @@ export default function OrdersClient({
         ) : (
           <div className="col-span-full py-12 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
             <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900">Aucune commande</h3>
-            <p className="text-xs text-neutral-500 mt-1">
-              Aucune commande ne correspond à vos filtres
-            </p>
+            <h3 className="text-sm font-semibold text-neutral-900">{t('noOrdersMatch')}</h3>
+            <p className="text-xs text-neutral-500 mt-1">{t('filterNoResults')}</p>
           </div>
         )}
       </div>
@@ -183,7 +188,7 @@ export default function OrdersClient({
       <AdminModal
         isOpen={!!selectedOrder}
         onClose={() => setSelectedOrder(null)}
-        title={`Commande #${selectedOrder?.id.slice(0, 8)}`}
+        title={`${tk('ticketOrder')} #${selectedOrder?.id.slice(0, 8)}`}
         size="lg"
       >
         {selectedOrder && (

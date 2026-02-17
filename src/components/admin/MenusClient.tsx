@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   Plus,
@@ -63,6 +64,8 @@ export default function MenusClient({
   const { toast } = useToast();
   const { isLimitReached, limits } = useSubscription();
   const supabase = createClient();
+  const t = useTranslations('menus');
+  const tc = useTranslations('common');
 
   const loadMenus = useCallback(async () => {
     setLoading(true);
@@ -77,10 +80,11 @@ export default function MenusClient({
         .order('display_order', { ascending: true });
       if (data) setMenus(data as Menu[]);
     } catch {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
+      toast({ title: t('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [supabase, tenantId, toast]);
 
   const openNewMenuModal = (parentId?: string) => {
@@ -128,7 +132,7 @@ export default function MenusClient({
           toast({ title: result.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Carte mise à jour' });
+        toast({ title: t('menuUpdated') });
       } else {
         const result = await actionCreateMenu(tenantId, {
           name: formName.trim(),
@@ -144,19 +148,19 @@ export default function MenusClient({
           toast({ title: result.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Carte créée' });
+        toast({ title: t('menuCreated') });
       }
       setShowModal(false);
       loadMenus();
     } catch {
-      toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' });
+      toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (menu: Menu) => {
-    if (!confirm(`Supprimer la carte "${menu.name}" ? Cette action est irréversible.`)) return;
+    if (!confirm(t('deleteConfirm', { name: menu.name }))) return;
 
     try {
       const result = await actionDeleteMenu(tenantId, menu.id);
@@ -164,10 +168,10 @@ export default function MenusClient({
         toast({ title: result.error, variant: 'destructive' });
         return;
       }
-      toast({ title: 'Carte supprimée' });
+      toast({ title: t('menuDeleted') });
       loadMenus();
     } catch {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -183,7 +187,7 @@ export default function MenusClient({
       }
       loadMenus();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -216,14 +220,12 @@ export default function MenusClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Cartes / Menus</h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Gérez vos cartes, sous-cartes et leur contenu
-          </p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
         </div>
         <Button onClick={() => openNewMenuModal()} disabled={limitReached} className="gap-2">
           <Plus className="w-4 h-4" />
-          Nouvelle carte
+          {t('newMenu')}
         </Button>
       </div>
 
@@ -231,9 +233,9 @@ export default function MenusClient({
       {limitReached && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm text-amber-800 font-medium">
-            Vous avez atteint la limite de {limits.maxMenus} cartes pour votre plan.{' '}
+            {t('limitReached', { max: limits.maxMenus })}{' '}
             <Link href={`/sites/${tenantSlug}/admin/subscription`} className="underline font-bold">
-              Passer au Premium →
+              {t('upgradeToPremium')}
             </Link>
           </p>
         </div>
@@ -243,7 +245,7 @@ export default function MenusClient({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <Input
-          placeholder="Rechercher une carte..."
+          placeholder={t('searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -266,7 +268,7 @@ export default function MenusClient({
       {filteredStandalone.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
-            Cartes indépendantes
+            {t('independentMenus')}
           </p>
           {filteredStandalone.map((menu, index) => (
             <MenuCard
@@ -297,7 +299,7 @@ export default function MenusClient({
             <div className="flex items-center gap-2 px-1">
               <Building2 className="w-4 h-4 text-neutral-400" />
               <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                {venue?.name || 'Espace'}
+                {venue?.name || t('space')}
               </p>
             </div>
             {filtered.map((menu, index) => (
@@ -323,12 +325,10 @@ export default function MenusClient({
           <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Folder className="w-7 h-7 text-neutral-400" />
           </div>
-          <h3 className="text-base font-bold text-neutral-900">Aucune carte</h3>
-          <p className="text-sm text-neutral-500 mt-2">
-            Créez votre première carte pour organiser vos plats
-          </p>
+          <h3 className="text-base font-bold text-neutral-900">{t('noMenus')}</h3>
+          <p className="text-sm text-neutral-500 mt-2">{t('noMenusDesc')}</p>
           <Button onClick={() => openNewMenuModal()} className="mt-4">
-            Créer une carte
+            {t('createMenu')}
           </Button>
         </div>
       )}
@@ -337,63 +337,63 @@ export default function MenusClient({
       <AdminModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingMenu ? 'Modifier la carte' : 'Nouvelle carte'}
+        title={editingMenu ? t('editMenuTitle') : t('newMenuTitle')}
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-name">Nom (FR) *</Label>
+              <Label htmlFor="menu-name">{t('nameFr')}</Label>
               <Input
                 id="menu-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ex: Carte des Boissons"
+                placeholder={t('nameFrPlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-name-en">Nom (EN)</Label>
+              <Label htmlFor="menu-name-en">{t('nameEn')}</Label>
               <Input
                 id="menu-name-en"
                 value={formNameEn}
                 onChange={(e) => setFormNameEn(e.target.value)}
-                placeholder="Ex: Drinks Menu"
+                placeholder={t('nameEnPlaceholder')}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-desc">Description (FR)</Label>
+              <Label htmlFor="menu-desc">{t('descriptionFr')}</Label>
               <Input
                 id="menu-desc"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Description de la carte"
+                placeholder={t('descriptionFrPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-desc-en">Description (EN)</Label>
+              <Label htmlFor="menu-desc-en">{t('descriptionEn')}</Label>
               <Input
                 id="menu-desc-en"
                 value={formDescriptionEn}
                 onChange={(e) => setFormDescriptionEn(e.target.value)}
-                placeholder="Menu description"
+                placeholder={t('descriptionEnPlaceholder')}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-venue">Espace (optionnel)</Label>
+              <Label htmlFor="menu-venue">{t('spaceOptional')}</Label>
               <select
                 id="menu-venue"
                 value={formVenueId || ''}
                 onChange={(e) => setFormVenueId(e.target.value || null)}
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
-                <option value="">Aucun (carte indépendante)</option>
+                <option value="">{t('noSpaceIndependent')}</option>
                 {venues.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
@@ -402,14 +402,14 @@ export default function MenusClient({
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-parent">Carte parente (sous-carte)</Label>
+              <Label htmlFor="menu-parent">{t('parentMenu')}</Label>
               <select
                 id="menu-parent"
                 value={formParentMenuId || ''}
                 onChange={(e) => setFormParentMenuId(e.target.value || null)}
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
-                <option value="">Aucune (carte principale)</option>
+                <option value="">{t('noParentMain')}</option>
                 {menus
                   .filter((m) => m.id !== editingMenu?.id)
                   .map((m) => (
@@ -429,16 +429,16 @@ export default function MenusClient({
               onChange={(e) => setFormIsActive(e.target.checked)}
               className="rounded border-neutral-300"
             />
-            <Label htmlFor="menu-active">Carte active (visible aux clients)</Label>
+            <Label htmlFor="menu-active">{t('activeVisibleToClients')}</Label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={saving}>
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingMenu ? 'Mettre à jour' : 'Créer'}
+              {editingMenu ? t('update') : t('create')}
             </Button>
           </div>
         </form>
@@ -461,6 +461,7 @@ interface MenuCardProps {
 }
 
 function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: MenuCardProps) {
+  const t = useTranslations('menus');
   return (
     <div className="bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group">
       <div className="flex items-center gap-4 p-4">
@@ -488,7 +489,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
             )}
             {menu.children && menu.children.length > 0 && (
               <span className="text-xs text-neutral-400">
-                {menu.children.length} sous-carte{menu.children.length > 1 ? 's' : ''}
+                {t('subMenuCount', { count: menu.children.length })}
               </span>
             )}
           </div>
@@ -506,11 +507,11 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
           >
             {menu.is_active ? (
               <>
-                <ToggleRight className="w-3 h-3 inline mr-0.5" /> Active
+                <ToggleRight className="w-3 h-3 inline mr-0.5" /> {t('active')}
               </>
             ) : (
               <>
-                <ToggleLeft className="w-3 h-3 inline mr-0.5" /> Inactive
+                <ToggleLeft className="w-3 h-3 inline mr-0.5" /> {t('inactive')}
               </>
             )}
           </button>
@@ -520,7 +521,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               variant="ghost"
               size="sm"
               onClick={onAddChild}
-              title="Ajouter une sous-carte"
+              title={t('addSubMenu')}
               className="h-8 w-8 p-0"
             >
               <Plus className="w-3.5 h-3.5" />

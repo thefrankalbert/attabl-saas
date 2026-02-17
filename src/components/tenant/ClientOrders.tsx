@@ -122,6 +122,7 @@ export default function ClientOrders({
 
     return () => {
       cancelled = true;
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [tenantId]);

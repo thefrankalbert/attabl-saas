@@ -7,7 +7,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
 import { createSupplierService } from '@/services/supplier.service';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -55,7 +55,8 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [activeSuppliers, setActiveSuppliers] = useState<Supplier[]>([]);
 
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const t = useTranslations('inventory');
+  const tc = useTranslations('common');
   const supabase = createClient();
   const inventoryService = createInventoryService(supabase);
   const supplierService = createSupplierService(supabase);
@@ -65,7 +66,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       const data = await inventoryService.getIngredients(tenantId);
       setIngredients(data);
     } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
+      toast({ title: tc('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -104,6 +105,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,10 +120,10 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   });
 
   const getStockBadge = (ing: Ingredient) => {
-    if (ing.current_stock <= 0) return { label: t('out_of_stock'), bg: 'bg-red-100 text-red-700' };
+    if (ing.current_stock <= 0) return { label: t('outOfStock'), bg: 'bg-red-100 text-red-700' };
     if (ing.current_stock <= ing.min_stock_alert)
-      return { label: t('low_stock'), bg: 'bg-amber-100 text-amber-700' };
-    return { label: t('stock_ok'), bg: 'bg-green-100 text-green-700' };
+      return { label: t('lowStock'), bg: 'bg-amber-100 text-amber-700' };
+    return { label: t('stockOk'), bg: 'bg-green-100 text-green-700' };
   };
 
   const resetForm = () => {
@@ -163,7 +165,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      toast({ title: 'Nom requis', variant: 'destructive' });
+      toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
@@ -178,7 +180,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           category: formCategory.trim() || undefined,
         };
         await inventoryService.createIngredient(tenantId, input);
-        toast({ title: 'Produit ajouté' });
+        toast({ title: t('productAdded') });
       } else if (modalMode === 'edit' && selectedIngredient) {
         await inventoryService.updateIngredient(selectedIngredient.id, tenantId, {
           name: formName.trim(),
@@ -187,13 +189,13 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || null,
         });
-        toast({ title: 'Produit modifié' });
+        toast({ title: t('productUpdated') });
       }
       setModalMode(null);
       resetForm();
       loadIngredients();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -208,12 +210,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         notes: adjustNotes.trim() || undefined,
         supplier_id: adjustSupplierId || undefined,
       });
-      toast({ title: 'Stock ajusté' });
+      toast({ title: t('stockAdjusted') });
       setModalMode(null);
       resetForm();
       loadIngredients();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -223,7 +225,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const outCount = ingredients.filter((i) => i.current_stock <= 0).length;
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>;
   }
 
   return (
@@ -236,12 +238,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             {t('inventory')}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {ingredients.length} {t('ingredients_count')}
+            {ingredients.length} {t('ingredientsCount')}
           </p>
         </div>
         <Button onClick={openAdd} className="gap-2">
           <Plus className="w-4 h-4" />
-          {t('add_ingredient')}
+          {t('addIngredient')}
         </Button>
       </div>
 
@@ -260,7 +262,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-700">
-                {lowCount} {t('low_stock')}
+                {lowCount} {t('lowStock')}
               </span>
             </div>
           )}
@@ -272,7 +274,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher un produit..."
+            placeholder={t('searchProduct')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -287,7 +289,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               onClick={() => setFilterStatus(status)}
               className="rounded-full"
             >
-              {status === 'all' ? 'Tous' : status === 'low' ? t('low_stock') : t('rupture')}
+              {status === 'all' ? tc('all') : status === 'low' ? t('lowStock') : t('rupture')}
             </Button>
           ))}
         </div>
@@ -299,25 +301,27 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           <table className="w-full text-sm">
             <thead className="bg-neutral-50 border-b border-neutral-200">
               <tr>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">Produit</th>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">Unité</th>
+                <th className="px-4 py-3 text-left font-semibold text-neutral-600">
+                  {tc('product')}
+                </th>
+                <th className="px-4 py-3 text-left font-semibold text-neutral-600">{tc('unit')}</th>
                 <th className="px-4 py-3 text-right font-semibold text-neutral-600">
                   <span className="inline-flex items-center gap-1">
-                    {t('current_stock')}
+                    {t('currentStock')}
                     <ArrowUpDown className="w-3 h-3" />
                   </span>
                 </th>
                 <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('min_alert')}
+                  {t('minAlert')}
                 </th>
                 <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('cost_per_unit')}
+                  {t('costPerUnit')}
                 </th>
                 <th className="px-4 py-3 text-center font-semibold text-neutral-600">
-                  {t('status')}
+                  {tc('status')}
                 </th>
                 <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('actions')}
+                  {tc('actions')}
                 </th>
               </tr>
             </thead>
@@ -365,7 +369,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                           onClick={() => openEdit(ing)}
                           className="text-xs"
                         >
-                          {t('edit')}
+                          {tc('edit')}
                         </Button>
                       </div>
                     </td>
@@ -375,7 +379,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {filtered.length === 0 && (
                 <tr>
                   <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
-                    Aucun produit trouvé
+                    {t('noProductFound')}
                   </td>
                 </tr>
               )}
@@ -389,12 +393,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">
-              {modalMode === 'add' ? t('add_ingredient') : t('edit_ingredient')}
+              {modalMode === 'add' ? t('addIngredient') : t('editIngredient')}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Nom</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {tc('name')}
+                </label>
                 <Input
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
@@ -405,7 +411,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Unité</label>
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                    {tc('unit')}
+                  </label>
                   <select
                     value={formUnit}
                     onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
@@ -421,7 +429,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 {modalMode === 'add' && (
                   <div>
                     <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                      {t('current_stock')}
+                      {t('currentStock')}
                     </label>
                     <Input
                       type="number"
@@ -437,7 +445,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('min_alert')}
+                    {t('minAlert')}
                   </label>
                   <Input
                     type="number"
@@ -449,7 +457,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('cost_per_unit')}
+                    {t('costPerUnit')}
                   </label>
                   <Input
                     type="number"
@@ -463,7 +471,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Catégorie (optionnel)
+                  {t('categoryOptional')}
                 </label>
                 <Input
                   value={formCategory}
@@ -481,9 +489,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   resetForm();
                 }}
               >
-                {t('cancel')}
+                {tc('cancel')}
               </Button>
-              <Button onClick={handleSave}>{t('save')}</Button>
+              <Button onClick={handleSave}>{tc('save')}</Button>
             </div>
           </div>
         </div>
@@ -493,9 +501,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       {modalMode === 'adjust' && selectedIngredient && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-1">{t('adjust_stock')}</h3>
+            <h3 className="font-bold text-lg mb-1">{t('adjustStock')}</h3>
             <p className="text-sm text-neutral-500 mb-4">
-              {selectedIngredient.name} — Stock actuel :{' '}
+              {selectedIngredient.name} — {t('currentStock')} :{' '}
               <span className="font-bold">
                 {selectedIngredient.current_stock}{' '}
                 {INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort}
@@ -505,7 +513,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Type de mouvement
+                  {t('movementType')}
                 </label>
                 <select
                   value={adjustType}
@@ -523,7 +531,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Quantité</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {tc('quantity')}
+                </label>
                 <Input
                   type="number"
                   step="0.01"
@@ -537,14 +547,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    Fournisseur (optionnel)
+                    {t('supplierOptional')}
                   </label>
                   <select
                     value={adjustSupplierId}
                     onChange={(e) => setAdjustSupplierId(e.target.value)}
                     className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">— Aucun —</option>
+                    <option value="">— {tc('none')} —</option>
                     {activeSuppliers.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -556,7 +566,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Notes (optionnel)
+                  {t('notesOptional')}
                 </label>
                 <Input
                   value={adjustNotes}
@@ -574,10 +584,10 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   resetForm();
                 }}
               >
-                {t('cancel')}
+                {tc('cancel')}
               </Button>
               <Button onClick={handleAdjust} disabled={!adjustQty}>
-                {t('confirm')}
+                {tc('confirm')}
               </Button>
             </div>
           </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import {
   Search,
@@ -41,14 +42,16 @@ interface POSSuggestion {
   description: string | null;
 }
 
-const SERVICE_TYPES: { value: ServiceType; label: string; emoji: string }[] = [
-  { value: 'dine_in', label: 'Sur place', emoji: '\ud83c\udf7d\ufe0f' },
-  { value: 'takeaway', label: '\u00c0 emporter', emoji: '\ud83d\udce6' },
-  { value: 'delivery', label: 'Livraison', emoji: '\ud83d\ude97' },
-  { value: 'room_service', label: 'Room service', emoji: '\ud83c\udfe8' },
-];
-
 export default function POSClient({ tenantId }: POSClientProps) {
+  const t = useTranslations('pos');
+  const tc = useTranslations('common');
+
+  const SERVICE_TYPES: { value: ServiceType; label: string; emoji: string }[] = [
+    { value: 'dine_in', label: t('serviceOnSite'), emoji: '\ud83c\udf7d\ufe0f' },
+    { value: 'takeaway', label: t('serviceTakeaway'), emoji: '\ud83d\udce6' },
+    { value: 'delivery', label: t('serviceDelivery'), emoji: '\ud83d\ude97' },
+    { value: 'room_service', label: t('serviceRoomService'), emoji: '\ud83c\udfe8' },
+  ];
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -144,11 +147,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         );
       }
     } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
+      toast({ title: t('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId, toast]);
+  }, [supabase, tenantId, toast, t]);
 
   useEffect(() => {
     loadData();
@@ -180,6 +183,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [loadData, supabase, tenantId]);
@@ -286,7 +290,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
       fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
 
       toast({
-        title: status === 'pending' ? 'Envoy\u00e9 en cuisine !' : 'Vente enregistr\u00e9e !',
+        title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
       });
       updateOrderNumber(orderNumber + 1);
       setCart([]);
@@ -295,11 +299,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
       if (showPaymentModal) setShowPaymentModal(false);
     } catch (err) {
       console.error(err);
-      toast({ title: 'Erreur lors de la commande', variant: 'destructive' });
+      toast({ title: t('orderError'), variant: 'destructive' });
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Chargement du POS...</div>;
+  if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
@@ -311,7 +315,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
-                placeholder="Rechercher un produit..."
+                placeholder={t('searchProduct')}
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -326,7 +330,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               onClick={() => setSelectedCategory('all')}
               className="rounded-full"
             >
-              Tout
+              {tc('all')}
             </Button>
             {categories.map((cat) => (
               <Button
@@ -378,7 +382,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-neutral-400">
               <SearchX className="w-12 h-12 mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucun r\u00e9sultat</p>
+              <p className="text-sm font-medium">{t('noResults')}</p>
             </div>
           )}
         </div>
@@ -389,7 +393,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-neutral-500" />
-            <h2 className="font-semibold text-neutral-900">Panier</h2>
+            <h2 className="font-semibold text-neutral-900">{t('cart')}</h2>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono bg-neutral-200 px-2 py-1 rounded text-neutral-600">
@@ -430,7 +434,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Room number input for room_service */}
           {serviceType === 'room_service' && (
             <Input
-              placeholder="N\u00b0 de chambre..."
+              placeholder={t('roomNumberPlaceholder')}
               value={roomNumber}
               onChange={(e) => setRoomNumber(e.target.value)}
               className="h-9 animate-in fade-in slide-in-from-top-1"
@@ -440,7 +444,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Delivery address textarea for delivery */}
           {serviceType === 'delivery' && (
             <textarea
-              placeholder="Adresse de livraison..."
+              placeholder={t('deliveryAddressPlaceholder')}
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
               className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
@@ -449,7 +453,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
           {/* Table / Client input */}
           <Input
-            placeholder="Table / Client..."
+            placeholder={t('tableClientPlaceholder')}
             value={selectedTable}
             onChange={(e) => setSelectedTable(e.target.value)}
             className="h-9"
@@ -504,7 +508,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   }}
                   className="text-xs text-primary hover:underline font-medium"
                 >
-                  {item.notes ? 'Modifier' : 'Note cuisine'}
+                  {item.notes ? tc('edit') : t('kitchenNote')}
                 </button>
               </div>
 
@@ -524,10 +528,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     <Lightbulb className="w-3 h-3 shrink-0" />
                     <span className="truncate">
                       {s.suggestion_type === 'pairing'
-                        ? 'Accompagner'
+                        ? t('suggestionPairing')
                         : s.suggestion_type === 'upsell'
-                          ? 'Suggérer'
-                          : 'Alternative'}{' '}
+                          ? t('suggestionUpsell')
+                          : t('suggestionAlternative')}{' '}
                       : {s.suggested_item_name}
                     </span>
                   </button>
@@ -537,7 +541,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {cart.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-neutral-300">
               <ShoppingBag className="w-12 h-12 mb-2 opacity-50" />
-              <p className="text-sm">Panier vide</p>
+              <p className="text-sm">{t('emptyCart')}</p>
             </div>
           )}
         </div>
@@ -545,7 +549,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         {/* Footer */}
         <div className="p-4 bg-neutral-50 border-t border-neutral-100 space-y-4">
           <div className="flex justify-between items-end">
-            <span className="text-sm text-neutral-500 font-medium">Total</span>
+            <span className="text-sm text-neutral-500 font-medium">{tc('total')}</span>
             <div className="text-right">
               <span className="text-2xl font-black text-neutral-900">
                 {formatCurrency(total, currency)}
@@ -568,7 +572,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               disabled={cart.length === 0}
               onClick={() => setShowPaymentModal(true)}
             >
-              Encaisser <ArrowRight className="ml-2 w-4 h-4" />
+              {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -578,19 +582,19 @@ export default function POSClient({ tenantId }: POSClientProps) {
       {editingNotes && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">Note pour la cuisine</h3>
+            <h3 className="font-bold text-lg mb-4">{t('kitchenNoteTitle')}</h3>
             <textarea
               autoFocus
               className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
-              placeholder="Ex: Sans oignon, bien cuit..."
+              placeholder={t('kitchenNotePlaceholder')}
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
             />
             <div className="flex justify-end gap-2 mt-4">
               <Button variant="ghost" onClick={() => setEditingNotes(null)}>
-                Annuler
+                {tc('cancel')}
               </Button>
-              <Button onClick={saveNotes}>Enregistrer</Button>
+              <Button onClick={saveNotes}>{tc('save')}</Button>
             </div>
           </div>
         </div>

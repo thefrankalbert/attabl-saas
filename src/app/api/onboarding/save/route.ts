@@ -45,13 +45,13 @@ export async function POST(request: Request) {
     }
 
     // 4. Get the user's tenant
-    const { data: adminUser } = await supabase
+    const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
       .select('tenant_id')
       .eq('user_id', user.id)
       .single();
 
-    if (!adminUser) {
+    if (adminUserError || !adminUser) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, Eye, EyeOff, AlertTriangle } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ export function ScreenLock({
   isWarning = false,
   remainingSeconds = 0,
 }: ScreenLockProps) {
+  const t = useTranslations('screenLock');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -71,14 +73,14 @@ export function ScreenLock({
       });
 
       if (authError) {
-        setError('Mot de passe incorrect');
+        setError(t('wrongPassword'));
         setPassword('');
       } else {
         setPassword('');
         onUnlock();
       }
     } catch {
-      setError('Erreur de connexion');
+      setError(t('connectionError'));
     } finally {
       setLoading(false);
     }
@@ -103,10 +105,7 @@ export function ScreenLock({
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-amber-500 px-4 py-2.5 text-sm font-medium text-black"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>
-              Verrouillage dans {formatTime(remainingSeconds)} — bougez la souris pour rester
-              connecté
-            </span>
+            <span>{t('lockingIn', { seconds: formatTime(remainingSeconds) })}</span>
           </motion.div>
         )}
       </AnimatePresence>
@@ -167,7 +166,7 @@ export function ScreenLock({
 
               {/* Tenant name */}
               <h2 className="text-xl font-semibold text-white mb-2">{tenantName}</h2>
-              <p className="text-sm text-white/40 mb-8">Session verrouillée pour inactivité</p>
+              <p className="text-sm text-white/40 mb-8">{t('sessionLocked')}</p>
 
               {mode === 'overlay' ? (
                 /* Overlay mode */
@@ -176,7 +175,7 @@ export function ScreenLock({
                   transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
                   className="text-sm text-white/60"
                 >
-                  Cliquez ou appuyez sur une touche pour déverrouiller
+                  {t('clickToUnlock')}
                 </motion.p>
               ) : (
                 /* Password mode */
@@ -186,7 +185,7 @@ export function ScreenLock({
                     <div className="relative">
                       <Input
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Mot de passe"
+                        placeholder={t('password')}
                         value={password}
                         onChange={(e) => {
                           setPassword(e.target.value);
@@ -225,7 +224,7 @@ export function ScreenLock({
                     disabled={loading || !password}
                     className="w-full h-11 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-lg transition-all"
                   >
-                    {loading ? 'Vérification...' : 'Déverrouiller'}
+                    {loading ? t('verifying') : t('unlock')}
                   </Button>
                 </form>
               )}

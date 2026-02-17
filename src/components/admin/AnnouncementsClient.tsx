@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Plus, Loader2, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -10,8 +11,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AdminModal from '@/components/admin/AdminModal';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import type { Announcement } from '@/types/admin.types';
 
 interface AnnouncementsClientProps {
@@ -35,6 +34,9 @@ export default function AnnouncementsClient({
   const [isActive, setIsActive] = useState(true);
 
   const { toast } = useToast();
+  const t = useTranslations('announcements');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const supabase = createClient();
 
   const resetForm = () => {
@@ -47,7 +49,7 @@ export default function AnnouncementsClient({
 
   const handleSave = async () => {
     if (!title || !startDate) {
-      toast({ title: 'Titre et date de début requis', variant: 'destructive' });
+      toast({ title: t('fieldsRequired'), variant: 'destructive' });
       return;
     }
 
@@ -69,14 +71,14 @@ export default function AnnouncementsClient({
       if (error) throw error;
 
       setAnnouncements((prev) => [newAnnouncement as Announcement, ...prev]);
-      toast({ title: 'Annonce créée !' });
+      toast({ title: t('announcementCreated') });
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
       console.error(e);
       toast({
-        title: 'Erreur',
-        description: e instanceof Error ? e.message : 'Erreur inconnue',
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('errorGeneric'),
         variant: 'destructive',
       });
     } finally {
@@ -85,14 +87,14 @@ export default function AnnouncementsClient({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Supprimer cette annonce ?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       await supabase.from('announcements').delete().eq('id', id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
-      toast({ title: 'Annonce supprimée' });
+      toast({ title: t('announcementDeletedConfirm') });
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -109,10 +111,12 @@ export default function AnnouncementsClient({
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === announcement.id ? (data as Announcement) : a)),
         );
-        toast({ title: !announcement.is_active ? 'Activée' : 'Désactivée' });
+        toast({
+          title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
+        });
       }
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -120,10 +124,8 @@ export default function AnnouncementsClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Annonces</h1>
-          <p className="text-sm text-neutral-500">
-            Gérez les popups et messages d&apos;information pour vos clients.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
         </div>
         <Button
           onClick={() => {
@@ -132,7 +134,7 @@ export default function AnnouncementsClient({
           }}
           className="gap-2"
         >
-          <Plus className="w-4 h-4" /> Nouvelle Annonce
+          <Plus className="w-4 h-4" /> {t('newAnnouncement')}
         </Button>
       </div>
 
@@ -151,7 +153,7 @@ export default function AnnouncementsClient({
               <div
                 className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}
               >
-                {ann.is_active ? 'Active' : 'Inactive'}
+                {ann.is_active ? t('statusActive') : t('statusInactive')}
               </div>
             </div>
 
@@ -163,9 +165,13 @@ export default function AnnouncementsClient({
             <div className="mt-auto space-y-4">
               <div className="flex items-center gap-2 text-xs text-neutral-400">
                 <Calendar className="w-3 h-3" />
-                <span>Du {format(new Date(ann.start_date), 'dd MMM yyyy', { locale: fr })}</span>
+                <span>
+                  {t('fromDate', { date: new Date(ann.start_date).toLocaleDateString(locale) })}
+                </span>
                 {ann.end_date && (
-                  <span>au {format(new Date(ann.end_date), 'dd MMM yyyy', { locale: fr })}</span>
+                  <span>
+                    {t('toDate', { date: new Date(ann.end_date).toLocaleDateString(locale) })}
+                  </span>
                 )}
               </div>
 
@@ -181,7 +187,7 @@ export default function AnnouncementsClient({
                   ) : (
                     <Eye className="w-3 h-3 mr-2" />
                   )}
-                  {ann.is_active ? 'Masquer' : 'Afficher'}
+                  {ann.is_active ? t('hide') : t('show')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -198,10 +204,8 @@ export default function AnnouncementsClient({
         {announcements.length === 0 && (
           <div className="col-span-full py-12 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-xl">
             <Megaphone className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900">Aucune annonce</h3>
-            <p className="text-xs text-neutral-500 mt-1">
-              Publiez une information importante pour vos clients.
-            </p>
+            <h3 className="text-sm font-semibold text-neutral-900">{t('noAnnouncements')}</h3>
+            <p className="text-xs text-neutral-500 mt-1">{t('noAnnouncementsDesc')}</p>
           </div>
         )}
       </div>
@@ -209,22 +213,22 @@ export default function AnnouncementsClient({
       <AdminModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Nouvelle Annonce"
+        title={t('newAnnouncement')}
       >
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Titre *</Label>
+            <Label>{t('titleField')}</Label>
             <Input
-              placeholder="Ex: Fermeture exceptionnelle..."
+              placeholder={t('titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Description</Label>
+            <Label>{t('descriptionField')}</Label>
             <Textarea
-              placeholder="Détails de l'annonce..."
+              placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               className="min-h-[100px]"
@@ -233,27 +237,27 @@ export default function AnnouncementsClient({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Date de début *</Label>
+              <Label>{t('startDateRequired')}</Label>
               <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label>Date de fin (optionnel)</Label>
+              <Label>{t('endDateOptional')}</Label>
               <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
             </div>
           </div>
 
           <div className="flex items-center gap-2 pt-2">
             <Switch checked={isActive} onCheckedChange={setIsActive} id="active-mode" />
-            <Label htmlFor="active-mode">Activer immédiatement</Label>
+            <Label htmlFor="active-mode">{t('enableImmediately')}</Label>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button onClick={handleSave} disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Publier
+              {t('publish')}
             </Button>
           </div>
         </div>

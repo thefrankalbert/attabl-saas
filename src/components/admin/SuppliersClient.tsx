@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { Truck, Plus, Search, Pencil, Trash2, Phone, Mail, MapPin } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -36,6 +37,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const [formNotes, setFormNotes] = useState('');
 
   const { toast } = useToast();
+  const t = useTranslations('suppliers');
+  const tc = useTranslations('common');
   const supabase = createClient();
   const supplierService = createSupplierService(supabase);
 
@@ -44,7 +47,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       const data = await supplierService.getSuppliers(tenantId);
       setSuppliers(data);
     } catch {
-      toast({ title: 'Erreur chargement fournisseurs', variant: 'destructive' });
+      toast({ title: t('loadError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -98,7 +101,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      toast({ title: 'Nom requis', variant: 'destructive' });
+      toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
@@ -113,7 +116,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           notes: formNotes.trim() || undefined,
         };
         await supplierService.createSupplier(tenantId, input);
-        toast({ title: 'Fournisseur ajouté' });
+        toast({ title: t('supplierAdded') });
       } else if (modalMode === 'edit' && selectedSupplier) {
         await supplierService.updateSupplier(selectedSupplier.id, tenantId, {
           name: formName.trim(),
@@ -123,13 +126,13 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           address: formAddress.trim() || null,
           notes: formNotes.trim() || null,
         });
-        toast({ title: 'Fournisseur modifié' });
+        toast({ title: t('supplierModified') });
       }
       setModalMode(null);
       resetForm();
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -138,26 +141,26 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       await supplierService.updateSupplier(supplier.id, tenantId, {
         is_active: !supplier.is_active,
       });
-      toast({ title: supplier.is_active ? 'Fournisseur désactivé' : 'Fournisseur activé' });
+      toast({ title: supplier.is_active ? t('supplierDisabled') : t('supplierEnabled') });
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (supplierId: string) => {
     try {
       await supplierService.deleteSupplier(supplierId, tenantId);
-      toast({ title: 'Fournisseur supprimé' });
+      toast({ title: t('supplierDeleted') });
       setDeleteConfirm(null);
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">Chargement des fournisseurs...</div>;
+    return <div className="p-8 text-center text-neutral-500">{t('loadingSuppliers')}</div>;
   }
 
   return (
@@ -167,15 +170,15 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
             <Truck className="w-6 h-6" />
-            Fournisseurs
+            {t('title')}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {suppliers.length} fournisseur{suppliers.length !== 1 ? 's' : ''}
+            {t('supplierCount', { count: suppliers.length })}
           </p>
         </div>
         <Button onClick={openAdd} className="gap-2">
           <Plus className="w-4 h-4" />
-          Ajouter un fournisseur
+          {t('addSupplier')}
         </Button>
       </div>
 
@@ -184,7 +187,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher par nom, contact, email..."
+            placeholder={t('searchPlaceholder')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -199,7 +202,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               onClick={() => setFilterActive(status)}
               className="rounded-full"
             >
-              {status === 'all' ? 'Tous' : status === 'active' ? 'Actifs' : 'Inactifs'}
+              {status === 'all'
+                ? t('filterAll')
+                : status === 'active'
+                  ? t('filterActive')
+                  : t('filterInactive')}
             </Button>
           ))}
         </div>
@@ -207,7 +214,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">Aucun fournisseur trouvé</div>
+        <div className="text-center py-12 text-neutral-500">{t('noSuppliersFound')}</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((supplier) => (
@@ -233,7 +240,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       : 'bg-neutral-100 text-neutral-500',
                   )}
                 >
-                  {supplier.is_active ? 'Actif' : 'Inactif'}
+                  {supplier.is_active ? t('active') : t('inactive')}
                 </span>
               </div>
 
@@ -270,7 +277,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   className="gap-1 text-xs"
                 >
                   <Pencil className="w-3 h-3" />
-                  Modifier
+                  {t('edit')}
                 </Button>
                 <Button
                   variant="ghost"
@@ -278,7 +285,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   onClick={() => handleToggleActive(supplier)}
                   className="text-xs"
                 >
-                  {supplier.is_active ? 'Désactiver' : 'Activer'}
+                  {supplier.is_active ? t('disable') : t('enable')}
                 </Button>
                 {deleteConfirm === supplier.id ? (
                   <div className="flex gap-1 ml-auto">
@@ -288,7 +295,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       onClick={() => handleDelete(supplier.id)}
                       className="text-xs"
                     >
-                      Confirmer
+                      {t('confirmAction')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -296,7 +303,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       onClick={() => setDeleteConfirm(null)}
                       className="text-xs"
                     >
-                      Annuler
+                      {t('cancelAction')}
                     </Button>
                   </div>
                 ) : (
@@ -320,37 +327,37 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">
-              {modalMode === 'add' ? 'Ajouter un fournisseur' : 'Modifier le fournisseur'}
+              {modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
             </h3>
 
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Nom du fournisseur *
+                  {t('nameLabel')}
                 </label>
                 <Input
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Ex: Metro, Makro..."
+                  placeholder={t('namePlaceholder')}
                   autoFocus
                 />
               </div>
 
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Personne de contact
+                  {t('contactPerson')}
                 </label>
                 <Input
                   value={formContact}
                   onChange={(e) => setFormContact(e.target.value)}
-                  placeholder="Nom du contact"
+                  placeholder={t('contactPlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    Téléphone
+                    {t('phoneLabel')}
                   </label>
                   <Input
                     value={formPhone}
@@ -359,7 +366,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Email</label>
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                    {t('emailLabel')}
+                  </label>
                   <Input
                     type="email"
                     value={formEmail}
@@ -370,20 +379,24 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Adresse</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('addressLabel')}
+                </label>
                 <Input
                   value={formAddress}
                   onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder="Adresse du fournisseur"
+                  placeholder={t('addressPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Notes</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('notesLabel')}
+                </label>
                 <Input
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder="Notes internes..."
+                  placeholder={t('notesPlaceholder')}
                 />
               </div>
             </div>
@@ -396,9 +409,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   resetForm();
                 }}
               >
-                Annuler
+                {t('cancelAction')}
               </Button>
-              <Button onClick={handleSave}>Enregistrer</Button>
+              <Button onClick={handleSave}>{t('save')}</Button>
             </div>
           </div>
         </div>
