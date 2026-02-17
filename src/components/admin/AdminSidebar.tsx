@@ -225,7 +225,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden shadow-sm bg-white border border-gray-200"
+        className="fixed top-3 left-3 z-50 lg:hidden shadow-sm bg-white border border-neutral-200"
         onClick={toggleSidebar}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -242,13 +242,13 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 w-64 bg-white border-r border-neutral-100 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0',
           isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
           className,
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
+        <div className="p-6 border-b border-neutral-100 flex-shrink-0 flex items-center justify-between">
           <Link href={`/sites/${tenant.slug}/admin`} className="flex items-center gap-3 group">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -266,10 +266,10 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-gray-900 truncate uppercase tracking-tight">
+              <h2 className="text-sm font-bold text-neutral-900 truncate uppercase tracking-tight">
                 {tenant.name}
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 {adminUser ? roleLabels[adminUser.role] || adminUser.role : 'Admin'}
               </p>
             </div>
@@ -280,7 +280,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
         <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-6">
           {filteredNavGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
-              <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <p className="px-3 mb-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
                 {group.title}
               </p>
               <div className="space-y-1">
@@ -295,8 +295,8 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
                       className={cn(
                         'group flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 relative space-x-3',
                         isActive
-                          ? 'bg-gray-50 text-gray-900 font-semibold'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium',
+                          ? 'bg-neutral-50 text-neutral-900 font-semibold'
+                          : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
                         isHighlight && !isActive && 'bg-blue-50/50 border border-blue-100/50',
                       )}
                     >
@@ -313,7 +313,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
                             ? ''
                             : isHighlight
                               ? 'text-blue-600'
-                              : 'text-gray-400 group-hover:text-gray-600',
+                              : 'text-neutral-400 group-hover:text-neutral-600',
                         )}
                         style={isActive ? { color: tenant.primary_color || '#000000' } : undefined}
                       />
@@ -325,7 +325,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
                       >
                         {item.label}
                       </span>
-                      {isActive && <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />}
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto text-neutral-400" />}
                     </Link>
                   );
                 })}
@@ -335,16 +335,16 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-white flex-shrink-0">
+        <div className="p-4 border-t border-neutral-100 bg-white flex-shrink-0">
           {adminUser && (
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                <span className="text-xs font-bold text-gray-600">
+              <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center border border-neutral-200">
+                <span className="text-xs font-bold text-neutral-600">
                   {(adminUser.name || 'A').charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-neutral-900 truncate">
                   {adminUser.name || 'Admin'}
                 </p>
               </div>
