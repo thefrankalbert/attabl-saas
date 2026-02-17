@@ -96,7 +96,7 @@ export default async function AdminLayout({
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-neutral-100">
       {/* Dev Mode Banner */}
       {isDevMode && (
         <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-xs text-center py-1 z-50">

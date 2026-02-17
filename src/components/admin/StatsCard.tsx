@@ -35,11 +35,11 @@ export default function StatsCard({
   const [textColor, bgColor] = (COLOR_MAP[color] || COLOR_MAP.blue).split(' ');
 
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-6 flex flex-col justify-between h-full hover:bg-gray-50/50 transition-colors duration-300">
+    <div className="bg-white border border-neutral-100 rounded-xl p-6 flex flex-col justify-between h-full hover:bg-neutral-50/50 transition-colors duration-300">
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-1">
-          <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest">{title}</h3>
-          <div className="text-3xl font-black text-gray-900 tracking-tight">{value}</div>
+          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest">{title}</h3>
+          <div className="text-3xl font-black text-neutral-900 tracking-tight">{value}</div>
         </div>
 
         {Icon && (
@@ -65,7 +65,9 @@ export default function StatsCard({
             <span>{trend.value}%</span>
           </div>
         )}
-        {subtitle && <span className="text-xs text-gray-400 font-medium ml-auto">{subtitle}</span>}
+        {subtitle && (
+          <span className="text-xs text-neutral-400 font-medium ml-auto">{subtitle}</span>
+        )}
       </div>
     </div>
   );
@@ -74,15 +76,15 @@ export default function StatsCard({
 // Skeleton pour l'état de chargement
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-white border border-gray-100 rounded-xl p-6 animate-pulse">
+    <div className="bg-white border border-neutral-100 rounded-xl p-6 animate-pulse">
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-2">
-          <div className="h-3 w-20 bg-gray-200 rounded" />
-          <div className="h-8 w-16 bg-gray-200 rounded" />
+          <div className="h-3 w-20 bg-neutral-200 rounded" />
+          <div className="h-8 w-16 bg-neutral-200 rounded" />
         </div>
-        <div className="w-12 h-12 bg-gray-100 rounded-xl" />
+        <div className="w-12 h-12 bg-neutral-100 rounded-xl" />
       </div>
-      <div className="h-3 w-24 bg-gray-100 rounded mt-4" />
+      <div className="h-3 w-24 bg-neutral-100 rounded mt-4" />
     </div>
   );
 }

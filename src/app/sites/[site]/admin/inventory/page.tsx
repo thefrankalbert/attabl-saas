@@ -13,7 +13,7 @@ export default async function InventoryPage({ params }: { params: Promise<{ site
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id, subscription_plan, subscription_status, trial_ends_at, currency')
+    .select('*')
     .eq('slug', tenantSlug)
     .single();
 

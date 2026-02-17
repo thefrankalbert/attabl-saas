@@ -157,7 +157,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">Chargement des fournisseurs...</div>;
+    return <div className="p-8 text-center text-neutral-500">Chargement des fournisseurs...</div>;
   }
 
   return (
@@ -165,11 +165,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
             <Truck className="w-6 h-6" />
             Fournisseurs
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-neutral-500 mt-1">
             {suppliers.length} fournisseur{suppliers.length !== 1 ? 's' : ''}
           </p>
         </div>
@@ -182,7 +182,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
             placeholder="Rechercher par nom, contact, email..."
             className="pl-9"
@@ -207,22 +207,22 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
       {/* List */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-gray-500">Aucun fournisseur trouvé</div>
+        <div className="text-center py-12 text-neutral-500">Aucun fournisseur trouvé</div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((supplier) => (
             <div
               key={supplier.id}
               className={cn(
-                'bg-white rounded-xl border p-4 transition-all hover:shadow-md',
-                supplier.is_active ? 'border-gray-200' : 'border-gray-100 opacity-60',
+                'bg-white rounded-xl border p-4 transition-all',
+                supplier.is_active ? 'border-neutral-200' : 'border-neutral-100 opacity-60',
               )}
             >
               <div className="flex items-start justify-between mb-3">
                 <div>
-                  <h3 className="font-semibold text-gray-900">{supplier.name}</h3>
+                  <h3 className="font-semibold text-neutral-900">{supplier.name}</h3>
                   {supplier.contact_name && (
-                    <p className="text-sm text-gray-500">{supplier.contact_name}</p>
+                    <p className="text-sm text-neutral-500">{supplier.contact_name}</p>
                   )}
                 </div>
                 <span
@@ -230,39 +230,39 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     'px-2 py-0.5 rounded-full text-xs font-medium',
                     supplier.is_active
                       ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-500',
+                      : 'bg-neutral-100 text-neutral-500',
                   )}
                 >
                   {supplier.is_active ? 'Actif' : 'Inactif'}
                 </span>
               </div>
 
-              <div className="space-y-1.5 text-sm text-gray-600 mb-4">
+              <div className="space-y-1.5 text-sm text-neutral-600 mb-4">
                 {supplier.phone && (
                   <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-gray-400" />
+                    <Phone className="w-3.5 h-3.5 text-neutral-400" />
                     {supplier.phone}
                   </div>
                 )}
                 {supplier.email && (
                   <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-gray-400" />
+                    <Mail className="w-3.5 h-3.5 text-neutral-400" />
                     {supplier.email}
                   </div>
                 )}
                 {supplier.address && (
                   <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-gray-400" />
+                    <MapPin className="w-3.5 h-3.5 text-neutral-400" />
                     <span className="truncate">{supplier.address}</span>
                   </div>
                 )}
               </div>
 
               {supplier.notes && (
-                <p className="text-xs text-gray-400 mb-3 line-clamp-2">{supplier.notes}</p>
+                <p className="text-xs text-neutral-400 mb-3 line-clamp-2">{supplier.notes}</p>
               )}
 
-              <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+              <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -318,14 +318,14 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       {/* Modal — Add / Edit */}
       {modalMode && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md animate-in zoom-in-95">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">
               {modalMode === 'add' ? 'Ajouter un fournisseur' : 'Modifier le fournisseur'}
             </h3>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
                   Nom du fournisseur *
                 </label>
                 <Input
@@ -337,7 +337,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
                   Personne de contact
                 </label>
                 <Input
@@ -349,7 +349,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Téléphone</label>
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                    Téléphone
+                  </label>
                   <Input
                     value={formPhone}
                     onChange={(e) => setFormPhone(e.target.value)}
@@ -357,7 +359,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-gray-600 mb-1 block">Email</label>
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Email</label>
                   <Input
                     type="email"
                     value={formEmail}
@@ -368,7 +370,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Adresse</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">Adresse</label>
                 <Input
                   value={formAddress}
                   onChange={(e) => setFormAddress(e.target.value)}
@@ -377,7 +379,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Notes</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">Notes</label>
                 <Input
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}

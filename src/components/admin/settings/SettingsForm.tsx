@@ -193,14 +193,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     <div className="max-w-4xl space-y-8">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Identité */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
               <Store className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Identité du restaurant</h2>
-              <p className="text-sm text-gray-500">Informations visibles par vos clients</p>
+              <h2 className="text-lg font-semibold text-neutral-900">Identité du restaurant</h2>
+              <p className="text-sm text-neutral-500">Informations visibles par vos clients</p>
             </div>
           </div>
 
@@ -226,7 +226,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             <div className="space-y-4">
               <Label>Logo</Label>
               <div className="flex items-center gap-6">
-                <div className="relative w-32 h-32 rounded-xl bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden group hover:border-gray-300 transition-colors">
+                <div className="relative w-32 h-32 rounded-xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center overflow-hidden group hover:border-neutral-300 transition-colors">
                   {logoPreview ? (
                     <Image
                       src={logoPreview}
@@ -235,7 +235,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       className="object-contain p-2"
                     />
                   ) : (
-                    <Upload className="h-8 w-8 text-gray-300" />
+                    <Upload className="h-8 w-8 text-neutral-300" />
                   )}
                   <input
                     type="file"
@@ -247,7 +247,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                     <p className="text-white text-xs font-medium">Modifier</p>
                   </div>
                 </div>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm text-neutral-500">
                   <p>Format recommandé : PNG ou JPG</p>
                   <p>Taille max : 2MB</p>
                   <p>Ratio : Carré (1:1)</p>
@@ -258,14 +258,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Branding */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-purple-50 rounded-lg">
               <Palette className="h-5 w-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Personnalisation</h2>
-              <p className="text-sm text-gray-500">Couleurs de votre menu digital</p>
+              <h2 className="text-lg font-semibold text-neutral-900">Personnalisation</h2>
+              <p className="text-sm text-neutral-500">Couleurs de votre menu digital</p>
             </div>
           </div>
 
@@ -275,12 +275,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 <Label htmlFor="primaryColor">Couleur principale</Label>
                 <div className="flex gap-3">
                   <div
-                    className="w-10 h-10 rounded-lg border border-gray-200 shadow-sm"
+                    className="w-10 h-10 rounded-lg border border-neutral-200"
                     style={{ backgroundColor: watchedPrimaryColor }}
                   />
                   <Input id="primaryColor" {...register('primaryColor')} className="font-mono" />
                 </div>
-                <p className="text-xs text-gray-500">Utilisée pour les boutons et titres</p>
+                <p className="text-xs text-neutral-500">Utilisée pour les boutons et titres</p>
               </div>
 
               <div className="space-y-2">
@@ -294,19 +294,19 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   />
                   <Input {...register('secondaryColor')} className="font-mono flex-1" />
                 </div>
-                <p className="text-xs text-gray-500">Utilisée pour le texte sur fond coloré</p>
+                <p className="text-xs text-neutral-500">Utilisée pour le texte sur fond coloré</p>
               </div>
             </div>
 
             {/* Preview Card */}
-            <div className="p-4 rounded-xl border border-gray-100 bg-gray-50">
-              <h3 className="text-xs font-semibold text-gray-500 mb-3 uppercase tracking-wider">
+            <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50">
+              <h3 className="text-xs font-semibold text-neutral-500 mb-3 uppercase tracking-wider">
                 Aperçu bouton
               </h3>
-              <div className="flex items-center justify-center h-24 bg-white rounded-lg border border-gray-200">
+              <div className="flex items-center justify-center h-24 bg-white rounded-lg border border-neutral-200">
                 <button
                   type="button"
-                  className="px-6 py-2.5 rounded-lg font-medium shadow-sm transition-transform active:scale-95"
+                  className="px-6 py-2.5 rounded-lg font-medium transition-transform active:scale-95"
                   style={{
                     backgroundColor: watchedPrimaryColor,
                     color: watch('secondaryColor'),
@@ -320,14 +320,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Facturation */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg">
               <Receipt className="h-5 w-5 text-emerald-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Facturation</h2>
-              <p className="text-sm text-gray-500">Devise, taxes et frais de service</p>
+              <h2 className="text-lg font-semibold text-neutral-900">Facturation</h2>
+              <p className="text-sm text-neutral-500">Devise, taxes et frais de service</p>
             </div>
           </div>
 
@@ -338,23 +338,25 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               <select
                 id="currency"
                 {...register('currency')}
-                className="flex h-10 w-full max-w-xs rounded-md border border-gray-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full max-w-xs rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="XAF">Franc CFA (XAF)</option>
                 <option value="EUR">Euro (EUR)</option>
                 <option value="USD">Dollar US (USD)</option>
               </select>
-              <p className="text-xs text-gray-500">{"Devise utilisée pour l'affichage des prix"}</p>
+              <p className="text-xs text-neutral-500">
+                {"Devise utilisée pour l'affichage des prix"}
+              </p>
             </div>
 
             {/* Tax Toggle + Rate */}
-            <div className="space-y-3 p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+            <div className="space-y-3 p-4 rounded-lg border border-neutral-100 bg-neutral-50/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <Label htmlFor="enableTax" className="text-sm font-medium text-gray-900">
+                  <Label htmlFor="enableTax" className="text-sm font-medium text-neutral-900">
                     Activer la TVA
                   </Label>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-neutral-500 mt-0.5">
                     Appliquer une taxe sur les commandes
                   </p>
                 </div>
@@ -365,13 +367,13 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                     {...register('enableTax')}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
               </div>
 
               {watchEnableTax && (
                 <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
-                  <Label htmlFor="taxRate" className="text-sm text-gray-600 whitespace-nowrap">
+                  <Label htmlFor="taxRate" className="text-sm text-neutral-600 whitespace-nowrap">
                     Taux TVA
                   </Label>
                   <div className="relative w-32">
@@ -384,7 +386,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       {...register('taxRate', { valueAsNumber: true })}
                       className="pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
                       %
                     </span>
                   </div>
@@ -396,16 +398,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             </div>
 
             {/* Service Charge Toggle + Rate */}
-            <div className="space-y-3 p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+            <div className="space-y-3 p-4 rounded-lg border border-neutral-100 bg-neutral-50/50">
               <div className="flex items-center justify-between">
                 <div>
                   <Label
                     htmlFor="enableServiceCharge"
-                    className="text-sm font-medium text-gray-900"
+                    className="text-sm font-medium text-neutral-900"
                   >
                     Activer les frais de service
                   </Label>
-                  <p className="text-xs text-gray-500 mt-0.5">
+                  <p className="text-xs text-neutral-500 mt-0.5">
                     Ajouter des frais de service aux commandes
                   </p>
                 </div>
@@ -416,7 +418,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                     {...register('enableServiceCharge')}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                  <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
                 </label>
               </div>
 
@@ -424,7 +426,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
                   <Label
                     htmlFor="serviceChargeRate"
-                    className="text-sm text-gray-600 whitespace-nowrap"
+                    className="text-sm text-neutral-600 whitespace-nowrap"
                   >
                     Taux frais de service
                   </Label>
@@ -438,7 +440,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       {...register('serviceChargeRate', { valueAsNumber: true })}
                       className="pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
                       %
                     </span>
                   </div>
@@ -452,14 +454,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Notification Sounds */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-50 rounded-lg">
               <Bell className="h-5 w-5 text-amber-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Sons de notification</h2>
-              <p className="text-sm text-gray-500">Son joué lors de la réception de commandes</p>
+              <h2 className="text-lg font-semibold text-neutral-900">Sons de notification</h2>
+              <p className="text-sm text-neutral-500">Son joué lors de la réception de commandes</p>
             </div>
           </div>
 
@@ -471,14 +473,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Idle Timeout / Screen Lock */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-indigo-50 rounded-lg">
               <Clock className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Verrouillage par inactivité</h2>
-              <p className="text-sm text-gray-500">
+              <h2 className="text-lg font-semibold text-neutral-900">
+                Verrouillage par inactivité
+              </h2>
+              <p className="text-sm text-neutral-500">
                 Verrouiller automatiquement le tableau de bord après une période d&apos;inactivité
               </p>
             </div>
@@ -486,12 +490,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           <div className="space-y-4">
             {/* Enable/disable toggle */}
-            <div className="flex items-center justify-between p-4 rounded-lg border border-gray-100 bg-gray-50/50">
+            <div className="flex items-center justify-between p-4 rounded-lg border border-neutral-100 bg-neutral-50/50">
               <div>
-                <Label className="text-sm font-medium text-gray-900">
+                <Label className="text-sm font-medium text-neutral-900">
                   Activer le verrouillage automatique
                 </Label>
-                <p className="text-xs text-gray-500 mt-0.5">
+                <p className="text-xs text-neutral-500 mt-0.5">
                   L&apos;écran sera verrouillé après la période d&apos;inactivité définie
                 </p>
               </div>
@@ -506,7 +510,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   }}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-indigo-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
               </label>
             </div>
 
@@ -517,7 +521,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 <div className="flex items-center gap-4">
                   <Label
                     htmlFor="idleTimeoutMinutes"
-                    className="text-sm text-gray-600 whitespace-nowrap"
+                    className="text-sm text-neutral-600 whitespace-nowrap"
                   >
                     Délai d&apos;inactivité
                   </Label>
@@ -531,11 +535,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       {...register('idleTimeoutMinutes', { valueAsNumber: true })}
                       className="pr-12"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
                       min
                     </span>
                   </div>
-                  <span className="text-xs text-gray-400">5 – 120 minutes</span>
+                  <span className="text-xs text-neutral-400">5 – 120 minutes</span>
                 </div>
                 {errors.idleTimeoutMinutes && (
                   <p className="text-xs text-red-500">{errors.idleTimeoutMinutes.message}</p>
@@ -543,7 +547,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
                 {/* Lock mode */}
                 <div className="space-y-2">
-                  <Label className="text-sm text-gray-600">Mode de verrouillage</Label>
+                  <Label className="text-sm text-neutral-600">Mode de verrouillage</Label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
@@ -551,11 +555,13 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       className={`p-3 rounded-lg border-2 text-left transition-all ${
                         watchScreenLockMode === 'overlay'
                           ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-neutral-200 hover:border-neutral-300'
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900">Overlay simple</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Cliquez pour déverrouiller</div>
+                      <div className="font-medium text-sm text-neutral-900">Overlay simple</div>
+                      <div className="text-xs text-neutral-500 mt-0.5">
+                        Cliquez pour déverrouiller
+                      </div>
                     </button>
                     <button
                       type="button"
@@ -563,11 +569,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       className={`p-3 rounded-lg border-2 text-left transition-all ${
                         watchScreenLockMode === 'password'
                           ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-neutral-200 hover:border-neutral-300'
                       }`}
                     >
-                      <div className="font-medium text-sm text-gray-900">Mot de passe requis</div>
-                      <div className="text-xs text-gray-500 mt-0.5">Re-saisir le mot de passe</div>
+                      <div className="font-medium text-sm text-neutral-900">
+                        Mot de passe requis
+                      </div>
+                      <div className="text-xs text-neutral-500 mt-0.5">
+                        Re-saisir le mot de passe
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -577,14 +587,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Contact */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-white rounded-xl border border-neutral-200 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-green-50 rounded-lg">
               <MapPin className="h-5 w-5 text-green-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Coordonnées</h2>
-              <p className="text-sm text-gray-500">Adresse et contact</p>
+              <h2 className="text-lg font-semibold text-neutral-900">Coordonnées</h2>
+              <p className="text-sm text-neutral-500">Adresse et contact</p>
             </div>
           </div>
 
@@ -609,7 +619,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
           <Button
             type="submit"
             disabled={saving || uploading}
-            className="min-w-[150px] bg-gray-900 text-white hover:bg-gray-800"
+            className="min-w-[150px] bg-neutral-900 text-white hover:bg-neutral-800"
           >
             {saving || uploading ? (
               <>

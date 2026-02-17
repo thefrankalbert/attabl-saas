@@ -13,7 +13,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id, currency')
+    .select('*')
     .eq('slug', tenantSlug)
     .single();
 

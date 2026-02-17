@@ -25,8 +25,8 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Paramètres</h1>
-        <p className="text-gray-500">
+        <h1 className="text-2xl font-bold text-neutral-900">Paramètres</h1>
+        <p className="text-neutral-500">
           Gérez les informations et le branding de votre établissement.
         </p>
       </div>

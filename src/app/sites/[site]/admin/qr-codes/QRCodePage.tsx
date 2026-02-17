@@ -80,12 +80,12 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-gray-100 rounded-xl">
-            <QrCode className="h-6 w-6 text-gray-600" />
+          <div className="p-2 bg-neutral-100 rounded-xl">
+            <QrCode className="h-6 w-6 text-neutral-600" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">QR Codes</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">QR Codes</h1>
         </div>
-        <p className="text-gray-500">
+        <p className="text-neutral-500">
           Générez et imprimez des QR codes pour vos tables et supports.
         </p>
       </div>
@@ -113,9 +113,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
       {/* Table & Menu Selectors */}
       {(tables.length > 0 || menus.length > 0) && (
-        <div className="mb-6 bg-white rounded-2xl border border-gray-200 p-5">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
-            <Layers className="w-4 h-4 text-gray-400" />
+        <div className="mb-6 bg-white rounded-2xl border border-neutral-200 p-5">
+          <h3 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+            <Layers className="w-4 h-4 text-neutral-400" />
             Personnaliser le QR Code
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -124,7 +124,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
               <div>
                 <label
                   htmlFor="qr-table-select"
-                  className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1.5"
+                  className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
                 >
                   <Table2 className="w-3.5 h-3.5" />
                   Table
@@ -133,7 +133,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                   id="qr-table-select"
                   value={selectedTableId}
                   onChange={(e) => setSelectedTableId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
                 >
                   <option value="">Aucune table (QR générique)</option>
                   {tablesByZone.map(({ zone, tables: zoneTables }) => (
@@ -155,7 +155,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
               <div>
                 <label
                   htmlFor="qr-menu-select"
-                  className="flex items-center gap-1.5 text-xs font-medium text-gray-500 mb-1.5"
+                  className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
                 >
                   <BookOpen className="w-3.5 h-3.5" />
                   Carte / Menu
@@ -164,7 +164,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                   id="qr-menu-select"
                   value={selectedMenuId}
                   onChange={(e) => setSelectedMenuId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-gray-900/10 focus:border-gray-300 transition-all"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
                 >
                   <option value="">Toutes les cartes</option>
                   {menus.map((menu) => (
@@ -179,15 +179,15 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
           {/* Dynamic URL Preview */}
           {(selectedTable || selectedMenu) && (
-            <div className="mt-3 p-2.5 bg-gray-50 rounded-lg">
-              <p className="text-xs text-gray-500 font-mono break-all">{qrUrl}</p>
+            <div className="mt-3 p-2.5 bg-neutral-50 rounded-lg">
+              <p className="text-xs text-neutral-500 font-mono break-all">{qrUrl}</p>
             </div>
           )}
         </div>
       )}
 
       {/* QR Customizer — split panel layout */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
+      <div className="bg-white rounded-2xl border border-neutral-200 p-6">
         <QRCustomizerLayout
           config={config}
           updateField={updateField}
@@ -202,14 +202,14 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
       {/* Batch Generation Section */}
       {tables.length > 0 && (
-        <div className="mt-8 bg-white rounded-2xl border border-gray-200 p-6">
+        <div className="mt-8 bg-white rounded-2xl border border-neutral-200 p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                <Download className="w-4 h-4 text-gray-400" />
+              <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                <Download className="w-4 h-4 text-neutral-400" />
                 Génération par lot
               </h3>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-neutral-500 mt-1">
                 Générez un QR code pour chaque table — {tables.length} table
                 {tables.length > 1 ? 's' : ''} trouvée{tables.length > 1 ? 's' : ''}
               </p>
@@ -231,37 +231,39 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
       {/* Tips */}
       <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Standard</h3>
-          <p className="text-sm text-gray-500">
+        <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+          <h3 className="font-semibold text-neutral-900 mb-1">Standard</h3>
+          <p className="text-sm text-neutral-500">
             Format carré 10×10 cm, idéal pour les affichages muraux et comptoirs.
           </p>
         </div>
-        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Chevalet</h3>
-          <p className="text-sm text-gray-500">
+        <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+          <h3 className="font-semibold text-neutral-900 mb-1">Chevalet</h3>
+          <p className="text-sm text-neutral-500">
             Format A6 vertical, parfait pour les chevalets de table.
           </p>
         </div>
-        <div className="p-4 rounded-xl bg-gray-50 border border-gray-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Carte</h3>
-          <p className="text-sm text-gray-500">
+        <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+          <h3 className="font-semibold text-neutral-900 mb-1">Carte</h3>
+          <p className="text-sm text-neutral-500">
             Format carte de visite, idéal pour le room service hôtelier.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Minimal ⭐</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="font-semibold text-neutral-900 mb-1">Minimal ⭐</h3>
+          <p className="text-sm text-neutral-500">
             Ultra-clean, grand QR avec une fine ligne séparatrice.
           </p>
         </div>
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Élégant ⭐</h3>
-          <p className="text-sm text-gray-500">Bordure ornementale double, style serif raffiné.</p>
+          <h3 className="font-semibold text-neutral-900 mb-1">Élégant ⭐</h3>
+          <p className="text-sm text-neutral-500">
+            Bordure ornementale double, style serif raffiné.
+          </p>
         </div>
         <div className="p-4 rounded-xl bg-amber-50 border border-amber-100">
-          <h3 className="font-semibold text-gray-900 mb-1">Néon ⭐</h3>
-          <p className="text-sm text-gray-500">
+          <h3 className="font-semibold text-neutral-900 mb-1">Néon ⭐</h3>
+          <p className="text-sm text-neutral-500">
             Fond sombre avec accent vif et effet glow lumineux.
           </p>
         </div>
@@ -425,10 +427,10 @@ function BatchQRPreview({
             {zoneTables.map((table) => (
               <div
                 key={table.id}
-                className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg text-xs"
+                className="flex items-center gap-2 p-2 bg-neutral-50 rounded-lg text-xs"
               >
-                <Table2 className="w-3 h-3 text-gray-400 shrink-0" />
-                <span className="text-gray-700 font-medium truncate">{table.display_name}</span>
+                <Table2 className="w-3 h-3 text-neutral-400 shrink-0" />
+                <span className="text-neutral-700 font-medium truncate">{table.display_name}</span>
               </div>
             ))}
           </div>
@@ -439,7 +441,7 @@ function BatchQRPreview({
       <Button
         onClick={handleBatchDownload}
         disabled={generating}
-        className="w-full h-11 bg-gray-900 hover:bg-gray-800 text-white rounded-xl gap-2"
+        className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl gap-2"
       >
         <Download className="w-4 h-4" />
         {generating
@@ -447,7 +449,7 @@ function BatchQRPreview({
           : `Télécharger ${tables.length} QR code${tables.length > 1 ? 's' : ''} (PDF)`}
       </Button>
       {selectedMenu && (
-        <p className="text-xs text-gray-400 mt-2 text-center">
+        <p className="text-xs text-neutral-400 mt-2 text-center">
           Chaque QR redirige vers la carte « {selectedMenu.name} »
         </p>
       )}

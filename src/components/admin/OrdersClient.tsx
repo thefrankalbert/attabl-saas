@@ -118,7 +118,7 @@ export default function OrdersClient({
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-bold tracking-tight">Commandes</h1>
-          <p className="text-xs text-gray-500 mt-1">Gérez les commandes en temps réel</p>
+          <p className="text-xs text-neutral-500 mt-1">Gérez les commandes en temps réel</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -132,7 +132,7 @@ export default function OrdersClient({
             {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
           </Button>
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
             <Input
               placeholder="Rechercher table..."
               className="pl-9 w-full sm:w-[200px]"
@@ -169,10 +169,10 @@ export default function OrdersClient({
             />
           ))
         ) : (
-          <div className="col-span-full py-12 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200">
-            <ListFilter className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900">Aucune commande</h3>
-            <p className="text-xs text-gray-500 mt-1">
+          <div className="col-span-full py-12 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
+            <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900">Aucune commande</h3>
+            <p className="text-xs text-neutral-500 mt-1">
               Aucune commande ne correspond à vos filtres
             </p>
           </div>

@@ -13,13 +13,13 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id, notification_sound_id')
+    .select('*')
     .eq('slug', tenantSlug)
     .single();
 
   if (!tenant) {
     return (
-      <div className="h-screen bg-slate-950 flex items-center justify-center p-8">
+      <div className="h-screen bg-neutral-950 flex items-center justify-center p-8">
         <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl max-w-md">
           <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>
@@ -33,5 +33,10 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
     );
   }
 
-  return <KitchenClient tenantId={tenant.id} notificationSoundId={tenant.notification_sound_id} />;
+  return (
+    <KitchenClient
+      tenantId={tenant.id}
+      notificationSoundId={tenant.notification_sound_id ?? undefined}
+    />
+  );
 }

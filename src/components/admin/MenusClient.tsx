@@ -216,8 +216,8 @@ export default function MenusClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Cartes / Menus</h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Cartes / Menus</h1>
+          <p className="text-sm text-neutral-500 mt-1">
             Gérez vos cartes, sous-cartes et leur contenu
           </p>
         </div>
@@ -241,7 +241,7 @@ export default function MenusClient({
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <Input
           placeholder="Rechercher une carte..."
           value={searchQuery}
@@ -256,7 +256,7 @@ export default function MenusClient({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-20 bg-white rounded-xl border border-gray-100 animate-pulse"
+              className="h-20 bg-white rounded-xl border border-neutral-100 animate-pulse"
             />
           ))}
         </div>
@@ -265,7 +265,7 @@ export default function MenusClient({
       {/* Standalone menus */}
       {filteredStandalone.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+          <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
             Cartes indépendantes
           </p>
           {filteredStandalone.map((menu, index) => (
@@ -295,8 +295,8 @@ export default function MenusClient({
         return (
           <div key={venueId} className="space-y-3">
             <div className="flex items-center gap-2 px-1">
-              <Building2 className="w-4 h-4 text-gray-400" />
-              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              <Building2 className="w-4 h-4 text-neutral-400" />
+              <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
                 {venue?.name || 'Espace'}
               </p>
             </div>
@@ -319,12 +319,12 @@ export default function MenusClient({
 
       {/* Empty state */}
       {menus.length === 0 && !loading && (
-        <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Folder className="w-7 h-7 text-gray-400" />
+        <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center">
+          <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Folder className="w-7 h-7 text-neutral-400" />
           </div>
-          <h3 className="text-base font-bold text-gray-900">Aucune carte</h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <h3 className="text-base font-bold text-neutral-900">Aucune carte</h3>
+          <p className="text-sm text-neutral-500 mt-2">
             Créez votre première carte pour organiser vos plats
           </p>
           <Button onClick={() => openNewMenuModal()} className="mt-4">
@@ -391,7 +391,7 @@ export default function MenusClient({
                 id="menu-venue"
                 value={formVenueId || ''}
                 onChange={(e) => setFormVenueId(e.target.value || null)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
                 <option value="">Aucun (carte indépendante)</option>
                 {venues.map((v) => (
@@ -407,7 +407,7 @@ export default function MenusClient({
                 id="menu-parent"
                 value={formParentMenuId || ''}
                 onChange={(e) => setFormParentMenuId(e.target.value || null)}
-                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm"
+                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
                 <option value="">Aucune (carte principale)</option>
                 {menus
@@ -427,7 +427,7 @@ export default function MenusClient({
               id="menu-active"
               checked={formIsActive}
               onChange={(e) => setFormIsActive(e.target.checked)}
-              className="rounded border-gray-300"
+              className="rounded border-neutral-300"
             />
             <Label htmlFor="menu-active">Carte active (visible aux clients)</Label>
           </div>
@@ -462,21 +462,21 @@ interface MenuCardProps {
 
 function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: MenuCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-gray-100 hover:border-gray-200 transition-all group">
+    <div className="bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group">
       <div className="flex items-center gap-4 p-4">
-        <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Folder className="w-5 h-5 text-gray-500" />
+        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center flex-shrink-0">
+          <Folder className="w-5 h-5 text-neutral-500" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Link
               href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
-              className="font-semibold text-gray-900 text-sm hover:underline truncate"
+              className="font-semibold text-neutral-900 text-sm hover:underline truncate"
             >
               {menu.name}
             </Link>
             {menu.name_en && (
-              <span className="text-xs text-gray-400 truncate">({menu.name_en})</span>
+              <span className="text-xs text-neutral-400 truncate">({menu.name_en})</span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -487,7 +487,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               </Badge>
             )}
             {menu.children && menu.children.length > 0 && (
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-neutral-400">
                 {menu.children.length} sous-carte{menu.children.length > 1 ? 's' : ''}
               </span>
             )}
@@ -501,7 +501,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               'px-2 py-1 rounded-full text-xs font-semibold border transition-all',
               menu.is_active
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                : 'bg-gray-100 text-gray-500 border-gray-200',
+                : 'bg-neutral-100 text-neutral-500 border-neutral-200',
             )}
           >
             {menu.is_active ? (
@@ -539,14 +539,14 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
           </div>
 
           <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}>
-            <ChevronRight className="w-4 h-4 text-gray-400" />
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
           </Link>
         </div>
       </div>
 
       {/* Sub-menus (children) */}
       {menu.children && menu.children.length > 0 && (
-        <div className="border-t border-gray-50 px-4 py-2 bg-gray-50/50">
+        <div className="border-t border-neutral-50 px-4 py-2 bg-neutral-50/50">
           <div className="flex flex-wrap gap-2">
             {menu.children.map((child) => (
               <span
@@ -554,8 +554,8 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
                 className={cn(
                   'text-xs px-2.5 py-1 rounded-full border',
                   child.is_active
-                    ? 'bg-white text-gray-700 border-gray-200'
-                    : 'bg-gray-100 text-gray-400 border-gray-200',
+                    ? 'bg-white text-neutral-700 border-neutral-200'
+                    : 'bg-neutral-100 text-neutral-400 border-neutral-200',
                 )}
               >
                 {child.name}

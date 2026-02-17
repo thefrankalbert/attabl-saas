@@ -14,7 +14,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id, notification_sound_id')
+    .select('*')
     .eq('slug', tenantSlug)
     .single();
 
