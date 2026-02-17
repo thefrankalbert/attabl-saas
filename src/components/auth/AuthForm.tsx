@@ -84,7 +84,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
       if (error) throw error;
     } catch (err) {
-      console.error(err);
+      logger.error('OAuth login failed', err);
       setError('Erreur de connexion. Veuillez réessayer.');
       setOauthLoading(null);
     }
@@ -175,7 +175,7 @@ function AuthForm({ mode }: AuthFormProps) {
         window.location.href = `${origin}/sites/${tenantSlug}/admin`;
       }
     } catch (err) {
-      console.error(err);
+      logger.error('Auth form submit failed', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
       if (errorMessage.includes('Invalid login credentials')) {
         setError('Email ou mot de passe incorrect.');

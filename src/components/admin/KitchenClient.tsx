@@ -15,9 +15,11 @@ import {
   X,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import KDSTicket from './KDSTicket';
 import type { Order, OrderStatus } from '@/types/admin.types';
@@ -27,30 +29,24 @@ interface KitchenClientProps {
   notificationSoundId?: string;
 }
 
-// ─── Column config ──────────────────────────────────────────
-const COLUMNS = {
+// ─── Column style config (no translatable text) ────────────
+const COLUMN_STYLES = {
   pending: {
-    label: 'En Attente',
     dot: 'bg-amber-400',
     countBadge: 'text-amber-400 bg-amber-400/10',
     colBg: 'bg-amber-500/[0.025]',
-    emptyLabel: 'Aucune commande en attente',
     emptyIcon: Bell,
   },
   preparing: {
-    label: 'En Préparation',
     dot: 'bg-blue-400',
     countBadge: 'text-blue-400 bg-blue-400/10',
     colBg: 'bg-blue-500/[0.025]',
-    emptyLabel: 'Rien en préparation',
     emptyIcon: Utensils,
   },
   ready: {
-    label: 'Prêts à Servir',
     dot: 'bg-emerald-400',
     countBadge: 'text-emerald-400 bg-emerald-400/10',
     colBg: 'bg-emerald-500/[0.025]',
-    emptyLabel: 'Aucune commande prête',
     emptyIcon: CheckCircle2,
   },
 } as const;
@@ -210,6 +206,10 @@ function EmptyColumn({
 }
 
 export default function KitchenClient({ tenantId, notificationSoundId }: KitchenClientProps) {
+  const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
+  const ta = useTranslations('admin');
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [showMockData, setShowMockData] = useState(false);
@@ -230,6 +230,24 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const router = useRouter();
   const supabase = createClient();
 
+  const COLUMNS = {
+    pending: {
+      ...COLUMN_STYLES.pending,
+      label: t('columnPending'),
+      emptyLabel: t('emptyPending'),
+    },
+    preparing: {
+      ...COLUMN_STYLES.preparing,
+      label: t('columnPreparing'),
+      emptyLabel: t('emptyPreparing'),
+    },
+    ready: {
+      ...COLUMN_STYLES.ready,
+      label: t('columnReady'),
+      emptyLabel: t('emptyReady'),
+    },
+  };
+
   const loadOrders = useCallback(async () => {
     try {
       const todayStart = new Date();
@@ -246,8 +264,8 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       if (error) throw error;
       setOrders(data as Order[]);
       setLastUpdate(new Date());
-    } catch {
-      console.error('Erreur chargement KDS');
+    } catch (error) {
+      logger.error('KDS loading error', error);
     } finally {
       setLoading(false);
     }
@@ -273,6 +291,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
     return () => {
       clearInterval(interval);
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [loadOrders, playNotification, supabase, tenantId]);
@@ -282,10 +301,10 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
     try {
       await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-      toast({ title: newStatus === 'ready' ? '✓ Commande prête !' : '✓ Statut mis à jour' });
+      toast({ title: newStatus === 'ready' ? t('actionAllReady') : ta('statusUpdated') });
       loadOrders();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
       loadOrders();
     }
   };
@@ -321,7 +340,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       <div className="fixed inset-0 z-[200] bg-neutral-950 flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
-          <p className="text-sm font-medium text-neutral-500">Chargement du KDS...</p>
+          <p className="text-sm font-medium text-neutral-500">{t('loadingKds')}</p>
         </div>
       </div>
     );
@@ -364,7 +383,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
               </span>
             </div>
             <span className="text-[10px] text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
-              {totalActive} en cours
+              {t('inProgress', { count: totalActive })}
             </span>
           </div>
         </div>
@@ -409,7 +428,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
           <button
             onClick={() => router.back()}
             className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors ml-1"
-            title="Retour au dashboard"
+            title={t('backToDashboard')}
           >
             <X className="w-4 h-4" />
           </button>

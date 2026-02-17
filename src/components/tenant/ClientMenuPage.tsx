@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Venue, Category, MenuItem, Ad, Tenant, Zone, Table, Menu } from '@/types/admin.types';
@@ -41,6 +42,7 @@ export default function ClientMenuPage({
   zones,
   tables,
 }: ClientMenuPageProps) {
+  const t = useTranslations('tenant');
   const { toast } = useToast();
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
@@ -59,8 +61,8 @@ export default function ClientMenuPage({
       localStorage.setItem('attabl_table', initialTable);
       queueMicrotask(() => {
         toast({
-          title: 'Table identifi\u00e9e',
-          description: `Vous \u00eates install\u00e9(e) \u00e0 la table ${initialTable}`,
+          title: t('tableIdentified'),
+          description: t('seatedAtTable', { table: initialTable }),
         });
       });
       return true;
@@ -101,6 +103,7 @@ export default function ClientMenuPage({
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
   }, [tenant.id]);

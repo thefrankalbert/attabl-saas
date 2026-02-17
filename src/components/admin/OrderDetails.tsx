@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Clock, Printer, Receipt, CreditCard, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,9 @@ export default function OrderDetails({
 }: OrderDetailsProps) {
   const [loading, setLoading] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const t = useTranslations('orders');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   const { toast } = useToast();
   const supabase = createClient();
 
@@ -39,11 +43,11 @@ export default function OrderDetails({
     try {
       const { error } = await supabase.from('orders').update({ status }).eq('id', order.id);
       if (error) throw error;
-      toast({ title: 'Statut mis à jour' });
+      toast({ title: t('statusUpdatedToast') });
       onUpdate();
       if (status === 'delivered') onClose();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -51,7 +55,7 @@ export default function OrderDetails({
 
   const handlePrintKitchen = () => {
     printKitchenTicket(order);
-    toast({ title: 'Impression ticket cuisine lancée' });
+    toast({ title: t('printKitchenStarted') });
   };
 
   const handlePrintReceipt = () => {
@@ -63,7 +67,7 @@ export default function OrderDetails({
       currency: currency,
     } as Tenant;
     printReceipt(order, tenantForPrint);
-    toast({ title: 'Impression reçu client lancée' });
+    toast({ title: t('printReceiptStarted') });
   };
 
   // Determine total to display
@@ -73,10 +77,10 @@ export default function OrderDetails({
 
   // Service type labels
   const serviceLabels: Record<string, string> = {
-    dine_in: '🍽️ Sur place',
-    takeaway: '📦 À emporter',
-    delivery: '🚗 Livraison',
-    room_service: '🏨 Room service',
+    dine_in: t('serviceDineIn'),
+    takeaway: t('serviceTakeaway'),
+    delivery: t('serviceDelivery'),
+    room_service: t('serviceRoomService'),
   };
 
   return (
@@ -90,7 +94,7 @@ export default function OrderDetails({
             </h2>
             <div className="flex items-center gap-2 text-sm text-neutral-500">
               <Clock className="w-4 h-4" />
-              {new Date(order.created_at).toLocaleString('fr-FR')}
+              {new Date(order.created_at).toLocaleString(locale)}
             </div>
             {order.service_type && order.service_type !== 'dine_in' && (
               <Badge variant="outline" className="mt-1">
@@ -151,29 +155,29 @@ export default function OrderDetails({
         {hasBreakdown && (
           <div className="space-y-1 text-sm">
             <div className="flex justify-between text-neutral-500">
-              <span>Sous-total</span>
+              <span>{t('subtotal')}</span>
               <span>{fmt(order.subtotal || 0)}</span>
             </div>
             {(order.tax_amount ?? 0) > 0 && (
               <div className="flex justify-between text-neutral-500">
-                <span>TVA</span>
+                <span>{t('vat')}</span>
                 <span>{fmt(order.tax_amount!)}</span>
               </div>
             )}
             {(order.service_charge_amount ?? 0) > 0 && (
               <div className="flex justify-between text-neutral-500">
-                <span>Service</span>
+                <span>{t('serviceCharge')}</span>
                 <span>{fmt(order.service_charge_amount!)}</span>
               </div>
             )}
             {(order.discount_amount ?? 0) > 0 && (
               <div className="flex justify-between text-red-500">
-                <span>Réduction</span>
+                <span>{t('discount')}</span>
                 <span>-{fmt(order.discount_amount!)}</span>
               </div>
             )}
             <div className="flex justify-between font-bold text-base border-t pt-1">
-              <span>Total</span>
+              <span>{tc('total')}</span>
               <span>{fmt(displayTotal)}</span>
             </div>
           </div>
@@ -188,28 +192,28 @@ export default function OrderDetails({
                 onClick={() => handleStatusUpdate('pending')}
                 disabled={loading || order.status === 'pending'}
               >
-                En attente
+                {t('pending')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleStatusUpdate('preparing')}
                 disabled={loading || order.status === 'preparing'}
               >
-                En préparation
+                {t('preparing')}
               </Button>
               <Button
                 variant="outline"
                 onClick={() => handleStatusUpdate('ready')}
                 disabled={loading || order.status === 'ready'}
               >
-                Prêt à servir
+                {t('readyToServe')}
               </Button>
               <Button
                 onClick={() => setShowPayment(true)}
                 disabled={loading}
                 className="bg-emerald-600 hover:bg-emerald-700"
               >
-                <CreditCard className="w-4 h-4 mr-2" /> Encaisser
+                <CreditCard className="w-4 h-4 mr-2" /> {t('checkout')}
               </Button>
             </>
           )}
@@ -218,7 +222,7 @@ export default function OrderDetails({
         {/* Print Actions */}
         <div className="flex gap-3 pt-2">
           <Button variant="secondary" className="flex-1" onClick={handlePrintKitchen}>
-            <Printer className="w-4 h-4 mr-2" /> Ticket Cuisine
+            <Printer className="w-4 h-4 mr-2" /> {t('kitchenTicket')}
           </Button>
           <Button
             variant="secondary"
@@ -226,7 +230,7 @@ export default function OrderDetails({
             onClick={handlePrintReceipt}
             disabled={order.status !== 'ready' && order.status !== 'delivered'}
           >
-            <Receipt className="w-4 h-4 mr-2" /> Reçu Client
+            <Receipt className="w-4 h-4 mr-2" /> {t('clientReceipt')}
           </Button>
         </div>
 
@@ -234,7 +238,7 @@ export default function OrderDetails({
         {order.status !== 'ready' && order.status !== 'delivered' && (
           <div className="flex items-center gap-2 p-3 bg-amber-50 text-amber-800 rounded-lg text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
-            Attention: La commande doit être &quot;Prête&quot; avant l&apos;encaissement.
+            {t('warningReadyBeforeCheckout')}
           </div>
         )}
       </div>

@@ -226,7 +226,10 @@ export function createOrderService(supabase: SupabaseClient) {
       if (itemsError) {
         logger.error('Error creating order items', itemsError);
         // Rollback: delete the order
-        await supabase.from('orders').delete().eq('id', order.id);
+        const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id);
+        if (deleteError) {
+          logger.error('Failed to rollback order', deleteError, { orderId: order.id });
+        }
         throw new ServiceError(
           "Erreur lors de l'enregistrement des articles",
           'INTERNAL',

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -20,6 +21,8 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   const [showForm, setShowForm] = useState(false);
   const [, setLoading] = useState(false);
   const { toast } = useToast();
+  const t = useTranslations('coupons');
+  const locale = useLocale();
 
   const refetch = useCallback(async () => {
     setLoading(true);
@@ -31,15 +34,15 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
+      toast({ title: t('loadError'), variant: 'destructive' });
     } else {
       setCoupons(data || []);
     }
     setLoading(false);
-  }, [tenantId, toast]);
+  }, [tenantId, toast, t]);
 
   const handleDelete = async (couponId: string) => {
-    if (!window.confirm('Supprimer ce coupon ?')) return;
+    if (!window.confirm(t('deleteConfirmCoupon'))) return;
     const supabase = createClient();
     const { error } = await supabase
       .from('coupons')
@@ -48,9 +51,9 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       .eq('tenant_id', tenantId);
 
     if (error) {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     } else {
-      toast({ title: 'Coupon supprimé' });
+      toast({ title: t('couponDeleted') });
       refetch();
     }
   };
@@ -63,9 +66,9 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       .eq('id', coupon.id);
 
     if (error) {
-      toast({ title: 'Erreur lors de la mise à jour', variant: 'destructive' });
+      toast({ title: t('updateError'), variant: 'destructive' });
     } else {
-      toast({ title: coupon.is_active ? 'Coupon désactivé' : 'Coupon activé' });
+      toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
       refetch();
     }
   };
@@ -82,13 +85,13 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">Coupons</h1>
-          <p className="text-xs text-neutral-500 mt-1">Gérez vos codes de réduction</p>
+          <h1 className="text-xl font-bold tracking-tight">{t('title')}</h1>
+          <p className="text-xs text-neutral-500 mt-1">{t('subtitleClient')}</p>
         </div>
 
         <Button onClick={() => setShowForm(true)} className="gap-2">
           <Plus className="h-4 w-4" />
-          Nouveau coupon
+          {t('newCoupon')}
         </Button>
       </div>
 
@@ -126,7 +129,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                         : 'bg-purple-50 text-purple-700'
                     }`}
                   >
-                    {coupon.discount_type === 'percentage' ? '%' : 'Fixe'}
+                    {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
                   </span>
                 </div>
 
@@ -145,20 +148,20 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 <button
                   onClick={() => toggleActive(coupon)}
                   className="flex items-center gap-1.5 group"
-                  title={coupon.is_active ? 'Désactiver' : 'Activer'}
+                  title={coupon.is_active ? t('deactivate') : t('activate')}
                 >
                   {coupon.is_active ? (
                     <>
                       <ToggleRight className="h-5 w-5 text-green-600" />
                       <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
-                        Actif
+                        {t('active')}
                       </span>
                     </>
                   ) : (
                     <>
                       <ToggleLeft className="h-5 w-5 text-neutral-400" />
                       <span className="text-xs font-semibold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
-                        Inactif
+                        {t('inactive')}
                       </span>
                     </>
                   )}
@@ -171,7 +174,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     size="icon"
                     onClick={() => handleDelete(coupon.id)}
                     className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                    title="Supprimer"
+                    title={t('deleteAction')}
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -182,17 +185,23 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
               {(coupon.valid_from || coupon.valid_until || coupon.min_order_amount) && (
                 <div className="mt-3 pt-3 border-t border-neutral-50 flex flex-wrap gap-3 text-xs text-neutral-500">
                   {coupon.valid_from && (
-                    <span>Début : {new Date(coupon.valid_from).toLocaleDateString('fr-FR')}</span>
+                    <span>
+                      {t('startLabel')} {new Date(coupon.valid_from).toLocaleDateString(locale)}
+                    </span>
                   )}
                   {coupon.valid_until && (
-                    <span>Fin : {new Date(coupon.valid_until).toLocaleDateString('fr-FR')}</span>
+                    <span>
+                      {t('endLabel')} {new Date(coupon.valid_until).toLocaleDateString(locale)}
+                    </span>
                   )}
                   {coupon.min_order_amount && (
-                    <span>Min. commande : {formatCurrency(coupon.min_order_amount, currency)}</span>
+                    <span>
+                      {t('minOrderLabel')} {formatCurrency(coupon.min_order_amount, currency)}
+                    </span>
                   )}
                   {coupon.max_discount_amount && coupon.discount_type === 'percentage' && (
                     <span>
-                      Réduction max. : {formatCurrency(coupon.max_discount_amount, currency)}
+                      {t('maxDiscountLabel')} {formatCurrency(coupon.max_discount_amount, currency)}
                     </span>
                   )}
                 </div>
@@ -203,11 +212,11 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       ) : (
         <div className="py-12 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
           <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-neutral-900">Aucun coupon</h3>
-          <p className="text-xs text-neutral-500 mt-1">Créez votre premier code de réduction</p>
+          <h3 className="text-sm font-semibold text-neutral-900">{t('noCoupons')}</h3>
+          <p className="text-xs text-neutral-500 mt-1">{t('noCouponsDesc')}</p>
           <Button onClick={() => setShowForm(true)} variant="outline" className="mt-4 gap-2">
             <Plus className="h-4 w-4" />
-            Nouveau coupon
+            {t('newCoupon')}
           </Button>
         </div>
       )}

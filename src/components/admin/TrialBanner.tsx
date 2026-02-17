@@ -1,6 +1,7 @@
 'use client';
 
 import { useSubscription } from '@/contexts/SubscriptionContext';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Clock, ArrowRight, X } from 'lucide-react';
 import { useState } from 'react';
@@ -11,6 +12,7 @@ interface TrialBannerProps {
 
 export function TrialBanner({ tenantSlug }: TrialBannerProps) {
   const { isInTrial, daysRemaining } = useSubscription();
+  const t = useTranslations('trial');
   const [isDismissed, setIsDismissed] = useState(false);
 
   if (!isInTrial || isDismissed || daysRemaining > 3) {
@@ -21,9 +23,7 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
   const styleConfig = getStyleConfig(daysRemaining);
 
   const message =
-    daysRemaining <= 1
-      ? 'Votre essai gratuit expire aujourd\u2019hui !'
-      : `Il vous reste ${daysRemaining} jour${daysRemaining > 1 ? 's' : ''} d\u2019essai gratuit.`;
+    daysRemaining <= 1 ? t('expiresToday') : t('daysRemaining', { count: daysRemaining });
 
   return (
     <div
@@ -37,7 +37,7 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
           href={upgradeUrl}
           className={`inline-flex items-center gap-1 font-semibold whitespace-nowrap hover:underline ${styleConfig.linkClass}`}
         >
-          Passer au Premium
+          {t('upgradeToPremium')}
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
@@ -45,7 +45,7 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
       <button
         onClick={() => setIsDismissed(true)}
         className={`flex-shrink-0 p-0.5 rounded-full transition-colors ${styleConfig.closeClass}`}
-        aria-label="Fermer"
+        aria-label={t('closeAriaLabel')}
       >
         <X className="w-4 h-4" />
       </button>

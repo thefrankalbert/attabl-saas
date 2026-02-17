@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import {
   ShoppingBag,
@@ -38,12 +39,16 @@ interface StockItem {
 
 // ─── Helpers ───────────────────────────────────────────────
 
-function timeAgo(date: string): string {
+function timeAgo(
+  date: string,
+  tc: (key: string, values?: Record<string, number>) => string,
+  locale: string,
+): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "À l'instant";
-  if (seconds < 3600) return `Il y a ${Math.floor(seconds / 60)}min`;
-  if (seconds < 86400) return `Il y a ${Math.floor(seconds / 3600)}h`;
-  return new Date(date).toLocaleDateString('fr-FR');
+  if (seconds < 60) return tc('justNow');
+  if (seconds < 3600) return tc('minutesAgo', { count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return tc('hoursAgo', { count: Math.floor(seconds / 3600) });
+  return new Date(date).toLocaleDateString(locale);
 }
 
 // formatPrice removed — replaced by formatCurrencyCompact
@@ -86,6 +91,9 @@ export default function DashboardClient({
   initialPopularItems,
   currency = 'XAF',
 }: DashboardClientProps) {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   // Base path pour tous les liens admin
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmt = (amount: number) => formatCurrency(amount, currency);
@@ -100,9 +108,9 @@ export default function DashboardClient({
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Bonjour';
-    if (hour < 18) return 'Bon après-midi';
-    return 'Bonsoir';
+    if (hour < 12) return t('goodMorning');
+    if (hour < 18) return t('goodAfternoon');
+    return t('goodEvening');
   };
 
   const loadStats = useCallback(async () => {
@@ -160,7 +168,8 @@ export default function DashboardClient({
         items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
           (item: Record<string, unknown>) => ({
             id: item.id as string,
-            name: ((item.menu_items as Record<string, unknown>)?.name as string) || 'Item inconnu',
+            name:
+              ((item.menu_items as Record<string, unknown>)?.name as string) || t('unknownItem'),
             quantity: item.quantity as number,
             price: item.price_at_order as number,
           }),
@@ -170,7 +179,7 @@ export default function DashboardClient({
     } catch {
       /* silently fail */
     }
-  }, [supabase, tenantId]);
+  }, [supabase, tenantId, t]);
 
   const loadStock = useCallback(async () => {
     try {
@@ -195,11 +204,11 @@ export default function DashboardClient({
         .eq('id', orderId)
         .eq('tenant_id', tenantId);
       if (error) throw error;
-      toast({ title: 'Statut mis à jour' });
+      toast({ title: t('statusUpdated') });
       loadRecentOrders();
       loadStats();
     } catch {
-      toast({ title: 'Erreur lors de la mise à jour', variant: 'destructive' });
+      toast({ title: t('statusUpdateError'), variant: 'destructive' });
     }
   };
 
@@ -241,6 +250,8 @@ export default function DashboardClient({
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
+      stockChannel.unsubscribe();
       supabase.removeChannel(channel);
       supabase.removeChannel(stockChannel);
     };
@@ -270,7 +281,7 @@ export default function DashboardClient({
           <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()} 👋</h1>
           <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            {new Date().toLocaleDateString('fr-FR', {
+            {new Date().toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
@@ -289,7 +300,7 @@ export default function DashboardClient({
             className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
           >
             <Banknote className="w-5 h-5" />
-            Ouvrir Caisse
+            {t('openPosButton')}
           </Link>
         </div>
       </div>
@@ -297,32 +308,32 @@ export default function DashboardClient({
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Commandes"
+          title={t('ordersCount')}
           value={stats.ordersToday}
           icon={ShoppingBag}
           color="blue"
-          subtitle="Aujourd'hui"
+          subtitle={t('todayLabel')}
         />
         <StatsCard
-          title="Revenus"
+          title={t('revenue')}
           value={fmtCompact(stats.revenueToday)}
           icon={Banknote}
           color="green"
-          subtitle="Aujourd'hui"
+          subtitle={t('todayLabel')}
         />
         <StatsCard
-          title="Plats actifs"
+          title={t('activeDishes')}
           value={stats.activeItems}
           icon={UtensilsCrossed}
           color="purple"
-          subtitle="Sur le menu"
+          subtitle={t('onMenuSubtitle')}
         />
         <StatsCard
-          title="Points de vente"
+          title={t('salesPoints')}
           value={stats.activeCards}
           icon={Users}
           color="orange"
-          subtitle="Actifs"
+          subtitle={t('activePlural')}
         />
       </div>
 
@@ -333,36 +344,35 @@ export default function DashboardClient({
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-neutral-600" />
               <div>
-                <h2 className="text-lg font-bold text-neutral-900">Stock en direct</h2>
-                <p className="text-sm text-neutral-500">
-                  Top 10 produits (tri par stock croissant)
-                </p>
+                <h2 className="text-lg font-bold text-neutral-900">{t('stockLive')}</h2>
+                <p className="text-sm text-neutral-500">{t('stockTop10')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               {stockItems.filter((s) => s.current_stock <= 0).length > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
                   <AlertTriangle className="w-3 h-3" />
-                  {stockItems.filter((s) => s.current_stock <= 0).length} rupture
+                  {t('outOfStockCount', {
+                    count: stockItems.filter((s) => s.current_stock <= 0).length,
+                  })}
                 </span>
               )}
               {stockItems.filter((s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert)
                 .length > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold">
                   <AlertTriangle className="w-3 h-3" />
-                  {
-                    stockItems.filter(
+                  {t('lowStockCount', {
+                    count: stockItems.filter(
                       (s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert,
-                    ).length
-                  }{' '}
-                  bas
+                    ).length,
+                  })}
                 </span>
               )}
               <Link
                 href={`${adminBase}/inventory`}
                 className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
               >
-                Voir tout <ArrowRight className="w-4 h-4" />
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -419,14 +429,16 @@ export default function DashboardClient({
         <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">Commandes récentes</h2>
-              <p className="text-sm text-neutral-500">{recentOrders.length} commandes</p>
+              <h2 className="text-lg font-bold text-neutral-900">{t('recentOrders')}</h2>
+              <p className="text-sm text-neutral-500">
+                {t('ordersCountLabel', { count: recentOrders.length })}
+              </p>
             </div>
             <Link
               href={`${adminBase}/orders`}
               className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
             >
-              Voir tout <ArrowRight className="w-4 h-4" />
+              {t('viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           {recentOrders.length > 0 ? (
@@ -441,7 +453,7 @@ export default function DashboardClient({
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-neutral-900">
-                            Table {order.table_number}
+                            {t('tableLabel')} {order.table_number}
                           </h3>
                           <StatusBadge status={order.status} />
                         </div>
@@ -455,11 +467,11 @@ export default function DashboardClient({
                         <div className="flex items-center gap-3 mt-2 text-xs text-neutral-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
-                            {timeAgo(order.created_at)}
+                            {timeAgo(order.created_at, tc, locale)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Utensils className="w-3.5 h-3.5" />
-                            {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} articles
+                            {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} {t('items')}
                           </span>
                         </div>
                       </div>
@@ -471,7 +483,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'preparing')}
                             className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                            title="Commencer la préparation"
+                            title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
                           </button>
@@ -480,7 +492,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'ready')}
                             className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
-                            title="Marquer comme prêt"
+                            title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -489,7 +501,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'delivered')}
                             className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
-                            title="Marquer comme livré"
+                            title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -497,7 +509,7 @@ export default function DashboardClient({
                         <Link
                           href={`${adminBase}/orders`}
                           className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
-                          title="Voir détails"
+                          title={t('viewDetails')}
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -512,8 +524,8 @@ export default function DashboardClient({
               <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-neutral-400" />
               </div>
-              <h3 className="font-semibold text-neutral-900 mb-1">Aucune commande</h3>
-              <p className="text-sm text-neutral-500">Les nouvelles commandes apparaîtront ici</p>
+              <h3 className="font-semibold text-neutral-900 mb-1">{t('noOrders')}</h3>
+              <p className="text-sm text-neutral-500">{t('noOrdersDescAlt')}</p>
             </div>
           )}
         </div>
@@ -522,8 +534,8 @@ export default function DashboardClient({
         <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">Top Plats</h2>
-              <p className="text-sm text-neutral-500">Les plus commandés</p>
+              <h2 className="text-lg font-bold text-neutral-900">{t('topDishes')}</h2>
+              <p className="text-sm text-neutral-500">{t('mostOrdered')}</p>
             </div>
           </div>
           {popularItems.length > 0 ? (
@@ -560,7 +572,9 @@ export default function DashboardClient({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-neutral-900 truncate">{item.name}</p>
-                    <p className="text-xs text-neutral-500">{item.order_count} commandes</p>
+                    <p className="text-xs text-neutral-500">
+                      {t('ordersCountLabel', { count: item.order_count })}
+                    </p>
                   </div>
                   <div className="w-16">
                     <MiniChart
@@ -578,7 +592,7 @@ export default function DashboardClient({
               <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
               </div>
-              <p className="text-sm text-neutral-500">Aucune donnée disponible</p>
+              <p className="text-sm text-neutral-500">{t('noDataAvailable')}</p>
             </div>
           )}
         </div>
@@ -594,8 +608,8 @@ export default function DashboardClient({
             <ChefHat className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Cuisine</h3>
-            <p className="text-xs text-neutral-500">Voir le KDS</p>
+            <h3 className="font-semibold text-neutral-900">{t('kitchenLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('viewKdsSubtitle')}</p>
           </div>
         </Link>
         <Link
@@ -606,8 +620,8 @@ export default function DashboardClient({
             <ShoppingBag className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Commandes</h3>
-            <p className="text-xs text-neutral-500">Gérer les commandes</p>
+            <h3 className="font-semibold text-neutral-900">{t('ordersLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('manageOrdersSubtitle')}</p>
           </div>
         </Link>
         <Link
@@ -618,8 +632,8 @@ export default function DashboardClient({
             <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Plats</h3>
-            <p className="text-xs text-neutral-500">Gérer les plats</p>
+            <h3 className="font-semibold text-neutral-900">{t('dishesLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('manageDishes')}</p>
           </div>
         </Link>
         <Link
@@ -630,8 +644,8 @@ export default function DashboardClient({
             <TrendingUp className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Rapports</h3>
-            <p className="text-xs text-neutral-500">Voir les stats</p>
+            <h3 className="font-semibold text-neutral-900">{t('reportsLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('viewStats')}</p>
           </div>
         </Link>
       </div>

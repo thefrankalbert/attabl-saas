@@ -18,6 +18,7 @@ import {
   Crown,
   Activity,
 } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   createAdminUserAction,
   deleteAdminUserAction,
@@ -46,8 +47,6 @@ import AdminModal from '@/components/admin/AdminModal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import { format } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
 type RoleConfigEntry = {
@@ -57,26 +56,6 @@ type RoleConfigEntry = {
   bg: string;
 };
 
-const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
-  owner: { label: 'Propriétaire', icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-  admin: { label: 'Admin', icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
-  manager: { label: 'Manager', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-  cashier: { label: 'Caissier', icon: CreditCard, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-  chef: { label: 'Chef', icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
-  waiter: { label: 'Serveur', icon: Coffee, color: 'text-neutral-600', bg: 'bg-neutral-50' },
-};
-
-const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
-  label: 'Utilisateur',
-  icon: Users,
-  color: 'text-neutral-600',
-  bg: 'bg-neutral-50',
-};
-
-function getRoleConfig(role: string): RoleConfigEntry {
-  return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
-}
-
 interface UsersClientProps {
   tenantId: string;
   currentUserRole: AdminRole;
@@ -84,6 +63,10 @@ interface UsersClientProps {
 }
 
 export default function UsersClient({ tenantId, currentUserRole, initialUsers }: UsersClientProps) {
+  const t = useTranslations('users');
+  const tc = useTranslations('common');
+  const locale = useLocale();
+
   const [users, setUsers] = useState<AdminUser[]>(initialUsers);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -98,11 +81,41 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
 
   const { toast } = useToast();
 
+  const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
+    owner: { label: t('roleOwner'), icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
+    manager: { label: t('roleManager'), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    cashier: {
+      label: t('roleCashier'),
+      icon: CreditCard,
+      color: 'text-emerald-600',
+      bg: 'bg-emerald-50',
+    },
+    chef: { label: t('roleChef'), icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
+    waiter: {
+      label: t('roleWaiter'),
+      icon: Coffee,
+      color: 'text-neutral-600',
+      bg: 'bg-neutral-50',
+    },
+  };
+
+  const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
+    label: t('roleUser'),
+    icon: Users,
+    color: 'text-neutral-600',
+    bg: 'bg-neutral-50',
+  };
+
+  function getRoleConfig(role: string): RoleConfigEntry {
+    return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
+  }
+
   const canManageUsers = ['owner', 'admin'].includes(currentUserRole);
 
   const handleCreateUser = async () => {
     if (!formData.email || !formData.password || !formData.full_name) {
-      toast({ title: 'Veuillez remplir tous les champs', variant: 'destructive' });
+      toast({ title: t('fillAllFields'), variant: 'destructive' });
       return;
     }
 
@@ -111,15 +124,15 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       const result = await createAdminUserAction(tenantId, formData);
       if (result.error) throw new Error(result.error);
 
-      toast({ title: 'Utilisateur créé avec succès' });
+      toast({ title: t('userCreated') });
       setIsModalOpen(false);
       // Ideally re-fetch or optimistically update. Since we don't have the full object from response easily without another fetch,
       // let's reload the page to be safe and simple, or fetch via client-side supabase if we wanted.
       window.location.reload();
     } catch (e: unknown) {
       toast({
-        title: 'Erreur',
-        description: e instanceof Error ? e.message : 'Erreur inconnue',
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('unknownError'),
         variant: 'destructive',
       });
     } finally {
@@ -128,18 +141,18 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm('Voulez-vous vraiment supprimer cet utilisateur ?')) return;
+    if (!confirm(t('confirmDeleteUser'))) return;
 
     try {
       const result = await deleteAdminUserAction(tenantId, userId);
       if (result.error) throw new Error(result.error);
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
-      toast({ title: 'Utilisateur supprimé' });
+      toast({ title: t('userDeleted') });
     } catch (e: unknown) {
       toast({
-        title: 'Erreur',
-        description: e instanceof Error ? e.message : 'Erreur inconnue',
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('unknownError'),
         variant: 'destructive',
       });
     }
@@ -152,11 +165,11 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       if (result.error) throw new Error(result.error);
 
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: newStatus } : u)));
-      toast({ title: newStatus ? 'Utilisateur activé' : 'Utilisateur désactivé' });
+      toast({ title: newStatus ? t('userActivated') : t('userDeactivated') });
     } catch (e: unknown) {
       toast({
-        title: 'Erreur',
-        description: e instanceof Error ? e.message : 'Erreur inconnue',
+        title: tc('error'),
+        description: e instanceof Error ? e.message : tc('unknownError'),
         variant: 'destructive',
       });
     }
@@ -166,14 +179,12 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Équipe</h1>
-          <p className="text-sm text-neutral-500">
-            Gérez les membres de votre équipe et leurs permissions.
-          </p>
+          <h1 className="text-2xl font-bold tracking-tight">{t('teamTitle')}</h1>
+          <p className="text-sm text-neutral-500">{t('teamSubtitle')}</p>
         </div>
         {canManageUsers && (
           <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-            <UserPlus className="w-4 h-4" /> Nouveau Membre
+            <UserPlus className="w-4 h-4" /> {t('newMember')}
           </Button>
         )}
       </div>
@@ -203,7 +214,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                       <p className="font-medium text-neutral-900">{user.full_name}</p>
                       {!user.is_active && (
                         <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
-                          Inactif
+                          {t('inactive')}
                         </Badge>
                       )}
                     </div>
@@ -227,14 +238,13 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                     {user.last_login_at || user.last_login ? (
                       <span className="flex items-center gap-1">
                         <Activity className="w-3 h-3" />{' '}
-                        {format(
-                          new Date((user.last_login_at || user.last_login)!),
-                          'dd MMM HH:mm',
-                          { locale: fr },
+                        {new Date((user.last_login_at || user.last_login)!).toLocaleDateString(
+                          locale,
+                          { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' },
                         )}
                       </span>
                     ) : (
-                      <span>Jamais connecté</span>
+                      <span>{t('neverLoggedIn')}</span>
                     )}
                   </div>
 
@@ -246,7 +256,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuLabel>{tc('actions')}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => handleToggleStatus(user)}>
                           {user.is_active ? (
@@ -254,7 +264,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                           ) : (
                             <Check className="w-4 h-4 mr-2" />
                           )}
-                          {user.is_active ? 'Désactiver' : 'Activer'}
+                          {user.is_active ? t('deactivate') : t('activate')}
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
@@ -262,7 +272,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                           onClick={() => handleDeleteUser(user.id)}
                         >
                           <X className="w-4 h-4 mr-2" />
-                          Supprimer
+                          {tc('delete')}
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
@@ -272,7 +282,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
             );
           })}
           {users.length === 0 && (
-            <div className="p-12 text-center text-neutral-500">Aucun membre dans l&apos;équipe</div>
+            <div className="p-12 text-center text-neutral-500">{t('emptyState')}</div>
           )}
         </div>
       </div>

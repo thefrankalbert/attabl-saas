@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { Ad } from '@/types/admin.types';
 
@@ -15,6 +16,7 @@ interface AdsSliderProps {
 export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true }, [Autoplay({ delay: 5000 })]);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const t = useTranslations('tenant');
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -48,7 +50,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
                     target="_blank"
                     rel="noopener"
                     className="absolute inset-0 z-10"
-                    aria-label="Voir l'offre"
+                    aria-label={t('viewOfferAriaLabel')}
                   ></a>
                 )}
               </div>

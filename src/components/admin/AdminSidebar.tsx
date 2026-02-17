@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard,
   ShoppingBag,
@@ -49,18 +50,20 @@ interface AdminSidebarProps {
   className?: string;
 }
 
-const roleLabels: Record<string, string> = {
-  owner: 'Propriétaire',
-  admin: 'Administrateur',
-  manager: 'Manager',
-  chef: 'Chef',
-  waiter: 'Serveur',
-  cashier: 'Caissier',
-};
-
 export function AdminSidebar({ tenant, adminUser, role, className }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openForPath, setOpenForPath] = useState<string | null>(null);
+  const t = useTranslations('sidebar');
+  const tc = useTranslations('common');
+
+  const roleLabels: Record<string, string> = {
+    owner: t('roleOwner'),
+    admin: t('roleAdmin'),
+    manager: t('roleManager'),
+    chef: t('roleKitchen'),
+    waiter: t('roleServer'),
+    cashier: t('roleStaff'),
+  };
 
   // Sidebar is open only if it was toggled for the current pathname
   // Navigating to a new route automatically "closes" it since openForPath won't match
@@ -79,129 +82,129 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
     ownerOnly?: boolean;
   };
 
-  const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
+  const NAV_GROUPS: { titleKey: string; items: NavItem[] }[] = [
     {
-      title: 'Principal',
+      titleKey: 'groupMain',
       items: [
-        { href: `/sites/${tenant.slug}/admin`, icon: LayoutDashboard, label: 'Dashboard' },
-        { href: `/sites/${tenant.slug}/admin/orders`, icon: ShoppingBag, label: 'Commandes' },
+        { href: `/sites/${tenant.slug}/admin`, icon: LayoutDashboard, label: t('navDashboard') },
+        { href: `/sites/${tenant.slug}/admin/orders`, icon: ShoppingBag, label: t('navOrders') },
       ],
     },
     {
-      title: 'Organisation',
+      titleKey: 'groupOrganization',
       items: [
         {
           href: `/sites/${tenant.slug}/admin/menus`,
           icon: ClipboardList,
-          label: 'Cartes / Menus',
+          label: t('navMenus'),
           requiredPermission: 'canManageMenus',
         },
         {
           href: `/sites/${tenant.slug}/admin/categories`,
           icon: UtensilsCrossed,
-          label: 'Catégories',
+          label: t('navCategories'),
           requiredPermission: 'canManageMenus',
         },
         {
           href: `/sites/${tenant.slug}/admin/items`,
           icon: BookOpen,
-          label: 'Plats & Articles',
+          label: t('navDishes'),
           requiredPermission: 'canManageMenus',
         },
         {
           href: `/sites/${tenant.slug}/admin/inventory`,
           icon: Package,
-          label: 'Inventaire',
+          label: t('navInventory'),
           requiredPermission: 'canViewStocks',
         },
         {
           href: `/sites/${tenant.slug}/admin/stock-history`,
           icon: History,
-          label: 'Historique Stock',
+          label: t('navStockHistory'),
           requiredPermission: 'canViewStocks',
         },
         {
           href: `/sites/${tenant.slug}/admin/recipes`,
           icon: BookOpenCheck,
-          label: 'Fiches Techniques',
+          label: t('navRecipes'),
           requiredPermission: 'canManageMenus',
         },
         {
           href: `/sites/${tenant.slug}/admin/suppliers`,
           icon: Truck,
-          label: 'Fournisseurs',
+          label: t('navSuppliers'),
           requiredPermission: 'canManageStocks',
         },
         {
           href: `/sites/${tenant.slug}/admin/suggestions`,
           icon: Lightbulb,
-          label: 'Suggestions',
+          label: t('navSuggestions'),
           requiredPermission: 'canManageMenus',
         },
         {
           href: `/sites/${tenant.slug}/admin/announcements`,
           icon: Megaphone,
-          label: 'Annonces',
+          label: t('navAnnouncements'),
           requiredPermission: 'canManageSettings',
         },
         {
           href: `/sites/${tenant.slug}/admin/coupons`,
           icon: Tag,
-          label: 'Coupons',
+          label: t('navCoupons'),
           requiredPermission: 'canManageSettings',
         },
       ],
     },
     {
-      title: 'Outils',
+      titleKey: 'groupTools',
       items: [
         {
           href: `/sites/${tenant.slug}/admin/pos`,
           icon: Laptop,
-          label: 'Caisse (POS)',
+          label: t('navPos'),
           highlight: true,
           requiredPermission: 'canConfigurePOS',
         },
         {
           href: `/sites/${tenant.slug}/admin/kitchen`,
           icon: ChefHat,
-          label: 'Cuisine (KDS)',
+          label: t('navKitchen'),
           highlight: true,
           requiredPermission: 'canConfigureKitchen',
         },
         {
           href: `/sites/${tenant.slug}/admin/qr-codes`,
           icon: QrCode,
-          label: 'QR Codes',
+          label: t('navQrCodes'),
           requiredPermission: 'canManageSettings',
         },
         {
           href: `/sites/${tenant.slug}/admin/reports`,
           icon: BarChart3,
-          label: 'Rapports',
+          label: t('navReports'),
           requiredPermission: 'canViewAllStats',
         },
       ],
     },
     {
-      title: 'Administration',
+      titleKey: 'groupAdmin',
       items: [
         {
           href: `/sites/${tenant.slug}/admin/users`,
           icon: Users,
-          label: 'Utilisateurs',
+          label: t('navUsers'),
           requiredPermission: 'canManageUsers',
         },
         {
           href: `/sites/${tenant.slug}/admin/settings`,
           icon: Settings,
-          label: 'Paramètres',
+          label: t('navSettings'),
           requiredPermission: 'canManageSettings',
         },
         {
           href: `/sites/${tenant.slug}/admin/subscription`,
           icon: CreditCard,
-          label: 'Abonnement',
+          label: t('navSubscription'),
           ownerOnly: true,
         },
       ],
@@ -281,7 +284,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           {filteredNavGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
               <p className="px-3 mb-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
-                {group.title}
+                {t(group.titleKey)}
               </p>
               <div className="space-y-1">
                 {group.items.map((item) => {
@@ -359,7 +362,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
               className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium group"
             >
               <LogOut className="h-4 w-4 group-hover:text-red-700" />
-              Déconnexion
+              {tc('logout')}
             </button>
           </form>
         </div>
