@@ -128,8 +128,8 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">Catégories</h1>
-          <p className="text-xs text-gray-500 mt-1">Structurez vos menus par catégories</p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Catégories</h1>
+          <p className="text-xs text-neutral-500 mt-1">Structurez vos menus par catégories</p>
         </div>
         <Button onClick={openNewModal} size="sm" className="gap-2">
           <Plus className="w-4 h-4" /> Nouvelle catégorie
@@ -137,9 +137,9 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       </div>
 
       {/* Counter */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-gray-100">
-        <Folder className="w-4 h-4 text-gray-400" />
-        <span className="text-xs text-gray-500 font-medium">
+      <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
+        <Folder className="w-4 h-4 text-neutral-400" />
+        <span className="text-xs text-neutral-500 font-medium">
           {categories.length} catégorie{categories.length > 1 ? 's' : ''}
         </span>
       </div>
@@ -150,7 +150,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse"
+              className="h-16 bg-white rounded-xl border border-neutral-100 animate-pulse"
             />
           ))}
         </div>
@@ -159,17 +159,17 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           {categories.map((cat) => (
             <div
               key={cat.id}
-              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors group"
+              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group"
             >
-              <GripVertical className="w-4 h-4 text-gray-300" />
-              <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center">
-                <Folder className="w-4 h-4 text-gray-500" />
+              <GripVertical className="w-4 h-4 text-neutral-300" />
+              <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
+                <Folder className="w-4 h-4 text-neutral-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-gray-900 text-sm">{cat.name}</p>
-                {cat.name_en && <p className="text-xs text-gray-400">{cat.name_en}</p>}
+                <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
+                {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
               </div>
-              <div className="flex items-center gap-1.5 text-xs text-gray-500">
+              <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                 <Utensils className="w-3.5 h-3.5" />
                 <span className="font-medium">{cat.items_count || 0} plats</span>
               </div>
@@ -195,12 +195,12 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           ))}
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-100 p-16 text-center">
-          <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Folder className="w-8 h-8 text-gray-400" />
+        <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
+          <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Folder className="w-8 h-8 text-neutral-400" />
           </div>
-          <h3 className="text-lg font-bold text-gray-900">Aucune catégorie</h3>
-          <p className="text-sm text-gray-500 mt-2">
+          <h3 className="text-lg font-bold text-neutral-900">Aucune catégorie</h3>
+          <p className="text-sm text-neutral-500 mt-2">
             Créez des catégories pour organiser vos plats
           </p>
           <Button onClick={openNewModal} className="mt-6">

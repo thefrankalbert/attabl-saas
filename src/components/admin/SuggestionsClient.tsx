@@ -150,7 +150,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
   });
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
   }
 
   return (
@@ -158,11 +158,11 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
             <Lightbulb className="w-6 h-6" />
             {t('suggestions')}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-neutral-500 mt-1">
             {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} active
             {suggestions.length !== 1 ? 's' : ''}
           </p>
@@ -175,7 +175,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
         <Input
           placeholder="Rechercher un plat..."
           className="pl-9"
@@ -191,37 +191,37 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           return (
             <div
               key={suggestion.id}
-              className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-sm transition-shadow"
+              className="bg-white rounded-xl border border-neutral-200 p-4 transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <span
                   className={cn(
                     'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-                    typeConfig?.color || 'bg-gray-100 text-gray-600',
+                    typeConfig?.color || 'bg-neutral-100 text-neutral-600',
                   )}
                 >
                   {typeConfig?.emoji} {typeConfig?.label}
                 </span>
                 <button
                   onClick={() => handleDelete(suggestion.id)}
-                  className="p-1 text-gray-400 hover:text-red-500 transition-colors"
+                  className="p-1 text-neutral-400 hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="mt-3 space-y-1">
-                <p className="text-sm font-semibold text-gray-900">
+                <p className="text-sm font-semibold text-neutral-900">
                   {suggestion.menu_item?.name || 'Plat inconnu'}
                 </p>
-                <p className="text-xs text-gray-400">suggère</p>
+                <p className="text-xs text-neutral-400">suggère</p>
                 <p className="text-sm font-semibold text-primary">
                   {suggestion.suggested_item?.name || 'Plat inconnu'}
                 </p>
               </div>
 
               {suggestion.description && (
-                <p className="mt-2 text-xs text-gray-500 italic">
+                <p className="mt-2 text-xs text-neutral-500 italic">
                   &ldquo;{suggestion.description}&rdquo;
                 </p>
               )}
@@ -229,7 +229,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           );
         })}
         {filtered.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-400">
+          <div className="col-span-full text-center py-12 text-neutral-400">
             <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">Aucune suggestion</p>
             <p className="text-xs mt-1">Ajoutez des conseils pour vos serveurs</p>
@@ -240,16 +240,18 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       {/* Add Modal */}
       {showAdd && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md animate-in zoom-in-95">
+          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">Nouvelle suggestion</h3>
 
             <div className="space-y-3">
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Plat source</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  Plat source
+                </label>
                 <select
                   value={sourceItemId}
                   onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm bg-white"
+                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
                 >
                   <option value="">Sélectionner un plat...</option>
                   {menuItems.map((item) => (
@@ -261,7 +263,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
                   Type de suggestion
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -274,7 +276,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
                         'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
                         suggestionType === st.value
                           ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-gray-200 text-gray-500 hover:bg-gray-50',
+                          : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
                       )}
                     >
                       <span>{st.emoji}</span>
@@ -285,11 +287,13 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">Plat suggéré</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  Plat suggéré
+                </label>
                 <select
                   value={targetItemId}
                   onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-gray-200 rounded-lg text-sm bg-white"
+                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
                 >
                   <option value="">Sélectionner un plat...</option>
                   {menuItems.map((item) => (
@@ -301,7 +305,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
               </div>
 
               <div>
-                <label className="text-xs font-medium text-gray-600 mb-1 block">
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
                   Conseil pour le serveur (optionnel)
                 </label>
                 <Input

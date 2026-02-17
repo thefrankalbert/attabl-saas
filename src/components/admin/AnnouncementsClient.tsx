@@ -121,7 +121,7 @@ export default function AnnouncementsClient({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Annonces</h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-neutral-500">
             Gérez les popups et messages d&apos;information pour vos clients.
           </p>
         </div>
@@ -140,28 +140,28 @@ export default function AnnouncementsClient({
         {announcements.map((ann) => (
           <div
             key={ann.id}
-            className="group bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all flex flex-col h-full"
+            className="group bg-white border rounded-xl p-5 transition-all flex flex-col h-full"
           >
             <div className="flex justify-between items-start mb-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-50 text-blue-600' : 'bg-gray-100 text-gray-400'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-50 text-blue-600' : 'bg-neutral-100 text-neutral-400'}`}
               >
                 <Megaphone className="w-5 h-5" />
               </div>
               <div
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}
+                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-neutral-100 text-neutral-500'}`}
               >
                 {ann.is_active ? 'Active' : 'Inactive'}
               </div>
             </div>
 
-            <h3 className="font-bold text-gray-900 mb-2 line-clamp-1">{ann.title}</h3>
+            <h3 className="font-bold text-neutral-900 mb-2 line-clamp-1">{ann.title}</h3>
             {ann.description && (
-              <p className="text-sm text-gray-500 line-clamp-2 mb-4 flex-1">{ann.description}</p>
+              <p className="text-sm text-neutral-500 line-clamp-2 mb-4 flex-1">{ann.description}</p>
             )}
 
             <div className="mt-auto space-y-4">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
+              <div className="flex items-center gap-2 text-xs text-neutral-400">
                 <Calendar className="w-3 h-3" />
                 <span>Du {format(new Date(ann.start_date), 'dd MMM yyyy', { locale: fr })}</span>
                 {ann.end_date && (
@@ -196,10 +196,10 @@ export default function AnnouncementsClient({
           </div>
         ))}
         {announcements.length === 0 && (
-          <div className="col-span-full py-12 text-center bg-gray-50 border border-dashed border-gray-200 rounded-xl">
-            <Megaphone className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-gray-900">Aucune annonce</h3>
-            <p className="text-xs text-gray-500 mt-1">
+          <div className="col-span-full py-12 text-center bg-neutral-50 border border-dashed border-neutral-200 rounded-xl">
+            <Megaphone className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-neutral-900">Aucune annonce</h3>
+            <p className="text-xs text-neutral-500 mt-1">
               Publiez une information importante pour vos clients.
             </p>
           </div>

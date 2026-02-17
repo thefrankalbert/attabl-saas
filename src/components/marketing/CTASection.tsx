@@ -28,7 +28,7 @@ export default function CTASection() {
               Commencer gratuitement
             </Link>
             <Link
-              href="#demo"
+              href="/contact"
               className="border-2 border-white/20 text-white px-8 py-4 rounded-xl text-base font-semibold hover:bg-white/10 transition-colors"
             >
               Demander une d&eacute;mo

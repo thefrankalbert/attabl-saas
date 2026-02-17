@@ -30,6 +30,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
+import { getRolePermissions, type NavItemPermission } from '@/lib/permissions';
+import type { AdminRole } from '@/types/admin.types';
 
 interface AdminSidebarProps {
   tenant: {
@@ -42,6 +45,7 @@ interface AdminSidebarProps {
     name?: string;
     role: string;
   };
+  role?: AdminRole;
   className?: string;
 }
 
@@ -49,10 +53,12 @@ const roleLabels: Record<string, string> = {
   owner: 'Propriétaire',
   admin: 'Administrateur',
   manager: 'Manager',
-  staff: 'Équipe',
+  chef: 'Chef',
+  waiter: 'Serveur',
+  cashier: 'Caissier',
 };
 
-export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps) {
+export function AdminSidebar({ tenant, adminUser, role, className }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openForPath, setOpenForPath] = useState<string | null>(null);
 
@@ -62,7 +68,18 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
 
   const toggleSidebar = () => setOpenForPath(isOpen ? null : pathname);
 
-  const NAV_GROUPS = [
+  const permissions = role ? getRolePermissions(role) : null;
+
+  type NavItem = {
+    href: string;
+    icon: typeof LayoutDashboard;
+    label: string;
+    highlight?: boolean;
+    requiredPermission?: NavItemPermission;
+    ownerOnly?: boolean;
+  };
+
+  const NAV_GROUPS: { title: string; items: NavItem[] }[] = [
     {
       title: 'Principal',
       items: [
@@ -73,28 +90,66 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
     {
       title: 'Organisation',
       items: [
-        { href: `/sites/${tenant.slug}/admin/menus`, icon: ClipboardList, label: 'Cartes / Menus' },
+        {
+          href: `/sites/${tenant.slug}/admin/menus`,
+          icon: ClipboardList,
+          label: 'Cartes / Menus',
+          requiredPermission: 'canManageMenus',
+        },
         {
           href: `/sites/${tenant.slug}/admin/categories`,
           icon: UtensilsCrossed,
           label: 'Catégories',
+          requiredPermission: 'canManageMenus',
         },
-        { href: `/sites/${tenant.slug}/admin/items`, icon: BookOpen, label: 'Plats & Articles' },
-        { href: `/sites/${tenant.slug}/admin/inventory`, icon: Package, label: 'Inventaire' },
+        {
+          href: `/sites/${tenant.slug}/admin/items`,
+          icon: BookOpen,
+          label: 'Plats & Articles',
+          requiredPermission: 'canManageMenus',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/inventory`,
+          icon: Package,
+          label: 'Inventaire',
+          requiredPermission: 'canViewStocks',
+        },
         {
           href: `/sites/${tenant.slug}/admin/stock-history`,
           icon: History,
           label: 'Historique Stock',
+          requiredPermission: 'canViewStocks',
         },
         {
           href: `/sites/${tenant.slug}/admin/recipes`,
           icon: BookOpenCheck,
           label: 'Fiches Techniques',
+          requiredPermission: 'canManageMenus',
         },
-        { href: `/sites/${tenant.slug}/admin/suppliers`, icon: Truck, label: 'Fournisseurs' },
-        { href: `/sites/${tenant.slug}/admin/suggestions`, icon: Lightbulb, label: 'Suggestions' },
-        { href: `/sites/${tenant.slug}/admin/announcements`, icon: Megaphone, label: 'Annonces' },
-        { href: `/sites/${tenant.slug}/admin/coupons`, icon: Tag, label: 'Coupons' },
+        {
+          href: `/sites/${tenant.slug}/admin/suppliers`,
+          icon: Truck,
+          label: 'Fournisseurs',
+          requiredPermission: 'canManageStocks',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/suggestions`,
+          icon: Lightbulb,
+          label: 'Suggestions',
+          requiredPermission: 'canManageMenus',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/announcements`,
+          icon: Megaphone,
+          label: 'Annonces',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/coupons`,
+          icon: Tag,
+          label: 'Coupons',
+          requiredPermission: 'canManageSettings',
+        },
       ],
     },
     {
@@ -105,26 +160,64 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
           icon: Laptop,
           label: 'Caisse (POS)',
           highlight: true,
+          requiredPermission: 'canConfigurePOS',
         },
         {
           href: `/sites/${tenant.slug}/admin/kitchen`,
           icon: ChefHat,
           label: 'Cuisine (KDS)',
           highlight: true,
+          requiredPermission: 'canConfigureKitchen',
         },
-        { href: `/sites/${tenant.slug}/admin/qr-codes`, icon: QrCode, label: 'QR Codes' },
-        { href: `/sites/${tenant.slug}/admin/reports`, icon: BarChart3, label: 'Rapports' },
+        {
+          href: `/sites/${tenant.slug}/admin/qr-codes`,
+          icon: QrCode,
+          label: 'QR Codes',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/reports`,
+          icon: BarChart3,
+          label: 'Rapports',
+          requiredPermission: 'canViewAllStats',
+        },
       ],
     },
     {
       title: 'Administration',
       items: [
-        { href: `/sites/${tenant.slug}/admin/users`, icon: Users, label: 'Utilisateurs' },
-        { href: `/sites/${tenant.slug}/admin/settings`, icon: Settings, label: 'Paramètres' },
-        { href: `/sites/${tenant.slug}/admin/subscription`, icon: CreditCard, label: 'Abonnement' },
+        {
+          href: `/sites/${tenant.slug}/admin/users`,
+          icon: Users,
+          label: 'Utilisateurs',
+          requiredPermission: 'canManageUsers',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/settings`,
+          icon: Settings,
+          label: 'Paramètres',
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `/sites/${tenant.slug}/admin/subscription`,
+          icon: CreditCard,
+          label: 'Abonnement',
+          ownerOnly: true,
+        },
       ],
     },
   ];
+
+  // Filter nav items based on role permissions
+  const filteredNavGroups = NAV_GROUPS.map((group) => ({
+    ...group,
+    items: group.items.filter((item) => {
+      if (item.ownerOnly) return role === 'owner';
+      if (!item.requiredPermission || !permissions) return true;
+      const val = permissions[item.requiredPermission];
+      return typeof val === 'boolean' ? val : !!val;
+    }),
+  })).filter((group) => group.items.length > 0);
 
   return (
     <>
@@ -132,7 +225,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden shadow-sm bg-white border border-gray-200"
+        className="fixed top-3 left-3 z-50 lg:hidden shadow-sm bg-white border border-neutral-200"
         onClick={toggleSidebar}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -149,13 +242,13 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 w-64 bg-white border-r border-neutral-100 z-40 flex flex-col transition-transform duration-300 ease-in-out lg:translate-x-0',
           isOpen ? 'translate-x-0 shadow-xl' : '-translate-x-full',
           className,
         )}
       >
         {/* Header */}
-        <div className="p-6 border-b border-gray-100 flex-shrink-0 flex items-center justify-between">
+        <div className="p-6 border-b border-neutral-100 flex-shrink-0 flex items-center justify-between">
           <Link href={`/sites/${tenant.slug}/admin`} className="flex items-center gap-3 group">
             {tenant.logo_url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -173,10 +266,10 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-gray-900 truncate uppercase tracking-tight">
+              <h2 className="text-sm font-bold text-neutral-900 truncate uppercase tracking-tight">
                 {tenant.name}
               </h2>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-neutral-500">
                 {adminUser ? roleLabels[adminUser.role] || adminUser.role : 'Admin'}
               </p>
             </div>
@@ -185,9 +278,9 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
 
         {/* Navigation */}
         <nav className="flex-1 min-h-0 overflow-y-auto py-4 px-3 space-y-6">
-          {NAV_GROUPS.map((group, groupIndex) => (
+          {filteredNavGroups.map((group, groupIndex) => (
             <div key={groupIndex}>
-              <p className="px-3 mb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+              <p className="px-3 mb-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">
                 {group.title}
               </p>
               <div className="space-y-1">
@@ -202,8 +295,8 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                       className={cn(
                         'group flex items-center px-3 py-2.5 rounded-lg transition-all duration-200 relative space-x-3',
                         isActive
-                          ? 'bg-gray-50 text-gray-900 font-semibold'
-                          : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium',
+                          ? 'bg-neutral-50 text-neutral-900 font-semibold'
+                          : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
                         isHighlight && !isActive && 'bg-blue-50/50 border border-blue-100/50',
                       )}
                     >
@@ -220,7 +313,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                             ? ''
                             : isHighlight
                               ? 'text-blue-600'
-                              : 'text-gray-400 group-hover:text-gray-600',
+                              : 'text-neutral-400 group-hover:text-neutral-600',
                         )}
                         style={isActive ? { color: tenant.primary_color || '#000000' } : undefined}
                       />
@@ -232,7 +325,7 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
                       >
                         {item.label}
                       </span>
-                      {isActive && <ChevronRight className="h-4 w-4 ml-auto text-gray-400" />}
+                      {isActive && <ChevronRight className="h-4 w-4 ml-auto text-neutral-400" />}
                     </Link>
                   );
                 })}
@@ -242,21 +335,24 @@ export function AdminSidebar({ tenant, adminUser, className }: AdminSidebarProps
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-100 bg-white flex-shrink-0">
+        <div className="p-4 border-t border-neutral-100 bg-white flex-shrink-0">
           {adminUser && (
             <div className="flex items-center gap-3 px-3 py-2 mb-2">
-              <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center border border-gray-200">
-                <span className="text-xs font-bold text-gray-600">
+              <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center border border-neutral-200">
+                <span className="text-xs font-bold text-neutral-600">
                   {(adminUser.name || 'A').charAt(0).toUpperCase()}
                 </span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-neutral-900 truncate">
                   {adminUser.name || 'Admin'}
                 </p>
               </div>
             </div>
           )}
+          <div className="px-3 mb-2">
+            <LocaleSwitcher />
+          </div>
           <form action="/api/auth/signout" method="post">
             <button
               type="submit"

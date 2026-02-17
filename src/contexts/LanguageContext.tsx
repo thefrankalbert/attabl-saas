@@ -11,6 +11,12 @@ const STORAGE_KEYS = {
   client: 'attabl_client_prefs_lang',
 } as const;
 
+// Map simple language codes to next-intl locale codes
+const LOCALE_MAP: Record<Language, string> = {
+  fr: 'fr-FR',
+  en: 'en-US',
+};
+
 interface Translations {
   [key: string]: {
     fr: string;
@@ -153,7 +159,7 @@ const translations: Translations = {
   stock: { fr: 'Stock', en: 'Stock' },
   current_stock: { fr: 'Stock actuel', en: 'Current stock' },
   min_alert: { fr: "Seuil d'alerte", en: 'Alert threshold' },
-  cost_per_unit: { fr: 'Co\u00fbt unitaire', en: 'Unit cost' },
+  cost_per_unit: { fr: 'Coût unitaire', en: 'Unit cost' },
   add_ingredient: { fr: 'Ajouter un produit', en: 'Add ingredient' },
   edit_ingredient: { fr: 'Modifier le produit', en: 'Edit ingredient' },
   recipe_for: { fr: 'Fiche technique de', en: 'Recipe for' },
@@ -167,10 +173,10 @@ const translations: Translations = {
   stock_movement: { fr: 'Mouvement de stock', en: 'Stock movement' },
   stock_movements: { fr: 'Mouvements de stock', en: 'Stock movements' },
   adjust_stock: { fr: 'Ajuster le stock', en: 'Adjust stock' },
-  destock: { fr: 'D\u00e9stockage', en: 'Destock' },
-  quantity_per_portion: { fr: 'Quantit\u00e9 par portion', en: 'Quantity per portion' },
+  destock: { fr: 'Déstockage', en: 'Destock' },
+  quantity_per_portion: { fr: 'Quantité par portion', en: 'Quantity per portion' },
   no_recipe: { fr: 'Sans fiche technique', en: 'No recipe defined' },
-  has_recipe: { fr: 'Fiche technique d\u00e9finie', en: 'Recipe defined' },
+  has_recipe: { fr: 'Fiche technique définie', en: 'Recipe defined' },
   suggestions: { fr: 'Suggestions', en: 'Suggestions' },
   pairing: { fr: 'Accompagnement', en: 'Pairing' },
   upsell: { fr: 'Suggestion vente', en: 'Upsell' },
@@ -247,6 +253,9 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     setLanguageState(lang);
     // Sauvegarder avec la clé spécifique au contexte
     localStorage.setItem(storageKey, lang);
+    // Sync with next-intl cookie for server-side rendering
+    const nextIntlLocale = LOCALE_MAP[lang];
+    document.cookie = `NEXT_LOCALE=${nextIntlLocale};path=/;max-age=31536000;SameSite=Lax`;
   };
 
   const t = (key: string) => {

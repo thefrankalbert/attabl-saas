@@ -77,11 +77,13 @@ export function SoundSettings({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Volume2 className="w-5 h-5 text-gray-500" />
-          <h3 className="font-semibold text-gray-900">Sons de notification</h3>
+          <Volume2 className="w-5 h-5 text-neutral-500" />
+          <h3 className="font-semibold text-neutral-900">Sons de notification</h3>
         </div>
         {!isPremium && (
-          <span className="text-xs text-gray-500">3 sons disponibles &middot; 10 avec Premium</span>
+          <span className="text-xs text-neutral-500">
+            3 sons disponibles &middot; 10 avec Premium
+          </span>
         )}
       </div>
 
@@ -99,8 +101,8 @@ export function SoundSettings({
                 isSelected
                   ? 'border-amber-400 bg-amber-50'
                   : isLocked
-                    ? 'border-gray-100 bg-gray-50/50 opacity-60'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                    ? 'border-neutral-100 bg-neutral-50/50 opacity-60'
+                    : 'border-neutral-200 bg-white hover:border-neutral-300'
               }`}
               onClick={() => !isLocked && handleSelect(sound)}
             >
@@ -115,8 +117,8 @@ export function SoundSettings({
                   isPlaying
                     ? 'bg-amber-500 text-white'
                     : isLocked
-                      ? 'bg-gray-100 text-gray-400'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      ? 'bg-neutral-100 text-neutral-400'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                 }`}
               >
                 {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
@@ -126,17 +128,17 @@ export function SoundSettings({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span
-                    className={`text-sm font-medium ${isLocked ? 'text-gray-400' : 'text-gray-900'}`}
+                    className={`text-sm font-medium ${isLocked ? 'text-neutral-400' : 'text-neutral-900'}`}
                   >
                     {sound.name}
                   </span>
                   {sound.isPremium && !isPremium && <PremiumBadge />}
                 </div>
-                <p className="text-xs text-gray-500 truncate">{sound.description}</p>
+                <p className="text-xs text-neutral-500 truncate">{sound.description}</p>
               </div>
 
               {/* Duration */}
-              <span className="text-xs text-gray-400 flex-shrink-0">{sound.duration}s</span>
+              <span className="text-xs text-neutral-400 flex-shrink-0">{sound.duration}s</span>
 
               {/* Selected indicator */}
               {isSelected && (
@@ -154,7 +156,7 @@ export function SoundSettings({
         <div className="pt-2">
           <Button
             variant="outline"
-            className="w-full h-11 border-dashed border-gray-300 text-gray-500 hover:text-gray-700"
+            className="w-full h-11 border-dashed border-neutral-300 text-neutral-500 hover:text-neutral-700"
             onClick={() => {
               toast({
                 title: 'Bientot disponible',

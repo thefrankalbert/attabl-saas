@@ -1,7 +1,21 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Timer, Flame, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
+import {
+  Flame,
+  AlertTriangle,
+  CheckCircle2,
+  Package,
+  Hotel,
+  Truck,
+  UtensilsCrossed,
+  Clock,
+  CircleDot,
+  Pause,
+  Check,
+  Play,
+  ChevronRight,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -15,35 +29,109 @@ interface KDSTicketProps {
   isMock?: boolean;
 }
 
-// Course labels in French with emoji
+// ─── Course labels ──────────────────────────────────────────
 const COURSE_LABELS: Record<string, { emoji: string; label: string; order: number }> = {
-  appetizer: { emoji: '\ud83e\udd57', label: 'Entr\u00e9es', order: 1 },
-  main: { emoji: '\ud83c\udf56', label: 'Plats', order: 2 },
-  dessert: { emoji: '\ud83c\udf70', label: 'Desserts', order: 3 },
-  drink: { emoji: '\ud83e\udd64', label: 'Boissons', order: 4 },
+  appetizer: { emoji: '🥗', label: 'Entrées', order: 1 },
+  main: { emoji: '🍖', label: 'Plats', order: 2 },
+  dessert: { emoji: '🍰', label: 'Desserts', order: 3 },
+  drink: { emoji: '🥤', label: 'Boissons', order: 4 },
 };
 
-// Service type badges
-const SERVICE_TYPE_BADGES: Record<string, { emoji: string; label: string }> = {
-  dine_in: { emoji: '\ud83c\udf7d\ufe0f', label: 'Sur place' },
-  takeaway: { emoji: '\ud83d\udce6', label: '\u00c0 emporter' },
-  delivery: { emoji: '\ud83d\ude97', label: 'Livraison' },
-  room_service: { emoji: '\ud83c\udfe8', label: 'Room service' },
+// ─── Service type config ────────────────────────────────────
+const SERVICE_TYPES: Record<
+  string,
+  { icon: React.ComponentType<{ className?: string }>; label: string }
+> = {
+  dine_in: { icon: UtensilsCrossed, label: 'Sur place' },
+  takeaway: { icon: Package, label: 'À emporter' },
+  delivery: { icon: Truck, label: 'Livraison' },
+  room_service: { icon: Hotel, label: 'Room service' },
 };
 
-// Item status config
-const ITEM_STATUS_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  pending: { label: 'En attente', bg: 'bg-gray-500/20', text: 'text-gray-400' },
-  preparing: { label: 'En pr\u00e9pa', bg: 'bg-yellow-500/20', text: 'text-yellow-400' },
-  ready: { label: 'Pr\u00eat', bg: 'bg-emerald-500/20', text: 'text-emerald-400' },
+// ─── Item status ────────────────────────────────────────────
+const ITEM_STATUSES: Record<
+  string,
+  {
+    label: string;
+    dot: string;
+    text: string;
+    bg: string;
+  }
+> = {
+  pending: {
+    label: 'Attente',
+    dot: 'bg-neutral-400',
+    text: 'text-neutral-400',
+    bg: 'bg-neutral-400/10 hover:bg-neutral-400/20',
+  },
+  preparing: {
+    label: 'Prépa',
+    dot: 'bg-yellow-400',
+    text: 'text-yellow-400',
+    bg: 'bg-yellow-400/10 hover:bg-yellow-400/20',
+  },
+  ready: {
+    label: 'Prêt',
+    dot: 'bg-emerald-400',
+    text: 'text-emerald-400',
+    bg: 'bg-emerald-400/10 hover:bg-emerald-400/20',
+  },
 };
 
-// Item status cycle order
-const ITEM_STATUS_CYCLE: Record<string, ItemStatus> = {
+const ITEM_NEXT: Record<string, ItemStatus> = {
   pending: 'preparing',
   preparing: 'ready',
-  ready: 'pending', // cycle back
+  ready: 'pending',
 };
+
+// ─── Order status → visual config ───────────────────────────
+const STATUS_CONFIG = {
+  pending: {
+    headerBg: 'bg-amber-500',
+    headerText: 'text-white',
+    icon: Play,
+    statusLabel: 'En attente',
+    actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
+    actionLabel: 'DÉMARRER',
+    next: 'preparing' as OrderStatus,
+  },
+  preparing: {
+    headerBg: 'bg-blue-500',
+    headerText: 'text-white',
+    icon: Pause,
+    statusLabel: 'En préparation',
+    actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
+    actionLabel: 'TERMINER',
+    next: 'ready' as OrderStatus,
+  },
+  ready: {
+    headerBg: 'bg-emerald-500',
+    headerText: 'text-white',
+    icon: Check,
+    statusLabel: 'Prêt à servir',
+    actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
+    actionLabel: 'SERVIR',
+    next: 'delivered' as OrderStatus,
+  },
+  delivered: {
+    headerBg: 'bg-neutral-600',
+    headerText: 'text-white',
+    icon: Check,
+    statusLabel: 'Servi',
+    actionBg: '',
+    actionLabel: '',
+    next: undefined,
+  },
+  cancelled: {
+    headerBg: 'bg-red-500',
+    headerText: 'text-white',
+    icon: CircleDot,
+    statusLabel: 'Annulé',
+    actionBg: '',
+    actionLabel: '',
+    next: undefined,
+  },
+} as const;
 
 export default function KDSTicket({
   order,
@@ -54,7 +142,6 @@ export default function KDSTicket({
   const [elapsed, setElapsed] = useState(0);
   const { toast } = useToast();
 
-  // Resolve items: Supabase returns order_items from join, but Order type uses items
   const items: OrderItem[] =
     order.items || (order as unknown as { order_items?: OrderItem[] }).order_items || [];
 
@@ -74,58 +161,26 @@ export default function KDSTicket({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatElapsedHuman = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    if (mins < 1) return "À l'instant";
+    if (mins === 1) return '1 min';
+    return `${mins} min`;
+  };
+
   const minutes = Math.floor(elapsed / 60);
   const isLate = minutes >= 20;
   const isWarning = minutes >= 10 && minutes < 20;
 
-  const statusConfig = {
-    pending: { bg: 'bg-amber-500', label: 'En Attente', borderColor: 'border-amber-500/50' },
-    preparing: {
-      bg: 'bg-blue-500',
-      label: 'En Pr\u00e9paration',
-      borderColor: 'border-blue-500/50',
-    },
-    ready: {
-      bg: 'bg-emerald-500',
-      label: 'Pr\u00eat \u00e0 Servir',
-      borderColor: 'border-emerald-500/50',
-    },
-    delivered: { bg: 'bg-gray-500', label: 'Servi', borderColor: 'border-gray-500/50' },
-    cancelled: { bg: 'bg-red-500', label: 'Annul\u00e9', borderColor: 'border-red-500/50' },
-  };
+  const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  const StatusIcon = cfg.icon;
 
-  const currentConfig = statusConfig[order.status] || statusConfig.pending;
-  const timerColor = isLate
-    ? 'bg-red-500 text-white'
-    : isWarning
-      ? 'bg-amber-500 text-white'
-      : 'bg-emerald-500/20 text-emerald-400';
-
-  const nextStatusMap: Record<string, OrderStatus> = {
-    pending: 'preparing',
-    preparing: 'ready',
-    ready: 'delivered',
-  };
-
-  const actionLabel: Record<string, string> = {
-    pending: 'D\u00c9MARRER',
-    preparing: 'TERMINER',
-    ready: 'SERVIR',
-  };
-
-  const actionColor: Record<string, string> = {
-    pending: 'bg-amber-500 hover:bg-amber-600',
-    preparing: 'bg-blue-500 hover:bg-blue-600',
-    ready: 'bg-emerald-500 hover:bg-emerald-600',
-  };
-
+  // ─── Actions ────────────────────────────────────────────────
   const handleAction = () => {
     if (isMock) return;
-    const nextStatus = nextStatusMap[order.status];
-    if (nextStatus) onStatusChange(order.id, nextStatus);
+    if (cfg.next) onStatusChange(order.id, cfg.next);
   };
 
-  // Update individual item status
   const updateItemStatus = async (itemId: string, newStatus: ItemStatus) => {
     if (isMock) return;
 
@@ -136,307 +191,292 @@ export default function KDSTicket({
       .eq('id', itemId);
 
     if (error) {
-      toast({ title: 'Erreur de mise \u00e0 jour', variant: 'destructive' });
+      toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
       return;
     }
 
-    // Check if all items are ready
     const allReady = items.every((i) =>
       i.id === itemId ? newStatus === 'ready' : i.item_status === 'ready',
     );
 
     if (allReady && items.length > 0) {
       await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
-      toast({ title: 'Tous les articles sont pr\u00eats !' });
+      toast({ title: 'Tous les articles sont prêts !' });
     }
 
     onUpdate?.();
   };
 
-  const handleItemStatusClick = (item: OrderItem) => {
-    const currentStatus = item.item_status || 'pending';
-    const nextStatus = ITEM_STATUS_CYCLE[currentStatus] || 'pending';
-    updateItemStatus(item.id, nextStatus);
+  const handleItemClick = (item: OrderItem) => {
+    const current = item.item_status || 'pending';
+    updateItemStatus(item.id, ITEM_NEXT[current] || 'pending');
   };
 
-  // Mark all items as ready
   const handleMarkAllReady = async () => {
     if (isMock) return;
 
     const supabase = createClient();
-
-    // Update all items to ready
     const itemIds = items.map((i) => i.id);
+
     if (itemIds.length > 0) {
-      const { error: itemsError } = await supabase
+      const { error } = await supabase
         .from('order_items')
         .update({ item_status: 'ready' })
         .in('id', itemIds);
 
-      if (itemsError) {
-        toast({ title: 'Erreur de mise \u00e0 jour', variant: 'destructive' });
+      if (error) {
+        toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
         return;
       }
     }
 
-    // Update order status to ready
-    const { error: orderError } = await supabase
-      .from('orders')
-      .update({ status: 'ready' })
-      .eq('id', order.id);
+    const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
 
-    if (orderError) {
-      toast({ title: 'Erreur de mise \u00e0 jour', variant: 'destructive' });
+    if (error) {
+      toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
       return;
     }
 
-    toast({ title: 'Commande marqu\u00e9e pr\u00eate !' });
+    toast({ title: 'Commande marquée prête !' });
     onUpdate?.();
   };
 
-  // Group items by course
+  // ─── Group items by course ─────────────────────────────────
   const groupedItems = items.reduce<Record<string, OrderItem[]>>((acc, item) => {
-    const course = item.course || 'main'; // default to 'main' if no course set
+    const course = item.course || 'main';
     if (!acc[course]) acc[course] = [];
     acc[course].push(item);
     return acc;
   }, {});
 
-  // Sort courses by defined order
   const sortedCourses = Object.keys(groupedItems).sort((a, b) => {
-    const orderA = COURSE_LABELS[a]?.order ?? 99;
-    const orderB = COURSE_LABELS[b]?.order ?? 99;
-    return orderA - orderB;
+    return (COURSE_LABELS[a]?.order ?? 99) - (COURSE_LABELS[b]?.order ?? 99);
   });
 
-  // Service type badge
-  const serviceType = order.service_type;
-  const serviceBadge = serviceType ? SERVICE_TYPE_BADGES[serviceType] : null;
+  // Progress
+  const readyCount = items.filter((i) => i.item_status === 'ready').length;
+  const progress = items.length > 0 ? Math.round((readyCount / items.length) * 100) : 0;
 
-  // Order number display
-  // Customer notes (from order level)
-  const customerNotes = order.notes;
+  const serviceType = order.service_type;
+  const svc = serviceType ? SERVICE_TYPES[serviceType] : null;
+
+  const timerColor = isLate ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-neutral-500';
 
   return (
     <div
       className={cn(
-        'flex flex-col rounded-xl overflow-hidden border-2 transition-all duration-300 bg-slate-900',
-        currentConfig.borderColor,
-        isLate && 'animate-pulse border-red-500',
+        'flex flex-col rounded-xl overflow-hidden transition-all duration-300 bg-neutral-900/90 border border-white/[0.06]',
+        isLate && 'ring-1 ring-red-500/40',
         isMock && 'opacity-90',
       )}
     >
-      {/* Status Bar */}
-      <div className={cn('h-1.5 w-full', currentConfig.bg)} />
-
-      {/* Header */}
-      <div className="p-3 border-b border-white/5">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center">
-              <span className="font-mono text-xl font-black text-white">{order.table_number}</span>
+      {/* ━━━ COLORED HEADER BANNER ━━━ */}
+      <div className={cn('px-3 py-2.5', cfg.headerBg, cfg.headerText)}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+              <StatusIcon className="w-4 h-4" />
             </div>
-            <div>
-              {order.order_number && (
-                <p className="font-mono text-lg font-black text-white">#{order.order_number}</p>
-              )}
+            <div className="min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                  Table {order.table_number}
-                </span>
-                <span className="text-[10px] text-slate-600">
-                  {new Date(order.created_at).toLocaleTimeString('fr-FR', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
+                {order.order_number ? (
+                  <span className="font-mono text-sm font-black">
+                    COMMANDE #{order.order_number}
+                  </span>
+                ) : (
+                  <span className="text-sm font-black uppercase tracking-wide">
+                    {cfg.statusLabel}
+                  </span>
+                )}
               </div>
+              <p className="text-[10px] font-medium opacity-80 truncate">
+                {formatElapsedHuman(elapsed)}
+                {order.customer_name && ` · ${order.customer_name}`}
+              </p>
             </div>
           </div>
-
-          <div className="flex flex-col items-end gap-1.5">
-            <div
-              className={cn(
-                'px-2.5 py-1.5 rounded-lg flex items-center gap-2 transition-all min-w-[80px] justify-center',
-                timerColor,
-                isLate && 'animate-pulse',
-              )}
-            >
-              {isLate ? <Flame className="w-3.5 h-3.5" /> : <Timer className="w-3.5 h-3.5" />}
-              <span className="font-mono text-sm font-black tabular-nums">
-                {formatTime(elapsed)}
-              </span>
+          {svc && (
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/15 shrink-0">
+              <svc.icon className="w-3 h-3" />
+              <span className="text-[9px] font-bold uppercase tracking-wide">{svc.label}</span>
             </div>
-          </div>
+          )}
         </div>
-
-        {/* Service Type Badge */}
-        {serviceBadge && (
-          <div className="mt-2 flex items-center gap-2">
-            <span
-              className={cn(
-                'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide',
-                serviceType === 'dine_in' &&
-                  'bg-blue-500/10 text-blue-400 border border-blue-500/20',
-                serviceType === 'takeaway' &&
-                  'bg-orange-500/10 text-orange-400 border border-orange-500/20',
-                serviceType === 'delivery' &&
-                  'bg-purple-500/10 text-purple-400 border border-purple-500/20',
-                serviceType === 'room_service' &&
-                  'bg-pink-500/10 text-pink-400 border border-pink-500/20',
-              )}
-            >
-              <span>{serviceBadge.emoji}</span>
-              <span>{serviceBadge.label}</span>
-            </span>
-            {serviceType === 'room_service' && order.room_number && (
-              <span className="text-[10px] font-bold text-pink-400">
-                Chambre {order.room_number}
-              </span>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* Customer Notes */}
-      {customerNotes && (
-        <div className="mx-3 mt-2 p-2 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+      {/* ━━━ INFO ROW ━━━ */}
+      <div className="flex items-center gap-4 px-3 py-2 border-b border-white/[0.04] bg-neutral-800/30">
+        {/* Table */}
+        <div className="flex items-center gap-1.5">
+          <UtensilsCrossed className="w-3.5 h-3.5 text-neutral-500" />
+          <span className="font-mono text-sm font-black text-white">{order.table_number}</span>
+        </div>
+        {/* Order # */}
+        {order.order_number && (
+          <div className="flex items-center gap-1.5">
+            <CircleDot className="w-3.5 h-3.5 text-neutral-500" />
+            <span className="font-mono text-sm font-bold text-neutral-300">
+              {order.order_number}
+            </span>
+          </div>
+        )}
+        {/* Room */}
+        {serviceType === 'room_service' && order.room_number && (
+          <div className="flex items-center gap-1.5">
+            <Hotel className="w-3.5 h-3.5 text-pink-400" />
+            <span className="text-xs font-bold text-pink-400">{order.room_number}</span>
+          </div>
+        )}
+        {/* Timer — pushed right */}
+        <div className={cn('flex items-center gap-1 ml-auto', timerColor)}>
+          {isLate ? <Flame className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+          <span className="font-mono text-sm font-black tabular-nums">{formatTime(elapsed)}</span>
+        </div>
+      </div>
+
+      {/* ━━━ Customer Notes ━━━ */}
+      {order.notes && (
+        <div className="px-3 py-2 bg-yellow-500/[0.07] border-b border-yellow-500/10">
           <div className="flex items-start gap-1.5 text-yellow-400">
-            <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-            <p className="text-[10px] font-bold uppercase tracking-wide leading-tight">
-              {customerNotes}
-            </p>
+            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <p className="text-[11px] font-bold leading-snug">{order.notes}</p>
           </div>
         </div>
       )}
 
-      {/* Items List - Grouped by Course */}
-      <div className="flex-1 p-3 space-y-3 overflow-y-auto max-h-[320px] bg-slate-900/50 custom-scrollbar">
+      {/* ━━━ ITEMS LIST ━━━ */}
+      <div className="flex-1 overflow-y-auto max-h-[280px] custom-scrollbar">
         {sortedCourses.map((course) => {
-          const courseConfig = COURSE_LABELS[course] || {
-            emoji: '\ud83c\udf7d\ufe0f',
-            label: course,
-            order: 99,
-          };
+          const courseConf = COURSE_LABELS[course] || { emoji: '🍽️', label: course, order: 99 };
           const courseItems = groupedItems[course];
 
           return (
             <div key={course}>
-              {/* Course Header */}
               {sortedCourses.length > 1 && (
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className="text-xs">{courseConfig.emoji}</span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-                    {courseConfig.label}
+                <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
+                  <span className="text-[10px]">{courseConf.emoji}</span>
+                  <span className="text-[9px] font-bold uppercase tracking-[0.15em] text-neutral-600">
+                    {courseConf.label}
                   </span>
-                  <div className="flex-1 h-px bg-slate-800" />
+                  <div className="flex-1 h-px bg-neutral-800/50" />
                 </div>
               )}
 
-              {/* Items */}
-              <div className="space-y-1.5">
-                {courseItems.map((item) => {
-                  const itemStatus = item.item_status || 'pending';
-                  const statusConf = ITEM_STATUS_CONFIG[itemStatus] || ITEM_STATUS_CONFIG.pending;
+              {courseItems.map((item) => {
+                const st = ITEM_STATUSES[item.item_status || 'pending'] || ITEM_STATUSES.pending;
+                const hasNotes = item.notes || item.customer_notes;
+                const hasMods = item.modifiers && item.modifiers.length > 0;
 
-                  return (
-                    <div
-                      key={item.id}
-                      className="flex items-start gap-3 p-2 rounded-lg bg-white/5 border border-white/5"
-                    >
-                      <div className="w-6 h-6 flex-shrink-0 rounded bg-slate-800 border border-slate-700 flex items-center justify-center">
-                        <span className="font-mono text-xs font-black text-white">
-                          {item.quantity}
+                return (
+                  <div
+                    key={item.id}
+                    className="flex items-start gap-2.5 px-3 py-1.5 border-b border-white/[0.02] last:border-b-0"
+                  >
+                    {/* Qty + Name */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1">
+                        <span className="text-[13px] text-neutral-400 font-medium shrink-0">
+                          {item.quantity} x
                         </span>
+                        <span className="text-[13px] font-bold text-white leading-tight truncate">
+                          {item.name}
+                        </span>
+                        {!isMock && item.menu_item_id && (
+                          <RuptureButton
+                            menuItemId={item.menu_item_id}
+                            itemName={item.name}
+                            onRupture={onUpdate}
+                          />
+                        )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <p className="text-sm font-bold text-white leading-tight">{item.name}</p>
-                          {!isMock && item.menu_item_id && (
-                            <RuptureButton
-                              menuItemId={item.menu_item_id}
-                              itemName={item.name}
-                              onRupture={onUpdate}
-                            />
-                          )}
+                      {hasMods && (
+                        <div className="flex flex-wrap gap-x-2 ml-6 mt-0.5">
+                          {item.modifiers!.map((mod, idx) => (
+                            <span key={idx} className="text-[10px] text-blue-400 font-medium">
+                              +{mod.name}
+                            </span>
+                          ))}
                         </div>
-
-                        {/* Modifiers in blue */}
-                        {item.modifiers && item.modifiers.length > 0 && (
-                          <div className="mt-0.5">
-                            {item.modifiers.map((mod, idx) => (
-                              <span
-                                key={idx}
-                                className="text-[10px] text-blue-400 font-medium mr-2"
-                              >
-                                +{mod.name}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-
-                        {/* Item notes */}
-                        {(item.notes || item.customer_notes) && (
-                          <div className="mt-1 flex items-start gap-1.5 text-amber-400">
-                            <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-                            <p className="text-[10px] font-bold uppercase tracking-wide leading-tight">
-                              {item.customer_notes || item.notes}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Item Status Badge - Clickable to cycle */}
-                      <button
-                        onClick={() => handleItemStatusClick(item)}
-                        disabled={isMock}
-                        className={cn(
-                          'px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide transition-all shrink-0',
-                          statusConf.bg,
-                          statusConf.text,
-                          !isMock && 'hover:opacity-80 cursor-pointer active:scale-95',
-                        )}
-                      >
-                        {statusConf.label}
-                      </button>
+                      )}
+                      {hasNotes && (
+                        <p className="text-[10px] text-amber-400/80 font-medium ml-6 mt-0.5 italic">
+                          {item.customer_notes || item.notes}
+                        </p>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
+
+                    {/* Status badge — clickable to cycle */}
+                    <button
+                      onClick={() => handleItemClick(item)}
+                      disabled={isMock}
+                      className={cn(
+                        'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold shrink-0 transition-all',
+                        st.bg,
+                        st.text,
+                        !isMock && 'cursor-pointer active:scale-95',
+                      )}
+                    >
+                      <div className={cn('w-1.5 h-1.5 rounded-full', st.dot)} />
+                      {st.label}
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           );
         })}
 
         {items.length === 0 && (
-          <div className="text-center py-4 text-slate-600 text-xs">Aucun article</div>
+          <div className="text-center py-6 text-neutral-600 text-xs">Aucun article</div>
         )}
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex flex-col">
-        {/* "Tout pr\u00eat" button */}
+      {/* ━━━ PROGRESS BAR ━━━ */}
+      {items.length > 0 && progress > 0 && (
+        <div className="px-3 py-1.5 border-t border-white/[0.04]">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1 rounded-full bg-neutral-800 overflow-hidden">
+              <div
+                className={cn(
+                  'h-full rounded-full transition-all duration-500',
+                  progress === 100 ? 'bg-emerald-400' : 'bg-blue-400',
+                )}
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-[10px] font-bold text-neutral-500 tabular-nums">
+              {readyCount}/{items.length}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ━━━ ACTIONS ━━━ */}
+      <div className="flex">
+        {/* "Tout prêt" shortcut */}
         {order.status !== 'ready' && order.status !== 'delivered' && items.length > 0 && (
           <button
             onClick={handleMarkAllReady}
             disabled={isMock}
-            className="w-full py-2 text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border-t border-white/5 transition-all flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/[0.06] hover:bg-emerald-400/[0.12] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Tout pr\u00eat</span>
+            Tout prêt
           </button>
         )}
 
-        {/* Main action button */}
-        {actionLabel[order.status] && (
+        {/* Main action — BIG touch target */}
+        {cfg.actionLabel && (
           <button
             onClick={handleAction}
+            disabled={isMock}
             className={cn(
-              'w-full py-3 font-black text-[10px] uppercase tracking-widest text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2',
-              actionColor[order.status],
+              'flex-1 py-2.5 font-black text-xs uppercase tracking-[0.15em] text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
+              cfg.actionBg,
             )}
           >
-            <span>{actionLabel[order.status]}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            {cfg.actionLabel}
+            <ChevronRight className="w-4 h-4" />
           </button>
         )}
       </div>

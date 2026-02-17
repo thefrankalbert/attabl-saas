@@ -200,25 +200,27 @@ export default function MenuDetailClient({
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-gray-500">
+      <div className="flex items-center gap-2 text-sm text-neutral-500">
         <Link
           href={`/sites/${tenantSlug}/admin/menus`}
-          className="hover:text-gray-900 transition-colors flex items-center gap-1"
+          className="hover:text-neutral-900 transition-colors flex items-center gap-1"
         >
           <ArrowLeft className="w-4 h-4" />
           Cartes
         </Link>
         <span>/</span>
-        <span className="text-gray-900 font-medium">{menu.name}</span>
+        <span className="text-neutral-900 font-medium">{menu.name}</span>
       </div>
 
       {/* Menu info header */}
-      <div className="bg-white rounded-xl border border-gray-100 p-6">
+      <div className="bg-white rounded-xl border border-neutral-100 p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">{menu.name}</h1>
-            {menu.name_en && <p className="text-sm text-gray-400">{menu.name_en}</p>}
-            {menu.description && <p className="text-sm text-gray-500 mt-2">{menu.description}</p>}
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{menu.name}</h1>
+            {menu.name_en && <p className="text-sm text-neutral-400">{menu.name_en}</p>}
+            {menu.description && (
+              <p className="text-sm text-neutral-500 mt-2">{menu.description}</p>
+            )}
           </div>
           <div className="flex items-center gap-3">
             {menu.venue && (
@@ -233,7 +235,7 @@ export default function MenuDetailClient({
                 'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
                 menu.is_active
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                  : 'bg-gray-100 text-gray-500 border-gray-200',
+                  : 'bg-neutral-100 text-neutral-500 border-neutral-200',
               )}
             >
               {menu.is_active ? (
@@ -255,8 +257,8 @@ export default function MenuDetailClient({
       {/* Categories section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-            <Folder className="w-4 h-4 text-gray-400" />
+          <h2 className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
+            <Folder className="w-4 h-4 text-neutral-400" />
             Cat\u00e9gories ({categories.length})
           </h2>
           <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
@@ -269,7 +271,7 @@ export default function MenuDetailClient({
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-16 bg-white rounded-xl border border-gray-100 animate-pulse"
+                className="h-16 bg-white rounded-xl border border-neutral-100 animate-pulse"
               />
             ))}
           </div>
@@ -280,15 +282,15 @@ export default function MenuDetailClient({
               return (
                 <div key={cat.id} className="space-y-2">
                   {/* Category header */}
-                  <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-gray-100 hover:bg-gray-50/50 transition-colors group">
-                    <div className="w-9 h-9 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <Folder className="w-4 h-4 text-gray-500" />
+                  <div className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group">
+                    <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
+                      <Folder className="w-4 h-4 text-neutral-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm">{cat.name}</p>
-                      {cat.name_en && <p className="text-xs text-gray-400">{cat.name_en}</p>}
+                      <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
+                      {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                    <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                       <Utensils className="w-3.5 h-3.5" />
                       <span className="font-medium">
                         {catItems.length} plat{catItems.length > 1 ? 's' : ''}
@@ -320,13 +322,13 @@ export default function MenuDetailClient({
                       {catItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100/80 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-neutral-50 rounded-lg hover:bg-neutral-100/80 transition-colors"
                         >
-                          <Utensils className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-                          <span className="flex-1 text-sm text-gray-700 font-medium truncate">
+                          <Utensils className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+                          <span className="flex-1 text-sm text-neutral-700 font-medium truncate">
                             {item.name}
                           </span>
-                          <span className="text-sm font-bold text-gray-900 tabular-nums">
+                          <span className="text-sm font-bold text-neutral-900 tabular-nums">
                             {item.price.toLocaleString()} FCFA
                           </span>
                           <button
@@ -335,7 +337,7 @@ export default function MenuDetailClient({
                               'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
                               item.is_available
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                : 'bg-gray-100 text-gray-500 border-gray-200',
+                                : 'bg-neutral-100 text-neutral-500 border-neutral-200',
                             )}
                           >
                             {item.is_available ? (
@@ -359,12 +361,12 @@ export default function MenuDetailClient({
             })}
           </div>
         ) : (
-          <div className="bg-white rounded-xl border border-gray-100 p-12 text-center">
-            <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-7 h-7 text-gray-400" />
+          <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center">
+            <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Folder className="w-7 h-7 text-neutral-400" />
             </div>
-            <h3 className="text-base font-bold text-gray-900">Aucune cat\u00e9gorie</h3>
-            <p className="text-sm text-gray-500 mt-2">
+            <h3 className="text-base font-bold text-neutral-900">Aucune cat\u00e9gorie</h3>
+            <p className="text-sm text-neutral-500 mt-2">
               Ajoutez des cat\u00e9gories pour organiser les plats de cette carte
             </p>
             <Button onClick={openNewCategoryModal} className="mt-4">

@@ -8,12 +8,13 @@ import {
   Maximize,
   Minimize,
   RefreshCw,
-  AlertTriangle,
-  Clock,
-  CheckCircle2,
   Bell,
   Utensils,
+  CheckCircle2,
+  Flame,
+  X,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -26,69 +27,170 @@ interface KitchenClientProps {
   notificationSoundId?: string;
 }
 
-// Mock Data
+// ─── Column config ──────────────────────────────────────────
+const COLUMNS = {
+  pending: {
+    label: 'En Attente',
+    dot: 'bg-amber-400',
+    countBadge: 'text-amber-400 bg-amber-400/10',
+    colBg: 'bg-amber-500/[0.025]',
+    emptyLabel: 'Aucune commande en attente',
+    emptyIcon: Bell,
+  },
+  preparing: {
+    label: 'En Préparation',
+    dot: 'bg-blue-400',
+    countBadge: 'text-blue-400 bg-blue-400/10',
+    colBg: 'bg-blue-500/[0.025]',
+    emptyLabel: 'Rien en préparation',
+    emptyIcon: Utensils,
+  },
+  ready: {
+    label: 'Prêts à Servir',
+    dot: 'bg-emerald-400',
+    countBadge: 'text-emerald-400 bg-emerald-400/10',
+    colBg: 'bg-emerald-500/[0.025]',
+    emptyLabel: 'Aucune commande prête',
+    emptyIcon: CheckCircle2,
+  },
+} as const;
+
+// ─── Rich mock data for demo ─────────────────────────────────
 const MOCK_ORDERS: Order[] = [
   {
     id: 'mock-1',
+    order_number: '047',
     table_number: '12',
     status: 'pending',
-    created_at: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
-    total_price: 15000,
+    service_type: 'dine_in',
+    created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+    total_price: 28500,
+    notes: 'Allergie aux noix — table VIP',
     items: [
-      { id: 'm1', name: 'Burger', quantity: 2, price: 5000 },
-      { id: 'm2', name: 'Frites', quantity: 2, price: 2500 },
+      {
+        id: 'm1',
+        name: 'Tartare de Saumon',
+        quantity: 2,
+        price: 6500,
+        item_status: 'pending',
+        course: 'appetizer',
+      },
+      {
+        id: 'm2',
+        name: 'Entrecôte Grillée',
+        quantity: 1,
+        price: 9500,
+        item_status: 'pending',
+        course: 'main',
+        notes: 'Cuisson saignante',
+        modifiers: [{ name: 'Sauce béarnaise', price: 500 }],
+      },
+      {
+        id: 'm3',
+        name: 'Risotto Truffe',
+        quantity: 1,
+        price: 8500,
+        item_status: 'pending',
+        course: 'main',
+      },
+      {
+        id: 'm4',
+        name: 'Frites Maison',
+        quantity: 2,
+        price: 1750,
+        item_status: 'pending',
+        course: 'main',
+      },
     ],
     tenant_id: 'mock',
   },
   {
     id: 'mock-2',
+    order_number: '045',
     table_number: '05',
     status: 'preparing',
-    created_at: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
-    total_price: 8000,
-    items: [{ id: 'm3', name: 'Pizza', quantity: 1, price: 8000, notes: 'Sans olives' }],
+    service_type: 'dine_in',
+    created_at: new Date(Date.now() - 14 * 60 * 1000).toISOString(),
+    total_price: 18000,
+    items: [
+      {
+        id: 'm5',
+        name: 'Pizza Margherita',
+        quantity: 1,
+        price: 8000,
+        item_status: 'preparing',
+        course: 'main',
+        customer_notes: 'Sans olives, extra mozzarella',
+      },
+      {
+        id: 'm6',
+        name: 'Tiramisu',
+        quantity: 2,
+        price: 5000,
+        item_status: 'pending',
+        course: 'dessert',
+      },
+    ],
+    tenant_id: 'mock',
+  },
+  {
+    id: 'mock-4',
+    order_number: '044',
+    table_number: '03',
+    status: 'preparing',
+    service_type: 'takeaway',
+    created_at: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+    total_price: 12000,
+    items: [
+      {
+        id: 'm9',
+        name: 'Burger Classic',
+        quantity: 2,
+        price: 4500,
+        item_status: 'ready',
+        course: 'main',
+      },
+      {
+        id: 'm10',
+        name: 'Onion Rings',
+        quantity: 1,
+        price: 3000,
+        item_status: 'preparing',
+        course: 'main',
+      },
+    ],
+    tenant_id: 'mock',
+  },
+  {
+    id: 'mock-3',
+    order_number: '042',
+    table_number: '08',
+    status: 'ready',
+    service_type: 'room_service',
+    room_number: '304',
+    created_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+    total_price: 14500,
+    items: [
+      {
+        id: 'm7',
+        name: 'Salade César',
+        quantity: 1,
+        price: 4500,
+        item_status: 'ready',
+        course: 'appetizer',
+      },
+      {
+        id: 'm8',
+        name: 'Fondant Chocolat',
+        quantity: 2,
+        price: 5000,
+        item_status: 'ready',
+        course: 'dessert',
+      },
+    ],
     tenant_id: 'mock',
   },
 ];
-
-function StatCard({
-  label,
-  count,
-  icon: Icon,
-  color,
-  pulse,
-}: {
-  label: string;
-  count: number;
-  icon: React.ComponentType<{ className?: string }>;
-  color: 'amber' | 'blue' | 'emerald';
-  pulse?: boolean;
-}) {
-  const styles = {
-    amber: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-    blue: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-    emerald: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  };
-  const iconBg = { amber: 'bg-amber-500', blue: 'bg-blue-500', emerald: 'bg-emerald-500' };
-
-  return (
-    <div
-      className={cn(
-        'flex items-center gap-3 px-4 py-2 rounded-lg border transition-all',
-        styles[color],
-        pulse && 'animate-pulse',
-      )}
-    >
-      <div className={cn('w-8 h-8 rounded-md flex items-center justify-center', iconBg[color])}>
-        <Icon className="w-4 h-4 text-white" />
-      </div>
-      <div>
-        <p className="font-mono text-2xl font-black tabular-nums">{count}</p>
-        <p className="text-[10px] font-bold uppercase tracking-widest opacity-70">{label}</p>
-      </div>
-    </div>
-  );
-}
 
 function EmptyColumn({
   label,
@@ -98,11 +200,11 @@ function EmptyColumn({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-6 text-center opacity-50">
-      <div className="w-12 h-12 rounded-xl bg-slate-800/50 flex items-center justify-center mb-3">
-        <Icon className="w-6 h-6 text-slate-500" />
+    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-neutral-800/40 flex items-center justify-center mb-4">
+        <Icon className="w-7 h-7 text-neutral-700" />
       </div>
-      <p className="text-sm font-bold text-slate-500">{label}</p>
+      <p className="text-sm font-semibold text-neutral-600">{label}</p>
     </div>
   );
 }
@@ -125,6 +227,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   });
 
   const { toast } = useToast();
+  const router = useRouter();
   const supabase = createClient();
 
   const loadOrders = useCallback(async () => {
@@ -175,7 +278,6 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   }, [loadOrders, playNotification, supabase, tenantId]);
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    // Optimistic
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
 
     try {
@@ -184,7 +286,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       loadOrders();
     } catch {
       toast({ title: 'Erreur', variant: 'destructive' });
-      loadOrders(); // Revert
+      loadOrders();
     }
   };
 
@@ -206,191 +308,164 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const preparingOrders = displayOrders.filter((o) => o.status === 'preparing');
   const readyOrders = displayOrders.filter((o) => o.status === 'ready');
 
+  const columnOrders = {
+    pending: pendingOrders,
+    preparing: preparingOrders,
+    ready: readyOrders,
+  };
+
+  const totalActive = pendingOrders.length + preparingOrders.length + readyOrders.length;
+
   if (loading) {
     return (
-      <div className="h-screen bg-slate-950 flex items-center justify-center text-white">
+      <div className="fixed inset-0 z-[200] bg-neutral-950 flex items-center justify-center text-white">
         <div className="flex flex-col items-center gap-4">
-          <RefreshCw className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-sm font-medium opacity-70">Chargement du KDS...</p>
+          <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
+          <p className="text-sm font-medium text-neutral-500">Chargement du KDS...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={cn(
-        'min-h-screen bg-slate-950 text-white flex flex-col font-sans overflow-hidden',
-        isFullscreen && 'fixed inset-0 z-[100]',
-      )}
-    >
+    <div className="fixed inset-0 z-[200] bg-neutral-950 text-white flex flex-col overflow-hidden">
       <audio ref={audioRef} preload="auto" />
 
-      {/* Header */}
-      <header className="h-14 border-b border-white/10 flex items-center justify-between px-4 bg-slate-900 sticky top-0 z-50 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-amber-500 flex items-center justify-center">
-            <ChefHat className="w-4 h-4 text-white" />
-          </div>
-          <div>
-            <h1 className="font-bold text-sm tracking-tight">KDS</h1>
-            <p className="text-[10px] text-slate-500">Kitchen Display System</p>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="hidden md:flex items-center gap-3">
-          <StatCard
-            label="en attente"
-            count={pendingOrders.length}
-            icon={AlertTriangle}
-            color="amber"
-            pulse={pendingOrders.length > 0}
-          />
-          <StatCard label="en cours" count={preparingOrders.length} icon={Clock} color="blue" />
-          <StatCard label="prêts" count={readyOrders.length} icon={CheckCircle2} color="emerald" />
-        </div>
-
-        {/* Controls */}
+      {/* ━━━ HEADER ━━━ */}
+      <header className="h-12 border-b border-white/[0.06] flex items-center justify-between px-3 bg-neutral-900/90 backdrop-blur-sm shrink-0">
+        {/* Left: Logo + counters */}
         <div className="flex items-center gap-2">
-          <span className="text-[10px] text-slate-500 font-mono mr-2 hidden sm:inline">
-            MAJ: {lastUpdate.toLocaleTimeString()}
+          <ChefHat className="w-5 h-5 text-amber-400" />
+          <span className="font-black text-sm tracking-tight mr-1">KDS</span>
+
+          {/* Inline status counters */}
+          <div className="flex items-center gap-1">
+            {pendingOrders.length > 0 && (
+              <div
+                className={cn(
+                  'flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400/10',
+                  pendingOrders.length > 3 && 'animate-pulse',
+                )}
+              >
+                {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400" />}
+                <span className="font-mono text-[11px] font-black text-amber-400 tabular-nums">
+                  {pendingOrders.length}
+                </span>
+              </div>
+            )}
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-400/10">
+              <span className="font-mono text-[11px] font-black text-blue-400 tabular-nums">
+                {preparingOrders.length}
+              </span>
+            </div>
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/10">
+              <span className="font-mono text-[11px] font-black text-emerald-400 tabular-nums">
+                {readyOrders.length}
+              </span>
+            </div>
+            <span className="text-[10px] text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
+              {totalActive} en cours
+            </span>
+          </div>
+        </div>
+
+        {/* Right: Controls */}
+        <div className="flex items-center gap-1.5">
+          <span className="text-[10px] text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
+            {lastUpdate.toLocaleTimeString('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            })}
           </span>
           <button
             onClick={() => setShowMockData(!showMockData)}
             className={cn(
-              'px-2 py-1 rounded text-[10px] border uppercase',
+              'px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
               showMockData
-                ? 'bg-amber-500/20 text-amber-500 border-amber-500'
-                : 'border-transparent text-slate-500',
+                ? 'bg-amber-400/20 text-amber-400'
+                : 'text-neutral-600 hover:text-neutral-400',
             )}
           >
-            {showMockData ? 'Demo On' : 'Demo Off'}
+            Demo
           </button>
           <button
             onClick={toggleSound}
             className={cn(
-              'p-2 rounded-lg transition-all',
-              soundEnabled ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400',
+              'p-1.5 rounded-lg transition-colors',
+              soundEnabled
+                ? 'bg-amber-400/20 text-amber-400'
+                : 'text-neutral-600 hover:text-neutral-400',
             )}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-2 rounded-lg bg-slate-800 text-slate-400 hover:text-white"
+            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+          </button>
+          <button
+            onClick={() => router.back()}
+            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors ml-1"
+            title="Retour au dashboard"
+          >
+            <X className="w-4 h-4" />
           </button>
         </div>
       </header>
 
-      {/* Columns Headers */}
-      <div className="hidden md:grid grid-cols-3 gap-px bg-slate-800 shrink-0 border-b border-white/5">
-        <div className="bg-slate-900 py-2 px-3 flex items-center gap-2 border-r border-white/5">
-          <div className="w-2 h-2 rounded-full bg-amber-500" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            En Attente
-          </span>
-          <span className="ml-auto bg-amber-500/10 text-amber-500 px-1.5 rounded text-[10px] font-bold">
-            {pendingOrders.length}
-          </span>
-        </div>
-        <div className="bg-slate-900 py-2 px-3 flex items-center gap-2 border-r border-white/5">
-          <div className="w-2 h-2 rounded-full bg-blue-500" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-            En Préparation
-          </span>
-          <span className="ml-auto bg-blue-500/10 text-blue-500 px-1.5 rounded text-[10px] font-bold">
-            {preparingOrders.length}
-          </span>
-        </div>
-        <div className="bg-slate-900 py-2 px-3 flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-500" />
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Prêts</span>
-          <span className="ml-auto bg-emerald-500/10 text-emerald-500 px-1.5 rounded text-[10px] font-bold">
-            {readyOrders.length}
-          </span>
-        </div>
-      </div>
+      {/* ━━━ 3-COLUMN GRID ━━━ */}
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
+        {(Object.keys(COLUMNS) as Array<keyof typeof COLUMNS>).map((key, idx) => {
+          const col = COLUMNS[key];
+          const colOrders = columnOrders[key];
 
-      {/* Columns Content — 3 cols on md+, scrollable single column on small tablets */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-px bg-slate-800 overflow-hidden">
-        {/* Pending */}
-        <div className="bg-slate-950 overflow-y-auto p-3 space-y-3 custom-scrollbar md:border-r border-white/5">
-          <div className="md:hidden flex items-center gap-2 mb-2 px-1">
-            <div className="w-2 h-2 rounded-full bg-amber-500" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              En Attente
-            </span>
-            <span className="ml-auto bg-amber-500/10 text-amber-500 px-1.5 rounded text-[10px] font-bold">
-              {pendingOrders.length}
-            </span>
-          </div>
-          {pendingOrders.length > 0 ? (
-            pendingOrders.map((o) => (
-              <KDSTicket
-                key={o.id}
-                order={o}
-                onStatusChange={handleStatusChange}
-                onUpdate={loadOrders}
-                isMock={showMockData}
-              />
-            ))
-          ) : (
-            <EmptyColumn label="Aucune commande en attente" icon={Bell} />
-          )}
-        </div>
+          return (
+            <div
+              key={key}
+              className={cn(
+                'flex flex-col overflow-hidden',
+                col.colBg,
+                idx < 2 && 'md:border-r border-white/[0.04]',
+              )}
+            >
+              {/* Column Header */}
+              <div className="py-2 px-3 flex items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30">
+                <div className={cn('w-2 h-2 rounded-full', col.dot)} />
+                <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">
+                  {col.label}
+                </span>
+                <span
+                  className={cn(
+                    'ml-auto px-2 py-0.5 rounded-md text-[11px] font-black tabular-nums',
+                    col.countBadge,
+                  )}
+                >
+                  {colOrders.length}
+                </span>
+              </div>
 
-        {/* Preparing */}
-        <div className="bg-slate-950 overflow-y-auto p-3 space-y-3 custom-scrollbar md:border-r border-white/5">
-          <div className="md:hidden flex items-center gap-2 mb-2 px-1">
-            <div className="w-2 h-2 rounded-full bg-blue-500" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              En Préparation
-            </span>
-            <span className="ml-auto bg-blue-500/10 text-blue-500 px-1.5 rounded text-[10px] font-bold">
-              {preparingOrders.length}
-            </span>
-          </div>
-          {preparingOrders.length > 0 ? (
-            preparingOrders.map((o) => (
-              <KDSTicket
-                key={o.id}
-                order={o}
-                onStatusChange={handleStatusChange}
-                onUpdate={loadOrders}
-                isMock={showMockData}
-              />
-            ))
-          ) : (
-            <EmptyColumn label="Rien en préparation" icon={Utensils} />
-          )}
-        </div>
-
-        {/* Ready */}
-        <div className="bg-slate-950 overflow-y-auto p-3 space-y-3 custom-scrollbar">
-          <div className="md:hidden flex items-center gap-2 mb-2 px-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-500" />
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Prêts</span>
-            <span className="ml-auto bg-emerald-500/10 text-emerald-500 px-1.5 rounded text-[10px] font-bold">
-              {readyOrders.length}
-            </span>
-          </div>
-          {readyOrders.length > 0 ? (
-            readyOrders.map((o) => (
-              <KDSTicket
-                key={o.id}
-                order={o}
-                onStatusChange={handleStatusChange}
-                onUpdate={loadOrders}
-                isMock={showMockData}
-              />
-            ))
-          ) : (
-            <EmptyColumn label="Aucune commande prête" icon={CheckCircle2} />
-          )}
-        </div>
+              {/* Column Content */}
+              <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar">
+                {colOrders.length > 0 ? (
+                  colOrders.map((o) => (
+                    <KDSTicket
+                      key={o.id}
+                      order={o}
+                      onStatusChange={handleStatusChange}
+                      onUpdate={loadOrders}
+                      isMock={showMockData}
+                    />
+                  ))
+                ) : (
+                  <EmptyColumn label={col.emptyLabel} icon={col.emptyIcon} />
+                )}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

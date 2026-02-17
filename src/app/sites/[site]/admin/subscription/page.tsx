@@ -2,10 +2,11 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
 
-export default async function SubscriptionPage() {
+export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
   const headersList = await headers();
-  const tenantSlug = headersList.get('x-tenant-slug');
+  const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Récupérer le tenant et l'email du propriétaire (si possible)
   // Note: Idéalement, on devrait récupérer l'email de l'user courant ou celui stocké dans tenant.users
@@ -18,7 +19,7 @@ export default async function SubscriptionPage() {
   if (!tenant) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-gray-600">Restaurant non trouvé</h2>
+        <h2 className="text-xl font-semibold text-neutral-600">Restaurant non trouvé</h2>
       </div>
     );
   }

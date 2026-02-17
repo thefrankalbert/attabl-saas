@@ -199,18 +199,18 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const selectedItem = menuItems.find((m) => m.id === selectedItemId);
 
   if (loading) {
-    return <div className="p-8 text-center text-gray-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
   }
 
   return (
     <div className="p-4 sm:p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+        <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
           <BookOpenCheck className="w-6 h-6" />
           {t('recipes_tech')}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-neutral-500 mt-1">
           {itemsWithRecipes.size} / {menuItems.length} plats avec fiche technique
         </p>
       </div>
@@ -218,7 +218,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
             placeholder="Rechercher un plat..."
             className="pl-9"
@@ -244,8 +244,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       {/* Layout: Items list + Recipe editor */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Items List */}
-        <div className="flex-1 bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="max-h-[600px] overflow-y-auto divide-y divide-gray-100">
+        <div className="flex-1 bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="max-h-[600px] overflow-y-auto divide-y divide-neutral-100">
             {filteredItems.map((item) => {
               const hasRecipe = itemsWithRecipes.has(item.id);
               const isSelected = selectedItemId === item.id;
@@ -258,14 +258,14 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     'w-full text-left px-4 py-3 flex items-center justify-between transition-colors',
                     isSelected
                       ? 'bg-primary/5 border-l-4 border-primary'
-                      : 'hover:bg-gray-50 border-l-4 border-transparent',
+                      : 'hover:bg-neutral-50 border-l-4 border-transparent',
                   )}
                 >
                   <div>
                     <p
                       className={cn(
                         'font-medium text-sm',
-                        isSelected ? 'text-primary' : 'text-gray-900',
+                        isSelected ? 'text-primary' : 'text-neutral-900',
                       )}
                     >
                       {item.name}
@@ -274,7 +274,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                   <span
                     className={cn(
                       'text-[10px] font-bold px-2 py-0.5 rounded-full uppercase',
-                      hasRecipe ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500',
+                      hasRecipe ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500',
                     )}
                   >
                     {hasRecipe ? t('has_recipe') : t('no_recipe')}
@@ -283,35 +283,35 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               );
             })}
             {filteredItems.length === 0 && (
-              <div className="px-4 py-12 text-center text-gray-400">Aucun plat trouvé</div>
+              <div className="px-4 py-12 text-center text-neutral-400">Aucun plat trouvé</div>
             )}
           </div>
         </div>
 
         {/* Recipe Editor Panel */}
-        <div className="lg:w-[450px] bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="lg:w-[450px] bg-white rounded-xl border border-neutral-200 overflow-hidden">
           {selectedItemId && selectedItem ? (
             <div className="flex flex-col h-full">
-              <div className="px-4 py-3 border-b border-gray-100 bg-gray-50">
-                <h3 className="font-bold text-sm text-gray-900">
+              <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
+                <h3 className="font-bold text-sm text-neutral-900">
                   {t('recipe_for')} {selectedItem.name}
                 </h3>
               </div>
 
               {loadingRecipe ? (
-                <div className="p-8 text-center text-gray-400">{t('loading')}</div>
+                <div className="p-8 text-center text-neutral-400">{t('loading')}</div>
               ) : (
                 <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[400px]">
                   {recipeLines.map((line, idx) => (
                     <div
                       key={idx}
-                      className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg border border-gray-100"
+                      className="flex items-start gap-2 p-3 bg-neutral-50 rounded-lg border border-neutral-100"
                     >
                       <div className="flex-1 space-y-2">
                         <select
                           value={line.ingredient_id}
                           onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                          className="w-full h-9 px-2 border border-gray-200 rounded-lg text-sm bg-white"
+                          className="w-full h-9 px-2 border border-neutral-200 rounded-lg text-sm bg-white"
                         >
                           {ingredients.map((ing) => (
                             <option key={ing.id} value={ing.id}>
@@ -330,7 +330,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             }
                             className="h-8 text-sm flex-1"
                           />
-                          <span className="text-xs text-gray-500 self-center w-10">
+                          <span className="text-xs text-neutral-500 self-center w-10">
                             {INGREDIENT_UNITS[line.unit as keyof typeof INGREDIENT_UNITS]
                               ?.labelShort || line.unit}
                           </span>
@@ -346,7 +346,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                   ))}
 
                   {recipeLines.length === 0 && (
-                    <p className="text-sm text-gray-400 text-center py-4">
+                    <p className="text-sm text-neutral-400 text-center py-4">
                       Aucun ingrédient défini
                     </p>
                   )}
@@ -365,7 +365,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               )}
 
               {/* Save button */}
-              <div className="px-4 py-3 border-t border-gray-100 bg-gray-50">
+              <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
                 <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
                   <Check className="w-4 h-4" />
                   {saving ? 'Sauvegarde...' : t('save')}
@@ -373,7 +373,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-gray-400">
+            <div className="flex flex-col items-center justify-center p-12 text-neutral-400">
               <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
               <p className="text-sm font-medium">Sélectionnez un plat</p>
               <p className="text-xs mt-1">pour définir sa fiche technique</p>

@@ -250,8 +250,8 @@ export default function DashboardClient({
     return (
       <div className="space-y-8 pb-10">
         <div className="animate-pulse">
-          <div className="h-8 w-48 bg-gray-200 rounded-lg" />
-          <div className="h-4 w-32 bg-gray-100 rounded mt-2" />
+          <div className="h-8 w-48 bg-neutral-200 rounded-lg" />
+          <div className="h-4 w-32 bg-neutral-100 rounded mt-2" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {[1, 2, 3, 4].map((i) => (
@@ -267,8 +267,8 @@ export default function DashboardClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{getGreeting()} 👋</h1>
-          <p className="text-gray-500 text-sm mt-1 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()} 👋</h1>
+          <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString('fr-FR', {
               weekday: 'long',
@@ -276,17 +276,17 @@ export default function DashboardClient({
               month: 'long',
               year: 'numeric',
             })}
-            <span className="text-gray-300">•</span>
-            <span className="font-medium text-gray-700">{tenantName}</span>
+            <span className="text-neutral-300">•</span>
+            <span className="font-medium text-neutral-700">{tenantName}</span>
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="relative p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">
-            <Bell className="w-5 h-5 text-gray-600" />
+          <button className="relative p-2.5 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
+            <Bell className="w-5 h-5 text-neutral-600" />
           </button>
           <Link
             href={`${adminBase}/pos`}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors shadow-lg shadow-orange-500/20"
+            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
           >
             <Banknote className="w-5 h-5" />
             Ouvrir Caisse
@@ -328,13 +328,15 @@ export default function DashboardClient({
 
       {/* Stock en direct */}
       {stockItems.length > 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-gray-600" />
+              <Package className="w-5 h-5 text-neutral-600" />
               <div>
-                <h2 className="text-lg font-bold text-gray-900">Stock en direct</h2>
-                <p className="text-sm text-gray-500">Top 10 produits (tri par stock croissant)</p>
+                <h2 className="text-lg font-bold text-neutral-900">Stock en direct</h2>
+                <p className="text-sm text-neutral-500">
+                  Top 10 produits (tri par stock croissant)
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -380,22 +382,22 @@ export default function DashboardClient({
                       ? 'border-red-200 bg-red-50/50'
                       : isLow
                         ? 'border-amber-200 bg-amber-50/50'
-                        : 'border-gray-100 bg-gray-50/50',
+                        : 'border-neutral-100 bg-neutral-50/50',
                   )}
                 >
-                  <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
+                  <p className="text-xs font-bold text-neutral-900 truncate">{item.name}</p>
                   <div className="mt-2 flex items-end justify-between">
                     <span
                       className={cn(
                         'text-lg font-black',
-                        isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-gray-900',
+                        isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-neutral-900',
                       )}
                     >
                       {item.current_stock}
                     </span>
-                    <span className="text-[10px] text-gray-400 font-medium">{item.unit}</span>
+                    <span className="text-[10px] text-neutral-400 font-medium">{item.unit}</span>
                   </div>
-                  <div className="mt-1.5 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="mt-1.5 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
                     <div
                       className={cn(
                         'h-full rounded-full transition-all',
@@ -414,11 +416,11 @@ export default function DashboardClient({
       {/* Orders + Popular Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Commandes récentes</h2>
-              <p className="text-sm text-gray-500">{recentOrders.length} commandes</p>
+              <h2 className="text-lg font-bold text-neutral-900">Commandes récentes</h2>
+              <p className="text-sm text-neutral-500">{recentOrders.length} commandes</p>
             </div>
             <Link
               href={`${adminBase}/orders`}
@@ -428,29 +430,29 @@ export default function DashboardClient({
             </Link>
           </div>
           {recentOrders.length > 0 ? (
-            <div className="divide-y divide-gray-50">
+            <div className="divide-y divide-neutral-50">
               {recentOrders.map((order) => (
-                <div key={order.id} className="p-4 hover:bg-gray-50/50 transition-colors">
+                <div key={order.id} className="p-4 hover:bg-neutral-50/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-blue-500/20">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
                         {order.table_number}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-900">
+                          <h3 className="font-semibold text-neutral-900">
                             Table {order.table_number}
                           </h3>
                           <StatusBadge status={order.status} />
                         </div>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                        <p className="text-sm text-neutral-500 mt-0.5">
                           {order.items
                             ?.slice(0, 2)
                             .map((i) => i.name)
                             .join(', ')}
                           {order.items && order.items.length > 2 && ` +${order.items.length - 2}`}
                         </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-neutral-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             {timeAgo(order.created_at)}
@@ -463,7 +465,7 @@ export default function DashboardClient({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">{fmt(order.total_price)}</p>
+                      <p className="font-bold text-neutral-900">{fmt(order.total_price)}</p>
                       <div className="flex items-center gap-1 mt-2">
                         {order.status === 'pending' && (
                           <button
@@ -486,7 +488,7 @@ export default function DashboardClient({
                         {order.status === 'ready' && (
                           <button
                             onClick={() => handleStatusChange(order.id, 'delivered')}
-                            className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                            className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
                             title="Marquer comme livré"
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -494,7 +496,7 @@ export default function DashboardClient({
                         )}
                         <Link
                           href={`${adminBase}/orders`}
-                          className="p-1.5 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                          className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
                           title="Voir détails"
                         >
                           <Eye className="w-4 h-4" />
@@ -507,21 +509,21 @@ export default function DashboardClient({
             </div>
           ) : (
             <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-8 h-8 text-gray-400" />
+              <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <ShoppingBag className="w-8 h-8 text-neutral-400" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-1">Aucune commande</h3>
-              <p className="text-sm text-gray-500">Les nouvelles commandes apparaîtront ici</p>
+              <h3 className="font-semibold text-neutral-900 mb-1">Aucune commande</h3>
+              <p className="text-sm text-neutral-500">Les nouvelles commandes apparaîtront ici</p>
             </div>
           )}
         </div>
 
         {/* Popular Items */}
-        <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-gray-100">
+        <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-gray-900">Top Plats</h2>
-              <p className="text-sm text-gray-500">Les plus commandés</p>
+              <h2 className="text-lg font-bold text-neutral-900">Top Plats</h2>
+              <p className="text-sm text-neutral-500">Les plus commandés</p>
             </div>
           </div>
           {popularItems.length > 0 ? (
@@ -529,17 +531,17 @@ export default function DashboardClient({
               {popularItems.map((item, idx) => (
                 <div
                   key={item.id}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 transition-colors"
                 >
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
                       idx === 0
                         ? 'bg-amber-100 text-amber-700'
                         : idx === 1
-                          ? 'bg-gray-200 text-gray-700'
+                          ? 'bg-neutral-200 text-neutral-700'
                           : idx === 2
                             ? 'bg-orange-100 text-orange-700'
-                            : 'bg-gray-100 text-gray-600'
+                            : 'bg-neutral-100 text-neutral-600'
                     }`}
                   >
                     {idx + 1}
@@ -552,19 +554,19 @@ export default function DashboardClient({
                       className="w-12 h-12 rounded-xl object-cover"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                      <UtensilsCrossed className="w-5 h-5 text-gray-400" />
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center">
+                      <UtensilsCrossed className="w-5 h-5 text-neutral-400" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-500">{item.order_count} commandes</p>
+                    <p className="font-semibold text-neutral-900 truncate">{item.name}</p>
+                    <p className="text-xs text-neutral-500">{item.order_count} commandes</p>
                   </div>
                   <div className="w-16">
                     <MiniChart
                       data={[3, 5, 4, 7, 6, 8, 5]}
                       color={
-                        idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-gray-400' : 'bg-orange-400'
+                        idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-neutral-400' : 'bg-orange-400'
                       }
                     />
                   </div>
@@ -573,10 +575,10 @@ export default function DashboardClient({
             </div>
           ) : (
             <div className="p-8 text-center">
-              <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                <UtensilsCrossed className="w-6 h-6 text-gray-400" />
+              <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+                <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
               </div>
-              <p className="text-sm text-gray-500">Aucune donnée disponible</p>
+              <p className="text-sm text-neutral-500">Aucune donnée disponible</p>
             </div>
           )}
         </div>
@@ -586,50 +588,50 @@ export default function DashboardClient({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link
           href={`${adminBase}/kitchen`}
-          className="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl hover:border-blue-200 hover:shadow-lg hover:shadow-blue-500/5 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-blue-200 transition-all group"
         >
           <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
             <ChefHat className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Cuisine</h3>
-            <p className="text-xs text-gray-500">Voir le KDS</p>
+            <h3 className="font-semibold text-neutral-900">Cuisine</h3>
+            <p className="text-xs text-neutral-500">Voir le KDS</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/orders`}
-          className="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl hover:border-amber-200 hover:shadow-lg hover:shadow-amber-500/5 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-amber-200 transition-all group"
         >
           <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
             <ShoppingBag className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Commandes</h3>
-            <p className="text-xs text-gray-500">Gérer les commandes</p>
+            <h3 className="font-semibold text-neutral-900">Commandes</h3>
+            <p className="text-xs text-neutral-500">Gérer les commandes</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/items`}
-          className="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl hover:border-emerald-200 hover:shadow-lg hover:shadow-emerald-500/5 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-emerald-200 transition-all group"
         >
           <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
             <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Plats</h3>
-            <p className="text-xs text-gray-500">Gérer les plats</p>
+            <h3 className="font-semibold text-neutral-900">Plats</h3>
+            <p className="text-xs text-neutral-500">Gérer les plats</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/reports`}
-          className="flex items-center gap-4 p-4 bg-white border border-gray-100 rounded-2xl hover:border-purple-200 hover:shadow-lg hover:shadow-purple-500/5 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-purple-200 transition-all group"
         >
           <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
             <TrendingUp className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">Rapports</h3>
-            <p className="text-xs text-gray-500">Voir les stats</p>
+            <h3 className="font-semibold text-neutral-900">Rapports</h3>
+            <p className="text-xs text-neutral-500">Voir les stats</p>
           </div>
         </Link>
       </div>

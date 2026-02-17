@@ -3,13 +3,16 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
+import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { TrialBanner } from '@/components/admin/TrialBanner';
+import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
+import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
   id: string;
   user_id: string;
   tenant_id: string;
-  role: 'owner' | 'admin' | 'manager' | 'staff';
+  role: AdminRole;
   name?: string;
 }
 
@@ -90,16 +93,10 @@ export default async function AdminLayout({
     };
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _roleLabels: Record<string, string> = {
-    owner: 'Propriétaire',
-    admin: 'Administrateur',
-    manager: 'Manager',
-    staff: 'Équipe',
-  };
+  const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-neutral-100">
       {/* Dev Mode Banner */}
       {isDevMode && (
         <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-xs text-center py-1 z-50">
@@ -127,27 +124,36 @@ export default async function AdminLayout({
               }
             : undefined
         }
+        role={userRole}
         className={isDevMode ? 'pt-6' : ''}
       />
 
       {/* Main Content */}
       <main className={`lg:ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
-        <SubscriptionProvider
-          tenant={
-            tenant
-              ? {
-                  subscription_plan: tenant.subscription_plan,
-                  subscription_status: tenant.subscription_status,
-                  trial_ends_at: tenant.trial_ends_at,
-                }
-              : null
-          }
-        >
-          <div className="p-4 lg:p-8 pt-16 lg:pt-8">
-            <TrialBanner tenantSlug={tenantSlug} />
-            {children}
-          </div>
-        </SubscriptionProvider>
+        <PermissionsProvider role={userRole}>
+          <AdminIdleWrapper
+            idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+            screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+            tenantName={tenant.name}
+          >
+            <SubscriptionProvider
+              tenant={
+                tenant
+                  ? {
+                      subscription_plan: tenant.subscription_plan,
+                      subscription_status: tenant.subscription_status,
+                      trial_ends_at: tenant.trial_ends_at,
+                    }
+                  : null
+              }
+            >
+              <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+                <TrialBanner tenantSlug={tenantSlug} />
+                {children}
+              </div>
+            </SubscriptionProvider>
+          </AdminIdleWrapper>
+        </PermissionsProvider>
       </main>
     </div>
   );

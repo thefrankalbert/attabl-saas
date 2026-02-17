@@ -33,7 +33,7 @@ export default function HeroSection() {
               Commencer gratuitement
             </Link>
             <Link
-              href="#demo"
+              href="/contact"
               className="border-2 border-neutral-900 text-neutral-900 px-8 py-4 rounded-xl text-base font-semibold hover:bg-neutral-900 hover:text-white transition-colors"
             >
               Voir une démo

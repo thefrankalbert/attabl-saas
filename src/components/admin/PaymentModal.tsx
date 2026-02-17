@@ -129,9 +129,9 @@ export default function PaymentModal({
         <DialogHeader>
           <DialogTitle>
             Encaissement
-            {finalOrderNum && <span className="ml-2 text-gray-400">#{finalOrderNum}</span>}
+            {finalOrderNum && <span className="ml-2 text-neutral-400">#{finalOrderNum}</span>}
             {finalTable && (
-              <span className="ml-2 block text-sm font-normal text-gray-500">
+              <span className="ml-2 block text-sm font-normal text-neutral-500">
                 Table {finalTable}
               </span>
             )}
@@ -141,13 +141,13 @@ export default function PaymentModal({
         <div className="space-y-6 py-4">
           {/* Price Breakdown */}
           {hasBreakdown && (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg border border-gray-100 text-sm">
-              <div className="flex justify-between text-gray-600">
+            <div className="space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-100 text-sm">
+              <div className="flex justify-between text-neutral-600">
                 <span>Sous-total</span>
                 <span>{formatCurrency(subtotal!, 'XAF')}</span>
               </div>
               {taxAmount !== undefined && taxAmount !== null && taxAmount > 0 && (
-                <div className="flex justify-between text-gray-600">
+                <div className="flex justify-between text-neutral-600">
                   <span>Taxes</span>
                   <span>{formatCurrency(taxAmount, 'XAF')}</span>
                 </div>
@@ -155,7 +155,7 @@ export default function PaymentModal({
               {serviceChargeAmount !== undefined &&
                 serviceChargeAmount !== null &&
                 serviceChargeAmount > 0 && (
-                  <div className="flex justify-between text-gray-600">
+                  <div className="flex justify-between text-neutral-600">
                     <span>Service</span>
                     <span>{formatCurrency(serviceChargeAmount, 'XAF')}</span>
                   </div>
@@ -166,7 +166,7 @@ export default function PaymentModal({
                   <span>-{formatCurrency(discountAmount, 'XAF')}</span>
                 </div>
               )}
-              <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-gray-900">
+              <div className="border-t border-neutral-200 pt-2 flex justify-between font-bold text-neutral-900">
                 <span>Total</span>
                 <span>{formatCurrency(finalTotal, 'XAF')}</span>
               </div>
@@ -174,9 +174,11 @@ export default function PaymentModal({
           )}
 
           {/* Total */}
-          <div className="text-center p-4 bg-gray-50 rounded-xl border border-gray-100">
-            <p className="text-sm text-gray-500 uppercase font-medium">Montant \u00e0 payer</p>
-            <p className="text-3xl font-black text-gray-900">{formatCurrency(finalTotal, 'XAF')}</p>
+          <div className="text-center p-4 bg-neutral-50 rounded-xl border border-neutral-100">
+            <p className="text-sm text-neutral-500 uppercase font-medium">Montant \u00e0 payer</p>
+            <p className="text-3xl font-black text-neutral-900">
+              {formatCurrency(finalTotal, 'XAF')}
+            </p>
           </div>
 
           {/* Method Selection */}
@@ -248,7 +250,7 @@ export default function PaymentModal({
                       'flex h-10 w-full rounded-md border border-input px-3 py-2 text-lg font-bold ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
                       change > 0
                         ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-gray-100 text-gray-400',
+                        : 'bg-neutral-100 text-neutral-400',
                     )}
                   >
                     {formatCurrency(change, 'XAF')}

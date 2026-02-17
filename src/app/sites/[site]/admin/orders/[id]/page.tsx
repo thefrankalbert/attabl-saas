@@ -6,7 +6,7 @@ import type { Order } from '@/types/admin.types';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ site: string; id: string }>;
 }
 
 export default async function SingleOrderPage({ params }: PageProps) {

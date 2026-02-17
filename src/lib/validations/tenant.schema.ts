@@ -37,6 +37,15 @@ export const updateTenantSettingsSchema = z.object({
     .optional(),
   enableTax: z.boolean().optional(),
   enableServiceCharge: z.boolean().optional(),
+  // ─── Idle timeout / screen lock ────────────────────────
+  idleTimeoutMinutes: z
+    .number()
+    .int()
+    .min(5, 'Minimum 5 minutes')
+    .max(120, 'Maximum 120 minutes')
+    .nullable()
+    .optional(),
+  screenLockMode: z.enum(['overlay', 'password']).optional(),
 });
 
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;
