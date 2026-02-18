@@ -450,7 +450,15 @@
     "soundError": "Error",
     "soundPlayError": "Unable to play this sound.",
     "languageSection": "Language",
-    "languageDescription": "Administration interface language"
+    "languageDescription": "Administration interface language",
+    "tabIdentity": "Identity",
+    "tabCustomization": "Customization",
+    "tabBilling": "Billing",
+    "tabNotifications": "Notifications",
+    "tabSecurity": "Security",
+    "tabLanguage": "Language",
+    "slug": "Slug",
+    "slugDescription": "Your unique subdomain. Contact support to change it."
   },
   "sidebar": {
     "groupMain": "Main",
@@ -691,7 +699,10 @@
     "avgOrderValue": "Avg. Order",
     "noServerData": "No server data for this period",
     "noDataTitle": "No reports available",
-    "noDataDescription": "Data will appear here once orders are recorded."
+    "noDataDescription": "Data will appear here once orders are recorded.",
+    "last90Days": "Last 90 days",
+    "productRanking": "Product Ranking",
+    "productName": "Product"
   },
   "coupons": {
     "title": "Coupons",

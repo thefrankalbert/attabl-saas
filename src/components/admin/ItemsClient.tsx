@@ -430,7 +430,7 @@ export default function ItemsClient({
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
+            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
               {t('cancel')}
             </Button>
             <Button type="submit" disabled={saving} variant="lime">

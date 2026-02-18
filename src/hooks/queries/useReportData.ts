@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { format, subDays, startOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
 
-type Period = '7d' | '30d' | 'thisMonth' | 'lastMonth' | 'thisYear';
+type Period = 'today' | '7d' | '30d' | '90d' | 'thisMonth' | 'lastMonth' | 'thisYear';
 
 interface DailyStats {
   date: string;
@@ -47,11 +47,17 @@ function getDateRange(p: Period) {
   let end: Date = now;
 
   switch (p) {
+    case 'today':
+      start = startOfDay(now);
+      break;
     case '7d':
       start = startOfDay(subDays(now, 6));
       break;
     case '30d':
       start = startOfDay(subDays(now, 29));
+      break;
+    case '90d':
+      start = startOfDay(subDays(now, 89));
       break;
     case 'thisMonth':
       start = startOfMonth(now);

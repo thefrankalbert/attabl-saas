@@ -250,7 +250,7 @@ export default function DashboardClient({
           </button>
           <Link
             href={`${adminBase}/pos`}
-            className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#CCFF00] text-black font-semibold rounded-xl hover:bg-[#b8e600] transition-colors"
           >
             <Banknote className="w-5 h-5" />
             {t('openPosButton')}
@@ -292,7 +292,7 @@ export default function DashboardClient({
 
       {/* Stock en direct */}
       {stockItems.length > 0 && (
-        <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-neutral-600" />
@@ -323,7 +323,7 @@ export default function DashboardClient({
               )}
               <Link
                 href={`${adminBase}/inventory`}
-                className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
               >
                 {t('viewAll')} <ArrowRight className="w-4 h-4" />
               </Link>
@@ -379,7 +379,7 @@ export default function DashboardClient({
       {/* Orders + Popular Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Orders */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+        <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div className="flex items-center gap-3">
               <div>
@@ -482,7 +482,7 @@ export default function DashboardClient({
             </div>
           ) : (
             <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-neutral-400" />
               </div>
               <h3 className="font-semibold text-neutral-900 mb-1">{t('noOrders')}</h3>
@@ -492,7 +492,7 @@ export default function DashboardClient({
         </div>
 
         {/* Popular Items */}
-        <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+        <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
               <h2 className="text-lg font-bold text-neutral-900">{t('topDishes')}</h2>
@@ -545,7 +545,7 @@ export default function DashboardClient({
             </div>
           ) : (
             <div className="p-8 text-center">
-              <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+              <div className="w-14 h-14 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
                 <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
               </div>
               <p className="text-sm text-neutral-500">{t('noDataAvailable')}</p>
@@ -558,9 +558,9 @@ export default function DashboardClient({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Link
           href={`${adminBase}/kitchen`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-blue-200 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-100 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
             <ChefHat className="w-6 h-6 text-blue-600" />
           </div>
           <div>
@@ -570,9 +570,9 @@ export default function DashboardClient({
         </Link>
         <Link
           href={`${adminBase}/orders`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-amber-200 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
             <ShoppingBag className="w-6 h-6 text-amber-600" />
           </div>
           <div>
@@ -582,9 +582,9 @@ export default function DashboardClient({
         </Link>
         <Link
           href={`${adminBase}/items`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-emerald-200 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-emerald-100 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
             <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
@@ -594,9 +594,9 @@ export default function DashboardClient({
         </Link>
         <Link
           href={`${adminBase}/reports`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-2xl hover:border-purple-200 transition-all group"
+          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-purple-100 transition-colors">
+          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
             <TrendingUp className="w-6 h-6 text-purple-600" />
           </div>
           <div>

@@ -450,7 +450,15 @@
     "soundError": "Error",
     "soundPlayError": "No se ha podido reproducir este sonido.",
     "languageSection": "Idioma",
-    "languageDescription": "Idioma de la interfaz de administración"
+    "languageDescription": "Idioma de la interfaz de administraci\u00f3n",
+    "tabIdentity": "Identidad",
+    "tabCustomization": "Personalizaci\u00f3n",
+    "tabBilling": "Facturaci\u00f3n",
+    "tabNotifications": "Notificaciones",
+    "tabSecurity": "Seguridad",
+    "tabLanguage": "Idioma",
+    "slug": "Slug",
+    "slugDescription": "Su subdominio \u00fanico. Contacte con soporte para cambiarlo."
   },
   "sidebar": {
     "groupMain": "Principal",
@@ -691,7 +699,10 @@
     "avgOrderValue": "Pedido promedio",
     "noServerData": "Sin datos de servidor para este período",
     "noDataTitle": "No hay informes disponibles",
-    "noDataDescription": "Los datos aparecerán aquí una vez que se registren pedidos."
+    "noDataDescription": "Los datos aparecerán aquí una vez que se registren pedidos.",
+    "last90Days": "Ultimos 90 dias",
+    "productRanking": "Clasificacion de productos",
+    "productName": "Producto"
   },
   "coupons": {
     "title": "Cupones",

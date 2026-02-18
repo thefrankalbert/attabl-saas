@@ -546,7 +546,12 @@ export default function TablesPage() {
                     {selectedZone.prefix}
                   </span>
                 </div>
-                <Button size="sm" className="gap-2" onClick={() => setShowAddTables(true)}>
+                <Button
+                  variant="lime"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setShowAddTables(true)}
+                >
                   <Plus className="w-4 h-4" />
                   Ajouter des tables
                 </Button>
@@ -659,7 +664,7 @@ export default function TablesPage() {
                   <p className="text-sm text-neutral-500 mt-2">
                     Ajoutez des tables a cette zone pour commencer
                   </p>
-                  <Button className="mt-6" onClick={() => setShowAddTables(true)}>
+                  <Button variant="lime" className="mt-6" onClick={() => setShowAddTables(true)}>
                     Ajouter des tables
                   </Button>
                 </div>
@@ -674,7 +679,7 @@ export default function TablesPage() {
               <p className="text-sm text-neutral-500 mt-2">
                 Creez une zone pour commencer a organiser vos tables
               </p>
-              <Button className="mt-6" onClick={() => setShowAddZone(true)}>
+              <Button variant="lime" className="mt-6" onClick={() => setShowAddZone(true)}>
                 Creer une zone
               </Button>
             </div>
@@ -714,10 +719,10 @@ export default function TablesPage() {
             </p>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => setShowAddZone(false)}>
+            <Button type="button" variant="ghost" onClick={() => setShowAddZone(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={savingZone}>
+            <Button type="submit" variant="lime" disabled={savingZone}>
               {savingZone && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Creer la zone
             </Button>
@@ -776,10 +781,10 @@ export default function TablesPage() {
             </div>
           )}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => setShowAddTables(false)}>
+            <Button type="button" variant="ghost" onClick={() => setShowAddTables(false)}>
               Annuler
             </Button>
-            <Button type="submit" disabled={savingTables}>
+            <Button type="submit" variant="lime" disabled={savingTables}>
               {savingTables && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               Ajouter {tableCount} table(s)
             </Button>
