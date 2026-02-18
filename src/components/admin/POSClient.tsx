@@ -79,6 +79,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
       icon: <BellRing className="w-4 h-4" />,
     },
   ];
+  const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
@@ -127,6 +128,23 @@ export default function POSClient({ tenantId }: POSClientProps) {
       }
     }
   }, [tenantId]);
+
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        if (data) setCurrentAdminUser(data);
+      }
+    }
+    fetchCurrentUser();
+  }, [supabase]);
 
   const updateOrderNumber = useCallback(
     (newNum: number) => {
@@ -253,6 +271,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
         status: string;
         total_price: number;
         service_type: ServiceType;
+        cashier_id: string | null;
+        server_id: string | null;
         room_number?: string;
         delivery_address?: string;
       } = {
@@ -261,6 +281,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
         status: status,
         total_price: total,
         service_type: serviceType,
+        cashier_id: currentAdminUser?.id ?? null,
+        server_id: currentAdminUser?.id ?? null,
       };
 
       // Add room number for room_service

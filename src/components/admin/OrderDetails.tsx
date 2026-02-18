@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Clock, Printer, Receipt, CreditCard, AlertCircle } from 'lucide-react';
+import { Clock, Printer, Receipt, CreditCard, AlertCircle, User } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
@@ -110,6 +110,15 @@ export default function OrderDetails({
         </div>
 
         <div className="border-b border-neutral-100" />
+
+        {/* Server */}
+        <div className="flex items-center justify-between">
+          <span className="flex items-center gap-1.5 text-sm text-neutral-500">
+            <User className="w-4 h-4" />
+            Serveur
+          </span>
+          <span className="text-sm font-medium">{order.server?.full_name ?? 'Non assigné'}</span>
+        </div>
 
         {/* Items */}
         <div className="h-[300px] overflow-y-auto pr-4 custom-scrollbar">
