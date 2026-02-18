@@ -37,6 +37,8 @@ export const metadata: Metadata = {
   title: 'ATTABL - Menu Digital & Commandes pour Restaurants et Hôtels',
   description:
     'Plateforme SaaS de commande digitale pour restaurants et hôtels. Menu QR Code, Room Service, Dashboard temps réel.',
+  manifest: '/manifest.json',
+  themeColor: '#CCFF00',
 };
 
 export default async function RootLayout({
