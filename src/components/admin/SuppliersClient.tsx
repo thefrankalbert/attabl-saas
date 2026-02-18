@@ -1,14 +1,16 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Truck, Plus, Search, Pencil, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { Truck, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import { createSupplierService } from '@/services/supplier.service';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
 
 interface SuppliersClientProps {
@@ -72,6 +74,129 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     }
     return true;
   });
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<Supplier, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.contact_name && (
+              <p className="text-xs text-neutral-400">{row.original.contact_name}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: () => t('email'),
+        cell: ({ row }) => (
+          <span className="text-neutral-600">{row.original.email || '\u2014'}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'phone',
+        header: () => t('phone'),
+        cell: ({ row }) => (
+          <span className="text-neutral-600">{row.original.phone || '\u2014'}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'address',
+        header: () => t('address'),
+        cell: ({ row }) => (
+          <span className="text-neutral-500 max-w-[200px] truncate block">
+            {row.original.address || '\u2014'}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: 'status',
+        header: () => <span className="w-full text-center block">{t('filterActive')}</span>,
+        cell: ({ row }) => (
+          <div className="text-center">
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-medium',
+                row.original.is_active
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-neutral-100 text-neutral-500',
+              )}
+            >
+              {row.original.is_active ? t('active') : t('inactive')}
+            </span>
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="w-full text-right block">{t('edit')}</span>,
+        cell: ({ row }) => {
+          const supplier = row.original;
+          return (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openEdit(supplier)}
+                className="gap-1 text-xs"
+              >
+                <Pencil className="w-3 h-3" />
+                {t('edit')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleToggleActive(supplier)}
+                className="text-xs"
+              >
+                {supplier.is_active ? t('disable') : t('enable')}
+              </Button>
+              {deleteConfirm === supplier.id ? (
+                <div className="flex gap-1">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(supplier.id)}
+                    className="text-xs"
+                  >
+                    {t('confirmAction')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteConfirm(null)}
+                    className="text-xs"
+                  >
+                    {t('cancelAction')}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteConfirm(supplier.id)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, deleteConfirm],
+  );
 
   const resetForm = () => {
     setFormName('');
@@ -176,7 +301,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             {t('supplierCount', { count: suppliers.length })}
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
+        <Button onClick={openAdd} variant="lime" className="gap-2">
           <Plus className="w-4 h-4" />
           {t('addSupplier')}
         </Button>
@@ -212,115 +337,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         </div>
       </div>
 
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">{t('noSuppliersFound')}</div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((supplier) => (
-            <div
-              key={supplier.id}
-              className={cn(
-                'bg-white rounded-xl border p-4 transition-all',
-                supplier.is_active ? 'border-neutral-200' : 'border-neutral-100 opacity-60',
-              )}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-neutral-900">{supplier.name}</h3>
-                  {supplier.contact_name && (
-                    <p className="text-sm text-neutral-500">{supplier.contact_name}</p>
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-xs font-medium',
-                    supplier.is_active
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-neutral-100 text-neutral-500',
-                  )}
-                >
-                  {supplier.is_active ? t('active') : t('inactive')}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-sm text-neutral-600 mb-4">
-                {supplier.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-neutral-400" />
-                    {supplier.phone}
-                  </div>
-                )}
-                {supplier.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                    {supplier.email}
-                  </div>
-                )}
-                {supplier.address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-neutral-400" />
-                    <span className="truncate">{supplier.address}</span>
-                  </div>
-                )}
-              </div>
-
-              {supplier.notes && (
-                <p className="text-xs text-neutral-400 mb-3 line-clamp-2">{supplier.notes}</p>
-              )}
-
-              <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEdit(supplier)}
-                  className="gap-1 text-xs"
-                >
-                  <Pencil className="w-3 h-3" />
-                  {t('edit')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleActive(supplier)}
-                  className="text-xs"
-                >
-                  {supplier.is_active ? t('disable') : t('enable')}
-                </Button>
-                {deleteConfirm === supplier.id ? (
-                  <div className="flex gap-1 ml-auto">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(supplier.id)}
-                      className="text-xs"
-                    >
-                      {t('confirmAction')}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteConfirm(null)}
-                      className="text-xs"
-                    >
-                      {t('cancelAction')}
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteConfirm(supplier.id)}
-                    className="text-xs text-red-600 hover:text-red-700 ml-auto"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Table */}
+      <DataTable columns={columns} data={filtered} emptyMessage={t('noSuppliersFound')} />
 
       {/* Modal — Add / Edit */}
       {modalMode && (
@@ -411,7 +429,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               >
                 {t('cancelAction')}
               </Button>
-              <Button onClick={handleSave}>{t('save')}</Button>
+              <Button onClick={handleSave} variant="lime">
+                {t('save')}
+              </Button>
             </div>
           </div>
         </div>

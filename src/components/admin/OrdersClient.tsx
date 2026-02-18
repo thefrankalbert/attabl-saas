@@ -7,11 +7,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Volume2, VolumeX, ListFilter } from 'lucide-react';
+import { Search, Volume2, VolumeX, ChevronRight, Eye } from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
-import OrderCard from '@/components/admin/OrderCard';
+import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
+import { cn } from '@/lib/utils';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { Order, OrderStatus } from '@/types/admin.types';
 
 interface OrdersClientProps {
@@ -105,6 +107,167 @@ export default function OrdersClient({
     return result;
   }, [orders, statusFilter, search]);
 
+  // Status badge config
+  const statusConfig: Record<
+    OrderStatus,
+    {
+      label: string;
+      bg: string;
+      nextStatus: OrderStatus | null;
+      nextLabel: string | null;
+      actionBg: string;
+    }
+  > = useMemo(
+    () => ({
+      pending: {
+        label: t('statusPendingCard'),
+        bg: 'bg-amber-100 text-amber-700',
+        nextStatus: 'preparing',
+        nextLabel: t('actionPrepare'),
+        actionBg: 'bg-amber-500',
+      },
+      preparing: {
+        label: t('statusPreparingCard'),
+        bg: 'bg-blue-100 text-blue-700',
+        nextStatus: 'ready',
+        nextLabel: t('actionReady'),
+        actionBg: 'bg-blue-500',
+      },
+      ready: {
+        label: t('statusReadyCard'),
+        bg: 'bg-emerald-100 text-emerald-700',
+        nextStatus: 'delivered',
+        nextLabel: t('actionDeliver'),
+        actionBg: 'bg-emerald-500',
+      },
+      delivered: {
+        label: t('statusDeliveredCard'),
+        bg: 'bg-slate-100 text-slate-500',
+        nextStatus: null,
+        nextLabel: null,
+        actionBg: '',
+      },
+      cancelled: {
+        label: t('statusCancelledCard'),
+        bg: 'bg-red-100 text-red-500',
+        nextStatus: null,
+        nextLabel: null,
+        actionBg: '',
+      },
+    }),
+    [t],
+  );
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<Order, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'table_number',
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t('searchTable').replace('...', '')}</SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900 text-xs">
+              {row.original.table_number}
+            </div>
+            <span className="font-medium text-neutral-900">{row.original.table_number}</span>
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'created_at',
+        header: ({ column }) => <SortableHeader column={column}>{tc('date')}</SortableHeader>,
+        cell: ({ row }) => (
+          <span className="text-neutral-500 text-xs whitespace-nowrap">
+            {new Date(row.original.created_at).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'status',
+        header: () => tc('status'),
+        cell: ({ row }) => {
+          const config = statusConfig[row.original.status];
+          return (
+            <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
+              {config.label}
+            </span>
+          );
+        },
+        enableSorting: false,
+      },
+      {
+        id: 'items_count',
+        header: () => t('orderDetails'),
+        cell: ({ row }) => {
+          const items = row.original.items || [];
+          return (
+            <span className="text-neutral-600 text-sm">
+              {items.length} {items.length === 1 ? 'item' : 'items'}
+            </span>
+          );
+        },
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'total_price',
+        header: ({ column }) => (
+          <SortableHeader column={column} className="ml-auto">
+            {tc('total')}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => {
+          const total =
+            row.original.total_price ?? row.original.total ?? row.original.total_amount ?? 0;
+          return (
+            <span className="font-mono font-bold text-neutral-900">{total.toLocaleString()}</span>
+          );
+        },
+        meta: { className: 'text-right' },
+      },
+      {
+        id: 'actions',
+        header: () => <span className="w-full text-right block">{tc('actions')}</span>,
+        cell: ({ row }) => {
+          const order = row.original;
+          const config = statusConfig[order.status];
+          return (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedOrder(order)}
+                className="text-xs gap-1"
+              >
+                <Eye className="w-3 h-3" />
+              </Button>
+              {config.nextStatus && (
+                <Button
+                  size="sm"
+                  onClick={() => handleStatusChange(order.id, config.nextStatus!)}
+                  className={cn(
+                    'text-xs text-white gap-1',
+                    config.actionBg,
+                    `hover:${config.actionBg}/90`,
+                  )}
+                >
+                  {config.nextLabel} <ChevronRight className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, tc, statusConfig],
+  );
+
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
     // Optimistic update
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
@@ -164,25 +327,8 @@ export default function OrdersClient({
         </Tabs>
       </div>
 
-      {/* Orders Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pb-20">
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map((order) => (
-            <OrderCard
-              key={order.id}
-              order={order}
-              onStatusChange={handleStatusChange}
-              onClick={() => setSelectedOrder(order)}
-            />
-          ))
-        ) : (
-          <div className="col-span-full py-12 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-            <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-neutral-900">{t('noOrdersMatch')}</h3>
-            <p className="text-xs text-neutral-500 mt-1">{t('filterNoResults')}</p>
-          </div>
-        )}
-      </div>
+      {/* Orders Table */}
+      <DataTable columns={columns} data={filteredOrders} emptyMessage={t('noOrdersMatch')} />
 
       {/* Detail Modal */}
       <AdminModal

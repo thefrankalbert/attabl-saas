@@ -1,25 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import {
-  Package,
-  Plus,
-  Search,
-  AlertTriangle,
-  ArrowUpDown,
-  ArrowUp,
-  ArrowDown,
-} from 'lucide-react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
+import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
 import { createSupplierService } from '@/services/supplier.service';
 import { formatCurrency } from '@/lib/utils/currency';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { CurrencyCode } from '@/types/admin.types';
 import type { Supplier } from '@/types/supplier.types';
 import type {
@@ -43,10 +37,6 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
-
-  // Sort state
-  const [sortField, setSortField] = useState<'name' | 'current_stock' | 'cost_per_unit'>('name');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);
@@ -139,29 +129,109 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
     return { label: t('stockOk'), bg: 'bg-green-100 text-green-700' };
   };
 
-  const toggleSort = (field: typeof sortField) => {
-    if (sortField === field) {
-      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortDirection('asc');
-    }
-  };
-
-  const sorted = [...filtered].sort((a, b) => {
-    const mul = sortDirection === 'asc' ? 1 : -1;
-    if (sortField === 'name') return mul * a.name.localeCompare(b.name);
-    return mul * ((a[sortField] ?? 0) - (b[sortField] ?? 0));
-  });
-
-  const SortIcon = ({ field }: { field: typeof sortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-neutral-400" />;
-    return sortDirection === 'asc' ? (
-      <ArrowUp className="w-3 h-3 text-lime-600" />
-    ) : (
-      <ArrowDown className="w-3 h-3 text-lime-600" />
-    );
-  };
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<Ingredient, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <SortableHeader column={column}>{tc('product')}</SortableHeader>,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.category && (
+              <p className="text-xs text-neutral-400">{row.original.category}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'unit',
+        header: () => tc('unit'),
+        cell: ({ row }) => INGREDIENT_UNITS[row.original.unit]?.labelShort || row.original.unit,
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'current_stock',
+        header: ({ column }) => (
+          <SortableHeader column={column} className="ml-auto">
+            {t('currentStock')}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => {
+          const ing = row.original;
+          return (
+            <span className="font-mono font-bold text-neutral-900">
+              {ing.current_stock.toFixed(ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2)}
+            </span>
+          );
+        },
+        meta: { className: 'text-right' },
+      },
+      {
+        accessorKey: 'min_stock_alert',
+        header: () => t('minAlert'),
+        cell: ({ row }) => <span className="text-neutral-500">{row.original.min_stock_alert}</span>,
+        enableSorting: false,
+        meta: { className: 'text-right' },
+      },
+      {
+        accessorKey: 'cost_per_unit',
+        header: ({ column }) => (
+          <SortableHeader column={column} className="ml-auto">
+            {t('costPerUnit')}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <span className="text-neutral-500">
+            {formatCurrency(row.original.cost_per_unit, currency as CurrencyCode)}
+          </span>
+        ),
+        meta: { className: 'text-right' },
+      },
+      {
+        id: 'status',
+        header: () => <span className="w-full text-center block">{tc('status')}</span>,
+        cell: ({ row }) => {
+          const badge = getStockBadge(row.original);
+          return (
+            <div className="text-center">
+              <span className={cn('px-2 py-1 rounded-full text-xs font-bold', badge.bg)}>
+                {badge.label}
+              </span>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="w-full text-right block">{tc('actions')}</span>,
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openAdjust(row.original)}
+              className="text-xs"
+            >
+              +/-
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEdit(row.original)}
+              className="text-xs"
+            >
+              {tc('edit')}
+            </Button>
+          </div>
+        ),
+        enableSorting: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currency, t, tc],
+  );
 
   const resetForm = () => {
     setFormName('');
@@ -333,115 +403,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 border-b border-neutral-100">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('name')}
-                    className="inline-flex items-center gap-1 hover:text-neutral-900 transition-colors"
-                  >
-                    {tc('product')}
-                    <SortIcon field="name" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">{tc('unit')}</th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('current_stock')}
-                    className="inline-flex items-center gap-1 hover:text-neutral-900 transition-colors ml-auto"
-                  >
-                    {t('currentStock')}
-                    <SortIcon field="current_stock" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('minAlert')}
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  <button
-                    type="button"
-                    onClick={() => toggleSort('cost_per_unit')}
-                    className="inline-flex items-center gap-1 hover:text-neutral-900 transition-colors ml-auto"
-                  >
-                    {t('costPerUnit')}
-                    <SortIcon field="cost_per_unit" />
-                  </button>
-                </th>
-                <th className="px-4 py-3 text-center font-semibold text-neutral-600">
-                  {tc('status')}
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {tc('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {sorted.map((ing) => {
-                const badge = getStockBadge(ing);
-                return (
-                  <tr key={ing.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-neutral-900">{ing.name}</p>
-                        {ing.category && <p className="text-xs text-neutral-400">{ing.category}</p>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600">
-                      {INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-neutral-900">
-                      {ing.current_stock.toFixed(
-                        ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2,
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-500">{ing.min_stock_alert}</td>
-                    <td className="px-4 py-3 text-right text-neutral-500">
-                      {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn('px-2 py-1 rounded-full text-xs font-bold', badge.bg)}>
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openAdjust(ing)}
-                          className="text-xs"
-                        >
-                          +/-
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(ing)}
-                          className="text-xs"
-                        >
-                          {tc('edit')}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {sorted.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
-                    {t('noProductFound')}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={columns} data={filtered} emptyMessage={t('noProductFound')} />
 
       {/* Modal — Add / Edit */}
       <AdminModal
