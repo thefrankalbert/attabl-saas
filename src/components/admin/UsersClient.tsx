@@ -126,21 +126,21 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
   const { toast } = useToast();
 
   const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
-    owner: { label: t('roleOwner'), icon: Crown, color: 'text-yellow-600', bg: 'bg-yellow-50' },
-    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-purple-600', bg: 'bg-purple-50' },
-    manager: { label: t('roleManager'), icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    owner: { label: t('roleOwner'), icon: Crown, color: 'text-lime-700', bg: 'bg-lime-100' },
+    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
+    manager: { label: t('roleManager'), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
     cashier: {
       label: t('roleCashier'),
       icon: CreditCard,
-      color: 'text-emerald-600',
-      bg: 'bg-emerald-50',
+      color: 'text-gray-600',
+      bg: 'bg-gray-100',
     },
     chef: { label: t('roleChef'), icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
     waiter: {
       label: t('roleWaiter'),
       icon: Coffee,
-      color: 'text-neutral-600',
-      bg: 'bg-neutral-50',
+      color: 'text-green-600',
+      bg: 'bg-green-50',
     },
   };
 

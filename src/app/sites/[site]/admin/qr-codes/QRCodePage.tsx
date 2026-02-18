@@ -55,7 +55,7 @@ function buildQRUrl(baseUrl: string, tableName?: string, menuSlug?: string): str
 export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePageProps) {
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const downloadPreviewRef = useRef<HTMLDivElement>(null);
 
   // QR Design Config (centralized state for customizer)
@@ -93,9 +93,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   const qrSubtitle = selectedTable ? selectedTable.display_name : undefined;
 
   const steps = [
-    { number: 1, label: 'Choisir', icon: Table2 },
-    { number: 2, label: 'Personnaliser', icon: Palette },
-    { number: 3, label: 'Télécharger', icon: Download },
+    { number: 0, label: 'Sélection', icon: Table2 },
+    { number: 1, label: 'Personnalisation', icon: Palette },
+    { number: 2, label: 'Aperçu & Téléchargement', icon: Download },
   ] as const;
 
   return (
@@ -140,7 +140,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                           : 'bg-neutral-200 text-neutral-400'
                     }`}
                   >
-                    {isCompleted ? <Check className="w-4 h-4" /> : <span>{step.number}</span>}
+                    {isCompleted ? <Check className="w-4 h-4" /> : <span>{step.number + 1}</span>}
                   </div>
                   <div className="hidden sm:flex items-center gap-1.5">
                     <StepIcon
@@ -182,8 +182,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         </div>
       </div>
 
-      {/* ─── Step 1: Choisir ─── */}
-      {currentStep === 1 && (
+      {/* ─── Step 0: Sélection ─── */}
+      {currentStep === 0 && (
         <div>
           {/* Info Banner */}
           <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
@@ -300,8 +300,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         </div>
       )}
 
-      {/* ─── Step 2: Personnaliser ─── */}
-      {currentStep === 2 && (
+      {/* ─── Step 1: Personnalisation ─── */}
+      {currentStep === 1 && (
         <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <QRCustomizerLayout
             config={config}
@@ -316,8 +316,8 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         </div>
       )}
 
-      {/* ─── Step 3: Télécharger ─── */}
-      {currentStep === 3 && (
+      {/* ─── Step 2: Aperçu & Téléchargement ─── */}
+      {currentStep === 2 && (
         <div>
           {/* Single QR Preview + Download */}
           <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
@@ -431,7 +431,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
       {/* ─── Navigation Buttons ─── */}
       <div className="mt-8 flex items-center justify-between">
-        {currentStep > 1 ? (
+        {currentStep > 0 ? (
           <Button
             type="button"
             variant="ghost"
@@ -445,11 +445,12 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <div />
         )}
 
-        {currentStep < 3 && (
+        {currentStep < 2 && (
           <Button
             type="button"
+            variant="lime"
             onClick={() => setCurrentStep((s) => s + 1)}
-            className="gap-2 bg-[#CCFF00] hover:bg-[#b8e600] text-black font-semibold rounded-xl"
+            className="gap-2 rounded-xl"
           >
             Suivant
             <ChevronRight className="w-4 h-4" />
@@ -629,7 +630,9 @@ function BatchQRPreview({
       <Button
         onClick={handleBatchDownload}
         disabled={generating}
-        className="w-full h-11 bg-[#CCFF00] hover:bg-[#b8e600] text-black font-semibold rounded-xl gap-2"
+        variant="lime"
+        size="lg"
+        className="w-full gap-2"
       >
         <Download className="w-4 h-4" />
         {generating

@@ -110,6 +110,9 @@ export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWi
 /** Invitations: 5 requests / 10 minutes per IP */
 export const invitationLimiter = createLimiter('invitation', Ratelimit.slidingWindow(5, '10 m'));
 
+/** Permissions: 20 requests / minute per IP */
+export const permissionLimiter = createLimiter('permission', Ratelimit.slidingWindow(20, '1 m'));
+
 // --- IP extraction helpers ---
 
 /**

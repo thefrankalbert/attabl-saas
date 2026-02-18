@@ -39,8 +39,8 @@ export default function StatsCard({
     <div className="bg-white border border-neutral-100 rounded-xl p-6 flex flex-col justify-between h-full hover:bg-neutral-50/50 transition-colors duration-300">
       <div className="flex justify-between items-start mb-4">
         <div className="space-y-1">
-          <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-widest">{title}</h3>
-          <div className="text-3xl font-black text-neutral-900 tracking-tight">{value}</div>
+          <h3 className="text-sm text-neutral-500">{title}</h3>
+          <div className="text-3xl font-bold text-neutral-900 tracking-tight">{value}</div>
         </div>
 
         {Icon && (

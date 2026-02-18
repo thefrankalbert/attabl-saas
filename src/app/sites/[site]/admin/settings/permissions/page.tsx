@@ -56,7 +56,6 @@ export default function PermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
-  const [adminUserId, setAdminUserId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   // Role overrides from DB: only stores diffs from defaults
@@ -84,7 +83,7 @@ export default function PermissionsPage() {
       // Check role - must be owner
       const { data: adminUser } = await supabase
         .from('admin_users')
-        .select('id, tenant_id, role')
+        .select('tenant_id, role')
         .eq('user_id', user.id)
         .single();
 
@@ -96,7 +95,6 @@ export default function PermissionsPage() {
 
       const tId = adminUser.tenant_id as string;
       setTenantId(tId);
-      setAdminUserId(adminUser.id as string);
 
       // Fetch existing role overrides
       const { data: rolePerms, error } = await supabase
@@ -161,51 +159,47 @@ export default function PermissionsPage() {
 
   const saveOverrides = useCallback(
     async (role: AdminRole, overrides: PermissionMap) => {
-      if (!tenantId || !adminUserId) return;
+      if (!tenantId) return;
 
       setSaving(true);
 
-      const hasKeys = Object.keys(overrides).length > 0;
+      try {
+        const hasKeys = Object.keys(overrides).length > 0;
 
-      if (hasKeys) {
-        const { error } = await supabase.from('role_permissions').upsert(
-          {
-            tenant_id: tenantId,
-            role: role,
-            permissions: overrides,
-            updated_at: new Date().toISOString(),
-            updated_by: adminUserId,
-          },
-          { onConflict: 'tenant_id,role' },
-        );
-
-        if (error) {
-          logger.error('Failed to save role permissions', { error, role });
-          toast({
-            title: 'Erreur lors de la sauvegarde',
-            variant: 'destructive',
+        if (hasKeys) {
+          const res = await fetch('/api/permissions', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenant_id: tenantId, role: role, permissions: overrides }),
           });
-        }
-      } else {
-        // No overrides: delete the row to fall back to defaults
-        const { error } = await supabase
-          .from('role_permissions')
-          .delete()
-          .eq('tenant_id', tenantId)
-          .eq('role', role);
-
-        if (error) {
-          logger.error('Failed to delete role permissions', { error, role });
-          toast({
-            title: 'Erreur lors de la sauvegarde',
-            variant: 'destructive',
+          if (!res.ok) {
+            const data: { error?: string } = await res.json();
+            throw new Error(data.error || 'Erreur de sauvegarde');
+          }
+        } else {
+          // No overrides: delete the row to fall back to defaults
+          const res = await fetch('/api/permissions', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tenant_id: tenantId, role: role }),
           });
+          if (!res.ok) {
+            const data: { error?: string } = await res.json();
+            throw new Error(data.error || 'Erreur de suppression');
+          }
         }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erreur lors de la sauvegarde';
+        logger.error('Failed to save role permissions', err, { role });
+        toast({
+          title: message,
+          variant: 'destructive',
+        });
       }
 
       setSaving(false);
     },
-    [tenantId, adminUserId, supabase, toast],
+    [tenantId, toast],
   );
 
   // ─── Toggle Permission ────────────────────────────
@@ -251,30 +245,35 @@ export default function PermissionsPage() {
 
       setSaving(true);
 
-      const { error } = await supabase
-        .from('role_permissions')
-        .delete()
-        .eq('tenant_id', tenantId)
-        .eq('role', role);
-
-      if (error) {
-        logger.error('Failed to restore defaults', { error, role });
-        toast({
-          title: 'Erreur lors de la restauration',
-          variant: 'destructive',
+      try {
+        const res = await fetch('/api/permissions', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tenant_id: tenantId, role: role }),
         });
-      } else {
+        if (!res.ok) {
+          const data: { error?: string } = await res.json();
+          throw new Error(data.error || 'Erreur lors de la restauration');
+        }
+
         setRoleOverrides((prev) => {
           const next = { ...prev };
           delete next[role];
           return next;
         });
         toast({ title: `Permissions par defaut restaurees pour ${ROLE_LABELS[role]}` });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Erreur lors de la restauration';
+        logger.error('Failed to restore defaults', err, { role });
+        toast({
+          title: message,
+          variant: 'destructive',
+        });
       }
 
       setSaving(false);
     },
-    [tenantId, supabase, toast],
+    [tenantId, toast],
   );
 
   // ─── Cleanup Timers ───────────────────────────────
