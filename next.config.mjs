@@ -1,5 +1,13 @@
 import { withSentryConfig } from '@sentry/nextjs';
 import createNextIntlPlugin from 'next-intl/plugin';
+import withPWAInit from '@ducanh2912/next-pwa';
+
+const withPWA = withPWAInit({
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+});
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -61,7 +69,7 @@ const nextConfig = {
   // async rewrites() { ... }
 };
 
-export default withSentryConfig(withNextIntl(nextConfig), {
+export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 
