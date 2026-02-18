@@ -104,6 +104,9 @@ export const newsletterLimiter = createLimiter('newsletter', Ratelimit.slidingWi
 /** Excel menu import: 5 requests / hour per IP */
 export const excelImportLimiter = createLimiter('excel-import', Ratelimit.slidingWindow(5, '1 h'));
 
+/** Assignments: 30 requests / minute per IP */
+export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
+
 // --- IP extraction helpers ---
 
 /**
