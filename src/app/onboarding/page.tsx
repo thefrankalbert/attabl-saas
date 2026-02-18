@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ArrowLeft,
   Building2,
+  Grid3x3,
   Palette,
   UtensilsCrossed,
   Rocket,
@@ -17,15 +18,17 @@ import Link from 'next/link';
 
 // Step Components
 import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
+import { TablesStep } from '@/components/onboarding/TablesStep';
 import { BrandingStep } from '@/components/onboarding/BrandingStep';
 import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
 
 const steps = [
   { id: 1, name: 'Établissement', icon: Building2, description: 'Informations de base' },
-  { id: 2, name: 'Personnalisation', icon: Palette, description: 'Logo et couleurs' },
-  { id: 3, name: 'Menu', icon: UtensilsCrossed, description: 'Vos premiers articles' },
-  { id: 4, name: 'Lancement', icon: Rocket, description: 'Prêt à démarrer' },
+  { id: 2, name: 'Vos tables', icon: Grid3x3, description: 'Configuration des tables' },
+  { id: 3, name: 'Personnalisation', icon: Palette, description: 'Logo et couleurs' },
+  { id: 4, name: 'Menu', icon: UtensilsCrossed, description: 'Vos premiers articles' },
+  { id: 5, name: 'Lancement', icon: Rocket, description: 'Prêt à démarrer' },
 ];
 
 export interface OnboardingData {
@@ -36,12 +39,15 @@ export interface OnboardingData {
   country: string;
   phone: string;
   tableCount: number;
-  // Step 2: Branding
+  // Step 2: Tables
+  tableConfigMode: 'complete' | 'minimum' | 'skip';
+  tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
+  // Step 3: Branding
   logoUrl: string;
   primaryColor: string;
   secondaryColor: string;
   description: string;
-  // Step 3: Menu
+  // Step 4: Menu
   menuOption: 'manual' | 'import' | 'template' | 'skip';
   menuItems: Array<{ name: string; price: number; category: string }>;
   // Tenant info
@@ -62,6 +68,8 @@ export default function OnboardingPage() {
     country: 'Cameroun',
     phone: '',
     tableCount: 10,
+    tableConfigMode: 'skip',
+    tableZones: [],
     logoUrl: '',
     primaryColor: '#CCFF00',
     secondaryColor: '#000000',
@@ -121,14 +129,14 @@ export default function OnboardingPage() {
   const nextStep = async () => {
     setError(null);
     await saveStep();
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
     }
   };
 
   const skipStep = () => {
     setError(null);
-    if (currentStep < 4) {
+    if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
     }
   };
@@ -269,14 +277,14 @@ export default function OnboardingPage() {
             </div>
             <span className="font-bold">ATTABL</span>
           </Link>
-          <span className="text-sm text-neutral-500">Étape {currentStep}/4</span>
+          <span className="text-sm text-neutral-500">Étape {currentStep}/5</span>
         </div>
 
         {/* Progress Bar (Mobile) */}
         <div className="lg:hidden h-1 bg-neutral-100 shrink-0">
           <div
             className="h-full bg-[#CCFF00] transition-all duration-500"
-            style={{ width: `${(currentStep / 4) * 100}%` }}
+            style={{ width: `${(currentStep / 5) * 100}%` }}
           />
         </div>
 
@@ -292,9 +300,10 @@ export default function OnboardingPage() {
                 transition={{ duration: 0.3 }}
               >
                 {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
-                {currentStep === 2 && <BrandingStep data={data} updateData={updateData} />}
-                {currentStep === 3 && <MenuStep data={data} updateData={updateData} />}
-                {currentStep === 4 && <LaunchStep data={data} />}
+                {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
+                {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
+                {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
+                {currentStep === 5 && <LaunchStep data={data} />}
               </motion.div>
             </AnimatePresence>
           </div>
@@ -332,8 +341,8 @@ export default function OnboardingPage() {
             </button>
 
             <div className="flex items-center gap-2 sm:gap-3">
-              {/* Skip button - shown on steps 1-3 */}
-              {currentStep < 4 && (
+              {/* Skip button - shown on steps 1-4 */}
+              {currentStep < 5 && (
                 <button
                   onClick={skipStep}
                   className="flex items-center gap-1.5 px-3 sm:px-4 py-3 rounded-xl font-medium text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all text-sm"
@@ -343,7 +352,7 @@ export default function OnboardingPage() {
                 </button>
               )}
 
-              {currentStep < 4 ? (
+              {currentStep < 5 ? (
                 <button
                   onClick={nextStep}
                   disabled={saving}

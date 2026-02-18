@@ -66,7 +66,7 @@ export function MenuStep({ updateData }: MenuStepProps) {
       <div className="mb-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-neutral-600 text-sm font-medium mb-2">
           <UtensilsCrossed className="h-3.5 w-3.5" />
-          Étape 3/4
+          Étape 4/5
         </div>
         <h1 className="text-2xl font-bold text-neutral-900 mb-1">Votre première catégorie</h1>
         <p className="text-neutral-500 text-sm">
