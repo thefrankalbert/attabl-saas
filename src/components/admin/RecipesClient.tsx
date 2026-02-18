@@ -3,13 +3,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { BookOpenCheck, Search, Plus, Trash2, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useIngredients } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
-import type { Ingredient, Recipe, RecipeLineInput } from '@/types/inventory.types';
+import type { Recipe, RecipeLineInput } from '@/types/inventory.types';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 
 interface RecipesClientProps {
@@ -32,9 +34,6 @@ interface RecipeLine {
 }
 
 export default function RecipesClient({ tenantId }: RecipesClientProps) {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRecipe, setFilterRecipe] = useState<'all' | 'with' | 'without'>('all');
 
@@ -53,37 +52,40 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const supabase = createClient();
   const inventoryService = createInventoryService(supabase);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [itemsRes, ingredientsData, recipesRes] = await Promise.all([
-        supabase
+  // TanStack Query for ingredients
+  const { data: ingredients = [] } = useIngredients(tenantId);
+
+  // TanStack Query for menu items and recipes
+  const { data: recipeData, isLoading: loading } = useQuery({
+    queryKey: ['recipes-data', tenantId],
+    queryFn: async () => {
+      const localSupabase = createClient();
+      const [itemsRes, recipesRes] = await Promise.all([
+        localSupabase
           .from('menu_items')
           .select('id, name, category_id, is_available')
           .eq('tenant_id', tenantId)
           .order('name'),
-        inventoryService.getIngredients(tenantId),
-        supabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
+        localSupabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
       ]);
 
-      if (itemsRes.data) setMenuItems(itemsRes.data as MenuItem[]);
-      setIngredients(ingredientsData);
+      const menuItemsList = (itemsRes.data as MenuItem[]) || [];
+      const recipeIds = new Set(
+        (recipesRes.data || []).map((r: { menu_item_id: string }) => r.menu_item_id),
+      );
+      return { menuItems: menuItemsList, recipeIds };
+    },
+    enabled: !!tenantId,
+  });
 
-      // Build set of items that have recipes
-      if (recipesRes.data) {
-        const ids = new Set(recipesRes.data.map((r: { menu_item_id: string }) => r.menu_item_id));
-        setItemsWithRecipes(ids);
-      }
-    } catch {
-      toast({ title: tc('loadingError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, supabase, inventoryService, toast]);
+  const menuItems = recipeData?.menuItems ?? [];
 
+  // Sync recipeIds from query into local Set state
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (recipeData?.recipeIds) {
+      setItemsWithRecipes(recipeData.recipeIds);
+    }
+  }, [recipeData?.recipeIds]);
 
   // Load recipe for selected item
   const loadRecipe = useCallback(
@@ -247,7 +249,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       {/* Layout: Items list + Recipe editor */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Items List */}
-        <div className="flex-1 bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <div className="flex-1 bg-white rounded-xl border border-neutral-100 overflow-hidden">
           <div className="max-h-[600px] overflow-y-auto divide-y divide-neutral-100">
             {filteredItems.map((item) => {
               const hasRecipe = itemsWithRecipes.has(item.id);
@@ -292,7 +294,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         </div>
 
         {/* Recipe Editor Panel */}
-        <div className="lg:w-[450px] bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <div className="lg:w-[450px] bg-white rounded-xl border border-neutral-100 overflow-hidden">
           {selectedItemId && selectedItem ? (
             <div className="flex flex-col h-full">
               <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
@@ -369,7 +371,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
               {/* Save button */}
               <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
-                <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  variant="lime"
+                  className="w-full gap-2"
+                >
                   <Check className="w-4 h-4" />
                   {saving ? t('saving') : tc('save')}
                 </Button>

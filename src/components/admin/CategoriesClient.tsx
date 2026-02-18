@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCategories } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,10 +23,6 @@ type CategoryWithCount = Category & { items_count?: number };
 export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
   const t = useTranslations('categories');
   const tc = useTranslations('common');
-  const [categories, setCategories] = useState<CategoryWithCount[]>(
-    initialCategories as CategoryWithCount[],
-  );
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null);
   const [saving, setSaving] = useState(false);
@@ -33,32 +31,15 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const [displayOrder, setDisplayOrder] = useState(0);
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  const loadCategories = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*, menu_items(id)')
-        .eq('tenant_id', tenantId)
-        .order('display_order', { ascending: true });
-      if (error) throw error;
-      const formatted = (data || []).map((cat: Record<string, unknown>) => ({
-        ...cat,
-        items_count: (cat.menu_items as unknown[])?.length || 0,
-      })) as CategoryWithCount[];
-      setCategories(formatted);
-    } catch {
-      toast({ title: tc('errorLoading'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, tenantId, toast]);
+  // TanStack Query for categories with item count
+  const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
+    useCategories(tenantId, { withItemCount: true });
 
-  useEffect(() => {
-    if (initialCategories.length === 0) loadCategories();
-  }, [initialCategories, loadCategories]);
+  const loadCategories = () => {
+    queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
+  };
 
   const openNewModal = () => {
     setEditingCategory(null);

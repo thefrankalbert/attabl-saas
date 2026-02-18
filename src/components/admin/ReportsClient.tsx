@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Download,
@@ -25,7 +25,7 @@ import {
   Cell,
   Legend,
 } from 'recharts';
-import { createClient } from '@/lib/supabase/client';
+import { useReportData } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -36,9 +36,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { jsPDF } from 'jspdf';
-import { format, subDays, startOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
+import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
-import { logger } from '@/lib/logger';
 import type { CurrencyCode } from '@/types/admin.types';
 
 interface ReportsClientProps {
@@ -52,19 +51,6 @@ interface DailyStats {
   date: string;
   revenue: number;
   orders: number;
-}
-
-interface TopItem {
-  id: string;
-  name: string;
-  quantity: number;
-  revenue: number;
-}
-
-interface CategoryBreakdown {
-  category: string;
-  revenue: number;
-  percentage: number;
 }
 
 const CHART_COLORS = [
@@ -82,200 +68,19 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const t = useTranslations('reports');
   const fmt = (amount: number) => formatCurrency(amount, currency);
   const [period, setPeriod] = useState<Period>('7d');
-  const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
-  const [dailyStats, setDailyStats] = useState<DailyStats[]>([]);
-  const [topItems, setTopItems] = useState<TopItem[]>([]);
-  const [categories, setCategories] = useState<CategoryBreakdown[]>([]);
-  const [summary, setSummary] = useState({ revenue: 0, orders: 0, avgBasket: 0 });
-  const [previousSummary, setPreviousSummary] = useState({ revenue: 0, orders: 0, avgBasket: 0 });
 
   const { toast } = useToast();
-  const supabase = createClient();
 
-  /** Compute date range and previous-period range for trend comparison */
-  const getDateRange = useCallback((p: Period) => {
-    const now = new Date();
-    let start: Date;
-    let end: Date = now;
+  // TanStack Query for report data
+  const { data: reportData, isLoading: loading } = useReportData(tenantId, period);
 
-    switch (p) {
-      case '7d':
-        start = startOfDay(subDays(now, 6));
-        break;
-      case '30d':
-        start = startOfDay(subDays(now, 29));
-        break;
-      case 'thisMonth':
-        start = startOfMonth(now);
-        break;
-      case 'lastMonth': {
-        const lastM = subMonths(now, 1);
-        start = startOfMonth(lastM);
-        end = startOfDay(startOfMonth(now));
-        break;
-      }
-      case 'thisYear':
-        start = startOfYear(now);
-        break;
-      default:
-        start = startOfDay(subDays(now, 6));
-    }
-
-    const daysDiff = Math.max(
-      Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)),
-      1,
-    );
-    const prevEnd = new Date(start.getTime() - 1);
-    const prevStart = startOfDay(subDays(prevEnd, daysDiff - 1));
-
-    return {
-      startDate: format(start, 'yyyy-MM-dd'),
-      endDate: format(end, 'yyyy-MM-dd'),
-      prevStartDate: format(prevStart, 'yyyy-MM-dd'),
-      prevEndDate: format(prevEnd, 'yyyy-MM-dd'),
-    };
-  }, []);
-
-  const loadData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period);
-
-      // ─── Server-side RPCs (replaces client-side aggregation) ───
-      const [dailyRes, topRes, summaryRes, prevSummaryRes, categoryRes] = await Promise.all([
-        supabase.rpc('get_daily_revenue', {
-          p_tenant_id: tenantId,
-          p_start_date: startDate,
-          p_end_date: endDate,
-        }),
-        supabase.rpc('get_top_items', {
-          p_tenant_id: tenantId,
-          p_start_date: startDate,
-          p_end_date: endDate,
-          p_limit: 5,
-        }),
-        supabase.rpc('get_order_summary', {
-          p_tenant_id: tenantId,
-          p_start_date: startDate,
-          p_end_date: endDate,
-        }),
-        supabase.rpc('get_order_summary', {
-          p_tenant_id: tenantId,
-          p_start_date: prevStartDate,
-          p_end_date: prevEndDate,
-        }),
-        supabase.rpc('get_category_breakdown', {
-          p_tenant_id: tenantId,
-          p_start_date: startDate,
-          p_end_date: endDate,
-        }),
-      ]);
-
-      // Fallback: if RPCs not available yet, use empty data
-      if (dailyRes.error || topRes.error || summaryRes.error) {
-        logger.warn('RPC fallback — RPCs may not be deployed yet', {
-          daily: dailyRes.error?.message,
-          top: topRes.error?.message,
-          summary: summaryRes.error?.message,
-        });
-        toast({ title: t('loadingError'), variant: 'destructive' });
-
-        // Graceful fallback with empty data
-        setDailyStats([]);
-        setTopItems([]);
-        setCategories([]);
-        setSummary({ revenue: 0, orders: 0, avgBasket: 0 });
-        setPreviousSummary({ revenue: 0, orders: 0, avgBasket: 0 });
-        return;
-      }
-
-      // Process daily stats (RPC returns { report_date, revenue, order_count })
-      const rawDaily = (dailyRes.data || []) as {
-        report_date: string;
-        revenue: number;
-        order_count: number;
-      }[];
-      setDailyStats(
-        rawDaily.map((d) => ({
-          date: d.report_date,
-          revenue: Number(d.revenue) || 0,
-          orders: Number(d.order_count) || 0,
-        })),
-      );
-
-      // Process top items (RPC returns { item_id, item_name, total_quantity, total_revenue })
-      const rawTop = (topRes.data || []) as {
-        item_id: string;
-        item_name: string;
-        total_quantity: number;
-        total_revenue: number;
-      }[];
-      setTopItems(
-        rawTop.map((t) => ({
-          id: t.item_id,
-          name: t.item_name,
-          quantity: Number(t.total_quantity) || 0,
-          revenue: Number(t.total_revenue) || 0,
-        })),
-      );
-
-      // Process summary (RPC returns { total_revenue, total_orders, avg_basket })
-      const rawSummary = summaryRes.data as {
-        total_revenue: number;
-        total_orders: number;
-        avg_basket: number;
-      } | null;
-      setSummary({
-        revenue: Number(rawSummary?.total_revenue) || 0,
-        orders: Number(rawSummary?.total_orders) || 0,
-        avgBasket: Math.round(Number(rawSummary?.avg_basket) || 0),
-      });
-
-      // Process previous-period summary for trend comparison
-      const rawPrev = prevSummaryRes.data as {
-        total_revenue: number;
-        total_orders: number;
-        avg_basket: number;
-      } | null;
-      setPreviousSummary({
-        revenue: Number(rawPrev?.total_revenue) || 0,
-        orders: Number(rawPrev?.total_orders) || 0,
-        avgBasket: Math.round(Number(rawPrev?.avg_basket) || 0),
-      });
-
-      // Process category breakdown (RPC returns { category_name, total_revenue })
-      if (!categoryRes.error && categoryRes.data) {
-        const rawCats = (categoryRes.data || []) as {
-          category_name: string;
-          total_revenue: number;
-        }[];
-        const totalCatRevenue = rawCats.reduce((sum, c) => sum + (Number(c.total_revenue) || 0), 0);
-        setCategories(
-          rawCats.map((c) => ({
-            category: c.category_name || 'Uncategorized',
-            revenue: Number(c.total_revenue) || 0,
-            percentage:
-              totalCatRevenue > 0
-                ? Math.round(((Number(c.total_revenue) || 0) / totalCatRevenue) * 100)
-                : 0,
-          })),
-        );
-      } else {
-        setCategories([]);
-      }
-    } catch (e) {
-      logger.error('Failed to load reports data', e);
-      toast({ title: t('loadingError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, period, toast, t, getDateRange]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  const dailyStats = reportData?.dailyStats ?? [];
+  const topItems = reportData?.topItems ?? [];
+  const categories = reportData?.categories ?? [];
+  const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0 };
+  const previousSummary = reportData?.previousSummary ?? { revenue: 0, orders: 0, avgBasket: 0 };
 
   /** Compute a human-readable label for the active period */
   const periodDisplayLabel = useMemo(() => {
