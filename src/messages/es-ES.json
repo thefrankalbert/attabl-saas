@@ -245,7 +245,7 @@
     "releaseAll": "Liberar todo",
     "claimOrder": "Tomar pedido",
     "myTables": "Mis mesas",
-    "unassigned": "Sin asignar",
+    "unassigned": "No asignado",
     "noActiveAssignments": "Sin asignaciones activas",
     "assignedTo": "Asignado a {name}",
     "serverPerformance": "Rendimiento por servidor"

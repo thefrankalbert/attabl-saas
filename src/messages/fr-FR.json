@@ -245,7 +245,7 @@
     "releaseAll": "Tout liberer",
     "claimOrder": "Prendre en charge",
     "myTables": "Mes tables",
-    "unassigned": "Non assignees",
+    "unassigned": "Non assigné",
     "noActiveAssignments": "Aucune assignation active",
     "assignedTo": "Assigne a {name}",
     "serverPerformance": "Performance par serveur"
@@ -426,6 +426,8 @@
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
     "fileTooLarge": "Fichier trop volumineux",
     "logoMaxSize": "Le logo ne doit pas dépasser 2MB",
+    "logoUploadError": "Échec du téléchargement du logo. Veuillez réessayer.",
+    "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue de la République...",
     "phonePlaceholder": "+235 66 77 88 99",

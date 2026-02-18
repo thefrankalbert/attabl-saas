@@ -90,7 +90,7 @@ export default function OrderDetails({
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h2 className="text-2xl font-bold">
-              {order.order_number || `Table ${order.table_number}`}
+              {order.order_number || t('tableNumber', { number: order.table_number })}
             </h2>
             <div className="flex items-center gap-2 text-sm text-neutral-500">
               <Clock className="w-4 h-4" />
@@ -104,7 +104,7 @@ export default function OrderDetails({
             )}
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-neutral-500 uppercase">Total</p>
+            <p className="text-sm font-medium text-neutral-500 uppercase">{tc('total')}</p>
             <p className="text-2xl font-bold text-primary">{fmt(displayTotal)}</p>
           </div>
         </div>
@@ -115,9 +115,9 @@ export default function OrderDetails({
         <div className="flex items-center justify-between">
           <span className="flex items-center gap-1.5 text-sm text-neutral-500">
             <User className="w-4 h-4" />
-            Serveur
+            {t('server')}
           </span>
-          <span className="text-sm font-medium">{order.server?.full_name ?? 'Non assigné'}</span>
+          <span className="text-sm font-medium">{order.server?.full_name ?? t('unassigned')}</span>
         </div>
 
         {/* Items */}

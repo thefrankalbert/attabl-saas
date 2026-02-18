@@ -245,7 +245,7 @@
     "releaseAll": "Tout liberer",
     "claimOrder": "Prendre en charge",
     "myTables": "Mes tables",
-    "unassigned": "Non assignees",
+    "unassigned": "Non assigné",
     "noActiveAssignments": "Aucune assignation active",
     "assignedTo": "Assigne a {name}",
     "serverPerformance": "Performance par serveur"
