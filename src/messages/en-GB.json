@@ -680,7 +680,12 @@
     "noCategories": "No category data available",
     "csvDownloaded": "CSV downloaded",
     "exportCsvError": "CSV export error",
-    "viewAllRanking": "View full ranking"
+    "viewAllRanking": "View full ranking",
+    "serverPerformance": "Server Performance",
+    "serverName": "Server",
+    "ordersCount": "Orders",
+    "avgOrderValue": "Avg. Order",
+    "noServerData": "No server data for this period"
   },
   "coupons": {
     "title": "Coupons",

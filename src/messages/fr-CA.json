@@ -680,7 +680,12 @@
     "noCategories": "Aucune donnee de categorie disponible",
     "csvDownloaded": "CSV telecharge",
     "exportCsvError": "Erreur export CSV",
-    "viewAllRanking": "Voir tout le classement"
+    "viewAllRanking": "Voir tout le classement",
+    "serverPerformance": "Performance par serveur",
+    "serverName": "Serveur",
+    "ordersCount": "Commandes",
+    "avgOrderValue": "Panier moyen",
+    "noServerData": "Aucune donnée serveur pour cette période"
   },
   "coupons": {
     "title": "Coupons",
