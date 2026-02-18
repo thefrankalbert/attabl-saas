@@ -28,6 +28,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 interface StockItem {
   id: string;
@@ -62,18 +63,43 @@ function getLast7DaysData(orders: Order[]): number[] {
   return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
 }
 
-function MiniChart({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data, 1);
+function MiniChart({ data }: { data: number[] }) {
+  const chartData = data.map((value, index) => ({ day: index, value }));
+  if (chartData.every((d) => d.value === 0)) {
+    return (
+      <div className="h-[40px] flex items-center justify-center text-xs text-neutral-400">--</div>
+    );
+  }
   return (
-    <div className="flex items-end gap-1 h-12">
-      {data.map((value, i) => (
-        <div
-          key={i}
-          className={`w-2 rounded-full transition-all duration-500 ${color}`}
-          style={{ height: `${(value / max) * 100}%`, minHeight: '4px' }}
+    <ResponsiveContainer width="100%" height={40}>
+      <AreaChart data={chartData}>
+        <defs>
+          <linearGradient id="limeGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
+            <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Tooltip
+          contentStyle={{
+            background: '#171717',
+            border: '1px solid #262626',
+            borderRadius: '8px',
+            fontSize: '12px',
+            color: '#fff',
+          }}
+          labelFormatter={() => ''}
+          formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
         />
-      ))}
-    </div>
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke="#CCFF00"
+          fill="url(#limeGradient)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -594,12 +620,7 @@ export default function DashboardClient({
                     </p>
                   </div>
                   <div className="w-16">
-                    <MiniChart
-                      data={getLast7DaysData(recentOrders)}
-                      color={
-                        idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-neutral-400' : 'bg-orange-400'
-                      }
-                    />
+                    <MiniChart data={getLast7DaysData(recentOrders)} />
                   </div>
                 </div>
               ))}
