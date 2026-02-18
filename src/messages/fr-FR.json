@@ -689,7 +689,9 @@
     "serverName": "Serveur",
     "ordersCount": "Commandes",
     "avgOrderValue": "Panier moyen",
-    "noServerData": "Aucune donnée serveur pour cette période"
+    "noServerData": "Aucune donnée serveur pour cette période",
+    "noDataTitle": "Aucun rapport disponible",
+    "noDataDescription": "Les données apparaîtront ici dès que des commandes seront enregistrées."
   },
   "coupons": {
     "title": "Coupons",

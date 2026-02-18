@@ -426,6 +426,8 @@
     "settingsSaveError": "An error occurred whilst saving.",
     "fileTooLarge": "File too large",
     "logoMaxSize": "Logo must not exceed 2MB",
+    "logoUploadError": "Failed to upload logo. Please try again.",
+    "logoUploading": "Uploading logo...",
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 High Street...",
     "phonePlaceholder": "+44 20 7946 0958",
@@ -687,7 +689,9 @@
     "serverName": "Server",
     "ordersCount": "Orders",
     "avgOrderValue": "Avg. Order",
-    "noServerData": "No server data for this period"
+    "noServerData": "No server data for this period",
+    "noDataTitle": "No reports available",
+    "noDataDescription": "Data will appear here once orders are recorded."
   },
   "coupons": {
     "title": "Coupons",

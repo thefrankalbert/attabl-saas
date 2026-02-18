@@ -426,6 +426,8 @@
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
     "fileTooLarge": "Fichier trop volumineux",
     "logoMaxSize": "Le logo ne doit pas d\u00e9passer 2Mo",
+    "logoUploadError": "\u00c9chec du t\u00e9l\u00e9chargement du logo. Veuillez r\u00e9essayer.",
+    "logoUploading": "T\u00e9l\u00e9chargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue Principale...",
     "phonePlaceholder": "+1 514 555 1234",
@@ -687,7 +689,9 @@
     "serverName": "Serveur",
     "ordersCount": "Commandes",
     "avgOrderValue": "Panier moyen",
-    "noServerData": "Aucune donnée serveur pour cette période"
+    "noServerData": "Aucune donnée serveur pour cette période",
+    "noDataTitle": "Aucun rapport disponible",
+    "noDataDescription": "Les données apparaîtront ici dès que des commandes seront enregistrées."
   },
   "coupons": {
     "title": "Coupons",

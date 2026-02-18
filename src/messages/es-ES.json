@@ -426,6 +426,8 @@
     "settingsSaveError": "Se ha producido un error al guardar.",
     "fileTooLarge": "Archivo demasiado grande",
     "logoMaxSize": "El logotipo no debe superar los 2 MB",
+    "logoUploadError": "Error al subir el logotipo. Inténtelo de nuevo.",
+    "logoUploading": "Subiendo logotipo...",
     "descriptionPlaceholder": "Cocina local y auténtica...",
     "addressPlaceholder": "Calle Mayor 123...",
     "phonePlaceholder": "+34 91 234 5678",
@@ -687,7 +689,9 @@
     "serverName": "Servidor",
     "ordersCount": "Pedidos",
     "avgOrderValue": "Pedido promedio",
-    "noServerData": "Sin datos de servidor para este período"
+    "noServerData": "Sin datos de servidor para este período",
+    "noDataTitle": "No hay informes disponibles",
+    "noDataDescription": "Los datos aparecerán aquí una vez que se registren pedidos."
   },
   "coupons": {
     "title": "Cupones",

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   TrendingUp,
   TrendingDown,
+  BarChart3,
 } from 'lucide-react';
 import {
   BarChart,
@@ -74,7 +75,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const { toast } = useToast();
 
   // TanStack Query for report data
-  const { data: reportData, isLoading: loading } = useReportData(tenantId, period);
+  const { data: reportData, isLoading: loading, error } = useReportData(tenantId, period);
 
   const dailyStats = reportData?.dailyStats ?? [];
   const topItems = reportData?.topItems ?? [];
@@ -217,6 +218,16 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       setExportingCsv(false);
     }
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <BarChart3 className="w-12 h-12 text-neutral-300 mb-4" />
+        <h2 className="text-lg font-semibold text-neutral-700">{t('noDataTitle')}</h2>
+        <p className="text-sm text-neutral-500 mt-1">{t('noDataDescription')}</p>
+      </div>
+    );
+  }
 
   if (loading)
     return <div className="p-12 text-center text-neutral-500">{t('loadingReports')}</div>;
