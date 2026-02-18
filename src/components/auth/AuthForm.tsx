@@ -59,6 +59,7 @@ function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'essentiel' | 'premium'>(urlPlan || 'essentiel');
 
   const supabase = createClient();
@@ -277,16 +278,25 @@ function AuthForm({ mode }: AuthFormProps) {
               </Link>
             )}
           </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={isLogin ? undefined : 8}
-            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={isLogin ? undefined : 8}
+              className="h-12 pr-20 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors text-sm"
+            >
+              {showPassword ? 'Masquer' : 'Afficher'}
+            </button>
+          </div>
         </div>
 
         {/* Plan Selection (Signup only) */}
