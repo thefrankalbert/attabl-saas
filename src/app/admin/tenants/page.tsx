@@ -24,6 +24,7 @@ import {
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
+import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
 
 // ─── Currency formatter (West African CFA) ──────────────────
 function formatCFA(amount: number): string {
@@ -566,21 +567,21 @@ export default function TenantsPage() {
         </div>
       </div>
 
-      {/* Wizard placeholder — Task 11 will add the actual wizard component here */}
+      {/* Add Restaurant Wizard */}
       {showWizard && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-xl bg-white p-6">
-            <p className="mb-4 text-sm text-neutral-600">
-              Le wizard sera integre dans la prochaine etape.
-            </p>
-            <Button
-              onClick={() => setShowWizard(false)}
-              className="rounded-lg bg-[#CCFF00] text-sm font-semibold text-black hover:bg-[#b8e600]"
-            >
-              Fermer
-            </Button>
-          </div>
-        </div>
+        <AddRestaurantWizard
+          onClose={() => setShowWizard(false)}
+          onSuccess={(slug) => {
+            setShowWizard(false);
+            // Navigate to the new restaurant's dashboard
+            const isDev = window.location.hostname === 'localhost';
+            if (isDev) {
+              window.location.assign(`http://${slug}.localhost:3000/admin`);
+            } else {
+              window.location.assign(`https://${slug}.attabl.com/admin`);
+            }
+          }}
+        />
       )}
     </div>
   );
