@@ -42,7 +42,7 @@ function createMockSupabase() {
     const callResolve = chain.resolve as unknown as () => Promise<unknown>;
     const updateChain = {
       eq: vi.fn().mockReturnValue({
-        eq: vi.fn().mockImplementation((..._args: unknown[]) => {
+        eq: vi.fn().mockImplementation(() => {
           const p = callResolve() as Promise<unknown> & { is: () => Promise<unknown> };
           p.is = callResolve;
           return p;
