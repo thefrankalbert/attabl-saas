@@ -151,21 +151,37 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       // Upload logo if changed
       if (logoFile) {
         setUploading(true);
-        const supabase = createClient();
-        const fileExt = logoFile.name.split('.').pop() || 'png';
-        const fileName = `${tenant.slug}/logo-${Date.now()}.${fileExt}`;
+        try {
+          const supabase = createClient();
+          const fileExt = logoFile.name.split('.').pop() || 'png';
+          const fileName = `${tenant.slug}/logo-${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('images')
-          .upload(fileName, logoFile, { upsert: true });
+          const { error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(fileName, logoFile, { upsert: true });
 
-        if (uploadError) throw new Error(`Erreur upload logo: ${uploadError.message}`);
+          if (uploadError) {
+            throw uploadError;
+          }
 
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from('images').getPublicUrl(fileName);
-        finalLogoUrl = publicUrl;
-        setUploading(false);
+          const {
+            data: { publicUrl },
+          } = supabase.storage.from('images').getPublicUrl(fileName);
+          finalLogoUrl = publicUrl;
+        } catch (uploadErr) {
+          logger.error('Failed to upload logo to storage', uploadErr);
+          // Revert logo preview to original on failure
+          setLogoPreview(tenant.logo_url || null);
+          setLogoFile(null);
+          toast({
+            title: tc('error'),
+            description: t('logoUploadError'),
+            variant: 'destructive',
+          });
+          return;
+        } finally {
+          setUploading(false);
+        }
       }
 
       // Prepare form data for server action
@@ -193,6 +209,8 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       const result = await updateTenantSettings(formData);
 
       if (result.success) {
+        // Clear the file reference after successful save
+        setLogoFile(null);
         toast({
           title: t('settingsUpdated'),
           description: t('settingsSavedSuccess'),
@@ -209,7 +227,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       });
     } finally {
       setSaving(false);
-      setUploading(false);
     }
   };
 
@@ -265,11 +282,19 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                     type="file"
                     accept="image/*"
                     onChange={handleLogoUpload}
-                    className="absolute inset-0 opacity-0 cursor-pointer"
+                    disabled={uploading || saving}
+                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
                   />
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white text-xs font-medium">{t('modify')}</p>
-                  </div>
+                  {uploading ? (
+                    <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center">
+                      <Loader2 className="h-6 w-6 text-white animate-spin" />
+                      <p className="text-white text-xs font-medium mt-1">{t('logoUploading')}</p>
+                    </div>
+                  ) : (
+                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <p className="text-white text-xs font-medium">{t('modify')}</p>
+                    </div>
+                  )}
                 </div>
                 <div className="text-sm text-neutral-500">
                   <p>{t('recommendedFormat')}</p>
