@@ -1,1 +1,8 @@
+# Gate 0: TypeScript — catch broken imports/types before commit
+pnpm typecheck || exit 1
+
+# Gate 1: Unit tests — catch logic regressions
+pnpm test || exit 1
+
+# Gate 2-3: ESLint + Prettier on staged files
 npx lint-staged
