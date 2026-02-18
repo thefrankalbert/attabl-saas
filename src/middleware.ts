@@ -44,7 +44,8 @@ export async function middleware(request: NextRequest) {
   }
 
   // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
-  // Sauf pour les routes auth/marketing qui vivent sur le domaine principal
+  // Sauf pour les routes qui vivent exclusivement sur le domaine principal
+  // (auth, marketing, API, admin plateforme, etc.)
   const MAIN_DOMAIN_PATHS = [
     '/login',
     '/signup',
@@ -53,6 +54,19 @@ export async function middleware(request: NextRequest) {
     '/checkout',
     '/pricing',
     '/forgot-password',
+    '/admin', // super admin (plateforme)
+    '/api', // API routes
+    '/contact',
+    '/features',
+    '/restaurants',
+    '/hotels',
+    '/bars-cafes',
+    '/boulangeries',
+    '/dark-kitchens',
+    '/food-trucks',
+    '/quick-service',
+    '/nouveautes',
+    '/test-db',
   ];
   const isMainDomainPath = MAIN_DOMAIN_PATHS.some(
     (p) => pathname === p || pathname.startsWith(p + '/'),
