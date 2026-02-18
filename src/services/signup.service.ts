@@ -155,6 +155,17 @@ export function createSignupService(supabase: SupabaseClient) {
         throw err;
       }
 
+      // 3b. Create restaurant group and link tenant
+      const { data: group } = await supabase
+        .from('restaurant_groups')
+        .insert({ owner_user_id: userId, name: 'Mon Groupe' })
+        .select('id')
+        .single();
+
+      if (group) {
+        await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
+      }
+
       // 4. Create admin user (rollback: delete tenant + auth user if fails)
       try {
         await this.createAdminUser({
@@ -195,6 +206,17 @@ export function createSignupService(supabase: SupabaseClient) {
         name: input.restaurantName,
         plan: input.plan || 'essentiel',
       });
+
+      // 2b. Create restaurant group and link tenant
+      const { data: group } = await supabase
+        .from('restaurant_groups')
+        .insert({ owner_user_id: input.userId, name: 'Mon Groupe' })
+        .select('id')
+        .single();
+
+      if (group) {
+        await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
+      }
 
       // 3. Create admin user (rollback: delete tenant if fails)
       try {
