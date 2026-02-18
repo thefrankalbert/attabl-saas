@@ -55,7 +55,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
       <div className="mb-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-neutral-600 text-sm font-medium mb-2">
           <Palette className="h-3.5 w-3.5" />
-          Étape 2/4
+          Étape 3/5
         </div>
         <h1 className="text-2xl font-bold text-neutral-900 mb-1">Personnalisez votre marque</h1>
         <p className="text-neutral-500 text-sm">Ajoutez votre logo et choisissez vos couleurs.</p>

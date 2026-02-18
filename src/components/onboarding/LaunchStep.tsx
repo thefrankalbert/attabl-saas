@@ -18,6 +18,7 @@ export function LaunchStep({ data }: LaunchStepProps) {
   const completedItems = [
     { label: 'Compte créé', done: true },
     { label: 'Identité configurée', done: !!data.establishmentType },
+    { label: 'Tables configurées', done: true },
     { label: 'Branding personnalisé', done: !!data.primaryColor },
     { label: 'Menu initialisé', done: data.menuOption !== 'skip' || true },
   ];
@@ -28,7 +29,7 @@ export function LaunchStep({ data }: LaunchStepProps) {
       <div className="mb-4">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-neutral-600 text-sm font-medium mb-2">
           <Rocket className="h-3.5 w-3.5" />
-          Étape 4/4
+          Étape 5/5
         </div>
         <h1 className="text-2xl font-bold text-neutral-900 mb-1">Prêt à lancer</h1>
         <p className="text-neutral-500 text-sm">
