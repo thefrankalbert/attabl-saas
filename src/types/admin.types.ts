@@ -95,6 +95,7 @@ export interface AdminUser {
   login_count?: number;
   created_at: string;
   created_by?: string;
+  custom_permissions?: Record<string, boolean> | null;
 }
 
 export interface OrderItem {
