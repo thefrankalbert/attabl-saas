@@ -486,7 +486,8 @@
     "navGeneral": "General",
     "collapse": "Contraer",
     "expand": "Expandir",
-    "navService": "Servicio"
+    "navService": "Servicio",
+    "navTables": "Mesas"
   },
   "kitchen": {
     "title": "Cocina (KDS)",
