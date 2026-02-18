@@ -5,7 +5,7 @@ import type { NextRequest } from 'next/server';
 // Routes qui nécessitent une authentification
 const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard', '/sites'];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   // 1. Extract subdomain
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);

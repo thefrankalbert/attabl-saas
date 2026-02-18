@@ -31,6 +31,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   viewportFit: 'cover',
+  themeColor: '#CCFF00',
 };
 
 export const metadata: Metadata = {
@@ -38,7 +39,6 @@ export const metadata: Metadata = {
   description:
     'Plateforme SaaS de commande digitale pour restaurants et hôtels. Menu QR Code, Room Service, Dashboard temps réel.',
   manifest: '/manifest.json',
-  themeColor: '#CCFF00',
 };
 
 export default async function RootLayout({
