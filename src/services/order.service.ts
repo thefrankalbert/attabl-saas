@@ -21,6 +21,7 @@ interface CreateOrderInput {
   service_charge_amount?: number;
   discount_amount?: number;
   coupon_id?: string;
+  server_id?: string;
 }
 
 interface CreateOrderResult {
@@ -183,8 +184,9 @@ export function createOrderService(supabase: SupabaseClient) {
           discount_amount: input.discount_amount ?? 0,
           payment_status: 'pending',
           coupon_id: input.coupon_id || null,
+          server_id: input.server_id ?? null,
         })
-        .select('id, order_number')
+        .select('id, order_number, table_id')
         .single();
 
       if (orderError) {
@@ -235,6 +237,26 @@ export function createOrderService(supabase: SupabaseClient) {
           'INTERNAL',
           itemsError,
         );
+      }
+
+      // Auto-assign server from active table assignment
+      if (!input.server_id && order.table_id) {
+        const { data: assignment } = await supabase
+          .from('table_assignments')
+          .select('server_id')
+          .eq('tenant_id', input.tenantId)
+          .eq('table_id', order.table_id)
+          .is('ended_at', null)
+          .order('started_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (assignment?.server_id) {
+          await supabase
+            .from('orders')
+            .update({ server_id: assignment.server_id })
+            .eq('id', order.id);
+        }
       }
 
       return {
