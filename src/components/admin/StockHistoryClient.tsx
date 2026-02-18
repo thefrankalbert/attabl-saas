@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { History, Search, Filter } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
+import { useStockMovements } from '@/hooks/queries';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
-import { createInventoryService } from '@/services/inventory.service';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import { MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
@@ -31,30 +29,11 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     { value: 'opening', label: t('filterOpening') },
   ];
 
-  const [movements, setMovements] = useState<StockMovement[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<MovementType | 'all'>('all');
 
-  const { toast } = useToast();
-  const supabase = createClient();
-  const inventoryService = createInventoryService(supabase);
-
-  const loadMovements = useCallback(async () => {
-    try {
-      const data = await inventoryService.getStockMovements(tenantId);
-      setMovements(data);
-    } catch {
-      toast({ title: tc('errorLoading'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  useEffect(() => {
-    loadMovements();
-  }, [loadMovements]);
+  // TanStack Query for stock movements
+  const { data: movements = [], isLoading: loading } = useStockMovements(tenantId);
 
   const filtered = movements.filter((m) => {
     const matchesType = filterType === 'all' || m.movement_type === filterType;

@@ -3,6 +3,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOrders } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -32,7 +34,6 @@ export default function OrdersClient({
   const ta = useTranslations('admin');
   const tk = useTranslations('kitchen');
 
-  const [orders, setOrders] = useState<Order[]>(initialOrders);
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -50,6 +51,11 @@ export default function OrdersClient({
 
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  // TanStack Query for orders
+  const { data: queryOrders } = useOrders(tenantId);
+  const orders = queryOrders ?? initialOrders;
 
   // Realtime subscription
   useEffect(() => {
@@ -60,21 +66,14 @@ export default function OrdersClient({
         { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
         async (payload) => {
           if (payload.eventType === 'INSERT') {
-            const { data } = await supabase
-              .from('orders')
-              .select('*, order_items(*)')
-              .eq('id', payload.new.id)
-              .single();
-            if (data) {
-              setOrders((prev) => [data as Order, ...prev]);
-              playNotification();
-              toast({ title: t('newOrderAlert'), description: `Table ${data.table_number}` });
-            }
-          } else if (payload.eventType === 'UPDATE') {
-            setOrders((prev) =>
-              prev.map((o) => (o.id === payload.new.id ? { ...o, ...payload.new } : o)),
-            );
+            playNotification();
+            const newOrder = payload.new as Record<string, unknown>;
+            toast({
+              title: t('newOrderAlert'),
+              description: `Table ${newOrder.table_number}`,
+            });
           }
+          queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
         },
       )
       .subscribe();
@@ -83,7 +82,7 @@ export default function OrdersClient({
       channel.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [supabase, tenantId, playNotification, toast, t]);
+  }, [supabase, tenantId, playNotification, toast, t, queryClient]);
 
   // Filtering logic (derived state via useMemo)
   const filteredOrders = useMemo(() => {
@@ -269,13 +268,12 @@ export default function OrdersClient({
   );
 
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    // Optimistic update
-    setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
-
     const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
     if (error) {
       toast({ title: tc('error'), variant: 'destructive' });
-      // Revert if error (would need real fetch to be perfect, but ok for now)
+    } else {
+      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
     }
   };
 

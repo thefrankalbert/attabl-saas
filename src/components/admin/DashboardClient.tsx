@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -21,6 +21,9 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDashboardStats } from '@/hooks/queries';
+import { useUpdateOrderStatus } from '@/hooks/mutations';
 import StatsCard, { StatsCardSkeleton } from '@/components/admin/StatsCard';
 import StatusBadge from '@/components/admin/StatusBadge';
 import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
@@ -29,14 +32,6 @@ import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
-
-interface StockItem {
-  id: string;
-  name: string;
-  unit: string;
-  current_stock: number;
-  min_stock_alert: number;
-}
 
 // ─── Helpers ───────────────────────────────────────────────
 
@@ -133,13 +128,24 @@ export default function DashboardClient({
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmt = (amount: number) => formatCurrency(amount, currency);
   const fmtCompact = (amount: number) => formatCurrencyCompact(amount, currency);
-  const [stats, setStats] = useState<DashboardStats>(initialStats);
-  const [recentOrders, setRecentOrders] = useState<Order[]>(initialRecentOrders);
   const [popularItems] = useState<PopularItem[]>(initialPopularItems);
-  const [loading] = useState(false);
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  // TanStack Query for dashboard data
+  const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
+    stats: initialStats,
+    recentOrders: initialRecentOrders,
+    stockItems: [],
+  });
+
+  const stats = dashboardData?.stats ?? initialStats;
+  const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;
+  const stockItems = dashboardData?.stockItems ?? [];
+
+  // Mutation for order status changes
+  const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -148,108 +154,21 @@ export default function DashboardClient({
     return t('goodEvening');
   };
 
-  const loadStats = useCallback(async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    try {
-      const [ordersRes, itemsRes, venuesRes] = await Promise.all([
-        supabase
-          .from('orders')
-          .select('id, total_price, total')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', today.toISOString()),
-        supabase
-          .from('menu_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_available', true),
-        supabase
-          .from('venues')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-      ]);
-      const ordersData = ordersRes.data || [];
-      setStats({
-        ordersToday: ordersData.length,
-        revenueToday: ordersData.reduce((sum, o) => sum + Number(o.total_price || o.total || 0), 0),
-        activeItems: itemsRes.count || 0,
-        activeCards: venuesRes.count || 0,
-      });
-    } catch {
-      /* silently fail - stats are non-critical */
-    }
-  }, [supabase, tenantId]);
-
-  const loadRecentOrders = useCallback(async () => {
-    try {
-      const { data: orders } = await supabase
-        .from('orders')
-        .select(
-          `id, table_number, status, total_price, total, created_at,
-         order_items(id, quantity, price_at_order, menu_items(name))`,
-        )
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      const formatted: Order[] = (orders || []).map((order: Record<string, unknown>) => ({
-        id: order.id as string,
-        tenant_id: tenantId,
-        table_number: (order.table_number as string) || 'N/A',
-        status: ((order.status as string) || 'pending') as Order['status'],
-        total_price: Number(order.total_price || order.total || 0),
-        created_at: order.created_at as string,
-        items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
-          (item: Record<string, unknown>) => ({
-            id: item.id as string,
-            name:
-              ((item.menu_items as Record<string, unknown>)?.name as string) || t('unknownItem'),
-            quantity: item.quantity as number,
-            price: item.price_at_order as number,
-          }),
-        ),
-      }));
-      setRecentOrders(formatted);
-    } catch {
-      /* silently fail */
-    }
-  }, [supabase, tenantId, t]);
-
-  const loadStock = useCallback(async () => {
-    try {
-      const { data } = await supabase
-        .from('ingredients')
-        .select('id, name, unit, current_stock, min_stock_alert')
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-        .order('current_stock', { ascending: true })
-        .limit(10);
-      setStockItems((data as StockItem[]) || []);
-    } catch {
-      /* non-critical */
-    }
-  }, [supabase, tenantId]);
-
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId);
-      if (error) throw error;
-      toast({ title: t('statusUpdated') });
-      loadRecentOrders();
-      loadStats();
-    } catch {
-      toast({ title: t('statusUpdateError'), variant: 'destructive' });
-    }
+    updateOrderStatus.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: () => {
+          toast({ title: t('statusUpdated') });
+        },
+        onError: () => {
+          toast({ title: t('statusUpdateError'), variant: 'destructive' });
+        },
+      },
+    );
   };
 
   useEffect(() => {
-    loadStock();
-
     const channel = supabase
       .channel(`dashboard-${tenantId}`)
       .on(
@@ -261,8 +180,7 @@ export default function DashboardClient({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadStats();
-          loadRecentOrders();
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
         },
       )
       .subscribe();
@@ -279,7 +197,7 @@ export default function DashboardClient({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadStock();
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
         },
       )
       .subscribe();
@@ -290,7 +208,7 @@ export default function DashboardClient({
       supabase.removeChannel(channel);
       supabase.removeChannel(stockChannel);
     };
-  }, [supabase, tenantId, loadStats, loadRecentOrders, loadStock]);
+  }, [supabase, tenantId, queryClient]);
 
   if (loading) {
     return (

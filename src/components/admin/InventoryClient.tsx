@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -11,11 +13,9 @@ import AdminModal from '@/components/admin/AdminModal';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
-import { createSupplierService } from '@/services/supplier.service';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { CurrencyCode } from '@/types/admin.types';
-import type { Supplier } from '@/types/supplier.types';
 import type {
   Ingredient,
   IngredientUnit,
@@ -33,8 +33,6 @@ interface InventoryClientProps {
 type ModalMode = 'add' | 'edit' | 'adjust' | null;
 
 export default function InventoryClient({ tenantId, currency }: InventoryClientProps) {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
 
@@ -55,41 +53,19 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
-  const [activeSuppliers, setActiveSuppliers] = useState<Supplier[]>([]);
 
   const { toast } = useToast();
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const inventoryService = createInventoryService(supabase);
-  const supplierService = createSupplierService(supabase);
 
-  const loadIngredients = useCallback(async () => {
-    try {
-      const data = await inventoryService.getIngredients(tenantId);
-      setIngredients(data);
-    } catch {
-      toast({ title: tc('loadingError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadSuppliers = useCallback(async () => {
-    try {
-      const data = await supplierService.getActiveSuppliers(tenantId);
-      setActiveSuppliers(data);
-    } catch {
-      // Silent fail — suppliers are optional
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  // TanStack Query for ingredients and suppliers
+  const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
+  const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
   useEffect(() => {
-    loadIngredients();
-    loadSuppliers();
-
     // Realtime updates on ingredients
     const channel = supabase
       .channel(`inventory-${tenantId}`)
@@ -102,7 +78,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadIngredients();
+          queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
         },
       )
       .subscribe();
@@ -112,7 +88,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, loadIngredients, loadSuppliers]);
+  }, [tenantId, queryClient]);
 
   // Filtered list
   const filtered = ingredients.filter((ing) => {
@@ -300,7 +276,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       }
       setModalMode(null);
       resetForm();
-      loadIngredients();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -320,7 +296,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       toast({ title: t('stockAdjusted') });
       setModalMode(null);
       resetForm();
-      loadIngredients();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }

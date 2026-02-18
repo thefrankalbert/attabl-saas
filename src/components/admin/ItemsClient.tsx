@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Star, Check, X, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMenuItems } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,9 +38,7 @@ export default function ItemsClient({
   initialCategories,
   currency = 'XAF',
 }: ItemsClientProps) {
-  const [items, setItems] = useState<MenuItem[]>(initialItems);
   const [categories] = useState<Category[]>(initialCategories);
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [saving, setSaving] = useState(false);
@@ -60,35 +60,18 @@ export default function ItemsClient({
   const t = useTranslations('items');
   const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  const loadItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('menu_items')
-        .select('*, categories(id, name)')
-        .eq('tenant_id', tenantId)
-        .order('name');
-      if (filterCategory !== 'all') query = query.eq('category_id', filterCategory);
-      if (filterAvailable !== 'all')
-        query = query.eq('is_available', filterAvailable === 'available');
-      const { data, error } = await query;
-      if (error) throw error;
-      const formatted: MenuItem[] = (data || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        category: item.categories as Category,
-      })) as MenuItem[];
-      setItems(formatted);
-    } catch {
-      toast({ title: t('loadingError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, filterCategory, filterAvailable, toast, t]);
+  // TanStack Query for menu items with category join
+  const { data: items = initialItems, isLoading: loading } = useMenuItems(tenantId, {
+    categoryId: filterCategory,
+    availableFilter: filterAvailable,
+    withCategory: true,
+  });
 
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+  const loadItems = () => {
+    queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
+  };
 
   const resetForm = () => {
     setName('');
@@ -213,7 +196,7 @@ export default function ItemsClient({
           <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
           <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
         </div>
-        <Button onClick={openNewModal} size="sm" className="gap-2">
+        <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
           <Plus className="w-4 h-4" /> {t('newItem')}
         </Button>
       </div>
@@ -348,7 +331,7 @@ export default function ItemsClient({
           </div>
           <h3 className="text-lg font-bold text-neutral-900">{t('noItems')}</h3>
           <p className="text-sm text-neutral-500 mt-2">{t('noItemsDesc')}</p>
-          <Button onClick={openNewModal} className="mt-6">
+          <Button onClick={openNewModal} variant="lime" className="mt-6">
             {t('addItem')}
           </Button>
         </div>
@@ -450,7 +433,7 @@ export default function ItemsClient({
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
               {t('cancel')}
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} variant="lime">
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editingItem ? t('update') : t('create')}
             </Button>

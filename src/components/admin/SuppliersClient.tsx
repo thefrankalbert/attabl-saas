@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Truck, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -20,8 +22,6 @@ interface SuppliersClientProps {
 type ModalMode = 'add' | 'edit' | null;
 
 export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -42,23 +42,15 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const t = useTranslations('suppliers');
   const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const supplierService = createSupplierService(supabase);
 
-  const loadSuppliers = useCallback(async () => {
-    try {
-      const data = await supplierService.getSuppliers(tenantId);
-      setSuppliers(data);
-    } catch {
-      toast({ title: t('loadError'), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  // TanStack Query for suppliers
+  const { data: suppliers = [], isLoading: loading } = useSuppliers(tenantId);
 
-  useEffect(() => {
-    loadSuppliers();
-  }, [loadSuppliers]);
+  const loadSuppliers = () => {
+    queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
+  };
 
   const filtered = suppliers.filter((s) => {
     if (filterActive === 'active' && !s.is_active) return false;
