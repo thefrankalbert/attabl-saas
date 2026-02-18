@@ -53,6 +53,15 @@ function timeAgo(
 
 // formatPrice removed — replaced by formatCurrencyCompact
 
+function getLast7DaysData(orders: Order[]): number[] {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+  return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
+}
+
 function MiniChart({ data, color }: { data: number[]; color: string }) {
   const max = Math.max(...data, 1);
   return (
@@ -278,7 +287,7 @@ export default function DashboardClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()} 👋</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()}</h1>
           <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString(locale, {
@@ -308,17 +317,17 @@ export default function DashboardClient({
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
+          title={t('revenue')}
+          value={fmtCompact(stats.revenueToday)}
+          icon={Banknote}
+          color="lime"
+          subtitle={t('todayLabel')}
+        />
+        <StatsCard
           title={t('ordersCount')}
           value={stats.ordersToday}
           icon={ShoppingBag}
           color="blue"
-          subtitle={t('todayLabel')}
-        />
-        <StatsCard
-          title={t('revenue')}
-          value={fmtCompact(stats.revenueToday)}
-          icon={Banknote}
-          color="green"
           subtitle={t('todayLabel')}
         />
         <StatsCard
@@ -428,15 +437,23 @@ export default function DashboardClient({
         {/* Recent Orders */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
-            <div>
-              <h2 className="text-lg font-bold text-neutral-900">{t('recentOrders')}</h2>
-              <p className="text-sm text-neutral-500">
-                {t('ordersCountLabel', { count: recentOrders.length })}
-              </p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-neutral-900">{t('recentOrders')}</h2>
+                <p className="text-sm text-neutral-500">
+                  {t('ordersCountLabel', { count: recentOrders.length })}
+                </p>
+              </div>
+              {recentOrders.filter((o) => o.status === 'pending').length > 0 && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold">
+                  <Clock className="w-3 h-3" />
+                  {recentOrders.filter((o) => o.status === 'pending').length} {t('pendingLabel')}
+                </span>
+              )}
             </div>
             <Link
               href={`${adminBase}/orders`}
-              className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
             >
               {t('viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
@@ -578,7 +595,7 @@ export default function DashboardClient({
                   </div>
                   <div className="w-16">
                     <MiniChart
-                      data={[3, 5, 4, 7, 6, 8, 5]}
+                      data={getLast7DaysData(recentOrders)}
                       color={
                         idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-neutral-400' : 'bg-orange-400'
                       }
