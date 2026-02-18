@@ -486,7 +486,8 @@
     "navGeneral": "General",
     "collapse": "Collapse",
     "expand": "Expand",
-    "navService": "Service"
+    "navService": "Service",
+    "navTables": "Tables"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",

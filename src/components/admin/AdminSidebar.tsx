@@ -32,6 +32,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   UserCheck,
+  Grid3x3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -236,6 +237,12 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           href: `${basePath}/qr-codes`,
           icon: QrCode,
           label: t('navQrCodes'),
+          requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `${basePath}/settings/tables`,
+          icon: Grid3x3,
+          label: t('navTables'),
           requiredPermission: 'canManageSettings',
         },
         {
