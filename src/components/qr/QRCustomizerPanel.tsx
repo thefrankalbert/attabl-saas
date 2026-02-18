@@ -1,7 +1,17 @@
 'use client';
 
-import { useCallback } from 'react';
-import { Layout, QrCode, Palette, Type, Settings2, Check, ImagePlus } from 'lucide-react';
+import { useCallback, useRef } from 'react';
+import {
+  Layout,
+  QrCode,
+  Palette,
+  Type,
+  Settings2,
+  Check,
+  ImagePlus,
+  Upload,
+  X,
+} from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -138,6 +148,29 @@ export function QRCustomizerPanel({
       updateField('backgroundImage', { ...config.backgroundImage, [key]: value });
     },
     [config.backgroundImage, updateField],
+  );
+
+  // ─── Logo file upload ────────────────────────────────
+  const logoFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoFileChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result;
+        if (typeof dataUrl === 'string') {
+          updateLogo('src', dataUrl);
+        }
+      };
+      reader.readAsDataURL(file);
+
+      // Reset file input so the same file can be re-selected
+      e.target.value = '';
+    },
+    [updateLogo],
   );
 
   // ─── Render ─────────────────────────────────────────
@@ -314,11 +347,60 @@ export function QRCustomizerPanel({
                       </Button>
                     )}
 
+                    {/* File upload for custom logo */}
+                    <div className="space-y-2">
+                      <Label className="text-xs text-gray-500">Importer une image</Label>
+                      <input
+                        ref={logoFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleLogoFileChange}
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2"
+                        onClick={() => logoFileInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4" />
+                        Choisir un fichier
+                      </Button>
+
+                      {/* Preview of uploaded/selected logo */}
+                      {config.logo.src && (
+                        <div className="relative rounded-xl border border-neutral-100 p-2 bg-neutral-50">
+                          <div className="flex items-center gap-3">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={config.logo.src}
+                              alt="Aperçu du logo"
+                              className="h-10 w-10 rounded-lg object-contain bg-white border border-neutral-100"
+                            />
+                            <span className="text-xs text-gray-500 truncate flex-1">
+                              {config.logo.src.startsWith('data:')
+                                ? 'Image importée'
+                                : config.logo.src}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => updateLogo('src', '')}
+                              className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                              aria-label="Supprimer le logo"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">URL du logo</Label>
+                      <Label className="text-xs text-gray-500">Ou entrer une URL</Label>
                       <Input
                         type="url"
-                        value={config.logo.src}
+                        value={config.logo.src.startsWith('data:') ? '' : config.logo.src}
                         onChange={(e) => updateLogo('src', e.target.value)}
                         placeholder="https://example.com/logo.png"
                         className="text-sm"

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   Plus,
@@ -56,6 +57,9 @@ export default function MenuDetailClient({
   const [savingCategory, setSavingCategory] = useState(false);
 
   const { toast } = useToast();
+  const t = useTranslations('menus');
+  const tc = useTranslations('common');
+  const tCat = useTranslations('categories');
   const supabase = createClient();
 
   const loadData = useCallback(async () => {
@@ -89,11 +93,11 @@ export default function MenuDetailClient({
         setItems([]);
       }
     } catch {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
+      toast({ title: t('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId, menu.id, toast]);
+  }, [supabase, tenantId, menu.id, toast, t]);
 
   const toggleMenuActive = async () => {
     try {
@@ -107,7 +111,7 @@ export default function MenuDetailClient({
       }
       setMenu((prev) => ({ ...prev, is_active: !prev.is_active }));
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -146,16 +150,16 @@ export default function MenuDetailClient({
           .update(payload)
           .eq('id', editingCategory.id);
         if (error) throw error;
-        toast({ title: 'Cat\u00e9gorie mise \u00e0 jour' });
+        toast({ title: t('categoryUpdated') });
       } else {
         const { error } = await supabase.from('categories').insert([payload]);
         if (error) throw error;
-        toast({ title: 'Cat\u00e9gorie cr\u00e9\u00e9e' });
+        toast({ title: t('categoryCreated') });
       }
       setShowCategoryModal(false);
       loadData();
     } catch {
-      toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' });
+      toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSavingCategory(false);
     }
@@ -165,19 +169,19 @@ export default function MenuDetailClient({
     const catItems = items.filter((it) => it.category_id === cat.id);
     if (catItems.length > 0) {
       toast({
-        title: `Cette cat\u00e9gorie contient ${catItems.length} plat(s). Supprimez-les d\u2019abord.`,
+        title: tCat('categoryHasDishes', { count: catItems.length }),
         variant: 'destructive',
       });
       return;
     }
-    if (!confirm(`Supprimer la cat\u00e9gorie "${cat.name}" ?`)) return;
+    if (!confirm(tCat('deleteCategoryConfirm', { name: cat.name }))) return;
     try {
       const { error } = await supabase.from('categories').delete().eq('id', cat.id);
       if (error) throw error;
-      toast({ title: 'Cat\u00e9gorie supprim\u00e9e' });
+      toast({ title: t('categoryDeleted') });
       loadData();
     } catch {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -190,7 +194,7 @@ export default function MenuDetailClient({
       if (error) throw error;
       loadData();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -206,7 +210,7 @@ export default function MenuDetailClient({
           className="hover:text-neutral-900 transition-colors flex items-center gap-1"
         >
           <ArrowLeft className="w-4 h-4" />
-          Cartes
+          {t('breadcrumbMenus')}
         </Link>
         <span>/</span>
         <span className="text-neutral-900 font-medium">{menu.name}</span>
@@ -241,12 +245,12 @@ export default function MenuDetailClient({
               {menu.is_active ? (
                 <>
                   <ToggleRight className="w-3 h-3 inline mr-1" />
-                  Active
+                  {t('active')}
                 </>
               ) : (
                 <>
                   <ToggleLeft className="w-3 h-3 inline mr-1" />
-                  Inactive
+                  {t('inactive')}
                 </>
               )}
             </button>
@@ -259,10 +263,10 @@ export default function MenuDetailClient({
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-neutral-700 flex items-center gap-2">
             <Folder className="w-4 h-4 text-neutral-400" />
-            Cat\u00e9gories ({categories.length})
+            {t('categoriesCount', { count: categories.length })}
           </h2>
           <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> Nouvelle cat\u00e9gorie
+            <Plus className="w-4 h-4" /> {t('newCategory')}
           </Button>
         </div>
 
@@ -293,7 +297,7 @@ export default function MenuDetailClient({
                     <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                       <Utensils className="w-3.5 h-3.5" />
                       <span className="font-medium">
-                        {catItems.length} plat{catItems.length > 1 ? 's' : ''}
+                        {t('dishCount', { count: catItems.length })}
                       </span>
                     </div>
                     <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
@@ -329,7 +333,7 @@ export default function MenuDetailClient({
                             {item.name}
                           </span>
                           <span className="text-sm font-bold text-neutral-900 tabular-nums">
-                            {item.price.toLocaleString()} FCFA
+                            {t('priceFcfa', { count: item.price })}
                           </span>
                           <button
                             onClick={() => toggleItemAvailable(item)}
@@ -343,12 +347,12 @@ export default function MenuDetailClient({
                             {item.is_available ? (
                               <>
                                 <Check className="w-3 h-3 inline mr-0.5" />
-                                Stock
+                                {t('stockLabel')}
                               </>
                             ) : (
                               <>
                                 <X className="w-3 h-3 inline mr-0.5" />
-                                \u00c9puis\u00e9
+                                {t('exhaustedLabel')}
                               </>
                             )}
                           </button>
@@ -365,12 +369,10 @@ export default function MenuDetailClient({
             <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <Folder className="w-7 h-7 text-neutral-400" />
             </div>
-            <h3 className="text-base font-bold text-neutral-900">Aucune cat\u00e9gorie</h3>
-            <p className="text-sm text-neutral-500 mt-2">
-              Ajoutez des cat\u00e9gories pour organiser les plats de cette carte
-            </p>
+            <h3 className="text-base font-bold text-neutral-900">{t('noCategoriesInMenu')}</h3>
+            <p className="text-sm text-neutral-500 mt-2">{t('noCategoriesInMenuDesc')}</p>
             <Button onClick={openNewCategoryModal} className="mt-4">
-              Cr\u00e9er une cat\u00e9gorie
+              {t('createCategory')}
             </Button>
           </div>
         )}
@@ -380,32 +382,32 @@ export default function MenuDetailClient({
       <AdminModal
         isOpen={showCategoryModal}
         onClose={() => setShowCategoryModal(false)}
-        title={editingCategory ? 'Modifier la cat\u00e9gorie' : 'Nouvelle cat\u00e9gorie'}
+        title={editingCategory ? t('editCategoryTitle') : t('newCategoryTitle')}
       >
         <form onSubmit={handleCategorySubmit} className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="cat-name">Nom (FR) *</Label>
+              <Label htmlFor="cat-name">{t('categoryNameFr')}</Label>
               <Input
                 id="cat-name"
                 value={catName}
                 onChange={(e) => setCatName(e.target.value)}
-                placeholder="Ex: Entr\u00e9es"
+                placeholder={t('nameFrPlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cat-name-en">Nom (EN)</Label>
+              <Label htmlFor="cat-name-en">{t('categoryNameEn')}</Label>
               <Input
                 id="cat-name-en"
                 value={catNameEn}
                 onChange={(e) => setCatNameEn(e.target.value)}
-                placeholder="Ex: Starters"
+                placeholder={t('nameEnPlaceholder')}
               />
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cat-order">Ordre d&apos;affichage</Label>
+            <Label htmlFor="cat-order">{t('categoryDisplayOrder')}</Label>
             <Input
               id="cat-order"
               type="number"
@@ -416,11 +418,11 @@ export default function MenuDetailClient({
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setShowCategoryModal(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" disabled={savingCategory}>
               {savingCategory && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingCategory ? 'Mettre \u00e0 jour' : 'Cr\u00e9er'}
+              {editingCategory ? t('update') : t('create')}
             </Button>
           </div>
         </form>

@@ -20,7 +20,7 @@ const SelectTrigger = React.forwardRef<
     className={cn(
       // Nova style: subtle, clean, small radius
       'flex h-9 w-full items-center justify-between gap-2',
-      'rounded-sm border border-input bg-background px-3 py-2',
+      'rounded-lg border border-neutral-200 bg-white px-3 py-2',
       'text-sm font-medium text-foreground',
       'ring-offset-background',
       'placeholder:text-muted-foreground',
@@ -78,11 +78,10 @@ const SelectContent = React.forwardRef<
       className={cn(
         // Nova style: clean dropdown with subtle animation
         'relative z-50 max-h-96 min-w-[8rem] overflow-hidden',
-        'rounded-sm border border-border bg-popover text-popover-foreground',
-        // Animation Nova style
+        'rounded-xl border border-neutral-200 bg-white text-neutral-900',
+        // Animation: clean fade + slide
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
-        'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95',
         'data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2',
         'data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
         position === 'popper' &&
@@ -129,7 +128,7 @@ const SelectItem = React.forwardRef<
     className={cn(
       // Nova style: subtle menu accent
       'relative flex w-full cursor-default select-none items-center',
-      'rounded-sm py-1.5 pl-2 pr-8 text-sm font-medium',
+      'rounded-lg py-1.5 pl-2 pr-8 text-sm font-medium',
       'outline-none',
       'focus:bg-accent focus:text-accent-foreground',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',

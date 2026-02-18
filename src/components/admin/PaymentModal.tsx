@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Coins, CreditCard, Banknote } from 'lucide-react';
 import {
   Dialog,
@@ -39,8 +40,10 @@ export default function PaymentModal({
   orderNumber,
   onSuccess,
 }: PaymentModalProps) {
+  const t = useTranslations('payment');
+
   const finalTotal = total ?? order?.total_price ?? 0;
-  const finalTable = tableNumber ?? order?.table_number ?? 'Inconnue';
+  const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
   const finalOrderNum = orderNumber ?? (order ? parseInt(order.id.slice(0, 4), 16) : undefined); // rudimentary fallback
 
   const [method, setMethod] = useState<PaymentMethod>('cash');
@@ -54,7 +57,7 @@ export default function PaymentModal({
     setAmountReceived('');
     setChange(0);
     setMethod('cash');
-  }, []);
+  }, [setMethod]);
 
   const handleAmountChange = (val: string) => {
     setAmountReceived(val);
@@ -81,7 +84,7 @@ export default function PaymentModal({
 
         if (error) {
           toast({
-            title: 'Erreur lors du paiement',
+            title: t('paymentError'),
             description: error.message,
             variant: 'destructive',
           });
@@ -90,11 +93,11 @@ export default function PaymentModal({
         }
       }
 
-      toast({ title: 'Paiement enregistr\u00e9 avec succ\u00e8s' });
+      toast({ title: t('paymentSuccess') });
       setIsProcessing(false);
       onSuccess();
     } catch {
-      toast({ title: 'Erreur lors du paiement', variant: 'destructive' });
+      toast({ title: t('paymentError'), variant: 'destructive' });
       setIsProcessing(false);
     }
   };
@@ -128,11 +131,11 @@ export default function PaymentModal({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            Encaissement
+            {t('title')}
             {finalOrderNum && <span className="ml-2 text-neutral-400">#{finalOrderNum}</span>}
             {finalTable && (
               <span className="ml-2 block text-sm font-normal text-neutral-500">
-                Table {finalTable}
+                {t('tableLabel', { table: finalTable })}
               </span>
             )}
           </DialogTitle>
@@ -143,12 +146,12 @@ export default function PaymentModal({
           {hasBreakdown && (
             <div className="space-y-2 p-3 bg-neutral-50 rounded-lg border border-neutral-100 text-sm">
               <div className="flex justify-between text-neutral-600">
-                <span>Sous-total</span>
+                <span>{t('subtotal')}</span>
                 <span>{formatCurrency(subtotal!, 'XAF')}</span>
               </div>
               {taxAmount !== undefined && taxAmount !== null && taxAmount > 0 && (
                 <div className="flex justify-between text-neutral-600">
-                  <span>Taxes</span>
+                  <span>{t('taxes')}</span>
                   <span>{formatCurrency(taxAmount, 'XAF')}</span>
                 </div>
               )}
@@ -156,18 +159,18 @@ export default function PaymentModal({
                 serviceChargeAmount !== null &&
                 serviceChargeAmount > 0 && (
                   <div className="flex justify-between text-neutral-600">
-                    <span>Service</span>
+                    <span>{t('service')}</span>
                     <span>{formatCurrency(serviceChargeAmount, 'XAF')}</span>
                   </div>
                 )}
               {discountAmount !== undefined && discountAmount !== null && discountAmount > 0 && (
                 <div className="flex justify-between text-green-600">
-                  <span>Remise</span>
+                  <span>{t('discount')}</span>
                   <span>-{formatCurrency(discountAmount, 'XAF')}</span>
                 </div>
               )}
               <div className="border-t border-neutral-200 pt-2 flex justify-between font-bold text-neutral-900">
-                <span>Total</span>
+                <span>{t('total')}</span>
                 <span>{formatCurrency(finalTotal, 'XAF')}</span>
               </div>
             </div>
@@ -175,7 +178,7 @@ export default function PaymentModal({
 
           {/* Total */}
           <div className="text-center p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <p className="text-sm text-neutral-500 uppercase font-medium">Montant \u00e0 payer</p>
+            <p className="text-sm text-neutral-500 uppercase font-medium">{t('amountToPay')}</p>
             <p className="text-3xl font-black text-neutral-900">
               {formatCurrency(finalTotal, 'XAF')}
             </p>
@@ -183,7 +186,7 @@ export default function PaymentModal({
 
           {/* Method Selection */}
           <div className="space-y-3">
-            <Label>Mode de paiement</Label>
+            <Label>{t('paymentMethod')}</Label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
@@ -196,7 +199,7 @@ export default function PaymentModal({
                 )}
               >
                 <Banknote className="mb-2 h-6 w-6" />
-                <span className="text-sm font-medium">Esp\u00e8ces</span>
+                <span className="text-sm font-medium">{t('cash')}</span>
               </button>
 
               <button
@@ -210,7 +213,7 @@ export default function PaymentModal({
                 )}
               >
                 <CreditCard className="mb-2 h-6 w-6" />
-                <span className="text-sm font-medium">Carte</span>
+                <span className="text-sm font-medium">{t('card')}</span>
               </button>
 
               <button
@@ -224,7 +227,7 @@ export default function PaymentModal({
                 )}
               >
                 <Coins className="mb-2 h-6 w-6" />
-                <span className="text-sm font-medium">Mobile</span>
+                <span className="text-sm font-medium">{t('mobile')}</span>
               </button>
             </div>
           </div>
@@ -233,7 +236,7 @@ export default function PaymentModal({
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="received">Re\u00e7u</Label>
+                  <Label htmlFor="received">{t('receipt')}</Label>
                   <Input
                     id="received"
                     type="number"
@@ -244,7 +247,7 @@ export default function PaymentModal({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Rendu</Label>
+                  <Label>{t('change')}</Label>
                   <div
                     className={cn(
                       'flex h-10 w-full rounded-md border border-input px-3 py-2 text-lg font-bold ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
@@ -263,7 +266,7 @@ export default function PaymentModal({
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={onClose} disabled={isProcessing}>
-            Annuler
+            {t('cancel')}
           </Button>
           <Button
             onClick={handleProcessPayment}
@@ -271,7 +274,7 @@ export default function PaymentModal({
             className="w-full sm:w-auto"
           >
             {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirmer l&apos;encaissement
+            {t('confirmPayment')}
           </Button>
         </DialogFooter>
       </DialogContent>

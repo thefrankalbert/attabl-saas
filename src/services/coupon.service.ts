@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Coupon } from '@/types/admin.types';
 import { ServiceError } from './errors';
+import { logger } from '@/lib/logger';
 
 export interface CouponValidationResult {
   valid: boolean;
@@ -93,7 +94,7 @@ export function createCouponService(supabase: SupabaseClient) {
       });
       if (error) {
         // Non-blocking: log but don't fail the order
-        console.error('Failed to increment coupon usage:', error);
+        logger.error('Failed to increment coupon usage', error);
       }
     },
 

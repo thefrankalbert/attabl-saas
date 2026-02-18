@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCategories } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,10 +21,8 @@ interface CategoriesClientProps {
 type CategoryWithCount = Category & { items_count?: number };
 
 export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
-  const [categories, setCategories] = useState<CategoryWithCount[]>(
-    initialCategories as CategoryWithCount[],
-  );
-  const [loading, setLoading] = useState(false);
+  const t = useTranslations('categories');
+  const tc = useTranslations('common');
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null);
   const [saving, setSaving] = useState(false);
@@ -30,31 +31,15 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const [displayOrder, setDisplayOrder] = useState(0);
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  const loadCategories = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('categories')
-        .select('*, menu_items(id)')
-        .eq('tenant_id', tenantId)
-        .order('display_order', { ascending: true });
-      if (error) throw error;
-      const formatted = (data || []).map((cat: Record<string, unknown>) => ({
-        ...cat,
-        items_count: (cat.menu_items as unknown[])?.length || 0,
-      })) as CategoryWithCount[];
-      setCategories(formatted);
-    } catch {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, toast]);
+  // TanStack Query for categories with item count
+  const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
+    useCategories(tenantId, { withItemCount: true });
 
-  useEffect(() => {
-    if (initialCategories.length === 0) loadCategories();
-  }, [initialCategories, loadCategories]);
+  const loadCategories = () => {
+    queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
+  };
 
   const openNewModal = () => {
     setEditingCategory(null);
@@ -89,16 +74,16 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           .update(payload)
           .eq('id', editingCategory.id);
         if (error) throw error;
-        toast({ title: 'Catégorie mise à jour' });
+        toast({ title: t('categoryUpdated') });
       } else {
         const { error } = await supabase.from('categories').insert([payload]);
         if (error) throw error;
-        toast({ title: 'Catégorie créée' });
+        toast({ title: t('categoryCreated') });
       }
       setShowModal(false);
       loadCategories();
     } catch {
-      toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' });
+      toast({ title: tc('errorSaving'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -107,19 +92,19 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const handleDelete = async (cat: CategoryWithCount) => {
     if (cat.items_count && cat.items_count > 0) {
       toast({
-        title: `Cette catégorie contient ${cat.items_count} plat(s). Supprimez-les d'abord.`,
+        title: t('categoryHasItems', { count: cat.items_count }),
         variant: 'destructive',
       });
       return;
     }
-    if (!confirm(`Supprimer la catégorie "${cat.name}" ?`)) return;
+    if (!confirm(t('confirmDelete', { name: cat.name }))) return;
     try {
       const { error } = await supabase.from('categories').delete().eq('id', cat.id);
       if (error) throw error;
-      toast({ title: 'Catégorie supprimée' });
+      toast({ title: t('categoryDeleted') });
       loadCategories();
     } catch {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: tc('errorDeleting'), variant: 'destructive' });
     }
   };
 
@@ -128,11 +113,11 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Catégories</h1>
-          <p className="text-xs text-neutral-500 mt-1">Structurez vos menus par catégories</p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+          <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
         </div>
         <Button onClick={openNewModal} size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> Nouvelle catégorie
+          <Plus className="w-4 h-4" /> {t('newCategory')}
         </Button>
       </div>
 
@@ -140,7 +125,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
         <Folder className="w-4 h-4 text-neutral-400" />
         <span className="text-xs text-neutral-500 font-medium">
-          {categories.length} catégorie{categories.length > 1 ? 's' : ''}
+          {categories.length} {t('categoriesCount')}
         </span>
       </div>
 
@@ -171,7 +156,9 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
               </div>
               <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                 <Utensils className="w-3.5 h-3.5" />
-                <span className="font-medium">{cat.items_count || 0} plats</span>
+                <span className="font-medium">
+                  {cat.items_count || 0} {t('dishesCount')}
+                </span>
               </div>
               <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
                 <Button
@@ -180,7 +167,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   onClick={() => openEditModal(cat)}
                   className="text-xs h-8"
                 >
-                  Modifier
+                  {tc('edit')}
                 </Button>
                 <Button
                   variant="outline"
@@ -188,7 +175,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   onClick={() => handleDelete(cat)}
                   className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  Supprimer
+                  {tc('delete')}
                 </Button>
               </div>
             </div>
@@ -199,12 +186,10 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Folder className="w-8 h-8 text-neutral-400" />
           </div>
-          <h3 className="text-lg font-bold text-neutral-900">Aucune catégorie</h3>
-          <p className="text-sm text-neutral-500 mt-2">
-            Créez des catégories pour organiser vos plats
-          </p>
+          <h3 className="text-lg font-bold text-neutral-900">{t('noCategories')}</h3>
+          <p className="text-sm text-neutral-500 mt-2">{t('noCategoriesDesc')}</p>
           <Button onClick={openNewModal} className="mt-6">
-            Créer une catégorie
+            {t('createCategory')}
           </Button>
         </div>
       )}
@@ -213,12 +198,12 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       <AdminModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingCategory ? 'Modifier la catégorie' : 'Nouvelle catégorie'}
+        title={editingCategory ? t('editCategory') : t('newCategory')}
       >
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="cat-name">Nom (FR) *</Label>
+              <Label htmlFor="cat-name">{t('nameFr')}</Label>
               <Input
                 id="cat-name"
                 value={name}
@@ -228,7 +213,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="cat-name-en">Nom (EN)</Label>
+              <Label htmlFor="cat-name-en">{t('nameEn')}</Label>
               <Input
                 id="cat-name-en"
                 value={nameEn}
@@ -238,7 +223,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="cat-order">Ordre d&apos;affichage</Label>
+            <Label htmlFor="cat-order">{t('displayOrder')}</Label>
             <Input
               id="cat-order"
               type="number"

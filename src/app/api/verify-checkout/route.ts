@@ -58,14 +58,14 @@ export async function GET(request: Request) {
     }
 
     // 4. SECURITY: Verify user owns this tenant
-    const { data: adminUser } = await supabase
+    const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
       .select('tenant_id')
       .eq('user_id', user.id)
       .eq('tenant_id', tenantId)
       .single();
 
-    if (!adminUser) {
+    if (adminUserError || !adminUser) {
       logger.warn('Verify checkout: user tried to access another tenant session', {
         userId: user.id,
         tenantId,
@@ -74,13 +74,13 @@ export async function GET(request: Request) {
     }
 
     // 5. Get tenant slug
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select('slug')
       .eq('id', tenantId)
       .single();
 
-    if (!tenant) {
+    if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 

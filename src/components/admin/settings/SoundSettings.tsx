@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Check, Volume2, Upload, Crown } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useSubscription } from '@/contexts/SubscriptionContext';
@@ -21,6 +22,7 @@ export function SoundSettings({
   currentSoundId = DEFAULT_SOUND_ID,
   onSoundChange,
 }: SoundSettingsProps) {
+  const t = useTranslations('settings');
   const { canAccess, effectivePlan } = useSubscription();
   const { toast } = useToast();
   const [selectedId, setSelectedId] = useState(currentSoundId);
@@ -29,6 +31,16 @@ export function SoundSettings({
 
   const isPremium = effectivePlan === 'premium' || effectivePlan === 'enterprise';
   const canUpload = canAccess('customSoundUpload');
+
+  // Cleanup audio on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePreview = (sound: SoundDefinition) => {
     // Stop current playback
@@ -49,7 +61,7 @@ export function SoundSettings({
     setPlayingId(sound.id);
 
     audio.play().catch(() => {
-      toast({ title: 'Erreur', description: 'Impossible de jouer ce son.' });
+      toast({ title: t('soundError'), description: t('soundPlayError') });
     });
 
     audio.onended = () => setPlayingId(null);
@@ -59,8 +71,8 @@ export function SoundSettings({
     // Check premium restriction
     if (sound.isPremium && !isPremium) {
       toast({
-        title: 'Son Premium',
-        description: 'Ce son est réservé au plan Premium.',
+        title: t('premiumSound'),
+        description: t('premiumSoundDesc'),
       });
       return;
     }
@@ -68,8 +80,8 @@ export function SoundSettings({
     setSelectedId(sound.id);
     onSoundChange(sound.id);
     toast({
-      title: 'Son sélectionné',
-      description: `${sound.name} est maintenant votre son de notification.`,
+      title: t('soundSelected'),
+      description: t('soundSelectedDesc', { name: sound.name }),
     });
   };
 
@@ -78,12 +90,10 @@ export function SoundSettings({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Volume2 className="w-5 h-5 text-neutral-500" />
-          <h3 className="font-semibold text-neutral-900">Sons de notification</h3>
+          <h3 className="font-semibold text-neutral-900">{t('notificationSoundsTitle')}</h3>
         </div>
         {!isPremium && (
-          <span className="text-xs text-neutral-500">
-            3 sons disponibles &middot; 10 avec Premium
-          </span>
+          <span className="text-xs text-neutral-500">{t('soundsAvailableCount')}</span>
         )}
       </div>
 
@@ -159,19 +169,19 @@ export function SoundSettings({
             className="w-full h-11 border-dashed border-neutral-300 text-neutral-500 hover:text-neutral-700"
             onClick={() => {
               toast({
-                title: 'Bientot disponible',
-                description: "L'upload de sons personnalisés arrive prochainement.",
+                title: t('comingSoon'),
+                description: t('customSoundComingSoon'),
               });
             }}
           >
             <Upload className="w-4 h-4 mr-2" />
-            Importer un son personnalisé
+            {t('importCustomSound')}
           </Button>
         </div>
       ) : (
         <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm">
           <Crown className="w-4 h-4 flex-shrink-0" />
-          <span>L&apos;import de sons personnalisés est disponible avec le plan Premium.</span>
+          <span>{t('customSoundPremiumOnly')}</span>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import {
   ShoppingBag,
@@ -20,6 +21,9 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useDashboardStats } from '@/hooks/queries';
+import { useUpdateOrderStatus } from '@/hooks/mutations';
 import StatsCard, { StatsCardSkeleton } from '@/components/admin/StatsCard';
 import StatusBadge from '@/components/admin/StatusBadge';
 import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
@@ -27,39 +31,70 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
-
-interface StockItem {
-  id: string;
-  name: string;
-  unit: string;
-  current_stock: number;
-  min_stock_alert: number;
-}
+import { AreaChart, Area, ResponsiveContainer, Tooltip } from 'recharts';
 
 // ─── Helpers ───────────────────────────────────────────────
 
-function timeAgo(date: string): string {
+function timeAgo(
+  date: string,
+  tc: (key: string, values?: Record<string, number>) => string,
+  locale: string,
+): string {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
-  if (seconds < 60) return "À l'instant";
-  if (seconds < 3600) return `Il y a ${Math.floor(seconds / 60)}min`;
-  if (seconds < 86400) return `Il y a ${Math.floor(seconds / 3600)}h`;
-  return new Date(date).toLocaleDateString('fr-FR');
+  if (seconds < 60) return tc('justNow');
+  if (seconds < 3600) return tc('minutesAgo', { count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return tc('hoursAgo', { count: Math.floor(seconds / 3600) });
+  return new Date(date).toLocaleDateString(locale);
 }
 
 // formatPrice removed — replaced by formatCurrencyCompact
 
-function MiniChart({ data, color }: { data: number[]; color: string }) {
-  const max = Math.max(...data, 1);
+function getLast7DaysData(orders: Order[]): number[] {
+  const days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    return d.toISOString().slice(0, 10);
+  });
+  return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
+}
+
+function MiniChart({ data }: { data: number[] }) {
+  const chartData = data.map((value, index) => ({ day: index, value }));
+  if (chartData.every((d) => d.value === 0)) {
+    return (
+      <div className="h-[40px] flex items-center justify-center text-xs text-neutral-400">--</div>
+    );
+  }
   return (
-    <div className="flex items-end gap-1 h-12">
-      {data.map((value, i) => (
-        <div
-          key={i}
-          className={`w-2 rounded-full transition-all duration-500 ${color}`}
-          style={{ height: `${(value / max) * 100}%`, minHeight: '4px' }}
+    <ResponsiveContainer width="100%" height={40}>
+      <AreaChart data={chartData}>
+        <defs>
+          <linearGradient id="limeGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
+            <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Tooltip
+          contentStyle={{
+            background: '#171717',
+            border: '1px solid #262626',
+            borderRadius: '8px',
+            fontSize: '12px',
+            color: '#fff',
+          }}
+          labelFormatter={() => ''}
+          formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
         />
-      ))}
-    </div>
+        <Area
+          type="monotone"
+          dataKey="value"
+          stroke="#CCFF00"
+          fill="url(#limeGradient)"
+          strokeWidth={2}
+          dot={false}
+        />
+      </AreaChart>
+    </ResponsiveContainer>
   );
 }
 
@@ -86,126 +121,54 @@ export default function DashboardClient({
   initialPopularItems,
   currency = 'XAF',
 }: DashboardClientProps) {
+  const t = useTranslations('admin');
+  const tc = useTranslations('common');
+  const locale = useLocale();
   // Base path pour tous les liens admin
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmt = (amount: number) => formatCurrency(amount, currency);
   const fmtCompact = (amount: number) => formatCurrencyCompact(amount, currency);
-  const [stats, setStats] = useState<DashboardStats>(initialStats);
-  const [recentOrders, setRecentOrders] = useState<Order[]>(initialRecentOrders);
   const [popularItems] = useState<PopularItem[]>(initialPopularItems);
-  const [loading] = useState(false);
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  // TanStack Query for dashboard data
+  const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
+    stats: initialStats,
+    recentOrders: initialRecentOrders,
+    stockItems: [],
+  });
+
+  const stats = dashboardData?.stats ?? initialStats;
+  const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;
+  const stockItems = dashboardData?.stockItems ?? [];
+
+  // Mutation for order status changes
+  const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return 'Bonjour';
-    if (hour < 18) return 'Bon après-midi';
-    return 'Bonsoir';
+    if (hour < 12) return t('goodMorning');
+    if (hour < 18) return t('goodAfternoon');
+    return t('goodEvening');
   };
 
-  const loadStats = useCallback(async () => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    try {
-      const [ordersRes, itemsRes, venuesRes] = await Promise.all([
-        supabase
-          .from('orders')
-          .select('id, total_price, total')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', today.toISOString()),
-        supabase
-          .from('menu_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_available', true),
-        supabase
-          .from('venues')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-      ]);
-      const ordersData = ordersRes.data || [];
-      setStats({
-        ordersToday: ordersData.length,
-        revenueToday: ordersData.reduce((sum, o) => sum + Number(o.total_price || o.total || 0), 0),
-        activeItems: itemsRes.count || 0,
-        activeCards: venuesRes.count || 0,
-      });
-    } catch {
-      /* silently fail - stats are non-critical */
-    }
-  }, [supabase, tenantId]);
-
-  const loadRecentOrders = useCallback(async () => {
-    try {
-      const { data: orders } = await supabase
-        .from('orders')
-        .select(
-          `id, table_number, status, total_price, total, created_at,
-         order_items(id, quantity, price_at_order, menu_items(name))`,
-        )
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .limit(6);
-
-      const formatted: Order[] = (orders || []).map((order: Record<string, unknown>) => ({
-        id: order.id as string,
-        tenant_id: tenantId,
-        table_number: (order.table_number as string) || 'N/A',
-        status: ((order.status as string) || 'pending') as Order['status'],
-        total_price: Number(order.total_price || order.total || 0),
-        created_at: order.created_at as string,
-        items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
-          (item: Record<string, unknown>) => ({
-            id: item.id as string,
-            name: ((item.menu_items as Record<string, unknown>)?.name as string) || 'Item inconnu',
-            quantity: item.quantity as number,
-            price: item.price_at_order as number,
-          }),
-        ),
-      }));
-      setRecentOrders(formatted);
-    } catch {
-      /* silently fail */
-    }
-  }, [supabase, tenantId]);
-
-  const loadStock = useCallback(async () => {
-    try {
-      const { data } = await supabase
-        .from('ingredients')
-        .select('id, name, unit, current_stock, min_stock_alert')
-        .eq('tenant_id', tenantId)
-        .eq('is_active', true)
-        .order('current_stock', { ascending: true })
-        .limit(10);
-      setStockItems((data as StockItem[]) || []);
-    } catch {
-      /* non-critical */
-    }
-  }, [supabase, tenantId]);
-
   const handleStatusChange = async (orderId: string, newStatus: string) => {
-    try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: newStatus })
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId);
-      if (error) throw error;
-      toast({ title: 'Statut mis à jour' });
-      loadRecentOrders();
-      loadStats();
-    } catch {
-      toast({ title: 'Erreur lors de la mise à jour', variant: 'destructive' });
-    }
+    updateOrderStatus.mutate(
+      { orderId, status: newStatus },
+      {
+        onSuccess: () => {
+          toast({ title: t('statusUpdated') });
+        },
+        onError: () => {
+          toast({ title: t('statusUpdateError'), variant: 'destructive' });
+        },
+      },
+    );
   };
 
   useEffect(() => {
-    loadStock();
-
     const channel = supabase
       .channel(`dashboard-${tenantId}`)
       .on(
@@ -217,8 +180,7 @@ export default function DashboardClient({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadStats();
-          loadRecentOrders();
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
         },
       )
       .subscribe();
@@ -235,16 +197,18 @@ export default function DashboardClient({
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadStock();
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
         },
       )
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
+      stockChannel.unsubscribe();
       supabase.removeChannel(channel);
       supabase.removeChannel(stockChannel);
     };
-  }, [supabase, tenantId, loadStats, loadRecentOrders, loadStock]);
+  }, [supabase, tenantId, queryClient]);
 
   if (loading) {
     return (
@@ -267,10 +231,10 @@ export default function DashboardClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()} 👋</h1>
+          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()}</h1>
           <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            {new Date().toLocaleDateString('fr-FR', {
+            {new Date().toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
@@ -289,7 +253,7 @@ export default function DashboardClient({
             className="flex items-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
           >
             <Banknote className="w-5 h-5" />
-            Ouvrir Caisse
+            {t('openPosButton')}
           </Link>
         </div>
       </div>
@@ -297,32 +261,32 @@ export default function DashboardClient({
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatsCard
-          title="Commandes"
+          title={t('revenue')}
+          value={fmtCompact(stats.revenueToday)}
+          icon={Banknote}
+          color="lime"
+          subtitle={t('todayLabel')}
+        />
+        <StatsCard
+          title={t('ordersCount')}
           value={stats.ordersToday}
           icon={ShoppingBag}
           color="blue"
-          subtitle="Aujourd'hui"
+          subtitle={t('todayLabel')}
         />
         <StatsCard
-          title="Revenus"
-          value={fmtCompact(stats.revenueToday)}
-          icon={Banknote}
-          color="green"
-          subtitle="Aujourd'hui"
-        />
-        <StatsCard
-          title="Plats actifs"
+          title={t('activeDishes')}
           value={stats.activeItems}
           icon={UtensilsCrossed}
           color="purple"
-          subtitle="Sur le menu"
+          subtitle={t('onMenuSubtitle')}
         />
         <StatsCard
-          title="Points de vente"
+          title={t('salesPoints')}
           value={stats.activeCards}
           icon={Users}
           color="orange"
-          subtitle="Actifs"
+          subtitle={t('activePlural')}
         />
       </div>
 
@@ -333,36 +297,35 @@ export default function DashboardClient({
             <div className="flex items-center gap-2">
               <Package className="w-5 h-5 text-neutral-600" />
               <div>
-                <h2 className="text-lg font-bold text-neutral-900">Stock en direct</h2>
-                <p className="text-sm text-neutral-500">
-                  Top 10 produits (tri par stock croissant)
-                </p>
+                <h2 className="text-lg font-bold text-neutral-900">{t('stockLive')}</h2>
+                <p className="text-sm text-neutral-500">{t('stockTop10')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               {stockItems.filter((s) => s.current_stock <= 0).length > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
                   <AlertTriangle className="w-3 h-3" />
-                  {stockItems.filter((s) => s.current_stock <= 0).length} rupture
+                  {t('outOfStockCount', {
+                    count: stockItems.filter((s) => s.current_stock <= 0).length,
+                  })}
                 </span>
               )}
               {stockItems.filter((s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert)
                 .length > 0 && (
                 <span className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold">
                   <AlertTriangle className="w-3 h-3" />
-                  {
-                    stockItems.filter(
+                  {t('lowStockCount', {
+                    count: stockItems.filter(
                       (s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert,
-                    ).length
-                  }{' '}
-                  bas
+                    ).length,
+                  })}
                 </span>
               )}
               <Link
                 href={`${adminBase}/inventory`}
                 className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
               >
-                Voir tout <ArrowRight className="w-4 h-4" />
+                {t('viewAll')} <ArrowRight className="w-4 h-4" />
               </Link>
             </div>
           </div>
@@ -418,15 +381,25 @@ export default function DashboardClient({
         {/* Recent Orders */}
         <div className="lg:col-span-2 bg-white rounded-2xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
-            <div>
-              <h2 className="text-lg font-bold text-neutral-900">Commandes récentes</h2>
-              <p className="text-sm text-neutral-500">{recentOrders.length} commandes</p>
+            <div className="flex items-center gap-3">
+              <div>
+                <h2 className="text-lg font-bold text-neutral-900">{t('recentOrders')}</h2>
+                <p className="text-sm text-neutral-500">
+                  {t('ordersCountLabel', { count: recentOrders.length })}
+                </p>
+              </div>
+              {recentOrders.filter((o) => o.status === 'pending').length > 0 && (
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-700 rounded-xl text-xs font-bold">
+                  <Clock className="w-3 h-3" />
+                  {recentOrders.filter((o) => o.status === 'pending').length} {t('pendingLabel')}
+                </span>
+              )}
             </div>
             <Link
               href={`${adminBase}/orders`}
-              className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+              className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
             >
-              Voir tout <ArrowRight className="w-4 h-4" />
+              {t('viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           {recentOrders.length > 0 ? (
@@ -441,7 +414,7 @@ export default function DashboardClient({
                       <div>
                         <div className="flex items-center gap-2">
                           <h3 className="font-semibold text-neutral-900">
-                            Table {order.table_number}
+                            {t('tableLabel')} {order.table_number}
                           </h3>
                           <StatusBadge status={order.status} />
                         </div>
@@ -455,11 +428,11 @@ export default function DashboardClient({
                         <div className="flex items-center gap-3 mt-2 text-xs text-neutral-400">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
-                            {timeAgo(order.created_at)}
+                            {timeAgo(order.created_at, tc, locale)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Utensils className="w-3.5 h-3.5" />
-                            {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} articles
+                            {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} {t('items')}
                           </span>
                         </div>
                       </div>
@@ -471,7 +444,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'preparing')}
                             className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
-                            title="Commencer la préparation"
+                            title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
                           </button>
@@ -480,7 +453,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'ready')}
                             className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
-                            title="Marquer comme prêt"
+                            title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -489,7 +462,7 @@ export default function DashboardClient({
                           <button
                             onClick={() => handleStatusChange(order.id, 'delivered')}
                             className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
-                            title="Marquer comme livré"
+                            title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
                           </button>
@@ -497,7 +470,7 @@ export default function DashboardClient({
                         <Link
                           href={`${adminBase}/orders`}
                           className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
-                          title="Voir détails"
+                          title={t('viewDetails')}
                         >
                           <Eye className="w-4 h-4" />
                         </Link>
@@ -512,8 +485,8 @@ export default function DashboardClient({
               <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <ShoppingBag className="w-8 h-8 text-neutral-400" />
               </div>
-              <h3 className="font-semibold text-neutral-900 mb-1">Aucune commande</h3>
-              <p className="text-sm text-neutral-500">Les nouvelles commandes apparaîtront ici</p>
+              <h3 className="font-semibold text-neutral-900 mb-1">{t('noOrders')}</h3>
+              <p className="text-sm text-neutral-500">{t('noOrdersDescAlt')}</p>
             </div>
           )}
         </div>
@@ -522,8 +495,8 @@ export default function DashboardClient({
         <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
           <div className="flex items-center justify-between p-5 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">Top Plats</h2>
-              <p className="text-sm text-neutral-500">Les plus commandés</p>
+              <h2 className="text-lg font-bold text-neutral-900">{t('topDishes')}</h2>
+              <p className="text-sm text-neutral-500">{t('mostOrdered')}</p>
             </div>
           </div>
           {popularItems.length > 0 ? (
@@ -560,15 +533,12 @@ export default function DashboardClient({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-neutral-900 truncate">{item.name}</p>
-                    <p className="text-xs text-neutral-500">{item.order_count} commandes</p>
+                    <p className="text-xs text-neutral-500">
+                      {t('ordersCountLabel', { count: item.order_count })}
+                    </p>
                   </div>
                   <div className="w-16">
-                    <MiniChart
-                      data={[3, 5, 4, 7, 6, 8, 5]}
-                      color={
-                        idx === 0 ? 'bg-amber-400' : idx === 1 ? 'bg-neutral-400' : 'bg-orange-400'
-                      }
-                    />
+                    <MiniChart data={getLast7DaysData(recentOrders)} />
                   </div>
                 </div>
               ))}
@@ -578,7 +548,7 @@ export default function DashboardClient({
               <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
                 <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
               </div>
-              <p className="text-sm text-neutral-500">Aucune donnée disponible</p>
+              <p className="text-sm text-neutral-500">{t('noDataAvailable')}</p>
             </div>
           )}
         </div>
@@ -594,8 +564,8 @@ export default function DashboardClient({
             <ChefHat className="w-6 h-6 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Cuisine</h3>
-            <p className="text-xs text-neutral-500">Voir le KDS</p>
+            <h3 className="font-semibold text-neutral-900">{t('kitchenLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('viewKdsSubtitle')}</p>
           </div>
         </Link>
         <Link
@@ -606,8 +576,8 @@ export default function DashboardClient({
             <ShoppingBag className="w-6 h-6 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Commandes</h3>
-            <p className="text-xs text-neutral-500">Gérer les commandes</p>
+            <h3 className="font-semibold text-neutral-900">{t('ordersLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('manageOrdersSubtitle')}</p>
           </div>
         </Link>
         <Link
@@ -618,8 +588,8 @@ export default function DashboardClient({
             <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Plats</h3>
-            <p className="text-xs text-neutral-500">Gérer les plats</p>
+            <h3 className="font-semibold text-neutral-900">{t('dishesLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('manageDishes')}</p>
           </div>
         </Link>
         <Link
@@ -630,8 +600,8 @@ export default function DashboardClient({
             <TrendingUp className="w-6 h-6 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">Rapports</h3>
-            <p className="text-xs text-neutral-500">Voir les stats</p>
+            <h3 className="font-semibold text-neutral-900">{t('reportsLabel')}</h3>
+            <p className="text-xs text-neutral-500">{t('viewStats')}</p>
           </div>
         </Link>
       </div>

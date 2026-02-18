@@ -142,6 +142,11 @@ export interface Order {
   paid_at?: string;
   // ─── Coupon ────────────────────────────────────────────
   coupon_id?: string;
+  // Waiter assignment
+  server_id?: string;
+  cashier_id?: string;
+  assigned_to?: string;
+  server?: { id: string; full_name: string; role: string };
 }
 
 // ─── Menus / Cartes ─────────────────────────────────────────
@@ -340,6 +345,19 @@ export interface Table {
   qr_code_url?: string;
   created_at: string;
   zone?: Zone;
+}
+
+export interface TableAssignment {
+  id: string;
+  tenant_id: string;
+  table_id: string;
+  server_id: string;
+  started_at: string;
+  ended_at: string | null;
+  created_at: string;
+  // Joins
+  server?: AdminUser;
+  table?: Table;
 }
 
 // ─── Settings ──────────────────────────────────────────────

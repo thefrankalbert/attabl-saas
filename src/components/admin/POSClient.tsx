@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import {
   Search,
@@ -13,8 +14,14 @@ import {
   ArrowRight,
   Printer,
   Lightbulb,
+  UtensilsCrossed,
+  Package,
+  Truck,
+  BellRing,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMenuItems, useCategories } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -22,7 +29,8 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { createInventoryService } from '@/services/inventory.service';
 import PaymentModal from '@/components/admin/PaymentModal';
-import type { Category, MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
+import { logger } from '@/lib/logger';
+import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
 interface POSClientProps {
   tenantId: string;
@@ -41,18 +49,38 @@ interface POSSuggestion {
   description: string | null;
 }
 
-const SERVICE_TYPES: { value: ServiceType; label: string; emoji: string }[] = [
-  { value: 'dine_in', label: 'Sur place', emoji: '\ud83c\udf7d\ufe0f' },
-  { value: 'takeaway', label: '\u00c0 emporter', emoji: '\ud83d\udce6' },
-  { value: 'delivery', label: 'Livraison', emoji: '\ud83d\ude97' },
-  { value: 'room_service', label: 'Room service', emoji: '\ud83c\udfe8' },
-];
-
 export default function POSClient({ tenantId }: POSClientProps) {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const t = useTranslations('pos');
+  const tc = useTranslations('common');
+
+  const SERVICE_TYPES: {
+    value: ServiceType;
+    label: string;
+    icon: React.ReactNode;
+  }[] = [
+    {
+      value: 'dine_in',
+      label: t('serviceOnSite'),
+      icon: <UtensilsCrossed className="w-4 h-4" />,
+    },
+    {
+      value: 'takeaway',
+      label: t('serviceTakeaway'),
+      icon: <Package className="w-4 h-4" />,
+    },
+    {
+      value: 'delivery',
+      label: t('serviceDelivery'),
+      icon: <Truck className="w-4 h-4" />,
+    },
+    {
+      value: 'room_service',
+      label: t('serviceRoomService'),
+      icon: <BellRing className="w-4 h-4" />,
+    },
+  ];
+  const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
   // Filters
@@ -76,6 +104,14 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   const { toast } = useToast();
   const supabase = createClient();
+  const queryClient = useQueryClient();
+
+  // TanStack Query for menu items and categories
+  const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems(tenantId, {
+    availableOnly: true,
+  });
+  const { data: categories = [], isLoading: catsLoading } = useCategories(tenantId);
+  const loading = itemsLoading || catsLoading;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -93,6 +129,23 @@ export default function POSClient({ tenantId }: POSClientProps) {
     }
   }, [tenantId]);
 
+  useEffect(() => {
+    async function fetchCurrentUser() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        const { data } = await supabase
+          .from('admin_users')
+          .select('id')
+          .eq('user_id', user.id)
+          .single();
+        if (data) setCurrentAdminUser(data);
+      }
+    }
+    fetchCurrentUser();
+  }, [supabase]);
+
   const updateOrderNumber = useCallback(
     (newNum: number) => {
       setOrderNumber(newNum);
@@ -108,16 +161,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
     [tenantId],
   );
 
-  const loadData = useCallback(async () => {
+  // Load tenant currency and suggestions (not covered by query hooks)
+  const loadExtras = useCallback(async () => {
     try {
-      const [catsRes, itemsRes, tenantRes, suggestionsRes] = await Promise.all([
-        supabase.from('categories').select('*').eq('tenant_id', tenantId).order('display_order'),
-        supabase
-          .from('menu_items')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .eq('is_available', true)
-          .order('name'),
+      const [tenantRes, suggestionsRes] = await Promise.all([
         supabase.from('tenants').select('currency').eq('id', tenantId).single(),
         supabase
           .from('item_suggestions')
@@ -128,8 +175,6 @@ export default function POSClient({ tenantId }: POSClientProps) {
           .eq('is_active', true),
       ]);
 
-      if (catsRes.data) setCategories(catsRes.data);
-      if (itemsRes.data) setMenuItems(itemsRes.data);
       if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
       if (suggestionsRes.data) {
         setSuggestions(
@@ -144,14 +189,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
         );
       }
     } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
+      // Non-critical — suggestions and currency are optional enhancements
     }
-  }, [supabase, tenantId, toast]);
+  }, [supabase, tenantId]);
 
   useEffect(() => {
-    loadData();
+    loadExtras();
 
     // Realtime: listen for menu_items availability changes
     const channel = supabase
@@ -164,25 +207,17 @@ export default function POSClient({ tenantId }: POSClientProps) {
           table: 'menu_items',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        (payload) => {
-          const updated = payload.new as { id: string; is_available: boolean };
-          setMenuItems((prev) => {
-            if (!updated.is_available) {
-              // Remove unavailable item from POS grid
-              return prev.filter((i) => i.id !== updated.id);
-            }
-            // If item becomes available again, reload data to get full item
-            loadData();
-            return prev;
-          });
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
         },
       )
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
-  }, [loadData, supabase, tenantId]);
+  }, [loadExtras, supabase, tenantId, queryClient]);
 
   const filteredItems = useMemo(() => {
     let items = menuItems;
@@ -236,6 +271,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
         status: string;
         total_price: number;
         service_type: ServiceType;
+        cashier_id: string | null;
+        server_id: string | null;
         room_number?: string;
         delivery_address?: string;
       } = {
@@ -244,6 +281,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
         status: status,
         total_price: total,
         service_type: serviceType,
+        cashier_id: currentAdminUser?.id ?? null,
+        server_id: currentAdminUser?.id ?? null,
       };
 
       // Add room number for room_service
@@ -286,7 +325,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
       fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
 
       toast({
-        title: status === 'pending' ? 'Envoy\u00e9 en cuisine !' : 'Vente enregistr\u00e9e !',
+        title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
       });
       updateOrderNumber(orderNumber + 1);
       setCart([]);
@@ -294,12 +333,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
       setDeliveryAddress('');
       if (showPaymentModal) setShowPaymentModal(false);
     } catch (err) {
-      console.error(err);
-      toast({ title: 'Erreur lors de la commande', variant: 'destructive' });
+      logger.error('Failed to create POS order', err);
+      toast({ title: t('orderError'), variant: 'destructive' });
     }
   };
 
-  if (loading) return <div className="p-8 text-center">Chargement du POS...</div>;
+  if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
@@ -311,7 +350,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
-                placeholder="Rechercher un produit..."
+                placeholder={t('searchProduct')}
                 className="pl-9"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -326,7 +365,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               onClick={() => setSelectedCategory('all')}
               className="rounded-full"
             >
-              Tout
+              {tc('all')}
             </Button>
             {categories.map((cat) => (
               <Button
@@ -378,7 +417,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           ) : (
             <div className="h-full flex flex-col items-center justify-center text-neutral-400">
               <SearchX className="w-12 h-12 mb-3 opacity-20" />
-              <p className="text-sm font-medium">Aucun r\u00e9sultat</p>
+              <p className="text-sm font-medium">{t('noResults')}</p>
             </div>
           )}
         </div>
@@ -389,7 +428,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
           <div className="flex items-center gap-2">
             <ShoppingBag className="w-5 h-5 text-neutral-500" />
-            <h2 className="font-semibold text-neutral-900">Panier</h2>
+            <h2 className="font-semibold text-neutral-900">{t('cart')}</h2>
           </div>
           <div className="flex items-center gap-2">
             <span className="text-xs font-mono bg-neutral-200 px-2 py-1 rounded text-neutral-600">
@@ -408,21 +447,21 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
         {/* Service Type Selection */}
         <div className="p-3 border-b border-neutral-100 space-y-2">
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
             {SERVICE_TYPES.map((st) => (
               <button
                 key={st.value}
                 type="button"
                 onClick={() => setServiceType(st.value)}
                 className={cn(
-                  'flex flex-col items-center justify-center rounded-lg border p-2 transition-all text-center',
+                  'flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all whitespace-nowrap text-xs font-medium',
                   serviceType === st.value
-                    ? 'border-primary bg-primary/5 text-primary ring-1 ring-primary/20'
-                    : 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50',
+                    ? 'bg-neutral-900 text-white'
+                    : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50',
                 )}
               >
-                <span className="text-base leading-none">{st.emoji}</span>
-                <span className="text-[10px] font-medium mt-1 leading-tight">{st.label}</span>
+                {st.icon}
+                <span>{st.label}</span>
               </button>
             ))}
           </div>
@@ -430,7 +469,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Room number input for room_service */}
           {serviceType === 'room_service' && (
             <Input
-              placeholder="N\u00b0 de chambre..."
+              placeholder={t('roomNumberPlaceholder')}
               value={roomNumber}
               onChange={(e) => setRoomNumber(e.target.value)}
               className="h-9 animate-in fade-in slide-in-from-top-1"
@@ -440,7 +479,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Delivery address textarea for delivery */}
           {serviceType === 'delivery' && (
             <textarea
-              placeholder="Adresse de livraison..."
+              placeholder={t('deliveryAddressPlaceholder')}
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
               className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
@@ -449,7 +488,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
           {/* Table / Client input */}
           <Input
-            placeholder="Table / Client..."
+            placeholder={t('tableClientPlaceholder')}
             value={selectedTable}
             onChange={(e) => setSelectedTable(e.target.value)}
             className="h-9"
@@ -504,7 +543,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   }}
                   className="text-xs text-primary hover:underline font-medium"
                 >
-                  {item.notes ? 'Modifier' : 'Note cuisine'}
+                  {item.notes ? tc('edit') : t('kitchenNote')}
                 </button>
               </div>
 
@@ -524,10 +563,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     <Lightbulb className="w-3 h-3 shrink-0" />
                     <span className="truncate">
                       {s.suggestion_type === 'pairing'
-                        ? 'Accompagner'
+                        ? t('suggestionPairing')
                         : s.suggestion_type === 'upsell'
-                          ? 'Suggérer'
-                          : 'Alternative'}{' '}
+                          ? t('suggestionUpsell')
+                          : t('suggestionAlternative')}{' '}
                       : {s.suggested_item_name}
                     </span>
                   </button>
@@ -537,7 +576,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {cart.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 text-neutral-300">
               <ShoppingBag className="w-12 h-12 mb-2 opacity-50" />
-              <p className="text-sm">Panier vide</p>
+              <p className="text-sm">{t('emptyCart')}</p>
             </div>
           )}
         </div>
@@ -545,7 +584,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         {/* Footer */}
         <div className="p-4 bg-neutral-50 border-t border-neutral-100 space-y-4">
           <div className="flex justify-between items-end">
-            <span className="text-sm text-neutral-500 font-medium">Total</span>
+            <span className="text-sm text-neutral-500 font-medium">{tc('total')}</span>
             <div className="text-right">
               <span className="text-2xl font-black text-neutral-900">
                 {formatCurrency(total, currency)}
@@ -556,19 +595,19 @@ export default function POSClient({ tenantId }: POSClientProps) {
           <div className="grid grid-cols-4 gap-2">
             <Button
               variant="outline"
-              className="h-12 border-neutral-300 text-neutral-600"
+              className="h-12 bg-neutral-900 text-white hover:bg-neutral-800 border-none rounded-xl"
               disabled={cart.length === 0}
               onClick={() => handleOrder('pending')}
-              title="Envoyer en cuisine"
+              title={t('sentToKitchen')}
             >
               <Printer className="w-5 h-5" />
             </Button>
             <Button
-              className="col-span-3 h-12 text-base font-bold"
+              className="col-span-3 h-12 text-base font-bold bg-[#CCFF00] text-black hover:bg-[#b8e600] rounded-xl border-none"
               disabled={cart.length === 0}
               onClick={() => setShowPaymentModal(true)}
             >
-              Encaisser <ArrowRight className="ml-2 w-4 h-4" />
+              {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -578,19 +617,24 @@ export default function POSClient({ tenantId }: POSClientProps) {
       {editingNotes && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">Note pour la cuisine</h3>
+            <h3 className="font-bold text-lg mb-4">{t('kitchenNoteTitle')}</h3>
             <textarea
               autoFocus
               className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
-              placeholder="Ex: Sans oignon, bien cuit..."
+              placeholder={t('kitchenNotePlaceholder')}
               value={notesText}
               onChange={(e) => setNotesText(e.target.value)}
             />
             <div className="flex justify-end gap-2 mt-4">
-              <Button variant="ghost" onClick={() => setEditingNotes(null)}>
-                Annuler
+              <Button variant="ghost" className="rounded-xl" onClick={() => setEditingNotes(null)}>
+                {tc('cancel')}
               </Button>
-              <Button onClick={saveNotes}>Enregistrer</Button>
+              <Button
+                className="bg-neutral-900 text-white hover:bg-neutral-800 rounded-xl"
+                onClick={saveNotes}
+              >
+                {tc('save')}
+              </Button>
             </div>
           </div>
         </div>

@@ -2,10 +2,13 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
 import { TrialBanner } from '@/components/admin/TrialBanner';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
+import { QueryProvider } from '@/components/providers/QueryProvider';
+import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
@@ -95,8 +98,34 @@ export default async function AdminLayout({
 
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
+  const sidebarElement = (
+    <AdminSidebar
+      tenant={
+        tenant
+          ? {
+              name: tenant.name,
+              slug: tenant.slug,
+              logo_url: tenant.logo_url,
+              primary_color: tenant.primary_color,
+            }
+          : { name: tenantSlug, slug: tenantSlug }
+      }
+      adminUser={
+        adminUser
+          ? {
+              name: adminUser.name,
+              role: adminUser.role,
+            }
+          : undefined
+      }
+      role={userRole}
+      className={isDevMode ? 'pt-6' : ''}
+    />
+  );
+
   return (
     <div className="min-h-screen bg-neutral-100">
+      <OfflineIndicator />
       {/* Dev Mode Banner */}
       {isDevMode && (
         <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-xs text-center py-1 z-50">
@@ -104,57 +133,34 @@ export default async function AdminLayout({
         </div>
       )}
 
-      {/* Sidebar */}
-      <AdminSidebar
-        tenant={
-          tenant
-            ? {
-                name: tenant.name,
-                slug: tenant.slug,
-                logo_url: tenant.logo_url,
-                primary_color: tenant.primary_color,
-              }
-            : { name: tenantSlug, slug: tenantSlug }
-        }
-        adminUser={
-          adminUser
-            ? {
-                name: adminUser.name,
-                role: adminUser.role,
-              }
-            : undefined
-        }
-        role={userRole}
-        className={isDevMode ? 'pt-6' : ''}
-      />
-
-      {/* Main Content */}
-      <main className={`lg:ml-64 min-h-screen ${isDevMode ? 'pt-6' : ''}`}>
-        <PermissionsProvider role={userRole}>
-          <AdminIdleWrapper
-            idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-            screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-            tenantName={tenant.name}
-          >
-            <SubscriptionProvider
-              tenant={
-                tenant
-                  ? {
-                      subscription_plan: tenant.subscription_plan,
-                      subscription_status: tenant.subscription_status,
-                      trial_ends_at: tenant.trial_ends_at,
-                    }
-                  : null
-              }
+      <AdminLayoutClient sidebar={sidebarElement} isDevMode={isDevMode}>
+        <QueryProvider>
+          <PermissionsProvider role={userRole}>
+            <AdminIdleWrapper
+              idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+              screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+              tenantName={tenant.name}
             >
-              <div className="p-4 lg:p-8 pt-16 lg:pt-8">
-                <TrialBanner tenantSlug={tenantSlug} />
-                {children}
-              </div>
-            </SubscriptionProvider>
-          </AdminIdleWrapper>
-        </PermissionsProvider>
-      </main>
+              <SubscriptionProvider
+                tenant={
+                  tenant
+                    ? {
+                        subscription_plan: tenant.subscription_plan,
+                        subscription_status: tenant.subscription_status,
+                        trial_ends_at: tenant.trial_ends_at,
+                      }
+                    : null
+                }
+              >
+                <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+                  <TrialBanner tenantSlug={tenantSlug} />
+                  {children}
+                </div>
+              </SubscriptionProvider>
+            </AdminIdleWrapper>
+          </PermissionsProvider>
+        </QueryProvider>
+      </AdminLayoutClient>
     </div>
   );
 }

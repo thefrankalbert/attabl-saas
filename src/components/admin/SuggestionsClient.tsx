@@ -7,7 +7,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations } from 'next-intl';
+import AdminModal from '@/components/admin/AdminModal';
 import type { SuggestionType } from '@/types/inventory.types';
 
 interface SuggestionsClientProps {
@@ -32,17 +33,6 @@ interface Suggestion {
   suggested_item?: { name: string };
 }
 
-const SUGGESTION_TYPES: { value: SuggestionType; label: string; emoji: string; color: string }[] = [
-  {
-    value: 'pairing',
-    label: 'Accompagnement',
-    emoji: '🍷',
-    color: 'bg-purple-100 text-purple-700',
-  },
-  { value: 'upsell', label: 'Suggestion vente', emoji: '💡', color: 'bg-amber-100 text-amber-700' },
-  { value: 'alternative', label: 'Alternative', emoji: '🔄', color: 'bg-blue-100 text-blue-700' },
-];
-
 export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -57,8 +47,31 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
   const [description, setDescription] = useState('');
 
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const t = useTranslations('inventory');
+  const tc = useTranslations('common');
   const supabase = createClient();
+
+  const SUGGESTION_TYPES: { value: SuggestionType; label: string; emoji: string; color: string }[] =
+    [
+      {
+        value: 'pairing',
+        label: t('pairing'),
+        emoji: '\uD83C\uDF77',
+        color: 'bg-purple-100 text-purple-700',
+      },
+      {
+        value: 'upsell',
+        label: t('upsell'),
+        emoji: '\uD83D\uDCA1',
+        color: 'bg-amber-100 text-amber-700',
+      },
+      {
+        value: 'alternative',
+        label: t('alternativeItem'),
+        emoji: '\uD83D\uDD04',
+        color: 'bg-blue-100 text-blue-700',
+      },
+    ];
 
   const loadData = useCallback(async () => {
     try {
@@ -82,7 +95,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       if (itemsRes.data) setMenuItems(itemsRes.data as MenuItem[]);
       if (suggestionsRes.data) setSuggestions(suggestionsRes.data as Suggestion[]);
     } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
+      toast({ title: tc('loadingError'), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -95,11 +108,11 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
 
   const handleAdd = async () => {
     if (!sourceItemId || !targetItemId) {
-      toast({ title: 'Sélectionnez les deux plats', variant: 'destructive' });
+      toast({ title: t('selectBothDishes'), variant: 'destructive' });
       return;
     }
     if (sourceItemId === targetItemId) {
-      toast({ title: 'Les deux plats doivent être différents', variant: 'destructive' });
+      toast({ title: t('dishesMustDiffer'), variant: 'destructive' });
       return;
     }
 
@@ -114,14 +127,14 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       });
 
       if (error) throw error;
-      toast({ title: 'Suggestion ajoutée' });
+      toast({ title: t('suggestionAdded') });
       setShowAdd(false);
       setSourceItemId('');
       setTargetItemId('');
       setDescription('');
       loadData();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -133,10 +146,10 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         .eq('id', id);
 
       if (error) throw error;
-      toast({ title: 'Suggestion supprimée' });
+      toast({ title: t('suggestionDeleted') });
       loadData();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -150,7 +163,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
   });
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>;
   }
 
   return (
@@ -163,13 +176,12 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
             {t('suggestions')}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} active
-            {suggestions.length !== 1 ? 's' : ''}
+            {t('activeSuggestions', { count: suggestions.length })}
           </p>
         </div>
         <Button onClick={() => setShowAdd(true)} className="gap-2">
           <Plus className="w-4 h-4" />
-          Ajouter une suggestion
+          {t('addSuggestion')}
         </Button>
       </div>
 
@@ -177,7 +189,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
         <Input
-          placeholder="Rechercher un plat..."
+          placeholder={t('searchDish')}
           className="pl-9"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
@@ -189,10 +201,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         {filtered.map((suggestion) => {
           const typeConfig = SUGGESTION_TYPES.find((st) => st.value === suggestion.suggestion_type);
           return (
-            <div
-              key={suggestion.id}
-              className="bg-white rounded-xl border border-neutral-200 p-4 transition-shadow"
-            >
+            <div key={suggestion.id} className="bg-white rounded-xl border border-neutral-200 p-4">
               <div className="flex items-start justify-between">
                 <span
                   className={cn(
@@ -212,11 +221,11 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
 
               <div className="mt-3 space-y-1">
                 <p className="text-sm font-semibold text-neutral-900">
-                  {suggestion.menu_item?.name || 'Plat inconnu'}
+                  {suggestion.menu_item?.name || tc('unknown')}
                 </p>
-                <p className="text-xs text-neutral-400">suggère</p>
+                <p className="text-xs text-neutral-400">{tc('suggests')}</p>
                 <p className="text-sm font-semibold text-primary">
-                  {suggestion.suggested_item?.name || 'Plat inconnu'}
+                  {suggestion.suggested_item?.name || tc('unknown')}
                 </p>
               </div>
 
@@ -231,100 +240,94 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         {filtered.length === 0 && (
           <div className="col-span-full text-center py-12 text-neutral-400">
             <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">Aucune suggestion</p>
-            <p className="text-xs mt-1">Ajoutez des conseils pour vos serveurs</p>
+            <p className="font-medium">{t('noSuggestions')}</p>
+            <p className="text-xs mt-1">{t('addServerAdvice')}</p>
           </div>
         )}
       </div>
 
       {/* Add Modal */}
-      {showAdd && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">Nouvelle suggestion</h3>
+      <AdminModal isOpen={showAdd} onClose={() => setShowAdd(false)} title={t('newSuggestion')}>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('sourceDish')}
+            </label>
+            <select
+              value={sourceItemId}
+              onChange={(e) => setSourceItemId(e.target.value)}
+              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+            >
+              <option value="">{tc('selectPlaceholder')}</option>
+              {menuItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Plat source
-                </label>
-                <select
-                  value={sourceItemId}
-                  onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('suggestionType')}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {SUGGESTION_TYPES.map((st) => (
+                <button
+                  key={st.value}
+                  type="button"
+                  onClick={() => setSuggestionType(st.value)}
+                  className={cn(
+                    'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
+                    suggestionType === st.value
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
+                  )}
                 >
-                  <option value="">Sélectionner un plat...</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Type de suggestion
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {SUGGESTION_TYPES.map((st) => (
-                    <button
-                      key={st.value}
-                      type="button"
-                      onClick={() => setSuggestionType(st.value)}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
-                        suggestionType === st.value
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
-                      )}
-                    >
-                      <span>{st.emoji}</span>
-                      <span>{st.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Plat suggéré
-                </label>
-                <select
-                  value={targetItemId}
-                  onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
-                >
-                  <option value="">Sélectionner un plat...</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Conseil pour le serveur (optionnel)
-                </label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ex: Ce plat se marie parfaitement avec..."
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="ghost" onClick={() => setShowAdd(false)}>
-                {t('cancel')}
-              </Button>
-              <Button onClick={handleAdd}>Ajouter</Button>
+                  <span>{st.emoji}</span>
+                  <span>{st.label}</span>
+                </button>
+              ))}
             </div>
           </div>
+
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('suggestedDish')}
+            </label>
+            <select
+              value={targetItemId}
+              onChange={(e) => setTargetItemId(e.target.value)}
+              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+            >
+              <option value="">{tc('selectPlaceholder')}</option>
+              {menuItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('serverAdvice')}
+            </label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('serverAdvicePlaceholder')}
+            />
+          </div>
         </div>
-      )}
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="ghost" onClick={() => setShowAdd(false)}>
+            {tc('cancel')}
+          </Button>
+          <Button onClick={handleAdd}>{tc('add')}</Button>
+        </div>
+      </AdminModal>
     </div>
   );
 }

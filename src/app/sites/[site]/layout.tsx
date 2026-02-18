@@ -1,7 +1,6 @@
 import { TenantProvider } from '@/contexts/TenantContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { LanguageProvider } from '@/contexts/LanguageContext';
 import { createClient } from '@/lib/supabase/server';
 
 export default async function SiteLayout({
@@ -27,11 +26,9 @@ export default async function SiteLayout({
           secondaryColor: tenant?.secondary_color || '#FFFFFF',
         }}
       >
-        <LanguageProvider>
-          <CartProvider>
-            <div className="min-h-screen bg-gray-50">{children}</div>
-          </CartProvider>
-        </LanguageProvider>
+        <CartProvider>
+          <div className="min-h-screen bg-gray-50">{children}</div>
+        </CartProvider>
       </ThemeProvider>
     </TenantProvider>
   );

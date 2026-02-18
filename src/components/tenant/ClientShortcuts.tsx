@@ -1,6 +1,7 @@
 'use client';
 
 import { Utensils, ShoppingBag, Bell, Search } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 
@@ -15,6 +16,7 @@ export default function ClientShortcuts({
   primaryColor = '#000000',
   className = '',
 }: ClientShortcutsProps) {
+  const t = useTranslations('tenant');
   const { toast } = useToast();
   const [loadingWaiter, setLoadingWaiter] = useState(false);
 
@@ -23,8 +25,8 @@ export default function ClientShortcuts({
     setLoadingWaiter(true);
     setTimeout(() => {
       toast({
-        title: 'Serveur appelé',
-        description: "Un membre de l'équipe arrive à votre table.",
+        title: t('waiterCalled'),
+        description: t('waiterCalledDesc'),
       });
       setLoadingWaiter(false);
     }, 1500);
@@ -34,26 +36,26 @@ export default function ClientShortcuts({
     <div className={`grid grid-cols-4 gap-3 mb-8 ${className}`}>
       <ShortcutButton
         icon={<Utensils className="w-5 h-5" />}
-        label="Sur place"
-        onClick={() => toast({ title: 'Mode Sur Place activé' })}
+        label={t('dineIn')}
+        onClick={() => toast({ title: t('dineInEnabled') })}
         color={primaryColor}
       />
       <ShortcutButton
         icon={<ShoppingBag className="w-5 h-5" />}
-        label="À emporter"
-        onClick={() => toast({ title: 'Mode À Emporter activé' })}
+        label={t('takeaway')}
+        onClick={() => toast({ title: t('takeawayEnabled') })}
         color={primaryColor}
       />
       <ShortcutButton
         icon={<Bell className={`w-5 h-5 ${loadingWaiter ? 'animate-swing' : ''}`} />}
-        label="Serveur"
+        label={t('callWaiter')}
         onClick={callWaiter}
         disabled={loadingWaiter}
         color={primaryColor}
       />
       <ShortcutButton
         icon={<Search className="w-5 h-5" />}
-        label="Recherche"
+        label={t('search')}
         onClick={onSearchClick}
         color={primaryColor}
       />

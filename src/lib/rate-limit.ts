@@ -101,6 +101,12 @@ export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3
 /** Newsletter: 3 requests / hour per IP */
 export const newsletterLimiter = createLimiter('newsletter', Ratelimit.slidingWindow(3, '1 h'));
 
+/** Excel menu import: 5 requests / hour per IP */
+export const excelImportLimiter = createLimiter('excel-import', Ratelimit.slidingWindow(5, '1 h'));
+
+/** Assignments: 30 requests / minute per IP */
+export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
+
 // --- IP extraction helpers ---
 
 /**

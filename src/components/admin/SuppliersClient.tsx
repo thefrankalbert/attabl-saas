@@ -1,13 +1,18 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Truck, Plus, Search, Pencil, Trash2, Phone, Mail, MapPin } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
+import { Truck, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { DataTable, SortableHeader } from '@/components/admin/DataTable';
 import { createSupplierService } from '@/services/supplier.service';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
 
 interface SuppliersClientProps {
@@ -17,8 +22,6 @@ interface SuppliersClientProps {
 type ModalMode = 'add' | 'edit' | null;
 
 export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
 
@@ -36,24 +39,18 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const [formNotes, setFormNotes] = useState('');
 
   const { toast } = useToast();
+  const t = useTranslations('suppliers');
+  const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const supplierService = createSupplierService(supabase);
 
-  const loadSuppliers = useCallback(async () => {
-    try {
-      const data = await supplierService.getSuppliers(tenantId);
-      setSuppliers(data);
-    } catch {
-      toast({ title: 'Erreur chargement fournisseurs', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  // TanStack Query for suppliers
+  const { data: suppliers = [], isLoading: loading } = useSuppliers(tenantId);
 
-  useEffect(() => {
-    loadSuppliers();
-  }, [loadSuppliers]);
+  const loadSuppliers = () => {
+    queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] });
+  };
 
   const filtered = suppliers.filter((s) => {
     if (filterActive === 'active' && !s.is_active) return false;
@@ -69,6 +66,129 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
     }
     return true;
   });
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<Supplier, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.contact_name && (
+              <p className="text-xs text-neutral-400">{row.original.contact_name}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'email',
+        header: () => t('email'),
+        cell: ({ row }) => (
+          <span className="text-neutral-600">{row.original.email || '\u2014'}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'phone',
+        header: () => t('phone'),
+        cell: ({ row }) => (
+          <span className="text-neutral-600">{row.original.phone || '\u2014'}</span>
+        ),
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'address',
+        header: () => t('address'),
+        cell: ({ row }) => (
+          <span className="text-neutral-500 max-w-[200px] truncate block">
+            {row.original.address || '\u2014'}
+          </span>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: 'status',
+        header: () => <span className="w-full text-center block">{t('filterActive')}</span>,
+        cell: ({ row }) => (
+          <div className="text-center">
+            <span
+              className={cn(
+                'px-2 py-0.5 rounded-full text-xs font-medium',
+                row.original.is_active
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-neutral-100 text-neutral-500',
+              )}
+            >
+              {row.original.is_active ? t('active') : t('inactive')}
+            </span>
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="w-full text-right block">{t('edit')}</span>,
+        cell: ({ row }) => {
+          const supplier = row.original;
+          return (
+            <div className="flex justify-end gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => openEdit(supplier)}
+                className="gap-1 text-xs"
+              >
+                <Pencil className="w-3 h-3" />
+                {t('edit')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleToggleActive(supplier)}
+                className="text-xs"
+              >
+                {supplier.is_active ? t('disable') : t('enable')}
+              </Button>
+              {deleteConfirm === supplier.id ? (
+                <div className="flex gap-1">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => handleDelete(supplier.id)}
+                    className="text-xs"
+                  >
+                    {t('confirmAction')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDeleteConfirm(null)}
+                    className="text-xs"
+                  >
+                    {t('cancelAction')}
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setDeleteConfirm(supplier.id)}
+                  className="text-xs text-red-600 hover:text-red-700"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [t, deleteConfirm],
+  );
 
   const resetForm = () => {
     setFormName('');
@@ -98,7 +218,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      toast({ title: 'Nom requis', variant: 'destructive' });
+      toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
@@ -113,7 +233,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           notes: formNotes.trim() || undefined,
         };
         await supplierService.createSupplier(tenantId, input);
-        toast({ title: 'Fournisseur ajouté' });
+        toast({ title: t('supplierAdded') });
       } else if (modalMode === 'edit' && selectedSupplier) {
         await supplierService.updateSupplier(selectedSupplier.id, tenantId, {
           name: formName.trim(),
@@ -123,13 +243,13 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           address: formAddress.trim() || null,
           notes: formNotes.trim() || null,
         });
-        toast({ title: 'Fournisseur modifié' });
+        toast({ title: t('supplierModified') });
       }
       setModalMode(null);
       resetForm();
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -138,26 +258,26 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       await supplierService.updateSupplier(supplier.id, tenantId, {
         is_active: !supplier.is_active,
       });
-      toast({ title: supplier.is_active ? 'Fournisseur désactivé' : 'Fournisseur activé' });
+      toast({ title: supplier.is_active ? t('supplierDisabled') : t('supplierEnabled') });
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
   const handleDelete = async (supplierId: string) => {
     try {
       await supplierService.deleteSupplier(supplierId, tenantId);
-      toast({ title: 'Fournisseur supprimé' });
+      toast({ title: t('supplierDeleted') });
       setDeleteConfirm(null);
       loadSuppliers();
     } catch {
-      toast({ title: 'Erreur suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">Chargement des fournisseurs...</div>;
+    return <div className="p-8 text-center text-neutral-500">{t('loadingSuppliers')}</div>;
   }
 
   return (
@@ -167,15 +287,15 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div>
           <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
             <Truck className="w-6 h-6" />
-            Fournisseurs
+            {t('title')}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {suppliers.length} fournisseur{suppliers.length !== 1 ? 's' : ''}
+            {t('supplierCount', { count: suppliers.length })}
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
+        <Button onClick={openAdd} variant="lime" className="gap-2">
           <Plus className="w-4 h-4" />
-          Ajouter un fournisseur
+          {t('addSupplier')}
         </Button>
       </div>
 
@@ -184,7 +304,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher par nom, contact, email..."
+            placeholder={t('searchPlaceholder')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -199,158 +319,55 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               onClick={() => setFilterActive(status)}
               className="rounded-full"
             >
-              {status === 'all' ? 'Tous' : status === 'active' ? 'Actifs' : 'Inactifs'}
+              {status === 'all'
+                ? t('filterAll')
+                : status === 'active'
+                  ? t('filterActive')
+                  : t('filterInactive')}
             </Button>
           ))}
         </div>
       </div>
 
-      {/* List */}
-      {filtered.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">Aucun fournisseur trouvé</div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {filtered.map((supplier) => (
-            <div
-              key={supplier.id}
-              className={cn(
-                'bg-white rounded-xl border p-4 transition-all',
-                supplier.is_active ? 'border-neutral-200' : 'border-neutral-100 opacity-60',
-              )}
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div>
-                  <h3 className="font-semibold text-neutral-900">{supplier.name}</h3>
-                  {supplier.contact_name && (
-                    <p className="text-sm text-neutral-500">{supplier.contact_name}</p>
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-xs font-medium',
-                    supplier.is_active
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-neutral-100 text-neutral-500',
-                  )}
-                >
-                  {supplier.is_active ? 'Actif' : 'Inactif'}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-sm text-neutral-600 mb-4">
-                {supplier.phone && (
-                  <div className="flex items-center gap-2">
-                    <Phone className="w-3.5 h-3.5 text-neutral-400" />
-                    {supplier.phone}
-                  </div>
-                )}
-                {supplier.email && (
-                  <div className="flex items-center gap-2">
-                    <Mail className="w-3.5 h-3.5 text-neutral-400" />
-                    {supplier.email}
-                  </div>
-                )}
-                {supplier.address && (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3.5 h-3.5 text-neutral-400" />
-                    <span className="truncate">{supplier.address}</span>
-                  </div>
-                )}
-              </div>
-
-              {supplier.notes && (
-                <p className="text-xs text-neutral-400 mb-3 line-clamp-2">{supplier.notes}</p>
-              )}
-
-              <div className="flex items-center gap-2 pt-2 border-t border-neutral-100">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEdit(supplier)}
-                  className="gap-1 text-xs"
-                >
-                  <Pencil className="w-3 h-3" />
-                  Modifier
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleActive(supplier)}
-                  className="text-xs"
-                >
-                  {supplier.is_active ? 'Désactiver' : 'Activer'}
-                </Button>
-                {deleteConfirm === supplier.id ? (
-                  <div className="flex gap-1 ml-auto">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDelete(supplier.id)}
-                      className="text-xs"
-                    >
-                      Confirmer
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setDeleteConfirm(null)}
-                      className="text-xs"
-                    >
-                      Annuler
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setDeleteConfirm(supplier.id)}
-                    className="text-xs text-red-600 hover:text-red-700 ml-auto"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {/* Table */}
+      <DataTable columns={columns} data={filtered} emptyMessage={t('noSuppliersFound')} />
 
       {/* Modal — Add / Edit */}
       {modalMode && (
         <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
           <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
             <h3 className="font-bold text-lg mb-4">
-              {modalMode === 'add' ? 'Ajouter un fournisseur' : 'Modifier le fournisseur'}
+              {modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
             </h3>
 
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Nom du fournisseur *
+                  {t('nameLabel')}
                 </label>
                 <Input
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Ex: Metro, Makro..."
+                  placeholder={t('namePlaceholder')}
                   autoFocus
                 />
               </div>
 
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Personne de contact
+                  {t('contactPerson')}
                 </label>
                 <Input
                   value={formContact}
                   onChange={(e) => setFormContact(e.target.value)}
-                  placeholder="Nom du contact"
+                  placeholder={t('contactPlaceholder')}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    Téléphone
+                    {t('phoneLabel')}
                   </label>
                   <Input
                     value={formPhone}
@@ -359,7 +376,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Email</label>
+                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                    {t('emailLabel')}
+                  </label>
                   <Input
                     type="email"
                     value={formEmail}
@@ -370,20 +389,24 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Adresse</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('addressLabel')}
+                </label>
                 <Input
                   value={formAddress}
                   onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder="Adresse du fournisseur"
+                  placeholder={t('addressPlaceholder')}
                 />
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Notes</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('notesLabel')}
+                </label>
                 <Input
                   value={formNotes}
                   onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder="Notes internes..."
+                  placeholder={t('notesPlaceholder')}
                 />
               </div>
             </div>
@@ -396,9 +419,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   resetForm();
                 }}
               >
-                Annuler
+                {t('cancelAction')}
               </Button>
-              <Button onClick={handleSave}>Enregistrer</Button>
+              <Button onClick={handleSave} variant="lime">
+                {t('save')}
+              </Button>
             </div>
           </div>
         </div>

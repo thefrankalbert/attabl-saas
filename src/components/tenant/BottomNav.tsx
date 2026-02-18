@@ -2,6 +2,7 @@
 
 import { Home, Search, ShoppingBag, ScrollText } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
 import { cn } from '@/lib/utils';
 
@@ -19,29 +20,30 @@ export default function BottomNav({
   const pathname = usePathname();
   const { totalItems } = useCart();
   const router = useRouter();
+  const t = useTranslations('tenant');
 
   const navItems = [
     {
-      label: 'Menu',
+      label: t('navMenu'),
       icon: Home,
       onClick: () => router.push(`/sites/${tenantSlug}`),
       isActive: pathname === `/sites/${tenantSlug}`,
     },
     {
-      label: 'Recherche',
+      label: t('navSearch'),
       icon: Search,
       onClick: onSearchClick,
       isActive: false,
     },
     {
-      label: 'Panier',
+      label: t('navCart'),
       icon: ShoppingBag,
       onClick: () => router.push(`/sites/${tenantSlug}/cart`),
       isActive: pathname === `/sites/${tenantSlug}/cart`,
       badge: totalItems > 0 ? totalItems : null,
     },
     {
-      label: 'Commandes',
+      label: t('navOrders'),
       icon: ScrollText,
       onClick: () => router.push(`/sites/${tenantSlug}/orders`),
       isActive: pathname === `/sites/${tenantSlug}/orders`,

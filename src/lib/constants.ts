@@ -42,42 +42,38 @@ export const ANIMATION = {
 } as const;
 
 // Order Status Configuration
+// Labels come from next-intl: orders.pending, orders.preparing, etc.
 export const ORDER_STATUS = {
   pending: {
-    label: 'En attente',
-    labelEn: 'Pending',
+    key: 'pending' as const,
     color: 'amber',
     bgClass: 'bg-amber-100/50',
     textClass: 'text-amber-700',
     dotClass: 'bg-amber-500',
   },
   preparing: {
-    label: 'En préparation',
-    labelEn: 'Preparing',
+    key: 'preparing' as const,
     color: 'blue',
     bgClass: 'bg-blue-100/50',
     textClass: 'text-blue-700',
     dotClass: 'bg-blue-500',
   },
   ready: {
-    label: 'Prêt',
-    labelEn: 'Ready',
+    key: 'ready' as const,
     color: 'emerald',
     bgClass: 'bg-emerald-100/50',
     textClass: 'text-emerald-700',
     dotClass: 'bg-emerald-500',
   },
   delivered: {
-    label: 'Servi',
-    labelEn: 'Delivered',
+    key: 'delivered' as const,
     color: 'gray',
     bgClass: 'bg-gray-100/50',
     textClass: 'text-gray-600',
     dotClass: 'bg-gray-400',
   },
   cancelled: {
-    label: 'Annulé',
-    labelEn: 'Cancelled',
+    key: 'cancelled' as const,
     color: 'red',
     bgClass: 'bg-red-100/50',
     textClass: 'text-red-600',
@@ -131,32 +127,23 @@ export const APP_CONFIG = {
   maxFileUploadSize: 5 * 1024 * 1024, // 5MB
 } as const;
 
-// Supported Languages
-export const LANGUAGES = {
-  fr: { label: 'Français', flag: '🇫🇷' },
-  en: { label: 'English', flag: '🇬🇧' },
-} as const;
-
 // Admin Navigation Groups (used by AdminSidebar)
+// Group titles come from next-intl: sidebar.groupMain, sidebar.groupOrganization, etc.
 export const ADMIN_NAV_GROUPS = [
   {
-    title: 'Principal',
-    titleEn: 'Main',
+    titleKey: 'groupMain' as const,
     items: ['dashboard', 'orders'],
   },
   {
-    title: 'Organisation',
-    titleEn: 'Organization',
+    titleKey: 'groupOrganization' as const,
     items: ['categories', 'items', 'announcements'],
   },
   {
-    title: 'Outils',
-    titleEn: 'Tools',
+    titleKey: 'groupTools' as const,
     items: ['pos', 'kitchen', 'qrcodes', 'reports'],
   },
   {
-    title: 'Administration',
-    titleEn: 'Administration',
+    titleKey: 'groupAdmin' as const,
     items: ['users', 'settings', 'subscription'],
   },
 ] as const;
