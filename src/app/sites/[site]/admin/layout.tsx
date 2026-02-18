@@ -17,6 +17,7 @@ interface AdminUser {
   tenant_id: string;
   role: AdminRole;
   name?: string;
+  custom_permissions?: Record<string, boolean> | null;
 }
 
 export default async function AdminLayout({
@@ -103,6 +104,7 @@ export default async function AdminLayout({
       tenant={
         tenant
           ? {
+              id: tenant.id,
               name: tenant.name,
               slug: tenant.slug,
               logo_url: tenant.logo_url,
@@ -115,6 +117,7 @@ export default async function AdminLayout({
           ? {
               name: adminUser.name,
               role: adminUser.role,
+              custom_permissions: adminUser.custom_permissions,
             }
           : undefined
       }

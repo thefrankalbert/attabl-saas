@@ -1,5 +1,13 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
+import { createTableConfigService } from './table-config.service';
+
+interface TableZoneData {
+  name: string;
+  prefix: string;
+  tableCount: number;
+  defaultCapacity?: number;
+}
 
 interface OnboardingStepData {
   establishmentType?: string;
@@ -8,6 +16,8 @@ interface OnboardingStepData {
   country?: string;
   phone?: string;
   tableCount?: number;
+  tableConfigMode?: 'complete' | 'minimum' | 'skip';
+  tableZones?: TableZoneData[];
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
@@ -27,6 +37,8 @@ interface OnboardingCompleteData {
   country?: string;
   phone?: string;
   tableCount?: number;
+  tableConfigMode?: 'complete' | 'minimum' | 'skip';
+  tableZones?: TableZoneData[];
   logoUrl?: string;
   primaryColor?: string;
   secondaryColor?: string;
@@ -48,6 +60,8 @@ interface OnboardingState {
     country: string;
     phone: string;
     tableCount: number;
+    tableConfigMode: 'complete' | 'minimum' | 'skip';
+    tableZones: TableZoneData[];
     logoUrl: string;
     primaryColor: string;
     secondaryColor: string;
@@ -76,14 +90,16 @@ export function createOnboardingService(supabase: SupabaseClient) {
         tenantUpdate.country = data.country;
         tenantUpdate.phone = data.phone;
         tenantUpdate.table_count = data.tableCount;
-      } else if (step === 2) {
+      }
+      // Step 2 (tables) is stored in onboarding data, not tenant fields
+      else if (step === 3) {
         tenantUpdate.logo_url = data.logoUrl;
         tenantUpdate.primary_color = data.primaryColor;
         tenantUpdate.secondary_color = data.secondaryColor;
         tenantUpdate.description = data.description;
       }
-      // Step 3 (menu) is handled separately
-      // Step 4 uses completeOnboarding()
+      // Step 4 (menu) is handled separately
+      // Step 5 uses completeOnboarding()
 
       if (Object.keys(tenantUpdate).length > 0) {
         await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
@@ -135,7 +151,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       await supabase.from('onboarding_progress').upsert(
         {
           tenant_id: tenantId,
-          step: 4,
+          step: 5,
           completed: true,
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -145,7 +161,42 @@ export function createOnboardingService(supabase: SupabaseClient) {
         },
       );
 
-      // 3. Create category and menu items if provided
+      // 3. Create zones and tables
+      const tableService = createTableConfigService(supabase);
+      let venueId: string | null = null;
+
+      const { data: existingVenue } = await supabase
+        .from('venues')
+        .select('id')
+        .eq('tenant_id', tenantId)
+        .single();
+
+      if (existingVenue) {
+        venueId = existingVenue.id;
+      } else {
+        const { data: newVenue } = await supabase
+          .from('venues')
+          .insert({ tenant_id: tenantId, name: data.tenantSlug || 'Principal' })
+          .select('id')
+          .single();
+        venueId = newVenue?.id || null;
+      }
+
+      if (venueId) {
+        if (data.tableZones && data.tableZones.length > 0 && data.tableConfigMode !== 'skip') {
+          const zonesWithDefaults = data.tableZones.map((z) => ({
+            ...z,
+            defaultCapacity: z.defaultCapacity ?? 2,
+          }));
+          await tableService.createZonesAndTables(tenantId, venueId, zonesWithDefaults);
+        } else {
+          // Skip mode or no zones: create default 10 tables
+          const tableCount = data.tableCount || 10;
+          await tableService.createDefaultConfig(tenantId, venueId, tableCount);
+        }
+      }
+
+      // 4. Create category and menu items if provided
       if (data.menuItems && data.menuItems.length > 0 && data.menuItems.some((item) => item.name)) {
         const categoryName = data.menuItems[0]?.category || 'Menu';
 
@@ -236,6 +287,8 @@ export function createOnboardingService(supabase: SupabaseClient) {
           country: tenant.country || 'Tchad',
           phone: tenant.phone || '',
           tableCount: tenant.table_count || 10,
+          tableConfigMode: 'skip' as const,
+          tableZones: [],
           logoUrl: tenant.logo_url || '',
           primaryColor: tenant.primary_color || '#CCFF00',
           secondaryColor: tenant.secondary_color || '#000000',

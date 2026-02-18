@@ -107,6 +107,9 @@ export const excelImportLimiter = createLimiter('excel-import', Ratelimit.slidin
 /** Assignments: 30 requests / minute per IP */
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 
+/** Invitations: 5 requests / 10 minutes per IP */
+export const invitationLimiter = createLimiter('invitation', Ratelimit.slidingWindow(5, '10 m'));
+
 // --- IP extraction helpers ---
 
 /**

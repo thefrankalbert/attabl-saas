@@ -128,19 +128,35 @@ function AuthForm({ mode }: AuthFormProps) {
 
         if (authError) throw new Error(authError.message);
 
-        const { data: adminUser } = await supabase
+        // Login flow — query all admin_users (supports multi-restaurant)
+        const { data: adminUsers } = await supabase
           .from('admin_users')
           .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
-          .eq('user_id', authData.user.id)
-          .single();
+          .eq('user_id', authData.user.id);
 
-        if (!adminUser) {
+        if (!adminUsers || adminUsers.length === 0) {
           throw new Error('Aucun restaurant associé à ce compte');
         }
 
-        const isSuperAdmin = adminUser.is_super_admin === true || adminUser.role === 'super_admin';
+        // Check if any entry is super admin
+        const isSuperAdmin = adminUsers.some(
+          (au) => au.is_super_admin === true || au.role === 'super_admin',
+        );
 
-        const tenantsData = adminUser.tenants as unknown as {
+        if (isSuperAdmin) {
+          window.location.href = '/admin/tenants';
+          return;
+        }
+
+        // Multi-restaurant owner → redirect to hub
+        if (adminUsers.length > 1) {
+          window.location.href = '/admin/tenants';
+          return;
+        }
+
+        // Single restaurant — direct redirect
+        const singleAdmin = adminUsers[0];
+        const tenantsData = singleAdmin.tenants as unknown as {
           slug: string;
           onboarding_completed: boolean;
         } | null;
@@ -148,13 +164,8 @@ function AuthForm({ mode }: AuthFormProps) {
         const tenantSlug = tenantsData?.slug;
         const onboardingCompleted = tenantsData?.onboarding_completed;
 
-        if (!tenantSlug && !isSuperAdmin) {
+        if (!tenantSlug) {
           throw new Error('Restaurant non trouvé');
-        }
-
-        if (isSuperAdmin) {
-          window.location.href = '/admin/tenants';
-          return;
         }
 
         if (onboardingCompleted === false) {
