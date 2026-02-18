@@ -1,6 +1,7 @@
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 interface AdminModalProps {
   isOpen: boolean;
@@ -25,13 +26,13 @@ export default function AdminModal({
 }: AdminModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={sizeClasses[size]}>
-        <DialogHeader>
+      <DialogContent className={cn('p-0', sizeClasses[size])}>
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
           <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900">
             {title}
           </DialogTitle>
         </DialogHeader>
-        {children}
+        <div className="px-6 pb-6">{children}</div>
       </DialogContent>
     </Dialog>
   );

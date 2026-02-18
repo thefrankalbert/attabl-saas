@@ -89,7 +89,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           <p className="text-xs text-neutral-500 mt-1">{t('subtitleClient')}</p>
         </div>
 
-        <Button onClick={() => setShowForm(true)} className="gap-2">
+        <Button onClick={() => setShowForm(true)} variant="lime" className="gap-2">
           <Plus className="h-4 w-4" />
           {t('newCoupon')}
         </Button>
@@ -109,10 +109,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           </div>
 
           {coupons.map((coupon) => (
-            <div
-              key={coupon.id}
-              className="bg-white rounded-xl border border-neutral-100 p-4 transition-shadow"
-            >
+            <div key={coupon.id} className="bg-white rounded-xl border border-neutral-100 p-4">
               <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
                 {/* Code */}
                 <div className="flex items-center gap-2">

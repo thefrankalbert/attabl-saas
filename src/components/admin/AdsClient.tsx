@@ -18,6 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import Image from 'next/image';
 import type { Ad } from '@/types/admin.types';
 
@@ -101,7 +102,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
-      console.error(e);
+      logger.error('Failed to save ad', e);
       toast({
         title: tc('error'),
         description: e instanceof Error ? e.message : tc('unknownError'),

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import AdminModal from '@/components/admin/AdminModal';
 import type { SuggestionType } from '@/types/inventory.types';
 
 interface SuggestionsClientProps {
@@ -200,10 +201,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         {filtered.map((suggestion) => {
           const typeConfig = SUGGESTION_TYPES.find((st) => st.value === suggestion.suggestion_type);
           return (
-            <div
-              key={suggestion.id}
-              className="bg-white rounded-xl border border-neutral-200 p-4 transition-shadow"
-            >
+            <div key={suggestion.id} className="bg-white rounded-xl border border-neutral-200 p-4">
               <div className="flex items-start justify-between">
                 <span
                   className={cn(
@@ -249,93 +247,87 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       </div>
 
       {/* Add Modal */}
-      {showAdd && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">{t('newSuggestion')}</h3>
+      <AdminModal isOpen={showAdd} onClose={() => setShowAdd(false)} title={t('newSuggestion')}>
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('sourceDish')}
+            </label>
+            <select
+              value={sourceItemId}
+              onChange={(e) => setSourceItemId(e.target.value)}
+              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+            >
+              <option value="">{tc('selectPlaceholder')}</option>
+              {menuItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('sourceDish')}
-                </label>
-                <select
-                  value={sourceItemId}
-                  onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('suggestionType')}
+            </label>
+            <div className="grid grid-cols-3 gap-2">
+              {SUGGESTION_TYPES.map((st) => (
+                <button
+                  key={st.value}
+                  type="button"
+                  onClick={() => setSuggestionType(st.value)}
+                  className={cn(
+                    'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
+                    suggestionType === st.value
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
+                  )}
                 >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('suggestionType')}
-                </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {SUGGESTION_TYPES.map((st) => (
-                    <button
-                      key={st.value}
-                      type="button"
-                      onClick={() => setSuggestionType(st.value)}
-                      className={cn(
-                        'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
-                        suggestionType === st.value
-                          ? 'border-primary bg-primary/5 text-primary'
-                          : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
-                      )}
-                    >
-                      <span>{st.emoji}</span>
-                      <span>{st.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('suggestedDish')}
-                </label>
-                <select
-                  value={targetItemId}
-                  onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
-                >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('serverAdvice')}
-                </label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('serverAdvicePlaceholder')}
-                />
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button variant="ghost" onClick={() => setShowAdd(false)}>
-                {tc('cancel')}
-              </Button>
-              <Button onClick={handleAdd}>{tc('add')}</Button>
+                  <span>{st.emoji}</span>
+                  <span>{st.label}</span>
+                </button>
+              ))}
             </div>
           </div>
+
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('suggestedDish')}
+            </label>
+            <select
+              value={targetItemId}
+              onChange={(e) => setTargetItemId(e.target.value)}
+              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+            >
+              <option value="">{tc('selectPlaceholder')}</option>
+              {menuItems.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('serverAdvice')}
+            </label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder={t('serverAdvicePlaceholder')}
+            />
+          </div>
         </div>
-      )}
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button variant="ghost" onClick={() => setShowAdd(false)}>
+            {tc('cancel')}
+          </Button>
+          <Button onClick={handleAdd}>{tc('add')}</Button>
+        </div>
+      </AdminModal>
     </div>
   );
 }
