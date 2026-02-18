@@ -1,0 +1,18 @@
+{
+  "name": "ATTABL - Menu Digital & Commandes",
+  "short_name": "ATTABL",
+  "description": "Solution digitale pour restaurants et hotels de luxe",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#CCFF00",
+  "orientation": "any",
+  "categories": ["business", "food"],
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ]
+}
