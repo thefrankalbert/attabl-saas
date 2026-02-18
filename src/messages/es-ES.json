@@ -58,7 +58,9 @@
     "hoursShort": "{count}h",
     "noItems": "Sin artículos",
     "updateError": "Error de actualización",
-    "saving": "Guardando..."
+    "saving": "Guardando...",
+    "offlineMode": "Modo sin conexión — Mostrando datos guardados",
+    "connectionRestored": "Conexión restablecida — Sincronizando..."
   },
   "menu": {
     "selectMenu": "Seleccione su carta",
@@ -434,7 +436,9 @@
     "customSoundComingSoon": "La carga de sonidos personalizados estará disponible próximamente.",
     "customSoundPremiumOnly": "La importación de sonidos personalizados está disponible con el plan Premium.",
     "soundError": "Error",
-    "soundPlayError": "No se ha podido reproducir este sonido."
+    "soundPlayError": "No se ha podido reproducir este sonido.",
+    "languageSection": "Idioma",
+    "languageDescription": "Idioma de la interfaz de administración"
   },
   "sidebar": {
     "groupMain": "Principal",
@@ -466,7 +470,12 @@
     "roleStaff": "Personal",
     "roleKitchen": "Cocina",
     "roleServer": "Camarero",
-    "roleUnknown": "Desconocido"
+    "roleUnknown": "Desconocido",
+    "groupMarketing": "Marketing",
+    "groupSettings": "Ajustes",
+    "navGeneral": "General",
+    "collapse": "Contraer",
+    "expand": "Expandir"
   },
   "kitchen": {
     "title": "Cocina (KDS)",
@@ -651,7 +660,16 @@
     "pdfDownloaded": "PDF descargado",
     "exportPdfError": "Error al exportar PDF",
     "loadingError": "Error de carga",
-    "ordersCountShort": "{count} pedidos"
+    "ordersCountShort": "{count} pedidos",
+    "thisMonth": "Este mes",
+    "lastMonth": "El mes pasado",
+    "thisYear": "Este ano",
+    "vsLastPeriod": "vs. periodo anterior",
+    "categoryBreakdown": "Desglose por categoria",
+    "noCategories": "Sin datos de categoria disponibles",
+    "csvDownloaded": "CSV descargado",
+    "exportCsvError": "Error al exportar CSV",
+    "viewAllRanking": "Ver clasificacion completa"
   },
   "coupons": {
     "title": "Cupones",
@@ -970,7 +988,20 @@
     "categoryUpdated": "Categoría actualizada",
     "categoryCreated": "Categoría creada",
     "categoryDeleted": "Categoría eliminada",
-    "priceFcfa": "{count} FCFA"
+    "priceFcfa": "{count} FCFA",
+    "importExcel": "Importar Excel",
+    "downloadTemplate": "Descargar plantilla Excel",
+    "selectFile": "Seleccionar un archivo",
+    "dragAndDrop": "Arrastre y suelte un archivo .xlsx aquí o haga clic para explorar",
+    "maxFileSize": "Tamaño máx.: 5 MB",
+    "importing": "Importando...",
+    "importSuccess": "Importación completada con éxito",
+    "importError": "Error durante la importación",
+    "categoriesCreated": "{count} categoría(s) creada(s)",
+    "itemsCreated": "{count} plato(s) creado(s)",
+    "itemsSkipped": "{count} plato(s) omitido(s)",
+    "errorsFound": "{count} error(es) encontrado(s)",
+    "rowError": "Fila {row}: {message}"
   },
   "payment": {
     "title": "Cobro",

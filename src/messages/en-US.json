@@ -58,7 +58,9 @@
     "hoursShort": "{count}h",
     "noItems": "No items",
     "updateError": "Update error",
-    "saving": "Saving..."
+    "saving": "Saving...",
+    "offlineMode": "Offline mode — Showing cached data",
+    "connectionRestored": "Connection restored — Syncing..."
   },
   "menu": {
     "selectMenu": "Select your menu",
@@ -434,7 +436,9 @@
     "customSoundComingSoon": "Custom sound upload is coming soon.",
     "customSoundPremiumOnly": "Custom sound import is available with the Premium plan.",
     "soundError": "Error",
-    "soundPlayError": "Unable to play this sound."
+    "soundPlayError": "Unable to play this sound.",
+    "languageSection": "Language",
+    "languageDescription": "Administration interface language"
   },
   "sidebar": {
     "groupMain": "Main",
@@ -466,7 +470,12 @@
     "roleStaff": "Staff",
     "roleKitchen": "Kitchen",
     "roleServer": "Server",
-    "roleUnknown": "Unknown"
+    "roleUnknown": "Unknown",
+    "groupMarketing": "Marketing",
+    "groupSettings": "Settings",
+    "navGeneral": "General",
+    "collapse": "Collapse",
+    "expand": "Expand"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",
@@ -651,7 +660,16 @@
     "pdfDownloaded": "PDF downloaded",
     "exportPdfError": "PDF export error",
     "loadingError": "Loading error",
-    "ordersCountShort": "{count} orders"
+    "ordersCountShort": "{count} orders",
+    "thisMonth": "This month",
+    "lastMonth": "Last month",
+    "thisYear": "This year",
+    "vsLastPeriod": "vs. previous period",
+    "categoryBreakdown": "Category Breakdown",
+    "noCategories": "No category data available",
+    "csvDownloaded": "CSV downloaded",
+    "exportCsvError": "CSV export error",
+    "viewAllRanking": "View full ranking"
   },
   "coupons": {
     "title": "Coupons",
@@ -970,7 +988,20 @@
     "categoryUpdated": "Category updated",
     "categoryCreated": "Category created",
     "categoryDeleted": "Category deleted",
-    "priceFcfa": "{count} FCFA"
+    "priceFcfa": "{count} FCFA",
+    "importExcel": "Import Excel",
+    "downloadTemplate": "Download Excel template",
+    "selectFile": "Select a file",
+    "dragAndDrop": "Drag and drop a .xlsx file here or click to browse",
+    "maxFileSize": "Max size: 5 MB",
+    "importing": "Importing...",
+    "importSuccess": "Import completed successfully",
+    "importError": "Error during import",
+    "categoriesCreated": "{count} category(ies) created",
+    "itemsCreated": "{count} item(s) created",
+    "itemsSkipped": "{count} item(s) skipped",
+    "errorsFound": "{count} error(s) found",
+    "rowError": "Row {row}: {message}"
   },
   "payment": {
     "title": "Checkout",
