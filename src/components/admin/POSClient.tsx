@@ -603,7 +603,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
               <Printer className="w-5 h-5" />
             </Button>
             <Button
-              className="col-span-3 h-12 text-base font-bold bg-[#CCFF00] text-black hover:bg-[#b8e600] rounded-xl border-none"
+              variant="lime"
+              className="col-span-3 h-12 text-base"
               disabled={cart.length === 0}
               onClick={() => setShowPaymentModal(true)}
             >

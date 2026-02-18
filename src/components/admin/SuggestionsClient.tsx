@@ -179,7 +179,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
             {t('activeSuggestions', { count: suggestions.length })}
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)} className="gap-2">
+        <Button onClick={() => setShowAdd(true)} variant="lime" className="gap-2">
           <Plus className="w-4 h-4" />
           {t('addSuggestion')}
         </Button>
@@ -201,7 +201,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         {filtered.map((suggestion) => {
           const typeConfig = SUGGESTION_TYPES.find((st) => st.value === suggestion.suggestion_type);
           return (
-            <div key={suggestion.id} className="bg-white rounded-xl border border-neutral-200 p-4">
+            <div key={suggestion.id} className="bg-white rounded-xl border border-neutral-100 p-4">
               <div className="flex items-start justify-between">
                 <span
                   className={cn(
@@ -325,7 +325,9 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           <Button variant="ghost" onClick={() => setShowAdd(false)}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleAdd}>{tc('add')}</Button>
+          <Button onClick={handleAdd} variant="lime">
+            {tc('add')}
+          </Button>
         </div>
       </AdminModal>
     </div>

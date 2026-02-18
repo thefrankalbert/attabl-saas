@@ -44,35 +44,9 @@ export async function middleware(request: NextRequest) {
   }
 
   // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
-  // Sauf pour les routes qui vivent exclusivement sur le domaine principal
-  // (auth, marketing, API, admin plateforme, etc.)
-  const MAIN_DOMAIN_PATHS = [
-    '/login',
-    '/signup',
-    '/auth',
-    '/onboarding',
-    '/checkout',
-    '/pricing',
-    '/forgot-password',
-    '/admin', // super admin (plateforme)
-    '/api', // API routes
-    '/contact',
-    '/features',
-    '/restaurants',
-    '/hotels',
-    '/bars-cafes',
-    '/boulangeries',
-    '/dark-kitchens',
-    '/food-trucks',
-    '/quick-service',
-    '/nouveautes',
-    '/test-db',
-  ];
-  const isMainDomainPath = MAIN_DOMAIN_PATHS.some(
-    (p) => pathname === p || pathname.startsWith(p + '/'),
-  );
-
-  if (subdomain && subdomain !== 'www' && !isMainDomainPath) {
+  // Sur un sous-domaine, TOUJOURS réécrire (y compris /admin, /api, etc.)
+  // Le domaine principal (sans subdomain) sert les routes marketing, auth, super admin
+  if (subdomain && subdomain !== 'www') {
     const url = request.nextUrl.clone();
 
     // Réécrire vers /sites/[subdomain]/[path]

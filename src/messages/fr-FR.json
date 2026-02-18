@@ -245,7 +245,7 @@
     "releaseAll": "Tout liberer",
     "claimOrder": "Prendre en charge",
     "myTables": "Mes tables",
-    "unassigned": "Non assignees",
+    "unassigned": "Non assigné",
     "noActiveAssignments": "Aucune assignation active",
     "assignedTo": "Assigne a {name}",
     "serverPerformance": "Performance par serveur"
@@ -426,6 +426,8 @@
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
     "fileTooLarge": "Fichier trop volumineux",
     "logoMaxSize": "Le logo ne doit pas dépasser 2MB",
+    "logoUploadError": "Échec du téléchargement du logo. Veuillez réessayer.",
+    "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue de la République...",
     "phonePlaceholder": "+235 66 77 88 99",
@@ -448,7 +450,15 @@
     "soundError": "Erreur",
     "soundPlayError": "Impossible de jouer ce son.",
     "languageSection": "Langue",
-    "languageDescription": "Langue de l'interface d'administration"
+    "languageDescription": "Langue de l'interface d'administration",
+    "tabIdentity": "Identit\u00e9",
+    "tabCustomization": "Personnalisation",
+    "tabBilling": "Facturation",
+    "tabNotifications": "Notifications",
+    "tabSecurity": "S\u00e9curit\u00e9",
+    "tabLanguage": "Langue",
+    "slug": "Slug",
+    "slugDescription": "Votre sous-domaine unique. Contactez le support pour le modifier."
   },
   "sidebar": {
     "groupMain": "Principal",
@@ -687,7 +697,12 @@
     "serverName": "Serveur",
     "ordersCount": "Commandes",
     "avgOrderValue": "Panier moyen",
-    "noServerData": "Aucune donnée serveur pour cette période"
+    "noServerData": "Aucune donnée serveur pour cette période",
+    "noDataTitle": "Aucun rapport disponible",
+    "noDataDescription": "Les données apparaîtront ici dès que des commandes seront enregistrées.",
+    "last90Days": "90 derniers jours",
+    "productRanking": "Classement des produits",
+    "productName": "Produit"
   },
   "coupons": {
     "title": "Coupons",

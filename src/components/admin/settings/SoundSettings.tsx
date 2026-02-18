@@ -47,6 +47,7 @@ export function SoundSettings({
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      audioRef.current = null;
     }
 
     // If clicking the same sound that's playing, stop it
@@ -56,15 +57,31 @@ export function SoundSettings({
     }
 
     // Play the new sound
-    const audio = new Audio(sound.file);
-    audioRef.current = audio;
-    setPlayingId(sound.id);
+    try {
+      const audio = new Audio(sound.file);
+      audioRef.current = audio;
+      setPlayingId(sound.id);
 
-    audio.play().catch(() => {
-      toast({ title: t('soundError'), description: t('soundPlayError') });
-    });
+      // Add error handler before play
+      audio.onerror = () => {
+        toast({ title: t('soundError'), description: t('soundPlayError'), variant: 'destructive' });
+        setPlayingId(null);
+        audioRef.current = null;
+      };
 
-    audio.onended = () => setPlayingId(null);
+      audio.play().catch(() => {
+        toast({ title: t('soundError'), description: t('soundPlayError'), variant: 'destructive' });
+        setPlayingId(null);
+        audioRef.current = null;
+      });
+
+      audio.onended = () => {
+        setPlayingId(null);
+      };
+    } catch {
+      toast({ title: t('soundError'), description: t('soundPlayError'), variant: 'destructive' });
+      setPlayingId(null);
+    }
   };
 
   const handleSelect = (sound: SoundDefinition) => {

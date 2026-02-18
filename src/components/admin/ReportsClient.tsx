@@ -10,8 +10,9 @@ import {
   ShoppingBag,
   CreditCard,
   ChevronRight,
-  TrendingUp,
-  TrendingDown,
+  ArrowUp,
+  ArrowDown,
+  BarChart3,
 } from 'lucide-react';
 import {
   BarChart,
@@ -28,13 +29,7 @@ import {
 import { useReportData } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { logger } from '@/lib/logger';
 import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -45,7 +40,7 @@ interface ReportsClientProps {
   currency?: CurrencyCode;
 }
 
-type Period = '7d' | '30d' | 'thisMonth' | 'lastMonth' | 'thisYear';
+type Period = 'today' | '7d' | '30d' | '90d' | 'thisMonth' | 'lastMonth' | 'thisYear';
 
 interface DailyStats {
   date: string;
@@ -64,6 +59,14 @@ const CHART_COLORS = [
   '#06b6d4',
 ];
 
+/** Pill-style period options for the tab selector */
+const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
+  { value: 'today', labelKey: 'periodToday' },
+  { value: '7d', labelKey: 'last7Days' },
+  { value: '30d', labelKey: 'last30Days' },
+  { value: '90d', labelKey: 'last90Days' },
+];
+
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
   const t = useTranslations('reports');
   const fmt = (amount: number) => formatCurrency(amount, currency);
@@ -74,7 +77,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const { toast } = useToast();
 
   // TanStack Query for report data
-  const { data: reportData, isLoading: loading } = useReportData(tenantId, period);
+  const { data: reportData, isLoading: loading, error } = useReportData(tenantId, period);
 
   const dailyStats = reportData?.dailyStats ?? [];
   const topItems = reportData?.topItems ?? [];
@@ -86,10 +89,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   /** Compute a human-readable label for the active period */
   const periodDisplayLabel = useMemo(() => {
     switch (period) {
+      case 'today':
+        return t('periodToday');
       case '7d':
         return t('last7Days');
       case '30d':
         return t('last30Days');
+      case '90d':
+        return t('last90Days');
       case 'thisMonth':
         return t('thisMonth');
       case 'lastMonth':
@@ -155,7 +162,8 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       doc.save(`rapport_${format(new Date(), 'yyyyMMdd')}.pdf`);
       toast({ title: t('pdfDownloaded') });
-    } catch {
+    } catch (err) {
+      logger.error('Failed to export PDF report', err);
       toast({ title: t('exportPdfError'), variant: 'destructive' });
     } finally {
       setExporting(false);
@@ -211,68 +219,88 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       URL.revokeObjectURL(url);
 
       toast({ title: t('csvDownloaded') });
-    } catch {
+    } catch (err) {
+      logger.error('Failed to export CSV report', err);
       toast({ title: t('exportCsvError'), variant: 'destructive' });
     } finally {
       setExportingCsv(false);
     }
   };
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <BarChart3 className="w-12 h-12 text-neutral-300 mb-4" />
+        <h2 className="text-lg font-semibold text-neutral-700">{t('noDataTitle')}</h2>
+        <p className="text-sm text-neutral-500 mt-1">{t('noDataDescription')}</p>
+      </div>
+    );
+  }
+
   if (loading)
     return <div className="p-12 text-center text-neutral-500">{t('loadingReports')}</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('titleClient')}</h1>
-          <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
+      {/* Header with title, pill tabs, and export buttons */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">{t('titleClient')}</h1>
+            <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              className="rounded-xl border-neutral-100"
+              onClick={handleExportCSV}
+              disabled={exportingCsv}
+            >
+              {exportingCsv ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+              )}
+              {t('exportCsv')}
+            </Button>
+            <Button
+              variant="lime"
+              className="rounded-xl"
+              onClick={handleExportPDF}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {t('exportPdf')}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Select value={period} onValueChange={(v: string) => setPeriod(v as Period)}>
-            <SelectTrigger className="w-[180px] rounded-xl border-neutral-100 text-neutral-600 hover:bg-neutral-50">
-              <SelectValue placeholder={t('selectPeriod')} />
-            </SelectTrigger>
-            <SelectContent className="rounded-xl">
-              <SelectItem value="7d">{t('last7Days')}</SelectItem>
-              <SelectItem value="30d">{t('last30Days')}</SelectItem>
-              <SelectItem value="thisMonth">{t('thisMonth')}</SelectItem>
-              <SelectItem value="lastMonth">{t('lastMonth')}</SelectItem>
-              <SelectItem value="thisYear">{t('thisYear')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button
-            variant="outline"
-            className="rounded-xl border-neutral-100"
-            onClick={handleExportCSV}
-            disabled={exportingCsv}
-          >
-            {exportingCsv ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <FileSpreadsheet className="w-4 h-4 mr-2" />
-            )}
-            {t('exportCsv')}
-          </Button>
-          <Button
-            variant="lime"
-            className="rounded-xl"
-            onClick={handleExportPDF}
-            disabled={exporting}
-          >
-            {exporting ? (
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-            ) : (
-              <Download className="w-4 h-4 mr-2" />
-            )}
-            {t('exportPdf')}
-          </Button>
+
+        {/* Pill-style period selector */}
+        <div className="flex items-center gap-1 bg-neutral-50 p-1 rounded-xl w-fit border border-neutral-100">
+          {PERIOD_PILLS.map((pill) => (
+            <button
+              key={pill.value}
+              type="button"
+              onClick={() => setPeriod(pill.value)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                period === pill.value
+                  ? 'bg-[#CCFF00] text-black'
+                  : 'text-neutral-500 hover:text-neutral-700 hover:bg-white'
+              }`}
+            >
+              {t(pill.labelKey)}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* KPI Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* Revenue — primary metric with lime accent */}
+        {/* Revenue -- primary metric with lime accent */}
         <div className="p-6 bg-white border border-neutral-100 rounded-xl">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-[#CCFF00]/20 text-black rounded-xl">
@@ -291,9 +319,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     }`}
                   >
                     {revenueTrend > 0 ? (
-                      <TrendingUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="w-3.5 h-3.5" />
                     ) : (
-                      <TrendingDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-3.5 h-3.5" />
                     )}
                     {Math.abs(revenueTrend)}%
                   </span>
@@ -322,9 +350,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     }`}
                   >
                     {ordersTrend > 0 ? (
-                      <TrendingUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="w-3.5 h-3.5" />
                     ) : (
-                      <TrendingDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-3.5 h-3.5" />
                     )}
                     {Math.abs(ordersTrend)}%
                   </span>
@@ -353,9 +381,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     }`}
                   >
                     {basketTrend > 0 ? (
-                      <TrendingUp className="w-3.5 h-3.5" />
+                      <ArrowUp className="w-3.5 h-3.5" />
                     ) : (
-                      <TrendingDown className="w-3.5 h-3.5" />
+                      <ArrowDown className="w-3.5 h-3.5" />
                     )}
                     {Math.abs(basketTrend)}%
                   </span>
@@ -464,6 +492,52 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
       </div>
 
+      {/* Product Ranking Table */}
+      {topItems.length > 0 && (
+        <div className="bg-white border border-neutral-100 rounded-xl p-6">
+          <h3 className="text-lg font-bold mb-6">{t('productRanking')}</h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-neutral-100">
+                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    #
+                  </th>
+                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    {t('productName')}
+                  </th>
+                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    {t('ordersCount')}
+                  </th>
+                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    {t('revenueLabel')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {topItems.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors"
+                  >
+                    <td className="py-3 px-2 tabular-nums text-neutral-500 font-bold">
+                      {index + 1}
+                    </td>
+                    <td className="py-3 px-2 font-medium text-neutral-900">{item.name}</td>
+                    <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                      {item.quantity}
+                    </td>
+                    <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                      {fmt(item.revenue)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Category Breakdown */}
       <div className="bg-white border border-neutral-100 rounded-xl p-6">
         <h3 className="text-lg font-bold mb-6">{t('categoryBreakdown')}</h3>
@@ -525,7 +599,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           <p className="text-sm text-neutral-400 text-center py-8">{t('noServerData')}</p>
         ) : (
           <div className="space-y-6">
-            {/* Horizontal bar chart — orders per server */}
+            {/* Horizontal bar chart -- orders per server */}
             <ResponsiveContainer width="100%" height={Math.max(serverStats.length * 48, 120)}>
               <BarChart
                 data={serverStats}
