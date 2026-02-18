@@ -15,6 +15,7 @@ import {
   Check,
   Play,
   ChevronRight,
+  User,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
@@ -330,6 +331,15 @@ export default function KDSTicket({
           <div className="flex items-center gap-1.5">
             <Hotel className="w-3.5 h-3.5 text-pink-400" />
             <span className="text-xs font-bold text-pink-400">{order.room_number}</span>
+          </div>
+        )}
+        {/* Server */}
+        {order.server && (
+          <div className="flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-lime-400" />
+            <span className="text-xs font-medium text-lime-400">
+              {order.server.full_name}
+            </span>
           </div>
         )}
         {/* Timer — pushed right */}

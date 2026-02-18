@@ -15,7 +15,7 @@ export function useOrders(tenantId: string, statusFilter?: string) {
       const supabase = createClient();
       let query = supabase
         .from('orders')
-        .select('*, order_items(*)')
+        .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
         .limit(200);

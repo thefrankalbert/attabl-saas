@@ -255,7 +255,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
       const { data, error } = await supabase
         .from('orders')
-        .select('*, order_items(*)')
+        .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
         .eq('tenant_id', tenantId)
         .in('status', ['pending', 'preparing', 'ready'])
         .gte('created_at', todayStart.toISOString())
