@@ -238,7 +238,17 @@
     "viewDetails": "Voir d\u00e9tails",
     "unknownItem": "Item inconnu",
     "activeDishes": "Plats actifs",
-    "tableLabel": "Table"
+    "tableLabel": "Table",
+    "server": "Serveur",
+    "assignServer": "Assigner un serveur",
+    "releaseTable": "Liberer la table",
+    "releaseAll": "Tout liberer",
+    "claimOrder": "Prendre en charge",
+    "myTables": "Mes tables",
+    "unassigned": "Non assignees",
+    "noActiveAssignments": "Aucune assignation active",
+    "assignedTo": "Assigne a {name}",
+    "serverPerformance": "Performance par serveur"
   },
   "dishes": {
     "addItem": "AJOUTER UN PLAT",
@@ -475,7 +485,8 @@
     "groupSettings": "Paramètres",
     "navGeneral": "Général",
     "collapse": "Réduire",
-    "expand": "Étendre"
+    "expand": "Étendre",
+    "navService": "Service"
   },
   "kitchen": {
     "title": "Cuisine (KDS)",

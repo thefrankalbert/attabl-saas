@@ -31,6 +31,7 @@ import {
   Truck,
   ChevronsLeft,
   ChevronsRight,
+  UserCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -205,6 +206,14 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       highlight: true,
       items: [],
       requiredPermission: 'canConfigureKitchen',
+    } as NavGroup & { requiredPermission?: NavItemPermission },
+    {
+      id: 'service',
+      titleKey: 'navService',
+      icon: UserCheck,
+      directLink: `${basePath}/service`,
+      items: [],
+      requiredPermission: 'canManageUsers',
     } as NavGroup & { requiredPermission?: NavItemPermission },
     {
       id: 'settings',
