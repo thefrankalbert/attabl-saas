@@ -54,6 +54,7 @@ export const createOrderSchema = z.object({
   room_number: z.string().max(20).optional(),
   delivery_address: z.string().max(500).optional(),
   coupon_code: z.string().max(50).optional(),
+  server_id: z.string().uuid().optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
