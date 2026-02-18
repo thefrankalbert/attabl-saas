@@ -12,7 +12,7 @@ interface StatsCardProps {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'orange' | 'purple' | 'gold';
+  color?: 'blue' | 'green' | 'orange' | 'purple' | 'gold' | 'lime';
   subtitle?: string;
 }
 
@@ -22,6 +22,7 @@ const COLOR_MAP: Record<string, string> = {
   orange: 'text-orange-600 bg-orange-50',
   purple: 'text-purple-600 bg-purple-50',
   gold: 'text-amber-600 bg-amber-50',
+  lime: 'text-black bg-[#CCFF00]',
 };
 
 export default function StatsCard({

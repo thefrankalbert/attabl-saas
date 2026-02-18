@@ -28,11 +28,11 @@ export function LocaleSwitcher() {
 
   return (
     <div className="relative flex items-center">
-      <Globe className="absolute left-2.5 h-3.5 w-3.5 text-gray-400 pointer-events-none" />
+      <Globe className="absolute left-2.5 h-3.5 w-3.5 text-neutral-400 pointer-events-none" />
       <select
         value={locale}
         onChange={handleChange}
-        className="w-full h-9 pl-8 pr-3 text-xs bg-transparent border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-sm appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
+        className="w-full h-9 pl-8 pr-3 text-xs bg-transparent border border-neutral-200 text-neutral-600 hover:bg-neutral-50 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
       >
         {locales.map((loc) => {
           const info = localeLabels[loc];

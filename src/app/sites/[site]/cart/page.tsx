@@ -16,6 +16,7 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { logger } from '@/lib/logger';
 
 export default function CartPage() {
   const {
@@ -101,7 +102,7 @@ export default function CartPage() {
       // Vider le panier après succès
       clearCart();
     } catch (err) {
-      console.error('Order submission error:', err);
+      logger.error('Order submission error:', err);
       setError('Erreur de connexion. Veuillez réessayer.');
     } finally {
       setIsSubmitting(false);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Play, Pause, Check, Volume2, Upload, Crown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -31,6 +31,16 @@ export function SoundSettings({
 
   const isPremium = effectivePlan === 'premium' || effectivePlan === 'enterprise';
   const canUpload = canAccess('customSoundUpload');
+
+  // Cleanup audio on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
 
   const handlePreview = (sound: SoundDefinition) => {
     // Stop current playback

@@ -183,14 +183,14 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           <p className="text-sm text-neutral-500">{t('teamSubtitle')}</p>
         </div>
         {canManageUsers && (
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Button variant="lime" onClick={() => setIsModalOpen(true)} className="gap-2">
             <UserPlus className="w-4 h-4" /> {t('newMember')}
           </Button>
         )}
       </div>
 
-      <div className="bg-white border rounded-xl overflow-hidden">
-        <div className="divide-y">
+      <div className="bg-white border border-neutral-100 rounded-xl overflow-hidden">
+        <div className="divide-y divide-neutral-100">
           {users.map((user) => {
             const roleConfig = getRoleConfig(user.role);
             const RoleIcon = roleConfig.icon;
@@ -287,19 +287,15 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
         </div>
       </div>
 
-      <AdminModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title="Ajouter un membre"
-      >
+      <AdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('addMember')}>
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Nom complet</Label>
+            <Label>{t('fullName')}</Label>
             <div className="relative">
               <Users className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
                 className="pl-9"
-                placeholder="Jean Dupont"
+                placeholder={t('fullNamePlaceholder')}
                 value={formData.full_name}
                 onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               />
@@ -307,13 +303,13 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           </div>
 
           <div className="space-y-2">
-            <Label>Email professionnel</Label>
+            <Label>{t('professionalEmail')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
                 className="pl-9"
                 type="email"
-                placeholder="jean@restaurant.com"
+                placeholder={t('emailPlaceholder')}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
@@ -321,7 +317,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           </div>
 
           <div className="space-y-2">
-            <Label>Mot de passe provisoire</Label>
+            <Label>{t('temporaryPassword')}</Label>
             <div className="relative">
               <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
@@ -335,7 +331,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           </div>
 
           <div className="space-y-2">
-            <Label>Rôle & Permissions</Label>
+            <Label>{t('roleAndPermissions')}</Label>
             <Select
               value={formData.role}
               onValueChange={(v: AdminRole) => setFormData({ ...formData, role: v })}
@@ -354,19 +350,16 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-neutral-500 mt-1">
-              Les administrateurs ont un accès complet. Les serveurs ne peuvent que prendre des
-              commandes.
-            </p>
+            <p className="text-xs text-neutral-500 mt-1">{t('roleDescription')}</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
-            <Button onClick={handleCreateUser} disabled={loading}>
+            <Button variant="lime" onClick={handleCreateUser} disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Créer le compte
+              {t('createAccount')}
             </Button>
           </div>
         </div>

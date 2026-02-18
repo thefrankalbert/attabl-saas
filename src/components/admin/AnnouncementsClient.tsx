@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AdminModal from '@/components/admin/AdminModal';
+import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
 
 interface AnnouncementsClientProps {
@@ -53,6 +54,14 @@ export default function AnnouncementsClient({
       return;
     }
 
+    if (endDate && new Date(endDate) < new Date(startDate)) {
+      toast({
+        title: t('endDateBeforeStartDate') || 'End date must be after start date',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setLoading(true);
     try {
       const { data: newAnnouncement, error } = await supabase
@@ -75,7 +84,7 @@ export default function AnnouncementsClient({
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
-      console.error(e);
+      logger.error('Failed to save announcement', e);
       toast({
         title: tc('error'),
         description: e instanceof Error ? e.message : tc('errorGeneric'),
@@ -132,6 +141,7 @@ export default function AnnouncementsClient({
             resetForm();
             setIsModalOpen(true);
           }}
+          variant="lime"
           className="gap-2"
         >
           <Plus className="w-4 h-4" /> {t('newAnnouncement')}
@@ -142,7 +152,7 @@ export default function AnnouncementsClient({
         {announcements.map((ann) => (
           <div
             key={ann.id}
-            className="group bg-white border rounded-xl p-5 transition-all flex flex-col h-full"
+            className="group bg-white border border-neutral-100 rounded-xl p-5 transition-all flex flex-col h-full"
           >
             <div className="flex justify-between items-start mb-3">
               <div
@@ -255,7 +265,7 @@ export default function AnnouncementsClient({
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={loading}>
+            <Button onClick={handleSave} disabled={loading} variant="lime">
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('publish')}
             </Button>

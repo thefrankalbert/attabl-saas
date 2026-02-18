@@ -4,7 +4,18 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Upload, Loader2, Save, Store, Palette, MapPin, Bell, Receipt, Clock } from 'lucide-react';
+import {
+  Upload,
+  Loader2,
+  Save,
+  Store,
+  Palette,
+  MapPin,
+  Bell,
+  Receipt,
+  Clock,
+  Globe,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,8 +25,10 @@ import { updateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
 import Image from 'next/image';
 import { SoundSettings } from './SoundSettings';
+import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 import type { CurrencyCode } from '@/types/admin.types';
 import { useTranslations } from 'next-intl';
+import { logger } from '@/lib/logger';
 
 function createSettingsSchema(messages: { nameMinLength: string; invalidColor: string }) {
   return z.object({
@@ -188,7 +201,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error(error);
+      logger.error('Failed to save settings', error);
       toast({
         title: tc('error'),
         description: t('settingsSaveError'),
@@ -204,7 +217,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     <div className="max-w-4xl space-y-8">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Identite */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
               <Store className="h-5 w-5 text-blue-600" />
@@ -269,7 +282,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Branding */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-purple-50 rounded-lg">
               <Palette className="h-5 w-5 text-purple-600" />
@@ -331,7 +344,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Facturation */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-emerald-50 rounded-lg">
               <Receipt className="h-5 w-5 text-emerald-600" />
@@ -349,7 +362,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               <select
                 id="currency"
                 {...register('currency')}
-                className="flex h-10 w-full max-w-xs rounded-md border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                className="flex h-10 w-full max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="XAF">Franc CFA (XAF)</option>
                 <option value="EUR">Euro (EUR)</option>
@@ -459,7 +472,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Notification Sounds */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-amber-50 rounded-lg">
               <Bell className="h-5 w-5 text-amber-600" />
@@ -478,7 +491,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Idle Timeout / Screen Lock */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-indigo-50 rounded-lg">
               <Clock className="h-5 w-5 text-indigo-600" />
@@ -584,7 +597,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </div>
 
         {/* Contact */}
-        <div className="bg-white rounded-xl border border-neutral-200 p-6">
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-green-50 rounded-lg">
               <MapPin className="h-5 w-5 text-green-600" />
@@ -607,12 +620,28 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
           </div>
         </div>
 
+        {/* Language */}
+        <div className="bg-white rounded-xl border border-neutral-100 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 bg-blue-50 rounded-lg">
+              <Globe className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-neutral-900">{t('languageSection')}</h2>
+              <p className="text-sm text-neutral-500">{t('languageDescription')}</p>
+            </div>
+          </div>
+
+          <LocaleSwitcher />
+        </div>
+
         {/* Actions */}
         <div className="flex justify-end gap-4 pt-4">
           <Button
             type="submit"
+            variant="lime"
             disabled={saving || uploading}
-            className="min-w-[150px] bg-neutral-900 text-white hover:bg-neutral-800"
+            className="min-w-[150px]"
           >
             {saving || uploading ? (
               <>
