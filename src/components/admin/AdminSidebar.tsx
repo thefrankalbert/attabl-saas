@@ -33,6 +33,7 @@ import {
   ChevronsRight,
   UserCheck,
   Grid3x3,
+  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -244,6 +245,12 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           icon: Grid3x3,
           label: t('navTables'),
           requiredPermission: 'canManageSettings',
+        },
+        {
+          href: `${basePath}/settings/permissions`,
+          icon: ShieldCheck,
+          label: t('navPermissions'),
+          ownerOnly: true,
         },
         {
           href: `${basePath}/reports`,
