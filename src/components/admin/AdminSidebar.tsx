@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   LayoutDashboard,
@@ -37,9 +37,18 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { getRolePermissions, type NavItemPermission } from '@/lib/permissions';
-import type { AdminRole } from '@/types/admin.types';
+import {
+  getRolePermissions,
+  getEffectivePermissions,
+  type NavItemPermission,
+} from '@/lib/permissions';
+import type { AdminRole, AdminUser } from '@/types/admin.types';
+import type {
+  PermissionCode,
+  RolePermissions as NewRolePermissions,
+} from '@/types/permission.types';
 import { useSidebar } from '@/contexts/SidebarContext';
+import { createClient } from '@/lib/supabase/client';
 
 // ─── Storage Keys ───────────────────────────────────────
 
@@ -49,6 +58,7 @@ const EXPANDED_GROUPS_KEY = 'attabl-sidebar-expanded';
 
 interface AdminSidebarProps {
   tenant: {
+    id?: string;
     name: string;
     slug: string;
     logo_url?: string;
@@ -57,6 +67,7 @@ interface AdminSidebarProps {
   adminUser?: {
     name?: string;
     role: string;
+    custom_permissions?: Record<string, boolean> | null;
   };
   role?: AdminRole;
   className?: string;
@@ -68,6 +79,7 @@ type NavItem = {
   label: string;
   highlight?: boolean;
   requiredPermission?: NavItemPermission;
+  permissionCode?: PermissionCode;
   ownerOnly?: boolean;
 };
 
@@ -78,6 +90,8 @@ type NavGroup = {
   items: NavItem[];
   directLink?: string;
   highlight?: boolean;
+  requiredPermission?: NavItemPermission;
+  permissionCode?: PermissionCode;
 };
 
 // ─── Component ──────────────────────────────────────────
@@ -85,6 +99,7 @@ type NavGroup = {
 export function AdminSidebar({ tenant, adminUser, role, className }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openForPath, setOpenForPath] = useState<string | null>(null);
+  const [roleOverrides, setRoleOverrides] = useState<NewRolePermissions | null>(null);
   const t = useTranslations('sidebar');
   const tc = useTranslations('common');
   const { isCollapsed, toggleCollapsed } = useSidebar();
@@ -104,6 +119,42 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
 
   const permissions = role ? getRolePermissions(role) : null;
 
+  // ─── Fetch role overrides for 3-level permission system ──
+  const hasFetchedOverrides = useRef(false);
+  useEffect(() => {
+    if (!tenant.id || !role || role === 'owner' || hasFetchedOverrides.current) return;
+    hasFetchedOverrides.current = true;
+
+    const supabase = createClient();
+    supabase
+      .from('role_permissions')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .eq('role', role)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setRoleOverrides(data as NewRolePermissions);
+        }
+      });
+  }, [tenant.id, role]);
+
+  // Build effective permission map (new 3-level system)
+  const effectivePerms = useMemo(() => {
+    if (!role || !adminUser) return null;
+    const fakeAdminUser: AdminUser = {
+      id: '',
+      user_id: '',
+      tenant_id: tenant.id || '',
+      email: '',
+      role: role,
+      is_active: true,
+      created_at: '',
+      custom_permissions: adminUser.custom_permissions || null,
+    };
+    return getEffectivePermissions(fakeAdminUser, roleOverrides);
+  }, [role, adminUser, tenant.id, roleOverrides]);
+
   const basePath = `/sites/${tenant.slug}/admin`;
 
   // ─── Navigation Groups (new 7-group structure) ─────────
@@ -122,6 +173,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       icon: ShoppingBag,
       directLink: `${basePath}/orders`,
       items: [],
+      permissionCode: 'orders.view',
     },
     {
       id: 'organization',
@@ -133,36 +185,42 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           icon: ClipboardList,
           label: t('navMenus'),
           requiredPermission: 'canManageMenus',
+          permissionCode: 'menu.view',
         },
         {
           href: `${basePath}/categories`,
           icon: UtensilsCrossed,
           label: t('navCategories'),
           requiredPermission: 'canManageMenus',
+          permissionCode: 'menu.view',
         },
         {
           href: `${basePath}/items`,
           icon: BookOpen,
           label: t('navDishes'),
           requiredPermission: 'canManageMenus',
+          permissionCode: 'menu.view',
         },
         {
           href: `${basePath}/inventory`,
           icon: Package,
           label: t('navInventory'),
           requiredPermission: 'canViewStocks',
+          permissionCode: 'inventory.view',
         },
         {
           href: `${basePath}/recipes`,
           icon: BookOpenCheck,
           label: t('navRecipes'),
           requiredPermission: 'canManageMenus',
+          permissionCode: 'menu.view',
         },
         {
           href: `${basePath}/suppliers`,
           icon: Truck,
           label: t('navSuppliers'),
           requiredPermission: 'canManageStocks',
+          permissionCode: 'inventory.edit',
         },
       ],
     },
@@ -176,18 +234,21 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           icon: Megaphone,
           label: t('navAnnouncements'),
           requiredPermission: 'canManageSettings',
+          permissionCode: 'settings.edit',
         },
         {
           href: `${basePath}/coupons`,
           icon: Tag,
           label: t('navCoupons'),
           requiredPermission: 'canManageSettings',
+          permissionCode: 'settings.edit',
         },
         {
           href: `${basePath}/suggestions`,
           icon: Lightbulb,
           label: t('navSuggestions'),
           requiredPermission: 'canManageMenus',
+          permissionCode: 'menu.edit',
         },
       ],
     },
@@ -199,7 +260,8 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       highlight: true,
       items: [],
       requiredPermission: 'canConfigurePOS',
-    } as NavGroup & { requiredPermission?: NavItemPermission },
+      permissionCode: 'pos.use',
+    },
     {
       id: 'kitchen',
       titleKey: 'navKitchen',
@@ -208,7 +270,8 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       highlight: true,
       items: [],
       requiredPermission: 'canConfigureKitchen',
-    } as NavGroup & { requiredPermission?: NavItemPermission },
+      permissionCode: 'orders.manage',
+    },
     {
       id: 'service',
       titleKey: 'navService',
@@ -216,7 +279,8 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       directLink: `${basePath}/service`,
       items: [],
       requiredPermission: 'canManageUsers',
-    } as NavGroup & { requiredPermission?: NavItemPermission },
+      permissionCode: 'team.view',
+    },
     {
       id: 'settings',
       titleKey: 'groupSettings',
@@ -227,24 +291,28 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           icon: Settings,
           label: t('navGeneral'),
           requiredPermission: 'canManageSettings',
+          permissionCode: 'settings.view',
         },
         {
           href: `${basePath}/users`,
           icon: Users,
           label: t('navUsers'),
           requiredPermission: 'canManageUsers',
+          permissionCode: 'team.view',
         },
         {
           href: `${basePath}/qr-codes`,
           icon: QrCode,
           label: t('navQrCodes'),
           requiredPermission: 'canManageSettings',
+          permissionCode: 'settings.view',
         },
         {
           href: `${basePath}/settings/tables`,
           icon: Grid3x3,
           label: t('navTables'),
           requiredPermission: 'canManageSettings',
+          permissionCode: 'settings.edit',
         },
         {
           href: `${basePath}/settings/permissions`,
@@ -257,12 +325,14 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           icon: BarChart3,
           label: t('navReports'),
           requiredPermission: 'canViewAllStats',
+          permissionCode: 'reports.view',
         },
         {
           href: `${basePath}/stock-history`,
           icon: History,
           label: t('navStockHistory'),
           requiredPermission: 'canViewStocks',
+          permissionCode: 'inventory.view',
         },
         {
           href: `${basePath}/subscription`,
@@ -276,22 +346,32 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
 
   // ─── Filter by permissions ─────────────────────────────
 
+  const checkPermission = useCallback(
+    (legacyPerm?: NavItemPermission, newPerm?: PermissionCode): boolean => {
+      // If we have the new 3-level permission system, prefer it
+      if (newPerm && effectivePerms) {
+        return effectivePerms[newPerm] ?? true;
+      }
+      // Fallback to legacy role-based permissions
+      if (legacyPerm && permissions) {
+        const val = permissions[legacyPerm];
+        return typeof val === 'boolean' ? val : !!val;
+      }
+      return true;
+    },
+    [effectivePerms, permissions],
+  );
+
   const filteredNavGroups = NAV_GROUPS.map((group) => {
     // Check group-level permission (for direct-link groups like POS/Kitchen)
-    const groupPerm = (group as NavGroup & { requiredPermission?: NavItemPermission })
-      .requiredPermission;
-    if (groupPerm && permissions) {
-      const val = permissions[groupPerm];
-      const allowed = typeof val === 'boolean' ? val : !!val;
-      if (!allowed) return null;
+    if (group.requiredPermission || group.permissionCode) {
+      if (!checkPermission(group.requiredPermission, group.permissionCode)) return null;
     }
 
     // Filter sub-items
     const filteredItems = group.items.filter((item) => {
       if (item.ownerOnly) return role === 'owner';
-      if (!item.requiredPermission || !permissions) return true;
-      const val = permissions[item.requiredPermission];
-      return typeof val === 'boolean' ? val : !!val;
+      return checkPermission(item.requiredPermission, item.permissionCode);
     });
 
     // If group has sub-items and all were filtered out, hide the group
