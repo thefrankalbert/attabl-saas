@@ -238,7 +238,17 @@
     "viewDetails": "View details",
     "unknownItem": "Unknown item",
     "activeDishes": "Active dishes",
-    "tableLabel": "Table"
+    "tableLabel": "Table",
+    "server": "Server",
+    "assignServer": "Assign server",
+    "releaseTable": "Release table",
+    "releaseAll": "Release all",
+    "claimOrder": "Take order",
+    "myTables": "My tables",
+    "unassigned": "Unassigned",
+    "noActiveAssignments": "No active assignments",
+    "assignedTo": "Assigned to {name}",
+    "serverPerformance": "Server performance"
   },
   "dishes": {
     "addItem": "ADD A DISH",
@@ -475,7 +485,8 @@
     "groupSettings": "Settings",
     "navGeneral": "General",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "navService": "Service"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",
