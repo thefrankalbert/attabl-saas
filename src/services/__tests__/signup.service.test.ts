@@ -36,6 +36,7 @@ function createMockSupabase(
       ? { error: { message: 'Admin insert failed' } }
       : { error: null },
     venues: { error: null },
+    restaurant_groups: { data: { id: 'group-abc-123' }, error: null },
   };
 
   const from = vi.fn((table: string) => {
@@ -55,6 +56,9 @@ function createMockSupabase(
         // For admin_users and venues which don't chain .select()
         then: undefined,
         ...tableResponses[table],
+      }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({ error: null }),
       }),
       delete: vi.fn().mockReturnValue({
         eq: vi.fn().mockResolvedValue({ error: null }),

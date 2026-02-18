@@ -9,6 +9,13 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Attabl <notifications@attabl.com>';
 
+interface InvitationEmailData {
+  restaurantName: string;
+  restaurantLogoUrl?: string;
+  role: string;
+  inviteUrl: string;
+}
+
 interface StockAlertItem {
   name: string;
   unit: string;
@@ -105,6 +112,80 @@ export async function sendStockAlertEmail(
     return true;
   } catch (err) {
     logger.error('Failed to send stock alert', err);
+    return false;
+  }
+}
+
+/**
+ * Send an invitation email to join a restaurant team on ATTABL.
+ *
+ * Uses the ATTABL design charter: #CCFF00 CTA, dark header, clean white body.
+ * The invitation link expires in 72 hours.
+ */
+export async function sendInvitationEmail(to: string, data: InvitationEmailData): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping invitation email');
+    return false;
+  }
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Administrateur',
+    manager: 'Manager',
+    cashier: 'Caissier',
+    chef: 'Chef Cuisine',
+    waiter: 'Serveur',
+  };
+
+  const roleLabel = roleLabels[data.role] || data.role;
+
+  const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0;text-align:center">
+        ${data.restaurantLogoUrl ? `<img src="${data.restaurantLogoUrl}" alt="" style="height:48px;margin-bottom:12px;border-radius:8px" />` : ''}
+        <h1 style="color:white;margin:0;font-size:22px">${data.restaurantName}</h1>
+      </div>
+      <div style="background:white;padding:32px 24px;border:1px solid #e5e7eb;border-top:none">
+        <h2 style="color:#111827;margin:0 0 16px;font-size:18px">Vous avez ete invite !</h2>
+        <p style="color:#374151;margin:0 0 8px;line-height:1.6">
+          Vous avez ete invite a rejoindre l'equipe de <strong>${data.restaurantName}</strong> sur ATTABL
+          en tant que <strong>${roleLabel}</strong>.
+        </p>
+        <p style="color:#6b7280;margin:0 0 24px;font-size:14px">
+          Cette invitation expire dans 72 heures.
+        </p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${data.inviteUrl}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
+            Accepter l'invitation
+          </a>
+        </div>
+        <p style="color:#9ca3af;font-size:13px;margin:0;text-align:center">
+          Si vous n'avez pas demande cette invitation, vous pouvez ignorer cet email.
+        </p>
+      </div>
+      <div style="background:#f9fafb;padding:16px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
+        <p style="color:#9ca3af;font-size:12px;margin:0;text-align:center">
+          Envoye par ATTABL — Menus digitaux pour restaurants et hotels
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: `Rejoignez l'equipe de ${data.restaurantName} sur ATTABL`,
+      html,
+    });
+
+    if (error) {
+      logger.error('Resend invitation error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send invitation email', err);
     return false;
   }
 }

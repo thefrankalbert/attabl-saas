@@ -9,3 +9,4 @@ export { useStockMovements } from './useStockMovements';
 export { useMenus } from './useMenus';
 export { useTenantSettings } from './useTenantSettings';
 export { useAssignments } from './useAssignments';
+export { useOwnerDashboard } from './useOwnerDashboard';
