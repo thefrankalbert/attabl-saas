@@ -25,10 +25,18 @@ interface CategoryBreakdown {
   percentage: number;
 }
 
+interface ServerStats {
+  serverName: string;
+  orders: number;
+  revenue: number;
+  avgOrder: number;
+}
+
 interface ReportData {
   dailyStats: DailyStats[];
   topItems: TopItem[];
   categories: CategoryBreakdown[];
+  serverStats: ServerStats[];
   summary: { revenue: number; orders: number; avgBasket: number };
   previousSummary: { revenue: number; orders: number; avgBasket: number };
 }
@@ -116,12 +124,22 @@ export function useReportData(tenantId: string, period: Period) {
         }),
       ]);
 
+      // Fetch server performance stats (separate query, non-blocking)
+      const serverRes = await supabase
+        .from('orders')
+        .select('server_id, total, server:admin_users!orders_server_id_fkey(full_name)')
+        .eq('tenant_id', tenantId)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate + 'T23:59:59')
+        .not('server_id', 'is', null);
+
       // Graceful fallback if RPCs not deployed
       if (dailyRes.error || topRes.error || summaryRes.error) {
         return {
           dailyStats: [],
           topItems: [],
           categories: [],
+          serverStats: [],
           summary: { revenue: 0, orders: 0, avgBasket: 0 },
           previousSummary: { revenue: 0, orders: 0, avgBasket: 0 },
         };
@@ -195,7 +213,43 @@ export function useReportData(tenantId: string, period: Period) {
         }));
       }
 
-      return { dailyStats, topItems, categories, summary, previousSummary };
+      // Server performance stats
+      let serverStats: ServerStats[] = [];
+      if (!serverRes.error && serverRes.data) {
+        const serverMap = new Map<
+          string,
+          { serverName: string; orders: number; revenue: number }
+        >();
+        for (const row of serverRes.data as unknown as {
+          server_id: string;
+          total: number;
+          server: { full_name: string }[] | { full_name: string } | null;
+        }[]) {
+          const serverObj = Array.isArray(row.server) ? row.server[0] : row.server;
+          const name = serverObj?.full_name || row.server_id;
+          const existing = serverMap.get(row.server_id);
+          if (existing) {
+            existing.orders += 1;
+            existing.revenue += Number(row.total) || 0;
+          } else {
+            serverMap.set(row.server_id, {
+              serverName: name,
+              orders: 1,
+              revenue: Number(row.total) || 0,
+            });
+          }
+        }
+        serverStats = Array.from(serverMap.values())
+          .map((s) => ({
+            serverName: s.serverName,
+            orders: s.orders,
+            revenue: s.revenue,
+            avgOrder: s.orders > 0 ? Math.round(s.revenue / s.orders) : 0,
+          }))
+          .sort((a, b) => b.orders - a.orders);
+      }
+
+      return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
     },
     enabled: !!tenantId,
   });

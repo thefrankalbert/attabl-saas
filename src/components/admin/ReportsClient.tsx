@@ -79,6 +79,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const dailyStats = reportData?.dailyStats ?? [];
   const topItems = reportData?.topItems ?? [];
   const categories = reportData?.categories ?? [];
+  const serverStats = reportData?.serverStats ?? [];
   const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0 };
   const previousSummary = reportData?.previousSummary ?? { revenue: 0, orders: 0, avgBasket: 0 };
 
@@ -513,6 +514,92 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                 />
               </PieChart>
             </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* Server Performance */}
+      <div className="bg-white border border-neutral-100 rounded-xl p-6">
+        <h3 className="text-lg font-bold mb-6">{t('serverPerformance')}</h3>
+        {serverStats.length === 0 ? (
+          <p className="text-sm text-neutral-400 text-center py-8">{t('noServerData')}</p>
+        ) : (
+          <div className="space-y-6">
+            {/* Horizontal bar chart — orders per server */}
+            <ResponsiveContainer width="100%" height={Math.max(serverStats.length * 48, 120)}>
+              <BarChart
+                data={serverStats}
+                layout="vertical"
+                margin={{ top: 5, right: 30, bottom: 5, left: 5 }}
+              >
+                <XAxis
+                  type="number"
+                  tick={{ fontSize: 10, fill: '#a3a3a3' }}
+                  axisLine={{ stroke: '#e5e5e5' }}
+                  tickLine={false}
+                />
+                <YAxis
+                  type="category"
+                  dataKey="serverName"
+                  tick={{ fontSize: 12, fill: '#525252' }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={120}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: '#171717',
+                    border: '1px solid #262626',
+                    borderRadius: '8px',
+                    color: '#fff',
+                  }}
+                  labelStyle={{ color: '#a3a3a3', fontSize: 11 }}
+                  formatter={(value: number | undefined) => [`${value ?? 0}`, t('ordersCount')]}
+                />
+                <Bar dataKey="orders" fill="#CCFF00" radius={[0, 4, 4, 0]} maxBarSize={32} />
+              </BarChart>
+            </ResponsiveContainer>
+
+            {/* Summary table */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-neutral-100">
+                    <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                      {t('serverName')}
+                    </th>
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                      {t('ordersCount')}
+                    </th>
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                      {t('revenueLabel')}
+                    </th>
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                      {t('avgOrderValue')}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {serverStats.map((s) => (
+                    <tr
+                      key={s.serverName}
+                      className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors"
+                    >
+                      <td className="py-3 px-2 font-medium text-neutral-900">{s.serverName}</td>
+                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                        {s.orders}
+                      </td>
+                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                        {fmt(s.revenue)}
+                      </td>
+                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                        {fmt(s.avgOrder)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
