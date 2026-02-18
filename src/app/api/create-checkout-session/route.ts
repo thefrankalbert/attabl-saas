@@ -41,13 +41,13 @@ export async function POST(request: Request) {
     }
 
     // ✅ SECURITY: Derive tenantId from authenticated user
-    const { data: adminUser } = await supabase
+    const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
       .select('tenant_id, tenants(name)')
       .eq('user_id', user.id)
       .single();
 
-    if (!adminUser?.tenant_id) {
+    if (adminUserError || !adminUser?.tenant_id) {
       return NextResponse.json(
         { error: 'Tenant non trouvé pour cet utilisateur' },
         { status: 404 },

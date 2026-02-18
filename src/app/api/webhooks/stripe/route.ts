@@ -24,6 +24,7 @@ function mapStripeStatus(stripeStatus: string): 'trial' | 'active' | 'past_due' 
     case 'unpaid':
       return 'past_due';
     default:
+      logger.warn('Unknown Stripe status, defaulting to active', { stripeStatus });
       return 'active';
   }
 }
@@ -111,11 +112,16 @@ export async function POST(request: Request) {
         const customerId = subscription.customer as string;
 
         // Récupérer le tenant
-        const { data: tenant } = await supabase
+        const { data: tenant, error: tenantError } = await supabase
           .from('tenants')
           .select('id')
           .eq('stripe_customer_id', customerId)
           .single();
+
+        if (tenantError || !tenant) {
+          logger.warn('Subscription updated: tenant not found', { customerId });
+          break;
+        }
 
         if (tenant) {
           // Accéder aux périodes via les items
@@ -156,23 +162,26 @@ export async function POST(request: Request) {
         const customerId = subscription.customer as string;
 
         // Suspendre le tenant
-        const { data: tenant } = await supabase
+        const { data: tenant, error: tenantDeleteError } = await supabase
           .from('tenants')
           .select('id')
           .eq('stripe_customer_id', customerId)
           .single();
 
-        if (tenant) {
-          await supabase
-            .from('tenants')
-            .update({
-              subscription_status: 'cancelled',
-              is_active: false,
-            })
-            .eq('id', tenant.id);
-
-          logger.warn('Tenant suspended — subscription cancelled', { tenantId: tenant.id });
+        if (tenantDeleteError || !tenant) {
+          logger.warn('Subscription deleted: tenant not found', { customerId });
+          break;
         }
+
+        await supabase
+          .from('tenants')
+          .update({
+            subscription_status: 'cancelled',
+            is_active: false,
+          })
+          .eq('id', tenant.id);
+
+        logger.warn('Tenant suspended — subscription cancelled', { tenantId: tenant.id });
         break;
       }
 
@@ -181,22 +190,25 @@ export async function POST(request: Request) {
         const customerId = invoice.customer as string;
 
         // Marquer comme "past_due"
-        const { data: tenant } = await supabase
+        const { data: tenant, error: tenantPaymentError } = await supabase
           .from('tenants')
           .select('id')
           .eq('stripe_customer_id', customerId)
           .single();
 
-        if (tenant) {
-          await supabase
-            .from('tenants')
-            .update({
-              subscription_status: 'past_due',
-            })
-            .eq('id', tenant.id);
-
-          logger.warn('Payment failed for tenant', { tenantId: tenant.id });
+        if (tenantPaymentError || !tenant) {
+          logger.warn('Payment failed: tenant not found', { customerId });
+          break;
         }
+
+        await supabase
+          .from('tenants')
+          .update({
+            subscription_status: 'past_due',
+          })
+          .eq('id', tenant.id);
+
+        logger.warn('Payment failed for tenant', { tenantId: tenant.id });
         break;
       }
 

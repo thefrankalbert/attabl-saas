@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
   Plus,
@@ -13,8 +14,14 @@ import {
   Loader2,
   Building2,
   Search,
+  FileSpreadsheet,
+  Upload,
+  Download,
+  CheckCircle2,
+  AlertCircle,
 } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMenus } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,12 +51,23 @@ export default function MenusClient({
   initialMenus,
   venues,
 }: MenusClientProps) {
-  const [menus, setMenus] = useState<Menu[]>(initialMenus);
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
   const [saving, setSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Import Excel state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<{
+    categoriesCreated: number;
+    itemsCreated: number;
+    itemsSkipped: number;
+    errors: Array<{ row: number; message: string }>;
+  } | null>(null);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formName, setFormName] = useState('');
@@ -62,26 +80,16 @@ export default function MenusClient({
 
   const { toast } = useToast();
   const { isLimitReached, limits } = useSubscription();
-  const supabase = createClient();
+  const queryClient = useQueryClient();
+  const t = useTranslations('menus');
+  const tc = useTranslations('common');
 
-  const loadMenus = useCallback(async () => {
-    setLoading(true);
-    try {
-      const { data } = await supabase
-        .from('menus')
-        .select(
-          '*, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
-        )
-        .eq('tenant_id', tenantId)
-        .is('parent_menu_id', null)
-        .order('display_order', { ascending: true });
-      if (data) setMenus(data as Menu[]);
-    } catch {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, toast]);
+  // TanStack Query for menus
+  const { data: menus = initialMenus, isLoading: loading } = useMenus(tenantId, initialMenus);
+
+  const loadMenus = () => {
+    queryClient.invalidateQueries({ queryKey: ['menus', tenantId] });
+  };
 
   const openNewMenuModal = (parentId?: string) => {
     setEditingMenu(null);
@@ -128,7 +136,7 @@ export default function MenusClient({
           toast({ title: result.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Carte mise à jour' });
+        toast({ title: t('menuUpdated') });
       } else {
         const result = await actionCreateMenu(tenantId, {
           name: formName.trim(),
@@ -144,19 +152,19 @@ export default function MenusClient({
           toast({ title: result.error, variant: 'destructive' });
           return;
         }
-        toast({ title: 'Carte créée' });
+        toast({ title: t('menuCreated') });
       }
       setShowModal(false);
       loadMenus();
     } catch {
-      toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' });
+      toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (menu: Menu) => {
-    if (!confirm(`Supprimer la carte "${menu.name}" ? Cette action est irréversible.`)) return;
+    if (!confirm(t('deleteConfirm', { name: menu.name }))) return;
 
     try {
       const result = await actionDeleteMenu(tenantId, menu.id);
@@ -164,10 +172,10 @@ export default function MenusClient({
         toast({ title: result.error, variant: 'destructive' });
         return;
       }
-      toast({ title: 'Carte supprimée' });
+      toast({ title: t('menuDeleted') });
       loadMenus();
     } catch {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -183,7 +191,7 @@ export default function MenusClient({
       }
       loadMenus();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -191,10 +199,106 @@ export default function MenusClient({
     const reordered = [...menus];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(dropIndex, 0, moved);
-    setMenus(reordered);
+    // Optimistic update in query cache
+    queryClient.setQueryData(['menus', tenantId], reordered);
 
     const orderedIds = reordered.map((m) => m.id);
     await actionReorderMenus(tenantId, orderedIds);
+  };
+
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
+  const openImportModal = () => {
+    setImportFile(null);
+    setImportResult(null);
+    setImporting(false);
+    setIsDragOver(false);
+    setShowImportModal(true);
+  };
+
+  const handleFileSelect = (file: File | undefined) => {
+    if (!file) return;
+    if (file.size > MAX_FILE_SIZE) {
+      toast({ title: t('maxFileSize'), variant: 'destructive' });
+      return;
+    }
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-excel',
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.xlsx?$/i)) {
+      toast({ title: t('importError'), variant: 'destructive' });
+      return;
+    }
+    setImportFile(file);
+    setImportResult(null);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files[0];
+    handleFileSelect(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleImport = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    setImportResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', importFile);
+      formData.append('tenantId', tenantId);
+
+      const response = await fetch('/api/menu-import', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        toast({ title: data.error || t('importError'), variant: 'destructive' });
+        setImportResult({
+          categoriesCreated: 0,
+          itemsCreated: 0,
+          itemsSkipped: 0,
+          errors: data.errors || [],
+        });
+        return;
+      }
+
+      setImportResult({
+        categoriesCreated: data.categoriesCreated ?? 0,
+        itemsCreated: data.itemsCreated ?? 0,
+        itemsSkipped: data.itemsSkipped ?? 0,
+        errors: data.errors ?? [],
+      });
+
+      toast({ title: t('importSuccess') });
+      loadMenus();
+    } catch {
+      toast({ title: t('importError'), variant: 'destructive' });
+    } finally {
+      setImporting(false);
+    }
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   // Group menus by venue
@@ -216,24 +320,33 @@ export default function MenusClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Cartes / Menus</h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            Gérez vos cartes, sous-cartes et leur contenu
-          </p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+          <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
         </div>
-        <Button onClick={() => openNewMenuModal()} disabled={limitReached} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Nouvelle carte
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={openImportModal} variant="outline" className="gap-2 rounded-xl">
+            <FileSpreadsheet className="w-4 h-4" />
+            {t('importExcel')}
+          </Button>
+          <Button
+            onClick={() => openNewMenuModal()}
+            variant="lime"
+            disabled={limitReached}
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            {t('newMenu')}
+          </Button>
+        </div>
       </div>
 
       {/* Limit warning */}
       {limitReached && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm text-amber-800 font-medium">
-            Vous avez atteint la limite de {limits.maxMenus} cartes pour votre plan.{' '}
+            {t('limitReached', { max: limits.maxMenus })}{' '}
             <Link href={`/sites/${tenantSlug}/admin/subscription`} className="underline font-bold">
-              Passer au Premium →
+              {t('upgradeToPremium')}
             </Link>
           </p>
         </div>
@@ -243,7 +356,7 @@ export default function MenusClient({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
         <Input
-          placeholder="Rechercher une carte..."
+          placeholder={t('searchPlaceholder')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -266,7 +379,7 @@ export default function MenusClient({
       {filteredStandalone.length > 0 && (
         <div className="space-y-3">
           <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
-            Cartes indépendantes
+            {t('independentMenus')}
           </p>
           {filteredStandalone.map((menu, index) => (
             <MenuCard
@@ -297,7 +410,7 @@ export default function MenusClient({
             <div className="flex items-center gap-2 px-1">
               <Building2 className="w-4 h-4 text-neutral-400" />
               <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                {venue?.name || 'Espace'}
+                {venue?.name || t('space')}
               </p>
             </div>
             {filtered.map((menu, index) => (
@@ -323,12 +436,10 @@ export default function MenusClient({
           <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Folder className="w-7 h-7 text-neutral-400" />
           </div>
-          <h3 className="text-base font-bold text-neutral-900">Aucune carte</h3>
-          <p className="text-sm text-neutral-500 mt-2">
-            Créez votre première carte pour organiser vos plats
-          </p>
-          <Button onClick={() => openNewMenuModal()} className="mt-4">
-            Créer une carte
+          <h3 className="text-base font-bold text-neutral-900">{t('noMenus')}</h3>
+          <p className="text-sm text-neutral-500 mt-2">{t('noMenusDesc')}</p>
+          <Button onClick={() => openNewMenuModal()} variant="lime" className="mt-4">
+            {t('createMenu')}
           </Button>
         </div>
       )}
@@ -337,63 +448,63 @@ export default function MenusClient({
       <AdminModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingMenu ? 'Modifier la carte' : 'Nouvelle carte'}
+        title={editingMenu ? t('editMenuTitle') : t('newMenuTitle')}
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-name">Nom (FR) *</Label>
+              <Label htmlFor="menu-name">{t('nameFr')}</Label>
               <Input
                 id="menu-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="Ex: Carte des Boissons"
+                placeholder={t('nameFrPlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-name-en">Nom (EN)</Label>
+              <Label htmlFor="menu-name-en">{t('nameEn')}</Label>
               <Input
                 id="menu-name-en"
                 value={formNameEn}
                 onChange={(e) => setFormNameEn(e.target.value)}
-                placeholder="Ex: Drinks Menu"
+                placeholder={t('nameEnPlaceholder')}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-desc">Description (FR)</Label>
+              <Label htmlFor="menu-desc">{t('descriptionFr')}</Label>
               <Input
                 id="menu-desc"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
-                placeholder="Description de la carte"
+                placeholder={t('descriptionFrPlaceholder')}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-desc-en">Description (EN)</Label>
+              <Label htmlFor="menu-desc-en">{t('descriptionEn')}</Label>
               <Input
                 id="menu-desc-en"
                 value={formDescriptionEn}
                 onChange={(e) => setFormDescriptionEn(e.target.value)}
-                placeholder="Menu description"
+                placeholder={t('descriptionEnPlaceholder')}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="menu-venue">Espace (optionnel)</Label>
+              <Label htmlFor="menu-venue">{t('spaceOptional')}</Label>
               <select
                 id="menu-venue"
                 value={formVenueId || ''}
                 onChange={(e) => setFormVenueId(e.target.value || null)}
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
-                <option value="">Aucun (carte indépendante)</option>
+                <option value="">{t('noSpaceIndependent')}</option>
                 {venues.map((v) => (
                   <option key={v.id} value={v.id}>
                     {v.name}
@@ -402,14 +513,14 @@ export default function MenusClient({
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="menu-parent">Carte parente (sous-carte)</Label>
+              <Label htmlFor="menu-parent">{t('parentMenu')}</Label>
               <select
                 id="menu-parent"
                 value={formParentMenuId || ''}
                 onChange={(e) => setFormParentMenuId(e.target.value || null)}
                 className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
               >
-                <option value="">Aucune (carte principale)</option>
+                <option value="">{t('noParentMain')}</option>
                 {menus
                   .filter((m) => m.id !== editingMenu?.id)
                   .map((m) => (
@@ -429,19 +540,130 @@ export default function MenusClient({
               onChange={(e) => setFormIsActive(e.target.checked)}
               className="rounded border-neutral-300"
             />
-            <Label htmlFor="menu-active">Carte active (visible aux clients)</Label>
+            <Label htmlFor="menu-active">{t('activeVisibleToClients')}</Label>
           </div>
 
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} variant="lime">
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingMenu ? 'Mettre à jour' : 'Créer'}
+              {editingMenu ? t('update') : t('create')}
             </Button>
           </div>
         </form>
+      </AdminModal>
+
+      {/* Import Excel Modal */}
+      <AdminModal
+        isOpen={showImportModal}
+        onClose={() => setShowImportModal(false)}
+        title={t('importExcel')}
+        size="lg"
+      >
+        <div className="space-y-5 pt-2">
+          {/* Download template link */}
+          <a
+            href="/api/menu-import"
+            download
+            className="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:text-lime-800 transition-colors"
+          >
+            <Download className="w-4 h-4" />
+            {t('downloadTemplate')}
+          </a>
+
+          {/* File upload drop zone */}
+          <div
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => fileInputRef.current?.click()}
+            className={cn(
+              'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all',
+              isDragOver
+                ? 'border-lime-400 bg-lime-50'
+                : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-neutral-100',
+            )}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              onChange={(e) => handleFileSelect(e.target.files?.[0])}
+            />
+            <div className="w-12 h-12 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
+              <Upload className="w-5 h-5 text-neutral-400" />
+            </div>
+            {importFile ? (
+              <div className="text-center">
+                <p className="text-sm font-semibold text-neutral-900">{importFile.name}</p>
+                <p className="text-xs text-neutral-500 mt-0.5">{formatFileSize(importFile.size)}</p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-sm text-neutral-600">{t('dragAndDrop')}</p>
+                <p className="text-xs text-neutral-400 mt-1">{t('maxFileSize')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Import results */}
+          {importResult && (
+            <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-4 space-y-2">
+              {importResult.categoriesCreated > 0 && (
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {t('categoriesCreated', { count: importResult.categoriesCreated })}
+                </div>
+              )}
+              {importResult.itemsCreated > 0 && (
+                <div className="flex items-center gap-2 text-sm text-emerald-700">
+                  <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                  {t('itemsCreated', { count: importResult.itemsCreated })}
+                </div>
+              )}
+              {importResult.itemsSkipped > 0 && (
+                <div className="flex items-center gap-2 text-sm text-amber-700">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  {t('itemsSkipped', { count: importResult.itemsSkipped })}
+                </div>
+              )}
+              {importResult.errors.length > 0 && (
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-sm font-medium text-red-700">
+                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                    {t('errorsFound', { count: importResult.errors.length })}
+                  </div>
+                  <ul className="ml-6 space-y-0.5">
+                    {importResult.errors.map((err, i) => (
+                      <li key={i} className="text-xs text-red-600">
+                        {t('rowError', { row: err.row, message: err.message })}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Action buttons */}
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+            <Button type="button" variant="ghost" onClick={() => setShowImportModal(false)}>
+              {t('cancel')}
+            </Button>
+            <Button
+              variant="lime"
+              disabled={!importFile || importing}
+              onClick={handleImport}
+              className="gap-2 rounded-xl"
+            >
+              {importing && <Loader2 className="w-4 h-4 animate-spin" />}
+              {importing ? t('importing') : t('importExcel')}
+            </Button>
+          </div>
+        </div>
       </AdminModal>
     </div>
   );
@@ -461,6 +683,7 @@ interface MenuCardProps {
 }
 
 function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: MenuCardProps) {
+  const t = useTranslations('menus');
   return (
     <div className="bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group">
       <div className="flex items-center gap-4 p-4">
@@ -488,7 +711,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
             )}
             {menu.children && menu.children.length > 0 && (
               <span className="text-xs text-neutral-400">
-                {menu.children.length} sous-carte{menu.children.length > 1 ? 's' : ''}
+                {t('subMenuCount', { count: menu.children.length })}
               </span>
             )}
           </div>
@@ -506,11 +729,11 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
           >
             {menu.is_active ? (
               <>
-                <ToggleRight className="w-3 h-3 inline mr-0.5" /> Active
+                <ToggleRight className="w-3 h-3 inline mr-0.5" /> {t('active')}
               </>
             ) : (
               <>
-                <ToggleLeft className="w-3 h-3 inline mr-0.5" /> Inactive
+                <ToggleLeft className="w-3 h-3 inline mr-0.5" /> {t('inactive')}
               </>
             )}
           </button>
@@ -520,7 +743,7 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               variant="ghost"
               size="sm"
               onClick={onAddChild}
-              title="Ajouter une sous-carte"
+              title={t('addSubMenu')}
               className="h-8 w-8 p-0"
             >
               <Plus className="w-3.5 h-3.5" />

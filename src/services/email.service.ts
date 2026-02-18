@@ -3,6 +3,7 @@
  */
 
 import { Resend } from 'resend';
+import { logger } from '@/lib/logger';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
@@ -27,7 +28,7 @@ export async function sendStockAlertEmail(
   data: StockAlertEmailData,
 ): Promise<boolean> {
   if (!resend) {
-    console.warn('[Email] RESEND_API_KEY not configured — skipping stock alert email');
+    logger.warn('RESEND_API_KEY not configured — skipping stock alert email');
     return false;
   }
 
@@ -97,13 +98,13 @@ export async function sendStockAlertEmail(
     });
 
     if (error) {
-      console.error('[Email] Resend error:', error);
+      logger.error('Resend error', error);
       return false;
     }
 
     return true;
   } catch (err) {
-    console.error('[Email] Failed to send stock alert:', err);
+    logger.error('Failed to send stock alert', err);
     return false;
   }
 }

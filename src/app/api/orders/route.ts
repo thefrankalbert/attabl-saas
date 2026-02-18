@@ -86,13 +86,17 @@ export async function POST(request: Request) {
     }
 
     // 5. Fetch tenant config for tax & service charge
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
         'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
       )
       .eq('id', tenantId)
       .single();
+
+    if (tenantError || !tenant) {
+      return NextResponse.json({ error: 'Configuration du tenant non trouvée' }, { status: 404 });
+    }
 
     // 6. Calculate pricing breakdown
     const pricing = calculateOrderTotal(

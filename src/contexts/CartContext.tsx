@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useTenant } from './TenantContext';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
+import { logger } from '@/lib/logger';
 import type { ServiceType, PricingBreakdown, CurrencyCode } from '@/types/admin.types';
 
 // Définition des types
@@ -146,7 +147,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       try {
         setItems(JSON.parse(savedCart));
       } catch (e) {
-        console.error('Error parsing cart from localStorage:', e);
+        logger.error('Error parsing cart from localStorage', e);
       }
     }
     if (savedResto) setCurrentRestaurantId(savedResto);
@@ -156,7 +157,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       try {
         setAppliedCoupon(JSON.parse(savedCoupon));
       } catch (e) {
-        console.error('Error parsing coupon from localStorage:', e);
+        logger.error('Error parsing coupon from localStorage', e);
       }
     }
     if (savedServiceType) setServiceTypeState(savedServiceType as ServiceType);

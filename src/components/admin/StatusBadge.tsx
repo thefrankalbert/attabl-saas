@@ -3,6 +3,7 @@
 import { cn } from '@/lib/utils';
 import { ORDER_STATUS } from '@/lib/constants';
 import type { OrderStatus } from '@/types/admin.types';
+import { useTranslations } from 'next-intl';
 
 interface StatusBadgeProps {
   status: string;
@@ -11,6 +12,7 @@ interface StatusBadgeProps {
 
 export default function StatusBadge({ status, className }: StatusBadgeProps) {
   const config = ORDER_STATUS[status as OrderStatus] || ORDER_STATUS.pending;
+  const t = useTranslations('orders');
 
   return (
     <span
@@ -22,7 +24,7 @@ export default function StatusBadge({ status, className }: StatusBadgeProps) {
       )}
     >
       <span className={cn('w-1.5 h-1.5 rounded-full', config.dotClass)} />
-      {config.label}
+      {t(config.key)}
     </span>
   );
 }

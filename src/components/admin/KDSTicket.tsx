@@ -15,7 +15,9 @@ import {
   Check,
   Play,
   ChevronRight,
+  User,
 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
@@ -29,109 +31,11 @@ interface KDSTicketProps {
   isMock?: boolean;
 }
 
-// ─── Course labels ──────────────────────────────────────────
-const COURSE_LABELS: Record<string, { emoji: string; label: string; order: number }> = {
-  appetizer: { emoji: '🥗', label: 'Entrées', order: 1 },
-  main: { emoji: '🍖', label: 'Plats', order: 2 },
-  dessert: { emoji: '🍰', label: 'Desserts', order: 3 },
-  drink: { emoji: '🥤', label: 'Boissons', order: 4 },
-};
-
-// ─── Service type config ────────────────────────────────────
-const SERVICE_TYPES: Record<
-  string,
-  { icon: React.ComponentType<{ className?: string }>; label: string }
-> = {
-  dine_in: { icon: UtensilsCrossed, label: 'Sur place' },
-  takeaway: { icon: Package, label: 'À emporter' },
-  delivery: { icon: Truck, label: 'Livraison' },
-  room_service: { icon: Hotel, label: 'Room service' },
-};
-
-// ─── Item status ────────────────────────────────────────────
-const ITEM_STATUSES: Record<
-  string,
-  {
-    label: string;
-    dot: string;
-    text: string;
-    bg: string;
-  }
-> = {
-  pending: {
-    label: 'Attente',
-    dot: 'bg-neutral-400',
-    text: 'text-neutral-400',
-    bg: 'bg-neutral-400/10 hover:bg-neutral-400/20',
-  },
-  preparing: {
-    label: 'Prépa',
-    dot: 'bg-yellow-400',
-    text: 'text-yellow-400',
-    bg: 'bg-yellow-400/10 hover:bg-yellow-400/20',
-  },
-  ready: {
-    label: 'Prêt',
-    dot: 'bg-emerald-400',
-    text: 'text-emerald-400',
-    bg: 'bg-emerald-400/10 hover:bg-emerald-400/20',
-  },
-};
-
 const ITEM_NEXT: Record<string, ItemStatus> = {
   pending: 'preparing',
   preparing: 'ready',
   ready: 'pending',
 };
-
-// ─── Order status → visual config ───────────────────────────
-const STATUS_CONFIG = {
-  pending: {
-    headerBg: 'bg-amber-500',
-    headerText: 'text-white',
-    icon: Play,
-    statusLabel: 'En attente',
-    actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
-    actionLabel: 'DÉMARRER',
-    next: 'preparing' as OrderStatus,
-  },
-  preparing: {
-    headerBg: 'bg-blue-500',
-    headerText: 'text-white',
-    icon: Pause,
-    statusLabel: 'En préparation',
-    actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
-    actionLabel: 'TERMINER',
-    next: 'ready' as OrderStatus,
-  },
-  ready: {
-    headerBg: 'bg-emerald-500',
-    headerText: 'text-white',
-    icon: Check,
-    statusLabel: 'Prêt à servir',
-    actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
-    actionLabel: 'SERVIR',
-    next: 'delivered' as OrderStatus,
-  },
-  delivered: {
-    headerBg: 'bg-neutral-600',
-    headerText: 'text-white',
-    icon: Check,
-    statusLabel: 'Servi',
-    actionBg: '',
-    actionLabel: '',
-    next: undefined,
-  },
-  cancelled: {
-    headerBg: 'bg-red-500',
-    headerText: 'text-white',
-    icon: CircleDot,
-    statusLabel: 'Annulé',
-    actionBg: '',
-    actionLabel: '',
-    next: undefined,
-  },
-} as const;
 
 export default function KDSTicket({
   order,
@@ -141,6 +45,107 @@ export default function KDSTicket({
 }: KDSTicketProps) {
   const [elapsed, setElapsed] = useState(0);
   const { toast } = useToast();
+  const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
+  const to = useTranslations('orders');
+
+  // ─── Course labels ──────────────────────────────────────────
+  const COURSE_LABELS: Record<string, { emoji: string; label: string; order: number }> = {
+    appetizer: { emoji: '\u{1F957}', label: t('courseStarters'), order: 1 },
+    main: { emoji: '\u{1F356}', label: t('courseMains'), order: 2 },
+    dessert: { emoji: '\u{1F370}', label: t('courseDesserts'), order: 3 },
+    drink: { emoji: '\u{1F964}', label: t('courseDrinks'), order: 4 },
+  };
+
+  // ─── Service type config ────────────────────────────────────
+  const SERVICE_TYPES: Record<
+    string,
+    { icon: React.ComponentType<{ className?: string }>; label: string }
+  > = {
+    dine_in: { icon: UtensilsCrossed, label: t('serviceOnSite') },
+    takeaway: { icon: Package, label: t('serviceTakeaway') },
+    delivery: { icon: Truck, label: t('serviceDelivery') },
+    room_service: { icon: Hotel, label: t('serviceRoom') },
+  };
+
+  // ─── Item status ────────────────────────────────────────────
+  const ITEM_STATUSES: Record<
+    string,
+    {
+      label: string;
+      dot: string;
+      text: string;
+      bg: string;
+    }
+  > = {
+    pending: {
+      label: t('itemPending'),
+      dot: 'bg-neutral-400',
+      text: 'text-neutral-400',
+      bg: 'bg-neutral-400/10 hover:bg-neutral-400/20',
+    },
+    preparing: {
+      label: t('itemPreparing'),
+      dot: 'bg-yellow-400',
+      text: 'text-yellow-400',
+      bg: 'bg-yellow-400/10 hover:bg-yellow-400/20',
+    },
+    ready: {
+      label: t('itemReady'),
+      dot: 'bg-emerald-400',
+      text: 'text-emerald-400',
+      bg: 'bg-emerald-400/10 hover:bg-emerald-400/20',
+    },
+  };
+
+  // ─── Order status → visual config ───────────────────────────
+  const STATUS_CONFIG = {
+    pending: {
+      headerBg: 'bg-amber-500',
+      headerText: 'text-white',
+      icon: Play,
+      statusLabel: t('columnPending'),
+      actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
+      actionLabel: t('actionStart').toUpperCase(),
+      next: 'preparing' as OrderStatus,
+    },
+    preparing: {
+      headerBg: 'bg-blue-500',
+      headerText: 'text-white',
+      icon: Pause,
+      statusLabel: t('columnPreparing'),
+      actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
+      actionLabel: t('actionFinish').toUpperCase(),
+      next: 'ready' as OrderStatus,
+    },
+    ready: {
+      headerBg: 'bg-emerald-500',
+      headerText: 'text-white',
+      icon: Check,
+      statusLabel: t('columnReady'),
+      actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
+      actionLabel: t('actionServe').toUpperCase(),
+      next: 'delivered' as OrderStatus,
+    },
+    delivered: {
+      headerBg: 'bg-neutral-600',
+      headerText: 'text-white',
+      icon: Check,
+      statusLabel: to('delivered'),
+      actionBg: '',
+      actionLabel: '',
+      next: undefined,
+    },
+    cancelled: {
+      headerBg: 'bg-red-500',
+      headerText: 'text-white',
+      icon: CircleDot,
+      statusLabel: to('cancelled'),
+      actionBg: '',
+      actionLabel: '',
+      next: undefined,
+    },
+  } as const;
 
   const items: OrderItem[] =
     order.items || (order as unknown as { order_items?: OrderItem[] }).order_items || [];
@@ -163,9 +168,10 @@ export default function KDSTicket({
 
   const formatElapsedHuman = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
-    if (mins < 1) return "À l'instant";
-    if (mins === 1) return '1 min';
-    return `${mins} min`;
+    const hours = Math.floor(mins / 60);
+    if (mins < 1) return tc('justNow');
+    if (hours >= 1) return tc('hoursShort', { count: hours });
+    return tc('minutesShort', { count: mins });
   };
 
   const minutes = Math.floor(elapsed / 60);
@@ -191,7 +197,7 @@ export default function KDSTicket({
       .eq('id', itemId);
 
     if (error) {
-      toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
+      toast({ title: tc('updateError'), variant: 'destructive' });
       return;
     }
 
@@ -201,7 +207,7 @@ export default function KDSTicket({
 
     if (allReady && items.length > 0) {
       await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
-      toast({ title: 'Tous les articles sont prêts !' });
+      toast({ title: t('allItemsReady') });
     }
 
     onUpdate?.();
@@ -225,7 +231,7 @@ export default function KDSTicket({
         .in('id', itemIds);
 
       if (error) {
-        toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
+        toast({ title: tc('updateError'), variant: 'destructive' });
         return;
       }
     }
@@ -233,11 +239,11 @@ export default function KDSTicket({
     const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
 
     if (error) {
-      toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
+      toast({ title: tc('updateError'), variant: 'destructive' });
       return;
     }
 
-    toast({ title: 'Commande marquée prête !' });
+    toast({ title: t('orderMarkedReady') });
     onUpdate?.();
   };
 
@@ -327,6 +333,13 @@ export default function KDSTicket({
             <span className="text-xs font-bold text-pink-400">{order.room_number}</span>
           </div>
         )}
+        {/* Server */}
+        {order.server && (
+          <div className="flex items-center gap-1.5">
+            <User className="w-3.5 h-3.5 text-lime-400" />
+            <span className="text-xs font-medium text-lime-400">{order.server.full_name}</span>
+          </div>
+        )}
         {/* Timer — pushed right */}
         <div className={cn('flex items-center gap-1 ml-auto', timerColor)}>
           {isLate ? <Flame className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
@@ -347,7 +360,11 @@ export default function KDSTicket({
       {/* ━━━ ITEMS LIST ━━━ */}
       <div className="flex-1 overflow-y-auto max-h-[280px] custom-scrollbar">
         {sortedCourses.map((course) => {
-          const courseConf = COURSE_LABELS[course] || { emoji: '🍽️', label: course, order: 99 };
+          const courseConf = COURSE_LABELS[course] || {
+            emoji: '\u{1F37D}\u{FE0F}',
+            label: course,
+            order: 99,
+          };
           const courseItems = groupedItems[course];
 
           return (
@@ -427,7 +444,7 @@ export default function KDSTicket({
         })}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-neutral-600 text-xs">Aucun article</div>
+          <div className="text-center py-6 text-neutral-600 text-xs">{tc('noItems')}</div>
         )}
       </div>
 
@@ -461,7 +478,7 @@ export default function KDSTicket({
             className="flex-1 py-2.5 text-[10px] font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/[0.06] hover:bg-emerald-400/[0.12] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            Tout prêt
+            {t('actionAllReady')}
           </button>
         )}
 

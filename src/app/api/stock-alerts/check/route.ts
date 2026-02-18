@@ -15,13 +15,13 @@ export async function POST() {
       return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
     }
 
-    const { data: tenant } = await supabase
+    const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select('id, subscription_plan, subscription_status, trial_ends_at')
       .eq('slug', tenantSlug)
       .single();
 
-    if (!tenant) {
+    if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 

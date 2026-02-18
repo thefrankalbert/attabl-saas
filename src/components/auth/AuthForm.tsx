@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -34,16 +34,6 @@ const GoogleIcon = () => (
   </svg>
 );
 
-// Microsoft Icon SVG
-const MicrosoftIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 23 23">
-    <path fill="#f35325" d="M1 1h10v10H1z" />
-    <path fill="#81bc06" d="M12 1h10v10H12z" />
-    <path fill="#05a6f0" d="M1 12h10v10H1z" />
-    <path fill="#ffba08" d="M12 12h10v10H12z" />
-  </svg>
-);
-
 interface AuthFormProps {
   mode: 'login' | 'signup';
 }
@@ -59,6 +49,7 @@ function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
   const [restaurantName, setRestaurantName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<'essentiel' | 'premium'>(urlPlan || 'essentiel');
 
   const supabase = createClient();
@@ -84,7 +75,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
       if (error) throw error;
     } catch (err) {
-      console.error(err);
+      logger.error('OAuth login failed', err);
       setError('Erreur de connexion. Veuillez réessayer.');
       setOauthLoading(null);
     }
@@ -175,7 +166,7 @@ function AuthForm({ mode }: AuthFormProps) {
         window.location.href = `${origin}/sites/${tenantSlug}/admin`;
       }
     } catch (err) {
-      console.error(err);
+      logger.error('Auth form submit failed', err);
       const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
       if (errorMessage.includes('Invalid login credentials')) {
         setError('Email ou mot de passe incorrect.');
@@ -277,16 +268,25 @@ function AuthForm({ mode }: AuthFormProps) {
               </Link>
             )}
           </div>
-          <Input
-            id="password"
-            type="password"
-            placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={isLogin ? undefined : 8}
-            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              minLength={isLogin ? undefined : 8}
+              className="h-12 pr-20 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+            </button>
+          </div>
         </div>
 
         {/* Plan Selection (Signup only) */}
@@ -391,21 +391,6 @@ function AuthForm({ mode }: AuthFormProps) {
             <GoogleIcon />
           )}
           <span className="ml-3">Continuer avec Google</span>
-        </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleOAuthLogin('azure')}
-          disabled={oauthLoading !== null}
-          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
-        >
-          {oauthLoading === 'azure' ? (
-            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-          ) : (
-            <MicrosoftIcon />
-          )}
-          <span className="ml-3">Continuer avec Outlook</span>
         </Button>
       </div>
 

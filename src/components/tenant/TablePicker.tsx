@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import type { Zone, Table } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,6 +22,7 @@ export default function TablePicker({
   zones,
   tables,
 }: TablePickerProps) {
+  const t = useTranslations('tenant');
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
 
@@ -55,7 +57,7 @@ export default function TablePicker({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white gap-0">
         <DialogHeader className="px-6 py-4 border-b">
-          <DialogTitle>Sélectionner votre table</DialogTitle>
+          <DialogTitle>{t('selectYourTable')}</DialogTitle>
         </DialogHeader>
 
         <div className="p-6">
@@ -63,7 +65,7 @@ export default function TablePicker({
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">
-                Zone
+                {t('zone')}
               </label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
                 {zones.map((zone) => (
@@ -81,7 +83,7 @@ export default function TablePicker({
                   </button>
                 ))}
                 {zones.length === 0 && (
-                  <p className="text-xs text-gray-400 text-center py-4">Aucune zone</p>
+                  <p className="text-xs text-gray-400 text-center py-4">{t('noZone')}</p>
                 )}
               </div>
             </div>
@@ -91,7 +93,7 @@ export default function TablePicker({
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">
-                Table
+                {t('table')}
               </label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
                 {availableTables.map((table) => (
@@ -109,10 +111,10 @@ export default function TablePicker({
                   </button>
                 ))}
                 {selectedZone && availableTables.length === 0 && (
-                  <p className="text-xs text-gray-400 text-center py-4">Aucune table</p>
+                  <p className="text-xs text-gray-400 text-center py-4">{t('noTable')}</p>
                 )}
                 {!selectedZone && (
-                  <p className="text-xs text-gray-400 text-center py-4">Sélectionnez une zone</p>
+                  <p className="text-xs text-gray-400 text-center py-4">{t('selectZone')}</p>
                 )}
               </div>
             </div>
@@ -124,7 +126,7 @@ export default function TablePicker({
               onClick={handleConfirm}
               disabled={!selectedTable}
             >
-              Confirmer la table {selectedTable?.table_number}
+              {t('confirmTable', { number: selectedTable?.table_number ?? '' })}
             </Button>
           </div>
         </div>

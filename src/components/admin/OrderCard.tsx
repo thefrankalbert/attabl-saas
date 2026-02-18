@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { Clock, Timer, ChevronRight, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
@@ -13,65 +14,6 @@ interface OrderCardProps {
   onClick?: () => void;
   compact?: boolean;
 }
-
-const statusConfig: Record<
-  OrderStatus,
-  {
-    color: string;
-    bg: string;
-    text: string;
-    label: string;
-    border: string;
-    nextStatus: OrderStatus | null;
-    nextLabel: string | null;
-  }
-> = {
-  pending: {
-    color: '#F59E0B',
-    bg: 'bg-amber-50',
-    text: 'text-amber-700',
-    label: 'En attente',
-    border: 'border-l-amber-500',
-    nextStatus: 'preparing',
-    nextLabel: 'Préparer',
-  },
-  preparing: {
-    color: '#3B82F6',
-    bg: 'bg-blue-50',
-    text: 'text-blue-700',
-    label: 'Préparation',
-    border: 'border-l-blue-500',
-    nextStatus: 'ready',
-    nextLabel: 'Prêt',
-  },
-  ready: {
-    color: '#22C55E',
-    bg: 'bg-emerald-50',
-    text: 'text-emerald-700',
-    label: 'Prêt',
-    border: 'border-l-emerald-500',
-    nextStatus: 'delivered',
-    nextLabel: 'Livrer',
-  },
-  delivered: {
-    color: '#6B7280',
-    bg: 'bg-slate-50',
-    text: 'text-slate-500',
-    label: 'Livré',
-    border: 'border-l-slate-500',
-    nextStatus: null,
-    nextLabel: null,
-  },
-  cancelled: {
-    color: '#EF4444',
-    bg: 'bg-red-50',
-    text: 'text-red-500',
-    label: 'Annulée',
-    border: 'border-l-red-500',
-    nextStatus: null,
-    nextLabel: null,
-  },
-};
 
 function useElapsedTime(createdAt: string, status: OrderStatus) {
   const [elapsed, setElapsed] = useState(0);
@@ -106,6 +48,70 @@ export default function OrderCard({
   onClick,
   compact = false,
 }: OrderCardProps) {
+  const t = useTranslations('orders');
+
+  const statusConfig = useMemo(
+    (): Record<
+      OrderStatus,
+      {
+        color: string;
+        bg: string;
+        text: string;
+        label: string;
+        border: string;
+        nextStatus: OrderStatus | null;
+        nextLabel: string | null;
+      }
+    > => ({
+      pending: {
+        color: '#F59E0B',
+        bg: 'bg-amber-50',
+        text: 'text-amber-700',
+        label: t('statusPending'),
+        border: 'border-l-amber-500',
+        nextStatus: 'preparing',
+        nextLabel: t('actionPrepare'),
+      },
+      preparing: {
+        color: '#3B82F6',
+        bg: 'bg-blue-50',
+        text: 'text-blue-700',
+        label: t('statusPreparing'),
+        border: 'border-l-blue-500',
+        nextStatus: 'ready',
+        nextLabel: t('actionReady'),
+      },
+      ready: {
+        color: '#22C55E',
+        bg: 'bg-emerald-50',
+        text: 'text-emerald-700',
+        label: t('statusReady'),
+        border: 'border-l-emerald-500',
+        nextStatus: 'delivered',
+        nextLabel: t('actionDeliver'),
+      },
+      delivered: {
+        color: '#6B7280',
+        bg: 'bg-slate-50',
+        text: 'text-slate-500',
+        label: t('statusDelivered'),
+        border: 'border-l-slate-500',
+        nextStatus: null,
+        nextLabel: null,
+      },
+      cancelled: {
+        color: '#EF4444',
+        bg: 'bg-red-50',
+        text: 'text-red-500',
+        label: t('statusCancelled'),
+        border: 'border-l-red-500',
+        nextStatus: null,
+        nextLabel: null,
+      },
+    }),
+    [t],
+  );
+
   const config = statusConfig[order.status];
   const elapsed = useElapsedTime(order.created_at, order.status);
   const isUrgent = elapsed >= 600 && ['pending', 'preparing'].includes(order.status);
@@ -128,7 +134,9 @@ export default function OrderCard({
               {order.table_number}
             </div>
             <div>
-              <p className="font-bold text-neutral-900">Table {order.table_number}</p>
+              <p className="font-bold text-neutral-900">
+                {t('tablePrefix')} {order.table_number}
+              </p>
               <div className="flex items-center gap-1 text-xs text-neutral-500">
                 <Clock className="w-3 h-3" />
                 {new Date(order.created_at).toLocaleTimeString([], {
@@ -175,7 +183,7 @@ export default function OrderCard({
             ))}
             {(order.items?.length || 0) > 3 && (
               <p className="text-xs text-neutral-400 italic">
-                +{order.items!.length - 3} autres...
+                {t('moreItems', { count: order.items!.length - 3 })}
               </p>
             )}
           </div>

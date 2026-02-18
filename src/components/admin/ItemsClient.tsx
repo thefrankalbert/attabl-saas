@@ -1,8 +1,11 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Star, Check, X, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useMenuItems } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,9 +38,7 @@ export default function ItemsClient({
   initialCategories,
   currency = 'XAF',
 }: ItemsClientProps) {
-  const [items, setItems] = useState<MenuItem[]>(initialItems);
   const [categories] = useState<Category[]>(initialCategories);
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [saving, setSaving] = useState(false);
@@ -56,36 +57,21 @@ export default function ItemsClient({
   const [isFeatured, setIsFeatured] = useState(false);
 
   const { toast } = useToast();
+  const t = useTranslations('items');
+  const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
 
-  const loadItems = useCallback(async () => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from('menu_items')
-        .select('*, categories(id, name)')
-        .eq('tenant_id', tenantId)
-        .order('name');
-      if (filterCategory !== 'all') query = query.eq('category_id', filterCategory);
-      if (filterAvailable !== 'all')
-        query = query.eq('is_available', filterAvailable === 'available');
-      const { data, error } = await query;
-      if (error) throw error;
-      const formatted: MenuItem[] = (data || []).map((item: Record<string, unknown>) => ({
-        ...item,
-        category: item.categories as Category,
-      })) as MenuItem[];
-      setItems(formatted);
-    } catch {
-      toast({ title: 'Erreur lors du chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [supabase, tenantId, filterCategory, filterAvailable, toast]);
+  // TanStack Query for menu items with category join
+  const { data: items = initialItems, isLoading: loading } = useMenuItems(tenantId, {
+    categoryId: filterCategory,
+    availableFilter: filterAvailable,
+    withCategory: true,
+  });
 
-  useEffect(() => {
-    loadItems();
-  }, [loadItems]);
+  const loadItems = () => {
+    queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
+  };
 
   const resetForm = () => {
     setName('');
@@ -142,7 +128,7 @@ export default function ItemsClient({
           .update(payload)
           .eq('id', editingItem.id);
         if (error) throw error;
-        toast({ title: 'Plat mis à jour' });
+        toast({ title: t('itemUpdated') });
       } else {
         // Vérifier les limites du plan avant la création
         const limitCheck = await checkCanAddMenuItemAction(tenantId);
@@ -152,26 +138,26 @@ export default function ItemsClient({
         }
         const { error } = await supabase.from('menu_items').insert([payload]);
         if (error) throw error;
-        toast({ title: 'Plat créé' });
+        toast({ title: t('itemCreated') });
       }
       setShowModal(false);
       loadItems();
     } catch {
-      toast({ title: 'Erreur lors de la sauvegarde', variant: 'destructive' });
+      toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = async (item: MenuItem) => {
-    if (!confirm(`Supprimer le plat "${item.name}" ?`)) return;
+    if (!confirm(t('deleteConfirm', { name: item.name }))) return;
     try {
       const { error } = await supabase.from('menu_items').delete().eq('id', item.id);
       if (error) throw error;
-      toast({ title: 'Plat supprimé' });
+      toast({ title: t('itemDeleted') });
       loadItems();
     } catch {
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -184,7 +170,7 @@ export default function ItemsClient({
       if (error) throw error;
       loadItems();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -195,10 +181,10 @@ export default function ItemsClient({
         .update({ is_featured: !item.is_featured })
         .eq('id', item.id);
       if (error) throw error;
-      toast({ title: item.is_featured ? 'Retiré de la une' : 'Mis à la une' });
+      toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -207,11 +193,11 @@ export default function ItemsClient({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">Plats & Articles</h1>
-          <p className="text-xs text-neutral-500 mt-1">Gérez votre carte complète</p>
+          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+          <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
         </div>
-        <Button onClick={openNewModal} size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> Nouveau plat
+        <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
+          <Plus className="w-4 h-4" /> {t('newItem')}
         </Button>
       </div>
 
@@ -219,10 +205,10 @@ export default function ItemsClient({
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-neutral-100">
         <Select value={filterCategory} onValueChange={setFilterCategory}>
           <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs">
-            <SelectValue placeholder="Toutes les catégories" />
+            <SelectValue placeholder={t('allCategories')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les catégories</SelectItem>
+            <SelectItem value="all">{t('allCategories')}</SelectItem>
             {categories.map((c) => (
               <SelectItem key={c.id} value={c.id}>
                 {c.name}
@@ -232,12 +218,12 @@ export default function ItemsClient({
         </Select>
         <Select value={filterAvailable} onValueChange={setFilterAvailable}>
           <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs">
-            <SelectValue placeholder="Tous" />
+            <SelectValue placeholder={t('all')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous</SelectItem>
-            <SelectItem value="available">En stock</SelectItem>
-            <SelectItem value="unavailable">Épuisé</SelectItem>
+            <SelectItem value="all">{t('all')}</SelectItem>
+            <SelectItem value="available">{t('inStock')}</SelectItem>
+            <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-neutral-400 font-medium">
@@ -277,7 +263,7 @@ export default function ItemsClient({
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-neutral-900 text-sm truncate">{item.name}</p>
                 <p className="text-xs text-neutral-400 mt-0.5">
-                  {item.category?.name || 'Sans catégorie'}
+                  {item.category?.name || t('uncategorized')}
                 </p>
               </div>
               <div className="text-right">
@@ -297,12 +283,12 @@ export default function ItemsClient({
                 {item.is_available ? (
                   <>
                     <Check className="w-3 h-3 inline mr-1" />
-                    Stock
+                    {t('stock')}
                   </>
                 ) : (
                   <>
                     <X className="w-3 h-3 inline mr-1" />
-                    Épuisé
+                    {t('exhausted')}
                   </>
                 )}
               </button>
@@ -324,7 +310,7 @@ export default function ItemsClient({
                   onClick={() => openEditModal(item)}
                   className="text-xs h-8"
                 >
-                  Modifier
+                  {t('edit')}
                 </Button>
                 <Button
                   variant="outline"
@@ -332,7 +318,7 @@ export default function ItemsClient({
                   onClick={() => handleDelete(item)}
                   className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
-                  Supprimer
+                  {t('delete')}
                 </Button>
               </div>
             </div>
@@ -343,10 +329,10 @@ export default function ItemsClient({
           <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <ImageIcon className="w-8 h-8 text-neutral-400" />
           </div>
-          <h3 className="text-lg font-bold text-neutral-900">Aucun plat</h3>
-          <p className="text-sm text-neutral-500 mt-2">Ajoutez des plats à votre carte</p>
-          <Button onClick={openNewModal} className="mt-6">
-            Ajouter un plat
+          <h3 className="text-lg font-bold text-neutral-900">{t('noItems')}</h3>
+          <p className="text-sm text-neutral-500 mt-2">{t('noItemsDesc')}</p>
+          <Button onClick={openNewModal} variant="lime" className="mt-6">
+            {t('addItem')}
           </Button>
         </div>
       )}
@@ -355,52 +341,52 @@ export default function ItemsClient({
       <AdminModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingItem ? 'Modifier le plat' : 'Nouveau plat'}
+        title={editingItem ? t('editItemTitle') : t('newItemTitle')}
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-4 pt-2 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Nom (FR) *</Label>
+              <Label>{t('nameFr')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Poulet Yassa"
+                placeholder={t('nameFrPlaceholder')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label>Nom (EN)</Label>
+              <Label>{t('nameEn')}</Label>
               <Input
                 value={nameEn}
                 onChange={(e) => setNameEn(e.target.value)}
-                placeholder="Ex: Yassa Chicken"
+                placeholder={t('nameEnPlaceholder')}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Description (FR)</Label>
+              <Label>{t('descriptionFr')}</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description du plat..."
+                placeholder={t('descriptionFrPlaceholder')}
                 rows={3}
               />
             </div>
             <div className="space-y-2">
-              <Label>Description (EN)</Label>
+              <Label>{t('descriptionEn')}</Label>
               <Textarea
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
-                placeholder="Dish description..."
+                placeholder={t('descriptionEnPlaceholder')}
                 rows={3}
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Prix *</Label>
+              <Label>{t('price')}</Label>
               <Input
                 type="number"
                 value={price}
@@ -410,10 +396,10 @@ export default function ItemsClient({
               />
             </div>
             <div className="space-y-2">
-              <Label>Catégorie *</Label>
+              <Label>{t('category')}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Sélectionner" />
+                  <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
@@ -426,7 +412,7 @@ export default function ItemsClient({
             </div>
           </div>
           <div className="space-y-2">
-            <Label>URL Image</Label>
+            <Label>{t('imageUrl')}</Label>
             <Input
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
@@ -436,20 +422,20 @@ export default function ItemsClient({
           <div className="flex items-center gap-6 pt-2">
             <div className="flex items-center gap-2">
               <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
-              <Label className="text-sm">Disponible</Label>
+              <Label className="text-sm">{t('available')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-              <Label className="text-sm">À la une</Label>
+              <Label className="text-sm">{t('featured')}</Label>
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => setShowModal(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
-            <Button type="submit" disabled={saving}>
+            <Button type="submit" disabled={saving} variant="lime">
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingItem ? 'Mettre à jour' : 'Créer'}
+              {editingItem ? t('update') : t('create')}
             </Button>
           </div>
         </form>

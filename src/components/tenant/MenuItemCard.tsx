@@ -3,6 +3,7 @@
 import { Plus, Minus, Leaf, Flame, Utensils, ChevronDown, Wine } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useState, useEffect, useRef } from 'react';
+import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
@@ -17,12 +18,12 @@ interface MenuItemCardProps {
   accentColor?: string;
 }
 
-// Simple price formatter
-const formatPrice = (price: number, currency: string = 'XOF') => {
+// Simple price formatter - locale injected at call site
+const formatPrice = (price: number, currency: string = 'XOF', locale: string = 'fr-FR') => {
   if (currency === 'XOF') {
-    return `${price.toLocaleString('fr-FR')} F`;
+    return `${price.toLocaleString(locale)} F`;
   }
-  return new Intl.NumberFormat('fr-FR', {
+  return new Intl.NumberFormat(locale, {
     style: 'currency',
     currency: currency,
   }).format(price);
@@ -44,6 +45,8 @@ export default function MenuItemCard({
   accentColor: _accentColor = 'text-amber-600',
 }: MenuItemCardProps) {
   const { addToCart, updateQuantity, items } = useCart();
+  const locale = useLocale();
+  const tt = useTranslations('tenant');
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -176,11 +179,7 @@ export default function MenuItemCard({
 
         <div className="flex items-center gap-2 mt-auto">
           <span className="text-[16px] font-bold" style={{ color: 'var(--tenant-primary)' }}>
-            {currentPrice > 0
-              ? formatPrice(currentPrice, currency)
-              : language === 'en'
-                ? 'Included'
-                : 'Inclus'}
+            {currentPrice > 0 ? formatPrice(currentPrice, currency, locale) : tt('included')}
           </span>
         </div>
 
@@ -218,7 +217,7 @@ export default function MenuItemCard({
                         : undefined
                     }
                   >
-                    {getVariantName(variant)} - {formatPrice(variant.price, currency)}
+                    {getVariantName(variant)} - {formatPrice(variant.price, currency, locale)}
                   </button>
                 ))}
               </div>
@@ -295,7 +294,7 @@ export default function MenuItemCard({
       {isUnavailable && (
         <div className="absolute inset-0 bg-white/40 flex items-center justify-center pointer-events-none">
           <span className="bg-gray-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
-            {language === 'en' ? 'Unavailable' : 'Indisponible'}
+            {tt('unavailable')}
           </span>
         </div>
       )}

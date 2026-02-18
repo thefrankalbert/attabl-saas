@@ -3,13 +3,15 @@
 import { useEffect, useState, useCallback } from 'react';
 import { BookOpenCheck, Search, Plus, Trash2, Check } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useIngredients } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
-import type { Ingredient, Recipe, RecipeLineInput } from '@/types/inventory.types';
+import type { Recipe, RecipeLineInput } from '@/types/inventory.types';
 import { INGREDIENT_UNITS } from '@/types/inventory.types';
 
 interface RecipesClientProps {
@@ -32,9 +34,6 @@ interface RecipeLine {
 }
 
 export default function RecipesClient({ tenantId }: RecipesClientProps) {
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRecipe, setFilterRecipe] = useState<'all' | 'with' | 'without'>('all');
 
@@ -48,40 +47,45 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const [itemsWithRecipes, setItemsWithRecipes] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const t = useTranslations('inventory');
+  const tc = useTranslations('common');
   const supabase = createClient();
   const inventoryService = createInventoryService(supabase);
 
-  const loadData = useCallback(async () => {
-    try {
-      const [itemsRes, ingredientsData, recipesRes] = await Promise.all([
-        supabase
+  // TanStack Query for ingredients
+  const { data: ingredients = [] } = useIngredients(tenantId);
+
+  // TanStack Query for menu items and recipes
+  const { data: recipeData, isLoading: loading } = useQuery({
+    queryKey: ['recipes-data', tenantId],
+    queryFn: async () => {
+      const localSupabase = createClient();
+      const [itemsRes, recipesRes] = await Promise.all([
+        localSupabase
           .from('menu_items')
           .select('id, name, category_id, is_available')
           .eq('tenant_id', tenantId)
           .order('name'),
-        inventoryService.getIngredients(tenantId),
-        supabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
+        localSupabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
       ]);
 
-      if (itemsRes.data) setMenuItems(itemsRes.data as MenuItem[]);
-      setIngredients(ingredientsData);
+      const menuItemsList = (itemsRes.data as MenuItem[]) || [];
+      const recipeIds = new Set(
+        (recipesRes.data || []).map((r: { menu_item_id: string }) => r.menu_item_id),
+      );
+      return { menuItems: menuItemsList, recipeIds };
+    },
+    enabled: !!tenantId,
+  });
 
-      // Build set of items that have recipes
-      if (recipesRes.data) {
-        const ids = new Set(recipesRes.data.map((r: { menu_item_id: string }) => r.menu_item_id));
-        setItemsWithRecipes(ids);
-      }
-    } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, supabase, inventoryService, toast]);
+  const menuItems = recipeData?.menuItems ?? [];
 
+  // Sync recipeIds from query into local Set state
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    if (recipeData?.recipeIds) {
+      setItemsWithRecipes(recipeData.recipeIds);
+    }
+  }, [recipeData?.recipeIds]);
 
   // Load recipe for selected item
   const loadRecipe = useCallback(
@@ -91,18 +95,19 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         const recipes = await inventoryService.getRecipesForItem(menuItemId, tenantId);
         const lines: RecipeLine[] = recipes.map((r: Recipe) => ({
           ingredient_id: r.ingredient_id,
-          ingredient_name: r.ingredient?.name || 'Inconnu',
+          ingredient_name: r.ingredient?.name || tc('unknown'),
           unit: r.ingredient?.unit || '',
           quantity_needed: r.quantity_needed,
           notes: r.notes || '',
         }));
         setRecipeLines(lines);
       } catch {
-        toast({ title: 'Erreur chargement recette', variant: 'destructive' });
+        toast({ title: t('loadingRecipeError'), variant: 'destructive' });
       } finally {
         setLoadingRecipe(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [tenantId, inventoryService, toast],
   );
 
@@ -118,7 +123,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
   const addLine = () => {
     if (ingredients.length === 0) {
-      toast({ title: "Ajoutez d'abord des produits dans l'inventaire", variant: 'destructive' });
+      toast({ title: t('addProductsFirst'), variant: 'destructive' });
       return;
     }
     const firstIngredient = ingredients[0];
@@ -169,7 +174,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         }));
 
       await inventoryService.setRecipe(tenantId, selectedItemId, lines);
-      toast({ title: 'Fiche technique sauvegardée' });
+      toast({ title: t('recipeSaved') });
 
       // Update itemsWithRecipes
       setItemsWithRecipes((prev) => {
@@ -182,7 +187,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         return next;
       });
     } catch {
-      toast({ title: 'Erreur sauvegarde', variant: 'destructive' });
+      toast({ title: t('recipeSaveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -199,7 +204,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const selectedItem = menuItems.find((m) => m.id === selectedItemId);
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>;
   }
 
   return (
@@ -208,10 +213,10 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       <div>
         <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
           <BookOpenCheck className="w-6 h-6" />
-          {t('recipes_tech')}
+          {t('recipesTech')}
         </h1>
         <p className="text-sm text-neutral-500 mt-1">
-          {itemsWithRecipes.size} / {menuItems.length} plats avec fiche technique
+          {itemsWithRecipes.size} / {menuItems.length} {t('withRecipe')}
         </p>
       </div>
 
@@ -220,7 +225,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher un plat..."
+            placeholder={t('searchDish')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -235,7 +240,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               onClick={() => setFilterRecipe(f)}
               className="rounded-full"
             >
-              {f === 'all' ? 'Tous' : f === 'with' ? t('has_recipe') : t('no_recipe')}
+              {f === 'all' ? tc('all') : f === 'with' ? t('hasRecipe') : t('noRecipe')}
             </Button>
           ))}
         </div>
@@ -244,7 +249,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
       {/* Layout: Items list + Recipe editor */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Items List */}
-        <div className="flex-1 bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <div className="flex-1 bg-white rounded-xl border border-neutral-100 overflow-hidden">
           <div className="max-h-[600px] overflow-y-auto divide-y divide-neutral-100">
             {filteredItems.map((item) => {
               const hasRecipe = itemsWithRecipes.has(item.id);
@@ -277,29 +282,29 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                       hasRecipe ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-500',
                     )}
                   >
-                    {hasRecipe ? t('has_recipe') : t('no_recipe')}
+                    {hasRecipe ? t('hasRecipe') : t('noRecipe')}
                   </span>
                 </button>
               );
             })}
             {filteredItems.length === 0 && (
-              <div className="px-4 py-12 text-center text-neutral-400">Aucun plat trouvé</div>
+              <div className="px-4 py-12 text-center text-neutral-400">{t('noDishFound')}</div>
             )}
           </div>
         </div>
 
         {/* Recipe Editor Panel */}
-        <div className="lg:w-[450px] bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <div className="lg:w-[450px] bg-white rounded-xl border border-neutral-100 overflow-hidden">
           {selectedItemId && selectedItem ? (
             <div className="flex flex-col h-full">
               <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50">
                 <h3 className="font-bold text-sm text-neutral-900">
-                  {t('recipe_for')} {selectedItem.name}
+                  {t('recipeFor')} {selectedItem.name}
                 </h3>
               </div>
 
               {loadingRecipe ? (
-                <div className="p-8 text-center text-neutral-400">{t('loading')}</div>
+                <div className="p-8 text-center text-neutral-400">{tc('loading')}</div>
               ) : (
                 <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[400px]">
                   {recipeLines.map((line, idx) => (
@@ -347,7 +352,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
                   {recipeLines.length === 0 && (
                     <p className="text-sm text-neutral-400 text-center py-4">
-                      Aucun ingrédient défini
+                      {t('noIngredientDefined')}
                     </p>
                   )}
 
@@ -359,24 +364,29 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     disabled={ingredients.length === 0}
                   >
                     <Plus className="w-4 h-4" />
-                    Ajouter un ingrédient
+                    {t('addIngredient')}
                   </Button>
                 </div>
               )}
 
               {/* Save button */}
               <div className="px-4 py-3 border-t border-neutral-100 bg-neutral-50">
-                <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
+                <Button
+                  onClick={handleSave}
+                  disabled={saving}
+                  variant="lime"
+                  className="w-full gap-2"
+                >
                   <Check className="w-4 h-4" />
-                  {saving ? 'Sauvegarde...' : t('save')}
+                  {saving ? t('saving') : tc('save')}
                 </Button>
               </div>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center p-12 text-neutral-400">
               <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm font-medium">Sélectionnez un plat</p>
-              <p className="text-xs mt-1">pour définir sa fiche technique</p>
+              <p className="text-sm font-medium">{t('selectDish')}</p>
+              <p className="text-xs mt-1">{t('defineRecipe')}</p>
             </div>
           )}
         </div>

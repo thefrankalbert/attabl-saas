@@ -1,18 +1,21 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
-import { Package, Plus, Search, AlertTriangle, ArrowUpDown } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
+import { useIngredients, useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { useLanguage } from '@/contexts/LanguageContext';
+import AdminModal from '@/components/admin/AdminModal';
+import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
-import { createSupplierService } from '@/services/supplier.service';
 import { formatCurrency } from '@/lib/utils/currency';
+import type { ColumnDef } from '@tanstack/react-table';
 import type { CurrencyCode } from '@/types/admin.types';
-import type { Supplier } from '@/types/supplier.types';
 import type {
   Ingredient,
   IngredientUnit,
@@ -30,8 +33,6 @@ interface InventoryClientProps {
 type ModalMode = 'add' | 'edit' | 'adjust' | null;
 
 export default function InventoryClient({ tenantId, currency }: InventoryClientProps) {
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
 
@@ -52,40 +53,19 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const [adjustType, setAdjustType] = useState<MovementType>('manual_add');
   const [adjustNotes, setAdjustNotes] = useState('');
   const [adjustSupplierId, setAdjustSupplierId] = useState('');
-  const [activeSuppliers, setActiveSuppliers] = useState<Supplier[]>([]);
 
   const { toast } = useToast();
-  const { t } = useLanguage();
+  const t = useTranslations('inventory');
+  const tc = useTranslations('common');
   const supabase = createClient();
+  const queryClient = useQueryClient();
   const inventoryService = createInventoryService(supabase);
-  const supplierService = createSupplierService(supabase);
 
-  const loadIngredients = useCallback(async () => {
-    try {
-      const data = await inventoryService.getIngredients(tenantId);
-      setIngredients(data);
-    } catch {
-      toast({ title: 'Erreur de chargement', variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadSuppliers = useCallback(async () => {
-    try {
-      const data = await supplierService.getActiveSuppliers(tenantId);
-      setActiveSuppliers(data);
-    } catch {
-      // Silent fail — suppliers are optional
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  // TanStack Query for ingredients and suppliers
+  const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
+  const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
   useEffect(() => {
-    loadIngredients();
-    loadSuppliers();
-
     // Realtime updates on ingredients
     const channel = supabase
       .channel(`inventory-${tenantId}`)
@@ -98,16 +78,17 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           filter: `tenant_id=eq.${tenantId}`,
         },
         () => {
-          loadIngredients();
+          queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
         },
       )
       .subscribe();
 
     return () => {
+      channel.unsubscribe();
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, loadIngredients, loadSuppliers]);
+  }, [tenantId, queryClient]);
 
   // Filtered list
   const filtered = ingredients.filter((ing) => {
@@ -118,11 +99,115 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   });
 
   const getStockBadge = (ing: Ingredient) => {
-    if (ing.current_stock <= 0) return { label: t('out_of_stock'), bg: 'bg-red-100 text-red-700' };
+    if (ing.current_stock <= 0) return { label: t('outOfStock'), bg: 'bg-red-100 text-red-700' };
     if (ing.current_stock <= ing.min_stock_alert)
-      return { label: t('low_stock'), bg: 'bg-amber-100 text-amber-700' };
-    return { label: t('stock_ok'), bg: 'bg-green-100 text-green-700' };
+      return { label: t('lowStock'), bg: 'bg-amber-100 text-amber-700' };
+    return { label: t('stockOk'), bg: 'bg-green-100 text-green-700' };
   };
+
+  // TanStack Table column definitions
+  const columns = useMemo<ColumnDef<Ingredient, unknown>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: ({ column }) => <SortableHeader column={column}>{tc('product')}</SortableHeader>,
+        cell: ({ row }) => (
+          <div>
+            <p className="font-medium text-neutral-900">{row.original.name}</p>
+            {row.original.category && (
+              <p className="text-xs text-neutral-400">{row.original.category}</p>
+            )}
+          </div>
+        ),
+      },
+      {
+        accessorKey: 'unit',
+        header: () => tc('unit'),
+        cell: ({ row }) => INGREDIENT_UNITS[row.original.unit]?.labelShort || row.original.unit,
+        enableSorting: false,
+      },
+      {
+        accessorKey: 'current_stock',
+        header: ({ column }) => (
+          <SortableHeader column={column} className="ml-auto">
+            {t('currentStock')}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => {
+          const ing = row.original;
+          return (
+            <span className="font-mono font-bold text-neutral-900">
+              {ing.current_stock.toFixed(ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2)}
+            </span>
+          );
+        },
+        meta: { className: 'text-right' },
+      },
+      {
+        accessorKey: 'min_stock_alert',
+        header: () => t('minAlert'),
+        cell: ({ row }) => <span className="text-neutral-500">{row.original.min_stock_alert}</span>,
+        enableSorting: false,
+        meta: { className: 'text-right' },
+      },
+      {
+        accessorKey: 'cost_per_unit',
+        header: ({ column }) => (
+          <SortableHeader column={column} className="ml-auto">
+            {t('costPerUnit')}
+          </SortableHeader>
+        ),
+        cell: ({ row }) => (
+          <span className="text-neutral-500">
+            {formatCurrency(row.original.cost_per_unit, currency as CurrencyCode)}
+          </span>
+        ),
+        meta: { className: 'text-right' },
+      },
+      {
+        id: 'status',
+        header: () => <span className="w-full text-center block">{tc('status')}</span>,
+        cell: ({ row }) => {
+          const badge = getStockBadge(row.original);
+          return (
+            <div className="text-center">
+              <span className={cn('px-2 py-1 rounded-full text-xs font-bold', badge.bg)}>
+                {badge.label}
+              </span>
+            </div>
+          );
+        },
+        enableSorting: false,
+      },
+      {
+        id: 'actions',
+        header: () => <span className="w-full text-right block">{tc('actions')}</span>,
+        cell: ({ row }) => (
+          <div className="flex justify-end gap-1">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => openAdjust(row.original)}
+              className="text-xs"
+            >
+              +/-
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openEdit(row.original)}
+              className="text-xs"
+            >
+              {tc('edit')}
+            </Button>
+          </div>
+        ),
+        enableSorting: false,
+      },
+    ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [currency, t, tc],
+  );
 
   const resetForm = () => {
     setFormName('');
@@ -163,7 +248,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
   const handleSave = async () => {
     if (!formName.trim()) {
-      toast({ title: 'Nom requis', variant: 'destructive' });
+      toast({ title: t('nameRequired'), variant: 'destructive' });
       return;
     }
 
@@ -178,7 +263,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           category: formCategory.trim() || undefined,
         };
         await inventoryService.createIngredient(tenantId, input);
-        toast({ title: 'Produit ajouté' });
+        toast({ title: t('productAdded') });
       } else if (modalMode === 'edit' && selectedIngredient) {
         await inventoryService.updateIngredient(selectedIngredient.id, tenantId, {
           name: formName.trim(),
@@ -187,13 +272,13 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           cost_per_unit: parseFloat(formCostPerUnit) || 0,
           category: formCategory.trim() || null,
         });
-        toast({ title: 'Produit modifié' });
+        toast({ title: t('productUpdated') });
       }
       setModalMode(null);
       resetForm();
-      loadIngredients();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -208,12 +293,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         notes: adjustNotes.trim() || undefined,
         supplier_id: adjustSupplierId || undefined,
       });
-      toast({ title: 'Stock ajusté' });
+      toast({ title: t('stockAdjusted') });
       setModalMode(null);
       resetForm();
-      loadIngredients();
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
     } catch {
-      toast({ title: 'Erreur', variant: 'destructive' });
+      toast({ title: tc('error'), variant: 'destructive' });
     }
   };
 
@@ -223,7 +308,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const outCount = ingredients.filter((i) => i.current_stock <= 0).length;
 
   if (loading) {
-    return <div className="p-8 text-center text-neutral-500">{t('loading')}</div>;
+    return <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>;
   }
 
   return (
@@ -236,12 +321,12 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             {t('inventory')}
           </h1>
           <p className="text-sm text-neutral-500 mt-1">
-            {ingredients.length} {t('ingredients_count')}
+            {ingredients.length} {t('ingredientsCount')}
           </p>
         </div>
-        <Button onClick={openAdd} className="gap-2">
+        <Button onClick={openAdd} variant="lime" className="gap-2">
           <Plus className="w-4 h-4" />
-          {t('add_ingredient')}
+          {t('addIngredient')}
         </Button>
       </div>
 
@@ -260,7 +345,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <div className="flex items-center gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg">
               <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span className="text-sm font-medium text-amber-700">
-                {lowCount} {t('low_stock')}
+                {lowCount} {t('lowStock')}
               </span>
             </div>
           )}
@@ -272,7 +357,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
-            placeholder="Rechercher un produit..."
+            placeholder={t('searchProduct')}
             className="pl-9"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -287,215 +372,136 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               onClick={() => setFilterStatus(status)}
               className="rounded-full"
             >
-              {status === 'all' ? 'Tous' : status === 'low' ? t('low_stock') : t('rupture')}
+              {status === 'all' ? tc('all') : status === 'low' ? t('lowStock') : t('rupture')}
             </Button>
           ))}
         </div>
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 border-b border-neutral-200">
-              <tr>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">Produit</th>
-                <th className="px-4 py-3 text-left font-semibold text-neutral-600">Unité</th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  <span className="inline-flex items-center gap-1">
-                    {t('current_stock')}
-                    <ArrowUpDown className="w-3 h-3" />
-                  </span>
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('min_alert')}
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('cost_per_unit')}
-                </th>
-                <th className="px-4 py-3 text-center font-semibold text-neutral-600">
-                  {t('status')}
-                </th>
-                <th className="px-4 py-3 text-right font-semibold text-neutral-600">
-                  {t('actions')}
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-100">
-              {filtered.map((ing) => {
-                const badge = getStockBadge(ing);
-                return (
-                  <tr key={ing.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="font-medium text-neutral-900">{ing.name}</p>
-                        {ing.category && <p className="text-xs text-neutral-400">{ing.category}</p>}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-neutral-600">
-                      {INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit}
-                    </td>
-                    <td className="px-4 py-3 text-right font-mono font-bold text-neutral-900">
-                      {ing.current_stock.toFixed(
-                        ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2,
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-right text-neutral-500">{ing.min_stock_alert}</td>
-                    <td className="px-4 py-3 text-right text-neutral-500">
-                      {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={cn('px-2 py-1 rounded-full text-xs font-bold', badge.bg)}>
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => openAdjust(ing)}
-                          className="text-xs"
-                        >
-                          +/-
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEdit(ing)}
-                          className="text-xs"
-                        >
-                          {t('edit')}
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-4 py-12 text-center text-neutral-400">
-                    Aucun produit trouvé
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <DataTable columns={columns} data={filtered} emptyMessage={t('noProductFound')} />
 
       {/* Modal — Add / Edit */}
-      {(modalMode === 'add' || modalMode === 'edit') && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">
-              {modalMode === 'add' ? t('add_ingredient') : t('edit_ingredient')}
-            </h3>
+      <AdminModal
+        isOpen={modalMode === 'add' || modalMode === 'edit'}
+        onClose={() => {
+          setModalMode(null);
+          resetForm();
+        }}
+        title={modalMode === 'add' ? t('addIngredient') : t('editIngredient')}
+      >
+        <div className="space-y-3">
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">{tc('name')}</label>
+            <Input
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              placeholder="Ex: Poulet, Riz, Huile..."
+              autoFocus
+            />
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Nom</label>
-                <Input
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Ex: Poulet, Riz, Huile..."
-                  autoFocus
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">Unité</label>
-                  <select
-                    value={formUnit}
-                    onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
-                  >
-                    {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
-                      <option key={u} value={u}>
-                        {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                {modalMode === 'add' && (
-                  <div>
-                    <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                      {t('current_stock')}
-                    </label>
-                    <Input
-                      type="number"
-                      step="0.01"
-                      value={formStock}
-                      onChange={(e) => setFormStock(e.target.value)}
-                      placeholder="0"
-                    />
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('min_alert')}
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formMinAlert}
-                    onChange={(e) => setFormMinAlert(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('cost_per_unit')}
-                  </label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formCostPerUnit}
-                    onChange={(e) => setFormCostPerUnit(e.target.value)}
-                    placeholder="0"
-                  />
-                </div>
-              </div>
-
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {tc('unit')}
+              </label>
+              <select
+                value={formUnit}
+                onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
+                className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
+              >
+                {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
+                  <option key={u} value={u}>
+                    {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {modalMode === 'add' && (
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Catégorie (optionnel)
+                  {t('currentStock')}
                 </label>
                 <Input
-                  value={formCategory}
-                  onChange={(e) => setFormCategory(e.target.value)}
-                  placeholder="Ex: Viandes, Légumes..."
+                  type="number"
+                  step="0.01"
+                  value={formStock}
+                  onChange={(e) => setFormStock(e.target.value)}
+                  placeholder="0"
                 />
               </div>
-            </div>
+            )}
+          </div>
 
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setModalMode(null);
-                  resetForm();
-                }}
-              >
-                {t('cancel')}
-              </Button>
-              <Button onClick={handleSave}>{t('save')}</Button>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('minAlert')}
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formMinAlert}
+                onChange={(e) => setFormMinAlert(e.target.value)}
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('costPerUnit')}
+              </label>
+              <Input
+                type="number"
+                step="0.01"
+                value={formCostPerUnit}
+                onChange={(e) => setFormCostPerUnit(e.target.value)}
+                placeholder="0"
+              />
             </div>
           </div>
+
+          <div>
+            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('categoryOptional')}
+            </label>
+            <Input
+              value={formCategory}
+              onChange={(e) => setFormCategory(e.target.value)}
+              placeholder="Ex: Viandes, Legumes..."
+            />
+          </div>
         </div>
-      )}
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setModalMode(null);
+              resetForm();
+            }}
+          >
+            {tc('cancel')}
+          </Button>
+          <Button onClick={handleSave} variant="lime">
+            {tc('save')}
+          </Button>
+        </div>
+      </AdminModal>
 
       {/* Modal — Adjust Stock */}
-      {modalMode === 'adjust' && selectedIngredient && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-1">{t('adjust_stock')}</h3>
+      <AdminModal
+        isOpen={modalMode === 'adjust' && !!selectedIngredient}
+        onClose={() => {
+          setModalMode(null);
+          resetForm();
+        }}
+        title={t('adjustStock')}
+      >
+        {selectedIngredient && (
+          <>
             <p className="text-sm text-neutral-500 mb-4">
-              {selectedIngredient.name} — Stock actuel :{' '}
+              {selectedIngredient.name} — {t('currentStock')} :{' '}
               <span className="font-bold">
                 {selectedIngredient.current_stock}{' '}
                 {INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort}
@@ -505,7 +511,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Type de mouvement
+                  {t('movementType')}
                 </label>
                 <select
                   value={adjustType}
@@ -523,7 +529,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               </div>
 
               <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">Quantité</label>
+                <label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {tc('quantity')}
+                </label>
                 <Input
                   type="number"
                   step="0.01"
@@ -537,14 +545,14 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
                 <div>
                   <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    Fournisseur (optionnel)
+                    {t('supplierOptional')}
                   </label>
                   <select
                     value={adjustSupplierId}
                     onChange={(e) => setAdjustSupplierId(e.target.value)}
                     className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">— Aucun —</option>
+                    <option value="">— {tc('none')} —</option>
                     {activeSuppliers.map((s) => (
                       <option key={s.id} value={s.id}>
                         {s.name}
@@ -556,7 +564,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  Notes (optionnel)
+                  {t('notesOptional')}
                 </label>
                 <Input
                   value={adjustNotes}
@@ -574,15 +582,15 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   resetForm();
                 }}
               >
-                {t('cancel')}
+                {tc('cancel')}
               </Button>
-              <Button onClick={handleAdjust} disabled={!adjustQty}>
-                {t('confirm')}
+              <Button onClick={handleAdjust} disabled={!adjustQty} variant="lime">
+                {tc('confirm')}
               </Button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </AdminModal>
     </div>
   );
 }
