@@ -44,7 +44,21 @@ export async function middleware(request: NextRequest) {
   }
 
   // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
-  if (subdomain && subdomain !== 'www') {
+  // Sauf pour les routes auth/marketing qui vivent sur le domaine principal
+  const MAIN_DOMAIN_PATHS = [
+    '/login',
+    '/signup',
+    '/auth',
+    '/onboarding',
+    '/checkout',
+    '/pricing',
+    '/forgot-password',
+  ];
+  const isMainDomainPath = MAIN_DOMAIN_PATHS.some(
+    (p) => pathname === p || pathname.startsWith(p + '/'),
+  );
+
+  if (subdomain && subdomain !== 'www' && !isMainDomainPath) {
     const url = request.nextUrl.clone();
 
     // Réécrire vers /sites/[subdomain]/[path]

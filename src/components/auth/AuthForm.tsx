@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -31,16 +31,6 @@ const GoogleIcon = () => (
       fill="#EA4335"
       d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
     />
-  </svg>
-);
-
-// Microsoft Icon SVG
-const MicrosoftIcon = () => (
-  <svg className="h-5 w-5" viewBox="0 0 23 23">
-    <path fill="#f35325" d="M1 1h10v10H1z" />
-    <path fill="#81bc06" d="M12 1h10v10H12z" />
-    <path fill="#05a6f0" d="M1 12h10v10H1z" />
-    <path fill="#ffba08" d="M12 12h10v10H12z" />
   </svg>
 );
 
@@ -292,9 +282,9 @@ function AuthForm({ mode }: AuthFormProps) {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors text-sm"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
             >
-              {showPassword ? 'Masquer' : 'Afficher'}
+              {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
           </div>
         </div>
@@ -402,32 +392,17 @@ function AuthForm({ mode }: AuthFormProps) {
           )}
           <span className="ml-3">Continuer avec Google</span>
         </Button>
-
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => handleOAuthLogin('azure')}
-          disabled={oauthLoading !== null}
-          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
-        >
-          {oauthLoading === 'azure' ? (
-            <Loader2 className="mr-3 h-5 w-5 animate-spin" />
-          ) : (
-            <MicrosoftIcon />
-          )}
-          <span className="ml-3">Continuer avec Outlook</span>
-        </Button>
       </div>
 
       {/* Footer Link */}
       <p className="mt-8 text-center text-sm text-neutral-500">
         {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
-        <a
+        <Link
           href={isLogin ? '/signup' : '/login'}
           className="font-semibold text-neutral-900 hover:underline"
         >
           {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
-        </a>
+        </Link>
       </p>
     </motion.div>
   );
