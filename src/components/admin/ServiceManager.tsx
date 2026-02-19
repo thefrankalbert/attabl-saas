@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function ServiceManager({ tenantId }: Props) {
+  const t = useTranslations('service');
   const [zones, setZones] = useState<(Zone & { tables: Table[] })[]>([]);
   const [servers, setServers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -84,10 +86,13 @@ export default function ServiceManager({ tenantId }: Props) {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl font-bold text-white">Service</h1>
+        <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="h-24 bg-neutral-800 rounded-xl animate-pulse" />
+            <div
+              key={i}
+              className="h-24 bg-neutral-50 rounded-xl border border-neutral-100 animate-pulse"
+            />
           ))}
         </div>
       </div>
@@ -97,27 +102,26 @@ export default function ServiceManager({ tenantId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Users className="w-6 h-6 text-[#CCFF00]" />
-          Service
+        <h1 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+          <Users className="w-5 h-5 text-neutral-500" />
+          {t('title')}
         </h1>
-        <div className="text-sm text-neutral-400">
-          {assignments.length} assignation{assignments.length !== 1 ? 's' : ''} active
-          {assignments.length !== 1 ? 's' : ''}
+        <div className="text-sm text-neutral-500">
+          {t('activeAssignments', { count: assignments.length })}
         </div>
       </div>
 
       {zones.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500">
-          Aucune zone configuree. Creez des zones et tables dans les parametres.
+        <div className="text-center py-12 text-neutral-500 bg-white rounded-xl border border-neutral-100">
+          {t('noZones')}
         </div>
       ) : (
         zones.map((zone) => (
           <div key={zone.id} className="space-y-3">
-            <h2 className="text-lg font-semibold text-neutral-300">{zone.name}</h2>
+            <h2 className="text-lg font-semibold text-neutral-700">{zone.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {zone.tables
-                .filter((t: Table) => t.is_active)
+                .filter((tbl: Table) => tbl.is_active)
                 .map((table: Table) => {
                   const assignment = getAssignmentForTable(table.id);
                   return (
@@ -125,36 +129,38 @@ export default function ServiceManager({ tenantId }: Props) {
                       key={table.id}
                       className={`rounded-xl border p-4 transition-colors ${
                         assignment
-                          ? 'border-[#CCFF00]/30 bg-[#CCFF00]/5'
-                          : 'border-neutral-800 bg-neutral-900'
+                          ? 'border-[#CCFF00]/50 bg-[#CCFF00]/5'
+                          : 'border-neutral-100 bg-white'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-mono font-bold text-white">
+                        <span className="font-mono font-bold text-neutral-900">
                           {table.display_name || table.table_number}
                         </span>
-                        <span className="text-xs text-neutral-500">{table.capacity} places</span>
+                        <span className="text-xs text-neutral-500">
+                          {t('seats', { count: table.capacity })}
+                        </span>
                       </div>
 
                       {assignment ? (
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <UserCheck className="w-4 h-4 text-[#CCFF00]" />
-                            <span className="text-sm font-medium text-[#CCFF00]">
-                              {assignment.server?.full_name ?? 'Serveur'}
+                            <UserCheck className="w-4 h-4 text-emerald-600" />
+                            <span className="text-sm font-medium text-neutral-900">
+                              {assignment.server?.full_name ?? t('server')}
                             </span>
                           </div>
                           <button
                             onClick={() => handleRelease(assignment.id)}
-                            className="p-1 rounded-lg hover:bg-neutral-800 text-neutral-500 hover:text-red-400 transition-colors"
-                            title="Liberer"
+                            className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-red-500 transition-colors"
+                            title={t('release')}
                           >
                             <X className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
                         <select
-                          className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm text-white focus:border-[#CCFF00] focus:outline-none"
+                          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 focus:border-[#CCFF00] focus:outline-none focus:ring-2 focus:ring-[#CCFF00]/20"
                           defaultValue=""
                           onChange={(e) => {
                             if (e.target.value) handleAssign(table.id, e.target.value);
@@ -162,7 +168,7 @@ export default function ServiceManager({ tenantId }: Props) {
                           }}
                         >
                           <option value="" disabled>
-                            Assigner un serveur...
+                            {t('assignServer')}
                           </option>
                           {servers.map((s) => (
                             <option key={s.id} value={s.id}>

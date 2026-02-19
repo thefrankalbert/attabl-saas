@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Download,
@@ -86,6 +86,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0 };
   const previousSummary = reportData?.previousSummary ?? { revenue: 0, orders: 0, avgBasket: 0 };
 
+  useEffect(() => {
+    if (error) {
+      toast({ title: t('loadError'), variant: 'destructive' });
+    }
+  }, [error, toast, t]);
+
   /** Compute a human-readable label for the active period */
   const periodDisplayLabel = useMemo(() => {
     switch (period) {
@@ -162,7 +168,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       doc.save(`rapport_${format(new Date(), 'yyyyMMdd')}.pdf`);
       toast({ title: t('pdfDownloaded') });
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error('Failed to export PDF report', err);
       toast({ title: t('exportPdfError'), variant: 'destructive' });
     } finally {
@@ -194,7 +200,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       // Top items
       rows.push(`${t('top5Products')}`);
-      rows.push(`#,Name,${t('salesCount', { count: '' }).trim()},${t('revenueLabel')}`);
+      rows.push(`#,Name,${t('salesCount', { count: 0 })},${t('revenueLabel')}`);
       topItems.forEach((item, i) => {
         rows.push(`${i + 1},"${item.name}",${item.quantity},${item.revenue}`);
       });
@@ -219,7 +225,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       URL.revokeObjectURL(url);
 
       toast({ title: t('csvDownloaded') });
-    } catch (err) {
+    } catch (err: unknown) {
       logger.error('Failed to export CSV report', err);
       toast({ title: t('exportCsvError'), variant: 'destructive' });
     } finally {

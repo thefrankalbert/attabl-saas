@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Star, Check, X, Image as ImageIcon } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -44,6 +44,7 @@ export default function ItemsClient({
   const [saving, setSaving] = useState(false);
   const [filterCategory, setFilterCategory] = useState('all');
   const [filterAvailable, setFilterAvailable] = useState('all');
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -61,6 +62,16 @@ export default function ItemsClient({
   const tc = useTranslations('common');
   const supabase = createClient();
   const queryClient = useQueryClient();
+
+  const closePanel = useCallback(() => setSelectedItem(null), []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closePanel();
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [closePanel]);
 
   // TanStack Query for menu items with category join
   const { data: items = initialItems, isLoading: loading } = useMenuItems(tenantId, {
@@ -246,7 +257,8 @@ export default function ItemsClient({
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group"
+              onClick={() => setSelectedItem(item)}
+              className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group cursor-pointer"
             >
               {item.image_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -272,7 +284,10 @@ export default function ItemsClient({
                 </p>
               </div>
               <button
-                onClick={() => toggleAvailable(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleAvailable(item);
+                }}
                 className={cn(
                   'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
                   item.is_available
@@ -293,7 +308,10 @@ export default function ItemsClient({
                 )}
               </button>
               <button
-                onClick={() => toggleFeatured(item)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFeatured(item);
+                }}
                 className={cn(
                   'p-2 rounded-lg transition-all',
                   item.is_featured
@@ -307,7 +325,10 @@ export default function ItemsClient({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => openEditModal(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEditModal(item);
+                  }}
                   className="text-xs h-8"
                 >
                   {t('edit')}
@@ -315,7 +336,10 @@ export default function ItemsClient({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleDelete(item)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDelete(item);
+                  }}
                   className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   {t('delete')}
@@ -335,6 +359,133 @@ export default function ItemsClient({
             {t('addItem')}
           </Button>
         </div>
+      )}
+
+      {/* Detail Side Panel */}
+      {selectedItem && (
+        <>
+          {/* Backdrop */}
+          <div className="fixed inset-0 z-40 bg-black/20" onClick={closePanel} />
+          {/* Panel */}
+          <div
+            className={cn(
+              'fixed right-0 top-0 h-full w-[400px] z-50 bg-white border-l border-neutral-100 rounded-l-xl overflow-y-auto',
+              'transition-transform duration-300 ease-out translate-x-0',
+            )}
+          >
+            {/* Panel Header */}
+            <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+              <h2 className="text-base font-bold text-neutral-900">{t('details')}</h2>
+              <button
+                onClick={closePanel}
+                className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
+              >
+                <X className="w-4 h-4 text-neutral-500" />
+              </button>
+            </div>
+
+            {/* Panel Content */}
+            <div className="p-5 space-y-5">
+              {/* Image */}
+              {selectedItem.image_url ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={selectedItem.image_url}
+                  alt={selectedItem.name}
+                  className="w-full h-48 rounded-xl object-cover border border-neutral-100"
+                />
+              ) : (
+                <div className="w-full h-48 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center">
+                  <ImageIcon className="w-12 h-12 text-neutral-300" />
+                </div>
+              )}
+
+              {/* Name */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('nameFr')}</p>
+                <p className="text-sm font-semibold text-neutral-900">{selectedItem.name}</p>
+              </div>
+
+              {/* Name EN */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('nameEn')}</p>
+                <p className="text-sm text-neutral-700">{selectedItem.name_en || '—'}</p>
+              </div>
+
+              {/* Description FR */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('descriptionFr')}</p>
+                <p className="text-sm text-neutral-700">
+                  {selectedItem.description || t('noDescription')}
+                </p>
+              </div>
+
+              {/* Description EN */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('descriptionEn')}</p>
+                <p className="text-sm text-neutral-700">{selectedItem.description_en || '—'}</p>
+              </div>
+
+              {/* Price */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('price')}</p>
+                <p className="text-lg font-bold text-neutral-900 tabular-nums">
+                  {formatCurrency(selectedItem.price, currency)}
+                </p>
+              </div>
+
+              {/* Category */}
+              <div className="space-y-1">
+                <p className="text-xs text-neutral-400 font-medium">{t('category')}</p>
+                <p className="text-sm text-neutral-700">
+                  {selectedItem.category?.name || t('uncategorized')}
+                </p>
+              </div>
+
+              {/* Availability & Featured badges */}
+              <div className="flex items-center gap-2">
+                <span
+                  className={cn(
+                    'px-2.5 py-1 rounded-full text-xs font-semibold border',
+                    selectedItem.is_available
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      : 'bg-neutral-100 text-neutral-500 border-neutral-200',
+                  )}
+                >
+                  {selectedItem.is_available ? (
+                    <>
+                      <Check className="w-3 h-3 inline mr-1" />
+                      {t('stock')}
+                    </>
+                  ) : (
+                    <>
+                      <X className="w-3 h-3 inline mr-1" />
+                      {t('exhausted')}
+                    </>
+                  )}
+                </span>
+                {selectedItem.is_featured && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-100 inline-flex items-center gap-1">
+                    <Star className="w-3 h-3 fill-current" />
+                    {t('featured')}
+                  </span>
+                )}
+              </div>
+
+              {/* Edit Button */}
+              <Button
+                variant="lime"
+                className="w-full mt-2"
+                onClick={() => {
+                  openEditModal(selectedItem);
+                  closePanel();
+                }}
+              >
+                {t('edit')}
+              </Button>
+            </div>
+          </div>
+        </>
       )}
 
       {/* Modal */}

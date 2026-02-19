@@ -59,6 +59,7 @@ interface DataTableProps<TData> {
   pageSize?: number;
   isLoading?: boolean;
   emptyMessage?: string;
+  onRowClick?: (row: TData) => void;
 }
 
 export function DataTable<TData>({
@@ -67,6 +68,7 @@ export function DataTable<TData>({
   pageSize = 50,
   isLoading = false,
   emptyMessage = 'Aucune donnée',
+  onRowClick,
 }: DataTableProps<TData>) {
   const [sorting, setSorting] = useState<SortingState>([]);
 
@@ -123,7 +125,14 @@ export function DataTable<TData>({
               ))
             ) : table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr key={row.id} className="hover:bg-neutral-50 transition-colors">
+                <tr
+                  key={row.id}
+                  className={cn(
+                    'hover:bg-neutral-50 transition-colors',
+                    onRowClick && 'cursor-pointer',
+                  )}
+                  onClick={() => onRowClick?.(row.original)}
+                >
                   {row.getVisibleCells().map((cell) => (
                     <td key={cell.id} className="px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}

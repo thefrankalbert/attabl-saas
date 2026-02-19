@@ -58,7 +58,7 @@ function getLast7DaysData(orders: Order[]): number[] {
   return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
 }
 
-function MiniChart({ data }: { data: number[] }) {
+function MiniChart({ data, tooltipLabel }: { data: number[]; tooltipLabel?: string }) {
   const chartData = data.map((value, index) => ({ day: index, value }));
   if (chartData.every((d) => d.value === 0)) {
     return (
@@ -83,7 +83,7 @@ function MiniChart({ data }: { data: number[] }) {
             color: '#fff',
           }}
           labelFormatter={() => ''}
-          formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
+          formatter={(value: number | undefined) => [value ?? 0, tooltipLabel ?? '']}
         />
         <Area
           type="monotone"
@@ -212,12 +212,12 @@ export default function DashboardClient({
 
   if (loading) {
     return (
-      <div className="space-y-8 pb-10">
+      <div className="flex flex-col gap-4 h-full">
         <div className="animate-pulse">
-          <div className="h-8 w-48 bg-neutral-200 rounded-lg" />
-          <div className="h-4 w-32 bg-neutral-100 rounded mt-2" />
+          <div className="h-7 w-48 bg-neutral-200 rounded-lg" />
+          <div className="h-4 w-32 bg-neutral-100 rounded mt-1" />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <StatsCardSkeleton key={i} />
           ))}
@@ -227,11 +227,11 @@ export default function DashboardClient({
   }
 
   return (
-    <div className="space-y-8 pb-10">
+    <div className="flex flex-col gap-4 h-full">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900">{getGreeting()}</h1>
+          <h1 className="text-xl font-bold text-neutral-900">{getGreeting()}</h1>
           <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
             {new Date().toLocaleDateString(locale, {
@@ -259,7 +259,7 @@ export default function DashboardClient({
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard
           title={t('revenue')}
           value={fmtCompact(stats.revenueToday)}
@@ -293,12 +293,12 @@ export default function DashboardClient({
       {/* Stock en direct */}
       {stockItems.length > 0 && (
         <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
             <div className="flex items-center gap-2">
-              <Package className="w-5 h-5 text-neutral-600" />
+              <Package className="w-4 h-4 text-neutral-600" />
               <div>
-                <h2 className="text-lg font-bold text-neutral-900">{t('stockLive')}</h2>
-                <p className="text-sm text-neutral-500">{t('stockTop10')}</p>
+                <h2 className="text-base font-bold text-neutral-900">{t('stockLive')}</h2>
+                <p className="text-xs text-neutral-500">{t('stockTop10')}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -329,7 +329,7 @@ export default function DashboardClient({
               </Link>
             </div>
           </div>
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-10 gap-2">
             {stockItems.map((item) => {
               const isOut = item.current_stock <= 0;
               const isLow = item.current_stock > 0 && item.current_stock <= item.min_stock_alert;
@@ -377,13 +377,13 @@ export default function DashboardClient({
       )}
 
       {/* Orders + Popular Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Recent Orders */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+          <div className="flex items-center justify-between p-4 border-b border-neutral-100">
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-lg font-bold text-neutral-900">{t('recentOrders')}</h2>
+                <h2 className="text-base font-bold text-neutral-900">{t('recentOrders')}</h2>
                 <p className="text-sm text-neutral-500">
                   {t('ordersCountLabel', { count: recentOrders.length })}
                 </p>
@@ -493,9 +493,9 @@ export default function DashboardClient({
 
         {/* Popular Items */}
         <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
-          <div className="flex items-center justify-between p-5 border-b border-neutral-100">
+          <div className="flex items-center justify-between p-4 border-b border-neutral-100">
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">{t('topDishes')}</h2>
+              <h2 className="text-base font-bold text-neutral-900">{t('topDishes')}</h2>
               <p className="text-sm text-neutral-500">{t('mostOrdered')}</p>
             </div>
           </div>
@@ -538,7 +538,10 @@ export default function DashboardClient({
                     </p>
                   </div>
                   <div className="w-16">
-                    <MiniChart data={getLast7DaysData(recentOrders)} />
+                    <MiniChart
+                      data={getLast7DaysData(recentOrders)}
+                      tooltipLabel={t('ordersCount')}
+                    />
                   </div>
                 </div>
               ))}
@@ -555,52 +558,52 @@ export default function DashboardClient({
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Link
           href={`${adminBase}/kitchen`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <ChefHat className="w-6 h-6 text-blue-600" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+            <ChefHat className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">{t('kitchenLabel')}</h3>
+            <h3 className="font-semibold text-sm text-neutral-900">{t('kitchenLabel')}</h3>
             <p className="text-xs text-neutral-500">{t('viewKdsSubtitle')}</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/orders`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <ShoppingBag className="w-6 h-6 text-amber-600" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+            <ShoppingBag className="w-5 h-5 text-amber-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">{t('ordersLabel')}</h3>
+            <h3 className="font-semibold text-sm text-neutral-900">{t('ordersLabel')}</h3>
             <p className="text-xs text-neutral-500">{t('manageOrdersSubtitle')}</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/items`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <UtensilsCrossed className="w-6 h-6 text-emerald-600" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+            <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">{t('dishesLabel')}</h3>
+            <h3 className="font-semibold text-sm text-neutral-900">{t('dishesLabel')}</h3>
             <p className="text-xs text-neutral-500">{t('manageDishes')}</p>
           </div>
         </Link>
         <Link
           href={`${adminBase}/reports`}
-          className="flex items-center gap-4 p-4 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
         >
-          <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <TrendingUp className="w-6 h-6 text-purple-600" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+            <TrendingUp className="w-5 h-5 text-purple-600" />
           </div>
           <div>
-            <h3 className="font-semibold text-neutral-900">{t('reportsLabel')}</h3>
+            <h3 className="font-semibold text-sm text-neutral-900">{t('reportsLabel')}</h3>
             <p className="text-xs text-neutral-500">{t('viewStats')}</p>
           </div>
         </Link>
