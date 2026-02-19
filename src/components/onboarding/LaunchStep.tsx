@@ -3,17 +3,54 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Check, ExternalLink, Layout, Copy, CheckCheck } from 'lucide-react';
+import {
+  Check,
+  ExternalLink,
+  Layout,
+  Copy,
+  CheckCheck,
+  Paintbrush,
+  Type,
+  Download,
+} from 'lucide-react';
 import { LaunchQR } from '@/components/qr/LaunchQR';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface LaunchStepProps {
   data: OnboardingData;
+  updateData: (data: Partial<OnboardingData>) => void;
 }
 
-export function LaunchStep({ data }: LaunchStepProps) {
+type LaunchTab = 'style' | 'text' | 'export';
+
+const TEMPLATES: Array<{ id: OnboardingData['qrTemplate']; labelKey: string }> = [
+  { id: 'standard', labelKey: 'qrTemplateStandard' },
+  { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
+  { id: 'carte', labelKey: 'qrTemplateCarte' },
+];
+
+const QR_STYLES: Array<{
+  id: OnboardingData['qrStyle'];
+  fg: string;
+  bg: string;
+}> = [
+  { id: 'classic', fg: '#000000', bg: '#FFFFFF' },
+  { id: 'branded', fg: 'primary', bg: '#FFFFFF' },
+  { id: 'inverted', fg: '#FFFFFF', bg: '#000000' },
+  { id: 'dark', fg: '#FFFFFF', bg: '#1a1a1a' },
+];
+
+const CTA_PRESETS = [
+  { key: 'qrCtaScan', value: 'Scannez pour commander' },
+  { key: 'qrCtaMenu', value: 'Scannez pour voir le menu' },
+  { key: 'qrCtaDiscover', value: 'Scannez pour d\u00e9couvrir' },
+  { key: 'qrCtaCard', value: 'Scannez notre carte' },
+];
+
+export function LaunchStep({ data, updateData }: LaunchStepProps) {
   const t = useTranslations('onboarding');
   const [copied, setCopied] = useState(false);
+  const [activeTab, setActiveTab] = useState<LaunchTab>('style');
 
   const menuUrl =
     typeof window !== 'undefined'
@@ -39,6 +76,12 @@ export function LaunchStep({ data }: LaunchStepProps) {
   };
 
   const accentColor = data.primaryColor || '#000';
+
+  const tabs: Array<{ id: LaunchTab; icon: typeof Paintbrush; label: string }> = [
+    { id: 'style', icon: Paintbrush, label: t('qrStyleTab') },
+    { id: 'text', icon: Type, label: t('qrTextTab') },
+    { id: 'export', icon: Download, label: t('qrExportTab') },
+  ];
 
   return (
     <div>
@@ -71,12 +114,12 @@ export function LaunchStep({ data }: LaunchStepProps) {
           <div>
             <h2 className="text-lg font-bold text-neutral-900">{data.tenantName}</h2>
             <p className="text-neutral-500 capitalize text-sm">
-              {data.establishmentType} • {data.city || 'Non défini'}
+              {data.establishmentType} &bull; {data.city || 'Non d\u00e9fini'}
             </p>
           </div>
         </div>
 
-        {/* Checklist — inline */}
+        {/* Checklist */}
         <div className="grid grid-cols-2 gap-2">
           {completedItems.map((item, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -132,18 +175,166 @@ export function LaunchStep({ data }: LaunchStepProps) {
         )}
       </div>
 
-      {/* QR Code */}
-      <LaunchQR
-        url={menuUrl}
-        tenantName={data.tenantName}
-        logoUrl={data.logoUrl}
-        primaryColor={data.primaryColor}
-      />
-
-      {/* Trial Info */}
-      <div className="mt-4 p-3 rounded-xl bg-neutral-50 border border-neutral-200 text-center">
-        <p className="text-xs text-neutral-600">{t('trialReminder')}</p>
+      {/* QR Customization Sub-tabs */}
+      <div className="flex gap-1 mb-4 border-b border-neutral-100 pb-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors ${
+                isActive
+                  ? 'border-[#CCFF00] text-neutral-900 bg-neutral-50'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
+
+      {/* Style Tab */}
+      {activeTab === 'style' && (
+        <div className="space-y-4">
+          {/* Templates */}
+          <div>
+            <p className="text-xs font-medium text-neutral-700 mb-2">Template</p>
+            <div className="grid grid-cols-3 gap-2">
+              {TEMPLATES.map((tmpl) => {
+                const isSelected = data.qrTemplate === tmpl.id;
+                return (
+                  <button
+                    key={tmpl.id}
+                    type="button"
+                    onClick={() => updateData({ qrTemplate: tmpl.id })}
+                    className={`p-3 rounded-xl border text-center transition-all ${
+                      isSelected
+                        ? 'border-[#CCFF00] bg-[#CCFF00]/5'
+                        : 'border-neutral-200 hover:border-neutral-300'
+                    }`}
+                  >
+                    {/* Template mini preview */}
+                    <div
+                      className={`mx-auto mb-2 rounded-lg flex items-center justify-center ${
+                        tmpl.id === 'standard'
+                          ? 'w-10 h-12'
+                          : tmpl.id === 'chevalet'
+                            ? 'w-8 h-14'
+                            : 'w-14 h-8'
+                      }`}
+                      style={{
+                        backgroundColor: data.secondaryColor || '#000',
+                        border: '1px solid rgba(0,0,0,0.1)',
+                      }}
+                    >
+                      <div
+                        className="w-4 h-4 rounded-sm"
+                        style={{ backgroundColor: data.primaryColor || '#CCFF00' }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-neutral-700">{t(tmpl.labelKey)}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* QR Color Styles */}
+          <div>
+            <p className="text-xs font-medium text-neutral-700 mb-2">{t('qrCodeTitle')}</p>
+            <div className="flex gap-2">
+              {QR_STYLES.map((style) => {
+                const isActive = data.qrStyle === style.id;
+                const previewFg = style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
+                return (
+                  <button
+                    key={style.id}
+                    type="button"
+                    onClick={() => updateData({ qrStyle: style.id })}
+                    className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center ${
+                      isActive ? 'border-[#CCFF00]' : 'border-neutral-200'
+                    }`}
+                    style={{ backgroundColor: style.bg }}
+                  >
+                    <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: previewFg }} />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Text Tab */}
+      {activeTab === 'text' && (
+        <div className="space-y-4">
+          {/* CTA Presets */}
+          <div>
+            <p className="text-xs font-medium text-neutral-700 mb-2">{t('qrCtaLabel')}</p>
+            <div className="flex flex-wrap gap-1.5 mb-2">
+              {CTA_PRESETS.map((preset) => {
+                const isActive = data.qrCta === preset.value;
+                return (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => updateData({ qrCta: preset.value })}
+                    className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+                      isActive
+                        ? 'bg-[#CCFF00] text-black font-medium'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {t(preset.key)}
+                  </button>
+                );
+              })}
+            </div>
+            <input
+              type="text"
+              value={data.qrCta}
+              onChange={(e) => updateData({ qrCta: e.target.value })}
+              placeholder={t('qrCtaLabel')}
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50"
+              maxLength={60}
+            />
+          </div>
+
+          {/* Description */}
+          <div>
+            <p className="text-xs font-medium text-neutral-700 mb-2">{t('qrDescriptionLabel')}</p>
+            <textarea
+              value={data.qrDescription}
+              onChange={(e) => updateData({ qrDescription: e.target.value })}
+              placeholder={t('qrDescriptionLabel')}
+              rows={2}
+              maxLength={120}
+              className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50 resize-none"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Export Tab */}
+      {activeTab === 'export' && (
+        <div>
+          <LaunchQR
+            url={menuUrl}
+            tenantName={data.tenantName}
+            logoUrl={data.logoUrl}
+            primaryColor={data.primaryColor}
+            template={data.qrTemplate}
+            qrStyle={data.qrStyle}
+            ctaText={data.qrCta}
+            descriptionText={data.qrDescription}
+          />
+        </div>
+      )}
     </div>
   );
 }
