@@ -65,7 +65,7 @@ export interface OnboardingData {
   menuOption: 'manual' | 'import' | 'template' | 'skip';
   menuItems: Array<{ name: string; price: number; category: string; imageUrl?: string }>;
   // Step 5: QR customization
-  qrTemplate: 'standard' | 'chevalet' | 'carte';
+  qrTemplate: 'standard' | 'chevalet' | 'carte' | 'minimal' | 'elegant' | 'neon';
   qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
   qrCta: string;
   qrDescription: string;

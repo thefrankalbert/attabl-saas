@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Check,
@@ -14,6 +14,10 @@ import {
   Download,
 } from 'lucide-react';
 import { LaunchQR } from '@/components/qr/LaunchQR';
+import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
+import type { QRTemplateId } from '@/types/qr-design.types';
+import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
+import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface LaunchStepProps {
@@ -23,10 +27,13 @@ interface LaunchStepProps {
 
 type LaunchTab = 'style' | 'text' | 'export';
 
-const TEMPLATES: Array<{ id: OnboardingData['qrTemplate']; labelKey: string }> = [
+const TEMPLATES: Array<{ id: QRTemplateId; labelKey: string }> = [
   { id: 'standard', labelKey: 'qrTemplateStandard' },
   { id: 'chevalet', labelKey: 'qrTemplateChevalet' },
   { id: 'carte', labelKey: 'qrTemplateCarte' },
+  { id: 'minimal', labelKey: 'qrTemplateMinimal' },
+  { id: 'elegant', labelKey: 'qrTemplateElegant' },
+  { id: 'neon', labelKey: 'qrTemplateNeon' },
 ];
 
 const QR_STYLES: Array<{
@@ -46,6 +53,49 @@ const CTA_PRESETS = [
   { key: 'qrCtaDiscover', value: 'Scannez pour d\u00e9couvrir' },
   { key: 'qrCtaCard', value: 'Scannez notre carte' },
 ];
+
+/** Renders a real template at mini scale for the template picker */
+function TemplateMiniPreview({
+  templateId,
+  data,
+}: {
+  templateId: QRTemplateId;
+  data: OnboardingData;
+}) {
+  const config = useMemo(() => onboardingDataToQRConfig(data, templateId), [data, templateId]);
+
+  const TemplateComponent = TEMPLATE_REGISTRY[templateId];
+  const defaults = TEMPLATE_DEFAULTS[templateId];
+
+  // Calculate scale to fit within ~80px tall preview container
+  const templateHeightPx = defaults.height * 3.78;
+  const templateWidthPx = defaults.width * 3.78;
+  const scale = Math.min(70 / templateHeightPx, 100 / templateWidthPx, 0.18);
+
+  return (
+    <div
+      className="relative overflow-hidden flex items-start justify-center"
+      style={{
+        height: 72,
+        width: '100%',
+      }}
+    >
+      <div
+        style={{
+          transform: `scale(${scale})`,
+          transformOrigin: 'top center',
+        }}
+      >
+        <TemplateComponent
+          config={config}
+          url="https://attabl.com"
+          tenantName={data.tenantName || 'Mon resto'}
+          logoUrl={data.logoUrl || undefined}
+        />
+      </div>
+    </div>
+  );
+}
 
 export function LaunchStep({ data, updateData }: LaunchStepProps) {
   const t = useTranslations('onboarding');
@@ -82,6 +132,9 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
     { id: 'text', icon: Type, label: t('qrTextTab') },
     { id: 'export', icon: Download, label: t('qrExportTab') },
   ];
+
+  // Build QRDesignConfig for the export tab
+  const qrConfig = useMemo(() => onboardingDataToQRConfig(data), [data]);
 
   return (
     <div>
@@ -201,10 +254,10 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
       {/* Style Tab */}
       {activeTab === 'style' && (
         <div className="space-y-4">
-          {/* Templates */}
+          {/* Templates — Real mini-previews */}
           <div>
             <p className="text-xs font-medium text-neutral-700 mb-2">Template</p>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {TEMPLATES.map((tmpl) => {
                 const isSelected = data.qrTemplate === tmpl.id;
                 return (
@@ -212,32 +265,21 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                     key={tmpl.id}
                     type="button"
                     onClick={() => updateData({ qrTemplate: tmpl.id })}
-                    className={`p-3 rounded-xl border text-center transition-all ${
+                    className={`rounded-xl border text-center transition-all overflow-hidden ${
                       isSelected
-                        ? 'border-[#CCFF00] bg-[#CCFF00]/5'
+                        ? 'border-[#CCFF00] ring-1 ring-[#CCFF00] bg-[#CCFF00]/5'
                         : 'border-neutral-200 hover:border-neutral-300'
                     }`}
                   >
-                    {/* Template mini preview */}
-                    <div
-                      className={`mx-auto mb-2 rounded-lg flex items-center justify-center ${
-                        tmpl.id === 'standard'
-                          ? 'w-10 h-12'
-                          : tmpl.id === 'chevalet'
-                            ? 'w-8 h-14'
-                            : 'w-14 h-8'
-                      }`}
-                      style={{
-                        backgroundColor: data.secondaryColor || '#000',
-                        border: '1px solid rgba(0,0,0,0.1)',
-                      }}
-                    >
-                      <div
-                        className="w-4 h-4 rounded-sm"
-                        style={{ backgroundColor: data.primaryColor || '#CCFF00' }}
-                      />
+                    {/* Mini template preview */}
+                    <div className="pt-2 px-1">
+                      <TemplateMiniPreview templateId={tmpl.id} data={data} />
                     </div>
-                    <span className="text-xs font-medium text-neutral-700">{t(tmpl.labelKey)}</span>
+                    <div className="py-1.5 border-t border-neutral-100">
+                      <span className="text-[11px] font-medium text-neutral-700">
+                        {t(tmpl.labelKey)}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -320,18 +362,14 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
         </div>
       )}
 
-      {/* Export Tab */}
+      {/* Export Tab — Full template preview + download */}
       {activeTab === 'export' && (
         <div>
           <LaunchQR
+            config={qrConfig}
             url={menuUrl}
             tenantName={data.tenantName}
-            logoUrl={data.logoUrl}
-            primaryColor={data.primaryColor}
-            template={data.qrTemplate}
-            qrStyle={data.qrStyle}
-            ctaText={data.qrCta}
-            descriptionText={data.qrDescription}
+            logoUrl={data.logoUrl || undefined}
           />
         </div>
       )}
