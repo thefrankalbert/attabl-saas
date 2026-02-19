@@ -15,7 +15,7 @@ interface LaunchQRProps {
   onDownload?: () => void;
 }
 
-export function LaunchQR({ url, tenantName, onDownload }: LaunchQRProps) {
+export function LaunchQR({ url, tenantName, primaryColor, onDownload }: LaunchQRProps) {
   const [downloading, setDownloading] = useState(false);
   const [mounted, setMounted] = useState(false);
   const qrRef = useRef<HTMLDivElement>(null);
@@ -55,12 +55,12 @@ export function LaunchQR({ url, tenantName, onDownload }: LaunchQRProps) {
 
   if (!mounted) {
     return (
-      <div className="p-5 rounded-xl border border-gray-200 bg-white">
+      <div className="p-5 rounded-xl border border-neutral-200 bg-white">
         <div className="flex items-center gap-5">
-          <div className="w-20 h-20 bg-gray-100 rounded-lg animate-pulse" />
+          <div className="w-20 h-20 bg-neutral-100 rounded-lg animate-pulse" />
           <div className="flex-1">
-            <div className="h-5 w-24 bg-gray-100 rounded animate-pulse mb-2" />
-            <div className="h-4 w-32 bg-gray-100 rounded animate-pulse" />
+            <div className="h-5 w-24 bg-neutral-100 rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-neutral-100 rounded animate-pulse" />
           </div>
         </div>
       </div>
@@ -68,7 +68,7 @@ export function LaunchQR({ url, tenantName, onDownload }: LaunchQRProps) {
   }
 
   return (
-    <div className="p-5 rounded-xl border border-gray-200 bg-white">
+    <div className="p-5 rounded-xl border border-neutral-200 bg-white">
       <div className="flex items-center gap-5">
         {/* QR Code Preview */}
         <div
@@ -80,20 +80,20 @@ export function LaunchQR({ url, tenantName, onDownload }: LaunchQRProps) {
             size={72}
             level="H"
             includeMargin={false}
-            fgColor="#000000"
+            fgColor={primaryColor || '#000000'}
             bgColor="#FFFFFF"
           />
         </div>
 
         {/* Info & Download */}
         <div className="flex-1">
-          <h3 className="font-semibold text-gray-900 mb-1">QR Code</h3>
-          <p className="text-sm text-gray-500 mb-3">Imprimez-le pour vos tables.</p>
+          <h3 className="font-semibold text-neutral-900 mb-1">QR Code</h3>
+          <p className="text-sm text-neutral-500 mb-3">Imprimez-le pour vos tables.</p>
           <Button
             onClick={downloadQR}
             disabled={downloading}
             size="sm"
-            className="bg-gray-900 hover:bg-gray-800 text-white rounded-lg"
+            className="bg-neutral-900 hover:bg-neutral-800 text-white rounded-lg"
           >
             <Download className="h-4 w-4 mr-2" />
             {downloading ? 'Génération...' : 'Télécharger'}

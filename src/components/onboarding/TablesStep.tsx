@@ -1,9 +1,17 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Grid3x3, Plus, X, Zap, Settings, Clock } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Plus, X, Zap, Settings, Clock } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface TablesStepProps {
@@ -32,38 +40,17 @@ function derivePrefix(name: string): string {
     .toUpperCase();
 }
 
-const modeOptions: Array<{
-  id: ConfigMode;
-  label: string;
-  description: string;
-  icon: typeof Settings;
-}> = [
-  {
-    id: 'complete',
-    label: 'Configuration complète',
-    description: 'Zones, préfixes, capacité',
-    icon: Settings,
-  },
-  {
-    id: 'minimum',
-    label: 'Configuration rapide',
-    description: 'Nom de zone + nombre de tables',
-    icon: Zap,
-  },
-  {
-    id: 'skip',
-    label: 'Configurer plus tard',
-    description: '10 tables par défaut',
-    icon: Clock,
-  },
-];
+const modeIds: ConfigMode[] = ['complete', 'minimum', 'skip'];
+const modeIcons = [Settings, Zap, Clock] as const;
 
 export function TablesStep({ data, updateData }: TablesStepProps) {
+  const t = useTranslations('onboarding');
+
   const [mode, setMode] = useState<ConfigMode>(data.tableConfigMode || 'skip');
   const [zones, setZones] = useState<ZoneData[]>(
     data.tableZones && data.tableZones.length > 0
       ? data.tableZones
-      : [{ name: 'Salle principale', prefix: 'SAL', tableCount: 10, defaultCapacity: 2 }],
+      : [{ name: '', prefix: '', tableCount: 10, defaultCapacity: 2 }],
   );
 
   const syncToParent = useCallback(
@@ -116,40 +103,49 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
     }
   };
 
+  const modeLabelKeys: Record<ConfigMode, string> = {
+    complete: 'modeComplete',
+    minimum: 'modeMinimum',
+    skip: 'modeSkip',
+  };
+
+  const modeDescKeys: Record<ConfigMode, string> = {
+    complete: 'modeCompleteDesc',
+    minimum: 'modeMinimumDesc',
+    skip: 'modeSkipDesc',
+  };
+
   return (
     <div>
-      {/* Header */}
+      {/* Title + Subtitle */}
       <div className="mb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-neutral-600 text-sm font-medium mb-2">
-          <Grid3x3 className="h-3.5 w-3.5" />
-          Étape 2/5
-        </div>
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">Configurez vos tables</h1>
-        <p className="text-neutral-500 text-sm">
-          Organisez vos tables par zone pour faciliter la gestion des commandes.
-        </p>
+        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('tablesTitle')}</h1>
+        <p className="text-neutral-500 text-sm">{t('tablesSubtitle')}</p>
       </div>
 
       {/* Mode Selector */}
-      <div className="grid grid-cols-3 gap-2 mb-4">
-        {modeOptions.map((opt) => {
-          const isActive = mode === opt.id;
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+        {modeIds.map((id, idx) => {
+          const isActive = mode === id;
+          const Icon = modeIcons[idx];
           return (
             <button
-              key={opt.id}
+              key={id}
               type="button"
-              onClick={() => handleModeChange(opt.id)}
+              onClick={() => handleModeChange(id)}
               className={`p-3 rounded-xl border-2 text-left transition-all ${
                 isActive
-                  ? 'border-neutral-900 bg-neutral-900/5'
+                  ? 'border-[#CCFF00] bg-[#CCFF00]/5'
                   : 'border-neutral-200 hover:border-neutral-300'
               }`}
             >
-              <opt.icon
+              <Icon
                 className={`h-4 w-4 mb-1.5 ${isActive ? 'text-neutral-900' : 'text-neutral-400'}`}
               />
-              <p className="font-medium text-neutral-900 text-xs leading-tight">{opt.label}</p>
-              <p className="text-[10px] text-neutral-500 mt-0.5">{opt.description}</p>
+              <p className="font-medium text-neutral-900 text-xs leading-tight">
+                {t(modeLabelKeys[id])}
+              </p>
+              <p className="text-[10px] text-neutral-500 mt-0.5">{t(modeDescKeys[id])}</p>
             </button>
           );
         })}
@@ -157,30 +153,25 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
 
       {/* Mode: Skip */}
       {mode === 'skip' && (
-        <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100 text-center">
+        <div className="bg-neutral-50 rounded-xl p-4 text-center">
           <Clock className="h-8 w-8 text-neutral-300 mx-auto mb-2" />
-          <p className="text-sm text-neutral-600 font-medium">
-            Nous configurerons automatiquement 10 tables pour vous.
-          </p>
-          <p className="text-xs text-neutral-400 mt-1">
-            Vous pourrez personnaliser vos zones et tables depuis le Dashboard.
-          </p>
+          <p className="text-sm text-neutral-600 font-medium">{t('skipInfo')}</p>
         </div>
       )}
 
       {/* Mode: Minimum */}
       {mode === 'minimum' && (
         <div className="space-y-2.5">
-          <Label className="text-neutral-700 font-semibold text-sm">Zones</Label>
+          <Label className="text-neutral-700 font-semibold text-sm">{t('zoneName')}</Label>
           {zones.map((zone, index) => (
             <div key={index} className="flex items-center gap-2">
               <div className="flex-1">
                 <Input
                   type="text"
-                  placeholder="Nom de la zone (ex: Terrasse)"
+                  placeholder={t('zoneNamePlaceholder')}
                   value={zone.name}
                   onChange={(e) => updateZone(index, 'name', e.target.value)}
-                  className="h-10 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl text-sm"
+                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
                 />
               </div>
               <div className="w-24">
@@ -188,10 +179,10 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                   type="number"
                   min="1"
                   max="100"
-                  placeholder="Tables"
+                  placeholder={t('zoneTableCount')}
                   value={zone.tableCount}
                   onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                  className="h-10 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl text-sm"
+                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
                 />
               </div>
               <button
@@ -203,6 +194,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     ? 'text-neutral-300 cursor-not-allowed'
                     : 'text-neutral-400 hover:text-red-500 hover:bg-red-50'
                 }`}
+                aria-label={t('deleteZone')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -216,14 +208,14 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
               className="flex items-center gap-2 px-3 py-2.5 w-full rounded-xl border-2 border-dashed border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-700 transition-colors text-sm"
             >
               <Plus className="h-4 w-4" />
-              Ajouter une zone
+              {t('addZone')}
             </button>
           )}
 
           {/* Preview */}
           {zones.some((z) => z.name && z.tableCount > 0) && (
             <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100 mt-3">
-              <p className="text-xs text-neutral-500 mb-2">Aperçu des tables</p>
+              <p className="text-xs text-neutral-500 mb-2">{t('tipPrefix')}</p>
               <div className="flex flex-wrap gap-1.5">
                 {zones
                   .filter((z) => z.name)
@@ -233,7 +225,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     return Array.from({ length: count }, (_, i) => (
                       <span
                         key={`${prefix}-${i}`}
-                        className="inline-flex items-center px-2 py-0.5 rounded-md bg-white border border-neutral-200 text-xs font-mono text-neutral-600"
+                        className="font-mono bg-neutral-100 rounded px-2 py-0.5 text-xs text-neutral-600"
                       >
                         {prefix}-{i + 1}
                       </span>
@@ -254,8 +246,8 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
       {mode === 'complete' && (
         <div className="space-y-3">
           {zones.map((zone, index) => (
-            <div key={index} className="p-3 rounded-xl border border-neutral-200 bg-white">
-              <div className="flex items-start justify-between mb-2.5">
+            <div key={index} className="border border-neutral-200 rounded-xl p-4 bg-white">
+              <div className="flex items-start justify-between mb-3">
                 <span className="text-xs font-medium text-neutral-400">Zone {index + 1}</span>
                 <button
                   type="button"
@@ -266,77 +258,82 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                       ? 'text-neutral-300 cursor-not-allowed'
                       : 'text-neutral-400 hover:text-red-500 hover:bg-red-50'
                   }`}
+                  aria-label={t('deleteZone')}
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 mb-2">
+              <div className="grid grid-cols-2 gap-3 mb-3">
                 <div>
-                  <Label className="text-neutral-600 text-xs">Nom</Label>
+                  <Label className="text-neutral-600 text-xs">{t('zoneName')}</Label>
                   <Input
                     type="text"
-                    placeholder="Terrasse"
+                    placeholder={t('zoneNamePlaceholder')}
                     value={zone.name}
                     onChange={(e) => updateZone(index, 'name', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
                   />
                 </div>
                 <div>
-                  <Label className="text-neutral-600 text-xs">Préfixe</Label>
+                  <Label className="text-neutral-600 text-xs">{t('zonePrefix')}</Label>
                   <Input
                     type="text"
                     placeholder="TER"
                     maxLength={5}
                     value={zone.prefix}
                     onChange={(e) => updateZone(index, 'prefix', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl font-mono uppercase text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 font-mono uppercase text-sm"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <Label className="text-neutral-600 text-xs">Nombre de tables</Label>
+                  <Label className="text-neutral-600 text-xs">{t('zoneTableCount')}</Label>
                   <Input
                     type="number"
                     min="1"
                     max="100"
                     value={zone.tableCount}
                     onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
                   />
                 </div>
                 <div>
-                  <Label className="text-neutral-600 text-xs">Capacité par table</Label>
-                  <select
-                    value={zone.defaultCapacity ?? 2}
-                    onChange={(e) => updateZone(index, 'defaultCapacity', e.target.value)}
-                    className="mt-1 h-9 w-full px-3 bg-neutral-50 border border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl text-sm"
+                  <Label className="text-neutral-600 text-xs">{t('zoneCapacity')}</Label>
+                  <Select
+                    value={String(zone.defaultCapacity ?? 2)}
+                    onValueChange={(val) => updateZone(index, 'defaultCapacity', val)}
                   >
-                    {capacityOptions.map((cap) => (
-                      <option key={cap} value={cap}>
-                        {cap} places
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {capacityOptions.map((cap) => (
+                        <SelectItem key={cap} value={String(cap)}>
+                          {cap} {t('capacityPlaces')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               {/* Inline preview for this zone */}
               {zone.name && zone.prefix && zone.tableCount > 0 && (
-                <div className="mt-2 pt-2 border-t border-neutral-100">
-                  <div className="flex flex-wrap gap-1">
+                <div className="mt-3 pt-3 border-t border-neutral-100">
+                  <div className="flex flex-wrap gap-1.5">
                     {Array.from({ length: Math.min(zone.tableCount, 8) }, (_, i) => (
                       <span
                         key={i}
-                        className="inline-flex items-center px-1.5 py-0.5 rounded bg-neutral-100 text-[10px] font-mono text-neutral-500"
+                        className="font-mono bg-neutral-100 rounded px-2 py-0.5 text-xs text-neutral-500"
                       >
                         {zone.prefix}-{i + 1}
                       </span>
                     ))}
                     {zone.tableCount > 8 && (
-                      <span className="inline-flex items-center px-1.5 py-0.5 text-[10px] text-neutral-400">
+                      <span className="inline-flex items-center px-2 py-0.5 text-xs text-neutral-400">
                         ...+{zone.tableCount - 8}
                       </span>
                     )}
@@ -353,7 +350,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
               className="flex items-center gap-2 px-3 py-2.5 w-full rounded-xl border-2 border-dashed border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-700 transition-colors text-sm"
             >
               <Plus className="h-4 w-4" />
-              Ajouter une zone
+              {t('addZone')}
             </button>
           )}
         </div>
@@ -363,9 +360,8 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
       {mode !== 'skip' && (
         <div className="mt-4 p-3 rounded-xl bg-neutral-50 border border-neutral-100">
           <p className="text-xs text-neutral-600">
-            <strong>Astuce :</strong> Le préfixe est automatiquement déduit du nom de la zone. Les
-            tables seront numérotées {zones[0]?.prefix || 'XXX'}-1, {zones[0]?.prefix || 'XXX'}-2,
-            etc.
+            <strong>{t('tipPrefix')}</strong> {zones[0]?.prefix || 'XXX'}-1,{' '}
+            {zones[0]?.prefix || 'XXX'}-2, ...
           </p>
         </div>
       )}
