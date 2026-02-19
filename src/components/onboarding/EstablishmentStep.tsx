@@ -368,17 +368,17 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   ))}
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
                 <Label className="text-sm font-medium text-neutral-700">{t('hasRestaurant')}</Label>
                 <button
                   type="button"
                   onClick={() => updateData({ hasRestaurant: !data.hasRestaurant })}
-                  className={`relative w-10 h-6 rounded-full transition-colors ${
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
                     data.hasRestaurant ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                   }`}
                 >
                   <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
                       data.hasRestaurant ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
@@ -426,17 +426,17 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
                 <Label className="text-sm font-medium text-neutral-700">{t('hasTerrace')}</Label>
                 <button
                   type="button"
                   onClick={() => updateData({ hasTerrace: !data.hasTerrace })}
-                  className={`relative w-10 h-6 rounded-full transition-colors ${
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
                     data.hasTerrace ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                   }`}
                 >
                   <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
                       data.hasTerrace ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
@@ -484,17 +484,17 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
                 <Label className="text-sm font-medium text-neutral-700">{t('hasWifi')}</Label>
                 <button
                   type="button"
                   onClick={() => updateData({ hasWifi: !data.hasWifi })}
-                  className={`relative w-10 h-6 rounded-full transition-colors ${
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
                     data.hasWifi ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                   }`}
                 >
                   <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
                       data.hasWifi ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
@@ -548,17 +548,17 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   </button>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between rounded-xl border border-neutral-200 px-3 py-2.5">
                 <Label className="text-sm font-medium text-neutral-700">{t('hasDelivery')}</Label>
                 <button
                   type="button"
                   onClick={() => updateData({ hasDelivery: !data.hasDelivery })}
-                  className={`relative w-10 h-6 rounded-full transition-colors ${
+                  className={`relative w-10 h-6 rounded-full transition-colors shrink-0 ${
                     data.hasDelivery ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                   }`}
                 >
                   <div
-                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
+                    className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${
                       data.hasDelivery ? 'translate-x-4' : 'translate-x-0'
                     }`}
                   />
