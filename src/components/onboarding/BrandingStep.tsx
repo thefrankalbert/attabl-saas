@@ -70,7 +70,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) return;
+    if (file.size > 15 * 1024 * 1024) return;
     const localUrl = URL.createObjectURL(file);
     updateData({ logoUrl: localUrl });
   };

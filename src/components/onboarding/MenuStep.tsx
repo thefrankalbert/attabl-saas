@@ -289,7 +289,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           id={`photo-${item.id}`}
                           onChange={(e) => {
                             const file = e.target.files?.[0];
-                            if (!file || file.size > 1024 * 1024) return;
+                            if (!file || file.size > 15 * 1024 * 1024) return;
                             const url = URL.createObjectURL(file);
                             updateArticle(category.id, item.id, 'imageUrl', url);
                           }}
