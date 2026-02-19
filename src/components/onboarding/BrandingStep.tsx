@@ -78,7 +78,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
           {t('previewLabel')}
         </p>
         <div
-          className="p-3 rounded-lg text-center"
+          className="p-2 rounded-lg text-center"
           style={{ backgroundColor: data.secondaryColor }}
         >
           <div
@@ -149,10 +149,16 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                 }
               }}
               className="relative w-[100px] h-[100px] shrink-0 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-neutral-400"
+              style={{ width: 100, height: 100, maxWidth: 100, maxHeight: 100 }}
             >
               {data.logoUrl ? (
                 <>
-                  <img src={data.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                  <img
+                    src={data.logoUrl}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
                   <div
                     role="button"
                     tabIndex={0}
@@ -255,12 +261,9 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   {t('primaryColor')}
                 </Label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="primaryColor"
-                    value={data.primaryColor}
-                    onChange={(e) => updateData({ primaryColor: e.target.value })}
-                    className="w-10 h-10 rounded-lg cursor-pointer border border-neutral-200 p-0.5"
+                  <div
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0"
+                    style={{ backgroundColor: data.primaryColor }}
                   />
                   <Input
                     type="text"
@@ -275,12 +278,9 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   {t('secondaryColor')}
                 </Label>
                 <div className="flex items-center gap-2">
-                  <input
-                    type="color"
-                    id="secondaryColor"
-                    value={data.secondaryColor}
-                    onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                    className="w-10 h-10 rounded-lg cursor-pointer border border-neutral-200 p-0.5"
+                  <div
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0"
+                    style={{ backgroundColor: data.secondaryColor }}
                   />
                   <Input
                     type="text"

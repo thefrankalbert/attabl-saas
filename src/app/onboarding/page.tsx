@@ -75,7 +75,7 @@ export default function OnboardingPage() {
     country: 'Cameroun',
     phone: '',
     tableCount: 10,
-    language: 'fr',
+    language: 'fr-FR',
     currency: 'EUR',
     tableConfigMode: 'skip',
     tableZones: [],
@@ -349,7 +349,7 @@ export default function OnboardingPage() {
         <div className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8">
           <div className="max-w-xl mx-auto">
             {/* Step badge + title — visible on all sizes */}
-            <div className="mb-6">
+            <div className="mb-4">
               <span className="inline-block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">
                 {t('step')} {currentStep} {t('stepOf')} 5
               </span>
@@ -384,16 +384,16 @@ export default function OnboardingPage() {
         {/* Footer Navigation */}
         <div className="border-t border-neutral-100 p-4 md:p-6 shrink-0">
           <div className="max-w-xl mx-auto flex items-center justify-between">
-            {/* Back button */}
-            <Button
-              variant="outline"
+            {/* Back button — text-only link style */}
+            <button
+              type="button"
               onClick={prevStep}
               disabled={currentStep === 1}
-              className={currentStep === 1 ? 'invisible' : ''}
+              className={`flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors disabled:opacity-0 ${currentStep === 1 ? 'invisible' : ''}`}
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">{t('back')}</span>
-            </Button>
+            </button>
 
             <div className="flex items-center gap-2">
               {/* Skip button — not on step 5 */}
@@ -412,12 +412,12 @@ export default function OnboardingPage() {
 
               {/* Continue / Launch */}
               {currentStep < 5 ? (
-                <Button variant="lime" size="lg" onClick={nextStep} disabled={saving}>
+                <Button variant="lime" onClick={nextStep} disabled={saving}>
                   {saving ? '...' : t('next')}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               ) : (
-                <Button variant="lime" size="lg" onClick={completeOnboarding} disabled={saving}>
+                <Button variant="lime" onClick={completeOnboarding} disabled={saving}>
                   {saving ? '...' : t('launchCTA')}
                   <Rocket className="h-4 w-4" />
                 </Button>
