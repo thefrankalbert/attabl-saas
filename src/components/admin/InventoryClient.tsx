@@ -396,7 +396,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <Input
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="Ex: Poulet, Riz, Huile..."
+              placeholder={t('ingredientNamePlaceholder')}
               autoFocus
             />
           </div>
@@ -468,7 +468,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             <Input
               value={formCategory}
               onChange={(e) => setFormCategory(e.target.value)}
-              placeholder="Ex: Viandes, Legumes..."
+              placeholder={t('categoryPlaceholder')}
             />
           </div>
         </div>
@@ -569,7 +569,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 <Input
                   value={adjustNotes}
                   onChange={(e) => setAdjustNotes(e.target.value)}
-                  placeholder="Ex: Livraison fournisseur, perte..."
+                  placeholder={t('adjustReasonPlaceholder')}
                 />
               </div>
             </div>

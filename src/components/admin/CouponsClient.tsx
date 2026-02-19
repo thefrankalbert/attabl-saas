@@ -100,12 +100,12 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
         <div className="grid gap-3">
           {/* Table Header (desktop) */}
           <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-neutral-400 uppercase tracking-widest">
-            <span>Code</span>
-            <span>Type</span>
-            <span>Valeur</span>
-            <span>Utilisations</span>
-            <span>Statut</span>
-            <span className="text-right">Actions</span>
+            <span>{t('codeField')}</span>
+            <span>{t('type')}</span>
+            <span>{t('valueColumn')}</span>
+            <span>{t('usagesColumn')}</span>
+            <span>{t('statusColumn')}</span>
+            <span className="text-right">{t('actionsColumn')}</span>
           </div>
 
           {coupons.map((coupon) => (
@@ -219,17 +219,16 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       )}
 
       {/* Coupon Form Modal */}
-      {showForm && (
-        <CouponForm
-          tenantId={tenantId}
-          currency={currency}
-          onClose={() => setShowForm(false)}
-          onSuccess={() => {
-            setShowForm(false);
-            refetch();
-          }}
-        />
-      )}
+      <CouponForm
+        tenantId={tenantId}
+        currency={currency}
+        isOpen={showForm}
+        onClose={() => setShowForm(false)}
+        onSuccess={() => {
+          setShowForm(false);
+          refetch();
+        }}
+      />
     </div>
   );
 }

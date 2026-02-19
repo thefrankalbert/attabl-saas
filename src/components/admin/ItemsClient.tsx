@@ -238,7 +238,7 @@ export default function ItemsClient({
           </SelectContent>
         </Select>
         <span className="ml-auto text-xs text-neutral-400 font-medium">
-          {items.length} article{items.length > 1 ? 's' : ''}
+          {t('itemCount', { count: items.length })}
         </span>
       </div>
 

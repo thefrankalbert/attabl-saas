@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
@@ -250,9 +251,9 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       <AdminModal isOpen={showAdd} onClose={() => setShowAdd(false)} title={t('newSuggestion')}>
         <div className="space-y-3">
           <div>
-            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
               {t('sourceDish')}
-            </label>
+            </Label>
             <select
               value={sourceItemId}
               onChange={(e) => setSourceItemId(e.target.value)}
@@ -268,9 +269,9 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
               {t('suggestionType')}
-            </label>
+            </Label>
             <div className="grid grid-cols-3 gap-2">
               {SUGGESTION_TYPES.map((st) => (
                 <button
@@ -292,9 +293,9 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
               {t('suggestedDish')}
-            </label>
+            </Label>
             <select
               value={targetItemId}
               onChange={(e) => setTargetItemId(e.target.value)}
@@ -310,9 +311,9 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
               {t('serverAdvice')}
-            </label>
+            </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
