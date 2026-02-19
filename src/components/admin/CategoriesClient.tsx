@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
+import { cn } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 import type { Category } from '@/types/admin.types';
 
 interface CategoriesClientProps {
@@ -33,13 +35,62 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const supabase = createClient();
   const queryClient = useQueryClient();
 
+  // Drag-and-drop state
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragNodeRef = useRef<HTMLDivElement | null>(null);
+
   // TanStack Query for categories with item count
   const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
     useCategories(tenantId, { withItemCount: true });
 
-  const loadCategories = () => {
+  const loadCategories = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
-  };
+  }, [queryClient, tenantId]);
+
+  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
+    setDragIndex(index);
+    dragNodeRef.current = e.currentTarget;
+    e.dataTransfer.effectAllowed = 'move';
+    // Make the drag image slightly transparent
+    requestAnimationFrame(() => {
+      if (dragNodeRef.current) dragNodeRef.current.style.opacity = '0.5';
+    });
+  }, []);
+
+  const handleDragEnd = useCallback(async () => {
+    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1';
+    if (dragIndex === null || dragOverIndex === null || dragIndex === dragOverIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Reorder categories
+    const reordered = [...categories];
+    const [moved] = reordered.splice(dragIndex, 1);
+    reordered.splice(dragOverIndex, 0, moved);
+
+    setDragIndex(null);
+    setDragOverIndex(null);
+
+    // Update display_order in database
+    try {
+      const updates = reordered.map((cat, i) => ({
+        id: cat.id,
+        display_order: i,
+        tenant_id: tenantId,
+        name: cat.name,
+      }));
+      const { error } = await supabase.from('categories').upsert(updates);
+      if (error) throw error;
+      loadCategories();
+    } catch (err: unknown) {
+      logger.error('Failed to reorder categories', err);
+      toast({ title: tc('updateError'), variant: 'destructive' });
+      loadCategories();
+    }
+  }, [dragIndex, dragOverIndex, categories, supabase, tenantId, loadCategories, toast, tc]);
 
   const openNewModal = () => {
     setEditingCategory(null);
@@ -83,7 +134,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       setShowModal(false);
       loadCategories();
     } catch {
-      toast({ title: tc('errorSaving'), variant: 'destructive' });
+      toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -92,19 +143,19 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const handleDelete = async (cat: CategoryWithCount) => {
     if (cat.items_count && cat.items_count > 0) {
       toast({
-        title: t('categoryHasItems', { count: cat.items_count }),
+        title: t('categoryHasDishes', { count: cat.items_count }),
         variant: 'destructive',
       });
       return;
     }
-    if (!confirm(t('confirmDelete', { name: cat.name }))) return;
+    if (!confirm(t('deleteCategoryConfirm', { name: cat.name }))) return;
     try {
       const { error } = await supabase.from('categories').delete().eq('id', cat.id);
       if (error) throw error;
       toast({ title: t('categoryDeleted') });
       loadCategories();
     } catch {
-      toast({ title: tc('errorDeleting'), variant: 'destructive' });
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -125,7 +176,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
         <Folder className="w-4 h-4 text-neutral-400" />
         <span className="text-xs text-neutral-500 font-medium">
-          {categories.length} {t('categoriesCount')}
+          {t('categoryCount', { count: categories.length })}
         </span>
       </div>
 
@@ -141,12 +192,25 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         </div>
       ) : categories.length > 0 ? (
         <div className="space-y-2">
-          {categories.map((cat) => (
+          {categories.map((cat, index) => (
             <div
               key={cat.id}
-              className="flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group"
+              draggable
+              onDragStart={(e) => handleDragStart(e, index)}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setDragOverIndex(index);
+              }}
+              onDragEnd={handleDragEnd}
+              className={cn(
+                'flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group',
+                dragOverIndex === index &&
+                  dragIndex !== null &&
+                  dragIndex !== index &&
+                  'border-[#CCFF00] bg-lime-50/30',
+              )}
             >
-              <GripVertical className="w-4 h-4 text-neutral-300" />
+              <GripVertical className="w-4 h-4 text-neutral-300 cursor-grab active:cursor-grabbing" />
               <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
                 <Folder className="w-4 h-4 text-neutral-500" />
               </div>
@@ -157,7 +221,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
               <div className="flex items-center gap-1.5 text-xs text-neutral-500">
                 <Utensils className="w-3.5 h-3.5" />
                 <span className="font-medium">
-                  {cat.items_count || 0} {t('dishesCount')}
+                  {t('dishCount', { count: cat.items_count || 0 })}
                 </span>
               </div>
               <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
@@ -198,7 +262,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       <AdminModal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
-        title={editingCategory ? t('editCategory') : t('newCategory')}
+        title={editingCategory ? t('editCategoryTitle') : t('newCategoryTitle')}
       >
         <form onSubmit={handleSubmit} className="space-y-4 pt-2">
           <div className="grid grid-cols-2 gap-4">
@@ -234,11 +298,11 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-              Annuler
+              {tc('cancel')}
             </Button>
             <Button type="submit" disabled={saving} variant="lime">
               {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingCategory ? 'Mettre à jour' : 'Créer'}
+              {editingCategory ? t('update') : t('create')}
             </Button>
           </div>
         </form>

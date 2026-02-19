@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Coins, CreditCard, Banknote } from 'lucide-react';
+import { Loader2, Coins, CreditCard, Banknote, Delete } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,8 @@ interface PaymentModalProps {
 
 type PaymentMethod = 'cash' | 'card' | 'mobile_money';
 
+const TIP_PERCENTAGES = [0, 5, 10, 15] as const;
+
 export default function PaymentModal({
   isOpen,
   onClose,
@@ -48,21 +50,49 @@ export default function PaymentModal({
 
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [amountReceived, setAmountReceived] = useState<string>('');
-  const [change, setChange] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Tip state
+  const [tipPercent, setTipPercent] = useState<number | null>(0);
+  const [customTip, setCustomTip] = useState<string>('');
+  const [showCustomTip, setShowCustomTip] = useState(false);
 
   const { toast } = useToast();
 
-  const resetForm = useCallback(() => {
-    setAmountReceived('');
-    setChange(0);
-    setMethod('cash');
-  }, [setMethod]);
+  // Compute tip amount and total with tip
+  const tipAmount = useMemo(() => {
+    if (showCustomTip) {
+      return parseFloat(customTip) || 0;
+    }
+    if (tipPercent !== null) {
+      return Math.round((finalTotal * tipPercent) / 100);
+    }
+    return 0;
+  }, [finalTotal, tipPercent, customTip, showCustomTip]);
 
-  const handleAmountChange = (val: string) => {
-    setAmountReceived(val);
-    const received = parseFloat(val) || 0;
-    setChange(Math.max(0, received - finalTotal));
+  const totalWithTip = useMemo(() => finalTotal + tipAmount, [finalTotal, tipAmount]);
+
+  // Change calculation based on totalWithTip
+  const change = useMemo(() => {
+    const received = parseFloat(amountReceived) || 0;
+    return Math.max(0, received - totalWithTip);
+  }, [amountReceived, totalWithTip]);
+
+  const resetForm = () => {
+    setAmountReceived('');
+    setMethod('cash');
+    setTipPercent(0);
+    setCustomTip('');
+    setShowCustomTip(false);
+  };
+
+  // Numeric keypad handlers
+  const handleKeypadPress = (key: string) => {
+    setAmountReceived((prev) => prev + key);
+  };
+
+  const handleKeypadBackspace = () => {
+    setAmountReceived((prev) => prev.slice(0, -1));
   };
 
   const handleProcessPayment = async () => {
@@ -96,8 +126,9 @@ export default function PaymentModal({
       toast({ title: t('paymentSuccess') });
       setIsProcessing(false);
       onSuccess();
-    } catch {
-      toast({ title: t('paymentError'), variant: 'destructive' });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : undefined;
+      toast({ title: t('paymentError'), description: message, variant: 'destructive' });
       setIsProcessing(false);
     }
   };
@@ -105,7 +136,7 @@ export default function PaymentModal({
   const isValid = () => {
     if (method === 'cash') {
       const received = parseFloat(amountReceived) || 0;
-      return received >= finalTotal;
+      return received >= totalWithTip;
     }
     return true;
   };
@@ -178,10 +209,67 @@ export default function PaymentModal({
 
           {/* Total */}
           <div className="text-center p-4 bg-neutral-50 rounded-xl border border-neutral-100">
-            <p className="text-sm text-neutral-500 uppercase font-medium">{t('amountToPay')}</p>
-            <p className="text-3xl font-black text-neutral-900">
-              {formatCurrency(finalTotal, 'XAF')}
+            <p className="text-sm text-neutral-500 uppercase font-medium">
+              {tipAmount > 0 ? t('totalWithTip') : t('amountToPay')}
             </p>
+            <p className="text-4xl font-black text-neutral-900">
+              {formatCurrency(totalWithTip, 'XAF')}
+            </p>
+            {tipAmount > 0 && (
+              <p className="text-sm text-neutral-400 mt-1">
+                {t('tipAmount', { amount: formatCurrency(tipAmount, 'XAF') })}
+              </p>
+            )}
+          </div>
+
+          {/* Tip Selection */}
+          <div className="space-y-3">
+            <Label>{t('tip')}</Label>
+            <div className="flex gap-2">
+              {TIP_PERCENTAGES.map((pct) => (
+                <button
+                  key={pct}
+                  type="button"
+                  onClick={() => {
+                    setTipPercent(pct);
+                    setShowCustomTip(false);
+                    setCustomTip('');
+                  }}
+                  className={cn(
+                    'flex-1 rounded-xl border-2 py-2 text-sm font-bold transition-all',
+                    !showCustomTip && tipPercent === pct
+                      ? 'border-[#CCFF00] bg-[#CCFF00]/10 text-neutral-900'
+                      : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50',
+                  )}
+                >
+                  {pct}%
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCustomTip(true);
+                  setTipPercent(null);
+                }}
+                className={cn(
+                  'flex-1 rounded-xl border-2 py-2 text-sm font-bold transition-all',
+                  showCustomTip
+                    ? 'border-[#CCFF00] bg-[#CCFF00]/10 text-neutral-900'
+                    : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50',
+                )}
+              >
+                {t('tipCustom')}
+              </button>
+            </div>
+            {showCustomTip && (
+              <Input
+                type="number"
+                placeholder="0"
+                value={customTip}
+                onChange={(e) => setCustomTip(e.target.value)}
+                className="text-lg font-bold animate-in fade-in slide-in-from-top-2"
+              />
+            )}
           </div>
 
           {/* Method Selection */}
@@ -231,33 +319,56 @@ export default function PaymentModal({
               </button>
             </div>
           </div>
-          {/* Cash Details */}
+
+          {/* Cash Details with Numeric Keypad */}
           {method === 'cash' && (
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="received">{t('receipt')}</Label>
-                  <Input
-                    id="received"
-                    type="number"
-                    placeholder="0"
-                    value={amountReceived}
-                    onChange={(e) => handleAmountChange(e.target.value)}
-                    className="text-lg font-bold"
-                  />
+              {/* Amount display */}
+              <div className="space-y-2">
+                <Label>{t('receipt')}</Label>
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-3 text-center">
+                  <p className="text-3xl font-black text-neutral-900 tabular-nums">
+                    {amountReceived
+                      ? formatCurrency(parseFloat(amountReceived) || 0, 'XAF')
+                      : formatCurrency(0, 'XAF')}
+                  </p>
                 </div>
-                <div className="space-y-2">
-                  <Label>{t('change')}</Label>
-                  <div
-                    className={cn(
-                      'flex h-10 w-full rounded-md border border-input px-3 py-2 text-lg font-bold ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
-                      change > 0
-                        ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-neutral-100 text-neutral-400',
-                    )}
+              </div>
+
+              {/* Numeric Keypad */}
+              <div className="grid grid-cols-3 gap-2">
+                {['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '00'].map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() => handleKeypadPress(key)}
+                    className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-lg font-bold py-3 transition-all active:scale-95"
                   >
-                    {formatCurrency(change, 'XAF')}
-                  </div>
+                    {key}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={handleKeypadBackspace}
+                  className="rounded-xl border border-neutral-200 bg-white hover:bg-neutral-50 text-lg font-bold py-3 transition-all active:scale-95 flex items-center justify-center"
+                  aria-label={t('backspace')}
+                >
+                  <Delete className="h-5 w-5" />
+                </button>
+              </div>
+
+              {/* Change display */}
+              <div className="space-y-2">
+                <Label>{t('change')}</Label>
+                <div
+                  className={cn(
+                    'rounded-xl border p-3 text-center text-lg font-bold',
+                    change > 0
+                      ? 'bg-green-50 text-green-700 border-green-200'
+                      : 'bg-neutral-100 text-neutral-400 border-neutral-200',
+                  )}
+                >
+                  {formatCurrency(change, 'XAF')}
                 </div>
               </div>
             </div>
@@ -269,6 +380,7 @@ export default function PaymentModal({
             {t('cancel')}
           </Button>
           <Button
+            variant="lime"
             onClick={handleProcessPayment}
             disabled={!isValid() || isProcessing}
             className="w-full sm:w-auto"

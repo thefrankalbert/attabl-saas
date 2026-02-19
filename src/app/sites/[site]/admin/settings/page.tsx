@@ -23,8 +23,8 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   if (!tenant) notFound();
 
   return (
-    <div>
-      <div className="mb-8">
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
+      <div className="mb-8 flex-shrink-0">
         <h1 className="text-2xl font-bold text-neutral-900">Paramètres</h1>
         <p className="text-neutral-500">
           Gérez les informations et le branding de votre établissement.
