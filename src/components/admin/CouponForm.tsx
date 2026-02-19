@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -13,11 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { X } from 'lucide-react';
+import AdminModal from '@/components/admin/AdminModal';
 import type { CurrencyCode } from '@/types/admin.types';
 
 interface CouponFormProps {
   tenantId: string;
+  isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
   currency: CurrencyCode;
@@ -25,11 +27,14 @@ interface CouponFormProps {
 
 export default function CouponForm({
   tenantId,
+  isOpen,
   onClose,
   onSuccess,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currency,
 }: CouponFormProps) {
+  const t = useTranslations('coupons');
+  const tc = useTranslations('common');
   const [code, setCode] = useState('');
   const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
   const [discountValue, setDiscountValue] = useState<number | ''>('');
@@ -45,17 +50,17 @@ export default function CouponForm({
     e.preventDefault();
 
     if (!code.trim()) {
-      toast({ title: 'Le code est requis', variant: 'destructive' });
+      toast({ title: t('codeRequired'), variant: 'destructive' });
       return;
     }
 
     if (!discountValue || discountValue <= 0) {
-      toast({ title: 'La valeur de réduction est requise', variant: 'destructive' });
+      toast({ title: t('valueRequired'), variant: 'destructive' });
       return;
     }
 
     if (discountType === 'percentage' && discountValue > 100) {
-      toast({ title: 'Le pourcentage ne peut pas dépasser 100%', variant: 'destructive' });
+      toast({ title: t('percentageMax'), variant: 'destructive' });
       return;
     }
 
@@ -80,156 +85,145 @@ export default function CouponForm({
 
     if (error) {
       if (error.code === '23505') {
-        toast({ title: 'Ce code existe déjà', variant: 'destructive' });
+        toast({ title: t('codeExists'), variant: 'destructive' });
       } else {
         toast({
-          title: 'Erreur lors de la création',
+          title: t('createError'),
           description: error.message,
           variant: 'destructive',
         });
       }
     } else {
-      toast({ title: 'Coupon créé avec succès' });
+      toast({ title: t('couponCreated') });
       onSuccess();
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-neutral-100">
-          <h2 className="text-lg font-bold tracking-tight">Nouveau coupon</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+    <AdminModal isOpen={isOpen} onClose={onClose} title={t('newCoupon')}>
+      <form onSubmit={handleSubmit} className="pt-5 space-y-5">
+        {/* Code */}
+        <div className="space-y-2">
+          <Label htmlFor="code">{t('codeField')}</Label>
+          <Input
+            id="code"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
+            placeholder={t('codePlaceholder')}
+            required
+            className="font-mono uppercase tracking-wider"
+          />
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-5">
-          {/* Code */}
-          <div className="space-y-2">
-            <Label htmlFor="code">Code</Label>
-            <Input
-              id="code"
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="EX: BIENVENUE10"
-              required
-              className="font-mono uppercase tracking-wider"
-            />
-          </div>
+        {/* Discount Type */}
+        <div className="space-y-2">
+          <Label>{t('discountType')}</Label>
+          <Select
+            value={discountType}
+            onValueChange={(value: 'percentage' | 'fixed') => setDiscountType(value)}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="percentage">{t('typePercentageLabel')}</SelectItem>
+              <SelectItem value="fixed">{t('typeFixedLabel')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-          {/* Discount Type */}
-          <div className="space-y-2">
-            <Label>Type de réduction</Label>
-            <Select
-              value={discountType}
-              onValueChange={(value: 'percentage' | 'fixed') => setDiscountType(value)}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="percentage">Pourcentage (%)</SelectItem>
-                <SelectItem value="fixed">Montant fixe</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Discount Value */}
+        <div className="space-y-2">
+          <Label htmlFor="discountValue">{t('discountValue')}</Label>
+          <Input
+            id="discountValue"
+            type="number"
+            min="0"
+            max={discountType === 'percentage' ? 100 : undefined}
+            step={discountType === 'percentage' ? '1' : '0.01'}
+            value={discountValue}
+            onChange={(e) => setDiscountValue(e.target.value ? Number(e.target.value) : '')}
+            placeholder={discountType === 'percentage' ? 'Ex: 15' : 'Ex: 1000'}
+            required
+          />
+        </div>
 
-          {/* Discount Value */}
-          <div className="space-y-2">
-            <Label htmlFor="discountValue">Valeur de réduction</Label>
-            <Input
-              id="discountValue"
-              type="number"
-              min="0"
-              max={discountType === 'percentage' ? 100 : undefined}
-              step={discountType === 'percentage' ? '1' : '0.01'}
-              value={discountValue}
-              onChange={(e) => setDiscountValue(e.target.value ? Number(e.target.value) : '')}
-              placeholder={discountType === 'percentage' ? 'Ex: 15' : 'Ex: 1000'}
-              required
-            />
-          </div>
+        {/* Min Order Amount */}
+        <div className="space-y-2">
+          <Label htmlFor="minAmount">{t('minimumOrder')}</Label>
+          <Input
+            id="minAmount"
+            type="number"
+            min="0"
+            step="0.01"
+            value={minAmount}
+            onChange={(e) => setMinAmount(e.target.value ? Number(e.target.value) : '')}
+            placeholder={t('optionalField')}
+          />
+        </div>
 
-          {/* Min Order Amount */}
+        {/* Max Discount (only for percentage) */}
+        {discountType === 'percentage' && (
           <div className="space-y-2">
-            <Label htmlFor="minAmount">Montant minimum de commande</Label>
+            <Label htmlFor="maxDiscount">{t('maximumDiscount')}</Label>
             <Input
-              id="minAmount"
+              id="maxDiscount"
               type="number"
               min="0"
               step="0.01"
-              value={minAmount}
-              onChange={(e) => setMinAmount(e.target.value ? Number(e.target.value) : '')}
-              placeholder="Optionnel"
+              value={maxDiscount}
+              onChange={(e) => setMaxDiscount(e.target.value ? Number(e.target.value) : '')}
+              placeholder={t('optionalField')}
             />
           </div>
+        )}
 
-          {/* Max Discount (only for percentage) */}
-          {discountType === 'percentage' && (
-            <div className="space-y-2">
-              <Label htmlFor="maxDiscount">Réduction maximale</Label>
-              <Input
-                id="maxDiscount"
-                type="number"
-                min="0"
-                step="0.01"
-                value={maxDiscount}
-                onChange={(e) => setMaxDiscount(e.target.value ? Number(e.target.value) : '')}
-                placeholder="Optionnel"
-              />
-            </div>
-          )}
-
-          {/* Date Range */}
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="validFrom">Date de début</Label>
-              <Input
-                id="validFrom"
-                type="date"
-                value={validFrom}
-                onChange={(e) => setValidFrom(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="validUntil">Date de fin</Label>
-              <Input
-                id="validUntil"
-                type="date"
-                value={validUntil}
-                onChange={(e) => setValidUntil(e.target.value)}
-              />
-            </div>
-          </div>
-
-          {/* Max Uses */}
+        {/* Date Range */}
+        <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
-            <Label htmlFor="maxUses">Utilisations maximales</Label>
+            <Label htmlFor="validFrom">{t('startDateField')}</Label>
             <Input
-              id="maxUses"
-              type="number"
-              min="0"
-              step="1"
-              value={maxUses}
-              onChange={(e) => setMaxUses(e.target.value ? Number(e.target.value) : '')}
-              placeholder="Illimité si vide"
+              id="validFrom"
+              type="date"
+              value={validFrom}
+              onChange={(e) => setValidFrom(e.target.value)}
             />
           </div>
-
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100">
-            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-              Annuler
-            </Button>
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Création...' : 'Créer le coupon'}
-            </Button>
+          <div className="space-y-2">
+            <Label htmlFor="validUntil">{t('endDateField')}</Label>
+            <Input
+              id="validUntil"
+              type="date"
+              value={validUntil}
+              onChange={(e) => setValidUntil(e.target.value)}
+            />
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+
+        {/* Max Uses */}
+        <div className="space-y-2">
+          <Label htmlFor="maxUses">{t('maxUsages')}</Label>
+          <Input
+            id="maxUses"
+            type="number"
+            min="0"
+            step="1"
+            value={maxUses}
+            onChange={(e) => setMaxUses(e.target.value ? Number(e.target.value) : '')}
+            placeholder={t('unlimitedIfEmpty')}
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100">
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+            {tc('cancel')}
+          </Button>
+          <Button type="submit" variant="lime" disabled={submitting}>
+            {submitting ? t('creating') : t('createCoupon')}
+          </Button>
+        </div>
+      </form>
+    </AdminModal>
   );
 }

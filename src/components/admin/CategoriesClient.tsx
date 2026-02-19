@@ -272,7 +272,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 id="cat-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Ex: Entrées"
+                placeholder={t('nameFrPlaceholder')}
                 required
               />
             </div>
@@ -282,7 +282,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 id="cat-name-en"
                 value={nameEn}
                 onChange={(e) => setNameEn(e.target.value)}
-                placeholder="Ex: Starters"
+                placeholder={t('nameEnPlaceholder')}
               />
             </div>
           </div>

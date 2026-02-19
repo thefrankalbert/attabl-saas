@@ -328,7 +328,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           <Input
                             type="number"
                             step="0.001"
-                            placeholder="Qté"
+                            placeholder={t('qtyPlaceholder')}
                             value={line.quantity_needed || ''}
                             onChange={(e) =>
                               updateLine(idx, 'quantity_needed', parseFloat(e.target.value) || 0)
