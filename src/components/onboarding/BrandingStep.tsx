@@ -33,10 +33,39 @@ const colorPresets = [
 
 type BrandingTab = 'logo' | 'colors' | 'description';
 
+const colorGrid = [
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#3B82F6',
+  '#6366F1',
+  '#A855F7',
+  '#EC4899',
+  '#F43F5E',
+  '#DC2626',
+  '#EA580C',
+  '#CA8A04',
+  '#16A34A',
+  '#0D9488',
+  '#2563EB',
+  '#4F46E5',
+  '#9333EA',
+  '#DB2777',
+  '#E11D48',
+  '#000000',
+  '#374151',
+  '#6B7280',
+  '#9CA3AF',
+  '#FFFFFF',
+];
+
 export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const t = useTranslations('onboarding');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<BrandingTab>('logo');
+  const [showPickerFor, setShowPickerFor] = useState<'primary' | 'secondary' | null>(null);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -148,8 +177,8 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   if (!data.logoUrl) fileInputRef.current?.click();
                 }
               }}
-              className="relative w-[100px] h-[100px] shrink-0 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-neutral-400"
-              style={{ width: 100, height: 100, maxWidth: 100, maxHeight: 100 }}
+              className="relative w-[120px] h-[120px] shrink-0 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-neutral-400"
+              style={{ width: 120, height: 120, maxWidth: 120, maxHeight: 120 }}
             >
               {data.logoUrl ? (
                 <>
@@ -262,7 +291,16 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                 </Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
+                      }
+                    }}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
                     style={{ backgroundColor: data.primaryColor }}
                   />
                   <Input
@@ -272,6 +310,26 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
                   />
                 </div>
+                {showPickerFor === 'primary' && (
+                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                    {colorGrid.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          updateData({ primaryColor: color });
+                          setShowPickerFor(null);
+                        }}
+                        className={`w-8 h-8 rounded-lg border ${
+                          data.primaryColor === color
+                            ? 'ring-2 ring-[#CCFF00] ring-offset-1'
+                            : 'border-neutral-200'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
               <div>
                 <Label htmlFor="secondaryColor" className="text-neutral-500 text-[10px] mb-1 block">
@@ -279,7 +337,18 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                 </Label>
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
+                      }
+                    }}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
                     style={{ backgroundColor: data.secondaryColor }}
                   />
                   <Input
@@ -289,6 +358,26 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
                   />
                 </div>
+                {showPickerFor === 'secondary' && (
+                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                    {colorGrid.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          updateData({ secondaryColor: color });
+                          setShowPickerFor(null);
+                        }}
+                        className={`w-8 h-8 rounded-lg border ${
+                          data.secondaryColor === color
+                            ? 'ring-2 ring-[#CCFF00] ring-offset-1'
+                            : 'border-neutral-200'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
