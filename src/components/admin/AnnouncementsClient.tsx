@@ -56,7 +56,7 @@ export default function AnnouncementsClient({
 
     if (endDate && new Date(endDate) < new Date(startDate)) {
       toast({
-        title: t('endDateBeforeStartDate') || 'End date must be after start date',
+        title: t('endDateBeforeStartDate'),
         variant: 'destructive',
       });
       return;
