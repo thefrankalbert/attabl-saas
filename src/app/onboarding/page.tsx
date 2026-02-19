@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+
 import {
   Building2,
   LayoutGrid,
@@ -42,6 +42,8 @@ export interface OnboardingData {
   country: string;
   phone: string;
   tableCount: number;
+  language: string;
+  currency: string;
   // Step 2: Tables
   tableConfigMode: 'complete' | 'minimum' | 'skip';
   tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
@@ -73,6 +75,8 @@ export default function OnboardingPage() {
     country: 'Cameroun',
     phone: '',
     tableCount: 10,
+    language: 'fr',
+    currency: 'EUR',
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
@@ -113,9 +117,9 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateData = (newData: Partial<OnboardingData>) => {
+  const updateData = useCallback((newData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...newData }));
-  };
+  }, []);
 
   const saveStep = async () => {
     setSaving(true);
@@ -217,7 +221,7 @@ export default function OnboardingPage() {
                   {/* Connecting line */}
                   {index < STEP_KEYS.length - 1 && (
                     <div
-                      className={`absolute left-[19px] lg:left-[19px] top-[40px] w-0.5 h-[calc(100%-8px)] ${
+                      className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
                         isCompleted ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                       }`}
                     />
@@ -351,21 +355,13 @@ export default function OnboardingPage() {
               </span>
             </div>
 
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.25 }}
-              >
-                {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
-                {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
-                {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
-                {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
-                {currentStep === 5 && <LaunchStep data={data} />}
-              </motion.div>
-            </AnimatePresence>
+            <div key={currentStep}>
+              {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
+              {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
+              {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
+              {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
+              {currentStep === 5 && <LaunchStep data={data} />}
+            </div>
           </div>
         </div>
 
@@ -399,18 +395,34 @@ export default function OnboardingPage() {
               <span className="hidden sm:inline">{t('back')}</span>
             </Button>
 
-            {/* Continue / Launch */}
-            {currentStep < 5 ? (
-              <Button variant="lime" size="lg" onClick={nextStep} disabled={saving}>
-                {saving ? '...' : t('next')}
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button variant="lime" size="lg" onClick={completeOnboarding} disabled={saving}>
-                {saving ? '...' : t('launchCTA')}
-                <Rocket className="h-4 w-4" />
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Skip button — not on step 5 */}
+              {currentStep < 5 && (
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    if (currentStep < 5) setCurrentStep((prev) => prev + 1);
+                  }}
+                  disabled={saving}
+                  className="text-neutral-400 hover:text-neutral-600"
+                >
+                  {t('skip')}
+                </Button>
+              )}
+
+              {/* Continue / Launch */}
+              {currentStep < 5 ? (
+                <Button variant="lime" size="lg" onClick={nextStep} disabled={saving}>
+                  {saving ? '...' : t('next')}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              ) : (
+                <Button variant="lime" size="lg" onClick={completeOnboarding} disabled={saving}>
+                  {saving ? '...' : t('launchCTA')}
+                  <Rocket className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>

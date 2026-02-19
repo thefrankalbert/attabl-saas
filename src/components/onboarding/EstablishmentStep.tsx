@@ -13,7 +13,16 @@ import {
   Plus,
   UtensilsCrossed,
   Wine,
+  Globe,
+  Banknote,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 
@@ -187,9 +196,19 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
             >
               <Minus className="h-4 w-4" />
             </button>
-            <span className="px-4 text-sm font-medium text-neutral-900 min-w-[3rem] text-center">
-              {data.tableCount}
-            </span>
+            <input
+              type="number"
+              min={1}
+              max={500}
+              value={data.tableCount}
+              onChange={(e) => {
+                const val = parseInt(e.target.value, 10);
+                if (!isNaN(val) && val >= 1 && val <= 500) {
+                  updateData({ tableCount: val });
+                }
+              }}
+              className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            />
             <button
               type="button"
               onClick={handleIncrement}
@@ -199,6 +218,52 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               <Plus className="h-4 w-4" />
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* Language & Currency */}
+      <div className="grid grid-cols-2 gap-3 mt-4">
+        <div>
+          <Label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+            <Globe className="h-3.5 w-3.5" />
+            {t('languageLabel')}
+          </Label>
+          <Select value={data.language} onValueChange={(val) => updateData({ language: val })}>
+            <SelectTrigger className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="fr">Fran{'\u00e7'}ais</SelectItem>
+              <SelectItem value="en">English</SelectItem>
+              <SelectItem value="es">Espa{'\u00f1'}ol</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
+            <Banknote className="h-3.5 w-3.5" />
+            {t('currencyLabel')}
+          </Label>
+          <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
+            <SelectTrigger className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
+              <SelectItem value="USD">USD ($)</SelectItem>
+              <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
+              <SelectItem value="XAF">XAF (FCFA)</SelectItem>
+              <SelectItem value="XOF">XOF (FCFA)</SelectItem>
+              <SelectItem value="MAD">
+                MAD ({'\u062f'}.{'\u0645'}.)
+              </SelectItem>
+              <SelectItem value="TND">
+                TND ({'\u062f'}.{'\u062a'})
+              </SelectItem>
+              <SelectItem value="CAD">CAD ($)</SelectItem>
+              <SelectItem value="CHF">CHF (Fr.)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
     </div>

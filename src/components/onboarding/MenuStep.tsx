@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
 import { ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
@@ -84,15 +84,11 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       }
       updateData({
         menuItems,
-        menuOption: cats.length > 0 ? 'manual' : 'skip',
+        menuOption: menuItems.length > 0 ? 'manual' : 'skip',
       });
     },
     [updateData],
   );
-
-  useEffect(() => {
-    syncToParent(categories);
-  }, [categories, syncToParent]);
 
   const addCategory = () => {
     if (categories.length >= 5) return;
@@ -106,11 +102,13 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       },
     ];
     setCategories(updated);
+    syncToParent(updated);
   };
 
   const deleteCategory = (categoryId: string) => {
     const updated = categories.filter((c) => c.id !== categoryId);
     setCategories(updated);
+    syncToParent(updated);
   };
 
   const toggleCategory = (categoryId: string) => {
@@ -122,6 +120,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
   const updateCategoryName = (categoryId: string, name: string) => {
     const updated = categories.map((c) => (c.id === categoryId ? { ...c, name } : c));
     setCategories(updated);
+    syncToParent(updated);
   };
 
   const addArticle = (categoryId: string) => {
@@ -134,6 +133,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       };
     });
     setCategories(updated);
+    syncToParent(updated);
   };
 
   const deleteArticle = (categoryId: string, itemId: string) => {
@@ -145,6 +145,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       };
     });
     setCategories(updated);
+    syncToParent(updated);
   };
 
   const updateArticle = (
@@ -161,6 +162,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
       };
     });
     setCategories(updated);
+    syncToParent(updated);
   };
 
   return (
@@ -198,7 +200,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                   placeholder={t('categoryNamePlaceholder')}
                   value={category.name}
                   onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                  className="flex-1 h-9 bg-white border-neutral-200 focus:border-neutral-900 rounded-lg text-sm font-medium"
+                  className="flex-1 h-9 bg-white border-neutral-200 rounded-lg text-sm font-medium"
                 />
 
                 <span className="text-xs text-neutral-500 whitespace-nowrap px-2 py-1 bg-white border border-neutral-200 rounded-full">
@@ -227,7 +229,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         onChange={(e) =>
                           updateArticle(category.id, item.id, 'name', e.target.value)
                         }
-                        className="flex-1 h-9 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-lg text-sm"
+                        className="flex-1 h-9 bg-neutral-50 border-neutral-200 rounded-lg text-sm"
                       />
                       <div className="flex items-center gap-1.5">
                         <Input
@@ -239,9 +241,9 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           onChange={(e) =>
                             updateArticle(category.id, item.id, 'price', e.target.value)
                           }
-                          className="w-28 h-9 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-lg text-sm"
+                          className="w-28 h-9 bg-neutral-50 border-neutral-200 rounded-lg text-sm"
                         />
-                        <span className="text-xs text-neutral-400">EUR</span>
+                        <span className="text-xs text-neutral-400">{data.currency || 'EUR'}</span>
                       </div>
                       <button
                         type="button"

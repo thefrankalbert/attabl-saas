@@ -171,7 +171,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                   placeholder={t('zoneNamePlaceholder')}
                   value={zone.name}
                   onChange={(e) => updateZone(index, 'name', e.target.value)}
-                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
+                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 text-sm"
                 />
               </div>
               <div className="w-24">
@@ -182,7 +182,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                   placeholder={t('zoneTableCount')}
                   value={zone.tableCount}
                   onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
+                  className="h-10 bg-neutral-50 rounded-xl border-neutral-200 text-sm"
                 />
               </div>
               <button
@@ -272,7 +272,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     placeholder={t('zoneNamePlaceholder')}
                     value={zone.name}
                     onChange={(e) => updateZone(index, 'name', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 text-sm"
                   />
                 </div>
                 <div>
@@ -283,7 +283,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     maxLength={5}
                     value={zone.prefix}
                     onChange={(e) => updateZone(index, 'prefix', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 font-mono uppercase text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 font-mono uppercase text-sm"
                   />
                 </div>
               </div>
@@ -297,7 +297,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     max="100"
                     value={zone.tableCount}
                     onChange={(e) => updateZone(index, 'tableCount', e.target.value)}
-                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 focus:bg-white focus:border-neutral-900 text-sm"
+                    className="mt-1 h-9 bg-neutral-50 rounded-xl border-neutral-200 text-sm"
                   />
                 </div>
                 <div>
