@@ -1422,6 +1422,7 @@
     "locationTab": "Ubicación",
     "detailsTab": "Detalles",
     "preferencesTab": "Preferencias",
+    "typeSpecificLabel": "Opciones específicas",
     "languageLabel": "Idioma",
     "currencyLabel": "Moneda",
     "tablesTitle": "Configuración de sus mesas",

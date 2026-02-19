@@ -1422,6 +1422,7 @@
     "locationTab": "Location",
     "detailsTab": "Details",
     "preferencesTab": "Preferences",
+    "typeSpecificLabel": "Specific options",
     "languageLabel": "Language",
     "currencyLabel": "Currency",
     "tablesTitle": "Table configuration",

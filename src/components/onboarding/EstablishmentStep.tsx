@@ -15,9 +15,8 @@ import {
   Plus,
   UtensilsCrossed,
   Wine,
-  Globe,
-  Banknote,
-  SlidersHorizontal,
+  ClipboardList,
+  Settings2,
 } from 'lucide-react';
 import {
   Select,
@@ -39,44 +38,115 @@ const establishmentTypes = [
 ] as const;
 
 const localeLabels: Record<string, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Français (France)', flag: '🇫🇷' },
-  'fr-CA': { label: 'Français (Canada)', flag: '🇨🇦' },
-  'en-US': { label: 'English (US)', flag: '🇺🇸' },
-  'en-GB': { label: 'English (UK)', flag: '🇬🇧' },
-  'en-AU': { label: 'English (Australia)', flag: '🇦🇺' },
-  'en-CA': { label: 'English (Canada)', flag: '🇨🇦' },
-  'en-IE': { label: 'English (Ireland)', flag: '🇮🇪' },
-  'es-ES': { label: 'Español (España)', flag: '🇪🇸' },
+  'fr-FR': { label: 'Fran\u00e7ais (France)', flag: '\ud83c\uddeb\ud83c\uddf7' },
+  'fr-CA': { label: 'Fran\u00e7ais (Canada)', flag: '\ud83c\udde8\ud83c\udde6' },
+  'en-US': { label: 'English (US)', flag: '\ud83c\uddfa\ud83c\uddf8' },
+  'en-GB': { label: 'English (UK)', flag: '\ud83c\uddec\ud83c\udde7' },
+  'en-AU': { label: 'English (Australia)', flag: '\ud83c\udde6\ud83c\uddfa' },
+  'en-CA': { label: 'English (Canada)', flag: '\ud83c\udde8\ud83c\udde6' },
+  'en-IE': { label: 'English (Ireland)', flag: '\ud83c\uddee\ud83c\uddea' },
+  'es-ES': { label: 'Espa\u00f1ol (Espa\u00f1a)', flag: '\ud83c\uddea\ud83c\uddf8' },
 };
 
-type EstablishmentTab = 'location' | 'details' | 'preferences';
+type EstablishmentTab = 'details' | 'preferences';
 
 interface EstablishmentStepProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
 }
 
+/** Compact toggle switch component */
+function ToggleSwitch({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between">
+      <Label className="text-sm font-medium text-neutral-700">{label}</Label>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={checked}
+        onClick={onChange}
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
+          checked ? 'bg-[#CCFF00]' : 'bg-neutral-200'
+        }`}
+      >
+        <span
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+            checked ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+/** Compact stepper for numeric values */
+function NumberStepper({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (val: number) => void;
+}) {
+  return (
+    <div>
+      <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">{label}</Label>
+      <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
+        <button
+          type="button"
+          onClick={() => value > min && onChange(value - 1)}
+          disabled={value <= min}
+          className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <Minus className="h-4 w-4" />
+        </button>
+        <input
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(e) => {
+            const val = parseInt(e.target.value, 10);
+            if (!isNaN(val) && val >= min && val <= max) {
+              onChange(val);
+            }
+          }}
+          className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        />
+        <button
+          type="button"
+          onClick={() => value < max && onChange(value + 1)}
+          disabled={value >= max}
+          className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
+        >
+          <Plus className="h-4 w-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) {
   const t = useTranslations('onboarding');
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<EstablishmentTab>('location');
-
-  const handleDecrement = () => {
-    if (data.tableCount > 1) {
-      updateData({ tableCount: data.tableCount - 1 });
-    }
-  };
-
-  const handleIncrement = () => {
-    if (data.tableCount < 500) {
-      updateData({ tableCount: data.tableCount + 1 });
-    }
-  };
+  const [activeTab, setActiveTab] = useState<EstablishmentTab>('details');
 
   const tabs: { id: EstablishmentTab; icon: typeof MapPin; label: string }[] = [
-    { id: 'location', icon: MapPin, label: t('locationTab') },
-    { id: 'details', icon: SlidersHorizontal, label: t('detailsTab') },
-    { id: 'preferences', icon: Globe, label: t('preferencesTab') },
+    { id: 'details', icon: ClipboardList, label: t('detailsTab') },
+    { id: 'preferences', icon: Settings2, label: t('preferencesTab') },
   ];
 
   return (
@@ -132,7 +202,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
         </div>
       </div>
 
-      {/* Sub-tabs */}
+      {/* Sub-tabs: Details | Preferences */}
       <div className="flex gap-1 mb-3 border-b border-neutral-100 pb-0">
         {tabs.map((tab) => {
           const Icon = tab.icon;
@@ -155,8 +225,9 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
         })}
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'location' && (
+      {/* ─── Details Tab ─── */}
+      {/* Address, city, country, phone */}
+      {activeTab === 'details' && (
         <div className="space-y-3">
           <div>
             <Label
@@ -204,12 +275,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               />
             </div>
           </div>
-        </div>
-      )}
 
-      {activeTab === 'details' && (
-        <div className="space-y-3">
-          {/* Phone — always shown first */}
           <div>
             <Label
               htmlFor="phone"
@@ -227,403 +293,16 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm"
             />
           </div>
-
-          {/* restaurant: table count + total capacity */}
-          {data.establishmentType === 'restaurant' && (
-            <>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('tableCountLabel')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={data.tableCount <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={data.tableCount}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 500) {
-                        updateData({ tableCount: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={data.tableCount >= 500}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('totalCapacity')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = data.totalCapacity ?? 1;
-                      if (current > 1) updateData({ totalCapacity: current - 1 });
-                    }}
-                    disabled={(data.totalCapacity ?? 1) <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={9999}
-                    value={data.totalCapacity ?? 1}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 9999) {
-                        updateData({ totalCapacity: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = data.totalCapacity ?? 1;
-                      if (current < 9999) updateData({ totalCapacity: current + 1 });
-                    }}
-                    disabled={(data.totalCapacity ?? 1) >= 9999}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* hotel: room count + star rating + has restaurant */}
-          {data.establishmentType === 'hotel' && (
-            <>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('roomCountLabel')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={data.tableCount <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={data.tableCount}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 500) {
-                        updateData({ tableCount: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={data.tableCount >= 500}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('starRating')}
-                </Label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <button
-                      key={star}
-                      type="button"
-                      onClick={() => updateData({ starRating: star })}
-                      className={`text-lg ${(data.starRating || 0) >= star ? 'text-yellow-400' : 'text-neutral-200'}`}
-                    >
-                      ★
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('hasRestaurant')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => updateData({ hasRestaurant: !data.hasRestaurant })}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                    data.hasRestaurant ? 'bg-[#CCFF00]' : 'bg-neutral-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      data.hasRestaurant ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* bar: table count + terrace toggle */}
-          {data.establishmentType === 'bar' && (
-            <>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('tableCountLabel')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={data.tableCount <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={data.tableCount}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 500) {
-                        updateData({ tableCount: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={data.tableCount >= 500}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('hasTerrace')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => updateData({ hasTerrace: !data.hasTerrace })}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                    data.hasTerrace ? 'bg-[#CCFF00]' : 'bg-neutral-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      data.hasTerrace ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* cafe: seat count + wifi toggle */}
-          {data.establishmentType === 'cafe' && (
-            <>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('seatCount')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={handleDecrement}
-                    disabled={data.tableCount <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={500}
-                    value={data.tableCount}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 500) {
-                        updateData({ tableCount: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleIncrement}
-                    disabled={data.tableCount >= 500}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('hasWifi')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => updateData({ hasWifi: !data.hasWifi })}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                    data.hasWifi ? 'bg-[#CCFF00]' : 'bg-neutral-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      data.hasWifi ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* fastfood: register count + delivery toggle */}
-          {data.establishmentType === 'fastfood' && (
-            <>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('registerCount')}
-                </Label>
-                <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = data.registerCount ?? 1;
-                      if (current > 1) updateData({ registerCount: current - 1 });
-                    }}
-                    disabled={(data.registerCount ?? 1) <= 1}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Minus className="h-4 w-4" />
-                  </button>
-                  <input
-                    type="number"
-                    min={1}
-                    max={100}
-                    value={data.registerCount ?? 1}
-                    onChange={(e) => {
-                      const val = parseInt(e.target.value, 10);
-                      if (!isNaN(val) && val >= 1 && val <= 100) {
-                        updateData({ registerCount: val });
-                      }
-                    }}
-                    className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const current = data.registerCount ?? 1;
-                      if (current < 100) updateData({ registerCount: current + 1 });
-                    }}
-                    disabled={(data.registerCount ?? 1) >= 100}
-                    className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                  {t('hasDelivery')}
-                </Label>
-                <button
-                  type="button"
-                  onClick={() => updateData({ hasDelivery: !data.hasDelivery })}
-                  className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors ${
-                    data.hasDelivery ? 'bg-[#CCFF00]' : 'bg-neutral-200'
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                      data.hasDelivery ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-              </div>
-            </>
-          )}
-
-          {/* other: generic table count */}
-          {data.establishmentType === 'other' && (
-            <div>
-              <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
-                {t('tableCountLabel')}
-              </Label>
-              <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
-                <button
-                  type="button"
-                  onClick={handleDecrement}
-                  disabled={data.tableCount <= 1}
-                  className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Minus className="h-4 w-4" />
-                </button>
-                <input
-                  type="number"
-                  min={1}
-                  max={500}
-                  value={data.tableCount}
-                  onChange={(e) => {
-                    const val = parseInt(e.target.value, 10);
-                    if (!isNaN(val) && val >= 1 && val <= 500) {
-                      updateData({ tableCount: val });
-                    }
-                  }}
-                  className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                />
-                <button
-                  type="button"
-                  onClick={handleIncrement}
-                  disabled={data.tableCount >= 500}
-                  className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  <Plus className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
 
+      {/* ─── Preferences Tab ─── */}
+      {/* Language, currency + type-specific fields (counts, toggles) */}
       {activeTab === 'preferences' && (
         <div className="space-y-3">
+          {/* Language */}
           <div>
-            <Label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-              <Globe className="h-3.5 w-3.5" />
-              {t('languageLabel')}
-            </Label>
+            <Label className="text-sm font-medium text-neutral-700">{t('languageLabel')}</Label>
             <Select
               value={data.language}
               onValueChange={(val) => {
@@ -647,11 +326,10 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </SelectContent>
             </Select>
           </div>
+
+          {/* Currency */}
           <div>
-            <Label className="text-sm font-medium text-neutral-700 flex items-center gap-2">
-              <Banknote className="h-3.5 w-3.5" />
-              {t('currencyLabel')}
-            </Label>
+            <Label className="text-sm font-medium text-neutral-700">{t('currencyLabel')}</Label>
             <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
               <SelectTrigger className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm">
                 <SelectValue />
@@ -673,6 +351,135 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </SelectContent>
             </Select>
           </div>
+
+          {/* Divider — type-specific section */}
+          {data.establishmentType && (
+            <div className="pt-1 border-t border-neutral-100">
+              <p className="text-[10px] uppercase tracking-wide text-neutral-400 font-medium mb-2">
+                {t('typeSpecificLabel')}
+              </p>
+            </div>
+          )}
+
+          {/* restaurant: table count + total capacity */}
+          {data.establishmentType === 'restaurant' && (
+            <>
+              <NumberStepper
+                label={t('tableCountLabel')}
+                value={data.tableCount}
+                min={1}
+                max={500}
+                onChange={(val) => updateData({ tableCount: val })}
+              />
+              <NumberStepper
+                label={t('totalCapacity')}
+                value={data.totalCapacity ?? 1}
+                min={1}
+                max={9999}
+                onChange={(val) => updateData({ totalCapacity: val })}
+              />
+            </>
+          )}
+
+          {/* hotel: room count + star rating + has restaurant */}
+          {data.establishmentType === 'hotel' && (
+            <>
+              <NumberStepper
+                label={t('roomCountLabel')}
+                value={data.tableCount}
+                min={1}
+                max={500}
+                onChange={(val) => updateData({ tableCount: val })}
+              />
+              <div>
+                <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
+                  {t('starRating')}
+                </Label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => updateData({ starRating: star })}
+                      className={`text-lg ${(data.starRating || 0) >= star ? 'text-yellow-400' : 'text-neutral-200'}`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <ToggleSwitch
+                label={t('hasRestaurant')}
+                checked={!!data.hasRestaurant}
+                onChange={() => updateData({ hasRestaurant: !data.hasRestaurant })}
+              />
+            </>
+          )}
+
+          {/* bar: table count + terrace toggle */}
+          {data.establishmentType === 'bar' && (
+            <>
+              <NumberStepper
+                label={t('tableCountLabel')}
+                value={data.tableCount}
+                min={1}
+                max={500}
+                onChange={(val) => updateData({ tableCount: val })}
+              />
+              <ToggleSwitch
+                label={t('hasTerrace')}
+                checked={!!data.hasTerrace}
+                onChange={() => updateData({ hasTerrace: !data.hasTerrace })}
+              />
+            </>
+          )}
+
+          {/* cafe: seat count + wifi toggle */}
+          {data.establishmentType === 'cafe' && (
+            <>
+              <NumberStepper
+                label={t('seatCount')}
+                value={data.tableCount}
+                min={1}
+                max={500}
+                onChange={(val) => updateData({ tableCount: val })}
+              />
+              <ToggleSwitch
+                label={t('hasWifi')}
+                checked={!!data.hasWifi}
+                onChange={() => updateData({ hasWifi: !data.hasWifi })}
+              />
+            </>
+          )}
+
+          {/* fastfood: register count + delivery toggle */}
+          {data.establishmentType === 'fastfood' && (
+            <>
+              <NumberStepper
+                label={t('registerCount')}
+                value={data.registerCount ?? 1}
+                min={1}
+                max={100}
+                onChange={(val) => updateData({ registerCount: val })}
+              />
+              <ToggleSwitch
+                label={t('hasDelivery')}
+                checked={!!data.hasDelivery}
+                onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
+              />
+            </>
+          )}
+
+          {/* other: generic table count */}
+          {data.establishmentType === 'other' && (
+            <NumberStepper
+              label={t('tableCountLabel')}
+              value={data.tableCount}
+              min={1}
+              max={500}
+              onChange={(val) => updateData({ tableCount: val })}
+            />
+          )}
         </div>
       )}
     </div>
