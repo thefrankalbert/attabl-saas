@@ -384,7 +384,7 @@ export default function OnboardingPage() {
               {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
               {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
               {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
-              {currentStep === 5 && <LaunchStep data={data} />}
+              {currentStep === 5 && <LaunchStep data={data} updateData={updateData} />}
             </div>
           </div>
         </div>
