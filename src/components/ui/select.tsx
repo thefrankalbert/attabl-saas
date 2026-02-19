@@ -78,7 +78,7 @@ const SelectContent = React.forwardRef<
       className={cn(
         // Nova style: clean dropdown with subtle animation
         'relative z-50 max-h-96 min-w-[8rem] overflow-hidden',
-        'rounded-xl border border-neutral-200 bg-white text-neutral-900',
+        'rounded-xl border border-neutral-200 bg-white text-neutral-900 shadow-none',
         // Animation: clean fade + slide
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',

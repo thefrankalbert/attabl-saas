@@ -44,6 +44,14 @@ export interface OnboardingData {
   tableCount: number;
   language: string;
   currency: string;
+  // Step 1: Type-specific fields
+  starRating?: number;
+  hasRestaurant?: boolean;
+  hasTerrace?: boolean;
+  hasWifi?: boolean;
+  registerCount?: number;
+  hasDelivery?: boolean;
+  totalCapacity?: number;
   // Step 2: Tables
   tableConfigMode: 'complete' | 'minimum' | 'skip';
   tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
@@ -54,7 +62,12 @@ export interface OnboardingData {
   description: string;
   // Step 4: Menu
   menuOption: 'manual' | 'import' | 'template' | 'skip';
-  menuItems: Array<{ name: string; price: number; category: string }>;
+  menuItems: Array<{ name: string; price: number; category: string; imageUrl?: string }>;
+  // Step 5: QR customization
+  qrTemplate: 'standard' | 'chevalet' | 'carte';
+  qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
+  qrCta: string;
+  qrDescription: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -77,6 +90,13 @@ export default function OnboardingPage() {
     tableCount: 10,
     language: 'fr-FR',
     currency: 'EUR',
+    starRating: undefined,
+    hasRestaurant: undefined,
+    hasTerrace: undefined,
+    hasWifi: undefined,
+    registerCount: undefined,
+    hasDelivery: undefined,
+    totalCapacity: undefined,
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
@@ -85,6 +105,10 @@ export default function OnboardingPage() {
     description: '',
     menuOption: 'skip',
     menuItems: [],
+    qrTemplate: 'standard',
+    qrStyle: 'branded',
+    qrCta: 'Scannez pour commander',
+    qrDescription: '',
     tenantId: '',
     tenantSlug: '',
     tenantName: '',
