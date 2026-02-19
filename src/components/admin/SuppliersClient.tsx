@@ -9,8 +9,10 @@ import { useSuppliers } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import AdminModal from '@/components/admin/AdminModal';
 import { createSupplierService } from '@/services/supplier.service';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
@@ -333,101 +335,101 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
       <DataTable columns={columns} data={filtered} emptyMessage={t('noSuppliersFound')} />
 
       {/* Modal — Add / Edit */}
-      {modalMode && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-md animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">
-              {modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
-            </h3>
+      <AdminModal
+        isOpen={modalMode !== null}
+        onClose={() => {
+          setModalMode(null);
+          resetForm();
+        }}
+        title={modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
+        size="sm"
+      >
+        <div className="space-y-3 pt-4">
+          <div>
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('nameLabel')}
+            </Label>
+            <Input
+              value={formName}
+              onChange={(e) => setFormName(e.target.value)}
+              placeholder={t('namePlaceholder')}
+              autoFocus
+            />
+          </div>
 
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('nameLabel')}
-                </label>
-                <Input
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  placeholder={t('namePlaceholder')}
-                  autoFocus
-                />
-              </div>
+          <div>
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('contactPerson')}
+            </Label>
+            <Input
+              value={formContact}
+              onChange={(e) => setFormContact(e.target.value)}
+              placeholder={t('contactPlaceholder')}
+            />
+          </div>
 
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('contactPerson')}
-                </label>
-                <Input
-                  value={formContact}
-                  onChange={(e) => setFormContact(e.target.value)}
-                  placeholder={t('contactPlaceholder')}
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('phoneLabel')}
-                  </label>
-                  <Input
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    placeholder="+237..."
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                    {t('emailLabel')}
-                  </label>
-                  <Input
-                    type="email"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    placeholder="contact@..."
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('addressLabel')}
-                </label>
-                <Input
-                  value={formAddress}
-                  onChange={(e) => setFormAddress(e.target.value)}
-                  placeholder={t('addressPlaceholder')}
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-medium text-neutral-600 mb-1 block">
-                  {t('notesLabel')}
-                </label>
-                <Input
-                  value={formNotes}
-                  onChange={(e) => setFormNotes(e.target.value)}
-                  placeholder={t('notesPlaceholder')}
-                />
-              </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('phoneLabel')}
+              </Label>
+              <Input
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+                placeholder="+237..."
+              />
             </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setModalMode(null);
-                  resetForm();
-                }}
-              >
-                {t('cancelAction')}
-              </Button>
-              <Button onClick={handleSave} variant="lime">
-                {t('save')}
-              </Button>
+            <div>
+              <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('emailLabel')}
+              </Label>
+              <Input
+                type="email"
+                value={formEmail}
+                onChange={(e) => setFormEmail(e.target.value)}
+                placeholder="contact@..."
+              />
             </div>
           </div>
+
+          <div>
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('addressLabel')}
+            </Label>
+            <Input
+              value={formAddress}
+              onChange={(e) => setFormAddress(e.target.value)}
+              placeholder={t('addressPlaceholder')}
+            />
+          </div>
+
+          <div>
+            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+              {t('notesLabel')}
+            </Label>
+            <Input
+              value={formNotes}
+              onChange={(e) => setFormNotes(e.target.value)}
+              placeholder={t('notesPlaceholder')}
+            />
+          </div>
         </div>
-      )}
+
+        <div className="flex justify-end gap-2 mt-6">
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setModalMode(null);
+              resetForm();
+            }}
+          >
+            {t('cancelAction')}
+          </Button>
+          <Button onClick={handleSave} variant="lime">
+            {t('save')}
+          </Button>
+        </div>
+      </AdminModal>
     </div>
   );
 }

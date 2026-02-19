@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Plus, Loader2, Trash2, Pencil, Check, X, Grid3x3, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,7 @@ interface Table {
 export default function TablesPage() {
   const supabase = createClient();
   const { toast } = useToast();
+  const t = useTranslations('tables');
 
   // ─── State ──────────────────────────────────────────────
   const [zones, setZones] = useState<Zone[]>([]);
@@ -74,7 +76,7 @@ export default function TablesPage() {
 
       if (error) {
         logger.error('Failed to load zones', { error });
-        toast({ title: 'Erreur lors du chargement des zones', variant: 'destructive' });
+        toast({ title: t('errorLoadZones'), variant: 'destructive' });
         return [];
       }
 
@@ -97,7 +99,7 @@ export default function TablesPage() {
 
       if (error) {
         logger.error('Failed to load tables', { error });
-        toast({ title: 'Erreur lors du chargement des tables', variant: 'destructive' });
+        toast({ title: t('errorLoadTables'), variant: 'destructive' });
       }
 
       setTables((data || []) as Table[]);
@@ -153,7 +155,7 @@ export default function TablesPage() {
         if (venueErr) {
           logger.error('Failed to create default venue', { error: venueErr });
           toast({
-            title: 'Erreur lors de la creation du lieu',
+            title: t('errorCreateVenue'),
             variant: 'destructive',
           });
           setLoading(false);
@@ -204,9 +206,9 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to create zone', { error });
-      toast({ title: 'Erreur lors de la creation de la zone', variant: 'destructive' });
+      toast({ title: t('errorCreateZone'), variant: 'destructive' });
     } else {
-      toast({ title: 'Zone creee avec succes' });
+      toast({ title: t('successCreateZone') });
       setShowAddZone(false);
       setZoneName('');
       setZonePrefix('');
@@ -236,24 +238,24 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to update zone name', { error });
-      toast({ title: 'Erreur lors de la mise a jour', variant: 'destructive' });
+      toast({ title: t('errorUpdateZone'), variant: 'destructive' });
     } else {
-      toast({ title: 'Zone mise a jour' });
+      toast({ title: t('successUpdateZone') });
       if (venueId) await loadZones(venueId);
     }
     setEditingZoneId(null);
   };
 
   const handleDeleteZone = async (zone: Zone) => {
-    if (!confirm(`Supprimer la zone "${zone.name}" ? Toutes les tables seront supprimees.`)) return;
+    if (!confirm(t('confirmDeleteZone', { name: zone.name }))) return;
 
     const { error } = await supabase.from('zones').delete().eq('id', zone.id);
 
     if (error) {
       logger.error('Failed to delete zone', { error });
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('errorDeleteZone'), variant: 'destructive' });
     } else {
-      toast({ title: 'Zone supprimee' });
+      toast({ title: t('successDeleteZone') });
       if (venueId) {
         const newZones = await loadZones(venueId);
         if (selectedZoneId === zone.id) {
@@ -309,9 +311,9 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to create tables', { error });
-      toast({ title: 'Erreur lors de la creation des tables', variant: 'destructive' });
+      toast({ title: t('errorCreateTables'), variant: 'destructive' });
     } else {
-      toast({ title: `${tableCount} table(s) creee(s)` });
+      toast({ title: t('successCreateTables', { count: tableCount }) });
       setShowAddTables(false);
       setTableCount(1);
       setTableCapacity(4);
@@ -328,7 +330,7 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to toggle table status', { error });
-      toast({ title: 'Erreur lors de la mise a jour', variant: 'destructive' });
+      toast({ title: t('errorToggleTable'), variant: 'destructive' });
     } else {
       setTables((prev) =>
         prev.map((t) => (t.id === table.id ? { ...t, is_active: !t.is_active } : t)),
@@ -344,10 +346,10 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to update capacity', { error });
-      toast({ title: 'Erreur lors de la mise a jour', variant: 'destructive' });
+      toast({ title: t('errorUpdateCapacity'), variant: 'destructive' });
     } else {
       setTables((prev) =>
-        prev.map((t) => (t.id === table.id ? { ...t, capacity: newCapacity } : t)),
+        prev.map((tbl) => (tbl.id === table.id ? { ...tbl, capacity: newCapacity } : tbl)),
       );
     }
   };
@@ -367,26 +369,28 @@ export default function TablesPage() {
 
     if (error) {
       logger.error('Failed to update table name', { error });
-      toast({ title: 'Erreur lors de la mise a jour', variant: 'destructive' });
+      toast({ title: t('errorUpdateTableName'), variant: 'destructive' });
     } else {
       setTables((prev) =>
-        prev.map((t) => (t.id === tableId ? { ...t, display_name: editingDisplayName.trim() } : t)),
+        prev.map((tbl) =>
+          tbl.id === tableId ? { ...tbl, display_name: editingDisplayName.trim() } : tbl,
+        ),
       );
     }
     setEditingTableId(null);
   };
 
   const handleDeleteTable = async (table: Table) => {
-    if (!confirm(`Supprimer la table "${table.display_name}" ?`)) return;
+    if (!confirm(t('confirmDeleteTable', { name: table.display_name }))) return;
 
     const { error } = await supabase.from('tables').delete().eq('id', table.id);
 
     if (error) {
       logger.error('Failed to delete table', { error });
-      toast({ title: 'Erreur lors de la suppression', variant: 'destructive' });
+      toast({ title: t('errorDeleteTable'), variant: 'destructive' });
     } else {
-      toast({ title: 'Table supprimee' });
-      setTables((prev) => prev.filter((t) => t.id !== table.id));
+      toast({ title: t('successDeleteTable') });
+      setTables((prev) => prev.filter((tbl) => tbl.id !== table.id));
     }
   };
 
@@ -408,10 +412,8 @@ export default function TablesPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Configuration des tables</h1>
-        <p className="text-neutral-500 text-sm mt-1">
-          Gerez les zones et tables de votre restaurant
-        </p>
+        <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
+        <p className="text-neutral-500 text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {/* Main Layout */}
@@ -420,8 +422,10 @@ export default function TablesPage() {
         <div className="w-full lg:w-72 flex-shrink-0">
           <div className="bg-white rounded-xl border border-neutral-100 p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-neutral-900">Zones</h2>
-              <span className="text-xs text-neutral-400">{zones.length} zone(s)</span>
+              <h2 className="text-sm font-semibold text-neutral-900">{t('zonesHeader')}</h2>
+              <span className="text-xs text-neutral-400">
+                {t('zoneCount', { count: zones.length })}
+              </span>
             </div>
 
             <div className="space-y-1">
@@ -528,7 +532,7 @@ export default function TablesPage() {
               onClick={() => setShowAddZone(true)}
             >
               <Plus className="w-3.5 h-3.5" />
-              Ajouter une zone
+              {t('addZone')}
             </Button>
           </div>
         </div>
@@ -553,7 +557,7 @@ export default function TablesPage() {
                   onClick={() => setShowAddTables(true)}
                 >
                   <Plus className="w-4 h-4" />
-                  Ajouter des tables
+                  {t('addTables')}
                 </Button>
               </div>
 
@@ -624,7 +628,7 @@ export default function TablesPage() {
 
                       {/* Capacity */}
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs text-neutral-500">Places:</span>
+                        <span className="text-xs text-neutral-500">{t('capacity')}</span>
                         <select
                           value={table.capacity}
                           onChange={(e) =>
@@ -649,7 +653,7 @@ export default function TablesPage() {
                           className="w-4 h-4 rounded border-neutral-300 text-[#CCFF00] focus:ring-[#CCFF00]/50"
                         />
                         <span className="text-xs text-neutral-500">
-                          {table.is_active ? 'Active' : 'Inactive'}
+                          {table.is_active ? t('active') : t('inactive')}
                         </span>
                       </label>
                     </div>
@@ -660,12 +664,10 @@ export default function TablesPage() {
                   <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                     <Grid3x3 className="w-8 h-8 text-neutral-400" />
                   </div>
-                  <h3 className="text-lg font-bold text-neutral-900">Aucune table</h3>
-                  <p className="text-sm text-neutral-500 mt-2">
-                    Ajoutez des tables a cette zone pour commencer
-                  </p>
+                  <h3 className="text-lg font-bold text-neutral-900">{t('noTableTitle')}</h3>
+                  <p className="text-sm text-neutral-500 mt-2">{t('noTableDesc')}</p>
                   <Button variant="lime" className="mt-6" onClick={() => setShowAddTables(true)}>
-                    Ajouter des tables
+                    {t('addTablesAction')}
                   </Button>
                 </div>
               )}
@@ -675,12 +677,10 @@ export default function TablesPage() {
               <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <MapPin className="w-8 h-8 text-neutral-400" />
               </div>
-              <h3 className="text-lg font-bold text-neutral-900">Aucune zone</h3>
-              <p className="text-sm text-neutral-500 mt-2">
-                Creez une zone pour commencer a organiser vos tables
-              </p>
+              <h3 className="text-lg font-bold text-neutral-900">{t('noZoneTitle')}</h3>
+              <p className="text-sm text-neutral-500 mt-2">{t('noZoneDesc')}</p>
               <Button variant="lime" className="mt-6" onClick={() => setShowAddZone(true)}>
-                Creer une zone
+                {t('createZone')}
               </Button>
             </div>
           )}
@@ -691,40 +691,38 @@ export default function TablesPage() {
       <AdminModal
         isOpen={showAddZone}
         onClose={() => setShowAddZone(false)}
-        title="Ajouter une zone"
+        title={t('modalAddZoneTitle')}
       >
         <form onSubmit={handleAddZone} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="zone-name">Nom de la zone</Label>
+            <Label htmlFor="zone-name">{t('zoneNameLabel')}</Label>
             <Input
               id="zone-name"
               value={zoneName}
               onChange={(e) => setZoneName(e.target.value)}
-              placeholder="Ex: Salle principale"
+              placeholder={t('zoneNamePlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="zone-prefix">Prefixe des tables</Label>
+            <Label htmlFor="zone-prefix">{t('zonePrefixLabel')}</Label>
             <Input
               id="zone-prefix"
               value={zonePrefix}
               onChange={(e) => setZonePrefix(e.target.value)}
-              placeholder="Ex: SAL"
+              placeholder={t('zonePrefixPlaceholder')}
               required
               maxLength={5}
             />
-            <p className="text-xs text-neutral-400">
-              Le prefixe sera utilise pour nommer les tables (ex: SAL-1, SAL-2)
-            </p>
+            <p className="text-xs text-neutral-400">{t('zonePrefixHelp')}</p>
           </div>
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="ghost" onClick={() => setShowAddZone(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" variant="lime" disabled={savingZone}>
               {savingZone && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Creer la zone
+              {t('createZoneSubmit')}
             </Button>
           </div>
         </form>
@@ -734,17 +732,18 @@ export default function TablesPage() {
       <AdminModal
         isOpen={showAddTables}
         onClose={() => setShowAddTables(false)}
-        title="Ajouter des tables"
+        title={t('modalAddTablesTitle')}
       >
         <form onSubmit={handleAddTables} className="space-y-4 pt-2">
           {selectedZone && (
             <p className="text-sm text-neutral-500">
-              Zone : <span className="font-medium text-neutral-700">{selectedZone.name}</span>
+              {t('addTablesZoneLabel')}{' '}
+              <span className="font-medium text-neutral-700">{selectedZone.name}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="table-count">Nombre de tables</Label>
+              <Label htmlFor="table-count">{t('tableCountLabel')}</Label>
               <Input
                 id="table-count"
                 type="number"
@@ -756,7 +755,7 @@ export default function TablesPage() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="table-capacity">Places par table</Label>
+              <Label htmlFor="table-capacity">{t('tableCapacityLabel')}</Label>
               <Input
                 id="table-capacity"
                 type="number"
@@ -770,11 +769,11 @@ export default function TablesPage() {
           </div>
           {selectedZone && (
             <div className="bg-neutral-50 rounded-lg p-3 text-xs text-neutral-500">
-              Les tables seront nommees{' '}
+              {t('tableNamingPreview')}{' '}
               <span className="font-mono font-medium text-neutral-700">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + 1}
               </span>{' '}
-              a{' '}
+              {t('tableNamingTo')}{' '}
               <span className="font-mono font-medium text-neutral-700">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + tableCount}
               </span>
@@ -782,11 +781,11 @@ export default function TablesPage() {
           )}
           <div className="flex justify-end gap-3 pt-4 border-t">
             <Button type="button" variant="ghost" onClick={() => setShowAddTables(false)}>
-              Annuler
+              {t('cancel')}
             </Button>
             <Button type="submit" variant="lime" disabled={savingTables}>
               {savingTables && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              Ajouter {tableCount} table(s)
+              {t('addTablesSubmit', { count: tableCount })}
             </Button>
           </div>
         </form>
