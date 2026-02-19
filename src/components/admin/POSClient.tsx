@@ -647,6 +647,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         onClose={() => setShowPaymentModal(false)}
         orderNumber={orderNumber}
         total={total}
+        tableNumber={selectedTable || `CMD-${orderNumber}`}
         onSuccess={() => handleOrder('delivered')}
       />
     </div>

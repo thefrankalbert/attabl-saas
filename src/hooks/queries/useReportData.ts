@@ -140,16 +140,14 @@ export function useReportData(tenantId: string, period: Period) {
           .lte('created_at', endDate + 'T23:59:59')
           .not('server_id', 'is', null);
 
-        // Graceful fallback if RPCs not deployed
+        // Throw on RPC failure so TanStack Query enters error state
         if (dailyRes.error || topRes.error || summaryRes.error) {
-          return {
-            dailyStats: [],
-            topItems: [],
-            categories: [],
-            serverStats: [],
-            summary: { revenue: 0, orders: 0, avgBasket: 0 },
-            previousSummary: { revenue: 0, orders: 0, avgBasket: 0 },
-          };
+          const msg =
+            dailyRes.error?.message ||
+            topRes.error?.message ||
+            summaryRes.error?.message ||
+            'Unknown RPC error';
+          throw new Error(`Reports RPC failed: ${msg}`);
         }
 
         // Process daily stats
@@ -260,15 +258,9 @@ export function useReportData(tenantId: string, period: Period) {
         }
 
         return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
-      } catch {
-        return {
-          dailyStats: [],
-          topItems: [],
-          categories: [],
-          serverStats: [],
-          summary: { revenue: 0, orders: 0, avgBasket: 0 },
-          previousSummary: { revenue: 0, orders: 0, avgBasket: 0 },
-        };
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : 'Unknown error loading reports';
+        throw new Error(message);
       }
     },
     enabled: !!tenantId,

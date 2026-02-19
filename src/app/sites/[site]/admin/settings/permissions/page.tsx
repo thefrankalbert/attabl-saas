@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, ShieldCheck, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -20,30 +21,6 @@ import type { AdminRole } from '@/types/admin.types';
 
 const EDITABLE_ROLES: AdminRole[] = ['admin', 'manager', 'cashier', 'chef', 'waiter'];
 
-const PERMISSION_LABELS: Record<PermissionCode, string> = {
-  'menu.view': 'Voir le menu',
-  'menu.edit': 'Modifier le menu',
-  'orders.view': 'Voir les commandes',
-  'orders.manage': 'Gerer les commandes',
-  'reports.view': 'Voir les rapports',
-  'pos.use': 'Utiliser la caisse',
-  'inventory.view': "Voir l'inventaire",
-  'inventory.edit': "Modifier l'inventaire",
-  'team.view': "Voir l'equipe",
-  'team.manage': "Gerer l'equipe",
-  'settings.view': 'Voir les parametres',
-  'settings.edit': 'Modifier les parametres',
-};
-
-const ROLE_LABELS: Record<string, string> = {
-  owner: 'Proprietaire',
-  admin: 'Administrateur',
-  manager: 'Manager',
-  cashier: 'Caissier',
-  chef: 'Chef Cuisine',
-  waiter: 'Serveur',
-};
-
 const DEBOUNCE_MS = 500;
 
 // ─── Component ────────────────────────────────────────
@@ -51,6 +28,7 @@ const DEBOUNCE_MS = 500;
 export default function PermissionsPage() {
   const supabase = createClient();
   const { toast } = useToast();
+  const t = useTranslations('permissions');
 
   // ─── State ────────────────────────────────────────
   const [loading, setLoading] = useState(true);
@@ -63,6 +41,23 @@ export default function PermissionsPage() {
 
   // Debounce timer per role
   const debounceTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  // ─── i18n Helpers ───────────────────────────────────
+
+  const permissionLabel = useCallback(
+    (perm: PermissionCode): string => {
+      const key = perm.replace('.', '_') as 'menu_view';
+      return t(`perm.${key}`);
+    },
+    [t],
+  );
+
+  const roleLabel = useCallback(
+    (role: string): string => {
+      return t(`role.${role}`);
+    },
+    [t],
+  );
 
   // ─── Initialization ───────────────────────────────
 
@@ -105,7 +100,7 @@ export default function PermissionsPage() {
       if (error) {
         logger.error('Failed to load role permissions', { error });
         toast({
-          title: 'Erreur lors du chargement des permissions',
+          title: t('loadError'),
           variant: 'destructive',
         });
       }
@@ -174,7 +169,7 @@ export default function PermissionsPage() {
           });
           if (!res.ok) {
             const data: { error?: string } = await res.json();
-            throw new Error(data.error || 'Erreur de sauvegarde');
+            throw new Error(data.error || t('saveError'));
           }
         } else {
           // No overrides: delete the row to fall back to defaults
@@ -185,21 +180,21 @@ export default function PermissionsPage() {
           });
           if (!res.ok) {
             const data: { error?: string } = await res.json();
-            throw new Error(data.error || 'Erreur de suppression');
+            throw new Error(data.error || t('deleteError'));
           }
         }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur lors de la sauvegarde';
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : t('saveError');
         logger.error('Failed to save role permissions', err, { role });
         toast({
-          title: message,
+          title: `${message} (${roleLabel(role)})`,
           variant: 'destructive',
         });
       }
 
       setSaving(false);
     },
-    [tenantId, toast],
+    [tenantId, toast, t, roleLabel],
   );
 
   // ─── Toggle Permission ────────────────────────────
@@ -253,7 +248,7 @@ export default function PermissionsPage() {
         });
         if (!res.ok) {
           const data: { error?: string } = await res.json();
-          throw new Error(data.error || 'Erreur lors de la restauration');
+          throw new Error(data.error || t('restoreError'));
         }
 
         setRoleOverrides((prev) => {
@@ -261,9 +256,9 @@ export default function PermissionsPage() {
           delete next[role];
           return next;
         });
-        toast({ title: `Permissions par defaut restaurees pour ${ROLE_LABELS[role]}` });
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Erreur lors de la restauration';
+        toast({ title: t('restoreSuccess', { role: roleLabel(role) }) });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : t('restoreError');
         logger.error('Failed to restore defaults', err, { role });
         toast({
           title: message,
@@ -273,7 +268,7 @@ export default function PermissionsPage() {
 
       setSaving(false);
     },
-    [tenantId, toast],
+    [tenantId, toast, t, roleLabel],
   );
 
   // ─── Cleanup Timers ───────────────────────────────
@@ -305,10 +300,8 @@ export default function PermissionsPage() {
         <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mb-4">
           <ShieldCheck className="w-8 h-8 text-red-400" />
         </div>
-        <h2 className="text-lg font-bold text-neutral-900">Acces refuse</h2>
-        <p className="text-sm text-neutral-500 mt-2">
-          Seul le proprietaire peut gerer les permissions.
-        </p>
+        <h2 className="text-lg font-bold text-neutral-900">{t('accessDenied')}</h2>
+        <p className="text-sm text-neutral-500 mt-2">{t('ownerOnly')}</p>
       </div>
     );
   }
@@ -319,15 +312,15 @@ export default function PermissionsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Permissions par role</h1>
-        <p className="text-neutral-500 text-sm mt-1">Personnalisez les acces pour chaque role</p>
+        <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
+        <p className="text-neutral-500 text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {/* Saving indicator */}
       {saving && (
         <div className="flex items-center gap-2 text-sm text-neutral-500">
           <Loader2 className="w-4 h-4 animate-spin" />
-          Sauvegarde...
+          {t('saving')}
         </div>
       )}
 
@@ -339,12 +332,12 @@ export default function PermissionsPage() {
             <thead>
               <tr className="border-b border-neutral-100">
                 <th className="text-left text-sm font-semibold text-neutral-900 px-4 py-3 min-w-[200px] sticky left-0 bg-white z-10">
-                  Permission
+                  {t('permissionColumn')}
                 </th>
                 {/* Owner column (locked) */}
                 <th className="text-center px-3 py-3 min-w-[100px]">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                    {ROLE_LABELS.owner}
+                    {roleLabel('owner')}
                   </span>
                 </th>
                 {/* Editable role columns */}
@@ -360,7 +353,7 @@ export default function PermissionsPage() {
                         role === 'waiter' && 'bg-cyan-50 text-cyan-700 border border-cyan-200',
                       )}
                     >
-                      {ROLE_LABELS[role]}
+                      {roleLabel(role)}
                     </span>
                   </th>
                 ))}
@@ -379,10 +372,7 @@ export default function PermissionsPage() {
                 >
                   {/* Permission label */}
                   <td className="text-sm text-neutral-700 px-4 py-3 sticky left-0 bg-inherit z-10">
-                    <div className="flex flex-col">
-                      <span className="font-medium">{PERMISSION_LABELS[perm]}</span>
-                      <span className="text-xs text-neutral-400 font-mono">{perm}</span>
-                    </div>
+                    <span className="font-medium">{permissionLabel(perm)}</span>
                   </td>
 
                   {/* Owner cell (always on, locked) */}
@@ -390,7 +380,7 @@ export default function PermissionsPage() {
                     <div className="flex justify-center opacity-50 pointer-events-none">
                       <Switch
                         checked={true}
-                        aria-label={`${PERMISSION_LABELS[perm]} - Proprietaire`}
+                        aria-label={`${permissionLabel(perm)} - ${roleLabel('owner')}`}
                       />
                     </div>
                   </td>
@@ -408,7 +398,7 @@ export default function PermissionsPage() {
                             checked={isEnabled}
                             onCheckedChange={() => handleToggle(role, perm)}
                             className={cn(isEnabled ? 'data-[state=checked]:bg-[#CCFF00]' : '')}
-                            aria-label={`${PERMISSION_LABELS[perm]} - ${ROLE_LABELS[role]}`}
+                            aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
                           />
                           {isOverridden && (
                             <span
@@ -419,7 +409,7 @@ export default function PermissionsPage() {
                                   : 'bg-neutral-50 text-neutral-400',
                               )}
                             >
-                              modifie
+                              {t('modified')}
                             </span>
                           )}
                         </div>
@@ -435,7 +425,7 @@ export default function PermissionsPage() {
         {/* Restore defaults row */}
         <div className="border-t border-neutral-100 px-4 py-3 flex items-center gap-4 bg-neutral-50/50">
           <span className="text-xs text-neutral-500 font-medium min-w-[200px]">
-            Restaurer les defauts
+            {t('restoreDefaults')}
           </span>
           {/* Owner placeholder */}
           <div className="min-w-[100px] flex justify-center px-3">
@@ -452,7 +442,7 @@ export default function PermissionsPage() {
                   onClick={() => handleRestoreDefaults(role)}
                 >
                   <RotateCcw className="w-3 h-3" />
-                  Reset
+                  {t('reset')}
                 </Button>
               ) : (
                 <span className="text-xs text-neutral-300">--</span>
@@ -465,18 +455,18 @@ export default function PermissionsPage() {
       {/* Legend */}
       <div className="bg-neutral-50 rounded-xl p-4 text-xs text-neutral-500 space-y-1">
         <p>
-          <span className="inline-block w-3 h-3 rounded-full bg-[#CCFF00] align-middle mr-1.5" />
-          = autorise
+          <span className="inline-block w-3 h-3 rounded-full bg-[#CCFF00] align-middle mr-1.5" />={' '}
+          {t('legendAllowed')}
           <span className="inline-block w-3 h-3 rounded-full bg-neutral-200 align-middle ml-4 mr-1.5" />
-          = refuse
+          = {t('legendDenied')}
         </p>
         <p>
           <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium align-middle mr-1.5">
-            modifie
+            {t('modified')}
           </span>
-          = valeur differente du defaut
+          = {t('legendModified')}
         </p>
-        <p>Les modifications sont sauvegardees automatiquement.</p>
+        <p>{t('autoSaveNote')}</p>
       </div>
     </div>
   );

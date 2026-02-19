@@ -177,14 +177,14 @@ export default function OrdersClient({
       {
         accessorFn: (row: Order) => row.server?.full_name ?? '—',
         id: 'server',
-        header: ({ column }) => <SortableHeader column={column}>Serveur</SortableHeader>,
+        header: ({ column }) => <SortableHeader column={column}>{t('serverLabel')}</SortableHeader>,
         cell: ({ getValue }) => (
           <span className="text-sm text-neutral-400">{getValue() as string}</span>
         ),
       },
       {
         accessorKey: 'created_at',
-        header: ({ column }) => <SortableHeader column={column}>{tc('date')}</SortableHeader>,
+        header: ({ column }) => <SortableHeader column={column}>{t('dateColumn')}</SortableHeader>,
         cell: ({ row }) => (
           <span className="text-neutral-500 text-xs whitespace-nowrap">
             {new Date(row.original.created_at).toLocaleTimeString([], {
@@ -214,7 +214,7 @@ export default function OrdersClient({
           const items = row.original.items || [];
           return (
             <span className="text-neutral-600 text-sm">
-              {items.length} {items.length === 1 ? 'item' : 'items'}
+              {items.length} {items.length === 1 ? tc('item') : tc('items')}
             </span>
           );
         },
@@ -334,7 +334,12 @@ export default function OrdersClient({
       </div>
 
       {/* Orders Table */}
-      <DataTable columns={columns} data={filteredOrders} emptyMessage={t('noOrdersMatch')} />
+      <DataTable
+        columns={columns}
+        data={filteredOrders}
+        emptyMessage={t('noOrdersMatch')}
+        onRowClick={(order) => setSelectedOrder(order)}
+      />
 
       {/* Detail Modal */}
       <AdminModal

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useQRDesignConfig } from '@/hooks/useQRDesignConfig';
 import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QRPreview } from '@/components/qr/QRPreview';
@@ -19,6 +20,7 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Table, Zone } from '@/types/admin.types';
 import type { QRDesignConfig } from '@/types/qr-design.types';
@@ -53,10 +55,17 @@ function buildQRUrl(baseUrl: string, tableName?: string, menuSlug?: string): str
 }
 
 export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePageProps) {
+  const t = useTranslations('qrCodes');
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
   const [currentStep, setCurrentStep] = useState(0);
+  const [maxVisited, setMaxVisited] = useState(0);
   const downloadPreviewRef = useRef<HTMLDivElement>(null);
+
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+    setMaxVisited((prev) => Math.max(prev, step));
+  };
 
   // QR Design Config (centralized state for customizer)
   const { config, updateField, setTemplate } = useQRDesignConfig(
@@ -93,86 +102,92 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   const qrSubtitle = selectedTable ? selectedTable.display_name : undefined;
 
   const steps = [
-    { number: 0, label: 'Sélection', icon: Table2 },
-    { number: 1, label: 'Personnalisation', icon: Palette },
-    { number: 2, label: 'Aperçu & Téléchargement', icon: Download },
+    { number: 0, label: t('stepSelection'), icon: Table2 },
+    { number: 1, label: t('stepCustomization'), icon: Palette },
+    { number: 2, label: t('stepDownload'), icon: Download },
   ] as const;
 
   return (
-    <div>
+    <div className="flex flex-col h-full">
       {/* Header — always visible */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
+      <div className="mb-6">
+        <div className="flex items-center gap-3 mb-1">
           <div className="p-2 bg-neutral-100 rounded-xl">
-            <QrCode className="h-6 w-6 text-neutral-600" />
+            <QrCode className="h-5 w-5 text-neutral-600" />
           </div>
-          <h1 className="text-2xl font-bold text-neutral-900">QR Codes</h1>
+          <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
         </div>
-        <p className="text-neutral-500">
-          Générez et imprimez des QR codes pour vos tables et supports.
-        </p>
+        <p className="text-sm text-neutral-500">{t('subtitle')}</p>
       </div>
 
-      {/* ─── Horizontal Stepper ─── */}
-      <div className="mb-8">
+      {/* ─── Clickable Stepper ─── */}
+      <div className="mb-6">
         <div className="flex items-center justify-between">
           {steps.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = currentStep === step.number;
             const isCompleted = currentStep > step.number;
+            const isClickable = step.number <= maxVisited;
 
             return (
               <div key={step.number} className="flex items-center flex-1 last:flex-none">
-                {/* Step circle + label */}
                 <button
                   type="button"
                   onClick={() => {
-                    if (isCompleted) setCurrentStep(step.number);
+                    if (isClickable) goToStep(step.number);
                   }}
-                  className={`flex items-center gap-2.5 ${isCompleted ? 'cursor-pointer' : 'cursor-default'}`}
+                  className={cn(
+                    'flex items-center gap-2.5 transition-opacity',
+                    isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
+                  )}
                 >
                   <div
-                    className={`flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold transition-colors ${
+                    className={cn(
+                      'flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold transition-colors',
                       isActive
                         ? 'bg-[#CCFF00] text-black'
                         : isCompleted
                           ? 'bg-neutral-900 text-white'
-                          : 'bg-neutral-200 text-neutral-400'
-                    }`}
+                          : isClickable
+                            ? 'bg-neutral-300 text-neutral-600'
+                            : 'bg-neutral-200 text-neutral-400',
+                    )}
                   >
                     {isCompleted ? <Check className="w-4 h-4" /> : <span>{step.number + 1}</span>}
                   </div>
                   <div className="hidden sm:flex items-center gap-1.5">
                     <StepIcon
-                      className={`w-4 h-4 ${
+                      className={cn(
+                        'w-4 h-4',
                         isActive
                           ? 'text-neutral-900'
-                          : isCompleted
+                          : isCompleted || isClickable
                             ? 'text-neutral-600'
-                            : 'text-neutral-300'
-                      }`}
+                            : 'text-neutral-300',
+                      )}
                     />
                     <span
-                      className={`text-sm ${
+                      className={cn(
+                        'text-sm',
                         isActive
                           ? 'font-bold text-neutral-900'
-                          : isCompleted
+                          : isCompleted || isClickable
                             ? 'font-medium text-neutral-600'
-                            : 'font-medium text-neutral-400'
-                      }`}
+                            : 'font-medium text-neutral-400',
+                      )}
                     >
                       {step.label}
                     </span>
                   </div>
                 </button>
 
-                {/* Connector line between steps */}
                 {index < steps.length - 1 && (
                   <div className="flex-1 mx-3">
                     <div
-                      className={`h-0.5 w-full transition-colors ${
-                        isCompleted ? 'bg-neutral-900' : 'bg-neutral-200'
-                      }`}
+                      className={cn(
+                        'h-0.5 w-full transition-colors',
+                        isCompleted ? 'bg-neutral-900' : 'bg-neutral-200',
+                      )}
                     />
                   </div>
                 )}
@@ -190,7 +205,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
             <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
             <div>
               <p className="text-sm text-blue-800">
-                <strong>URL de votre menu :</strong>{' '}
+                <strong>{t('menuUrl')} :</strong>{' '}
                 <a
                   href={menuUrl}
                   target="_blank"
@@ -200,9 +215,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                   {menuUrl}
                 </a>
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                Les clients qui scannent le QR code seront redirigés vers cette URL.
-              </p>
+              <p className="text-xs text-blue-600 mt-1">{t('qrRedirectInfo')}</p>
             </div>
           </div>
 
@@ -211,7 +224,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
             <div className="bg-white rounded-xl border border-neutral-100 p-5">
               <h3 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-neutral-400" />
-                Sélectionnez une table et/ou un menu
+                {t('selectTableMenu')}
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Table Selector */}
@@ -222,7 +235,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                       className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
                     >
                       <Table2 className="w-3.5 h-3.5" />
-                      Table
+                      {t('table')}
                     </label>
                     <select
                       id="qr-table-select"
@@ -230,13 +243,15 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                       onChange={(e) => setSelectedTableId(e.target.value)}
                       className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
                     >
-                      <option value="">Aucune table (QR générique)</option>
+                      <option value="">{t('noTable')}</option>
                       {tablesByZone.map(({ zone, tables: zoneTables }) => (
                         <optgroup key={zone.id} label={zone.name}>
                           {zoneTables.map((table) => (
                             <option key={table.id} value={table.id}>
                               {table.display_name}
-                              {table.capacity > 0 ? ` (${table.capacity} places)` : ''}
+                              {table.capacity > 0
+                                ? ` (${t('seats', { count: table.capacity })})`
+                                : ''}
                             </option>
                           ))}
                         </optgroup>
@@ -253,7 +268,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                       className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
                     >
                       <BookOpen className="w-3.5 h-3.5" />
-                      Carte / Menu
+                      {t('menuLabel')}
                     </label>
                     <select
                       id="qr-menu-select"
@@ -261,7 +276,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                       onChange={(e) => setSelectedMenuId(e.target.value)}
                       className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
                     >
-                      <option value="">Toutes les cartes</option>
+                      <option value="">{t('allMenus')}</option>
                       {menus.map((menu) => (
                         <option key={menu.id} value={menu.id}>
                           {menu.name}
@@ -284,16 +299,16 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           {/* Selection Summary */}
           <div className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-100">
             <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
-              Résumé de la sélection
+              {t('selectionSummary')}
             </h4>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5 text-sm text-neutral-700">
                 <Table2 className="w-3.5 h-3.5 text-neutral-400" />
-                <span>{selectedTable ? selectedTable.display_name : 'Aucune table'}</span>
+                <span>{selectedTable ? selectedTable.display_name : t('noTableSelected')}</span>
               </div>
               <div className="flex items-center gap-1.5 text-sm text-neutral-700">
                 <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
-                <span>{selectedMenu ? selectedMenu.name : 'Toutes les cartes'}</span>
+                <span>{selectedMenu ? selectedMenu.name : t('allMenus')}</span>
               </div>
             </div>
           </div>
@@ -323,7 +338,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
             <h3 className="text-base font-bold text-neutral-900 mb-4 flex items-center gap-2">
               <QrCode className="w-4 h-4 text-neutral-400" />
-              Votre QR Code
+              {t('yourQRCode')}
             </h3>
             <div className="flex justify-center mb-6">
               <div className="max-w-xs w-full">
@@ -347,11 +362,10 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                 <div>
                   <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
                     <Download className="w-4 h-4 text-neutral-400" />
-                    Génération par lot
+                    {t('batchGeneration')}
                   </h3>
                   <p className="text-sm text-neutral-500 mt-1">
-                    Générez un QR code pour chaque table — {tables.length} table
-                    {tables.length > 1 ? 's' : ''} trouvée{tables.length > 1 ? 's' : ''}
+                    {t('batchGenerationDesc', { count: tables.length })}
                   </p>
                 </div>
               </div>
@@ -372,58 +386,46 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           {/* Tips */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">Standard</h3>
-              <p className="text-sm text-neutral-500">
-                Format carré 10×10 cm, idéal pour les affichages muraux et comptoirs.
-              </p>
+              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipStandard')}</h3>
+              <p className="text-sm text-neutral-500">{t('tipStandardDesc')}</p>
             </div>
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">Chevalet</h3>
-              <p className="text-sm text-neutral-500">
-                Format A6 vertical, parfait pour les chevalets de table.
-              </p>
+              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipEasel')}</h3>
+              <p className="text-sm text-neutral-500">{t('tipEaselDesc')}</p>
             </div>
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">Carte</h3>
-              <p className="text-sm text-neutral-500">
-                Format carte de visite, idéal pour le room service hôtelier.
-              </p>
+              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipCard')}</h3>
+              <p className="text-sm text-neutral-500">{t('tipCardDesc')}</p>
             </div>
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
               <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                Minimal
+                {t('tipMinimal')}
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
                   <Sparkles className="w-3 h-3" />
                   Premium
                 </span>
               </h3>
-              <p className="text-sm text-neutral-500">
-                Ultra-clean, grand QR avec une fine ligne séparatrice.
-              </p>
+              <p className="text-sm text-neutral-500">{t('tipMinimalDesc')}</p>
             </div>
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
               <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                Élégant
+                {t('tipElegant')}
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
                   <Sparkles className="w-3 h-3" />
                   Premium
                 </span>
               </h3>
-              <p className="text-sm text-neutral-500">
-                Bordure ornementale double, style serif raffiné.
-              </p>
+              <p className="text-sm text-neutral-500">{t('tipElegantDesc')}</p>
             </div>
             <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
               <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                Néon
+                {t('tipNeon')}
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
                   <Sparkles className="w-3 h-3" />
                   Premium
                 </span>
               </h3>
-              <p className="text-sm text-neutral-500">
-                Fond sombre avec accent vif et effet glow lumineux.
-              </p>
+              <p className="text-sm text-neutral-500">{t('tipNeonDesc')}</p>
             </div>
           </div>
         </div>
@@ -435,11 +437,11 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <Button
             type="button"
             variant="ghost"
-            onClick={() => setCurrentStep((s) => s - 1)}
+            onClick={() => goToStep(currentStep - 1)}
             className="gap-2 text-neutral-600 hover:text-neutral-900"
           >
             <ChevronLeft className="w-4 h-4" />
-            Précédent
+            {t('previous')}
           </Button>
         ) : (
           <div />
@@ -449,10 +451,10 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
           <Button
             type="button"
             variant="lime"
-            onClick={() => setCurrentStep((s) => s + 1)}
+            onClick={() => goToStep(currentStep + 1)}
             className="gap-2 rounded-xl"
           >
-            Suivant
+            {t('next')}
             <ChevronRight className="w-4 h-4" />
           </Button>
         )}
@@ -483,6 +485,7 @@ function BatchQRPreview({
   primaryColor,
   config,
 }: BatchQRPreviewProps) {
+  const t = useTranslations('qrCodes');
   const [generating, setGenerating] = useState(false);
 
   const selectedMenu = menus.find((m) => m.id === selectedMenuId);
@@ -636,12 +639,12 @@ function BatchQRPreview({
       >
         <Download className="w-4 h-4" />
         {generating
-          ? `Génération en cours (${tables.length} QR codes)...`
-          : `Télécharger ${tables.length} QR code${tables.length > 1 ? 's' : ''} (PDF)`}
+          ? t('batchGenerating', { count: tables.length })
+          : t('batchDownload', { count: tables.length })}
       </Button>
       {selectedMenu && (
         <p className="text-xs text-neutral-400 mt-2 text-center">
-          Chaque QR redirige vers la carte « {selectedMenu.name} »
+          {t('batchMenuRedirect', { menu: selectedMenu.name })}
         </p>
       )}
     </div>
