@@ -169,7 +169,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
 
       // Update display_order in database
       try {
-        const updates = reordered.map((cat, i) => ({
+        const updates = reordered.map((cat, i: number) => ({
           id: cat.id,
           display_order: i,
           tenant_id: tenantId,
