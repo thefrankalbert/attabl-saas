@@ -96,6 +96,14 @@ export default function PaymentModal({
   };
 
   const handleProcessPayment = async () => {
+    if (!finalTable || finalTable === t('unknownTable')) {
+      toast({
+        title: t('tableRequired'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsProcessing(true);
 
     try {

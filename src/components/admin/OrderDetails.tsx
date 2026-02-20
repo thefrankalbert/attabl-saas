@@ -99,7 +99,7 @@ export default function OrderDetails({
             {order.service_type && order.service_type !== 'dine_in' && (
               <Badge variant="outline" className="mt-1">
                 {serviceLabels[order.service_type] || order.service_type}
-                {order.room_number ? ` Ch.${order.room_number}` : ''}
+                {order.room_number ? ` ${t('roomNumber', { number: order.room_number })}` : ''}
               </Badge>
             )}
           </div>

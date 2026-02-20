@@ -39,6 +39,7 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     secondaryColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, messages.invalidColor),
     address: z.string().optional(),
     phone: z.string().optional(),
+    logo_url: z.string().optional(),
     // Facturation fields
     currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
     enableTax: z.boolean().optional(),
@@ -103,7 +104,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('identity');
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedSoundId, setSelectedSoundId] = useState(
@@ -126,6 +126,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       secondaryColor: tenant.secondary_color || '#FFFFFF',
       address: tenant.address || '',
       phone: tenant.phone || '',
+      logo_url: tenant.logo_url || '',
       currency: tenant.currency || 'XAF',
       enableTax: tenant.enable_tax ?? false,
       taxRate: tenant.tax_rate ?? 0,
@@ -142,67 +143,68 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const watchIdleTimeoutMinutes = watch('idleTimeoutMinutes');
   const watchScreenLockMode = watch('screenLockMode');
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: t('fileTooLarge'),
-          description: t('logoMaxSize'),
-          variant: 'destructive',
-        });
-        return;
+    if (!file) return;
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: t('fileTooLarge'),
+        description: t('logoMaxSize'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Set local DataURL preview for immediate feedback
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Supabase Storage
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop() || 'png';
+      const filePath = `${tenant.id}/logo.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('tenant-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
       }
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('tenant-logos').getPublicUrl(filePath);
+
+      setValue('logo_url', publicUrl);
+
+      toast({
+        title: t('logoUploaded'),
+      });
+    } catch (uploadErr) {
+      logger.error('Failed to upload logo to storage', uploadErr);
+      // Revert logo preview to original on failure
+      setLogoPreview(tenant.logo_url || null);
+      toast({
+        title: tc('error'),
+        description: t('logoUploadError'),
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
   const onSubmit = async (data: SettingsFormValues) => {
     setSaving(true);
     try {
-      let finalLogoUrl = tenant.logo_url || '';
-
-      // Upload logo if changed
-      if (logoFile) {
-        setUploading(true);
-        try {
-          const supabase = createClient();
-          const fileExt = logoFile.name.split('.').pop() || 'png';
-          const fileName = `${tenant.slug}/logo-${Date.now()}.${fileExt}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('images')
-            .upload(fileName, logoFile, { upsert: true });
-
-          if (uploadError) {
-            throw uploadError;
-          }
-
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('images').getPublicUrl(fileName);
-          finalLogoUrl = publicUrl;
-        } catch (uploadErr) {
-          logger.error('Failed to upload logo to storage', uploadErr);
-          // Revert logo preview to original on failure
-          setLogoPreview(tenant.logo_url || null);
-          setLogoFile(null);
-          toast({
-            title: tc('error'),
-            description: t('logoUploadError'),
-            variant: 'destructive',
-          });
-          return;
-        } finally {
-          setUploading(false);
-        }
-      }
-
       // Prepare form data for server action
       const formData = new FormData();
       formData.append('name', data.name);
@@ -211,7 +213,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('secondaryColor', data.secondaryColor);
       formData.append('address', data.address || '');
       formData.append('phone', data.phone || '');
-      if (finalLogoUrl) formData.append('logoUrl', finalLogoUrl);
+      if (data.logo_url) formData.append('logoUrl', data.logo_url);
       formData.append('notificationSoundId', selectedSoundId);
       // Facturation fields
       formData.append('currency', data.currency || 'XAF');
@@ -228,8 +230,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       const result = await updateTenantSettings(formData);
 
       if (result.success) {
-        // Clear the file reference after successful save
-        setLogoFile(null);
         toast({
           title: t('settingsUpdated'),
           description: t('settingsSavedSuccess'),

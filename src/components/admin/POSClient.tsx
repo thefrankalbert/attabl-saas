@@ -606,7 +606,13 @@ export default function POSClient({ tenantId }: POSClientProps) {
               variant="lime"
               className="col-span-3 h-12 text-base"
               disabled={cart.length === 0}
-              onClick={() => setShowPaymentModal(true)}
+              onClick={() => {
+                if (!selectedTable) {
+                  toast({ title: t('selectTableFirst'), variant: 'destructive' });
+                  return;
+                }
+                setShowPaymentModal(true);
+              }}
             >
               {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
             </Button>

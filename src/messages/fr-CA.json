@@ -426,9 +426,10 @@
     "settingsUpdated": "Param\u00e8tres mis \u00e0 jour",
     "settingsSavedSuccess": "Les modifications ont \u00e9t\u00e9 enregistr\u00e9es avec succ\u00e8s.",
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
-    "fileTooLarge": "Fichier trop volumineux",
+    "fileTooLarge": "Le fichier est trop volumineux (max 2 Mo)",
     "logoMaxSize": "Le logo ne doit pas d\u00e9passer 2Mo",
-    "logoUploadError": "\u00c9chec du t\u00e9l\u00e9chargement du logo. Veuillez r\u00e9essayer.",
+    "logoUploaded": "Logo mis \u00e0 jour",
+    "logoUploadError": "Erreur lors du t\u00e9l\u00e9versement du logo",
     "logoUploading": "T\u00e9l\u00e9chargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue Principale...",
@@ -450,7 +451,7 @@
     "customSoundComingSoon": "Le t\u00e9l\u00e9versement de sons personnalis\u00e9s arrive prochainement.",
     "customSoundPremiumOnly": "L'import de sons personnalis\u00e9s est disponible avec le plan Premium.",
     "soundError": "Erreur",
-    "soundPlayError": "Impossible de jouer ce son.",
+    "soundPlayError": "Impossible de lire le son. Vérifiez votre navigateur.",
     "languageSection": "Langue",
     "languageDescription": "Langue de l'interface d'administration",
     "tabIdentity": "Identit\u00e9",
@@ -597,7 +598,9 @@
     "orderError": "Erreur lors de la commande",
     "loading": "Chargement du POS...",
     "loadingPos": "Chargement du POS...",
-    "sendToKitchen": "Envoyer en cuisine"
+    "sendToKitchen": "Envoyer en cuisine",
+    "selectTableFirst": "Veuillez sélectionner une table d'abord",
+    "server": "Serveur"
   },
   "users": {
     "title": "Utilisateurs",
@@ -1121,7 +1124,8 @@
     "tipCustom": "Autre",
     "tipAmount": "Pourboire : {amount}",
     "totalWithTip": "Total avec pourboire",
-    "backspace": "Effacer"
+    "backspace": "Effacer",
+    "tableRequired": "Veuillez sélectionner une table d'abord"
   },
   "qrCodes": {
     "title": "QR Codes",
