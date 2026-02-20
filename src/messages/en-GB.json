@@ -137,6 +137,8 @@
     "serviceTakeaway": "Takeaway",
     "serviceDelivery": "Delivery",
     "serviceRoom": "Room service",
+    "serviceDineIn": "Dine-in",
+    "warningReadyBeforeCheckout": "Check that the order is ready before checkout",
     "subtotal": "Subtotal",
     "vat": "VAT",
     "serviceCharge": "Service",
