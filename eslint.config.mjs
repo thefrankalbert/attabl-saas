@@ -19,6 +19,8 @@ const eslintConfig = defineConfig([
     'coverage/**',
     // Utility scripts (Node.js, not Next.js)
     'scripts/**',
+    // Claude Code worktrees (isolated development branches)
+    '.claude/**',
   ]),
 ]);
 
