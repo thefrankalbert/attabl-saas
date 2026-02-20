@@ -1,10 +1,11 @@
 /* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Palette, Upload, X, Layout } from 'lucide-react';
+import { Upload, X, Layout, Paintbrush, Type, Image } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface BrandingStepProps {
@@ -14,32 +15,64 @@ interface BrandingStepProps {
 
 const colorPresets = [
   { name: 'Lime', primary: '#CCFF00', secondary: '#000000' },
-  { name: 'Blue', primary: '#3B82F6', secondary: '#1E3A8A' },
-  { name: 'Red', primary: '#EF4444', secondary: '#7F1D1D' },
-  { name: 'Green', primary: '#22C55E', secondary: '#14532D' },
-  { name: 'Purple', primary: '#A855F7', secondary: '#581C87' },
-  { name: 'Orange', primary: '#F97316', secondary: '#7C2D12' },
+  { name: 'Ocean', primary: '#3B82F6', secondary: '#1E3A8A' },
+  { name: 'Ruby', primary: '#EF4444', secondary: '#7F1D1D' },
+  { name: 'Forest', primary: '#22C55E', secondary: '#14532D' },
+  { name: 'Violet', primary: '#A855F7', secondary: '#581C87' },
+  { name: 'Sunset', primary: '#F97316', secondary: '#7C2D12' },
+  { name: 'Gold', primary: '#EAB308', secondary: '#422006' },
+  { name: 'Rose', primary: '#EC4899', secondary: '#831843' },
+  { name: 'Teal', primary: '#14B8A6', secondary: '#134E4A' },
+  { name: 'Slate', primary: '#64748B', secondary: '#0F172A' },
+  { name: 'Coral', primary: '#F97171', secondary: '#FFFFFF' },
+  { name: 'Navy', primary: '#1E40AF', secondary: '#DBEAFE' },
+  { name: 'Mint', primary: '#34D399', secondary: '#FFFFFF' },
+  { name: 'Wine', primary: '#9F1239', secondary: '#FFF1F2' },
+  { name: 'Charcoal', primary: '#374151', secondary: '#F3F4F6' },
+];
+
+type BrandingTab = 'logo' | 'colors' | 'description';
+
+const colorGrid = [
+  '#EF4444',
+  '#F97316',
+  '#EAB308',
+  '#22C55E',
+  '#14B8A6',
+  '#3B82F6',
+  '#6366F1',
+  '#A855F7',
+  '#EC4899',
+  '#F43F5E',
+  '#DC2626',
+  '#EA580C',
+  '#CA8A04',
+  '#16A34A',
+  '#0D9488',
+  '#2563EB',
+  '#4F46E5',
+  '#9333EA',
+  '#DB2777',
+  '#E11D48',
+  '#000000',
+  '#374151',
+  '#6B7280',
+  '#9CA3AF',
+  '#FFFFFF',
 ];
 
 export function BrandingStep({ data, updateData }: BrandingStepProps) {
-  const [uploading, setUploading] = useState(false);
+  const t = useTranslations('onboarding');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [activeTab, setActiveTab] = useState<BrandingTab>('logo');
+  const [showPickerFor, setShowPickerFor] = useState<'primary' | 'secondary' | null>(null);
 
-  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    setUploading(true);
-    try {
-      // For now, create a local URL preview
-      // In production, this would upload to Supabase Storage
-      const localUrl = URL.createObjectURL(file);
-      updateData({ logoUrl: localUrl });
-    } catch (error) {
-      console.error('Error uploading logo:', error);
-    } finally {
-      setUploading(false);
-    }
+    if (file.size > 15 * 1024 * 1024) return;
+    const localUrl = URL.createObjectURL(file);
+    updateData({ logoUrl: localUrl });
   };
 
   const removeLogo = () => {
@@ -49,173 +82,32 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
     }
   };
 
+  const tabs: { id: BrandingTab; icon: typeof Image; label: string }[] = [
+    { id: 'logo', icon: Image, label: t('logoLabel') },
+    { id: 'colors', icon: Paintbrush, label: t('colorPresetsLabel') },
+    { id: 'description', icon: Type, label: t('descriptionLabel') },
+  ];
+
+  // Check if current colors match a preset
+  const isPresetSelected = (preset: (typeof colorPresets)[number]) =>
+    data.primaryColor === preset.primary && data.secondaryColor === preset.secondary;
+  const hasPresetMatch = colorPresets.some(isPresetSelected);
+
   return (
-    <div>
-      {/* Header */}
-      <div className="mb-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/5 text-neutral-600 text-sm font-medium mb-2">
-          <Palette className="h-3.5 w-3.5" />
-          Étape 3/5
-        </div>
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">Personnalisez votre marque</h1>
-        <p className="text-neutral-500 text-sm">Ajoutez votre logo et choisissez vos couleurs.</p>
+    <div className="flex flex-col">
+      {/* Title & Subtitle */}
+      <div className="mb-3">
+        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('brandingTitle')}</h1>
+        <p className="text-neutral-500 text-sm">{t('brandingSubtitle')}</p>
       </div>
 
-      {/* Logo Upload */}
-      <div className="mb-4">
-        <Label className="text-neutral-700 font-semibold mb-2 block text-sm">
-          Logo de votre établissement
-        </Label>
-
-        <div className="flex items-center gap-4">
-          {/* Preview */}
-          <div
-            className="w-16 h-16 rounded-xl border-2 border-dashed border-neutral-200 flex items-center justify-center overflow-hidden shrink-0"
-            style={{ backgroundColor: data.logoUrl ? 'transparent' : data.primaryColor + '20' }}
-          >
-            {data.logoUrl ? (
-              <img src={data.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-            ) : (
-              <Layout className="h-6 w-6 text-neutral-400" />
-            )}
-          </div>
-
-          {/* Upload Controls */}
-          <div className="flex-1">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleLogoUpload}
-              className="hidden"
-            />
-
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-2 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg font-medium text-neutral-700 transition-colors text-sm"
-              >
-                <Upload className="h-3.5 w-3.5" />
-                {uploading ? 'Upload...' : 'Uploader'}
-              </button>
-
-              {data.logoUrl && (
-                <button
-                  type="button"
-                  onClick={removeLogo}
-                  className="flex items-center gap-1 px-3 py-1.5 text-red-600 hover:bg-red-50 rounded-lg font-medium transition-colors text-sm"
-                >
-                  <X className="h-3.5 w-3.5" />
-                  Supprimer
-                </button>
-              )}
-              <span className="text-xs text-neutral-400">PNG, JPG ou SVG. Max 2MB.</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Color Presets */}
-      <div className="mb-4">
-        <Label className="text-neutral-700 font-semibold mb-2 block text-sm">
-          Palette de couleurs
-        </Label>
-        <div className="grid grid-cols-6 gap-2">
-          {colorPresets.map((preset) => (
-            <button
-              key={preset.name}
-              type="button"
-              onClick={() =>
-                updateData({
-                  primaryColor: preset.primary,
-                  secondaryColor: preset.secondary,
-                })
-              }
-              className={`p-2 rounded-lg border-2 transition-all ${
-                data.primaryColor === preset.primary
-                  ? 'border-neutral-900'
-                  : 'border-neutral-200 hover:border-neutral-300'
-              }`}
-            >
-              <div className="flex gap-1 mb-1">
-                <div className="w-5 h-5 rounded-full" style={{ backgroundColor: preset.primary }} />
-                <div
-                  className="w-5 h-5 rounded-full"
-                  style={{ backgroundColor: preset.secondary }}
-                />
-              </div>
-              <p className="text-xs font-medium text-neutral-600">{preset.name}</p>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Custom Colors */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
-        <div>
-          <Label htmlFor="primaryColor" className="text-neutral-700 font-semibold text-sm">
-            Couleur principale
-          </Label>
-          <div className="mt-1.5 flex items-center gap-2">
-            <input
-              type="color"
-              id="primaryColor"
-              value={data.primaryColor}
-              onChange={(e) => updateData({ primaryColor: e.target.value })}
-              className="w-10 h-10 rounded-lg cursor-pointer border-2 border-neutral-200"
-            />
-            <Input
-              type="text"
-              value={data.primaryColor}
-              onChange={(e) => updateData({ primaryColor: e.target.value })}
-              className="h-10 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl font-mono uppercase text-sm"
-            />
-          </div>
-        </div>
-        <div>
-          <Label htmlFor="secondaryColor" className="text-neutral-700 font-semibold text-sm">
-            Couleur secondaire
-          </Label>
-          <div className="mt-1.5 flex items-center gap-2">
-            <input
-              type="color"
-              id="secondaryColor"
-              value={data.secondaryColor}
-              onChange={(e) => updateData({ secondaryColor: e.target.value })}
-              className="w-10 h-10 rounded-lg cursor-pointer border-2 border-neutral-200"
-            />
-            <Input
-              type="text"
-              value={data.secondaryColor}
-              onChange={(e) => updateData({ secondaryColor: e.target.value })}
-              className="h-10 bg-neutral-50 border-neutral-200 focus:bg-white focus:border-neutral-900 rounded-xl font-mono uppercase text-sm"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Description */}
-      <div className="mb-4">
-        <Label htmlFor="description" className="text-neutral-700 font-semibold text-sm">
-          Description courte (optionnel)
-        </Label>
-        <textarea
-          id="description"
-          placeholder="Bienvenue dans notre établissement..."
-          value={data.description}
-          onChange={(e) => updateData({ description: e.target.value })}
-          rows={2}
-          className="mt-1.5 w-full px-3 py-2 bg-neutral-50 border border-neutral-200 focus:bg-white focus:border-neutral-900 focus:ring-2 focus:ring-neutral-900/10 rounded-xl resize-none transition-all text-sm"
-        />
-      </div>
-
-      {/* Live Preview */}
-      <div className="p-4 rounded-xl border border-neutral-200 bg-neutral-50">
-        <p className="text-xs text-neutral-500 mb-2">Aperçu</p>
+      {/* Live Preview — always visible */}
+      <div className="border border-neutral-200 rounded-xl p-3 bg-neutral-50 mb-4">
+        <p className="text-[10px] text-neutral-400 mb-1.5 font-medium uppercase tracking-wide">
+          {t('previewLabel')}
+        </p>
         <div
-          className="p-3 rounded-lg text-center"
+          className="p-2 rounded-lg text-center"
           style={{ backgroundColor: data.secondaryColor }}
         >
           <div
@@ -227,17 +119,294 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
             ) : (
               <Layout className="h-4 w-4" style={{ color: data.secondaryColor }} />
             )}
-            <span className="font-bold text-sm" style={{ color: data.secondaryColor }}>
-              {data.tenantName || 'Votre Établissement'}
+            <span className="font-bold text-xs" style={{ color: data.secondaryColor }}>
+              {data.tenantName || 'Mon établissement'}
             </span>
           </div>
           {data.description && (
-            <p className="mt-2 text-xs opacity-80" style={{ color: data.primaryColor }}>
+            <p className="mt-1.5 text-[10px] opacity-80" style={{ color: data.primaryColor }}>
               {data.description}
             </p>
           )}
         </div>
       </div>
+
+      {/* Sub-tabs */}
+      <div className="flex gap-1 mb-4 border-b border-neutral-100 pb-0">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors ${
+                isActive
+                  ? 'border-[#CCFF00] text-neutral-900 bg-neutral-50'
+                  : 'border-transparent text-neutral-400 hover:text-neutral-600'
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {tab.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'logo' && (
+        <div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleLogoUpload}
+            className="hidden"
+          />
+
+          <div className="flex items-start gap-4">
+            {/* Drop zone — using div instead of button to avoid nesting issue */}
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => !data.logoUrl && fileInputRef.current?.click()}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  if (!data.logoUrl) fileInputRef.current?.click();
+                }
+              }}
+              className="relative w-[120px] h-[120px] shrink-0 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-neutral-400"
+              style={{ width: 120, height: 120, maxWidth: 120, maxHeight: 120 }}
+            >
+              {data.logoUrl ? (
+                <>
+                  <img
+                    src={data.logoUrl}
+                    alt="Logo"
+                    className="w-full h-full object-cover"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeLogo();
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.stopPropagation();
+                        removeLogo();
+                      }
+                    }}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100"
+                    aria-label={t('logoDelete')}
+                  >
+                    <X className="h-5 w-5 text-white" />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-5 w-5 text-neutral-400 mb-1" />
+                  <span className="text-[10px] text-neutral-400 text-center px-2">
+                    {t('logoUpload')}
+                  </span>
+                </>
+              )}
+            </div>
+            <div className="pt-2">
+              <p className="text-xs text-neutral-400">{t('logoMaxSize')}</p>
+              {data.logoUrl && (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="mt-2 text-xs text-neutral-500 underline hover:text-neutral-700"
+                >
+                  {t('logoChange')}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'colors' && (
+        <div>
+          {/* Presets */}
+          <div className="mb-4">
+            <Label className="text-neutral-700 font-medium mb-2 block text-xs">
+              {t('colorPresetsLabel')}
+            </Label>
+            <div className="grid grid-cols-5 sm:grid-cols-8 gap-1.5">
+              {colorPresets.map((preset) => {
+                const isSelected = isPresetSelected(preset);
+                return (
+                  <button
+                    key={preset.name}
+                    type="button"
+                    onClick={() => {
+                      updateData({
+                        primaryColor: preset.primary,
+                        secondaryColor: preset.secondary,
+                      });
+                    }}
+                    className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border ${
+                      isSelected
+                        ? 'ring-2 ring-[#CCFF00] ring-offset-1 border-transparent'
+                        : 'border-neutral-200 hover:border-neutral-300'
+                    }`}
+                  >
+                    <div
+                      className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center"
+                      style={{ backgroundColor: preset.secondary }}
+                    >
+                      <div
+                        className="w-3.5 h-3.5 rounded-full"
+                        style={{ backgroundColor: preset.primary }}
+                      />
+                    </div>
+                    <span className="text-[8px] font-medium text-neutral-500 truncate w-full text-center">
+                      {preset.name}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Custom Colors */}
+          <div>
+            <Label className="text-neutral-700 font-medium mb-2 block text-xs">
+              {t('customColorsLabel')}
+              {!hasPresetMatch && (
+                <span className="ml-1.5 text-[10px] text-neutral-400">(actif)</span>
+              )}
+            </Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label htmlFor="primaryColor" className="text-neutral-500 text-[10px] mb-1 block">
+                  {t('primaryColor')}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
+                      }
+                    }}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
+                    style={{ backgroundColor: data.primaryColor }}
+                  />
+                  <Input
+                    type="text"
+                    value={data.primaryColor}
+                    onChange={(e) => updateData({ primaryColor: e.target.value })}
+                    className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
+                  />
+                </div>
+                {showPickerFor === 'primary' && (
+                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                    {colorGrid.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          updateData({ primaryColor: color });
+                          setShowPickerFor(null);
+                        }}
+                        className={`w-8 h-8 rounded-lg border ${
+                          data.primaryColor === color
+                            ? 'ring-2 ring-[#CCFF00] ring-offset-1'
+                            : 'border-neutral-200'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div>
+                <Label htmlFor="secondaryColor" className="text-neutral-500 text-[10px] mb-1 block">
+                  {t('secondaryColor')}
+                </Label>
+                <div className="flex items-center gap-2">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() =>
+                      setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
+                      }
+                    }}
+                    className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
+                    style={{ backgroundColor: data.secondaryColor }}
+                  />
+                  <Input
+                    type="text"
+                    value={data.secondaryColor}
+                    onChange={(e) => updateData({ secondaryColor: e.target.value })}
+                    className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
+                  />
+                </div>
+                {showPickerFor === 'secondary' && (
+                  <div className="mt-2 grid grid-cols-5 gap-1.5">
+                    {colorGrid.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => {
+                          updateData({ secondaryColor: color });
+                          setShowPickerFor(null);
+                        }}
+                        className={`w-8 h-8 rounded-lg border ${
+                          data.secondaryColor === color
+                            ? 'ring-2 ring-[#CCFF00] ring-offset-1'
+                            : 'border-neutral-200'
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'description' && (
+        <div>
+          <Label htmlFor="description" className="text-neutral-700 font-medium text-xs">
+            {t('descriptionLabel')}
+          </Label>
+          <textarea
+            id="description"
+            placeholder={t('descriptionPlaceholder')}
+            value={data.description}
+            onChange={(e) => {
+              if (e.target.value.length <= 500) {
+                updateData({ description: e.target.value });
+              }
+            }}
+            rows={4}
+            maxLength={500}
+            className="mt-1.5 w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl resize-none text-sm"
+          />
+          <p className="text-xs text-neutral-400 mt-1 text-right">
+            {t('charCount', { count: data.description.length, max: 500 })}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
