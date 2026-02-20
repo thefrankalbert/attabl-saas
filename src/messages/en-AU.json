@@ -1129,7 +1129,11 @@
     "tipAmount": "Tip: {amount}",
     "totalWithTip": "Total with tip",
     "backspace": "Delete",
-    "tableRequired": "Please select a table first"
+    "tableRequired": "Please select a table first",
+    "amountDue": "Amount Due",
+    "received": "Received",
+    "customTip": "Custom",
+    "numpadClear": "Clear"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1166,7 +1170,11 @@
     "tipNeon": "Neon",
     "tipNeonDesc": "Dark background with vivid accent and luminous glow effect.",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "tabChoose": "Choose",
+    "tabCustomize": "Customise",
+    "tabDownload": "Download",
+    "formatA4": "A4 Format"
   },
   "service": {
     "title": "Service",

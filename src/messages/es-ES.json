@@ -1129,7 +1129,11 @@
     "tipAmount": "Propina: {amount}",
     "totalWithTip": "Total con propina",
     "backspace": "Borrar",
-    "tableRequired": "Por favor seleccione una mesa primero"
+    "tableRequired": "Por favor seleccione una mesa primero",
+    "amountDue": "Monto a pagar",
+    "received": "Recibido",
+    "customTip": "Personalizado",
+    "numpadClear": "Borrar"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1166,7 +1170,11 @@
     "tipNeon": "Neón",
     "tipNeonDesc": "Fondo oscuro con acento vivo y efecto de brillo luminoso.",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "tabChoose": "Elegir",
+    "tabCustomize": "Personalizar",
+    "tabDownload": "Descargar",
+    "formatA4": "Formato A4"
   },
   "service": {
     "title": "Servicio",

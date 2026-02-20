@@ -191,7 +191,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
         <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
         <Input
           placeholder={t('searchDish')}
-          className="pl-9"
+          className="pl-9 rounded-lg focus-visible:ring-lime-400"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -248,16 +248,21 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
       </div>
 
       {/* Add Modal */}
-      <AdminModal isOpen={showAdd} onClose={() => setShowAdd(false)} title={t('newSuggestion')}>
-        <div className="space-y-3">
+      <AdminModal
+        isOpen={showAdd}
+        onClose={() => setShowAdd(false)}
+        title={t('newSuggestion')}
+        size="lg"
+      >
+        <div className="space-y-4 pt-4">
           <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-sm font-medium text-neutral-900 mb-1.5 block">
               {t('sourceDish')}
             </Label>
             <select
               value={sourceItemId}
               onChange={(e) => setSourceItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+              className="w-full h-10 px-3 border border-neutral-100 rounded-lg text-sm bg-white text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2"
             >
               <option value="">{tc('selectPlaceholder')}</option>
               {menuItems.map((item) => (
@@ -269,7 +274,7 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-sm font-medium text-neutral-900 mb-1.5 block">
               {t('suggestionType')}
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -281,8 +286,8 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
                   className={cn(
                     'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
                     suggestionType === st.value
-                      ? 'border-primary bg-primary/5 text-primary'
-                      : 'border-neutral-200 text-neutral-500 hover:bg-neutral-50',
+                      ? 'border-lime-400 bg-lime-50 text-neutral-900'
+                      : 'border-neutral-100 text-neutral-500 hover:bg-neutral-50',
                   )}
                 >
                   <span>{st.emoji}</span>
@@ -293,13 +298,13 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-sm font-medium text-neutral-900 mb-1.5 block">
               {t('suggestedDish')}
             </Label>
             <select
               value={targetItemId}
               onChange={(e) => setTargetItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white"
+              className="w-full h-10 px-3 border border-neutral-100 rounded-lg text-sm bg-white text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2"
             >
               <option value="">{tc('selectPlaceholder')}</option>
               {menuItems.map((item) => (
@@ -311,14 +316,16 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
           </div>
 
           <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+            <Label className="text-sm font-medium text-neutral-900 mb-1.5 block">
               {t('serverAdvice')}
             </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t('serverAdvicePlaceholder')}
+              className="rounded-lg focus-visible:ring-lime-400"
             />
+            <p className="mt-1 text-xs text-neutral-500">{t('addServerAdvice')}</p>
           </div>
         </div>
 

@@ -215,7 +215,7 @@ export default function ItemsClient({
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-3 p-4 bg-white rounded-xl border border-neutral-100">
         <Select value={filterCategory} onValueChange={setFilterCategory}>
-          <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-neutral-100 text-neutral-900 focus:ring-lime-400">
             <SelectValue placeholder={t('allCategories')} />
           </SelectTrigger>
           <SelectContent>
@@ -228,7 +228,7 @@ export default function ItemsClient({
           </SelectContent>
         </Select>
         <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-          <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs">
+          <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-neutral-100 text-neutral-900 focus:ring-lime-400">
             <SelectValue placeholder={t('all')} />
           </SelectTrigger>
           <SelectContent>
@@ -495,61 +495,66 @@ export default function ItemsClient({
         title={editingItem ? t('editItemTitle') : t('newItemTitle')}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-5 pt-2 max-h-[70vh] overflow-y-auto">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('nameFr')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('nameFr')}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('nameFrPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t('nameEn')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('nameEn')}</Label>
               <Input
                 value={nameEn}
                 onChange={(e) => setNameEn(e.target.value)}
                 placeholder={t('nameEnPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('descriptionFr')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('descriptionFr')}</Label>
               <Textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('descriptionFrPlaceholder')}
                 rows={3}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t('descriptionEn')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('descriptionEn')}</Label>
               <Textarea
                 value={descriptionEn}
                 onChange={(e) => setDescriptionEn(e.target.value)}
                 placeholder={t('descriptionEnPlaceholder')}
                 rows={3}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('price')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('price')}</Label>
               <Input
                 type="number"
                 value={price}
                 onChange={(e) => setPrice(Number(e.target.value))}
                 min={0}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label>{t('category')}</Label>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{t('category')}</Label>
               <Select value={categoryId} onValueChange={setCategoryId}>
-                <SelectTrigger>
+                <SelectTrigger className="rounded-lg border border-neutral-100 text-neutral-900 focus:ring-lime-400">
                   <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -562,25 +567,26 @@ export default function ItemsClient({
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>{t('imageUrl')}</Label>
+          <div className="space-y-1.5">
+            <Label className="text-neutral-900">{t('imageUrl')}</Label>
             <Input
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
               placeholder="https://..."
+              className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
             />
           </div>
           <div className="flex items-center gap-6 pt-2">
             <div className="flex items-center gap-2">
               <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
-              <Label className="text-sm">{t('available')}</Label>
+              <Label className="text-sm text-neutral-900">{t('available')}</Label>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-              <Label className="text-sm">{t('featured')}</Label>
+              <Label className="text-sm text-neutral-900">{t('featured')}</Label>
             </div>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
             <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
               {t('cancel')}
             </Button>

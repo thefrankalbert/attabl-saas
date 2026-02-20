@@ -115,7 +115,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           <div>
             <p className="font-medium text-neutral-900">{row.original.name}</p>
             {row.original.category && (
-              <p className="text-xs text-neutral-400">{row.original.category}</p>
+              <p className="text-xs text-neutral-500">{row.original.category}</p>
             )}
           </div>
         ),
@@ -389,8 +389,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           resetForm();
         }}
         title={modalMode === 'add' ? t('addIngredient') : t('editIngredient')}
+        size="lg"
       >
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div>
             <label className="text-xs font-medium text-neutral-600 mb-1 block">{tc('name')}</label>
             <Input
@@ -401,7 +402,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-neutral-600 mb-1 block">
                 {tc('unit')}
@@ -409,7 +410,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               <select
                 value={formUnit}
                 onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
+                className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
               >
                 {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
                   <option key={u} value={u}>
@@ -434,7 +435,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="text-xs font-medium text-neutral-600 mb-1 block">
                 {t('minAlert')}
@@ -497,6 +498,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           resetForm();
         }}
         title={t('adjustStock')}
+        size="lg"
       >
         {selectedIngredient && (
           <>
@@ -508,7 +510,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               </span>
             </p>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-neutral-600 mb-1 block">
                   {t('movementType')}
@@ -516,7 +518,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 <select
                   value={adjustType}
                   onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
+                  className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
                 >
                   {(['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]).map(
                     (mt) => (
@@ -550,7 +552,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   <select
                     value={adjustSupplierId}
                     onChange={(e) => setAdjustSupplierId(e.target.value)}
-                    className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary"
+                    className="w-full h-10 px-3 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
                   >
                     <option value="">— {tc('none')} —</option>
                     {activeSuppliers.map((s) => (

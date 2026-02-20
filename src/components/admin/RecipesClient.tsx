@@ -288,7 +288,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               );
             })}
             {filteredItems.length === 0 && (
-              <div className="px-4 py-12 text-center text-neutral-400">{t('noDishFound')}</div>
+              <div className="px-4 py-12 text-center text-neutral-500">{t('noDishFound')}</div>
             )}
           </div>
         </div>
@@ -304,9 +304,9 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
 
               {loadingRecipe ? (
-                <div className="p-8 text-center text-neutral-400">{tc('loading')}</div>
+                <div className="p-8 text-center text-neutral-500">{tc('loading')}</div>
               ) : (
-                <div className="flex-1 p-4 space-y-3 overflow-y-auto max-h-[400px]">
+                <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[400px]">
                   {recipeLines.map((line, idx) => (
                     <div
                       key={idx}
@@ -316,7 +316,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         <select
                           value={line.ingredient_id}
                           onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                          className="w-full h-9 px-2 border border-neutral-200 rounded-lg text-sm bg-white"
+                          className="w-full h-9 px-2 border border-neutral-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-lime-400"
                         >
                           {ingredients.map((ing) => (
                             <option key={ing.id} value={ing.id}>
@@ -351,7 +351,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                   ))}
 
                   {recipeLines.length === 0 && (
-                    <p className="text-sm text-neutral-400 text-center py-4">
+                    <p className="text-sm text-neutral-500 text-center py-4">
                       {t('noIngredientDefined')}
                     </p>
                   )}
@@ -383,7 +383,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center p-12 text-neutral-400">
+            <div className="flex flex-col items-center justify-center p-12 text-neutral-500">
               <BookOpenCheck className="w-12 h-12 mb-3 opacity-30" />
               <p className="text-sm font-medium">{t('selectDish')}</p>
               <p className="text-xs mt-1">{t('defineRecipe')}</p>

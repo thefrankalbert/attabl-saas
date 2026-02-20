@@ -1,8 +1,24 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  useSortable,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useCategories } from '@/hooks/queries';
@@ -22,6 +38,87 @@ interface CategoriesClientProps {
 
 type CategoryWithCount = Category & { items_count?: number };
 
+interface SortableRowProps {
+  cat: CategoryWithCount;
+  onEdit: (cat: CategoryWithCount) => void;
+  onDelete: (cat: CategoryWithCount) => void;
+  editLabel: string;
+  deleteLabel: string;
+  dishCountLabel: string;
+}
+
+function SortableRow({
+  cat,
+  onEdit,
+  onDelete,
+  editLabel,
+  deleteLabel,
+  dishCountLabel,
+}: SortableRowProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: cat.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group',
+        isDragging && 'shadow-lg border-[#CCFF00]',
+      )}
+    >
+      <button
+        type="button"
+        ref={setActivatorNodeRef}
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none"
+        aria-label="Drag to reorder"
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4 text-neutral-300" />
+      </button>
+      <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
+        <Folder className="w-4 h-4 text-neutral-500" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
+        {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
+      </div>
+      <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+        <Utensils className="w-3.5 h-3.5" />
+        <span className="font-medium">{dishCountLabel}</span>
+      </div>
+      <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+        <Button variant="outline" size="sm" onClick={() => onEdit(cat)} className="text-xs h-8">
+          {editLabel}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onDelete(cat)}
+          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+        >
+          {deleteLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
   const t = useTranslations('categories');
   const tc = useTranslations('common');
@@ -35,10 +132,15 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const supabase = createClient();
   const queryClient = useQueryClient();
 
-  // Drag-and-drop state
-  const [dragIndex, setDragIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
-  const dragNodeRef = useRef<HTMLDivElement | null>(null);
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor),
+  );
 
   // TanStack Query for categories with item count
   const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
@@ -48,49 +150,42 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
   }, [queryClient, tenantId]);
 
-  const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>, index: number) => {
-    setDragIndex(index);
-    dragNodeRef.current = e.currentTarget;
-    e.dataTransfer.effectAllowed = 'move';
-    // Make the drag image slightly transparent
-    requestAnimationFrame(() => {
-      if (dragNodeRef.current) dragNodeRef.current.style.opacity = '0.5';
-    });
-  }, []);
+  const handleDragEnd = useCallback(
+    async (event: DragEndEvent) => {
+      const { active, over } = event;
 
-  const handleDragEnd = useCallback(async () => {
-    if (dragNodeRef.current) dragNodeRef.current.style.opacity = '1';
-    if (dragIndex === null || dragOverIndex === null || dragIndex === dragOverIndex) {
-      setDragIndex(null);
-      setDragOverIndex(null);
-      return;
-    }
+      if (!over || active.id === over.id) {
+        return;
+      }
 
-    // Reorder categories
-    const reordered = [...categories];
-    const [moved] = reordered.splice(dragIndex, 1);
-    reordered.splice(dragOverIndex, 0, moved);
+      const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+      const newIndex = categories.findIndex((cat) => cat.id === over.id);
 
-    setDragIndex(null);
-    setDragOverIndex(null);
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
 
-    // Update display_order in database
-    try {
-      const updates = reordered.map((cat, i) => ({
-        id: cat.id,
-        display_order: i,
-        tenant_id: tenantId,
-        name: cat.name,
-      }));
-      const { error } = await supabase.from('categories').upsert(updates);
-      if (error) throw error;
-      loadCategories();
-    } catch (err: unknown) {
-      logger.error('Failed to reorder categories', err);
-      toast({ title: tc('updateError'), variant: 'destructive' });
-      loadCategories();
-    }
-  }, [dragIndex, dragOverIndex, categories, supabase, tenantId, loadCategories, toast, tc]);
+      const reordered = arrayMove(categories, oldIndex, newIndex);
+
+      // Update display_order in database
+      try {
+        const updates = reordered.map((cat, i) => ({
+          id: cat.id,
+          display_order: i,
+          tenant_id: tenantId,
+          name: cat.name,
+        }));
+        const { error } = await supabase.from('categories').upsert(updates);
+        if (error) throw error;
+        loadCategories();
+      } catch (err: unknown) {
+        logger.error('Failed to reorder categories', err);
+        toast({ title: tc('updateError'), variant: 'destructive' });
+        loadCategories();
+      }
+    },
+    [categories, supabase, tenantId, loadCategories, toast, tc],
+  );
 
   const openNewModal = () => {
     setEditingCategory(null);
@@ -155,7 +250,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       toast({ title: t('categoryDeleted') });
       loadCategories();
     } catch {
-      toast({ title: t('deleteError'), variant: 'destructive' });
+      toast({ title: tc('deleteError'), variant: 'destructive' });
     }
   };
 
@@ -191,60 +286,26 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           ))}
         </div>
       ) : categories.length > 0 ? (
-        <div className="space-y-2">
-          {categories.map((cat, index) => (
-            <div
-              key={cat.id}
-              draggable
-              onDragStart={(e) => handleDragStart(e, index)}
-              onDragOver={(e) => {
-                e.preventDefault();
-                setDragOverIndex(index);
-              }}
-              onDragEnd={handleDragEnd}
-              className={cn(
-                'flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group',
-                dragOverIndex === index &&
-                  dragIndex !== null &&
-                  dragIndex !== index &&
-                  'border-[#CCFF00] bg-lime-50/30',
-              )}
-            >
-              <GripVertical className="w-4 h-4 text-neutral-300 cursor-grab active:cursor-grabbing" />
-              <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
-                <Folder className="w-4 h-4 text-neutral-500" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
-                {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
-              </div>
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500">
-                <Utensils className="w-3.5 h-3.5" />
-                <span className="font-medium">
-                  {t('dishCount', { count: cat.items_count || 0 })}
-                </span>
-              </div>
-              <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => openEditModal(cat)}
-                  className="text-xs h-8"
-                >
-                  {tc('edit')}
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(cat)}
-                  className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                >
-                  {tc('delete')}
-                </Button>
-              </div>
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <SortableContext
+            items={categories.map((cat) => cat.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2">
+              {categories.map((cat) => (
+                <SortableRow
+                  key={cat.id}
+                  cat={cat}
+                  onEdit={openEditModal}
+                  onDelete={handleDelete}
+                  editLabel={tc('edit')}
+                  deleteLabel={tc('delete')}
+                  dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
+                />
+              ))}
             </div>
-          ))}
-        </div>
+          </SortableContext>
+        </DndContext>
       ) : (
         <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
           <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -263,40 +324,50 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={editingCategory ? t('editCategoryTitle') : t('newCategoryTitle')}
+        size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="cat-name">{t('nameFr')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-name" className="text-neutral-900">
+                {t('nameFr')}
+              </Label>
               <Input
                 id="cat-name"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder={t('nameFrPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cat-name-en">{t('nameEn')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-name-en" className="text-neutral-900">
+                {t('nameEn')}
+              </Label>
               <Input
                 id="cat-name-en"
                 value={nameEn}
                 onChange={(e) => setNameEn(e.target.value)}
                 placeholder={t('nameEnPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="cat-order">{t('displayOrder')}</Label>
+          <div className="space-y-1.5">
+            <Label htmlFor="cat-order" className="text-neutral-900">
+              {t('displayOrder')}
+            </Label>
             <Input
               id="cat-order"
               type="number"
               value={displayOrder}
               onChange={(e) => setDisplayOrder(Number(e.target.value))}
               min={0}
+              className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
             />
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
             <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
               {tc('cancel')}
             </Button>

@@ -6,21 +6,9 @@ import { useQRDesignConfig } from '@/hooks/useQRDesignConfig';
 import { QRCustomizerLayout } from '@/components/qr/QRCustomizerLayout';
 import { QRPreview } from '@/components/qr/QRPreview';
 import { QRExportBar } from '@/components/qr/QRExportBar';
-import {
-  QrCode,
-  Info,
-  Table2,
-  BookOpen,
-  Layers,
-  Download,
-  Sparkles,
-  Palette,
-  Check,
-  ChevronRight,
-  ChevronLeft,
-} from 'lucide-react';
+import { QrCode, Info, Table2, BookOpen, Layers, Download, Sparkles } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Table, Zone } from '@/types/admin.types';
 import type { QRDesignConfig } from '@/types/qr-design.types';
@@ -58,14 +46,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   const t = useTranslations('qrCodes');
   const [selectedTableId, setSelectedTableId] = useState<string>('');
   const [selectedMenuId, setSelectedMenuId] = useState<string>('');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [maxVisited, setMaxVisited] = useState(0);
   const downloadPreviewRef = useRef<HTMLDivElement>(null);
-
-  const goToStep = (step: number) => {
-    setCurrentStep(step);
-    setMaxVisited((prev) => Math.max(prev, step));
-  };
 
   // QR Design Config (centralized state for customizer)
   const { config, updateField, setTemplate } = useQRDesignConfig(
@@ -88,7 +69,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   }, [zones, tables]);
 
   // Compute selected table/menu objects
-  const selectedTable = tables.find((t) => t.id === selectedTableId);
+  const selectedTable = tables.find((tbl) => tbl.id === selectedTableId);
   const selectedMenu = menus.find((m) => m.id === selectedMenuId);
 
   // Build dynamic QR URL
@@ -101,15 +82,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   // Subtitle for the QR code
   const qrSubtitle = selectedTable ? selectedTable.display_name : undefined;
 
-  const steps = [
-    { number: 0, label: t('stepSelection'), icon: Table2 },
-    { number: 1, label: t('stepCustomization'), icon: Palette },
-    { number: 2, label: t('stepDownload'), icon: Download },
-  ] as const;
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Header — always visible */}
+    <div className="flex flex-col h-[calc(100vh-8rem)]">
+      {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
           <div className="p-2 bg-neutral-100 rounded-xl">
@@ -120,345 +95,253 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <p className="text-sm text-neutral-500">{t('subtitle')}</p>
       </div>
 
-      {/* ─── Clickable Stepper ─── */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          {steps.map((step, index) => {
-            const StepIcon = step.icon;
-            const isActive = currentStep === step.number;
-            const isCompleted = currentStep > step.number;
-            const isClickable = step.number <= maxVisited;
+      {/* ─── Tabs Navigation ─── */}
+      <Tabs defaultValue="choose" className="flex flex-col flex-1 min-h-0">
+        <TabsList className="w-full justify-start">
+          <TabsTrigger value="choose">{t('tabChoose')}</TabsTrigger>
+          <TabsTrigger value="customize">{t('tabCustomize')}</TabsTrigger>
+          <TabsTrigger value="download">{t('tabDownload')}</TabsTrigger>
+        </TabsList>
 
-            return (
-              <div key={step.number} className="flex items-center flex-1 last:flex-none">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isClickable) goToStep(step.number);
-                  }}
-                  className={cn(
-                    'flex items-center gap-2.5 transition-opacity',
-                    isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-default',
-                  )}
-                >
-                  <div
-                    className={cn(
-                      'flex items-center justify-center w-9 h-9 rounded-full text-sm font-bold transition-colors',
-                      isActive
-                        ? 'bg-[#CCFF00] text-black'
-                        : isCompleted
-                          ? 'bg-neutral-900 text-white'
-                          : isClickable
-                            ? 'bg-neutral-300 text-neutral-600'
-                            : 'bg-neutral-200 text-neutral-400',
-                    )}
+        {/* ─── Tab: Choose ─── */}
+        <TabsContent value="choose" className="flex-1 overflow-auto">
+          <div>
+            {/* Info Banner */}
+            <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+              <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm text-blue-800">
+                  <strong>{t('menuUrl')} :</strong>{' '}
+                  <a
+                    href={menuUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline hover:no-underline"
                   >
-                    {isCompleted ? <Check className="w-4 h-4" /> : <span>{step.number + 1}</span>}
-                  </div>
-                  <div className="hidden sm:flex items-center gap-1.5">
-                    <StepIcon
-                      className={cn(
-                        'w-4 h-4',
-                        isActive
-                          ? 'text-neutral-900'
-                          : isCompleted || isClickable
-                            ? 'text-neutral-600'
-                            : 'text-neutral-300',
-                      )}
-                    />
-                    <span
-                      className={cn(
-                        'text-sm',
-                        isActive
-                          ? 'font-bold text-neutral-900'
-                          : isCompleted || isClickable
-                            ? 'font-medium text-neutral-600'
-                            : 'font-medium text-neutral-400',
-                      )}
-                    >
-                      {step.label}
-                    </span>
-                  </div>
-                </button>
-
-                {index < steps.length - 1 && (
-                  <div className="flex-1 mx-3">
-                    <div
-                      className={cn(
-                        'h-0.5 w-full transition-colors',
-                        isCompleted ? 'bg-neutral-900' : 'bg-neutral-200',
-                      )}
-                    />
-                  </div>
-                )}
+                    {menuUrl}
+                  </a>
+                </p>
+                <p className="text-xs text-blue-600 mt-1">{t('qrRedirectInfo')}</p>
               </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* ─── Step 0: Sélection ─── */}
-      {currentStep === 0 && (
-        <div>
-          {/* Info Banner */}
-          <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
-            <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
-            <div>
-              <p className="text-sm text-blue-800">
-                <strong>{t('menuUrl')} :</strong>{' '}
-                <a
-                  href={menuUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:no-underline"
-                >
-                  {menuUrl}
-                </a>
-              </p>
-              <p className="text-xs text-blue-600 mt-1">{t('qrRedirectInfo')}</p>
             </div>
-          </div>
 
-          {/* Table & Menu Selectors */}
-          {(tables.length > 0 || menus.length > 0) && (
-            <div className="bg-white rounded-xl border border-neutral-100 p-5">
-              <h3 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                <Layers className="w-4 h-4 text-neutral-400" />
-                {t('selectTableMenu')}
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Table Selector */}
-                {tables.length > 0 && (
-                  <div>
-                    <label
-                      htmlFor="qr-table-select"
-                      className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
-                    >
-                      <Table2 className="w-3.5 h-3.5" />
-                      {t('table')}
-                    </label>
-                    <select
-                      id="qr-table-select"
-                      value={selectedTableId}
-                      onChange={(e) => setSelectedTableId(e.target.value)}
-                      className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
-                    >
-                      <option value="">{t('noTable')}</option>
-                      {tablesByZone.map(({ zone, tables: zoneTables }) => (
-                        <optgroup key={zone.id} label={zone.name}>
-                          {zoneTables.map((table) => (
-                            <option key={table.id} value={table.id}>
-                              {table.display_name}
-                              {table.capacity > 0
-                                ? ` (${t('seats', { count: table.capacity })})`
-                                : ''}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
-                  </div>
-                )}
+            {/* Table & Menu Selectors */}
+            {(tables.length > 0 || menus.length > 0) && (
+              <div className="bg-white rounded-xl border border-neutral-100 p-5">
+                <h3 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-neutral-400" />
+                  {t('selectTableMenu')}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Table Selector */}
+                  {tables.length > 0 && (
+                    <div>
+                      <label
+                        htmlFor="qr-table-select"
+                        className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
+                      >
+                        <Table2 className="w-3.5 h-3.5" />
+                        {t('table')}
+                      </label>
+                      <select
+                        id="qr-table-select"
+                        value={selectedTableId}
+                        onChange={(e) => setSelectedTableId(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
+                      >
+                        <option value="">{t('noTable')}</option>
+                        {tablesByZone.map(({ zone, tables: zoneTables }) => (
+                          <optgroup key={zone.id} label={zone.name}>
+                            {zoneTables.map((table) => (
+                              <option key={table.id} value={table.id}>
+                                {table.display_name}
+                                {table.capacity > 0
+                                  ? ` (${t('seats', { count: table.capacity })})`
+                                  : ''}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
+                    </div>
+                  )}
 
-                {/* Menu Selector */}
-                {menus.length > 0 && (
-                  <div>
-                    <label
-                      htmlFor="qr-menu-select"
-                      className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
-                    >
-                      <BookOpen className="w-3.5 h-3.5" />
-                      {t('menuLabel')}
-                    </label>
-                    <select
-                      id="qr-menu-select"
-                      value={selectedMenuId}
-                      onChange={(e) => setSelectedMenuId(e.target.value)}
-                      className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
-                    >
-                      <option value="">{t('allMenus')}</option>
-                      {menus.map((menu) => (
-                        <option key={menu.id} value={menu.id}>
-                          {menu.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-
-              {/* Dynamic URL Preview */}
-              {(selectedTable || selectedMenu) && (
-                <div className="mt-3 p-2.5 bg-neutral-50 rounded-xl">
-                  <p className="text-xs text-neutral-500 font-mono break-all">{qrUrl}</p>
+                  {/* Menu Selector */}
+                  {menus.length > 0 && (
+                    <div>
+                      <label
+                        htmlFor="qr-menu-select"
+                        className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" />
+                        {t('menuLabel')}
+                      </label>
+                      <select
+                        id="qr-menu-select"
+                        value={selectedMenuId}
+                        onChange={(e) => setSelectedMenuId(e.target.value)}
+                        className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
+                      >
+                        <option value="">{t('allMenus')}</option>
+                        {menus.map((menu) => (
+                          <option key={menu.id} value={menu.id}>
+                            {menu.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          )}
 
-          {/* Selection Summary */}
-          <div className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-            <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
-              {t('selectionSummary')}
-            </h4>
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                <Table2 className="w-3.5 h-3.5 text-neutral-400" />
-                <span>{selectedTable ? selectedTable.display_name : t('noTableSelected')}</span>
+                {/* Dynamic URL Preview */}
+                {(selectedTable || selectedMenu) && (
+                  <div className="mt-3 p-2.5 bg-neutral-50 rounded-xl">
+                    <p className="text-xs text-neutral-500 font-mono break-all">{qrUrl}</p>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
-                <span>{selectedMenu ? selectedMenu.name : t('allMenus')}</span>
+            )}
+
+            {/* Selection Summary */}
+            <div className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+                {t('selectionSummary')}
+              </h4>
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-1.5 text-sm text-neutral-700">
+                  <Table2 className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>{selectedTable ? selectedTable.display_name : t('noTableSelected')}</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm text-neutral-700">
+                  <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>{selectedMenu ? selectedMenu.name : t('allMenus')}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        </TabsContent>
 
-      {/* ─── Step 1: Personnalisation ─── */}
-      {currentStep === 1 && (
-        <div className="bg-white rounded-xl border border-neutral-100 p-6">
-          <QRCustomizerLayout
-            config={config}
-            updateField={updateField}
-            setTemplate={setTemplate}
-            url={qrUrl}
-            tenantName={tenant.name}
-            tenantSlug={tenant.slug}
-            tableName={qrSubtitle}
-            logoUrl={tenant.logoUrl}
-          />
-        </div>
-      )}
-
-      {/* ─── Step 2: Aperçu & Téléchargement ─── */}
-      {currentStep === 2 && (
-        <div>
-          {/* Single QR Preview + Download */}
-          <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
-            <h3 className="text-base font-bold text-neutral-900 mb-4 flex items-center gap-2">
-              <QrCode className="w-4 h-4 text-neutral-400" />
-              {t('yourQRCode')}
-            </h3>
-            <div className="flex justify-center mb-6">
-              <div className="max-w-xs w-full">
-                <QRPreview
-                  ref={downloadPreviewRef}
-                  config={config}
-                  url={qrUrl}
-                  tenantName={tenant.name}
-                  tableName={qrSubtitle}
-                  logoUrl={tenant.logoUrl}
-                />
-              </div>
-            </div>
-            <QRExportBar config={config} previewRef={downloadPreviewRef} tenantSlug={tenant.slug} />
+        {/* ─── Tab: Customize ─── */}
+        <TabsContent value="customize" className="flex-1 overflow-auto">
+          <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <QRCustomizerLayout
+              config={config}
+              updateField={updateField}
+              setTemplate={setTemplate}
+              url={qrUrl}
+              tenantName={tenant.name}
+              tenantSlug={tenant.slug}
+              tableName={qrSubtitle}
+              logoUrl={tenant.logoUrl}
+            />
           </div>
+        </TabsContent>
 
-          {/* Batch Generation Section */}
-          {tables.length > 0 && (
+        {/* ─── Tab: Download ─── */}
+        <TabsContent value="download" className="flex-1 overflow-auto">
+          <div>
+            {/* Single QR Preview + Download */}
             <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                    <Download className="w-4 h-4 text-neutral-400" />
-                    {t('batchGeneration')}
-                  </h3>
-                  <p className="text-sm text-neutral-500 mt-1">
-                    {t('batchGenerationDesc', { count: tables.length })}
-                  </p>
+              <h3 className="text-base font-bold text-neutral-900 mb-4 flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-neutral-400" />
+                {t('yourQRCode')}
+              </h3>
+              <div className="flex justify-center mb-6">
+                <div className="max-w-xs w-full">
+                  <QRPreview
+                    ref={downloadPreviewRef}
+                    config={config}
+                    url={qrUrl}
+                    tenantName={tenant.name}
+                    tableName={qrSubtitle}
+                    logoUrl={tenant.logoUrl}
+                  />
                 </div>
               </div>
-
-              <BatchQRPreview
-                tables={tables}
-                zones={zones}
-                menus={menus}
-                selectedMenuId={selectedMenuId}
-                menuUrl={menuUrl}
-                tenantName={tenant.name}
-                primaryColor={tenant.primaryColor}
+              <QRExportBar
                 config={config}
+                previewRef={downloadPreviewRef}
+                tenantSlug={tenant.slug}
               />
             </div>
-          )}
 
-          {/* Tips */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipStandard')}</h3>
-              <p className="text-sm text-neutral-500">{t('tipStandardDesc')}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipEasel')}</h3>
-              <p className="text-sm text-neutral-500">{t('tipEaselDesc')}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1">{t('tipCard')}</h3>
-              <p className="text-sm text-neutral-500">{t('tipCardDesc')}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                {t('tipMinimal')}
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
-                  <Sparkles className="w-3 h-3" />
-                  Premium
-                </span>
-              </h3>
-              <p className="text-sm text-neutral-500">{t('tipMinimalDesc')}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                {t('tipElegant')}
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
-                  <Sparkles className="w-3 h-3" />
-                  Premium
-                </span>
-              </h3>
-              <p className="text-sm text-neutral-500">{t('tipElegantDesc')}</p>
-            </div>
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
-                {t('tipNeon')}
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
-                  <Sparkles className="w-3 h-3" />
-                  Premium
-                </span>
-              </h3>
-              <p className="text-sm text-neutral-500">{t('tipNeonDesc')}</p>
+            {/* Batch Generation Section (A4 format) */}
+            {tables.length > 0 && (
+              <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                      <Download className="w-4 h-4 text-neutral-400" />
+                      {t('batchGeneration')}
+                    </h3>
+                    <p className="text-sm text-neutral-500 mt-1">
+                      {t('batchGenerationDesc', { count: tables.length })}
+                    </p>
+                    <p className="text-xs text-neutral-400 mt-1">{t('formatA4')}</p>
+                  </div>
+                </div>
+
+                <BatchQRPreview
+                  tables={tables}
+                  zones={zones}
+                  menus={menus}
+                  selectedMenuId={selectedMenuId}
+                  menuUrl={menuUrl}
+                  tenantName={tenant.name}
+                  primaryColor={tenant.primaryColor}
+                  config={config}
+                />
+              </div>
+            )}
+
+            {/* Tips */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipStandard')}</h3>
+                <p className="text-sm text-neutral-500">{t('tipStandardDesc')}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipEasel')}</h3>
+                <p className="text-sm text-neutral-500">{t('tipEaselDesc')}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipCard')}</h3>
+                <p className="text-sm text-neutral-500">{t('tipCardDesc')}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+                  {t('tipMinimal')}
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                    <Sparkles className="w-3 h-3" />
+                    Premium
+                  </span>
+                </h3>
+                <p className="text-sm text-neutral-500">{t('tipMinimalDesc')}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+                  {t('tipElegant')}
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                    <Sparkles className="w-3 h-3" />
+                    Premium
+                  </span>
+                </h3>
+                <p className="text-sm text-neutral-500">{t('tipElegantDesc')}</p>
+              </div>
+              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+                  {t('tipNeon')}
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                    <Sparkles className="w-3 h-3" />
+                    Premium
+                  </span>
+                </h3>
+                <p className="text-sm text-neutral-500">{t('tipNeonDesc')}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* ─── Navigation Buttons ─── */}
-      <div className="mt-8 flex items-center justify-between">
-        {currentStep > 0 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => goToStep(currentStep - 1)}
-            className="gap-2 text-neutral-600 hover:text-neutral-900"
-          >
-            <ChevronLeft className="w-4 h-4" />
-            {t('previous')}
-          </Button>
-        ) : (
-          <div />
-        )}
-
-        {currentStep < 2 && (
-          <Button
-            type="button"
-            variant="lime"
-            onClick={() => goToStep(currentStep + 1)}
-            className="gap-2 rounded-xl"
-          >
-            {t('next')}
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        )}
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
