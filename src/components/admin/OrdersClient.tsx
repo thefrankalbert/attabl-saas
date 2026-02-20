@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrders } from '@/hooks/queries';
+import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +53,7 @@ export default function OrdersClient({
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
   // TanStack Query for orders
   const { data: queryOrders } = useOrders(tenantId);
@@ -281,14 +283,8 @@ export default function OrdersClient({
     [t, tc, statusConfig],
   );
 
-  const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', orderId);
-    if (error) {
-      toast({ title: tc('error'), variant: 'destructive' });
-    } else {
-      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
-    }
+  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    updateOrderStatus.mutate({ orderId, status: newStatus });
   };
 
   return (
