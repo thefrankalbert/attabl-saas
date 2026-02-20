@@ -426,9 +426,10 @@
     "settingsUpdated": "Ajustes actualizados",
     "settingsSavedSuccess": "Los cambios se han guardado correctamente.",
     "settingsSaveError": "Se ha producido un error al guardar.",
-    "fileTooLarge": "Archivo demasiado grande",
+    "fileTooLarge": "El archivo es demasiado grande (máx. 2 MB)",
     "logoMaxSize": "El logotipo no debe superar los 2 MB",
-    "logoUploadError": "Error al subir el logotipo. Inténtelo de nuevo.",
+    "logoUploaded": "Logo actualizado",
+    "logoUploadError": "Error al subir el logo",
     "logoUploading": "Subiendo logotipo...",
     "descriptionPlaceholder": "Cocina local y auténtica...",
     "addressPlaceholder": "Calle Mayor 123...",
@@ -450,7 +451,7 @@
     "customSoundComingSoon": "La carga de sonidos personalizados estará disponible próximamente.",
     "customSoundPremiumOnly": "La importación de sonidos personalizados está disponible con el plan Premium.",
     "soundError": "Error",
-    "soundPlayError": "No se ha podido reproducir este sonido.",
+    "soundPlayError": "No se puede reproducir el sonido. Verifique su navegador.",
     "languageSection": "Idioma",
     "languageDescription": "Idioma de la interfaz de administraci\u00f3n",
     "tabIdentity": "Identidad",
@@ -597,7 +598,9 @@
     "orderError": "Error en el pedido",
     "loading": "Cargando TPV...",
     "loadingPos": "Cargando TPV...",
-    "sendToKitchen": "Enviar a cocina"
+    "sendToKitchen": "Enviar a cocina",
+    "selectTableFirst": "Por favor seleccione una mesa primero",
+    "server": "Camarero"
   },
   "users": {
     "title": "Usuarios",
@@ -1121,7 +1124,8 @@
     "tipCustom": "Otro",
     "tipAmount": "Propina: {amount}",
     "totalWithTip": "Total con propina",
-    "backspace": "Borrar"
+    "backspace": "Borrar",
+    "tableRequired": "Por favor seleccione una mesa primero"
   },
   "qrCodes": {
     "title": "QR Codes",

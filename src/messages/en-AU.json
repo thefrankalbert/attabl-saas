@@ -426,9 +426,10 @@
     "settingsUpdated": "Settings updated",
     "settingsSavedSuccess": "Changes have been saved successfully.",
     "settingsSaveError": "An error occurred while saving.",
-    "fileTooLarge": "File too large",
+    "fileTooLarge": "File is too large (max 2 MB)",
     "logoMaxSize": "Logo must not exceed 2MB",
-    "logoUploadError": "Failed to upload logo. Please try again.",
+    "logoUploaded": "Logo updated",
+    "logoUploadError": "Error uploading logo",
     "logoUploading": "Uploading logo...",
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 George Street...",
@@ -450,7 +451,7 @@
     "customSoundComingSoon": "Custom sound upload is coming soon.",
     "customSoundPremiumOnly": "Custom sound import is available with the Premium plan.",
     "soundError": "Error",
-    "soundPlayError": "Unable to play this sound.",
+    "soundPlayError": "Unable to play sound. Check your browser.",
     "languageSection": "Language",
     "languageDescription": "Administration interface language",
     "tabIdentity": "Identity",
@@ -597,7 +598,9 @@
     "orderError": "Order error",
     "loading": "Loading POS...",
     "loadingPos": "Loading POS...",
-    "sendToKitchen": "Send to kitchen"
+    "sendToKitchen": "Send to kitchen",
+    "selectTableFirst": "Please select a table first",
+    "server": "Server"
   },
   "users": {
     "title": "Users",
@@ -1121,7 +1124,8 @@
     "tipCustom": "Custom",
     "tipAmount": "Tip: {amount}",
     "totalWithTip": "Total with tip",
-    "backspace": "Delete"
+    "backspace": "Delete",
+    "tableRequired": "Please select a table first"
   },
   "qrCodes": {
     "title": "QR Codes",

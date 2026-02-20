@@ -426,9 +426,10 @@
     "settingsUpdated": "Paramètres mis à jour",
     "settingsSavedSuccess": "Les modifications ont été enregistrées avec succès.",
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
-    "fileTooLarge": "Fichier trop volumineux",
+    "fileTooLarge": "Le fichier est trop volumineux (max 2 Mo)",
     "logoMaxSize": "Le logo ne doit pas dépasser 2MB",
-    "logoUploadError": "Échec du téléchargement du logo. Veuillez réessayer.",
+    "logoUploaded": "Logo mis à jour",
+    "logoUploadError": "Erreur lors du téléversement du logo",
     "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue de la République...",
@@ -450,7 +451,7 @@
     "customSoundComingSoon": "L'upload de sons personnalisés arrive prochainement.",
     "customSoundPremiumOnly": "L'import de sons personnalisés est disponible avec le plan Premium.",
     "soundError": "Erreur",
-    "soundPlayError": "Impossible de jouer ce son.",
+    "soundPlayError": "Impossible de lire le son. Vérifiez votre navigateur.",
     "languageSection": "Langue",
     "languageDescription": "Langue de l'interface d'administration",
     "tabIdentity": "Identit\u00e9",
@@ -597,7 +598,9 @@
     "orderError": "Erreur lors de la commande",
     "loading": "Chargement du POS...",
     "loadingPos": "Chargement du POS...",
-    "sendToKitchen": "Envoyer en cuisine"
+    "sendToKitchen": "Envoyer en cuisine",
+    "selectTableFirst": "Veuillez sélectionner une table d'abord",
+    "server": "Serveur"
   },
   "users": {
     "title": "Utilisateurs",
@@ -1121,7 +1124,8 @@
     "tipCustom": "Autre",
     "tipAmount": "Pourboire : {amount}",
     "totalWithTip": "Total avec pourboire",
-    "backspace": "Effacer"
+    "backspace": "Effacer",
+    "tableRequired": "Veuillez sélectionner une table d'abord"
   },
   "qrCodes": {
     "title": "QR Codes",
