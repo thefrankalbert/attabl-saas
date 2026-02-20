@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { updateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
@@ -39,6 +40,7 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     secondaryColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, messages.invalidColor),
     address: z.string().optional(),
     phone: z.string().optional(),
+    logo_url: z.string().optional(),
     // Facturation fields
     currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
     enableTax: z.boolean().optional(),
@@ -77,18 +79,20 @@ interface SettingsFormProps {
 
 type SettingsTab =
   | 'identity'
-  | 'customization'
+  | 'branding'
   | 'billing'
-  | 'notifications'
+  | 'sounds'
   | 'security'
+  | 'contact'
   | 'language';
 
 const TAB_CONFIG: { key: SettingsTab; icon: React.ElementType; labelKey: string }[] = [
   { key: 'identity', icon: Store, labelKey: 'tabIdentity' },
-  { key: 'customization', icon: Palette, labelKey: 'tabCustomization' },
+  { key: 'branding', icon: Palette, labelKey: 'tabBranding' },
   { key: 'billing', icon: Receipt, labelKey: 'tabBilling' },
-  { key: 'notifications', icon: Bell, labelKey: 'tabNotifications' },
+  { key: 'sounds', icon: Bell, labelKey: 'tabSounds' },
   { key: 'security', icon: Shield, labelKey: 'tabSecurity' },
+  { key: 'contact', icon: MapPin, labelKey: 'tabContact' },
   { key: 'language', icon: Globe, labelKey: 'tabLanguage' },
 ];
 
@@ -101,9 +105,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     invalidColor: t('invalidColor'),
   });
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('identity');
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedSoundId, setSelectedSoundId] = useState(
@@ -126,6 +128,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       secondaryColor: tenant.secondary_color || '#FFFFFF',
       address: tenant.address || '',
       phone: tenant.phone || '',
+      logo_url: tenant.logo_url || '',
       currency: tenant.currency || 'XAF',
       enableTax: tenant.enable_tax ?? false,
       taxRate: tenant.tax_rate ?? 0,
@@ -142,67 +145,68 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   const watchIdleTimeoutMinutes = watch('idleTimeoutMinutes');
   const watchScreenLockMode = watch('screenLockMode');
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        toast({
-          title: t('fileTooLarge'),
-          description: t('logoMaxSize'),
-          variant: 'destructive',
-        });
-        return;
+    if (!file) return;
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast({
+        title: t('fileTooLarge'),
+        description: t('logoMaxSize'),
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Set local DataURL preview for immediate feedback
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload to Supabase Storage
+    setUploading(true);
+    try {
+      const supabase = createClient();
+      const fileExt = file.name.split('.').pop() || 'png';
+      const filePath = `${tenant.id}/logo.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('tenant-logos')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) {
+        throw uploadError;
       }
-      setLogoFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setLogoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('tenant-logos').getPublicUrl(filePath);
+
+      setValue('logo_url', publicUrl);
+
+      toast({
+        title: t('logoUploaded'),
+      });
+    } catch (uploadErr) {
+      logger.error('Failed to upload logo to storage', uploadErr);
+      // Revert logo preview to original on failure
+      setLogoPreview(tenant.logo_url || null);
+      toast({
+        title: tc('error'),
+        description: t('logoUploadError'),
+        variant: 'destructive',
+      });
+    } finally {
+      setUploading(false);
     }
   };
 
   const onSubmit = async (data: SettingsFormValues) => {
     setSaving(true);
     try {
-      let finalLogoUrl = tenant.logo_url || '';
-
-      // Upload logo if changed
-      if (logoFile) {
-        setUploading(true);
-        try {
-          const supabase = createClient();
-          const fileExt = logoFile.name.split('.').pop() || 'png';
-          const fileName = `${tenant.slug}/logo-${Date.now()}.${fileExt}`;
-
-          const { error: uploadError } = await supabase.storage
-            .from('images')
-            .upload(fileName, logoFile, { upsert: true });
-
-          if (uploadError) {
-            throw uploadError;
-          }
-
-          const {
-            data: { publicUrl },
-          } = supabase.storage.from('images').getPublicUrl(fileName);
-          finalLogoUrl = publicUrl;
-        } catch (uploadErr) {
-          logger.error('Failed to upload logo to storage', uploadErr);
-          // Revert logo preview to original on failure
-          setLogoPreview(tenant.logo_url || null);
-          setLogoFile(null);
-          toast({
-            title: tc('error'),
-            description: t('logoUploadError'),
-            variant: 'destructive',
-          });
-          return;
-        } finally {
-          setUploading(false);
-        }
-      }
-
       // Prepare form data for server action
       const formData = new FormData();
       formData.append('name', data.name);
@@ -211,7 +215,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       formData.append('secondaryColor', data.secondaryColor);
       formData.append('address', data.address || '');
       formData.append('phone', data.phone || '');
-      if (finalLogoUrl) formData.append('logoUrl', finalLogoUrl);
+      if (data.logo_url) formData.append('logoUrl', data.logo_url);
       formData.append('notificationSoundId', selectedSoundId);
       // Facturation fields
       formData.append('currency', data.currency || 'XAF');
@@ -228,8 +232,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       const result = await updateTenantSettings(formData);
 
       if (result.success) {
-        // Clear the file reference after successful save
-        setLogoFile(null);
         toast({
           title: t('settingsUpdated'),
           description: t('settingsSavedSuccess'),
@@ -250,35 +252,24 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   };
 
   return (
-    <div className="max-w-4xl flex flex-col h-full min-h-0">
-      {/* Tab bar */}
-      <nav className="flex-shrink-0 border-b border-neutral-200">
-        <div className="-mb-px flex gap-1 overflow-x-auto">
-          {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => {
-            const isActive = activeTab === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-                  isActive
-                    ? 'border-[#CCFF00] text-neutral-900 font-semibold'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {t(labelKey)}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl flex flex-col h-full min-h-0">
+      <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
+        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-neutral-200 bg-transparent p-0">
+          {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
+            <TabsTrigger
+              key={key}
+              value={key}
+              className="flex items-center gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-700 data-[state=active]:border-[#CCFF00] data-[state=active]:bg-transparent data-[state=active]:text-neutral-900 data-[state=active]:font-semibold data-[state=active]:shadow-none"
+            >
+              <Icon className="h-4 w-4" />
+              {t(labelKey)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 mt-6">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 mt-6">
           {/* Identity tab */}
-          {activeTab === 'identity' && (
+          <TabsContent value="identity" className="mt-0">
             <div className="space-y-6">
               <div className="bg-white rounded-xl border border-neutral-100 p-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -375,39 +366,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   </p>
                 </div>
               </div>
-
-              {/* Contact info within identity tab */}
-              <div className="bg-white rounded-xl border border-neutral-100 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-neutral-900">{t('contactInfo')}</h2>
-                    <p className="text-sm text-neutral-500">{t('addressAndContact')}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">{t('fullAddress')}</Label>
-                    <Input
-                      id="address"
-                      {...register('address')}
-                      placeholder={t('addressPlaceholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t('phone')}</Label>
-                    <Input id="phone" {...register('phone')} placeholder={t('phonePlaceholder')} />
-                  </div>
-                </div>
-              </div>
             </div>
-          )}
+          </TabsContent>
 
-          {/* Customization tab */}
-          {activeTab === 'customization' && (
+          {/* Branding tab */}
+          <TabsContent value="branding" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-purple-50 rounded-lg">
@@ -472,10 +435,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
             </div>
-          )}
+          </TabsContent>
 
           {/* Billing tab */}
-          {activeTab === 'billing' && (
+          <TabsContent value="billing" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-emerald-50 rounded-lg">
@@ -607,10 +570,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
             </div>
-          )}
+          </TabsContent>
 
-          {/* Notifications tab */}
-          {activeTab === 'notifications' && (
+          {/* Sounds tab */}
+          <TabsContent value="sounds" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-amber-50 rounded-lg">
@@ -630,10 +593,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 tenantId={tenant.id}
               />
             </div>
-          )}
+          </TabsContent>
 
           {/* Security tab */}
-          {activeTab === 'security' && (
+          <TabsContent value="security" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-indigo-50 rounded-lg">
@@ -742,10 +705,40 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 )}
               </div>
             </div>
-          )}
+          </TabsContent>
+
+          {/* Contact tab */}
+          <TabsContent value="contact" className="mt-0">
+            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900">{t('contactInfo')}</h2>
+                  <p className="text-sm text-neutral-500">{t('addressAndContact')}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address">{t('fullAddress')}</Label>
+                  <Input
+                    id="address"
+                    {...register('address')}
+                    placeholder={t('addressPlaceholder')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t('phone')}</Label>
+                  <Input id="phone" {...register('phone')} placeholder={t('phonePlaceholder')} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Language tab */}
-          {activeTab === 'language' && (
+          <TabsContent value="language" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-blue-50 rounded-lg">
@@ -759,31 +752,31 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
               <LocaleSwitcher />
             </div>
-          )}
+          </TabsContent>
         </div>
+      </Tabs>
 
-        {/* Actions - always visible */}
-        <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4">
-          <Button
-            type="submit"
-            variant="lime"
-            disabled={saving || uploading}
-            className="min-w-[150px]"
-          >
-            {saving || uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {tc('saving')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {tc('saveChanges')}
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
+      {/* Actions - always visible */}
+      <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4">
+        <Button
+          type="submit"
+          variant="lime"
+          disabled={saving || uploading}
+          className="min-w-[150px]"
+        >
+          {saving || uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {tc('saving')}
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              {tc('saveChanges')}
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }

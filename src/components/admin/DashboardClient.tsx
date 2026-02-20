@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -12,13 +12,10 @@ import {
   Clock,
   ChefHat,
   TrendingUp,
-  Bell,
-  Calendar,
   Eye,
   CheckCircle2,
   Utensils,
   Package,
-  AlertTriangle,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,46 +55,6 @@ function getLast7DaysData(orders: Order[]): number[] {
   return days.map((day) => orders.filter((o) => o.created_at?.startsWith(day)).length);
 }
 
-function MiniChart({ data, tooltipLabel }: { data: number[]; tooltipLabel?: string }) {
-  const chartData = data.map((value, index) => ({ day: index, value }));
-  if (chartData.every((d) => d.value === 0)) {
-    return (
-      <div className="h-[40px] flex items-center justify-center text-xs text-neutral-400">--</div>
-    );
-  }
-  return (
-    <ResponsiveContainer width="100%" height={40}>
-      <AreaChart data={chartData}>
-        <defs>
-          <linearGradient id="limeGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
-            <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
-          </linearGradient>
-        </defs>
-        <Tooltip
-          contentStyle={{
-            background: '#171717',
-            border: '1px solid #262626',
-            borderRadius: '8px',
-            fontSize: '12px',
-            color: '#fff',
-          }}
-          labelFormatter={() => ''}
-          formatter={(value: number | undefined) => [value ?? 0, tooltipLabel ?? '']}
-        />
-        <Area
-          type="monotone"
-          dataKey="value"
-          stroke="#CCFF00"
-          fill="url(#limeGradient)"
-          strokeWidth={2}
-          dot={false}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  );
-}
-
 // ─── Types ─────────────────────────────────────────────────
 
 interface DashboardClientProps {
@@ -112,15 +69,8 @@ interface DashboardClientProps {
 
 // ─── Main Component ────────────────────────────────────────
 
-export default function DashboardClient({
-  tenantId,
-  tenantSlug,
-  tenantName,
-  initialStats,
-  initialRecentOrders,
-  initialPopularItems,
-  currency = 'XAF',
-}: DashboardClientProps) {
+export default function DashboardClient(props: DashboardClientProps) {
+  const { tenantId, tenantSlug, initialStats, initialRecentOrders, currency = 'XAF' } = props;
   const t = useTranslations('admin');
   const tc = useTranslations('common');
   const locale = useLocale();
@@ -128,7 +78,6 @@ export default function DashboardClient({
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmt = (amount: number) => formatCurrency(amount, currency);
   const fmtCompact = (amount: number) => formatCurrencyCompact(amount, currency);
-  const [popularItems] = useState<PopularItem[]>(initialPopularItems);
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -146,13 +95,6 @@ export default function DashboardClient({
 
   // Mutation for order status changes
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
-
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return t('goodMorning');
-    if (hour < 18) return t('goodAfternoon');
-    return t('goodEvening');
-  };
 
   const handleStatusChange = async (orderId: string, newStatus: string) => {
     updateOrderStatus.mutate(
@@ -212,66 +154,47 @@ export default function DashboardClient({
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4 h-full">
-        <div className="animate-pulse">
-          <div className="h-7 w-48 bg-neutral-200 rounded-lg" />
-          <div className="h-4 w-32 bg-neutral-100 rounded mt-1" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="h-[calc(100vh-8rem)] grid grid-rows-[auto_1fr_1fr] gap-3 overflow-hidden">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <StatsCardSkeleton key={i} />
           ))}
+        </div>
+        <div className="grid grid-cols-3 gap-3 min-h-0">
+          <div className="col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse" />
+        </div>
+        <div className="grid grid-cols-3 gap-3 min-h-0">
+          <div className="col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse" />
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <div>
-          <h1 className="text-xl font-bold text-neutral-900">{getGreeting()}</h1>
-          <p className="text-neutral-500 text-sm mt-1 flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            {new Date().toLocaleDateString(locale, {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-            <span className="text-neutral-300">•</span>
-            <span className="font-medium text-neutral-700">{tenantName}</span>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button className="relative p-2.5 bg-white border border-neutral-200 rounded-xl hover:bg-neutral-50 transition-colors">
-            <Bell className="w-5 h-5 text-neutral-600" />
-          </button>
-          <Link
-            href={`${adminBase}/pos`}
-            className="flex items-center gap-2 px-4 py-2.5 bg-[#CCFF00] text-black font-semibold rounded-xl hover:bg-[#b8e600] transition-colors"
-          >
-            <Banknote className="w-5 h-5" />
-            {t('openPosButton')}
-          </Link>
-        </div>
-      </div>
+  const revenueChartData = getLast7DaysData(recentOrders).map((count, i) => {
+    const d = new Date();
+    d.setDate(d.getDate() - (6 - i));
+    const dayLabel = d.toLocaleDateString(locale, { weekday: 'short' });
+    return { day: dayLabel, orders: count };
+  });
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatsCard
-          title={t('revenue')}
-          value={fmtCompact(stats.revenueToday)}
-          icon={Banknote}
-          color="lime"
-          subtitle={t('todayLabel')}
-        />
+  return (
+    <div className="h-[calc(100vh-8rem)] grid grid-rows-[auto_1fr_1fr] gap-3 overflow-hidden">
+      {/* Row 1 — KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatsCard
           title={t('ordersCount')}
           value={stats.ordersToday}
           icon={ShoppingBag}
           color="blue"
+          subtitle={t('todayLabel')}
+        />
+        <StatsCard
+          title={t('revenue')}
+          value={fmtCompact(stats.revenueToday)}
+          icon={Banknote}
+          color="lime"
           subtitle={t('todayLabel')}
         />
         <StatsCard
@@ -290,101 +213,124 @@ export default function DashboardClient({
         />
       </div>
 
-      {/* Stock en direct */}
-      {stockItems.length > 0 && (
-        <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+      {/* Row 2 — Revenue Chart + Quick Actions */}
+      <div className="grid grid-cols-3 gap-3 min-h-0">
+        {/* Revenue Chart (col-span-2) */}
+        <div className="col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
             <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-neutral-600" />
+              <TrendingUp className="w-4 h-4 text-neutral-600" />
               <div>
-                <h2 className="text-base font-bold text-neutral-900">{t('stockLive')}</h2>
-                <p className="text-xs text-neutral-500">{t('stockTop10')}</p>
+                <h2 className="text-base font-bold text-neutral-900">{t('revenue')}</h2>
+                <p className="text-xs text-neutral-500">{t('todayLabel')}</p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              {stockItems.filter((s) => s.current_stock <= 0).length > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-bold">
-                  <AlertTriangle className="w-3 h-3" />
-                  {t('outOfStockCount', {
-                    count: stockItems.filter((s) => s.current_stock <= 0).length,
-                  })}
-                </span>
-              )}
-              {stockItems.filter((s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert)
-                .length > 0 && (
-                <span className="flex items-center gap-1 px-2 py-1 bg-amber-50 text-amber-600 rounded-lg text-xs font-bold">
-                  <AlertTriangle className="w-3 h-3" />
-                  {t('lowStockCount', {
-                    count: stockItems.filter(
-                      (s) => s.current_stock > 0 && s.current_stock <= s.min_stock_alert,
-                    ).length,
-                  })}
-                </span>
-              )}
-              <Link
-                href={`${adminBase}/inventory`}
-                className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
-              >
-                {t('viewAll')} <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+            <Link
+              href={`${adminBase}/reports`}
+              className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
+            >
+              {t('viewAll')} <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <div className="p-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 xl:grid-cols-10 gap-2">
-            {stockItems.map((item) => {
-              const isOut = item.current_stock <= 0;
-              const isLow = item.current_stock > 0 && item.current_stock <= item.min_stock_alert;
-              const maxStock = Math.max(item.min_stock_alert * 3, item.current_stock, 1);
-              const pct = Math.min((item.current_stock / maxStock) * 100, 100);
-
-              return (
-                <div
-                  key={item.id}
-                  className={cn(
-                    'p-3 rounded-xl border transition-colors',
-                    isOut
-                      ? 'border-red-200 bg-red-50/50'
-                      : isLow
-                        ? 'border-amber-200 bg-amber-50/50'
-                        : 'border-neutral-100 bg-neutral-50/50',
-                  )}
-                >
-                  <p className="text-xs font-bold text-neutral-900 truncate">{item.name}</p>
-                  <div className="mt-2 flex items-end justify-between">
-                    <span
-                      className={cn(
-                        'text-lg font-black',
-                        isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-neutral-900',
-                      )}
-                    >
-                      {item.current_stock}
-                    </span>
-                    <span className="text-[10px] text-neutral-400 font-medium">{item.unit}</span>
-                  </div>
-                  <div className="mt-1.5 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
-                    <div
-                      className={cn(
-                        'h-full rounded-full transition-all',
-                        isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500',
-                      )}
-                      style={{ width: `${Math.max(pct, 2)}%` }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
+          <div className="flex-1 min-h-0 p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueChartData}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Tooltip
+                  contentStyle={{
+                    background: '#171717',
+                    border: '1px solid #262626',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: '#fff',
+                  }}
+                  formatter={(value: number | undefined) => [value ?? 0, t('ordersCount')]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#CCFF00"
+                  fill="url(#revenueGradient)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
-      )}
 
-      {/* Orders + Popular Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Recent Orders */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-neutral-100 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-neutral-100">
+        {/* Quick Actions (col-span-1) */}
+        <div className="min-h-0 overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col">
+          <div className="px-4 py-3 border-b border-neutral-100">
+            <h2 className="text-base font-bold text-neutral-900">{t('quickActions')}</h2>
+          </div>
+          <div className="flex-1 min-h-0 overflow-auto p-3 space-y-2">
+            <Link
+              href={`${adminBase}/kitchen`}
+              className="flex items-center gap-3 p-3 border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+                <ChefHat className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-neutral-900">{t('kitchenLabel')}</h3>
+                <p className="text-xs text-neutral-500">{t('viewKdsSubtitle')}</p>
+              </div>
+            </Link>
+            <Link
+              href={`${adminBase}/orders`}
+              className="flex items-center gap-3 p-3 border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+                <ShoppingBag className="w-5 h-5 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-neutral-900">{t('ordersLabel')}</h3>
+                <p className="text-xs text-neutral-500">{t('manageOrdersSubtitle')}</p>
+              </div>
+            </Link>
+            <Link
+              href={`${adminBase}/items`}
+              className="flex items-center gap-3 p-3 border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+                <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-neutral-900">{t('dishesLabel')}</h3>
+                <p className="text-xs text-neutral-500">{t('manageDishes')}</p>
+              </div>
+            </Link>
+            <Link
+              href={`${adminBase}/reports`}
+              className="flex items-center gap-3 p-3 border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
+            >
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
+                <TrendingUp className="w-5 h-5 text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-sm text-neutral-900">{t('reportsLabel')}</h3>
+                <p className="text-xs text-neutral-500">{t('viewStats')}</p>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* Row 3 — Recent Orders + Stock Alerts */}
+      <div className="grid grid-cols-3 gap-3 min-h-0">
+        {/* Recent Orders (col-span-2) */}
+        <div className="col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
             <div className="flex items-center gap-3">
               <div>
                 <h2 className="text-base font-bold text-neutral-900">{t('recentOrders')}</h2>
-                <p className="text-sm text-neutral-500">
+                <p className="text-xs text-neutral-500">
                   {t('ordersCountLabel', { count: recentOrders.length })}
                 </p>
               </div>
@@ -403,7 +349,7 @@ export default function DashboardClient({
             </Link>
           </div>
           {recentOrders.length > 0 ? (
-            <div className="divide-y divide-neutral-50">
+            <div className="flex-1 min-h-0 overflow-auto divide-y divide-neutral-50">
               {recentOrders.map((order) => (
                 <div key={order.id} className="p-4 hover:bg-neutral-50/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
@@ -481,132 +427,93 @@ export default function DashboardClient({
               ))}
             </div>
           ) : (
-            <div className="p-12 text-center">
-              <div className="w-16 h-16 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <ShoppingBag className="w-8 h-8 text-neutral-400" />
+            <div className="flex-1 min-h-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <ShoppingBag className="w-8 h-8 text-neutral-400" />
+                </div>
+                <h3 className="font-semibold text-neutral-900 mb-1">{t('noOrders')}</h3>
+                <p className="text-sm text-neutral-500">{t('noOrdersDescAlt')}</p>
               </div>
-              <h3 className="font-semibold text-neutral-900 mb-1">{t('noOrders')}</h3>
-              <p className="text-sm text-neutral-500">{t('noOrdersDescAlt')}</p>
             </div>
           )}
         </div>
 
-        {/* Popular Items */}
-        <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
-          <div className="flex items-center justify-between p-4 border-b border-neutral-100">
-            <div>
-              <h2 className="text-base font-bold text-neutral-900">{t('topDishes')}</h2>
-              <p className="text-sm text-neutral-500">{t('mostOrdered')}</p>
+        {/* Stock Alerts (col-span-1) */}
+        <div className="min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
+            <div className="flex items-center gap-2">
+              <Package className="w-4 h-4 text-neutral-600" />
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">{t('stockLive')}</h2>
+                <p className="text-xs text-neutral-500">{t('stockTop10')}</p>
+              </div>
             </div>
+            <Link
+              href={`${adminBase}/inventory`}
+              className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
+            >
+              {t('viewAll')} <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          {popularItems.length > 0 ? (
-            <div className="p-4 space-y-3">
-              {popularItems.map((item, idx) => (
-                <div
-                  key={item.id}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-neutral-50 transition-colors"
-                >
+          {stockItems.length > 0 ? (
+            <div className="flex-1 min-h-0 overflow-auto p-3 space-y-2">
+              {stockItems.map((item) => {
+                const isOut = item.current_stock <= 0;
+                const isLow = item.current_stock > 0 && item.current_stock <= item.min_stock_alert;
+                const maxStock = Math.max(item.min_stock_alert * 3, item.current_stock, 1);
+                const pct = Math.min((item.current_stock / maxStock) * 100, 100);
+
+                return (
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                      idx === 0
-                        ? 'bg-amber-100 text-amber-700'
-                        : idx === 1
-                          ? 'bg-neutral-200 text-neutral-700'
-                          : idx === 2
-                            ? 'bg-orange-100 text-orange-700'
-                            : 'bg-neutral-100 text-neutral-600'
-                    }`}
+                    key={item.id}
+                    className={cn(
+                      'p-3 rounded-xl border transition-colors',
+                      isOut
+                        ? 'border-red-200 bg-red-50/50'
+                        : isLow
+                          ? 'border-amber-200 bg-amber-50/50'
+                          : 'border-neutral-100 bg-neutral-50/50',
+                    )}
                   >
-                    {idx + 1}
-                  </div>
-                  {item.image_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="w-12 h-12 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-neutral-100 to-neutral-200 flex items-center justify-center">
-                      <UtensilsCrossed className="w-5 h-5 text-neutral-400" />
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs font-bold text-neutral-900 truncate">{item.name}</p>
+                      <span className="text-[10px] text-neutral-400 font-medium">{item.unit}</span>
                     </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-neutral-900 truncate">{item.name}</p>
-                    <p className="text-xs text-neutral-500">
-                      {t('ordersCountLabel', { count: item.order_count })}
-                    </p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-neutral-200 rounded-full overflow-hidden">
+                        <div
+                          className={cn(
+                            'h-full rounded-full transition-all',
+                            isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-green-500',
+                          )}
+                          style={{ width: `${Math.max(pct, 2)}%` }}
+                        />
+                      </div>
+                      <span
+                        className={cn(
+                          'text-sm font-black tabular-nums',
+                          isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-neutral-900',
+                        )}
+                      >
+                        {item.current_stock}
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-16">
-                    <MiniChart
-                      data={getLast7DaysData(recentOrders)}
-                      tooltipLabel={t('ordersCount')}
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
-            <div className="p-8 text-center">
-              <div className="w-14 h-14 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <UtensilsCrossed className="w-6 h-6 text-neutral-400" />
+            <div className="flex-1 min-h-0 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-14 h-14 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Package className="w-6 h-6 text-neutral-400" />
+                </div>
+                <p className="text-sm text-neutral-500">{t('noDataAvailable')}</p>
               </div>
-              <p className="text-sm text-neutral-500">{t('noDataAvailable')}</p>
             </div>
           )}
         </div>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Link
-          href={`${adminBase}/kitchen`}
-          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <ChefHat className="w-5 h-5 text-blue-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm text-neutral-900">{t('kitchenLabel')}</h3>
-            <p className="text-xs text-neutral-500">{t('viewKdsSubtitle')}</p>
-          </div>
-        </Link>
-        <Link
-          href={`${adminBase}/orders`}
-          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <ShoppingBag className="w-5 h-5 text-amber-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm text-neutral-900">{t('ordersLabel')}</h3>
-            <p className="text-xs text-neutral-500">{t('manageOrdersSubtitle')}</p>
-          </div>
-        </Link>
-        <Link
-          href={`${adminBase}/items`}
-          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <UtensilsCrossed className="w-5 h-5 text-emerald-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm text-neutral-900">{t('dishesLabel')}</h3>
-            <p className="text-xs text-neutral-500">{t('manageDishes')}</p>
-          </div>
-        </Link>
-        <Link
-          href={`${adminBase}/reports`}
-          className="flex items-center gap-3 p-3 bg-white border border-neutral-100 rounded-xl hover:border-[#CCFF00] transition-all group"
-        >
-          <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center group-hover:bg-[#CCFF00]/20 transition-colors">
-            <TrendingUp className="w-5 h-5 text-purple-600" />
-          </div>
-          <div>
-            <h3 className="font-semibold text-sm text-neutral-900">{t('reportsLabel')}</h3>
-            <p className="text-xs text-neutral-500">{t('viewStats')}</p>
-          </div>
-        </Link>
       </div>
     </div>
   );

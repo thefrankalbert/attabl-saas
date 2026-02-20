@@ -137,6 +137,8 @@
     "serviceTakeaway": "Para llevar",
     "serviceDelivery": "A domicilio",
     "serviceRoom": "Servicio de habitaciones",
+    "serviceDineIn": "En local",
+    "warningReadyBeforeCheckout": "Verifique que el pedido esté listo antes de cobrar",
     "subtotal": "Subtotal",
     "vat": "IVA",
     "serviceCharge": "Servicio",
@@ -426,9 +428,10 @@
     "settingsUpdated": "Ajustes actualizados",
     "settingsSavedSuccess": "Los cambios se han guardado correctamente.",
     "settingsSaveError": "Se ha producido un error al guardar.",
-    "fileTooLarge": "Archivo demasiado grande",
-    "logoMaxSize": "El logotipo no debe superar los 15 MB",
-    "logoUploadError": "Error al subir el logotipo. Inténtelo de nuevo.",
+    "fileTooLarge": "El archivo es demasiado grande (máx. 2 MB)",
+    "logoMaxSize": "El logotipo no debe superar los 2 MB",
+    "logoUploaded": "Logo actualizado",
+    "logoUploadError": "Error al subir el logo",
     "logoUploading": "Subiendo logotipo...",
     "descriptionPlaceholder": "Cocina local y auténtica...",
     "addressPlaceholder": "Calle Mayor 123...",
@@ -450,14 +453,15 @@
     "customSoundComingSoon": "La carga de sonidos personalizados estará disponible próximamente.",
     "customSoundPremiumOnly": "La importación de sonidos personalizados está disponible con el plan Premium.",
     "soundError": "Error",
-    "soundPlayError": "No se ha podido reproducir este sonido.",
+    "soundPlayError": "No se puede reproducir el sonido. Verifique su navegador.",
     "languageSection": "Idioma",
     "languageDescription": "Idioma de la interfaz de administraci\u00f3n",
     "tabIdentity": "Identidad",
-    "tabCustomization": "Personalizaci\u00f3n",
+    "tabBranding": "Marca",
     "tabBilling": "Facturaci\u00f3n",
-    "tabNotifications": "Notificaciones",
+    "tabSounds": "Sonidos",
     "tabSecurity": "Seguridad",
+    "tabContact": "Contacto",
     "tabLanguage": "Idioma",
     "slug": "Slug",
     "slugDescription": "Su subdominio \u00fanico. Contacte con soporte para cambiarlo."
@@ -495,6 +499,7 @@
     "roleUnknown": "Desconocido",
     "groupMarketing": "Marketing",
     "groupSettings": "Ajustes",
+    "groupAnalyse": "Análisis",
     "navGeneral": "General",
     "collapse": "Contraer",
     "expand": "Expandir",
@@ -597,7 +602,9 @@
     "orderError": "Error en el pedido",
     "loading": "Cargando TPV...",
     "loadingPos": "Cargando TPV...",
-    "sendToKitchen": "Enviar a cocina"
+    "sendToKitchen": "Enviar a cocina",
+    "selectTableFirst": "Por favor seleccione una mesa primero",
+    "server": "Camarero"
   },
   "users": {
     "title": "Usuarios",
@@ -756,6 +763,15 @@
       "cashier": "Cajero",
       "chef": "Chef",
       "waiter": "Camarero"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Pedidos",
+      "reports": "Informes",
+      "pos": "Punto de venta",
+      "inventory": "Inventario",
+      "team": "Equipo",
+      "settings": "Configuracion"
     }
   },
   "coupons": {
@@ -1121,7 +1137,12 @@
     "tipCustom": "Otro",
     "tipAmount": "Propina: {amount}",
     "totalWithTip": "Total con propina",
-    "backspace": "Borrar"
+    "backspace": "Borrar",
+    "tableRequired": "Por favor seleccione una mesa primero",
+    "amountDue": "Monto a pagar",
+    "received": "Recibido",
+    "customTip": "Personalizado",
+    "numpadClear": "Borrar"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1158,7 +1179,11 @@
     "tipNeon": "Neón",
     "tipNeonDesc": "Fondo oscuro con acento vivo y efecto de brillo luminoso.",
     "previous": "Anterior",
-    "next": "Siguiente"
+    "next": "Siguiente",
+    "tabChoose": "Elegir",
+    "tabCustomize": "Personalizar",
+    "tabDownload": "Descargar",
+    "formatA4": "Formato A4"
   },
   "service": {
     "title": "Servicio",

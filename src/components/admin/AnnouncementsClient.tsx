@@ -133,7 +133,7 @@ export default function AnnouncementsClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{t('title')}</h1>
           <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
         </div>
         <Button
@@ -224,41 +224,55 @@ export default function AnnouncementsClient({
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title={t('newAnnouncement')}
+        size="lg"
       >
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>{t('titleField')}</Label>
+        <div className="space-y-4 pt-4">
+          <div>
+            <Label className="mb-1.5 block text-neutral-900">{t('titleField')}</Label>
             <Input
               placeholder={t('titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
+              className="rounded-lg focus-visible:ring-lime-400"
             />
           </div>
 
-          <div className="space-y-2">
-            <Label>{t('descriptionField')}</Label>
+          <div>
+            <Label className="mb-1.5 block text-neutral-900">{t('descriptionField')}</Label>
             <Textarea
               placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[100px]"
+              className="min-h-[100px] rounded-lg focus-visible:ring-lime-400"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>{t('startDateRequired')}</Label>
-              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
+            <div>
+              <Label className="mb-1.5 block text-neutral-900">{t('startDateRequired')}</Label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="rounded-lg focus-visible:ring-lime-400"
+              />
             </div>
-            <div className="space-y-2">
-              <Label>{t('endDateOptional')}</Label>
-              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
+            <div>
+              <Label className="mb-1.5 block text-neutral-900">{t('endDateOptional')}</Label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="rounded-lg focus-visible:ring-lime-400"
+              />
             </div>
           </div>
 
           <div className="flex items-center gap-2 pt-2">
             <Switch checked={isActive} onCheckedChange={setIsActive} id="active-mode" />
-            <Label htmlFor="active-mode">{t('enableImmediately')}</Label>
+            <Label htmlFor="active-mode" className="text-neutral-900">
+              {t('enableImmediately')}
+            </Label>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">

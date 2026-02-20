@@ -10,10 +10,8 @@ import {
   UtensilsCrossed,
   BookOpen,
   Settings,
-  CreditCard,
   ChevronRight,
   ChevronDown,
-  QrCode,
   LogOut,
   ChefHat,
   Megaphone,
@@ -21,7 +19,6 @@ import {
   Laptop,
   ClipboardList,
   BarChart3,
-  Users,
   Menu,
   X,
   Package,
@@ -32,8 +29,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   UserCheck,
-  Grid3x3,
-  ShieldCheck,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -282,44 +277,10 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       permissionCode: 'team.view',
     },
     {
-      id: 'settings',
-      titleKey: 'groupSettings',
-      icon: Settings,
+      id: 'analyse',
+      titleKey: 'groupAnalyse',
+      icon: BarChart3,
       items: [
-        {
-          href: `${basePath}/settings`,
-          icon: Settings,
-          label: t('navGeneral'),
-          requiredPermission: 'canManageSettings',
-          permissionCode: 'settings.view',
-        },
-        {
-          href: `${basePath}/users`,
-          icon: Users,
-          label: t('navUsers'),
-          requiredPermission: 'canManageUsers',
-          permissionCode: 'team.view',
-        },
-        {
-          href: `${basePath}/qr-codes`,
-          icon: QrCode,
-          label: t('navQrCodes'),
-          requiredPermission: 'canManageSettings',
-          permissionCode: 'settings.view',
-        },
-        {
-          href: `${basePath}/settings/tables`,
-          icon: Grid3x3,
-          label: t('navTables'),
-          requiredPermission: 'canManageSettings',
-          permissionCode: 'settings.edit',
-        },
-        {
-          href: `${basePath}/settings/permissions`,
-          icon: ShieldCheck,
-          label: t('navPermissions'),
-          ownerOnly: true,
-        },
         {
           href: `${basePath}/reports`,
           icon: BarChart3,
@@ -333,12 +294,6 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           label: t('navStockHistory'),
           requiredPermission: 'canViewStocks',
           permissionCode: 'inventory.view',
-        },
-        {
-          href: `${basePath}/subscription`,
-          icon: CreditCard,
-          label: t('navSubscription'),
-          ownerOnly: true,
         },
       ],
     },
@@ -758,15 +713,24 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
                   </div>
                 </div>
               )}
-              <form action="/api/auth/signout" method="post">
-                <button
-                  type="submit"
-                  className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium group"
+              <div className="flex items-center gap-2">
+                <form action="/api/auth/signout" method="post" className="flex-1">
+                  <button
+                    type="submit"
+                    className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium group"
+                  >
+                    <LogOut className="h-4 w-4 group-hover:text-red-700" />
+                    {tc('logout')}
+                  </button>
+                </form>
+                <Link
+                  href={`${basePath}/settings`}
+                  className="flex items-center justify-center px-2.5 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
+                  aria-label={t('navGeneral')}
                 >
-                  <LogOut className="h-4 w-4 group-hover:text-red-700" />
-                  {tc('logout')}
-                </button>
-              </form>
+                  <Settings className="h-4 w-4" />
+                </Link>
+              </div>
             </div>
           )}
 
@@ -792,18 +756,29 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
               </button>
             </Tooltip>
 
-            {/* Collapsed mode: show sign-out icon */}
+            {/* Collapsed mode: show settings + sign-out icons */}
             {isCollapsed && (
-              <Tooltip label={tc('logout')} show={isCollapsed}>
-                <form action="/api/auth/signout" method="post">
-                  <button
-                    type="submit"
-                    className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors group"
+              <>
+                <Tooltip label={t('navGeneral')} show={isCollapsed}>
+                  <Link
+                    href={`${basePath}/settings`}
+                    className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
+                    aria-label={t('navGeneral')}
                   >
-                    <LogOut className="h-4 w-4 group-hover:text-red-700" />
-                  </button>
-                </form>
-              </Tooltip>
+                    <Settings className="h-4 w-4" />
+                  </Link>
+                </Tooltip>
+                <Tooltip label={tc('logout')} show={isCollapsed}>
+                  <form action="/api/auth/signout" method="post">
+                    <button
+                      type="submit"
+                      className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors group"
+                    >
+                      <LogOut className="h-4 w-4 group-hover:text-red-700" />
+                    </button>
+                  </form>
+                </Tooltip>
+              </>
             )}
           </div>
         </div>

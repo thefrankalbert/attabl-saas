@@ -6,6 +6,13 @@ import { createClient } from '@/lib/supabase/client';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
 import { UserCheck, X, Users } from 'lucide-react';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 import type { Table, Zone, AdminUser } from '@/types/admin.types';
 
 interface Props {
@@ -91,7 +98,7 @@ export default function ServiceManager({ tenantId }: Props) {
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-24 bg-neutral-50 rounded-xl border border-neutral-100 animate-pulse"
+              className="h-24 bg-neutral-50 rounded-lg border border-neutral-100 animate-pulse"
             />
           ))}
         </div>
@@ -112,13 +119,13 @@ export default function ServiceManager({ tenantId }: Props) {
       </div>
 
       {zones.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500 bg-white rounded-xl border border-neutral-100">
+        <div className="text-center py-12 text-neutral-500 bg-white rounded-lg border border-neutral-100 p-6">
           {t('noZones')}
         </div>
       ) : (
         zones.map((zone) => (
           <div key={zone.id} className="space-y-3">
-            <h2 className="text-lg font-semibold text-neutral-700">{zone.name}</h2>
+            <h2 className="text-lg font-semibold text-neutral-900">{zone.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {zone.tables
                 .filter((tbl: Table) => tbl.is_active)
@@ -127,9 +134,9 @@ export default function ServiceManager({ tenantId }: Props) {
                   return (
                     <div
                       key={table.id}
-                      className={`rounded-xl border p-4 transition-colors ${
+                      className={`rounded-lg border p-4 transition-colors ${
                         assignment
-                          ? 'border-[#CCFF00]/50 bg-[#CCFF00]/5'
+                          ? 'border-emerald-200 bg-emerald-50'
                           : 'border-neutral-100 bg-white'
                       }`}
                     >
@@ -159,23 +166,22 @@ export default function ServiceManager({ tenantId }: Props) {
                           </button>
                         </div>
                       ) : (
-                        <select
-                          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-700 focus:border-[#CCFF00] focus:outline-none focus:ring-2 focus:ring-[#CCFF00]/20"
-                          defaultValue=""
-                          onChange={(e) => {
-                            if (e.target.value) handleAssign(table.id, e.target.value);
-                            e.target.value = '';
+                        <Select
+                          onValueChange={(value) => {
+                            if (value) handleAssign(table.id, value);
                           }}
                         >
-                          <option value="" disabled>
-                            {t('assignServer')}
-                          </option>
-                          {servers.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.full_name} ({s.role})
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={t('assignServer')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {servers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.full_name} ({s.role})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                     </div>
                   );

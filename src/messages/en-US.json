@@ -137,6 +137,8 @@
     "serviceTakeaway": "Takeout",
     "serviceDelivery": "Delivery",
     "serviceRoom": "Room service",
+    "serviceDineIn": "Dine-in",
+    "warningReadyBeforeCheckout": "Check that the order is ready before checkout",
     "subtotal": "Subtotal",
     "vat": "VAT",
     "serviceCharge": "Service",
@@ -426,9 +428,10 @@
     "settingsUpdated": "Settings updated",
     "settingsSavedSuccess": "Changes have been saved successfully.",
     "settingsSaveError": "An error occurred while saving.",
-    "fileTooLarge": "File too large",
-    "logoMaxSize": "Logo must not exceed 15 MB",
-    "logoUploadError": "Failed to upload logo. Please try again.",
+    "fileTooLarge": "File is too large (max 2 MB)",
+    "logoMaxSize": "Logo must not exceed 2MB",
+    "logoUploaded": "Logo updated",
+    "logoUploadError": "Error uploading logo",
     "logoUploading": "Uploading logo...",
     "descriptionPlaceholder": "Local and authentic cuisine...",
     "addressPlaceholder": "123 Main Street...",
@@ -450,14 +453,15 @@
     "customSoundComingSoon": "Custom sound upload is coming soon.",
     "customSoundPremiumOnly": "Custom sound import is available with the Premium plan.",
     "soundError": "Error",
-    "soundPlayError": "Unable to play this sound.",
+    "soundPlayError": "Unable to play sound. Check your browser.",
     "languageSection": "Language",
     "languageDescription": "Administration interface language",
     "tabIdentity": "Identity",
-    "tabCustomization": "Customization",
+    "tabBranding": "Branding",
     "tabBilling": "Billing",
-    "tabNotifications": "Notifications",
+    "tabSounds": "Sounds",
     "tabSecurity": "Security",
+    "tabContact": "Contact",
     "tabLanguage": "Language",
     "slug": "Slug",
     "slugDescription": "Your unique subdomain. Contact support to change it."
@@ -495,6 +499,7 @@
     "roleUnknown": "Unknown",
     "groupMarketing": "Marketing",
     "groupSettings": "Settings",
+    "groupAnalyse": "Analytics",
     "navGeneral": "General",
     "collapse": "Collapse",
     "expand": "Expand",
@@ -597,7 +602,9 @@
     "orderError": "Order error",
     "loading": "Loading POS...",
     "loadingPos": "Loading POS...",
-    "sendToKitchen": "Send to kitchen"
+    "sendToKitchen": "Send to kitchen",
+    "selectTableFirst": "Please select a table first",
+    "server": "Server"
   },
   "users": {
     "title": "Users",
@@ -756,6 +763,15 @@
       "cashier": "Cashier",
       "chef": "Chef",
       "waiter": "Waiter"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Orders",
+      "reports": "Reports",
+      "pos": "Point of Sale",
+      "inventory": "Inventory",
+      "team": "Team",
+      "settings": "Settings"
     }
   },
   "coupons": {
@@ -1121,7 +1137,12 @@
     "tipCustom": "Custom",
     "tipAmount": "Tip: {amount}",
     "totalWithTip": "Total with tip",
-    "backspace": "Delete"
+    "backspace": "Delete",
+    "tableRequired": "Please select a table first",
+    "amountDue": "Amount Due",
+    "received": "Received",
+    "customTip": "Custom",
+    "numpadClear": "Clear"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1158,7 +1179,11 @@
     "tipNeon": "Neon",
     "tipNeonDesc": "Dark background with vivid accent and luminous glow effect.",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "tabChoose": "Choose",
+    "tabCustomize": "Customize",
+    "tabDownload": "Download",
+    "formatA4": "A4 Format"
   },
   "service": {
     "title": "Service",

@@ -79,7 +79,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           <div>
             <p className="font-medium text-neutral-900">{row.original.name}</p>
             {row.original.contact_name && (
-              <p className="text-xs text-neutral-400">{row.original.contact_name}</p>
+              <p className="text-xs text-neutral-500">{row.original.contact_name}</p>
             )}
           </div>
         ),
@@ -342,9 +342,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           resetForm();
         }}
         title={modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
-        size="sm"
+        size="lg"
       >
-        <div className="space-y-3 pt-4">
+        <div className="space-y-4 pt-4">
           <div>
             <Label className="text-xs font-medium text-neutral-600 mb-1 block">
               {t('nameLabel')}
@@ -368,7 +368,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <Label className="text-xs font-medium text-neutral-600 mb-1 block">
                 {t('phoneLabel')}
