@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, ShieldCheck, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import {
-  PERMISSION_CODES,
   DEFAULT_PERMISSIONS,
   type PermissionCode,
   type PermissionMap,
@@ -22,6 +20,22 @@ import type { AdminRole } from '@/types/admin.types';
 const EDITABLE_ROLES: AdminRole[] = ['admin', 'manager', 'cashier', 'chef', 'waiter'];
 
 const DEBOUNCE_MS = 500;
+
+// Permission categories for grouped display
+interface PermissionCategory {
+  key: string;
+  permissions: PermissionCode[];
+}
+
+const PERMISSION_CATEGORIES: PermissionCategory[] = [
+  { key: 'menu', permissions: ['menu.view', 'menu.edit'] },
+  { key: 'orders', permissions: ['orders.view', 'orders.manage'] },
+  { key: 'reports', permissions: ['reports.view'] },
+  { key: 'pos', permissions: ['pos.use'] },
+  { key: 'inventory', permissions: ['inventory.view', 'inventory.edit'] },
+  { key: 'team', permissions: ['team.view', 'team.manage'] },
+  { key: 'settings', permissions: ['settings.view', 'settings.edit'] },
+];
 
 // ─── Component ────────────────────────────────────────
 
@@ -55,6 +69,13 @@ export default function PermissionsPage() {
   const roleLabel = useCallback(
     (role: string): string => {
       return t(`role.${role}`);
+    },
+    [t],
+  );
+
+  const categoryLabel = useCallback(
+    (categoryKey: string): string => {
+      return t(`category.${categoryKey}`);
     },
     [t],
   );
@@ -308,6 +329,9 @@ export default function PermissionsPage() {
 
   // ─── Render ───────────────────────────────────────
 
+  // Track global row index for alternating colors across categories
+  let globalRowIndex = 0;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -325,137 +349,149 @@ export default function PermissionsPage() {
       )}
 
       {/* Permissions Matrix */}
-      <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+      <div className="border border-neutral-100 rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            {/* Header */}
+            {/* Sticky Header Row */}
             <thead>
-              <tr className="border-b border-neutral-100">
-                <th className="text-left text-sm font-semibold text-neutral-900 px-4 py-3 min-w-[200px] sticky left-0 bg-white z-10">
+              <tr className="bg-neutral-50 border-b border-neutral-100">
+                <th className="text-left text-sm font-semibold text-neutral-900 px-5 py-3.5 min-w-[220px] sticky left-0 bg-neutral-50 z-10">
                   {t('permissionColumn')}
                 </th>
                 {/* Owner column (locked) */}
-                <th className="text-center px-3 py-3 min-w-[100px]">
+                <th className="text-center px-3 py-3.5 min-w-[100px]">
                   <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
                     {roleLabel('owner')}
                   </span>
                 </th>
-                {/* Editable role columns */}
+                {/* Editable role columns with individual restore */}
                 {EDITABLE_ROLES.map((role) => (
-                  <th key={role} className="text-center px-3 py-3 min-w-[100px]">
-                    <span
-                      className={cn(
-                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
-                        role === 'admin' && 'bg-purple-50 text-purple-700 border border-purple-200',
-                        role === 'manager' && 'bg-blue-50 text-blue-700 border border-blue-200',
-                        role === 'cashier' && 'bg-green-50 text-green-700 border border-green-200',
-                        role === 'chef' && 'bg-orange-50 text-orange-700 border border-orange-200',
-                        role === 'waiter' && 'bg-cyan-50 text-cyan-700 border border-cyan-200',
+                  <th key={role} className="text-center px-3 py-3.5 min-w-[110px]">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
+                          role === 'admin' &&
+                            'bg-purple-50 text-purple-700 border border-purple-200',
+                          role === 'manager' && 'bg-blue-50 text-blue-700 border border-blue-200',
+                          role === 'cashier' &&
+                            'bg-green-50 text-green-700 border border-green-200',
+                          role === 'chef' &&
+                            'bg-orange-50 text-orange-700 border border-orange-200',
+                          role === 'waiter' && 'bg-cyan-50 text-cyan-700 border border-cyan-200',
+                        )}
+                      >
+                        {roleLabel(role)}
+                      </span>
+                      {hasOverrides(role) && (
+                        <button
+                          type="button"
+                          onClick={() => handleRestoreDefaults(role)}
+                          className="inline-flex items-center gap-1 text-[10px] text-neutral-500 hover:text-neutral-900 transition-colors"
+                        >
+                          <RotateCcw className="w-2.5 h-2.5" />
+                          {t('reset')}
+                        </button>
                       )}
-                    >
-                      {roleLabel(role)}
-                    </span>
+                    </div>
                   </th>
                 ))}
               </tr>
             </thead>
 
-            {/* Body */}
+            {/* Body: grouped by category */}
             <tbody>
-              {PERMISSION_CODES.map((perm, idx) => (
-                <tr
-                  key={perm}
-                  className={cn(
-                    'border-b border-neutral-50 transition-colors hover:bg-neutral-50/50',
-                    idx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/30',
-                  )}
-                >
-                  {/* Permission label */}
-                  <td className="text-sm text-neutral-700 px-4 py-3 sticky left-0 bg-inherit z-10">
-                    <span className="font-medium">{permissionLabel(perm)}</span>
-                  </td>
+              {PERMISSION_CATEGORIES.map((category) => {
+                const rows = category.permissions.map((perm) => {
+                  const rowIdx = globalRowIndex++;
+                  return { perm, rowIdx };
+                });
 
-                  {/* Owner cell (always on, locked) */}
-                  <td className="text-center px-3 py-3">
-                    <div className="flex justify-center opacity-50 pointer-events-none">
-                      <Switch
-                        checked={true}
-                        aria-label={`${permissionLabel(perm)} - ${roleLabel('owner')}`}
-                      />
-                    </div>
-                  </td>
-
-                  {/* Editable role cells */}
-                  {EDITABLE_ROLES.map((role) => {
-                    const isEnabled = getEffectiveValue(role, perm);
-                    const defaultVal = DEFAULT_PERMISSIONS[role]?.[perm] ?? false;
-                    const isOverridden = roleOverrides[role]?.[perm] !== undefined;
-
-                    return (
-                      <td key={role} className="text-center px-3 py-3">
-                        <div className="flex flex-col items-center gap-1">
-                          <Switch
-                            checked={isEnabled}
-                            onCheckedChange={() => handleToggle(role, perm)}
-                            className={cn(isEnabled ? 'data-[state=checked]:bg-[#CCFF00]' : '')}
-                            aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
-                          />
-                          {isOverridden && (
-                            <span
-                              className={cn(
-                                'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
-                                isEnabled !== defaultVal
-                                  ? 'bg-amber-50 text-amber-600'
-                                  : 'bg-neutral-50 text-neutral-400',
-                              )}
-                            >
-                              {t('modified')}
-                            </span>
-                          )}
-                        </div>
+                return (
+                  <React.Fragment key={category.key}>
+                    {/* Category header row */}
+                    <tr className="border-b border-neutral-100">
+                      <td
+                        colSpan={2 + EDITABLE_ROLES.length}
+                        className="px-5 py-2.5 bg-white sticky left-0"
+                      >
+                        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+                          {categoryLabel(category.key)}
+                        </span>
                       </td>
-                    );
-                  })}
-                </tr>
-              ))}
+                    </tr>
+
+                    {/* Permission rows in this category */}
+                    {rows.map(({ perm, rowIdx }) => (
+                      <tr
+                        key={perm}
+                        className={cn(
+                          'border-b border-neutral-50 transition-colors hover:bg-neutral-50/80',
+                          rowIdx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50',
+                        )}
+                      >
+                        {/* Permission label (no code column) */}
+                        <td className="text-sm text-neutral-900 px-5 py-3 sticky left-0 bg-inherit z-10">
+                          <span className="font-medium">{permissionLabel(perm)}</span>
+                        </td>
+
+                        {/* Owner cell (always on, locked) */}
+                        <td className="text-center px-3 py-3">
+                          <div className="flex justify-center opacity-40 pointer-events-none">
+                            <Switch
+                              checked={true}
+                              aria-label={`${permissionLabel(perm)} - ${roleLabel('owner')}`}
+                            />
+                          </div>
+                        </td>
+
+                        {/* Editable role cells */}
+                        {EDITABLE_ROLES.map((role) => {
+                          const isEnabled = getEffectiveValue(role, perm);
+                          const defaultVal = DEFAULT_PERMISSIONS[role]?.[perm] ?? false;
+                          const isOverridden = roleOverrides[role]?.[perm] !== undefined;
+
+                          return (
+                            <td key={role} className="text-center px-3 py-3">
+                              <div className="flex flex-col items-center gap-1">
+                                <Switch
+                                  checked={isEnabled}
+                                  onCheckedChange={() => handleToggle(role, perm)}
+                                  className={cn(
+                                    isEnabled ? 'data-[state=checked]:bg-lime-400' : '',
+                                  )}
+                                  aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
+                                />
+                                {isOverridden && (
+                                  <span
+                                    className={cn(
+                                      'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                                      isEnabled !== defaultVal
+                                        ? 'bg-amber-50 text-amber-600'
+                                        : 'bg-neutral-50 text-neutral-400',
+                                    )}
+                                  >
+                                    {t('modified')}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </React.Fragment>
+                );
+              })}
             </tbody>
           </table>
-        </div>
-
-        {/* Restore defaults row */}
-        <div className="border-t border-neutral-100 px-4 py-3 flex items-center gap-4 bg-neutral-50/50">
-          <span className="text-xs text-neutral-500 font-medium min-w-[200px]">
-            {t('restoreDefaults')}
-          </span>
-          {/* Owner placeholder */}
-          <div className="min-w-[100px] flex justify-center px-3">
-            <span className="text-xs text-neutral-300">--</span>
-          </div>
-          {/* Editable roles */}
-          {EDITABLE_ROLES.map((role) => (
-            <div key={role} className="min-w-[100px] flex justify-center px-3">
-              {hasOverrides(role) ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 text-neutral-600 hover:text-neutral-900"
-                  onClick={() => handleRestoreDefaults(role)}
-                >
-                  <RotateCcw className="w-3 h-3" />
-                  {t('reset')}
-                </Button>
-              ) : (
-                <span className="text-xs text-neutral-300">--</span>
-              )}
-            </div>
-          ))}
         </div>
       </div>
 
       {/* Legend */}
-      <div className="bg-neutral-50 rounded-xl p-4 text-xs text-neutral-500 space-y-1">
+      <div className="border border-neutral-100 rounded-xl p-6 text-xs text-neutral-500 space-y-1.5">
         <p>
-          <span className="inline-block w-3 h-3 rounded-full bg-[#CCFF00] align-middle mr-1.5" />={' '}
+          <span className="inline-block w-3 h-3 rounded-full bg-lime-400 align-middle mr-1.5" />={' '}
           {t('legendAllowed')}
           <span className="inline-block w-3 h-3 rounded-full bg-neutral-200 align-middle ml-4 mr-1.5" />
           = {t('legendDenied')}
@@ -466,7 +502,7 @@ export default function PermissionsPage() {
           </span>
           = {t('legendModified')}
         </p>
-        <p>{t('autoSaveNote')}</p>
+        <p className="text-neutral-500">{t('autoSaveNote')}</p>
       </div>
     </div>
   );
