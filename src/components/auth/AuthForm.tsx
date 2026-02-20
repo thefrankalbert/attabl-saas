@@ -41,16 +41,13 @@ interface AuthFormProps {
 function AuthForm({ mode }: AuthFormProps) {
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
-  const urlPlan = searchParams.get('plan') as 'essentiel' | 'premium' | null;
 
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'azure' | null>(null);
   const [error, setError] = useState('');
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
-  const [restaurantName, setRestaurantName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'essentiel' | 'premium'>(urlPlan || 'essentiel');
 
   const supabase = createClient();
 
@@ -63,20 +60,13 @@ function AuthForm({ mode }: AuthFormProps) {
         provider,
         options: {
           redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || window.location.origin}/auth/callback`,
-          queryParams:
-            mode === 'signup'
-              ? {
-                  plan: selectedPlan,
-                  restaurant_name: restaurantName,
-                }
-              : undefined,
         },
       });
 
       if (error) throw error;
     } catch (err) {
       logger.error('OAuth login failed', err);
-      setError('Erreur de connexion. Veuillez réessayer.');
+      setError('Erreur de connexion. Veuillez r\u00e9essayer.');
       setOauthLoading(null);
     }
   };
@@ -88,15 +78,15 @@ function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
-        // Signup flow
+        // Signup flow — restaurant name is collected during onboarding
         const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            restaurantName,
+            restaurantName: 'Mon Restaurant',
             email,
             password,
-            plan: selectedPlan,
+            plan: 'essentiel',
           }),
         });
 
@@ -135,7 +125,7 @@ function AuthForm({ mode }: AuthFormProps) {
           .eq('user_id', authData.user.id);
 
         if (!adminUsers || adminUsers.length === 0) {
-          throw new Error('Aucun restaurant associé à ce compte');
+          throw new Error('Aucun restaurant associ\u00e9 \u00e0 ce compte');
         }
 
         // Check if any entry is super admin
@@ -165,7 +155,7 @@ function AuthForm({ mode }: AuthFormProps) {
         const onboardingCompleted = tenantsData?.onboarding_completed;
 
         if (!tenantSlug) {
-          throw new Error('Restaurant non trouvé');
+          throw new Error('Restaurant non trouv\u00e9');
         }
 
         if (onboardingCompleted === false) {
@@ -221,35 +211,17 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 mb-2">
-          {isLogin ? 'Accédez à votre tableau de bord' : 'Commencer gratuitement'}
+          {isLogin ? 'Bon retour parmi nous' : 'Lancez votre menu digital'}
         </h1>
         <p className="text-neutral-500 text-sm">
           {isLogin
-            ? 'Connectez-vous pour piloter votre établissement.'
-            : 'Inscription rapide — aucun engagement, aucune carte requise.'}
+            ? 'Connectez-vous pour piloter votre \u00e9tablissement.'
+            : 'Cr\u00e9ez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
         </p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Restaurant Name (Signup only) */}
-        {!isLogin && (
-          <div className="space-y-1.5">
-            <Label htmlFor="restaurantName" className="text-neutral-700 font-medium text-sm">
-              Nom de l&apos;établissement
-            </Label>
-            <Input
-              id="restaurantName"
-              type="text"
-              placeholder="Ex: Le Petit Bistrot"
-              value={restaurantName}
-              onChange={(e) => setRestaurantName(e.target.value)}
-              required
-              className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
-            />
-          </div>
-        )}
-
         <div className="space-y-1.5">
           <Label htmlFor="email" className="text-neutral-700 font-medium text-sm">
             Email
@@ -275,7 +247,7 @@ function AuthForm({ mode }: AuthFormProps) {
                 href="/forgot-password"
                 className="text-sm text-neutral-400 hover:text-neutral-900 transition-colors"
               >
-                Mot de passe oublié ?
+                Mot de passe oubli&eacute; ?
               </Link>
             )}
           </div>
@@ -283,7 +255,11 @@ function AuthForm({ mode }: AuthFormProps) {
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
+              placeholder={
+                isLogin
+                  ? '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'
+                  : 'Minimum 8 caract\u00e8res'
+              }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -299,54 +275,6 @@ function AuthForm({ mode }: AuthFormProps) {
             </button>
           </div>
         </div>
-
-        {/* Plan Selection (Signup only) */}
-        {!isLogin && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label className="text-neutral-700 font-medium text-sm">
-                {urlPlan ? 'Votre plan sélectionné' : 'Choisissez votre plan'}
-              </Label>
-              {urlPlan && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedPlan(selectedPlan === 'essentiel' ? 'premium' : 'essentiel')
-                  }
-                  className="text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors"
-                >
-                  Modifier
-                </button>
-              )}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('essentiel')}
-                className={`p-4 rounded-lg border-2 text-left transition-all active:scale-[0.98] ${
-                  selectedPlan === 'essentiel'
-                    ? 'border-[#CCFF00] bg-[#CCFF00]/5 ring-1 ring-[#CCFF00]/20'
-                    : 'border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                <div className="font-bold text-neutral-900 leading-none mb-1">Essentiel</div>
-                <div className="text-xs text-neutral-500">39 800 F / mois</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedPlan('premium')}
-                className={`p-4 rounded-lg border-2 text-left transition-all active:scale-[0.98] ${
-                  selectedPlan === 'premium'
-                    ? 'border-[#CCFF00] bg-[#CCFF00]/5 ring-1 ring-[#CCFF00]/20'
-                    : 'border-neutral-200 hover:border-neutral-300'
-                }`}
-              >
-                <div className="font-bold text-neutral-900 leading-none mb-1">Prime</div>
-                <div className="text-xs text-neutral-500">79 800 F / mois</div>
-              </button>
-            </div>
-          </div>
-        )}
 
         {error && (
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
@@ -367,14 +295,21 @@ function AuthForm({ mode }: AuthFormProps) {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-              {isLogin ? 'Connexion...' : 'Création du compte...'}
+              {isLogin ? 'Connexion...' : 'Cr\u00e9ation en cours...'}
             </>
           ) : isLogin ? (
             'Se connecter'
           ) : (
-            'Créer mon compte'
+            'Commencer gratuitement'
           )}
         </Button>
+
+        {/* Trust signal for signup */}
+        {!isLogin && (
+          <p className="text-center text-xs text-neutral-400">
+            14 jours gratuits &mdash; aucun engagement
+          </p>
+        )}
       </form>
 
       {/* Divider */}
@@ -407,7 +342,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
       {/* Footer Link */}
       <p className="mt-8 text-center text-sm text-neutral-500">
-        {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
+        {isLogin ? 'Pas encore de compte ?' : 'D\u00e9j\u00e0 un compte ?'}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}
           className="font-semibold text-neutral-900 hover:underline"
