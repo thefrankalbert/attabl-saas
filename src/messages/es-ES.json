@@ -137,6 +137,8 @@
     "serviceTakeaway": "Para llevar",
     "serviceDelivery": "A domicilio",
     "serviceRoom": "Servicio de habitaciones",
+    "serviceDineIn": "En local",
+    "warningReadyBeforeCheckout": "Verifique que el pedido esté listo antes de cobrar",
     "subtotal": "Subtotal",
     "vat": "IVA",
     "serviceCharge": "Servicio",
