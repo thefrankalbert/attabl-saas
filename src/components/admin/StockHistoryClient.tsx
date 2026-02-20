@@ -155,8 +155,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <History className="h-5 w-5 text-indigo-600" />
+          <div className="p-2 bg-neutral-100 rounded-lg">
+            <History className="h-5 w-5 text-neutral-600" />
           </div>
           <div>
             <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
@@ -168,32 +168,34 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
-          <Input
-            placeholder={t('searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          <Filter className="h-4 w-4 text-neutral-400 flex-shrink-0" />
-          {movementFilters.map((f) => (
-            <button
-              key={f.value}
-              onClick={() => setFilterType(f.value)}
-              className={cn(
-                'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                filterType === f.value
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
-              )}
-            >
-              {f.label}
-            </button>
-          ))}
+      <div className="border border-neutral-100 rounded-xl p-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-neutral-400" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 rounded-lg focus:ring-lime-400"
+            />
+          </div>
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <Filter className="h-4 w-4 text-neutral-400 flex-shrink-0" />
+            {movementFilters.map((f) => (
+              <button
+                key={f.value}
+                onClick={() => setFilterType(f.value)}
+                className={cn(
+                  'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
+                  filterType === f.value
+                    ? 'bg-neutral-900 text-white'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
+                )}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

@@ -32,8 +32,13 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   const tenantWithEmail = { ...tenant, email: user?.email };
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">Gestion de l&apos;abonnement</h1>
+    <div className="container mx-auto py-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900">Gestion de l&apos;abonnement</h1>
+        <p className="text-sm text-neutral-500 mt-1">
+          Gérez votre plan et votre cycle de facturation
+        </p>
+      </div>
       <SubscriptionManager tenant={tenantWithEmail} />
     </div>
   );

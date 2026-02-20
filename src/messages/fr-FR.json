@@ -763,6 +763,15 @@
       "cashier": "Caissier",
       "chef": "Chef Cuisine",
       "waiter": "Serveur"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Commandes",
+      "reports": "Rapports",
+      "pos": "Point de vente",
+      "inventory": "Inventaire",
+      "team": "Equipe",
+      "settings": "Parametres"
     }
   },
   "coupons": {

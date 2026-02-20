@@ -763,6 +763,15 @@
       "cashier": "Cajero",
       "chef": "Chef",
       "waiter": "Camarero"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Pedidos",
+      "reports": "Informes",
+      "pos": "Punto de venta",
+      "inventory": "Inventario",
+      "team": "Equipo",
+      "settings": "Configuracion"
     }
   },
   "coupons": {

@@ -428,14 +428,14 @@ export default function TablesPage() {
               </span>
             </div>
 
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               {zones.map((zone) => (
                 <div
                   key={zone.id}
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition-colors group',
                     selectedZoneId === zone.id
-                      ? 'bg-[#CCFF00]/10 border border-[#CCFF00]/30'
+                      ? 'bg-neutral-900/5 border border-neutral-200'
                       : 'hover:bg-neutral-50 border border-transparent',
                   )}
                   onClick={() => {
@@ -456,7 +456,7 @@ export default function TablesPage() {
                       <Input
                         value={editingZoneName}
                         onChange={(e) => setEditingZoneName(e.target.value)}
-                        className="h-7 text-sm"
+                        className="h-7 text-sm rounded-lg focus:ring-lime-400"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveZoneName(zone.id);
                           if (e.key === 'Escape') setEditingZoneId(null);
@@ -469,7 +469,7 @@ export default function TablesPage() {
                           e.stopPropagation();
                           handleSaveZoneName(zone.id);
                         }}
-                        className="p-1 text-green-600 hover:text-green-700"
+                        className="p-1 text-emerald-600 hover:text-emerald-700"
                       >
                         <Check className="w-3.5 h-3.5" />
                       </button>
@@ -551,9 +551,8 @@ export default function TablesPage() {
                   </span>
                 </div>
                 <Button
-                  variant="lime"
                   size="sm"
-                  className="gap-2"
+                  className="gap-2 bg-neutral-900 text-white hover:bg-neutral-800"
                   onClick={() => setShowAddTables(true)}
                 >
                   <Plus className="w-4 h-4" />
@@ -563,36 +562,44 @@ export default function TablesPage() {
 
               {/* Tables grid */}
               {tablesLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="h-32 bg-white rounded-xl border border-neutral-100 animate-pulse"
+                      className="h-32 bg-white rounded-lg border border-neutral-100 animate-pulse"
                     />
                   ))}
                 </div>
               ) : tables.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {tables.map((table) => (
                     <div
                       key={table.id}
                       className={cn(
-                        'bg-white rounded-xl border p-4 transition-colors relative group',
-                        table.is_active ? 'border-neutral-200' : 'border-neutral-100 opacity-60',
+                        'bg-white rounded-lg border border-neutral-100 p-3 transition-colors relative group',
+                        !table.is_active && 'opacity-60',
                       )}
                     >
-                      {/* Delete button */}
-                      <button
-                        type="button"
-                        onClick={() => handleDeleteTable(table)}
-                        className="absolute top-2 right-2 p-1 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-
-                      {/* Table number */}
-                      <div className="text-xs font-mono text-neutral-400 mb-1">
-                        {table.table_number}
+                      {/* Status indicator + Delete button */}
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={cn(
+                              'w-2 h-2 rounded-full',
+                              table.is_active ? 'bg-emerald-400' : 'bg-amber-400',
+                            )}
+                          />
+                          <span className="text-xs font-mono text-neutral-400">
+                            {table.table_number}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteTable(table)}
+                          className="p-1 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
 
                       {/* Display name (editable) */}
@@ -601,7 +608,7 @@ export default function TablesPage() {
                           <Input
                             value={editingDisplayName}
                             onChange={(e) => setEditingDisplayName(e.target.value)}
-                            className="h-7 text-sm"
+                            className="h-7 text-sm rounded-lg focus:ring-lime-400"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveTableName(table.id);
                               if (e.key === 'Escape') setEditingTableId(null);
@@ -611,7 +618,7 @@ export default function TablesPage() {
                           <button
                             type="button"
                             onClick={() => handleSaveTableName(table.id)}
-                            className="p-1 text-green-600 hover:text-green-700"
+                            className="p-1 text-emerald-600 hover:text-emerald-700"
                           >
                             <Check className="w-3.5 h-3.5" />
                           </button>
@@ -634,7 +641,7 @@ export default function TablesPage() {
                           onChange={(e) =>
                             handleUpdateCapacity(table, parseInt(e.target.value, 10))
                           }
-                          className="text-xs border border-neutral-200 rounded-md px-1.5 py-0.5 text-neutral-700 bg-white"
+                          className="text-xs border border-neutral-100 rounded-lg px-1.5 py-0.5 text-neutral-700 bg-white focus:ring-lime-400 focus:outline-none"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
                             <option key={n} value={n}>
@@ -650,7 +657,7 @@ export default function TablesPage() {
                           type="checkbox"
                           checked={table.is_active}
                           onChange={() => handleToggleActive(table)}
-                          className="w-4 h-4 rounded border-neutral-300 text-[#CCFF00] focus:ring-[#CCFF00]/50"
+                          className="w-4 h-4 rounded border-neutral-300 accent-lime-400 focus:ring-lime-400"
                         />
                         <span className="text-xs text-neutral-500">
                           {table.is_active ? t('active') : t('inactive')}
@@ -666,7 +673,10 @@ export default function TablesPage() {
                   </div>
                   <h3 className="text-lg font-bold text-neutral-900">{t('noTableTitle')}</h3>
                   <p className="text-sm text-neutral-500 mt-2">{t('noTableDesc')}</p>
-                  <Button variant="lime" className="mt-6" onClick={() => setShowAddTables(true)}>
+                  <Button
+                    className="mt-6 bg-neutral-900 text-white hover:bg-neutral-800"
+                    onClick={() => setShowAddTables(true)}
+                  >
                     {t('addTablesAction')}
                   </Button>
                 </div>
@@ -679,7 +689,10 @@ export default function TablesPage() {
               </div>
               <h3 className="text-lg font-bold text-neutral-900">{t('noZoneTitle')}</h3>
               <p className="text-sm text-neutral-500 mt-2">{t('noZoneDesc')}</p>
-              <Button variant="lime" className="mt-6" onClick={() => setShowAddZone(true)}>
+              <Button
+                className="mt-6 bg-neutral-900 text-white hover:bg-neutral-800"
+                onClick={() => setShowAddZone(true)}
+              >
                 {t('createZone')}
               </Button>
             </div>
@@ -695,32 +708,42 @@ export default function TablesPage() {
       >
         <form onSubmit={handleAddZone} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="zone-name">{t('zoneNameLabel')}</Label>
+            <Label htmlFor="zone-name" className="text-sm text-neutral-900">
+              {t('zoneNameLabel')}
+            </Label>
             <Input
               id="zone-name"
               value={zoneName}
               onChange={(e) => setZoneName(e.target.value)}
               placeholder={t('zoneNamePlaceholder')}
+              className="rounded-lg focus:ring-lime-400"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="zone-prefix">{t('zonePrefixLabel')}</Label>
+            <Label htmlFor="zone-prefix" className="text-sm text-neutral-900">
+              {t('zonePrefixLabel')}
+            </Label>
             <Input
               id="zone-prefix"
               value={zonePrefix}
               onChange={(e) => setZonePrefix(e.target.value)}
               placeholder={t('zonePrefixPlaceholder')}
+              className="rounded-lg focus:ring-lime-400"
               required
               maxLength={5}
             />
-            <p className="text-xs text-neutral-400">{t('zonePrefixHelp')}</p>
+            <p className="text-xs text-neutral-500">{t('zonePrefixHelp')}</p>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
             <Button type="button" variant="ghost" onClick={() => setShowAddZone(false)}>
               {t('cancel')}
             </Button>
-            <Button type="submit" variant="lime" disabled={savingZone}>
+            <Button
+              type="submit"
+              className="bg-neutral-900 text-white hover:bg-neutral-800"
+              disabled={savingZone}
+            >
               {savingZone && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('createZoneSubmit')}
             </Button>
@@ -738,29 +761,35 @@ export default function TablesPage() {
           {selectedZone && (
             <p className="text-sm text-neutral-500">
               {t('addTablesZoneLabel')}{' '}
-              <span className="font-medium text-neutral-700">{selectedZone.name}</span>
+              <span className="font-medium text-neutral-900">{selectedZone.name}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="table-count">{t('tableCountLabel')}</Label>
+              <Label htmlFor="table-count" className="text-sm text-neutral-900">
+                {t('tableCountLabel')}
+              </Label>
               <Input
                 id="table-count"
                 type="number"
                 value={tableCount}
                 onChange={(e) => setTableCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="rounded-lg focus:ring-lime-400"
                 min={1}
                 max={50}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="table-capacity">{t('tableCapacityLabel')}</Label>
+              <Label htmlFor="table-capacity" className="text-sm text-neutral-900">
+                {t('tableCapacityLabel')}
+              </Label>
               <Input
                 id="table-capacity"
                 type="number"
                 value={tableCapacity}
                 onChange={(e) => setTableCapacity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                className="rounded-lg focus:ring-lime-400"
                 min={1}
                 max={50}
                 required
@@ -768,22 +797,26 @@ export default function TablesPage() {
             </div>
           </div>
           {selectedZone && (
-            <div className="bg-neutral-50 rounded-lg p-3 text-xs text-neutral-500">
+            <div className="bg-neutral-50 rounded-lg border border-neutral-100 p-3 text-xs text-neutral-500">
               {t('tableNamingPreview')}{' '}
-              <span className="font-mono font-medium text-neutral-700">
+              <span className="font-mono font-medium text-neutral-900">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + 1}
               </span>{' '}
               {t('tableNamingTo')}{' '}
-              <span className="font-mono font-medium text-neutral-700">
+              <span className="font-mono font-medium text-neutral-900">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + tableCount}
               </span>
             </div>
           )}
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
             <Button type="button" variant="ghost" onClick={() => setShowAddTables(false)}>
               {t('cancel')}
             </Button>
-            <Button type="submit" variant="lime" disabled={savingTables}>
+            <Button
+              type="submit"
+              className="bg-neutral-900 text-white hover:bg-neutral-800"
+              disabled={savingTables}
+            >
               {savingTables && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('addTablesSubmit', { count: tableCount })}
             </Button>

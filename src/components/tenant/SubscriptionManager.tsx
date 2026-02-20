@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { loadStripe } from '@stripe/stripe-js';
-import { PricingCard, PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
+import type { PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
 import { PLAN_LIMITS } from '@/lib/plans/features';
+import { cn } from '@/lib/utils';
 
 // Initialiser Stripe
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -23,6 +25,32 @@ interface Tenant {
 interface SubscriptionManagerProps {
   tenant: Tenant;
 }
+
+const PLAN_DETAILS = {
+  essentiel: {
+    name: 'Essentiel',
+    description: 'Pour démarrer votre menu digital',
+    features: [
+      '1 espace restaurant',
+      'Menu digital illimité',
+      '2 comptes admin',
+      'Support par email',
+      'Photos HD',
+    ],
+  },
+  premium: {
+    name: 'Premium',
+    description: 'Le plus populaire pour les pros',
+    features: [
+      '3 espaces (Restaurant, Bar...)',
+      'Commande à table & Room Service',
+      '5 comptes admin',
+      'Multi-langues (FR/EN)',
+      'Support prioritaire WhatsApp',
+      'Statistiques avancées',
+    ],
+  },
+};
 
 export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
   const [billingInterval, setBillingInterval] = useState<BillingInterval>(
@@ -43,7 +71,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
           plan,
           billingInterval: interval,
           tenantId: tenant.id,
-          email: tenant.email, // L'email doit être passé ou récupéré côté serveur si possible, mais ici on suppose qu'il est dans l'objet tenant ou on le demandera
+          email: tenant.email,
         }),
       });
 
@@ -71,7 +99,6 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
   const limits = {
     admins: planLimits.maxAdmins,
     venues: planLimits.maxVenues,
-    items: planLimits.maxItems,
   };
 
   const getStatusBadge = (status: string) => {
@@ -85,7 +112,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-neutral-100 text-neutral-800';
     }
   };
 
@@ -104,128 +131,206 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
     }
   };
 
+  // Pricing calculation
+  const getPrice = (plan: PricingPlan) => {
+    const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
+    const annualDiscountRate = 0.15;
+    if (billingInterval === 'yearly') {
+      return Math.round(baseMonthlyPrice * (1 - annualDiscountRate));
+    }
+    return baseMonthlyPrice;
+  };
+
+  const getYearlyTotal = (plan: PricingPlan) => {
+    const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
+    const annualDiscountRate = 0.15;
+    return Math.round(baseMonthlyPrice * 12 * (1 - annualDiscountRate));
+  };
+
   return (
     <div className="space-y-8">
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Statut actuel */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Abonnement actuel</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <div>
-                  <p className="text-sm text-gray-500">Plan</p>
-                  <p className="text-2xl font-bold capitalize">{currentPlan}</p>
-                </div>
-                <Badge className={getStatusBadge(tenant.subscription_status)}>
-                  {getStatusLabel(tenant.subscription_status)}
-                </Badge>
-              </div>
-
+      {/* Current subscription status cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Current plan status */}
+        <div className="border border-neutral-100 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-neutral-900 mb-4">Abonnement actuel</h3>
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
               <div>
-                <p className="text-sm text-gray-500">Cycle de facturation</p>
-                <p className="font-medium">
-                  {tenant.billing_interval === 'yearly' ? 'Annuel (-20%)' : 'Mensuel'}
+                <p className="text-sm text-neutral-500">Plan</p>
+                <p className="text-2xl font-bold text-neutral-900 capitalize">{currentPlan}</p>
+              </div>
+              <Badge className={getStatusBadge(tenant.subscription_status)}>
+                {getStatusLabel(tenant.subscription_status)}
+              </Badge>
+            </div>
+
+            <div>
+              <p className="text-sm text-neutral-500">Cycle de facturation</p>
+              <p className="font-medium text-neutral-900">
+                {tenant.billing_interval === 'yearly' ? 'Annuel (-15%)' : 'Mensuel'}
+              </p>
+            </div>
+
+            {tenant.subscription_current_period_end && (
+              <div>
+                <p className="text-sm text-neutral-500">
+                  Prochain renouvellement / Fin d&apos;essai
+                </p>
+                <p className="font-medium text-neutral-900">
+                  {new Date(tenant.subscription_current_period_end).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
                 </p>
               </div>
+            )}
+          </div>
+        </div>
 
-              {tenant.subscription_current_period_end && (
-                <div>
-                  <p className="text-sm text-gray-500">
-                    Prochain renouvellement / Fin d&apos;essai
-                  </p>
-                  <p className="font-medium">
-                    {new Date(tenant.subscription_current_period_end).toLocaleDateString('fr-FR', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Limites (Mockées pour l'instant basé sur le plan) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Limites d&apos;utilisation</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-600">Administrateurs</span>
-                  <span className="font-semibold">
-                    {limits.admins > 50 ? 'Illimité' : limits.admins}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '40%' }} />
-                </div>
+        {/* Usage limits */}
+        <div className="border border-neutral-100 rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-neutral-900 mb-4">
+            Limites d&apos;utilisation
+          </h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-neutral-500">Administrateurs</span>
+                <span className="font-semibold text-neutral-900">
+                  {limits.admins > 50 ? 'Illimité' : limits.admins}
+                </span>
               </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-gray-600">Espaces</span>
-                  <span className="font-semibold">
-                    {limits.venues > 50 ? 'Illimité' : limits.venues}
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: '20%' }} />
-                </div>
+              <div className="w-full bg-neutral-100 rounded-full h-2">
+                <div className="bg-neutral-900 h-2 rounded-full" style={{ width: '40%' }} />
               </div>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="flex justify-between mb-1">
+                <span className="text-sm text-neutral-500">Espaces</span>
+                <span className="font-semibold text-neutral-900">
+                  {limits.venues > 50 ? 'Illimité' : limits.venues}
+                </span>
+              </div>
+              <div className="w-full bg-neutral-100 rounded-full h-2">
+                <div className="bg-neutral-900 h-2 rounded-full" style={{ width: '20%' }} />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Changer de plan */}
+      {/* Change plan section */}
       <div>
         <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Changer de plan</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">Changer de plan</h2>
 
-          <div className="relative inline-flex bg-white p-1 rounded-full border shadow-sm mt-4 md:mt-0">
+          <div className="relative inline-flex bg-neutral-50 p-1 rounded-full border border-neutral-100 mt-4 md:mt-0">
             <button
               onClick={() => setBillingInterval('monthly')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all ${
-                billingInterval === 'monthly' ? 'bg-gray-900 text-white shadow' : 'text-gray-600'
-              }`}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-semibold transition-colors',
+                billingInterval === 'monthly'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-500 hover:text-neutral-700',
+              )}
             >
               Mensuel
             </button>
             <button
               onClick={() => setBillingInterval('yearly')}
-              className={`px-4 py-2 rounded-full text-sm font-semibold transition-all flex items-center gap-1 ${
-                billingInterval === 'yearly' ? 'bg-gray-900 text-white shadow' : 'text-gray-600'
-              }`}
+              className={cn(
+                'px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1',
+                billingInterval === 'yearly'
+                  ? 'bg-neutral-900 text-white'
+                  : 'text-neutral-500 hover:text-neutral-700',
+              )}
             >
               Annuel{' '}
               <span className="text-[10px] bg-green-100 text-green-700 px-1.5 rounded-full">
-                -20%
+                -15%
               </span>
             </button>
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <PricingCard
-            plan="essentiel"
-            billingInterval={billingInterval}
-            isCurrentPlan={currentPlan === 'essentiel'}
-            onSelect={handleUpgrade}
-            isLoading={isLoading === 'essentiel'}
-          />
-          <PricingCard
-            plan="premium"
-            billingInterval={billingInterval}
-            isCurrentPlan={currentPlan === 'premium'}
-            onSelect={handleUpgrade}
-            isLoading={isLoading === 'premium'}
-          />
+        {/* Side-by-side plan comparison cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {(['essentiel', 'premium'] as const).map((plan) => {
+            const details = PLAN_DETAILS[plan];
+            const isCurrent = currentPlan === plan;
+            const price = getPrice(plan);
+            const yearlyTotal = getYearlyTotal(plan);
+
+            return (
+              <div
+                key={plan}
+                className={cn(
+                  'border rounded-xl p-6 flex flex-col',
+                  isCurrent ? 'border-2 border-lime-400' : 'border border-neutral-100',
+                )}
+              >
+                {/* Plan header */}
+                <div className="mb-6">
+                  {isCurrent && (
+                    <span className="inline-block text-xs font-medium text-lime-700 bg-lime-50 px-2 py-0.5 rounded-full mb-2">
+                      Plan actuel
+                    </span>
+                  )}
+                  <h3 className="text-xl font-semibold text-neutral-900">{details.name}</h3>
+                  <p className="text-sm text-neutral-500 mt-1">{details.description}</p>
+                </div>
+
+                {/* Price */}
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl font-bold text-neutral-900">
+                      {price.toLocaleString('fr-FR')}
+                    </span>
+                    <span className="text-neutral-500 text-sm font-medium">F/mois</span>
+                  </div>
+                  {billingInterval === 'yearly' && (
+                    <p className="text-xs text-neutral-500 mt-1">
+                      Facturé {yearlyTotal.toLocaleString('fr-FR')} F/an
+                    </p>
+                  )}
+                </div>
+
+                {/* Feature checklist */}
+                <div className="space-y-3 flex-grow mb-6">
+                  {details.features.map((feature, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <Check className="h-4 w-4 shrink-0 mt-0.5 text-neutral-900" />
+                      <span className="text-sm text-neutral-900">{feature}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* CTA button */}
+                <Button
+                  onClick={() => handleUpgrade(plan, billingInterval)}
+                  disabled={isLoading === plan || isCurrent}
+                  className={cn(
+                    'w-full h-11 rounded-lg font-semibold text-sm transition-colors',
+                    isCurrent
+                      ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed'
+                      : plan === 'premium'
+                        ? 'bg-neutral-900 text-white hover:bg-neutral-800'
+                        : 'bg-white text-neutral-900 border border-neutral-200 hover:bg-neutral-50',
+                  )}
+                >
+                  {isCurrent
+                    ? 'Plan actuel'
+                    : isLoading === plan
+                      ? 'Chargement...'
+                      : plan === 'premium'
+                        ? 'Passer au Premium'
+                        : 'Choisir Essentiel'}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

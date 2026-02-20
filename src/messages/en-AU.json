@@ -763,6 +763,15 @@
       "cashier": "Cashier",
       "chef": "Chef",
       "waiter": "Waiter"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Orders",
+      "reports": "Reports",
+      "pos": "Point of Sale",
+      "inventory": "Inventory",
+      "team": "Team",
+      "settings": "Settings"
     }
   },
   "coupons": {
