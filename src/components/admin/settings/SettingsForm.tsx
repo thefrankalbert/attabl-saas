@@ -21,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { updateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
@@ -78,18 +79,20 @@ interface SettingsFormProps {
 
 type SettingsTab =
   | 'identity'
-  | 'customization'
+  | 'branding'
   | 'billing'
-  | 'notifications'
+  | 'sounds'
   | 'security'
+  | 'contact'
   | 'language';
 
 const TAB_CONFIG: { key: SettingsTab; icon: React.ElementType; labelKey: string }[] = [
   { key: 'identity', icon: Store, labelKey: 'tabIdentity' },
-  { key: 'customization', icon: Palette, labelKey: 'tabCustomization' },
+  { key: 'branding', icon: Palette, labelKey: 'tabBranding' },
   { key: 'billing', icon: Receipt, labelKey: 'tabBilling' },
-  { key: 'notifications', icon: Bell, labelKey: 'tabNotifications' },
+  { key: 'sounds', icon: Bell, labelKey: 'tabSounds' },
   { key: 'security', icon: Shield, labelKey: 'tabSecurity' },
+  { key: 'contact', icon: MapPin, labelKey: 'tabContact' },
   { key: 'language', icon: Globe, labelKey: 'tabLanguage' },
 ];
 
@@ -102,7 +105,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     invalidColor: t('invalidColor'),
   });
 
-  const [activeTab, setActiveTab] = useState<SettingsTab>('identity');
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -250,35 +252,24 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   };
 
   return (
-    <div className="max-w-4xl flex flex-col h-full min-h-0">
-      {/* Tab bar */}
-      <nav className="flex-shrink-0 border-b border-neutral-200">
-        <div className="-mb-px flex gap-1 overflow-x-auto">
-          {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => {
-            const isActive = activeTab === key;
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => setActiveTab(key)}
-                className={`flex items-center gap-2 whitespace-nowrap px-4 py-3 text-sm font-medium transition-colors border-b-2 ${
-                  isActive
-                    ? 'border-[#CCFF00] text-neutral-900 font-semibold'
-                    : 'border-transparent text-neutral-500 hover:text-neutral-700'
-                }`}
-              >
-                <Icon className="h-4 w-4" />
-                {t(labelKey)}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+    <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl flex flex-col h-full min-h-0">
+      <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
+        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-neutral-200 bg-transparent p-0">
+          {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
+            <TabsTrigger
+              key={key}
+              value={key}
+              className="flex items-center gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-700 data-[state=active]:border-[#CCFF00] data-[state=active]:bg-transparent data-[state=active]:text-neutral-900 data-[state=active]:font-semibold data-[state=active]:shadow-none"
+            >
+              <Icon className="h-4 w-4" />
+              {t(labelKey)}
+            </TabsTrigger>
+          ))}
+        </TabsList>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col flex-1 min-h-0 mt-6">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 mt-6">
           {/* Identity tab */}
-          {activeTab === 'identity' && (
+          <TabsContent value="identity" className="mt-0">
             <div className="space-y-6">
               <div className="bg-white rounded-xl border border-neutral-100 p-6">
                 <div className="flex items-center gap-3 mb-6">
@@ -375,39 +366,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   </p>
                 </div>
               </div>
-
-              {/* Contact info within identity tab */}
-              <div className="bg-white rounded-xl border border-neutral-100 p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-green-50 rounded-lg">
-                    <MapPin className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-neutral-900">{t('contactInfo')}</h2>
-                    <p className="text-sm text-neutral-500">{t('addressAndContact')}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="address">{t('fullAddress')}</Label>
-                    <Input
-                      id="address"
-                      {...register('address')}
-                      placeholder={t('addressPlaceholder')}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t('phone')}</Label>
-                    <Input id="phone" {...register('phone')} placeholder={t('phonePlaceholder')} />
-                  </div>
-                </div>
-              </div>
             </div>
-          )}
+          </TabsContent>
 
-          {/* Customization tab */}
-          {activeTab === 'customization' && (
+          {/* Branding tab */}
+          <TabsContent value="branding" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-purple-50 rounded-lg">
@@ -472,10 +435,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
             </div>
-          )}
+          </TabsContent>
 
           {/* Billing tab */}
-          {activeTab === 'billing' && (
+          <TabsContent value="billing" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-emerald-50 rounded-lg">
@@ -607,10 +570,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
             </div>
-          )}
+          </TabsContent>
 
-          {/* Notifications tab */}
-          {activeTab === 'notifications' && (
+          {/* Sounds tab */}
+          <TabsContent value="sounds" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-amber-50 rounded-lg">
@@ -630,10 +593,10 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 tenantId={tenant.id}
               />
             </div>
-          )}
+          </TabsContent>
 
           {/* Security tab */}
-          {activeTab === 'security' && (
+          <TabsContent value="security" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-indigo-50 rounded-lg">
@@ -742,10 +705,40 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 )}
               </div>
             </div>
-          )}
+          </TabsContent>
+
+          {/* Contact tab */}
+          <TabsContent value="contact" className="mt-0">
+            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-green-50 rounded-lg">
+                  <MapPin className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold text-neutral-900">{t('contactInfo')}</h2>
+                  <p className="text-sm text-neutral-500">{t('addressAndContact')}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="address">{t('fullAddress')}</Label>
+                  <Input
+                    id="address"
+                    {...register('address')}
+                    placeholder={t('addressPlaceholder')}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">{t('phone')}</Label>
+                  <Input id="phone" {...register('phone')} placeholder={t('phonePlaceholder')} />
+                </div>
+              </div>
+            </div>
+          </TabsContent>
 
           {/* Language tab */}
-          {activeTab === 'language' && (
+          <TabsContent value="language" className="mt-0">
             <div className="bg-white rounded-xl border border-neutral-100 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-blue-50 rounded-lg">
@@ -759,31 +752,31 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
               <LocaleSwitcher />
             </div>
-          )}
+          </TabsContent>
         </div>
+      </Tabs>
 
-        {/* Actions - always visible */}
-        <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4">
-          <Button
-            type="submit"
-            variant="lime"
-            disabled={saving || uploading}
-            className="min-w-[150px]"
-          >
-            {saving || uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {tc('saving')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {tc('saveChanges')}
-              </>
-            )}
-          </Button>
-        </div>
-      </form>
-    </div>
+      {/* Actions - always visible */}
+      <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4">
+        <Button
+          type="submit"
+          variant="lime"
+          disabled={saving || uploading}
+          className="min-w-[150px]"
+        >
+          {saving || uploading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {tc('saving')}
+            </>
+          ) : (
+            <>
+              <Save className="mr-2 h-4 w-4" />
+              {tc('saveChanges')}
+            </>
+          )}
+        </Button>
+      </div>
+    </form>
   );
 }
