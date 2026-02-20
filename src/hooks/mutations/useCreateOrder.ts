@@ -3,6 +3,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { createInventoryService } from '@/services/inventory.service';
+import { logger } from '@/lib/logger';
 
 interface CreateOrderInput {
   tenant_id: string;
@@ -10,6 +12,8 @@ interface CreateOrderInput {
   status: string;
   total_price: number;
   service_type: string;
+  cashier_id?: string | null;
+  server_id?: string | null;
   room_number?: string;
   delivery_address?: string;
   items: {
@@ -24,6 +28,7 @@ interface CreateOrderInput {
 /**
  * Mutation to create an order with its items.
  * Automatically invalidates orders and dashboard-stats queries on success.
+ * Handles inventory destock and stock alerts as post-order side effects.
  * Includes aggressive retry for offline resilience.
  */
 export function useCreateOrder(tenantId: string) {
@@ -44,6 +49,8 @@ export function useCreateOrder(tenantId: string) {
           status: input.status,
           total_price: input.total_price,
           service_type: input.service_type,
+          cashier_id: input.cashier_id ?? null,
+          server_id: input.server_id ?? null,
           room_number: input.room_number,
           delivery_address: input.delivery_address,
         })
@@ -66,6 +73,13 @@ export function useCreateOrder(tenantId: string) {
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
       if (itemsError) throw itemsError;
 
+      // Auto-destock inventory (non-blocking — order succeeds even if destock fails)
+      const inventoryService = createInventoryService(supabase);
+      inventoryService.destockOrder(order.id, input.tenant_id).catch(() => {});
+
+      // Check stock alerts (non-blocking, fire-and-forget)
+      fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
+
       return order;
     },
     onSuccess: () => {
@@ -73,6 +87,7 @@ export function useCreateOrder(tenantId: string) {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
     },
     onError: (error: Error) => {
+      logger.error('Failed to create order', error);
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
     },
     retry: 10,
