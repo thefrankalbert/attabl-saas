@@ -85,7 +85,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{t('title')}</h1>
+          <h1 className="text-xl font-bold tracking-tight text-neutral-900">{t('title')}</h1>
           <p className="text-xs text-neutral-500 mt-1">{t('subtitleClient')}</p>
         </div>
 

@@ -31,8 +31,8 @@ export default function ServerDashboard({ tenantId, currentServerId }: Props) {
     <div className="space-y-6">
       {/* My Tables */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-          <UserCheck className="w-5 h-5 text-[#CCFF00]" />
+        <h2 className="text-lg font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+          <UserCheck className="w-5 h-5 text-emerald-600" />
           Mes tables ({myAssignments.length})
         </h2>
         {myAssignments.length === 0 ? (
@@ -48,21 +48,21 @@ export default function ServerDashboard({ tenantId, currentServerId }: Props) {
               return (
                 <div
                   key={assignment.id}
-                  className="rounded-xl border border-[#CCFF00]/30 bg-[#CCFF00]/5 p-4"
+                  className="rounded-lg border border-neutral-100 bg-white p-4"
                 >
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-mono font-bold text-white">
+                    <span className="font-mono font-bold text-neutral-900">
                       {assignment.table?.display_name ?? assignment.table?.table_number ?? 'Table'}
                     </span>
                     <button
                       onClick={() => releaseAssignment.mutate(assignment.id)}
-                      className="flex items-center gap-1 text-xs text-neutral-500 hover:text-red-400 transition-colors"
+                      className="flex items-center gap-1 text-xs text-neutral-500 hover:text-red-500 transition-colors"
                     >
                       <LogOut className="w-3.5 h-3.5" />
                       Liberer
                     </button>
                   </div>
-                  <div className="text-sm text-neutral-400">
+                  <div className="text-sm text-neutral-500">
                     {tableOrders.length} commande{tableOrders.length !== 1 ? 's' : ''} active
                     {tableOrders.length !== 1 ? 's' : ''}
                   </div>
@@ -75,8 +75,8 @@ export default function ServerDashboard({ tenantId, currentServerId }: Props) {
 
       {/* Unassigned Orders */}
       <div>
-        <h2 className="text-lg font-semibold text-white mb-3 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-neutral-400" />
+        <h2 className="text-lg font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-neutral-500" />
           Non assignees ({unassignedOrders.length})
         </h2>
         {unassignedOrders.length === 0 ? (
@@ -84,12 +84,9 @@ export default function ServerDashboard({ tenantId, currentServerId }: Props) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {unassignedOrders.map((order: Order) => (
-              <div
-                key={order.id}
-                className="rounded-xl border border-neutral-800 bg-neutral-900 p-4"
-              >
+              <div key={order.id} className="rounded-lg border border-neutral-100 bg-white p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono font-bold text-white">
+                  <span className="font-mono font-bold text-neutral-900">
                     {order.table_number ?? '—'}
                   </span>
                   <span className="text-xs text-neutral-500">
@@ -98,14 +95,14 @@ export default function ServerDashboard({ tenantId, currentServerId }: Props) {
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-white">
+                  <span className="text-sm font-medium text-neutral-900">
                     {(order.total_price / 100).toFixed(2)} €
                   </span>
                   <button
                     onClick={() =>
                       claimOrder.mutate({ orderId: order.id, serverId: currentServerId })
                     }
-                    className="rounded-lg bg-[#CCFF00] px-3 py-1 text-xs font-semibold text-black hover:bg-[#CCFF00]/80 transition-colors"
+                    className="rounded-lg bg-neutral-900 px-3 py-1 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors"
                   >
                     Prendre en charge
                   </button>

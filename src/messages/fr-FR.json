@@ -137,6 +137,8 @@
     "serviceTakeaway": "À emporter",
     "serviceDelivery": "Livraison",
     "serviceRoom": "Room service",
+    "serviceDineIn": "Sur place",
+    "warningReadyBeforeCheckout": "Vérifiez que la commande est prête avant d'encaisser",
     "subtotal": "Sous-total",
     "vat": "TVA",
     "serviceCharge": "Service",
@@ -426,9 +428,10 @@
     "settingsUpdated": "Paramètres mis à jour",
     "settingsSavedSuccess": "Les modifications ont été enregistrées avec succès.",
     "settingsSaveError": "Une erreur est survenue lors de la sauvegarde.",
-    "fileTooLarge": "Fichier trop volumineux",
-    "logoMaxSize": "Le logo ne doit pas dépasser 15 Mo",
-    "logoUploadError": "Échec du téléchargement du logo. Veuillez réessayer.",
+    "fileTooLarge": "Le fichier est trop volumineux (max 2 Mo)",
+    "logoMaxSize": "Le logo ne doit pas dépasser 2MB",
+    "logoUploaded": "Logo mis à jour",
+    "logoUploadError": "Erreur lors du téléversement du logo",
     "logoUploading": "Téléchargement du logo...",
     "descriptionPlaceholder": "Cuisine locale et authentique...",
     "addressPlaceholder": "123 Rue de la République...",
@@ -450,14 +453,15 @@
     "customSoundComingSoon": "L'upload de sons personnalisés arrive prochainement.",
     "customSoundPremiumOnly": "L'import de sons personnalisés est disponible avec le plan Premium.",
     "soundError": "Erreur",
-    "soundPlayError": "Impossible de jouer ce son.",
+    "soundPlayError": "Impossible de lire le son. Vérifiez votre navigateur.",
     "languageSection": "Langue",
     "languageDescription": "Langue de l'interface d'administration",
     "tabIdentity": "Identit\u00e9",
-    "tabCustomization": "Personnalisation",
+    "tabBranding": "Apparence",
     "tabBilling": "Facturation",
-    "tabNotifications": "Notifications",
+    "tabSounds": "Sons",
     "tabSecurity": "S\u00e9curit\u00e9",
+    "tabContact": "Contact",
     "tabLanguage": "Langue",
     "slug": "Slug",
     "slugDescription": "Votre sous-domaine unique. Contactez le support pour le modifier."
@@ -495,6 +499,7 @@
     "roleUnknown": "Inconnu",
     "groupMarketing": "Marketing",
     "groupSettings": "Paramètres",
+    "groupAnalyse": "Analyse",
     "navGeneral": "Général",
     "collapse": "Réduire",
     "expand": "Étendre",
@@ -597,7 +602,9 @@
     "orderError": "Erreur lors de la commande",
     "loading": "Chargement du POS...",
     "loadingPos": "Chargement du POS...",
-    "sendToKitchen": "Envoyer en cuisine"
+    "sendToKitchen": "Envoyer en cuisine",
+    "selectTableFirst": "Veuillez sélectionner une table d'abord",
+    "server": "Serveur"
   },
   "users": {
     "title": "Utilisateurs",
@@ -697,11 +704,11 @@
     "ordersCountShort": "{count} cmds",
     "thisMonth": "Ce mois-ci",
     "lastMonth": "Le mois dernier",
-    "thisYear": "Cette annee",
-    "vsLastPeriod": "vs. periode precedente",
-    "categoryBreakdown": "Repartition par categorie",
-    "noCategories": "Aucune donnee de categorie disponible",
-    "csvDownloaded": "CSV telecharge",
+    "thisYear": "Cette année",
+    "vsLastPeriod": "vs. période précédente",
+    "categoryBreakdown": "Répartition par catégorie",
+    "noCategories": "Aucune donnée de catégorie disponible",
+    "csvDownloaded": "CSV téléchargé",
     "exportCsvError": "Erreur export CSV",
     "viewAllRanking": "Voir tout le classement",
     "serverPerformance": "Performance par serveur",
@@ -756,6 +763,15 @@
       "cashier": "Caissier",
       "chef": "Chef Cuisine",
       "waiter": "Serveur"
+    },
+    "category": {
+      "menu": "Menu",
+      "orders": "Commandes",
+      "reports": "Rapports",
+      "pos": "Point de vente",
+      "inventory": "Inventaire",
+      "team": "Equipe",
+      "settings": "Parametres"
     }
   },
   "coupons": {
@@ -1121,7 +1137,12 @@
     "tipCustom": "Autre",
     "tipAmount": "Pourboire : {amount}",
     "totalWithTip": "Total avec pourboire",
-    "backspace": "Effacer"
+    "backspace": "Effacer",
+    "tableRequired": "Veuillez sélectionner une table d'abord",
+    "amountDue": "Montant dû",
+    "received": "Reçu",
+    "customTip": "Personnalisé",
+    "numpadClear": "Effacer"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1158,7 +1179,11 @@
     "tipNeon": "Néon",
     "tipNeonDesc": "Fond sombre avec accent vif et effet glow lumineux.",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "tabChoose": "Choisir",
+    "tabCustomize": "Personnaliser",
+    "tabDownload": "Télécharger",
+    "formatA4": "Format A4"
   },
   "service": {
     "title": "Service",

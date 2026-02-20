@@ -249,7 +249,10 @@ export default function OrdersClient({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setSelectedOrder(order)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setSelectedOrder(order);
+                }}
                 className="text-xs gap-1"
               >
                 <Eye className="w-3 h-3" />
@@ -257,7 +260,10 @@ export default function OrdersClient({
               {config.nextStatus && (
                 <Button
                   size="sm"
-                  onClick={() => handleStatusChange(order.id, config.nextStatus!)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleStatusChange(order.id, config.nextStatus!);
+                  }}
                   className={cn(
                     'text-xs text-white gap-1',
                     config.actionBg,
