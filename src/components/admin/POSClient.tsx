@@ -22,14 +22,13 @@ import {
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems, useCategories } from '@/hooks/queries';
+import { useCreateOrder } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
-import { createInventoryService } from '@/services/inventory.service';
 import PaymentModal from '@/components/admin/PaymentModal';
-import { logger } from '@/lib/logger';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
 interface POSClientProps {
@@ -99,12 +98,26 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
 
-  // Order Seq
-  const [orderNumber, setOrderNumber] = useState(1);
+  // Order Seq — initialize from localStorage to avoid setState in effect
+  const [orderNumber, setOrderNumber] = useState(() => {
+    if (typeof window === 'undefined') return 1;
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const stored = localStorage.getItem(`pos_order_${tenantId}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.date === today) return parsed.number || 1;
+      }
+    } catch {
+      /* ignore */
+    }
+    return 1;
+  });
 
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const createOrder = useCreateOrder(tenantId);
 
   // TanStack Query for menu items and categories
   const { data: menuItems = [], isLoading: itemsLoading } = useMenuItems(tenantId, {
@@ -112,22 +125,6 @@ export default function POSClient({ tenantId }: POSClientProps) {
   });
   const { data: categories = [], isLoading: catsLoading } = useCategories(tenantId);
   const loading = itemsLoading || catsLoading;
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const today = new Date().toISOString().split('T')[0];
-      const key = `pos_order_${tenantId}`;
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        try {
-          const parsed = JSON.parse(stored);
-          if (parsed.date === today) setOrderNumber(parsed.number || 1);
-        } catch {
-          /* ignore */
-        }
-      }
-    }
-  }, [tenantId]);
 
   useEffect(() => {
     async function fetchCurrentUser() {
@@ -194,6 +191,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   }, [supabase, tenantId]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Async data fetch requires setState
     loadExtras();
 
     // Realtime: listen for menu_items availability changes
@@ -260,82 +258,45 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-  const handleOrder = async (status: 'pending' | 'delivered') => {
+  const handleOrder = (status: 'pending' | 'delivered') => {
     if (cart.length === 0) return;
 
-    try {
-      // Create Order
-      const orderPayload: {
-        tenant_id: string;
-        table_number: string;
-        status: string;
-        total_price: number;
-        service_type: ServiceType;
-        cashier_id: string | null;
-        server_id: string | null;
-        room_number?: string;
-        delivery_address?: string;
-      } = {
+    createOrder.mutate(
+      {
         tenant_id: tenantId,
         table_number: selectedTable || `CMD-${orderNumber}`,
-        status: status,
+        status,
         total_price: total,
         service_type: serviceType,
         cashier_id: currentAdminUser?.id ?? null,
         server_id: currentAdminUser?.id ?? null,
-      };
-
-      // Add room number for room_service
-      if (serviceType === 'room_service' && roomNumber) {
-        orderPayload.room_number = roomNumber;
-      }
-
-      // Add delivery address for delivery
-      if (serviceType === 'delivery' && deliveryAddress) {
-        orderPayload.delivery_address = deliveryAddress;
-      }
-
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderPayload)
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create Order Items
-      const orderItems = cart.map((item) => ({
-        tenant_id: tenantId,
-        order_id: order.id,
-        menu_item_id: item.id,
-        quantity: item.quantity,
-        price_at_order: item.price,
-        notes: item.notes || null,
-        name: item.name, // Redundant but useful for history if item deleted
-      }));
-
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-      if (itemsError) throw itemsError;
-
-      // Auto-destock inventory (non-blocking — order succeeds even if destock fails)
-      const inventoryService = createInventoryService(supabase);
-      inventoryService.destockOrder(order.id, tenantId).catch(() => {});
-
-      // Check stock alerts (non-blocking, fire-and-forget)
-      fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
-
-      toast({
-        title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
-      });
-      updateOrderNumber(orderNumber + 1);
-      setCart([]);
-      setRoomNumber('');
-      setDeliveryAddress('');
-      if (showPaymentModal) setShowPaymentModal(false);
-    } catch (err) {
-      logger.error('Failed to create POS order', err);
-      toast({ title: t('orderError'), variant: 'destructive' });
-    }
+        room_number: serviceType === 'room_service' && roomNumber ? roomNumber : undefined,
+        delivery_address:
+          serviceType === 'delivery' && deliveryAddress ? deliveryAddress : undefined,
+        items: cart.map((item) => ({
+          menu_item_id: item.id,
+          quantity: item.quantity,
+          price_at_order: item.price,
+          notes: item.notes || null,
+          name: item.name,
+        })),
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
+          });
+          updateOrderNumber(orderNumber + 1);
+          setCart([]);
+          setRoomNumber('');
+          setDeliveryAddress('');
+          if (showPaymentModal) setShowPaymentModal(false);
+        },
+        onError: () => {
+          toast({ title: t('orderError'), variant: 'destructive' });
+        },
+      },
+    );
   };
 
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;

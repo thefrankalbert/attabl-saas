@@ -1,35 +1,39 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback, useRef } from 'react';
+
 import {
-  Layout,
-  Check,
-  ArrowRight,
-  ArrowLeft,
   Building2,
-  Grid3x3,
+  LayoutGrid,
   Palette,
   UtensilsCrossed,
   Rocket,
-  SkipForward,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Layout,
 } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
-// Step Components
 import { EstablishmentStep } from '@/components/onboarding/EstablishmentStep';
 import { TablesStep } from '@/components/onboarding/TablesStep';
 import { BrandingStep } from '@/components/onboarding/BrandingStep';
 import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
+import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
-const steps = [
-  { id: 1, name: 'Établissement', icon: Building2, description: 'Informations de base' },
-  { id: 2, name: 'Vos tables', icon: Grid3x3, description: 'Configuration des tables' },
-  { id: 3, name: 'Personnalisation', icon: Palette, description: 'Logo et couleurs' },
-  { id: 4, name: 'Menu', icon: UtensilsCrossed, description: 'Vos premiers articles' },
-  { id: 5, name: 'Lancement', icon: Rocket, description: 'Prêt à démarrer' },
-];
+const STEP_ICONS = [Building2, LayoutGrid, Palette, UtensilsCrossed, Rocket] as const;
+
+const STEP_KEYS = [
+  { name: 'stepEstablishment', desc: 'stepEstablishmentDesc' },
+  { name: 'stepTables', desc: 'stepTablesDesc' },
+  { name: 'stepBranding', desc: 'stepBrandingDesc' },
+  { name: 'stepMenu', desc: 'stepMenuDesc' },
+  { name: 'stepLaunch', desc: 'stepLaunchDesc' },
+] as const;
 
 export interface OnboardingData {
   // Step 1: Establishment
@@ -39,6 +43,16 @@ export interface OnboardingData {
   country: string;
   phone: string;
   tableCount: number;
+  language: string;
+  currency: string;
+  // Step 1: Type-specific fields
+  starRating?: number;
+  hasRestaurant?: boolean;
+  hasTerrace?: boolean;
+  hasWifi?: boolean;
+  registerCount?: number;
+  hasDelivery?: boolean;
+  totalCapacity?: number;
   // Step 2: Tables
   tableConfigMode: 'complete' | 'minimum' | 'skip';
   tableZones: Array<{ name: string; prefix: string; tableCount: number; defaultCapacity?: number }>;
@@ -49,7 +63,12 @@ export interface OnboardingData {
   description: string;
   // Step 4: Menu
   menuOption: 'manual' | 'import' | 'template' | 'skip';
-  menuItems: Array<{ name: string; price: number; category: string }>;
+  menuItems: Array<{ name: string; price: number; category: string; imageUrl?: string }>;
+  // Step 5: QR customization
+  qrTemplate: 'standard' | 'chevalet' | 'carte' | 'minimal' | 'elegant' | 'neon';
+  qrStyle: 'classic' | 'branded' | 'inverted' | 'dark';
+  qrCta: string;
+  qrDescription: string;
   // Tenant info
   tenantId: string;
   tenantSlug: string;
@@ -57,10 +76,15 @@ export interface OnboardingData {
 }
 
 export default function OnboardingPage() {
-  const [currentStep, setCurrentStep] = useState(1);
+  const t = useTranslations('onboarding');
+  const { toast } = useToast();
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const touchStartX = useRef(0);
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
     address: '',
@@ -68,6 +92,15 @@ export default function OnboardingPage() {
     country: 'Cameroun',
     phone: '',
     tableCount: 10,
+    language: 'fr-FR',
+    currency: 'EUR',
+    starRating: undefined,
+    hasRestaurant: undefined,
+    hasTerrace: undefined,
+    hasWifi: undefined,
+    registerCount: undefined,
+    hasDelivery: undefined,
+    totalCapacity: undefined,
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
@@ -76,12 +109,15 @@ export default function OnboardingPage() {
     description: '',
     menuOption: 'skip',
     menuItems: [],
+    qrTemplate: 'standard',
+    qrStyle: 'branded',
+    qrCta: 'Scannez pour commander',
+    qrDescription: '',
     tenantId: '',
     tenantSlug: '',
     tenantName: '',
   });
 
-  // Fetch current onboarding state
   useEffect(() => {
     const fetchOnboardingState = async () => {
       try {
@@ -95,32 +131,80 @@ export default function OnboardingPage() {
             tenantName: state.tenantName,
             ...state.data,
           }));
-          setCurrentStep(state.step || 1);
+          setCurrentStep(state.step || 0);
         }
       } catch (err) {
-        console.error('Error fetching onboarding state:', err);
+        const message = err instanceof Error ? err.message : 'Unknown error';
+        toast({ title: t('saveError'), description: message, variant: 'destructive' });
       } finally {
         setLoading(false);
       }
     };
 
     fetchOnboardingState();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const updateData = (newData: Partial<OnboardingData>) => {
+  // Auto-save debounced
+  useEffect(() => {
+    if (loading || currentStep === 0 || currentStep === 5) return;
+    setAutoSaveStatus('idle');
+    const timer = setTimeout(async () => {
+      setAutoSaveStatus('saving');
+      try {
+        const res = await fetch('/api/onboarding/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ step: currentStep, data }),
+        });
+        if (res.ok) {
+          setAutoSaveStatus('saved');
+          setTimeout(() => setAutoSaveStatus('idle'), 2000);
+        }
+      } catch {
+        setAutoSaveStatus('idle');
+      }
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [data, currentStep, loading]);
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.key === 'ArrowRight' && currentStep > 0 && currentStep < 5) {
+        setError(null);
+        setDirection('forward');
+        setCurrentStep((prev) => prev + 1);
+      }
+      if (e.key === 'ArrowLeft' && currentStep > 1) {
+        setError(null);
+        setDirection('backward');
+        setCurrentStep((prev) => prev - 1);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep]);
+
+  const updateData = useCallback((newData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...newData }));
-  };
+  }, []);
 
   const saveStep = async () => {
     setSaving(true);
     try {
-      await fetch('/api/onboarding/save', {
+      const res = await fetch('/api/onboarding/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ step: currentStep, data }),
       });
+      if (!res.ok) {
+        toast({ title: t('saveError'), variant: 'destructive' });
+      }
     } catch (err) {
-      console.error('Error saving step:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      toast({ title: t('saveError'), description: message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -128,14 +212,8 @@ export default function OnboardingPage() {
 
   const nextStep = async () => {
     setError(null);
-    await saveStep();
-    if (currentStep < 5) {
-      setCurrentStep((prev) => prev + 1);
-    }
-  };
-
-  const skipStep = () => {
-    setError(null);
+    if (currentStep > 0) await saveStep();
+    setDirection('forward');
     if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
     }
@@ -143,8 +221,27 @@ export default function OnboardingPage() {
 
   const prevStep = () => {
     setError(null);
+    setDirection('backward');
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
+    }
+  };
+
+  // Task 8: Visual validation indicators
+  const stepIsComplete = (step: number): boolean => {
+    switch (step) {
+      case 1:
+        return !!data.tenantName && !!data.establishmentType;
+      case 2:
+        return true; // tables are optional
+      case 3:
+        return !!data.primaryColor;
+      case 4:
+        return true; // menu is optional
+      case 5:
+        return true;
+      default:
+        return false;
     }
   };
 
@@ -160,16 +257,15 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Erreur lors du lancement');
+        throw new Error(errData.error || t('completeError'));
       }
 
-      // Redirect to admin dashboard
-      // Use /sites/{slug}/admin path on the main domain — works without wildcard DNS
       const origin = window.location.origin;
       window.location.href = `${origin}/sites/${data.tenantSlug}/admin`;
     } catch (err) {
-      console.error('Error completing onboarding:', err);
-      setError(err instanceof Error ? err.message : 'Une erreur est survenue');
+      const message = err instanceof Error ? err.message : t('completeError');
+      setError(message);
+      toast({ title: t('completeError'), description: message, variant: 'destructive' });
     } finally {
       setSaving(false);
     }
@@ -180,7 +276,7 @@ export default function OnboardingPage() {
       <div className="h-screen bg-white flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="h-12 w-12 bg-[#CCFF00] rounded-xl" />
-          <p className="text-neutral-500">Chargement...</p>
+          <p className="text-neutral-500">...</p>
         </div>
       </div>
     );
@@ -188,192 +284,291 @@ export default function OnboardingPage() {
 
   return (
     <div className="h-screen bg-white flex overflow-hidden">
-      {/* Sidebar - Progress */}
-      <div className="hidden lg:flex w-80 shrink-0 py-4 pl-4">
-        <div className="flex w-full flex-col rounded-[2rem] bg-neutral-900 p-8">
+      {/* Sidebar — Desktop (lg+): w-72, icons + titles + descriptions */}
+      {/* Sidebar — Tablet (md): w-56, icons + titles only */}
+      {currentStep > 0 && (
+        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-neutral-50 border-r border-neutral-100">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-3 mb-12">
-            <div className="bg-[#CCFF00] rounded-xl p-2">
-              <Layout className="h-6 w-6 text-black" />
-            </div>
-            <span className="text-2xl font-bold text-white">ATTABL</span>
-          </Link>
+          <div className="p-6 lg:p-8">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="bg-[#CCFF00] rounded-xl p-2">
+                <Layout className="h-5 w-5 text-black" />
+              </div>
+              <span className="text-xl font-bold text-neutral-900">ATTABL</span>
+            </Link>
+          </div>
 
           {/* Steps */}
-          <div className="flex-1">
-            <p className="text-neutral-500 text-sm mb-6">Configuration</p>
-            <nav className="space-y-2">
-              {steps.map((step) => {
-                const isCompleted = currentStep > step.id;
-                const isCurrent = currentStep === step.id;
+          <nav className="flex-1 px-4 lg:px-6">
+            <div className="space-y-1">
+              {STEP_KEYS.map((stepKey, index) => {
+                const stepId = index + 1;
+                const isCompleted = currentStep > stepId;
+                const isCurrent = currentStep === stepId;
+                const Icon = STEP_ICONS[index];
 
                 return (
-                  <button
-                    key={step.id}
-                    type="button"
-                    onClick={() => {
-                      if (isCompleted) {
-                        setError(null);
-                        setCurrentStep(step.id);
-                      }
-                    }}
-                    className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left ${
-                      isCurrent
-                        ? 'bg-[#CCFF00]/10 border border-[#CCFF00]/30'
-                        : isCompleted
-                          ? 'opacity-60 hover:opacity-80 cursor-pointer'
-                          : 'opacity-40 cursor-default'
-                    }`}
-                  >
-                    <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${
-                        isCompleted
-                          ? 'bg-[#CCFF00] text-black'
-                          : isCurrent
-                            ? 'bg-[#CCFF00]/20 text-[#CCFF00] border border-[#CCFF00]/50'
-                            : 'bg-white/10 text-white/50'
+                  <div key={stepId} className="relative">
+                    {/* Connecting line */}
+                    {index < STEP_KEYS.length - 1 && (
+                      <div
+                        className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
+                          isCompleted ? 'bg-[#CCFF00]' : 'bg-neutral-200'
+                        }`}
+                      />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isCompleted) {
+                          setError(null);
+                          setDirection('backward');
+                          setCurrentStep(stepId);
+                        }
+                      }}
+                      className={`relative z-10 w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
+                        isCurrent
+                          ? 'bg-white border border-neutral-200'
+                          : isCompleted
+                            ? 'hover:bg-white/60 cursor-pointer'
+                            : 'opacity-50 cursor-default'
                       }`}
                     >
-                      {isCompleted ? (
-                        <Check className="h-5 w-5" />
-                      ) : (
-                        <step.icon className="h-5 w-5" />
-                      )}
-                    </div>
-                    <div>
-                      <p className={`font-medium ${isCurrent ? 'text-white' : 'text-white/70'}`}>
-                        {step.name}
-                      </p>
-                      <p className="text-xs text-neutral-500">{step.description}</p>
-                    </div>
-                  </button>
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                          isCompleted
+                            ? 'bg-[#CCFF00] text-black'
+                            : isCurrent
+                              ? 'bg-neutral-900 text-white'
+                              : 'bg-neutral-200 text-neutral-400'
+                        }`}
+                      >
+                        {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p
+                          className={`text-sm font-medium truncate ${
+                            isCurrent ? 'text-neutral-900' : 'text-neutral-600'
+                          }`}
+                        >
+                          {t(stepKey.name)}
+                        </p>
+                        {/* Description: visible on lg+ only */}
+                        <p className="hidden lg:block text-xs text-neutral-400 truncate">
+                          {t(stepKey.desc)}
+                        </p>
+                      </div>
+                    </button>
+                  </div>
                 );
               })}
-            </nav>
-          </div>
+            </div>
+          </nav>
 
           {/* Footer */}
-          <div className="pt-8 border-t border-white/10">
-            <p className="text-sm text-neutral-500">
-              {data.tenantName && (
-                <>
-                  <span className="text-white font-medium">{data.tenantName}</span>
-                  <br />
-                </>
-              )}
-              14 jours d&apos;essai gratuit
-            </p>
+          <div className="p-4 lg:p-6 border-t border-neutral-100">
+            {data.tenantName && (
+              <p className="text-sm font-medium text-neutral-900 truncate">{data.tenantName}</p>
+            )}
+            <p className="text-xs text-neutral-400">{t('trialReminder')}</p>
           </div>
-        </div>
-      </div>
+        </aside>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header */}
-        <div className="lg:hidden flex items-center justify-between p-4 border-b shrink-0">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-black rounded-lg p-1.5">
-              <Layout className="h-4 w-4 text-[#CCFF00]" />
+        {/* Mobile Header (< md) — horizontal step bar */}
+        {currentStep > 0 && (
+          <div className="md:hidden shrink-0">
+            {/* Logo row */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+              <Link href="/" className="flex items-center gap-2">
+                <div className="bg-[#CCFF00] rounded-lg p-1.5">
+                  <Layout className="h-4 w-4 text-black" />
+                </div>
+                <span className="font-bold text-neutral-900">ATTABL</span>
+              </Link>
+              <span className="text-xs text-neutral-400 uppercase tracking-wide font-medium">
+                {t('step')} {currentStep} {t('stepOf')} 5
+              </span>
             </div>
-            <span className="font-bold">ATTABL</span>
-          </Link>
-          <span className="text-sm text-neutral-500">Étape {currentStep}/5</span>
-        </div>
 
-        {/* Progress Bar (Mobile) */}
-        <div className="lg:hidden h-1 bg-neutral-100 shrink-0">
-          <div
-            className="h-full bg-[#CCFF00] transition-all duration-500"
-            style={{ width: `${(currentStep / 5) * 100}%` }}
-          />
-        </div>
+            {/* Horizontal step circles */}
+            <div className="flex items-center justify-center gap-0 py-3 px-4">
+              {STEP_ICONS.map((Icon, index) => {
+                const stepId = index + 1;
+                const isCompleted = currentStep > stepId;
+                const isCurrent = currentStep === stepId;
+
+                return (
+                  <div key={stepId} className="flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isCompleted) {
+                          setError(null);
+                          setDirection('backward');
+                          setCurrentStep(stepId);
+                        }
+                      }}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
+                        isCompleted
+                          ? 'bg-[#CCFF00] text-black cursor-pointer'
+                          : isCurrent
+                            ? 'bg-neutral-900 text-white'
+                            : 'bg-neutral-200 text-neutral-400'
+                      }`}
+                    >
+                      {isCompleted ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Icon className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                    {/* Connecting line */}
+                    {index < STEP_ICONS.length - 1 && (
+                      <div
+                        className={`w-6 sm:w-10 h-0.5 ${
+                          currentStep > stepId ? 'bg-[#CCFF00]' : 'bg-neutral-200'
+                        }`}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Step Content */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-8 lg:pt-6">
-          <div className="max-w-2xl mx-auto">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
-                {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
-                {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
-                {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
-                {currentStep === 5 && <LaunchStep data={data} />}
-              </motion.div>
-            </AnimatePresence>
+        <div
+          className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
+          onTouchStart={(e) => {
+            touchStartX.current = e.touches[0].clientX;
+          }}
+          onTouchEnd={(e) => {
+            const diff = touchStartX.current - e.changedTouches[0].clientX;
+            if (Math.abs(diff) > 50) {
+              if (diff > 0 && currentStep > 0 && currentStep < 5) nextStep();
+              if (diff < 0 && currentStep > 1) prevStep();
+            }
+          }}
+        >
+          <div className="max-w-xl mx-auto">
+            {/* Step badge — hidden on step 0 */}
+            {currentStep > 0 && (
+              <div className="mb-4">
+                <span className="inline-block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">
+                  {t('step')} {currentStep} {t('stepOf')} 5
+                </span>
+              </div>
+            )}
+
+            <div
+              key={currentStep}
+              className={
+                currentStep > 0
+                  ? direction === 'forward'
+                    ? 'animate-in slide-in-from-right-4 fade-in duration-200'
+                    : 'animate-in slide-in-from-left-4 fade-in duration-200'
+                  : ''
+              }
+            >
+              {currentStep === 0 && (
+                <WelcomeStep
+                  tenantName={data.tenantName}
+                  onStart={() => {
+                    setDirection('forward');
+                    setCurrentStep(1);
+                  }}
+                />
+              )}
+              {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
+              {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
+              {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
+              {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
+              {currentStep === 5 && <LaunchStep data={data} updateData={updateData} />}
+            </div>
           </div>
         </div>
 
         {/* Error Banner */}
         {error && (
-          <div className="mx-4 sm:mx-6 lg:mx-12 mb-2 shrink-0">
-            <div className="max-w-2xl mx-auto p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+          <div className="mx-4 md:mx-6 lg:mx-12 mb-2 shrink-0">
+            <div className="max-w-xl mx-auto p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
               <span>{error}</span>
               <button
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-600 ml-3 font-bold"
+                className="text-red-400 hover:text-red-600 ml-3 shrink-0"
               >
-                ✕
+                <span className="sr-only">Close</span>
+                &times;
               </button>
             </div>
           </div>
         )}
 
-        {/* Footer Navigation */}
-        <div className="border-t p-4 sm:p-6 lg:px-12 shrink-0">
-          <div className="max-w-2xl mx-auto flex items-center justify-between gap-2">
-            <button
-              onClick={prevStep}
-              disabled={currentStep === 1}
-              className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-xl font-medium transition-all ${
-                currentStep === 1
-                  ? 'opacity-0 pointer-events-none'
-                  : 'text-neutral-600 hover:bg-neutral-100'
-              }`}
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="hidden sm:inline">Précédent</span>
-            </button>
-
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Skip button - shown on steps 1-4 */}
-              {currentStep < 5 && (
-                <button
-                  onClick={skipStep}
-                  className="flex items-center gap-1.5 px-3 sm:px-4 py-3 rounded-xl font-medium text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 transition-all text-sm"
-                >
-                  <SkipForward className="h-4 w-4" />
-                  <span className="hidden sm:inline">Passer</span>
-                </button>
-              )}
-
-              {currentStep < 5 ? (
-                <button
-                  onClick={nextStep}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] "
-                >
-                  {saving ? 'Enregistrement...' : 'Continuer'}
-                  <ArrowRight className="h-5 w-5" />
-                </button>
+        {/* Footer Navigation — hidden on step 0 (welcome screen) */}
+        {currentStep > 0 && (
+          <div className="border-t border-neutral-100 p-4 md:p-6 shrink-0">
+            <div className="max-w-xl mx-auto flex items-center justify-between">
+              {/* Back button or auto-save status on step 1 */}
+              {currentStep === 1 ? (
+                <span className="text-xs text-neutral-400 min-w-[80px]">
+                  {autoSaveStatus === 'saving' && t('autoSaving')}
+                  {autoSaveStatus === 'saved' && `✓ ${t('autoSaved')}`}
+                </span>
               ) : (
                 <button
-                  onClick={completeOnboarding}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 sm:px-8 py-3 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-xl transition-all hover:scale-[1.02] active:scale-[0.98] "
+                  type="button"
+                  onClick={prevStep}
+                  className="flex items-center gap-1.5 text-sm text-neutral-500 hover:text-neutral-900 transition-colors"
                 >
-                  {saving ? 'Lancement...' : 'Accéder au Dashboard'}
-                  <Rocket className="h-5 w-5" />
+                  <ArrowLeft className="h-4 w-4" />
+                  <span className="hidden sm:inline">{t('back')}</span>
                 </button>
               )}
+
+              <div className="flex items-center gap-2">
+                {/* Skip button — not on step 5 */}
+                {currentStep < 5 && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      if (currentStep < 5) {
+                        setDirection('forward');
+                        setCurrentStep((prev) => prev + 1);
+                      }
+                    }}
+                    disabled={saving}
+                    className="text-neutral-400 hover:text-neutral-600"
+                  >
+                    {t('skip')}
+                  </Button>
+                )}
+
+                {/* Continue / Launch — with validation opacity (Task 8) */}
+                {currentStep < 5 ? (
+                  <Button
+                    variant="lime"
+                    onClick={nextStep}
+                    disabled={saving}
+                    className={!stepIsComplete(currentStep) ? 'opacity-60' : ''}
+                  >
+                    {saving ? '...' : t('next')}
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button variant="lime" onClick={completeOnboarding} disabled={saving}>
+                    {saving ? '...' : t('launchCTA')}
+                    <Rocket className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
