@@ -1129,7 +1129,11 @@
     "tipAmount": "Pourboire : {amount}",
     "totalWithTip": "Total avec pourboire",
     "backspace": "Effacer",
-    "tableRequired": "Veuillez sélectionner une table d'abord"
+    "tableRequired": "Veuillez sélectionner une table d'abord",
+    "amountDue": "Montant dû",
+    "received": "Reçu",
+    "customTip": "Personnalisé",
+    "numpadClear": "Effacer"
   },
   "qrCodes": {
     "title": "QR Codes",
@@ -1166,7 +1170,11 @@
     "tipNeon": "Néon",
     "tipNeonDesc": "Fond sombre avec accent vif et effet glow lumineux.",
     "previous": "Précédent",
-    "next": "Suivant"
+    "next": "Suivant",
+    "tabChoose": "Choisir",
+    "tabCustomize": "Personnaliser",
+    "tabDownload": "Télécharger",
+    "formatA4": "Format A4"
   },
   "service": {
     "title": "Service",

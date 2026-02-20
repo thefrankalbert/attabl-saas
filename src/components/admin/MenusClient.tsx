@@ -451,58 +451,72 @@ export default function MenusClient({
         title={editingMenu ? t('editMenuTitle') : t('newMenuTitle')}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="menu-name">{t('nameFr')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-name" className="text-neutral-900">
+                {t('nameFr')}
+              </Label>
               <Input
                 id="menu-name"
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
                 placeholder={t('nameFrPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="menu-name-en">{t('nameEn')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-name-en" className="text-neutral-900">
+                {t('nameEn')}
+              </Label>
               <Input
                 id="menu-name-en"
                 value={formNameEn}
                 onChange={(e) => setFormNameEn(e.target.value)}
                 placeholder={t('nameEnPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="menu-desc">{t('descriptionFr')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-desc" className="text-neutral-900">
+                {t('descriptionFr')}
+              </Label>
               <Input
                 id="menu-desc"
                 value={formDescription}
                 onChange={(e) => setFormDescription(e.target.value)}
                 placeholder={t('descriptionFrPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="menu-desc-en">{t('descriptionEn')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-desc-en" className="text-neutral-900">
+                {t('descriptionEn')}
+              </Label>
               <Input
                 id="menu-desc-en"
                 value={formDescriptionEn}
                 onChange={(e) => setFormDescriptionEn(e.target.value)}
                 placeholder={t('descriptionEnPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="menu-venue">{t('spaceOptional')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-venue" className="text-neutral-900">
+                {t('spaceOptional')}
+              </Label>
               <select
                 id="menu-venue"
                 value={formVenueId || ''}
                 onChange={(e) => setFormVenueId(e.target.value || null)}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
               >
                 <option value="">{t('noSpaceIndependent')}</option>
                 {venues.map((v) => (
@@ -512,13 +526,15 @@ export default function MenusClient({
                 ))}
               </select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="menu-parent">{t('parentMenu')}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="menu-parent" className="text-neutral-900">
+                {t('parentMenu')}
+              </Label>
               <select
                 id="menu-parent"
                 value={formParentMenuId || ''}
                 onChange={(e) => setFormParentMenuId(e.target.value || null)}
-                className="w-full rounded-md border border-neutral-200 px-3 py-2 text-sm"
+                className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
               >
                 <option value="">{t('noParentMain')}</option>
                 {menus
@@ -538,12 +554,14 @@ export default function MenusClient({
               id="menu-active"
               checked={formIsActive}
               onChange={(e) => setFormIsActive(e.target.checked)}
-              className="rounded border-neutral-300"
+              className="rounded border-neutral-200 text-lime-500 focus:ring-lime-400"
             />
-            <Label htmlFor="menu-active">{t('activeVisibleToClients')}</Label>
+            <Label htmlFor="menu-active" className="text-neutral-900">
+              {t('activeVisibleToClients')}
+            </Label>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
             <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
               {t('cancel')}
             </Button>
