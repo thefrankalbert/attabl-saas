@@ -10,10 +10,10 @@
   --color-muted-foreground: #6b7280;
   --color-border: #e5e7eb;
 
-  /* Accent colors - subtle blue like Square */
-  --color-primary: #3b82f6;
-  --color-primary-dark: #2563eb;
-  --color-primary-light: #dbeafe;
+  /* Accent colors - lime brand */
+  --color-primary: #ccff00;
+  --color-primary-dark: #b3e600;
+  --color-primary-light: #f0ffc0;
 
   /* Semantic colors */
   --color-success: #10b981;
@@ -21,9 +21,9 @@
   --color-error: #ef4444;
 
   /* Legacy compatibility - keep these for existing components */
-  --color-brand-green: #3b82f6;
-  --color-brand-green-dark: #2563eb;
-  --color-brand-green-light: #dbeafe;
+  --color-brand-green: #ccff00;
+  --color-brand-green-dark: #b3e600;
+  --color-brand-green-light: #f0ffc0;
   --color-brand-orange: #f59e0b;
   --color-brand-orange-dark: #d97706;
   --color-neutral-50: #f9fafb;
