@@ -91,7 +91,7 @@ export default function LogoMarquee() {
     <div className="absolute bottom-2 left-0 right-0 z-10 overflow-hidden py-6">
       <div className="relative flex">
         {/* Premier set de logos */}
-        <div className="animate-scroll flex shrink-0 items-center gap-24 px-12">
+        <div className="animate-scroll flex shrink-0 items-center gap-8 sm:gap-16 lg:gap-24 px-4 sm:px-8 lg:px-12">
           {logos.map((logo, idx) => {
             const LogoComponent = logo.component;
             return (
@@ -106,7 +106,7 @@ export default function LogoMarquee() {
         </div>
 
         {/* Deuxième set de logos (pour l'effet de boucle infinie) */}
-        <div className="animate-scroll flex shrink-0 items-center gap-24 px-12">
+        <div className="animate-scroll flex shrink-0 items-center gap-8 sm:gap-16 lg:gap-24 px-4 sm:px-8 lg:px-12">
           {logos.map((logo, idx) => {
             const LogoComponent = logo.component;
             return (

@@ -368,7 +368,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="text-xs font-medium text-neutral-600 mb-1 block">
                 {t('phoneLabel')}

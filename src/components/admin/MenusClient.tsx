@@ -452,7 +452,7 @@ export default function MenusClient({
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="menu-name" className="text-neutral-900">
                 {t('nameFr')}
@@ -480,7 +480,7 @@ export default function MenusClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="menu-desc" className="text-neutral-900">
                 {t('descriptionFr')}
@@ -507,7 +507,7 @@ export default function MenusClient({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label htmlFor="menu-venue" className="text-neutral-900">
                 {t('spaceOptional')}

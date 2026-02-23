@@ -75,7 +75,7 @@ export function TestimonialCarousel() {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      <div className="relative min-h-[180px] flex items-center">
+      <div className="relative min-h-[200px] md:min-h-[180px] flex items-center">
         <AnimatePresence mode="wait">
           <motion.div
             key={current}
@@ -115,8 +115,8 @@ export function TestimonialCarousel() {
             type="button"
             onClick={() => setCurrent(i)}
             aria-label={`T\u00e9moignage ${i + 1}`}
-            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-              i === current ? 'bg-[#CCFF00] w-6' : 'bg-white/20 hover:bg-white/40'
+            className={`w-3 h-3 rounded-full transition-all duration-300 ${
+              i === current ? 'bg-[#CCFF00] w-8' : 'bg-white/20 hover:bg-white/40'
             }`}
           />
         ))}
