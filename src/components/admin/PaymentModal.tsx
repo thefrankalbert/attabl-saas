@@ -331,7 +331,7 @@ export default function PaymentModal({
               <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
                 {t('paymentMethod')}
               </p>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={() => setMethod('cash')}

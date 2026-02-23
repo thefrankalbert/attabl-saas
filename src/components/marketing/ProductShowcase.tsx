@@ -34,13 +34,13 @@ export default function ProductShowcase() {
   const prev = () => setActiveIndex((prev) => (prev - 1 + products.length) % products.length);
 
   return (
-    <section className="relative bg-white py-32">
+    <section className="relative bg-white py-16 md:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-16 lg:grid-cols-2 lg:items-center">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
           {/* Left: Product preview */}
           <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100">
             <div className="flex h-full items-center justify-center">
-              <p className="text-6xl font-bold text-neutral-300">
+              <p className="text-3xl font-bold text-neutral-300 sm:text-4xl md:text-6xl">
                 {products[activeIndex].category}
               </p>
             </div>
@@ -51,7 +51,7 @@ export default function ProductShowcase() {
             <p className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
               {products[activeIndex].category}
             </p>
-            <h2 className="mt-4 text-5xl font-semibold leading-tight text-neutral-900">
+            <h2 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl lg:text-5xl">
               {products[activeIndex].title}
             </h2>
             <p className="mt-6 text-xl text-neutral-600">{products[activeIndex].description}</p>

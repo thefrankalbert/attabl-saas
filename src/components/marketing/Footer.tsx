@@ -83,7 +83,7 @@ export default function Footer() {
             />
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-lg bg-[#CCFF00] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#b3e600]"
+              className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#CCFF00] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#b3e600]"
             >
               <Send className="h-4 w-4" />
               {submitted ? 'Merci !' : "S'abonner"}

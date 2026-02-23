@@ -369,7 +369,7 @@ export default function ItemsClient({
           {/* Panel */}
           <div
             className={cn(
-              'fixed right-0 top-0 h-full w-[400px] z-50 bg-white border-l border-neutral-100 rounded-l-xl overflow-y-auto',
+              'fixed right-0 top-0 h-full w-full sm:w-[400px] z-50 bg-white border-l border-neutral-100 rounded-l-xl overflow-y-auto',
               'transition-transform duration-300 ease-out translate-x-0',
             )}
           >
@@ -496,7 +496,7 @@ export default function ItemsClient({
         size="lg"
       >
         <form onSubmit={handleSubmit} className="space-y-5 pt-2 max-h-[70vh] overflow-y-auto">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-neutral-900">{t('nameFr')}</Label>
               <Input
@@ -517,7 +517,7 @@ export default function ItemsClient({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-neutral-900">{t('descriptionFr')}</Label>
               <Textarea
@@ -539,7 +539,7 @@ export default function ItemsClient({
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-neutral-900">{t('price')}</Label>
               <Input
