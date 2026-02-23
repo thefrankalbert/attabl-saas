@@ -255,7 +255,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
                 <Minus size={16} strokeWidth={2.5} />
@@ -268,7 +268,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
-                className={`w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
                 <Plus size={16} strokeWidth={2.5} />

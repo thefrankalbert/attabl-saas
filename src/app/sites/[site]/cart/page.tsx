@@ -176,7 +176,7 @@ export default function CartPage() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-4xl pb-32 md:pb-6">
+      <main className="container mx-auto px-4 py-6 max-w-4xl pb-32 lg:pb-6">
         {/* Erreurs de validation */}
         {(error || validationErrors.length > 0) && (
           <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
@@ -238,7 +238,7 @@ export default function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeFromCart(itemKey)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
                         aria-label="Supprimer"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -248,7 +248,7 @@ export default function CartPage() {
                       <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
                         <button
                           onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors"
                           aria-label="Diminuer la quantité"
                         >
                           <Minus className="w-4 h-4" />
@@ -260,7 +260,7 @@ export default function CartPage() {
 
                         <button
                           onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                          className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-white transition-colors"
+                          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors"
                           aria-label="Augmenter la quantité"
                         >
                           <Plus className="w-4 h-4" />
@@ -360,7 +360,7 @@ export default function CartPage() {
 
       {/* Mobile Sticky Bottom Bar — visible only on phones */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 z-50 md:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
       >
         <div className="flex items-center justify-between mb-2">

@@ -17,12 +17,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   return (
     <div className="min-h-screen w-full flex bg-white">
       {/* Left \u2014 Form on white surface */}
-      <div className="w-full lg:w-[55%] flex items-center justify-center bg-white px-8 sm:px-16 lg:px-20 py-10">
+      <div className="w-full md:w-[55%] flex items-center justify-center bg-white px-4 sm:px-8 md:px-12 lg:px-20 py-10 overflow-y-auto">
         <div className="w-full max-w-[420px]">{children}</div>
       </div>
 
       {/* Right \u2014 Dark panel with testimonials (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[45%] items-center py-6 pr-6 pl-3">
+      <div className="hidden md:flex md:w-[45%] items-center py-6 pr-3 md:pr-6 pl-1.5 md:pl-3">
         <div className="relative flex flex-col items-center justify-center w-full h-full overflow-hidden rounded-[2rem]">
           {/* Background layers */}
           <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
@@ -44,7 +44,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <div className="flex items-center justify-center gap-8">
                 {stats.map((stat) => (
                   <div key={stat.label} className="text-center">
-                    <div className="text-2xl font-bold text-[#CCFF00]">{stat.value}</div>
+                    <div className="text-xl md:text-2xl font-bold text-[#CCFF00]">{stat.value}</div>
                     <div className="text-xs text-white/50 mt-1">{stat.label}</div>
                   </div>
                 ))}

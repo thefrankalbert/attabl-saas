@@ -33,7 +33,7 @@ export default function ClientShortcuts({
   };
 
   return (
-    <div className={`grid grid-cols-4 gap-3 mb-8 ${className}`}>
+    <div className={`grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 ${className}`}>
       <ShortcutButton
         icon={<Utensils className="w-5 h-5" />}
         label={t('dineIn')}

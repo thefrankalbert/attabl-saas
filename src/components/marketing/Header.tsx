@@ -51,7 +51,7 @@ export default function Header() {
           scrolled || menuOpen ? 'bg-white' : 'bg-transparent'
         }`}
       >
-        <div className="flex w-full items-center px-8 py-5">
+        <div className="flex w-full items-center px-4 py-5 sm:px-6 lg:px-8">
           {/* Logo - Far Left */}
           <Link
             href="/"
@@ -63,10 +63,13 @@ export default function Header() {
           </Link>
 
           {/* Navigation - Left with spacing */}
-          <nav className="ml-16 hidden items-center gap-10 md:flex">
+          <nav className="ml-8 hidden items-center gap-6 lg:ml-16 lg:flex lg:gap-10">
             <button
               type="button"
               onMouseEnter={() => setActiveMegaMenu('solutions')}
+              onClick={() =>
+                setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
+              }
               className={`text-base font-semibold transition-colors ${
                 scrolled || menuOpen
                   ? 'text-neutral-900 hover:text-neutral-600'
@@ -78,6 +81,7 @@ export default function Header() {
             <button
               type="button"
               onMouseEnter={() => setActiveMegaMenu('features')}
+              onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
               className={`text-base font-semibold transition-colors ${
                 scrolled || menuOpen
                   ? 'text-neutral-900 hover:text-neutral-600'
@@ -109,8 +113,8 @@ export default function Header() {
           </nav>
 
           {/* Actions - Right */}
-          <div className="ml-auto flex items-center gap-6">
-            <div className="hidden items-center gap-6 md:flex">
+          <div className="ml-auto flex items-center gap-3 lg:gap-6">
+            <div className="hidden items-center gap-3 lg:flex lg:gap-6">
               <Link
                 href="/login"
                 className={`text-base font-semibold transition-colors ${
@@ -133,7 +137,7 @@ export default function Header() {
               </Link>
               <button
                 type="button"
-                className={`transition-colors ${
+                className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
                   scrolled || menuOpen
                     ? 'text-neutral-900 hover:text-neutral-600'
                     : 'text-white hover:text-white/80'
@@ -143,7 +147,7 @@ export default function Header() {
               </button>
               <button
                 type="button"
-                className={`transition-colors ${
+                className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
                   scrolled || menuOpen
                     ? 'text-neutral-900 hover:text-neutral-600'
                     : 'text-white hover:text-white/80'
@@ -155,7 +159,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors md:hidden ${
+              className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors lg:hidden ${
                 scrolled || menuOpen
                   ? 'text-neutral-700 hover:bg-neutral-50'
                   : 'text-white hover:bg-white/10'
@@ -173,7 +177,7 @@ export default function Header() {
           onMouseLeave={() => setActiveMegaMenu(null)}
           className="fixed left-0 right-0 top-0 z-40 bg-white pt-[77px]"
         >
-          <div className="px-8 py-12">
+          <div className="px-4 py-12 sm:px-6 lg:px-8">
             {activeMegaMenu === 'solutions' && (
               <div className="flex flex-col gap-6">
                 {segments.map((seg) => (
@@ -226,7 +230,7 @@ export default function Header() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-white md:hidden"
+            className="fixed inset-0 z-40 bg-white lg:hidden"
           >
             <div className="flex h-full flex-col overflow-y-auto px-4 py-20 sm:px-6">
               <div className="space-y-1">

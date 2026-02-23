@@ -273,7 +273,7 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="h-screen bg-white flex items-center justify-center">
+      <div className="h-dvh bg-white flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
           <div className="h-12 w-12 bg-[#CCFF00] rounded-xl" />
           <p className="text-neutral-500">...</p>
@@ -283,11 +283,11 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="h-screen bg-white flex overflow-hidden">
+    <div className="h-dvh bg-white flex overflow-hidden">
       {/* Sidebar — Desktop (lg+): w-72, icons + titles + descriptions */}
       {/* Sidebar — Tablet (md): w-56, icons + titles only */}
       {currentStep > 0 && (
-        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-neutral-50 border-r border-neutral-100">
+        <aside className="hidden lg:flex lg:w-72 shrink-0 flex-col bg-neutral-50 border-r border-neutral-100">
           {/* Logo */}
           <div className="p-6 lg:p-8">
             <Link href="/" className="flex items-center gap-3">
@@ -380,7 +380,7 @@ export default function OnboardingPage() {
       <div className="flex-1 flex flex-col min-w-0">
         {/* Mobile Header (< md) — horizontal step bar */}
         {currentStep > 0 && (
-          <div className="md:hidden shrink-0">
+          <div className="lg:hidden shrink-0">
             {/* Logo row */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
               <Link href="/" className="flex items-center gap-2">
@@ -449,7 +449,7 @@ export default function OnboardingPage() {
           }}
           onTouchEnd={(e) => {
             const diff = touchStartX.current - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 50) {
+            if (Math.abs(diff) > 80) {
               if (diff > 0 && currentStep > 0 && currentStep < 5) nextStep();
               if (diff < 0 && currentStep > 1) prevStep();
             }
@@ -511,7 +511,7 @@ export default function OnboardingPage() {
 
         {/* Footer Navigation — hidden on step 0 (welcome screen) */}
         {currentStep > 0 && (
-          <div className="border-t border-neutral-100 p-4 md:p-6 shrink-0">
+          <div className="border-t border-neutral-100 p-4 md:p-6 shrink-0 pb-[env(safe-area-inset-bottom)]">
             <div className="max-w-xl mx-auto flex items-center justify-between">
               {/* Back button or auto-save status on step 1 */}
               {currentStep === 1 ? (

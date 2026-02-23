@@ -27,12 +27,14 @@ const industries = [
 
 export default function IndustrySection() {
   return (
-    <section className="relative bg-black py-32 text-white">
+    <section className="relative bg-black py-16 text-white md:py-24 lg:py-32">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <p className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
           CONÇU POUR TOUS LES SECTEURS
         </p>
-        <h2 className="mt-4 text-5xl font-semibold leading-tight">Développez votre activité</h2>
+        <h2 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
+          Développez votre activité
+        </h2>
 
         <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {industries.map((industry, idx) => (

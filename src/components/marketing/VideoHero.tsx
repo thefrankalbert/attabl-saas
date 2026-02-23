@@ -6,7 +6,7 @@ import LogoMarquee from './LogoMarquee';
 
 export default function VideoHero() {
   return (
-    <section className="relative h-screen w-full overflow-hidden">
+    <section className="relative min-h-screen w-full overflow-hidden h-dvh">
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
         <video
@@ -28,10 +28,12 @@ export default function VideoHero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="font-[family-name:var(--font-dm-serif-display)] text-5xl font-light leading-[1.1] text-white sm:text-6xl lg:text-7xl"
+          className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-[1.1] text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl"
         >
           Petit comptoir ou grande enseigne.
-          <br />
+          <span className="hidden sm:inline">
+            <br />
+          </span>{' '}
           Marquez votre territoire.
         </motion.h1>
 

@@ -154,19 +154,19 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="h-[calc(100vh-8rem)] grid grid-rows-[auto_1fr_1fr] gap-3 overflow-hidden">
+      <div className="space-y-3 pb-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <StatsCardSkeleton key={i} />
           ))}
         </div>
-        <div className="grid grid-cols-3 gap-3 min-h-0">
-          <div className="col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse" />
-          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+          <div className="h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
         </div>
-        <div className="grid grid-cols-3 gap-3 min-h-0">
-          <div className="col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse" />
-          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+          <div className="lg:col-span-2 h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+          <div className="h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
         </div>
       </div>
     );
@@ -180,7 +180,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   });
 
   return (
-    <div className="h-[calc(100vh-8rem)] grid grid-rows-[auto_1fr_1fr] gap-3 overflow-hidden">
+    <div className="space-y-3 pb-6">
       {/* Row 1 — KPI Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatsCard
@@ -214,9 +214,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Row 2 — Revenue Chart + Quick Actions */}
-      <div className="grid grid-cols-3 gap-3 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Revenue Chart (col-span-2) */}
-        <div className="col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="lg:col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-neutral-600" />
@@ -265,7 +265,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* Quick Actions (col-span-1) */}
-        <div className="min-h-0 overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="px-4 py-3 border-b border-neutral-100">
             <h2 className="text-base font-bold text-neutral-900">{t('quickActions')}</h2>
           </div>
@@ -323,9 +323,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Row 3 — Recent Orders + Stock Alerts */}
-      <div className="grid grid-cols-3 gap-3 min-h-0">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {/* Recent Orders (col-span-2) */}
-        <div className="col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="lg:col-span-2 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
             <div className="flex items-center gap-3">
               <div>
@@ -440,7 +440,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* Stock Alerts (col-span-1) */}
-        <div className="min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-neutral-600" />
