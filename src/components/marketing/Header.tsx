@@ -51,6 +51,16 @@ export default function Header() {
           scrolled || menuOpen ? 'bg-white' : 'bg-transparent'
         }`}
       >
+        {/* Subtle dark gradient visible only on transparent (hero) state */}
+        {!scrolled && !menuOpen && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 h-28"
+            style={{
+              background:
+                'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+            }}
+          />
+        )}
         <div className="flex w-full items-center px-4 py-5 sm:px-6 lg:px-8">
           {/* Logo - Far Left */}
           <Link

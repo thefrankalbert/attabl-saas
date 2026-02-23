@@ -210,12 +210,17 @@ export default function OnboardingPage() {
     }
   };
 
+  const scrollToTop = () => {
+    document.getElementById('onboarding-content')?.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
   const nextStep = async () => {
     setError(null);
     if (currentStep > 0) await saveStep();
     setDirection('forward');
     if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
+      scrollToTop();
     }
   };
 
@@ -224,6 +229,7 @@ export default function OnboardingPage() {
     setDirection('backward');
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
+      scrollToTop();
     }
   };
 
@@ -312,7 +318,7 @@ export default function OnboardingPage() {
                     {/* Connecting line */}
                     {index < STEP_KEYS.length - 1 && (
                       <div
-                        className={`absolute left-[19px] top-10 bottom-0 w-0.5 ${
+                        className={`absolute left-[26px] top-[42px] h-[24px] w-[2px] -translate-x-1/2 ${
                           isCompleted ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                         }`}
                       />
@@ -443,6 +449,7 @@ export default function OnboardingPage() {
 
         {/* Step Content */}
         <div
+          id="onboarding-content"
           className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
@@ -455,7 +462,7 @@ export default function OnboardingPage() {
             }
           }}
         >
-          <div className="max-w-xl mx-auto">
+          <div className="w-full max-w-5xl mx-auto">
             {/* Step badge — hidden on step 0 */}
             {currentStep > 0 && (
               <div className="mb-4">
@@ -496,7 +503,7 @@ export default function OnboardingPage() {
         {/* Error Banner */}
         {error && (
           <div className="mx-4 md:mx-6 lg:mx-12 mb-2 shrink-0">
-            <div className="max-w-xl mx-auto p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+            <div className="w-full max-w-5xl mx-auto p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
               <span>{error}</span>
               <button
                 onClick={() => setError(null)}
@@ -512,7 +519,7 @@ export default function OnboardingPage() {
         {/* Footer Navigation — hidden on step 0 (welcome screen) */}
         {currentStep > 0 && (
           <div className="border-t border-neutral-100 p-4 md:p-6 shrink-0 pb-[env(safe-area-inset-bottom)]">
-            <div className="max-w-xl mx-auto flex items-center justify-between">
+            <div className="w-full max-w-5xl mx-auto flex items-center justify-between">
               {/* Back button or auto-save status on step 1 */}
               {currentStep === 1 ? (
                 <span className="text-xs text-neutral-400 min-w-[80px]">

@@ -25,6 +25,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
+import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
 
 // ─── Currency formatter (West African CFA) ──────────────────
 function formatCFA(amount: number): string {
@@ -175,7 +176,7 @@ export default function TenantsPage() {
           <div className="rounded-2xl bg-black p-4">
             <Building2 className="h-8 w-8 text-[#CCFF00]" />
           </div>
-          <Loader2 className="h-6 w-6 animate-spin text-neutral-400" />
+          <LoadingIndicator type="dot-circle" size="md" className="text-neutral-400" />
         </div>
       </div>
     );
