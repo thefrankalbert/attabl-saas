@@ -89,8 +89,8 @@ export function DataTable<TData>({
 
   return (
     <div className="border border-neutral-100 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto scrollbar-hide">
+        <table className="w-full text-sm min-w-[600px]">
           {/* Header */}
           <thead className="bg-neutral-50">
             {table.getHeaderGroups().map((headerGroup) => (
@@ -154,7 +154,7 @@ export function DataTable<TData>({
 
       {/* Pagination footer — only show if more than one page */}
       {pageCount > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-neutral-100">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-neutral-100">
           <p className="text-xs text-neutral-500">
             Page {currentPage} / {pageCount}
           </p>
@@ -164,7 +164,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -173,7 +173,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="h-8 w-8 p-0"
+              className="h-9 w-9 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

@@ -1,53 +1,19 @@
 'use client';
 
-import Link from 'next/link';
+import { useState, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  LayoutDashboard,
-  ShoppingBag,
-  UtensilsCrossed,
-  BookOpen,
-  Settings,
-  ChevronRight,
-  ChevronDown,
-  LogOut,
-  ChefHat,
-  Megaphone,
-  Tag,
-  Laptop,
-  ClipboardList,
-  BarChart3,
-  Menu,
-  X,
-  Package,
-  BookOpenCheck,
-  Lightbulb,
-  History,
-  Truck,
-  ChevronsLeft,
-  ChevronsRight,
-  UserCheck,
-} from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  getRolePermissions,
-  getEffectivePermissions,
-  type NavItemPermission,
-} from '@/lib/permissions';
-import type { AdminRole, AdminUser } from '@/types/admin.types';
-import type {
-  PermissionCode,
-  RolePermissions as NewRolePermissions,
-} from '@/types/permission.types';
+import { getRolePermissions } from '@/lib/permissions';
+import { getEffectivePermissions } from '@/lib/permissions';
 import { useSidebar } from '@/contexts/SidebarContext';
-import { createClient } from '@/lib/supabase/client';
-
-// ─── Storage Keys ───────────────────────────────────────
-
-const EXPANDED_GROUPS_KEY = 'attabl-sidebar-expanded';
+import { useRolePermissions } from '@/hooks/queries/useRolePermissions';
+import { SidebarHeader } from './sidebar/SidebarHeader';
+import { SidebarNav } from './sidebar/SidebarNav';
+import { SidebarFooter } from './sidebar/SidebarFooter';
+import type { AdminRole, AdminUser } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -68,36 +34,21 @@ interface AdminSidebarProps {
   className?: string;
 }
 
-type NavItem = {
-  href: string;
-  icon: typeof LayoutDashboard;
-  label: string;
-  highlight?: boolean;
-  requiredPermission?: NavItemPermission;
-  permissionCode?: PermissionCode;
-  ownerOnly?: boolean;
-};
-
-type NavGroup = {
-  id: string;
-  titleKey: string;
-  icon: typeof LayoutDashboard;
-  items: NavItem[];
-  directLink?: string;
-  highlight?: boolean;
-  requiredPermission?: NavItemPermission;
-  permissionCode?: PermissionCode;
-};
-
 // ─── Component ──────────────────────────────────────────
 
 export function AdminSidebar({ tenant, adminUser, role, className }: AdminSidebarProps) {
   const pathname = usePathname();
   const [openForPath, setOpenForPath] = useState<string | null>(null);
-  const [roleOverrides, setRoleOverrides] = useState<NewRolePermissions | null>(null);
   const t = useTranslations('sidebar');
-  const tc = useTranslations('common');
   const { isCollapsed, toggleCollapsed } = useSidebar();
+
+  // Mobile sidebar: open only if toggled for current pathname
+  const isOpen = openForPath === pathname;
+  const toggleSidebar = () => setOpenForPath(isOpen ? null : pathname);
+
+  const basePath = `/sites/${tenant.slug}/admin`;
+
+  // ─── Role labels ──────────────────────────────────────
 
   const roleLabels: Record<string, string> = {
     owner: t('roleOwner'),
@@ -108,31 +59,15 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
     cashier: t('roleStaff'),
   };
 
-  // Mobile sidebar: open only if toggled for current pathname
-  const isOpen = openForPath === pathname;
-  const toggleSidebar = () => setOpenForPath(isOpen ? null : pathname);
+  const roleLabel = adminUser ? roleLabels[adminUser.role] || adminUser.role : 'Admin';
+
+  // ─── Legacy permissions ───────────────────────────────
 
   const permissions = role ? getRolePermissions(role) : null;
 
-  // ─── Fetch role overrides for 3-level permission system ──
-  const hasFetchedOverrides = useRef(false);
-  useEffect(() => {
-    if (!tenant.id || !role || role === 'owner' || hasFetchedOverrides.current) return;
-    hasFetchedOverrides.current = true;
+  // ─── 3-level permission overrides ─────────────────────
 
-    const supabase = createClient();
-    supabase
-      .from('role_permissions')
-      .select('*')
-      .eq('tenant_id', tenant.id)
-      .eq('role', role)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          setRoleOverrides(data as NewRolePermissions);
-        }
-      });
-  }, [tenant.id, role]);
+  const roleOverrides = useRolePermissions(tenant.id, role);
 
   // Build effective permission map (new 3-level system)
   const effectivePerms = useMemo(() => {
@@ -150,292 +85,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
     return getEffectivePermissions(fakeAdminUser, roleOverrides);
   }, [role, adminUser, tenant.id, roleOverrides]);
 
-  const basePath = `/sites/${tenant.slug}/admin`;
-
-  // ─── Navigation Groups (new 7-group structure) ─────────
-
-  const NAV_GROUPS: NavGroup[] = [
-    {
-      id: 'dashboard',
-      titleKey: 'navDashboard',
-      icon: LayoutDashboard,
-      directLink: basePath,
-      items: [],
-    },
-    {
-      id: 'orders',
-      titleKey: 'navOrders',
-      icon: ShoppingBag,
-      directLink: `${basePath}/orders`,
-      items: [],
-      permissionCode: 'orders.view',
-    },
-    {
-      id: 'organization',
-      titleKey: 'groupOrganization',
-      icon: ClipboardList,
-      items: [
-        {
-          href: `${basePath}/menus`,
-          icon: ClipboardList,
-          label: t('navMenus'),
-          requiredPermission: 'canManageMenus',
-          permissionCode: 'menu.view',
-        },
-        {
-          href: `${basePath}/categories`,
-          icon: UtensilsCrossed,
-          label: t('navCategories'),
-          requiredPermission: 'canManageMenus',
-          permissionCode: 'menu.view',
-        },
-        {
-          href: `${basePath}/items`,
-          icon: BookOpen,
-          label: t('navDishes'),
-          requiredPermission: 'canManageMenus',
-          permissionCode: 'menu.view',
-        },
-        {
-          href: `${basePath}/inventory`,
-          icon: Package,
-          label: t('navInventory'),
-          requiredPermission: 'canViewStocks',
-          permissionCode: 'inventory.view',
-        },
-        {
-          href: `${basePath}/recipes`,
-          icon: BookOpenCheck,
-          label: t('navRecipes'),
-          requiredPermission: 'canManageMenus',
-          permissionCode: 'menu.view',
-        },
-        {
-          href: `${basePath}/suppliers`,
-          icon: Truck,
-          label: t('navSuppliers'),
-          requiredPermission: 'canManageStocks',
-          permissionCode: 'inventory.edit',
-        },
-      ],
-    },
-    {
-      id: 'marketing',
-      titleKey: 'groupMarketing',
-      icon: Megaphone,
-      items: [
-        {
-          href: `${basePath}/announcements`,
-          icon: Megaphone,
-          label: t('navAnnouncements'),
-          requiredPermission: 'canManageSettings',
-          permissionCode: 'settings.edit',
-        },
-        {
-          href: `${basePath}/coupons`,
-          icon: Tag,
-          label: t('navCoupons'),
-          requiredPermission: 'canManageSettings',
-          permissionCode: 'settings.edit',
-        },
-        {
-          href: `${basePath}/suggestions`,
-          icon: Lightbulb,
-          label: t('navSuggestions'),
-          requiredPermission: 'canManageMenus',
-          permissionCode: 'menu.edit',
-        },
-      ],
-    },
-    {
-      id: 'pos',
-      titleKey: 'navPos',
-      icon: Laptop,
-      directLink: `${basePath}/pos`,
-      highlight: true,
-      items: [],
-      requiredPermission: 'canConfigurePOS',
-      permissionCode: 'pos.use',
-    },
-    {
-      id: 'kitchen',
-      titleKey: 'navKitchen',
-      icon: ChefHat,
-      directLink: `${basePath}/kitchen`,
-      highlight: true,
-      items: [],
-      requiredPermission: 'canConfigureKitchen',
-      permissionCode: 'orders.manage',
-    },
-    {
-      id: 'service',
-      titleKey: 'navService',
-      icon: UserCheck,
-      directLink: `${basePath}/service`,
-      items: [],
-      requiredPermission: 'canManageUsers',
-      permissionCode: 'team.view',
-    },
-    {
-      id: 'analyse',
-      titleKey: 'groupAnalyse',
-      icon: BarChart3,
-      items: [
-        {
-          href: `${basePath}/reports`,
-          icon: BarChart3,
-          label: t('navReports'),
-          requiredPermission: 'canViewAllStats',
-          permissionCode: 'reports.view',
-        },
-        {
-          href: `${basePath}/stock-history`,
-          icon: History,
-          label: t('navStockHistory'),
-          requiredPermission: 'canViewStocks',
-          permissionCode: 'inventory.view',
-        },
-      ],
-    },
-  ];
-
-  // ─── Filter by permissions ─────────────────────────────
-
-  const checkPermission = useCallback(
-    (legacyPerm?: NavItemPermission, newPerm?: PermissionCode): boolean => {
-      // If we have the new 3-level permission system, prefer it
-      if (newPerm && effectivePerms) {
-        return effectivePerms[newPerm] ?? true;
-      }
-      // Fallback to legacy role-based permissions
-      if (legacyPerm && permissions) {
-        const val = permissions[legacyPerm];
-        return typeof val === 'boolean' ? val : !!val;
-      }
-      return true;
-    },
-    [effectivePerms, permissions],
-  );
-
-  const filteredNavGroups = NAV_GROUPS.map((group) => {
-    // Check group-level permission (for direct-link groups like POS/Kitchen)
-    if (group.requiredPermission || group.permissionCode) {
-      if (!checkPermission(group.requiredPermission, group.permissionCode)) return null;
-    }
-
-    // Filter sub-items
-    const filteredItems = group.items.filter((item) => {
-      if (item.ownerOnly) return role === 'owner';
-      return checkPermission(item.requiredPermission, item.permissionCode);
-    });
-
-    // If group has sub-items and all were filtered out, hide the group
-    if (group.items.length > 0 && filteredItems.length === 0) return null;
-
-    return { ...group, items: filteredItems };
-  }).filter((g): g is NonNullable<typeof g> => g !== null);
-
-  // ─── Expanded groups state ─────────────────────────────
-
-  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
-
-  // Load saved expanded state from localStorage
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(EXPANDED_GROUPS_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, boolean>;
-        setExpandedGroups(parsed);
-      }
-    } catch {
-      // ignore
-    }
-  }, []);
-
-  // Auto-expand parent group if a child is active
-  useEffect(() => {
-    for (const group of filteredNavGroups) {
-      if (group.items.length > 0) {
-        const hasActiveChild = group.items.some((item) => pathname === item.href);
-        if (hasActiveChild && !expandedGroups[group.id]) {
-          setExpandedGroups((prev) => {
-            const next = { ...prev, [group.id]: true };
-            try {
-              localStorage.setItem(EXPANDED_GROUPS_KEY, JSON.stringify(next));
-            } catch {
-              // ignore
-            }
-            return next;
-          });
-        }
-      }
-    }
-    // Only re-run when pathname changes
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname]);
-
-  const toggleGroup = useCallback((groupId: string) => {
-    setExpandedGroups((prev) => {
-      const next = { ...prev, [groupId]: !prev[groupId] };
-      try {
-        localStorage.setItem(EXPANDED_GROUPS_KEY, JSON.stringify(next));
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  }, []);
-
-  // ─── Helper: check if a group or its children are active ─
-
-  const isGroupActive = useCallback(
-    (group: NavGroup): boolean => {
-      if (group.directLink) {
-        // For dashboard, exact match; for others, startsWith
-        if (group.id === 'dashboard') return pathname === group.directLink;
-        return pathname === group.directLink || pathname.startsWith(group.directLink + '/');
-      }
-      return group.items.some(
-        (item) => pathname === item.href || pathname.startsWith(item.href + '/'),
-      );
-    },
-    [pathname],
-  );
-
-  // ─── Tooltip for collapsed mode ────────────────────────
-
-  const Tooltip = ({
-    label,
-    children,
-    show,
-  }: {
-    label: string;
-    children: React.ReactNode;
-    show: boolean;
-  }) => {
-    const [visible, setVisible] = useState(false);
-    const ref = useRef<HTMLDivElement>(null);
-
-    if (!show) return <>{children}</>;
-
-    return (
-      <div
-        ref={ref}
-        className="relative"
-        onMouseEnter={() => setVisible(true)}
-        onMouseLeave={() => setVisible(false)}
-      >
-        {children}
-        {visible && (
-          <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50 px-2.5 py-1.5 bg-neutral-900 text-white text-xs font-medium rounded-md whitespace-nowrap pointer-events-none">
-            {label}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // ─── Render ─────────────────────────────────────────────
+  // ─── Render ───────────────────────────────────────────
 
   return (
     <>
@@ -466,322 +116,29 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           className,
         )}
       >
-        {/* Header */}
-        <div
-          className={cn(
-            'border-b border-neutral-100 flex-shrink-0 flex items-center',
-            isCollapsed ? 'p-3 justify-center' : 'p-6 justify-between',
-          )}
-        >
-          <Link
-            href={basePath}
-            className={cn('flex items-center group', isCollapsed ? 'justify-center' : 'gap-3')}
-          >
-            {tenant.logo_url ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={tenant.logo_url}
-                alt={tenant.name}
-                className={cn('rounded-lg object-contain', isCollapsed ? 'w-8 h-8' : 'w-10 h-10')}
-              />
-            ) : (
-              <div
-                className={cn(
-                  'rounded-lg flex items-center justify-center text-white font-bold',
-                  isCollapsed ? 'w-8 h-8 text-xs' : 'w-10 h-10',
-                )}
-                style={{ backgroundColor: tenant.primary_color || '#374151' }}
-              >
-                {tenant.name.charAt(0).toUpperCase()}
-              </div>
-            )}
-            {!isCollapsed && (
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-neutral-900 truncate uppercase tracking-tight">
-                  {tenant.name}
-                </h2>
-                <p className="text-xs text-neutral-500">
-                  {adminUser ? roleLabels[adminUser.role] || adminUser.role : 'Admin'}
-                </p>
-              </div>
-            )}
-          </Link>
-        </div>
+        <SidebarHeader
+          basePath={basePath}
+          tenant={tenant}
+          roleLabel={roleLabel}
+          isCollapsed={isCollapsed}
+        />
 
-        {/* Navigation */}
-        <nav
-          className={cn(
-            'flex-1 min-h-0 overflow-y-auto py-4',
-            isCollapsed ? 'px-1.5 space-y-1' : 'px-3 space-y-1',
-          )}
-        >
-          {filteredNavGroups.map((group) => {
-            const active = isGroupActive(group);
-            const isExpanded = expandedGroups[group.id] ?? false;
-            const isDirectLink = !!group.directLink;
+        <SidebarNav
+          basePath={basePath}
+          isCollapsed={isCollapsed}
+          primaryColor={tenant.primary_color}
+          role={role}
+          permissions={permissions}
+          effectivePerms={effectivePerms}
+          onToggleCollapsed={toggleCollapsed}
+        />
 
-            // ─── Direct link item (Dashboard, Orders, POS, Kitchen) ─
-            if (isDirectLink) {
-              return (
-                <Tooltip key={group.id} label={t(group.titleKey)} show={isCollapsed}>
-                  <Link
-                    href={group.directLink!}
-                    className={cn(
-                      'group flex items-center rounded-lg transition-all duration-200 relative',
-                      isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3 py-2.5 space-x-3',
-                      active
-                        ? 'bg-neutral-50 text-neutral-900 font-semibold'
-                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
-                      group.highlight && !active && 'bg-blue-50/50 border border-blue-100/50',
-                    )}
-                  >
-                    {active && (
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                        style={{
-                          backgroundColor: tenant.primary_color || '#000000',
-                        }}
-                      />
-                    )}
-                    <group.icon
-                      className={cn(
-                        'w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-105',
-                        active
-                          ? ''
-                          : group.highlight
-                            ? 'text-blue-600'
-                            : 'text-neutral-400 group-hover:text-neutral-600',
-                      )}
-                      style={active ? { color: tenant.primary_color || '#000000' } : undefined}
-                    />
-                    {!isCollapsed && (
-                      <>
-                        <span
-                          className={cn(
-                            'text-sm tracking-tight leading-none',
-                            group.highlight && !active && 'text-blue-900 font-bold',
-                          )}
-                        >
-                          {t(group.titleKey)}
-                        </span>
-                        {active && <ChevronRight className="h-4 w-4 ml-auto text-neutral-400" />}
-                      </>
-                    )}
-                  </Link>
-                </Tooltip>
-              );
-            }
-
-            // ─── Collapsible group (Organization, Marketing, Settings) ─
-            return (
-              <div key={group.id}>
-                <Tooltip key={group.id} label={t(group.titleKey)} show={isCollapsed}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isCollapsed) {
-                        // In collapsed mode, expanding the sidebar first might be better,
-                        // but the spec says just show tooltip. Let's expand the group
-                        // and also un-collapse the sidebar so user can see children.
-                        toggleCollapsed();
-                        if (!isExpanded) toggleGroup(group.id);
-                      } else {
-                        toggleGroup(group.id);
-                      }
-                    }}
-                    className={cn(
-                      'w-full group flex items-center rounded-lg transition-all duration-200 relative',
-                      isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3 py-2.5',
-                      active && !isExpanded
-                        ? 'bg-neutral-50 text-neutral-900 font-semibold'
-                        : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
-                    )}
-                  >
-                    {active && !isExpanded && (
-                      <div
-                        className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                        style={{
-                          backgroundColor: tenant.primary_color || '#000000',
-                        }}
-                      />
-                    )}
-                    <group.icon
-                      className={cn(
-                        'w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-105',
-                        active ? '' : 'text-neutral-400 group-hover:text-neutral-600',
-                      )}
-                      style={active ? { color: tenant.primary_color || '#000000' } : undefined}
-                    />
-                    {!isCollapsed && (
-                      <>
-                        <span className="text-sm tracking-tight leading-none ml-3">
-                          {t(group.titleKey)}
-                        </span>
-                        <ChevronDown
-                          className={cn(
-                            'h-4 w-4 ml-auto text-neutral-400 transition-transform duration-200',
-                            isExpanded && 'rotate-180',
-                          )}
-                        />
-                      </>
-                    )}
-                  </button>
-                </Tooltip>
-
-                {/* Collapsible sub-items */}
-                {!isCollapsed && (
-                  <div
-                    className={cn(
-                      'overflow-hidden transition-[grid-template-rows] duration-300 ease-in-out',
-                      isExpanded ? 'grid grid-rows-[1fr]' : 'grid grid-rows-[0fr]',
-                    )}
-                  >
-                    <div className="min-h-0">
-                      <div className="pl-4 mt-1 space-y-0.5">
-                        {group.items.map((item) => {
-                          const isItemActive =
-                            pathname === item.href || pathname.startsWith(item.href + '/');
-
-                          return (
-                            <Link
-                              key={item.href}
-                              href={item.href}
-                              className={cn(
-                                'group flex items-center px-3 py-2 rounded-lg transition-all duration-200 relative space-x-3',
-                                isItemActive
-                                  ? 'bg-neutral-50 text-neutral-900 font-semibold'
-                                  : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
-                              )}
-                            >
-                              {isItemActive && (
-                                <div
-                                  className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-                                  style={{
-                                    backgroundColor: tenant.primary_color || '#000000',
-                                  }}
-                                />
-                              )}
-                              <item.icon
-                                className={cn(
-                                  'w-4 h-4 flex-shrink-0 transition-transform group-hover:scale-105',
-                                  isItemActive
-                                    ? ''
-                                    : 'text-neutral-400 group-hover:text-neutral-600',
-                                )}
-                                style={
-                                  isItemActive
-                                    ? {
-                                        color: tenant.primary_color || '#000000',
-                                      }
-                                    : undefined
-                                }
-                              />
-                              <span className="text-sm tracking-tight leading-none">
-                                {item.label}
-                              </span>
-                              {isItemActive && (
-                                <ChevronRight className="h-3.5 w-3.5 ml-auto text-neutral-400" />
-                              )}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </nav>
-
-        {/* Footer */}
-        <div className="border-t border-neutral-100 bg-white flex-shrink-0">
-          {/* User info + locale (hidden in collapsed mode) */}
-          {!isCollapsed && (
-            <div className="p-4 pb-0">
-              {adminUser && (
-                <div className="flex items-center gap-3 px-3 py-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center border border-neutral-200">
-                    <span className="text-xs font-bold text-neutral-600">
-                      {(adminUser.name || 'A').charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 truncate">
-                      {adminUser.name || 'Admin'}
-                    </p>
-                  </div>
-                </div>
-              )}
-              <div className="flex items-center gap-2">
-                <form action="/api/auth/signout" method="post" className="flex-1">
-                  <button
-                    type="submit"
-                    className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-red-600 hover:bg-red-50 transition-colors text-sm font-medium group"
-                  >
-                    <LogOut className="h-4 w-4 group-hover:text-red-700" />
-                    {tc('logout')}
-                  </button>
-                </form>
-                <Link
-                  href={`${basePath}/settings`}
-                  className="flex items-center justify-center px-2.5 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
-                  aria-label={t('navGeneral')}
-                >
-                  <Settings className="h-4 w-4" />
-                </Link>
-              </div>
-            </div>
-          )}
-
-          {/* Collapse toggle */}
-          <div className={cn('border-t border-neutral-100', isCollapsed ? 'p-2' : 'p-3')}>
-            <Tooltip label={isCollapsed ? t('expand') : t('collapse')} show={isCollapsed}>
-              <button
-                type="button"
-                onClick={toggleCollapsed}
-                className={cn(
-                  'hidden lg:flex items-center rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors text-sm font-medium w-full',
-                  isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
-                )}
-              >
-                {isCollapsed ? (
-                  <ChevronsRight className="h-4 w-4" />
-                ) : (
-                  <>
-                    <ChevronsLeft className="h-4 w-4" />
-                    <span>{t('collapse')}</span>
-                  </>
-                )}
-              </button>
-            </Tooltip>
-
-            {/* Collapsed mode: show settings + sign-out icons */}
-            {isCollapsed && (
-              <>
-                <Tooltip label={t('navGeneral')} show={isCollapsed}>
-                  <Link
-                    href={`${basePath}/settings`}
-                    className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
-                    aria-label={t('navGeneral')}
-                  >
-                    <Settings className="h-4 w-4" />
-                  </Link>
-                </Tooltip>
-                <Tooltip label={tc('logout')} show={isCollapsed}>
-                  <form action="/api/auth/signout" method="post">
-                    <button
-                      type="submit"
-                      className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors group"
-                    >
-                      <LogOut className="h-4 w-4 group-hover:text-red-700" />
-                    </button>
-                  </form>
-                </Tooltip>
-              </>
-            )}
-          </div>
-        </div>
+        <SidebarFooter
+          basePath={basePath}
+          isCollapsed={isCollapsed}
+          adminUser={adminUser}
+          onToggleCollapsed={toggleCollapsed}
+        />
       </aside>
     </>
   );

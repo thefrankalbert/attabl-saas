@@ -254,24 +254,24 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl flex flex-col h-full min-h-0">
       <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
-        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-neutral-200 bg-transparent p-0">
+        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-neutral-200 bg-transparent p-0">
           {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
             <TabsTrigger
               key={key}
               value={key}
-              className="flex items-center gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-4 py-3 text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-700 data-[state=active]:border-[#CCFF00] data-[state=active]:bg-transparent data-[state=active]:text-neutral-900 data-[state=active]:font-semibold data-[state=active]:shadow-none"
+              className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-2.5 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-700 data-[state=active]:border-[#CCFF00] data-[state=active]:bg-transparent data-[state=active]:text-neutral-900 data-[state=active]:font-semibold data-[state=active]:shadow-none"
             >
-              <Icon className="h-4 w-4" />
-              {t(labelKey)}
+              <Icon className="h-4 w-4 flex-shrink-0" />
+              <span className="hidden sm:inline">{t(labelKey)}</span>
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <div className="flex-1 mt-6">
+        <div className="flex-1 mt-4 sm:mt-6">
           {/* Identity tab */}
           <TabsContent value="identity" className="mt-0">
-            <div className="space-y-6">
-              <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="space-y-4 sm:space-y-6">
+              <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Store className="h-5 w-5 text-blue-600" />
@@ -284,11 +284,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="name">{t('restaurantName')}</Label>
-                      <Input id="name" {...register('name')} />
+                      <Input id="name" {...register('name')} className="min-h-[44px]" />
                       {errors.name && <p className="text-xs text-red-500">{errors.name.message}</p>}
                     </div>
 
@@ -298,14 +298,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                         id="description"
                         {...register('description')}
                         placeholder={t('descriptionPlaceholder')}
-                        className="resize-none h-24"
+                        className="resize-none h-24 min-h-[44px]"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <Label>{t('logo')}</Label>
-                    <div className="flex items-center gap-6">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                       <div className="relative w-32 h-32 rounded-xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center overflow-hidden group hover:border-neutral-300 transition-colors">
                         {logoPreview ? (
                           <Image
@@ -348,16 +348,16 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               </div>
 
               {/* Slug (read-only display) */}
-              <div className="bg-white rounded-xl border border-neutral-100 p-6">
+              <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
                 <div className="space-y-2">
                   <Label htmlFor="slug">{t('slug') ?? 'Slug'}</Label>
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                     <span className="text-sm text-neutral-400">https://</span>
                     <Input
                       id="slug"
                       value={tenant.slug}
                       disabled
-                      className="max-w-xs font-mono text-neutral-500"
+                      className="max-w-xs font-mono text-neutral-500 min-h-[44px]"
                     />
                     <span className="text-sm text-neutral-400">.attabl.com</span>
                   </div>
@@ -371,7 +371,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Branding tab */}
           <TabsContent value="branding" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-purple-50 rounded-lg">
                   <Palette className="h-5 w-5 text-purple-600" />
@@ -382,19 +382,19 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="primaryColor">{t('primaryColor')}</Label>
                     <div className="flex gap-3">
                       <div
-                        className="w-10 h-10 rounded-lg border border-neutral-200"
+                        className="w-10 h-10 rounded-lg border border-neutral-200 flex-shrink-0"
                         style={{ backgroundColor: watchedPrimaryColor }}
                       />
                       <Input
                         id="primaryColor"
                         {...register('primaryColor')}
-                        className="font-mono"
+                        className="font-mono min-h-[44px]"
                       />
                     </div>
                     <p className="text-xs text-neutral-500">{t('usedForButtonsAndTitles')}</p>
@@ -406,10 +406,13 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                       <Input
                         id="secondaryColor"
                         type="color"
-                        className="w-10 h-10 p-1 rounded-lg cursor-pointer"
+                        className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0"
                         {...register('secondaryColor')}
                       />
-                      <Input {...register('secondaryColor')} className="font-mono flex-1" />
+                      <Input
+                        {...register('secondaryColor')}
+                        className="font-mono flex-1 min-h-[44px]"
+                      />
                     </div>
                     <p className="text-xs text-neutral-500">{t('usedForTextOnColoredBg')}</p>
                   </div>
@@ -439,7 +442,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Billing tab */}
           <TabsContent value="billing" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-emerald-50 rounded-lg">
                   <Receipt className="h-5 w-5 text-emerald-600" />
@@ -457,7 +460,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   <select
                     id="currency"
                     {...register('currency')}
-                    className="flex h-10 w-full max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   >
                     <option value="XAF">Franc CFA (XAF)</option>
                     <option value="EUR">Euro (EUR)</option>
@@ -487,7 +490,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   </div>
 
                   {watchEnableTax && (
-                    <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex flex-wrap items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
                       <Label
                         htmlFor="taxRate"
                         className="text-sm text-neutral-600 whitespace-nowrap"
@@ -502,7 +505,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                           max={100}
                           step={0.1}
                           {...register('taxRate', { valueAsNumber: true })}
-                          className="pr-8"
+                          className="pr-8 min-h-[44px]"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
                           %
@@ -541,7 +544,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                   </div>
 
                   {watchEnableServiceCharge && (
-                    <div className="flex items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex flex-wrap items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
                       <Label
                         htmlFor="serviceChargeRate"
                         className="text-sm text-neutral-600 whitespace-nowrap"
@@ -556,7 +559,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                           max={100}
                           step={0.1}
                           {...register('serviceChargeRate', { valueAsNumber: true })}
-                          className="pr-8"
+                          className="pr-8 min-h-[44px]"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
                           %
@@ -574,7 +577,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Sounds tab */}
           <TabsContent value="sounds" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-amber-50 rounded-lg">
                   <Bell className="h-5 w-5 text-amber-600" />
@@ -597,7 +600,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Security tab */}
           <TabsContent value="security" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-indigo-50 rounded-lg">
                   <Clock className="h-5 w-5 text-indigo-600" />
@@ -636,7 +639,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 {watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-top-2">
                     {/* Duration */}
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-3 sm:gap-4">
                       <Label
                         htmlFor="idleTimeoutMinutes"
                         className="text-sm text-neutral-600 whitespace-nowrap"
@@ -651,7 +654,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                           max={120}
                           step={5}
                           {...register('idleTimeoutMinutes', { valueAsNumber: true })}
-                          className="pr-12"
+                          className="pr-12 min-h-[44px]"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-neutral-400">
                           min
@@ -666,11 +669,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                     {/* Lock mode */}
                     <div className="space-y-2">
                       <Label className="text-sm text-neutral-600">{t('screenLockMode')}</Label>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <button
                           type="button"
                           onClick={() => setValue('screenLockMode', 'overlay')}
-                          className={`p-3 rounded-lg border-2 text-left transition-all ${
+                          className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
                             watchScreenLockMode === 'overlay'
                               ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
                               : 'border-neutral-200 hover:border-neutral-300'
@@ -686,7 +689,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                         <button
                           type="button"
                           onClick={() => setValue('screenLockMode', 'password')}
-                          className={`p-3 rounded-lg border-2 text-left transition-all ${
+                          className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
                             watchScreenLockMode === 'password'
                               ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
                               : 'border-neutral-200 hover:border-neutral-300'
@@ -709,7 +712,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Contact tab */}
           <TabsContent value="contact" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-green-50 rounded-lg">
                   <MapPin className="h-5 w-5 text-green-600" />
@@ -720,18 +723,24 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="address">{t('fullAddress')}</Label>
                   <Input
                     id="address"
                     {...register('address')}
                     placeholder={t('addressPlaceholder')}
+                    className="min-h-[44px]"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone">{t('phone')}</Label>
-                  <Input id="phone" {...register('phone')} placeholder={t('phonePlaceholder')} />
+                  <Input
+                    id="phone"
+                    {...register('phone')}
+                    placeholder={t('phonePlaceholder')}
+                    className="min-h-[44px]"
+                  />
                 </div>
               </div>
             </div>
@@ -739,7 +748,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
           {/* Language tab */}
           <TabsContent value="language" className="mt-0">
-            <div className="bg-white rounded-xl border border-neutral-100 p-6">
+            <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-2 bg-blue-50 rounded-lg">
                   <Globe className="h-5 w-5 text-blue-600" />
@@ -757,12 +766,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
       </Tabs>
 
       {/* Actions - always visible */}
-      <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4">
+      <div className="flex-shrink-0 flex justify-end gap-4 border-t border-neutral-100 pt-4 mt-4 px-0 sm:px-0">
         <Button
           type="submit"
           variant="lime"
           disabled={saving || uploading}
-          className="min-w-[150px]"
+          className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
         >
           {saving || uploading ? (
             <>

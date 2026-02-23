@@ -136,7 +136,13 @@ export default async function AdminLayout({
         </div>
       )}
 
-      <AdminLayoutClient sidebar={sidebarElement} isDevMode={isDevMode}>
+      <AdminLayoutClient
+        sidebar={sidebarElement}
+        isDevMode={isDevMode}
+        basePath={`/sites/${tenantSlug}/admin`}
+        role={userRole}
+        primaryColor={tenant.primary_color ?? undefined}
+      >
         <QueryProvider>
           <PermissionsProvider role={userRole}>
             <AdminIdleWrapper
@@ -155,7 +161,7 @@ export default async function AdminLayout({
                     : null
                 }
               >
-                <div className="p-4 lg:p-8 pt-16 lg:pt-8">
+                <div className="p-3 sm:p-4 lg:p-8 pt-14 md:pt-8 pb-20 md:pb-4">
                   <TrialBanner tenantSlug={tenantSlug} />
                   {children}
                 </div>
