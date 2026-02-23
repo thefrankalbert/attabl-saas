@@ -165,7 +165,7 @@ export default function PaymentModal({
         }
       }}
     >
-      <DialogContent className="max-w-3xl p-0">
+      <DialogContent className="max-w-3xl p-0 h-[100dvh] sm:h-auto sm:max-h-[90vh]">
         <DialogHeader className="border-b border-neutral-100 px-6 py-4">
           <DialogTitle className="flex items-center gap-2">
             {t('title')}
@@ -272,7 +272,7 @@ export default function PaymentModal({
                     setCustomTip('');
                   }}
                   className={cn(
-                    'flex-1 rounded-lg border py-2 text-sm font-bold transition-all',
+                    'flex-1 rounded-lg border py-2 min-h-[44px] text-sm font-bold transition-all',
                     !showCustomTip && tipPercent === 0
                       ? 'border-[#CCFF00] bg-[#CCFF00]/10 text-neutral-900'
                       : 'border-neutral-100 bg-white text-neutral-600 hover:bg-neutral-50',
@@ -290,7 +290,7 @@ export default function PaymentModal({
                       setCustomTip('');
                     }}
                     className={cn(
-                      'flex-1 rounded-lg border py-2 text-sm font-bold transition-all',
+                      'flex-1 rounded-lg border py-2 min-h-[44px] text-sm font-bold transition-all',
                       !showCustomTip && tipPercent === pct
                         ? 'border-[#CCFF00] bg-[#CCFF00]/10 text-neutral-900'
                         : 'border-neutral-100 bg-white text-neutral-600 hover:bg-neutral-50',
@@ -306,7 +306,7 @@ export default function PaymentModal({
                     setTipPercent(null);
                   }}
                   className={cn(
-                    'flex-1 rounded-lg border py-2 text-sm font-bold transition-all',
+                    'flex-1 rounded-lg border py-2 min-h-[44px] text-sm font-bold transition-all',
                     showCustomTip
                       ? 'border-[#CCFF00] bg-[#CCFF00]/10 text-neutral-900'
                       : 'border-neutral-100 bg-white text-neutral-600 hover:bg-neutral-50',
@@ -336,7 +336,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={() => setMethod('cash')}
                   className={cn(
-                    'flex flex-col items-center justify-center rounded-lg border p-3 transition-all hover:bg-accent',
+                    'flex flex-col items-center justify-center rounded-lg border p-3 min-h-[44px] transition-all hover:bg-accent',
                     method === 'cash'
                       ? 'border-primary bg-primary/5 text-primary'
                       : 'border-neutral-100 bg-white text-muted-foreground',
@@ -350,7 +350,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={() => setMethod('card')}
                   className={cn(
-                    'flex flex-col items-center justify-center rounded-lg border p-3 transition-all hover:bg-accent',
+                    'flex flex-col items-center justify-center rounded-lg border p-3 min-h-[44px] transition-all hover:bg-accent',
                     method === 'card'
                       ? 'border-primary bg-primary/5 text-primary'
                       : 'border-neutral-100 bg-white text-muted-foreground',
@@ -364,7 +364,7 @@ export default function PaymentModal({
                   type="button"
                   onClick={() => setMethod('mobile_money')}
                   className={cn(
-                    'flex flex-col items-center justify-center rounded-lg border p-3 transition-all hover:bg-accent',
+                    'flex flex-col items-center justify-center rounded-lg border p-3 min-h-[44px] transition-all hover:bg-accent',
                     method === 'mobile_money'
                       ? 'border-primary bg-primary/5 text-primary'
                       : 'border-neutral-100 bg-white text-muted-foreground',
@@ -417,7 +417,7 @@ export default function PaymentModal({
                     type="button"
                     onClick={() => handleKeypadPress(key)}
                     className={cn(
-                      'flex items-center justify-center rounded-lg border border-neutral-100 bg-white py-3 text-lg font-bold transition-all active:scale-95 hover:bg-neutral-50',
+                      'flex items-center justify-center rounded-lg border border-neutral-100 bg-white py-4 min-h-[52px] text-lg sm:text-xl font-bold transition-all active:scale-95 hover:bg-neutral-50',
                       key === 'C' && 'text-red-500',
                     )}
                     aria-label={key === 'C' ? t('numpadClear') : key}

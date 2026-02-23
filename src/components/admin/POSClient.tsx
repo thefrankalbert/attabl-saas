@@ -80,6 +80,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   ];
   const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
   // Filters
@@ -302,281 +303,326 @@ export default function POSClient({ tenantId }: POSClientProps) {
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-hidden">
-      {/* Products Section */}
-      <div className="flex-1 flex flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden">
-        {/* Header Filters */}
-        <div className="p-4 border-b border-neutral-100 space-y-4">
-          <div className="flex gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
-              <Input
-                placeholder={t('searchProduct')}
-                className="pl-9"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+      {/* Mobile View Toggle */}
+      <div className="md:hidden flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
+        <button
+          onClick={() => setMobileView('products')}
+          className={cn(
+            'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
+            mobileView === 'products'
+              ? 'border-b-2 border-neutral-900 text-neutral-900'
+              : 'text-neutral-400',
+          )}
+        >
+          {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
+        </button>
+        <button
+          onClick={() => setMobileView('cart')}
+          className={cn(
+            'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
+            mobileView === 'cart'
+              ? 'border-b-2 border-neutral-900 text-neutral-900'
+              : 'text-neutral-400',
+          )}
+        >
+          {t('cart')}{' '}
+          {cart.length > 0 && (
+            <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+              {cart.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden min-h-0">
+        {/* Products Section */}
+        <div
+          className={cn(
+            'flex-1 flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden',
+            mobileView === 'products' ? 'flex' : 'hidden',
+            'md:flex',
+          )}
+        >
+          {/* Header Filters */}
+          <div className="p-3 sm:p-4 border-b border-neutral-100 space-y-3 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
+                <Input
+                  placeholder={t('searchProduct')}
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
+              <Button
+                variant={selectedCategory === 'all' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setSelectedCategory('all')}
+                className="rounded-full"
+              >
+                {tc('all')}
+              </Button>
+              {categories.map((cat) => (
+                <Button
+                  key={cat.id}
+                  variant={selectedCategory === cat.id ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className="rounded-full whitespace-nowrap"
+                >
+                  {cat.name}
+                </Button>
+              ))}
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide">
-            <Button
-              variant={selectedCategory === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setSelectedCategory('all')}
-              className="rounded-full"
-            >
-              {tc('all')}
-            </Button>
-            {categories.map((cat) => (
-              <Button
-                key={cat.id}
-                variant={selectedCategory === cat.id ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedCategory(cat.id)}
-                className="rounded-full whitespace-nowrap"
-              >
-                {cat.name}
-              </Button>
-            ))}
+          {/* Grid */}
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
+            {filteredItems.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+                {filteredItems.map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => addToCart(item)}
+                    className="text-left group bg-neutral-50 hover:bg-white border border-neutral-100 hover:border-primary/50 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full"
+                  >
+                    <div className="aspect-square bg-white rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+                      {item.image_url ? (
+                        <Image src={item.image_url} alt="" fill className="object-cover" />
+                      ) : (
+                        <Utensils className="w-8 h-8 text-neutral-300" />
+                      )}
+                      {cart.find((c) => c.id === item.id) && (
+                        <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                          {cart.find((c) => c.id === item.id)?.quantity}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 flex flex-col">
+                      <h3 className="font-semibold text-sm text-neutral-900 leading-tight mb-1 line-clamp-2">
+                        {item.name}
+                      </h3>
+                      <p className="text-xs font-bold text-neutral-500 mt-auto">
+                        {formatCurrency(item.price, currency)}
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-neutral-400">
+                <SearchX className="w-12 h-12 mb-3 opacity-20" />
+                <p className="text-sm font-medium">{t('noResults')}</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Grid */}
-        <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-          {filteredItems.length > 0 ? (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
-              {filteredItems.map((item) => (
+        {/* Cart Section */}
+        <div
+          className={cn(
+            'w-full md:w-[350px] lg:w-[400px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0 md:max-h-[50vh] lg:max-h-none',
+            mobileView === 'cart' ? 'flex' : 'hidden',
+            'md:flex',
+          )}
+        >
+          <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-neutral-500" />
+              <h2 className="font-semibold text-neutral-900">{t('cart')}</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-mono bg-neutral-200 px-2 py-1 rounded text-neutral-600">
+                #{orderNumber}
+              </span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 text-neutral-400 hover:text-red-500"
+                onClick={() => setCart([])}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Service Type Selection */}
+          <div className="p-3 border-b border-neutral-100 space-y-2">
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+              {SERVICE_TYPES.map((st) => (
                 <button
-                  key={item.id}
-                  onClick={() => addToCart(item)}
-                  className="text-left group bg-neutral-50 hover:bg-white border border-neutral-100 hover:border-primary/50 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full"
+                  key={st.value}
+                  type="button"
+                  onClick={() => setServiceType(st.value)}
+                  className={cn(
+                    'flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all whitespace-nowrap text-xs font-medium',
+                    serviceType === st.value
+                      ? 'bg-neutral-900 text-white'
+                      : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50',
+                  )}
                 >
-                  <div className="aspect-square bg-white rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
-                    {item.image_url ? (
-                      <Image src={item.image_url} alt="" fill className="object-cover" />
-                    ) : (
-                      <Utensils className="w-8 h-8 text-neutral-300" />
-                    )}
-                    {cart.find((c) => c.id === item.id) && (
-                      <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
-                        {cart.find((c) => c.id === item.id)?.quantity}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 flex flex-col">
-                    <h3 className="font-semibold text-sm text-neutral-900 leading-tight mb-1 line-clamp-2">
-                      {item.name}
-                    </h3>
-                    <p className="text-xs font-bold text-neutral-500 mt-auto">
-                      {formatCurrency(item.price, currency)}
-                    </p>
-                  </div>
+                  {st.icon}
+                  <span>{st.label}</span>
                 </button>
               ))}
             </div>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center text-neutral-400">
-              <SearchX className="w-12 h-12 mb-3 opacity-20" />
-              <p className="text-sm font-medium">{t('noResults')}</p>
-            </div>
-          )}
-        </div>
-      </div>
 
-      {/* Cart Section */}
-      <div className="w-full lg:w-[400px] bg-white rounded-xl border border-neutral-100 flex flex-col overflow-hidden shrink-0 max-h-[50vh] lg:max-h-none">
-        <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
-          <div className="flex items-center gap-2">
-            <ShoppingBag className="w-5 h-5 text-neutral-500" />
-            <h2 className="font-semibold text-neutral-900">{t('cart')}</h2>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-mono bg-neutral-200 px-2 py-1 rounded text-neutral-600">
-              #{orderNumber}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-neutral-400 hover:text-red-500"
-              onClick={() => setCart([])}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
+            {/* Room number input for room_service */}
+            {serviceType === 'room_service' && (
+              <Input
+                placeholder={t('roomNumberPlaceholder')}
+                value={roomNumber}
+                onChange={(e) => setRoomNumber(e.target.value)}
+                className="h-9 animate-in fade-in slide-in-from-top-1"
+              />
+            )}
 
-        {/* Service Type Selection */}
-        <div className="p-3 border-b border-neutral-100 space-y-2">
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-            {SERVICE_TYPES.map((st) => (
-              <button
-                key={st.value}
-                type="button"
-                onClick={() => setServiceType(st.value)}
-                className={cn(
-                  'flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all whitespace-nowrap text-xs font-medium',
-                  serviceType === st.value
-                    ? 'bg-neutral-900 text-white'
-                    : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50',
-                )}
-              >
-                {st.icon}
-                <span>{st.label}</span>
-              </button>
-            ))}
-          </div>
+            {/* Delivery address textarea for delivery */}
+            {serviceType === 'delivery' && (
+              <textarea
+                placeholder={t('deliveryAddressPlaceholder')}
+                value={deliveryAddress}
+                onChange={(e) => setDeliveryAddress(e.target.value)}
+                className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
+              />
+            )}
 
-          {/* Room number input for room_service */}
-          {serviceType === 'room_service' && (
+            {/* Table / Client input */}
             <Input
-              placeholder={t('roomNumberPlaceholder')}
-              value={roomNumber}
-              onChange={(e) => setRoomNumber(e.target.value)}
-              className="h-9 animate-in fade-in slide-in-from-top-1"
+              placeholder={t('tableClientPlaceholder')}
+              value={selectedTable}
+              onChange={(e) => setSelectedTable(e.target.value)}
+              className="h-9"
             />
-          )}
-
-          {/* Delivery address textarea for delivery */}
-          {serviceType === 'delivery' && (
-            <textarea
-              placeholder={t('deliveryAddressPlaceholder')}
-              value={deliveryAddress}
-              onChange={(e) => setDeliveryAddress(e.target.value)}
-              className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
-            />
-          )}
-
-          {/* Table / Client input */}
-          <Input
-            placeholder={t('tableClientPlaceholder')}
-            value={selectedTable}
-            onChange={(e) => setSelectedTable(e.target.value)}
-            className="h-9"
-          />
-        </div>
-
-        {/* Cart Items */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {cart.map((item) => (
-            <div key={item.id} className="group">
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-neutral-900 line-clamp-1">{item.name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <p className="text-xs text-neutral-500">
-                      {formatCurrency(item.price, currency)}
-                    </p>
-                    {item.notes && (
-                      <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
-                        {item.notes}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <p className="text-sm font-bold text-neutral-900">
-                  {formatCurrency(item.price * item.quantity, currency)}
-                </p>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 bg-neutral-50 rounded-lg p-0.5 border border-neutral-100">
-                  <button
-                    onClick={() => updateQuantity(item.id, -1)}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
-                  >
-                    <Minus className="w-3 h-3" />
-                  </button>
-                  <span className="w-8 text-center text-xs font-bold tabular-nums">
-                    {item.quantity}
-                  </span>
-                  <button
-                    onClick={() => updateQuantity(item.id, 1)}
-                    className="w-7 h-7 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
-                  >
-                    <Plus className="w-3 h-3" />
-                  </button>
-                </div>
-                <button
-                  onClick={() => {
-                    setEditingNotes(item.id);
-                    setNotesText(item.notes || '');
-                  }}
-                  className="text-xs text-primary hover:underline font-medium"
-                >
-                  {item.notes ? tc('edit') : t('kitchenNote')}
-                </button>
-              </div>
-
-              {/* Suggestion badge */}
-              {suggestions
-                .filter((s) => s.menu_item_id === item.id)
-                .slice(0, 1)
-                .map((s) => (
-                  <button
-                    key={s.suggested_item_id}
-                    onClick={() => {
-                      const suggestedItem = menuItems.find((mi) => mi.id === s.suggested_item_id);
-                      if (suggestedItem) addToCart(suggestedItem);
-                    }}
-                    className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-medium hover:bg-amber-100 transition-colors w-full"
-                  >
-                    <Lightbulb className="w-3 h-3 shrink-0" />
-                    <span className="truncate">
-                      {s.suggestion_type === 'pairing'
-                        ? t('suggestionPairing')
-                        : s.suggestion_type === 'upsell'
-                          ? t('suggestionUpsell')
-                          : t('suggestionAlternative')}{' '}
-                      : {s.suggested_item_name}
-                    </span>
-                  </button>
-                ))}
-            </div>
-          ))}
-          {cart.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 text-neutral-300">
-              <ShoppingBag className="w-12 h-12 mb-2 opacity-50" />
-              <p className="text-sm">{t('emptyCart')}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="p-4 bg-neutral-50 border-t border-neutral-100 space-y-4">
-          <div className="flex justify-between items-end">
-            <span className="text-sm text-neutral-500 font-medium">{tc('total')}</span>
-            <div className="text-right">
-              <span className="text-2xl font-black text-neutral-900">
-                {formatCurrency(total, currency)}
-              </span>
-            </div>
           </div>
 
-          <div className="grid grid-cols-4 gap-2">
-            <Button
-              variant="outline"
-              className="h-12 bg-neutral-900 text-white hover:bg-neutral-800 border-none rounded-xl"
-              disabled={cart.length === 0}
-              onClick={() => handleOrder('pending')}
-              title={t('sentToKitchen')}
-            >
-              <Printer className="w-5 h-5" />
-            </Button>
-            <Button
-              variant="lime"
-              className="col-span-3 h-12 text-base"
-              disabled={cart.length === 0}
-              onClick={() => {
-                if (!selectedTable) {
-                  toast({ title: t('selectTableFirst'), variant: 'destructive' });
-                  return;
-                }
-                setShowPaymentModal(true);
-              }}
-            >
-              {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
-            </Button>
+          {/* Cart Items */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {cart.map((item) => (
+              <div key={item.id} className="group">
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-neutral-900 line-clamp-1">{item.name}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-neutral-500">
+                        {formatCurrency(item.price, currency)}
+                      </p>
+                      {item.notes && (
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
+                          {item.notes}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <p className="text-sm font-bold text-neutral-900">
+                    {formatCurrency(item.price * item.quantity, currency)}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1 bg-neutral-50 rounded-lg p-0.5 border border-neutral-100">
+                    <button
+                      onClick={() => updateQuantity(item.id, -1)}
+                      className="w-9 h-9 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="w-8 text-center text-xs font-bold tabular-nums">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(item.id, 1)}
+                      className="w-9 h-9 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingNotes(item.id);
+                      setNotesText(item.notes || '');
+                    }}
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    {item.notes ? tc('edit') : t('kitchenNote')}
+                  </button>
+                </div>
+
+                {/* Suggestion badge */}
+                {suggestions
+                  .filter((s) => s.menu_item_id === item.id)
+                  .slice(0, 1)
+                  .map((s) => (
+                    <button
+                      key={s.suggested_item_id}
+                      onClick={() => {
+                        const suggestedItem = menuItems.find((mi) => mi.id === s.suggested_item_id);
+                        if (suggestedItem) addToCart(suggestedItem);
+                      }}
+                      className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-medium hover:bg-amber-100 transition-colors w-full"
+                    >
+                      <Lightbulb className="w-3 h-3 shrink-0" />
+                      <span className="truncate">
+                        {s.suggestion_type === 'pairing'
+                          ? t('suggestionPairing')
+                          : s.suggestion_type === 'upsell'
+                            ? t('suggestionUpsell')
+                            : t('suggestionAlternative')}{' '}
+                        : {s.suggested_item_name}
+                      </span>
+                    </button>
+                  ))}
+              </div>
+            ))}
+            {cart.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 text-neutral-300">
+                <ShoppingBag className="w-12 h-12 mb-2 opacity-50" />
+                <p className="text-sm">{t('emptyCart')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="p-4 bg-neutral-50 border-t border-neutral-100 space-y-4">
+            <div className="flex justify-between items-end">
+              <span className="text-sm text-neutral-500 font-medium">{tc('total')}</span>
+              <div className="text-right">
+                <span className="text-2xl font-black text-neutral-900">
+                  {formatCurrency(total, currency)}
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-4 gap-2">
+              <Button
+                variant="outline"
+                className="h-12 bg-neutral-900 text-white hover:bg-neutral-800 border-none rounded-xl"
+                disabled={cart.length === 0}
+                onClick={() => handleOrder('pending')}
+                title={t('sentToKitchen')}
+              >
+                <Printer className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="lime"
+                className="col-span-3 h-12 text-base"
+                disabled={cart.length === 0}
+                onClick={() => {
+                  if (!selectedTable) {
+                    toast({ title: t('selectTableFirst'), variant: 'destructive' });
+                    return;
+                  }
+                  setShowPaymentModal(true);
+                }}
+              >
+                {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

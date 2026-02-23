@@ -197,7 +197,7 @@ export default function OrderCard({
               onStatusChange(order.id, config.nextStatus!);
             }}
             className={cn(
-              'w-full mt-2 py-2 rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-white transition-opacity hover:opacity-90',
+              'w-full mt-2 py-3 min-h-[44px] rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-white transition-opacity hover:opacity-90',
               order.status === 'pending'
                 ? 'bg-amber-500'
                 : order.status === 'preparing'
@@ -205,7 +205,7 @@ export default function OrderCard({
                   : 'bg-emerald-500',
             )}
           >
-            {config.nextLabel} <ChevronRight className="w-3 h-3" />
+            {config.nextLabel} <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
       </div>

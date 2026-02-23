@@ -154,19 +154,19 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="space-y-3 pb-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="min-h-0 lg:h-[calc(100vh-8rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <StatsCardSkeleton key={i} />
           ))}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
-          <div className="h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+          <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
+          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          <div className="lg:col-span-2 h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
-          <div className="h-64 bg-white border border-neutral-100 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+          <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
+          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
         </div>
       </div>
     );
@@ -180,9 +180,9 @@ export default function DashboardClient(props: DashboardClientProps) {
   });
 
   return (
-    <div className="space-y-3 pb-6">
+    <div className="min-h-0 lg:h-[calc(100vh-8rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
       {/* Row 1 — KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
         <StatsCard
           title={t('ordersCount')}
           value={stats.ordersToday}
@@ -214,9 +214,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Row 2 — Revenue Chart + Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
         {/* Revenue Chart (col-span-2) */}
-        <div className="lg:col-span-2 min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="col-span-1 md:col-span-2 aspect-[16/9] md:aspect-auto md:min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-neutral-600" />
@@ -323,9 +323,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Row 3 — Recent Orders + Stock Alerts */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
         {/* Recent Orders (col-span-2) */}
-        <div className="lg:col-span-2 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+        <div className="col-span-1 md:col-span-2 min-h-[300px] md:min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
             <div className="flex items-center gap-3">
               <div>
@@ -389,7 +389,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                         {order.status === 'pending' && (
                           <button
                             onClick={() => handleStatusChange(order.id, 'preparing')}
-                            className="p-1.5 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
                             title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
@@ -398,7 +398,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                         {order.status === 'preparing' && (
                           <button
                             onClick={() => handleStatusChange(order.id, 'ready')}
-                            className="p-1.5 bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-lg hover:bg-emerald-100 transition-colors"
                             title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -407,7 +407,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                         {order.status === 'ready' && (
                           <button
                             onClick={() => handleStatusChange(order.id, 'delivered')}
-                            className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
                             title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -415,7 +415,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                         )}
                         <Link
                           href={`${adminBase}/orders`}
-                          className="p-1.5 bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
+                          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-neutral-100 text-neutral-600 rounded-lg hover:bg-neutral-200 transition-colors"
                           title={t('viewDetails')}
                         >
                           <Eye className="w-4 h-4" />

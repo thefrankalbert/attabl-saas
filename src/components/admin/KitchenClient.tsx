@@ -215,6 +215,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const [showMockData, setShowMockData] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeTab, setActiveTab] = useState<keyof typeof COLUMN_STYLES>('pending');
 
   const {
     soundEnabled,
@@ -351,11 +352,11 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       <audio ref={audioRef} preload="auto" />
 
       {/* ━━━ HEADER ━━━ */}
-      <header className="h-12 border-b border-white/[0.06] flex items-center justify-between px-3 bg-neutral-900/90 backdrop-blur-sm shrink-0">
+      <header className="h-12 sm:h-14 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/90 backdrop-blur-sm shrink-0">
         {/* Left: Logo + counters */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <ChefHat className="w-5 h-5 text-amber-400" />
-          <span className="font-black text-sm tracking-tight mr-1">KDS</span>
+          <span className="font-black text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1">KDS</span>
 
           {/* Inline status counters */}
           <div className="flex items-center gap-1">
@@ -389,7 +390,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
         </div>
 
         {/* Right: Controls */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
           <span className="text-[10px] text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
             {lastUpdate.toLocaleTimeString('fr-FR', {
               hour: '2-digit',
@@ -400,7 +401,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
           <button
             onClick={() => setShowMockData(!showMockData)}
             className={cn(
-              'px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
+              'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
               showMockData
                 ? 'bg-amber-400/20 text-amber-400'
                 : 'text-neutral-600 hover:text-neutral-400',
@@ -411,7 +412,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
           <button
             onClick={toggleSound}
             className={cn(
-              'p-1.5 rounded-lg transition-colors',
+              'p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
               soundEnabled
                 ? 'bg-amber-400/20 text-amber-400'
                 : 'text-neutral-600 hover:text-neutral-400',
@@ -421,13 +422,13 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </button>
           <button
             onClick={() => router.back()}
-            className="p-1.5 rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors ml-1"
+            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
             title={t('backToDashboard')}
           >
             <X className="w-4 h-4" />
@@ -435,25 +436,61 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
         </div>
       </header>
 
+      {/* ━━━ MOBILE TAB BAR ━━━ */}
+      <div className="flex md:hidden border-b border-white/[0.06] shrink-0">
+        {(Object.keys(COLUMNS) as Array<keyof typeof COLUMNS>).map((key) => {
+          const col = COLUMNS[key];
+          const count = columnOrders[key].length;
+          const isActive = activeTab === key;
+          const borderColor =
+            key === 'pending' ? '#fbbf24' : key === 'preparing' ? '#60a5fa' : '#34d399';
+          return (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
+                isActive ? 'border-b-2 text-white' : 'text-neutral-600',
+              )}
+              style={isActive ? { borderColor } : undefined}
+            >
+              <div className={cn('w-2 h-2 rounded-full', col.dot)} />
+              {col.label}
+              <span
+                className={cn(
+                  'px-1.5 py-0.5 rounded text-[10px] tabular-nums font-black',
+                  col.countBadge,
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* ━━━ 3-COLUMN GRID ━━━ */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
         {(Object.keys(COLUMNS) as Array<keyof typeof COLUMNS>).map((key, idx) => {
           const col = COLUMNS[key];
           const colOrders = columnOrders[key];
+          const isActive = activeTab === key;
 
           return (
             <div
               key={key}
               className={cn(
-                'flex flex-col overflow-hidden',
+                'flex-col overflow-hidden',
                 col.colBg,
                 idx < 2 && 'md:border-r border-white/[0.04]',
+                // Mobile: only show active tab; Desktop: always show all
+                isActive ? 'flex' : 'hidden md:flex',
               )}
             >
-              {/* Column Header */}
-              <div className="py-2 px-3 flex items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30">
+              {/* Column Header — hidden on mobile (tabs serve this role) */}
+              <div className="hidden md:flex py-2 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30">
                 <div className={cn('w-2 h-2 rounded-full', col.dot)} />
-                <span className="text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">
                   {col.label}
                 </span>
                 <span
@@ -467,7 +504,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
               </div>
 
               {/* Column Content */}
-              <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar">
+              <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 space-y-2 sm:space-y-2.5 custom-scrollbar">
                 {colOrders.length > 0 ? (
                   colOrders.map((o) => (
                     <KDSTicket
