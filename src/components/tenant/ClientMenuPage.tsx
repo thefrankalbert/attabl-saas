@@ -198,7 +198,7 @@ export default function ClientMenuPage({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-gray-50 pb-32">
       {/* Header */}
       <header className="bg-white sticky top-0 z-40 border-b border-gray-100">
         <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -344,7 +344,7 @@ export default function ClientMenuPage({
                       </h2>
                       <div className="h-px bg-gray-200 flex-1"></div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
                       {category.items.map((item: MenuItem) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
                         const effectiveItem = isRealtimeDisabled

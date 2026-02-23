@@ -322,7 +322,7 @@ export default function OrdersClient({
       </div>
 
       {/* Tabs / Filters */}
-      <div className="flex items-center justify-between overflow-x-auto pb-2">
+      <div className="flex items-center justify-between overflow-x-auto scrollbar-hide pb-2">
         <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
           <TabsList>
             <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>

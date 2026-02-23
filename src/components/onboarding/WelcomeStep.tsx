@@ -32,18 +32,20 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
       <p className="text-neutral-500 text-sm mb-8 max-w-sm">{t('welcomeSubtitle')}</p>
 
       {/* Step overview */}
-      <div className="flex items-center gap-3 mb-8">
+      <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
         {STEPS.map((step, i) => {
           const Icon = step.icon;
           return (
             <div key={i} className="flex items-center gap-3">
               <div className="flex flex-col items-center gap-1.5">
-                <div className="w-10 h-10 rounded-full bg-neutral-100 flex items-center justify-center">
-                  <Icon className="h-4 w-4 text-neutral-500" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-neutral-100 flex items-center justify-center">
+                  <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-neutral-500" />
                 </div>
                 <span className="text-[10px] text-neutral-400 font-medium">{t(step.key)}</span>
               </div>
-              {i < STEPS.length - 1 && <div className="w-4 h-px bg-neutral-200 mb-5" />}
+              {i < STEPS.length - 1 && (
+                <div className="hidden sm:block w-4 h-px bg-neutral-200 mb-5" />
+              )}
             </div>
           );
         })}

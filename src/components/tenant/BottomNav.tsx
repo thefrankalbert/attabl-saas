@@ -52,7 +52,7 @@ export default function BottomNav({
 
   return (
     <div
-      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 pt-2 pb-safe z-50 md:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
+      className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 pt-2 pb-safe z-50 lg:hidden shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]"
       style={{ paddingBottom: `max(env(safe-area-inset-bottom, 8px), 8px)` }}
     >
       <div className="flex items-center justify-around max-w-md mx-auto">
@@ -61,7 +61,7 @@ export default function BottomNav({
             key={index}
             onClick={item.onClick}
             className={cn(
-              'flex flex-col items-center gap-0.5 p-2 relative transition-colors min-w-[56px]',
+              'flex flex-col items-center gap-0.5 p-2.5 relative transition-colors min-w-[48px] min-h-[44px]',
               !item.isActive && 'text-gray-400',
             )}
             style={item.isActive ? { color: primaryColor } : {}}

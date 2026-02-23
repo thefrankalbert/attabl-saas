@@ -254,7 +254,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="max-w-4xl flex flex-col h-full min-h-0">
       <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
-        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-1 overflow-x-auto rounded-none border-b border-neutral-200 bg-transparent p-0">
+        <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-neutral-200 bg-transparent p-0">
           {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
             <TabsTrigger
               key={key}

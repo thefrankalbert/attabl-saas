@@ -96,7 +96,7 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
       const offset = tabPaneHeight + navHeight + 20; // 20px d'espace supplémentaire
 
       const elementRect = element.getBoundingClientRect();
-      const absoluteElementTop = elementRect.top + window.pageYOffset;
+      const absoluteElementTop = elementRect.top + window.scrollY;
       const offsetPosition = absoluteElementTop - offset;
 
       window.scrollTo({
@@ -112,7 +112,7 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
       className="fixed left-0 right-0 z-30 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide py-3 transition-all duration-150"
       style={{ top: `${tabPaneHeight}px` }}
     >
-      <div className="max-w-3xl lg:max-w-5xl mx-auto px-6 flex gap-2 md:gap-4 min-w-max">
+      <div className="max-w-3xl lg:max-w-5xl mx-auto px-6 flex gap-2 md:gap-4">
         {categories.map((category) => {
           const isActive = activeCategory === category.id;
           return (
@@ -127,7 +127,7 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
               }}
               onClick={() => scrollToCategory(category.id)}
               className={`
-                                whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]
+                                whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]
                                 ${
                                   isActive
                                     ? 'text-white'

@@ -47,9 +47,9 @@ export default function StatsBar() {
             <motion.div
               key={metric.label}
               variants={metricVariants}
-              className={index < metrics.length - 1 ? 'border-r border-white/10' : undefined}
+              className={index < metrics.length - 1 ? 'md:border-r md:border-white/10' : undefined}
             >
-              <div className="font-[family-name:var(--font-sora)] text-5xl font-bold text-white">
+              <div className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl md:text-5xl font-bold text-white">
                 {metric.value}
               </div>
               <div className="text-sm text-neutral-400 mt-1">{metric.label}</div>
