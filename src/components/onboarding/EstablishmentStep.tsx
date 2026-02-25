@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -47,8 +46,6 @@ const localeLabels: Record<string, { label: string; flag: string }> = {
   'en-IE': { label: 'English (Ireland)', flag: '\ud83c\uddee\ud83c\uddea' },
   'es-ES': { label: 'Espa\u00f1ol (Espa\u00f1a)', flag: '\ud83c\uddea\ud83c\uddf8' },
 };
-
-type EstablishmentTab = 'details' | 'preferences';
 
 interface EstablishmentStepProps {
   data: OnboardingData;

@@ -1192,6 +1192,13 @@
     "seats": "{count} seats",
     "server": "Server",
     "release": "Release",
+    "myTables": "My tables ({count})",
+    "noTablesAssigned": "No tables assigned.",
+    "activeOrders": "{count} active order(s)",
+    "unassignedOrders": "Unassigned ({count})",
+    "allOrdersAssigned": "All orders are assigned.",
+    "items": "{count} item(s)",
+    "claimOrder": "Claim",
     "assignServer": "Assign a server..."
   },
   "stockHistory": {

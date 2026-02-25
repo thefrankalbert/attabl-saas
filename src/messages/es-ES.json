@@ -455,16 +455,16 @@
     "soundError": "Error",
     "soundPlayError": "No se puede reproducir el sonido. Verifique su navegador.",
     "languageSection": "Idioma",
-    "languageDescription": "Idioma de la interfaz de administraci\u00f3n",
+    "languageDescription": "Idioma de la interfaz de administración",
     "tabIdentity": "Identidad",
     "tabBranding": "Marca",
-    "tabBilling": "Facturaci\u00f3n",
+    "tabBilling": "Facturación",
     "tabSounds": "Sonidos",
     "tabSecurity": "Seguridad",
     "tabContact": "Contacto",
     "tabLanguage": "Idioma",
     "slug": "Slug",
-    "slugDescription": "Su subdominio \u00fanico. Contacte con soporte para cambiarlo."
+    "slugDescription": "Su subdominio único. Contacte con soporte para cambiarlo."
   },
   "sidebar": {
     "groupMain": "Principal",
@@ -889,7 +889,7 @@
     "loadError": "Error al cargar proveedores",
     "ingredientNamePlaceholder": "Ej.: Pollo, Arroz, Aceite...",
     "categoryPlaceholder": "Ej.: Carnes, Verduras...",
-    "adjustReasonPlaceholder": "Ej.: Entrega proveedor, p\u00e9rdida...",
+    "adjustReasonPlaceholder": "Ej.: Entrega proveedor, pérdida...",
     "qtyPlaceholder": "Cant."
   },
   "announcements": {
@@ -1192,6 +1192,13 @@
     "seats": "{count} asientos",
     "server": "Camarero",
     "release": "Liberar",
+    "myTables": "Mis mesas ({count})",
+    "noTablesAssigned": "Ninguna mesa asignada.",
+    "activeOrders": "{count} pedido(s) activo(s)",
+    "unassignedOrders": "Sin asignar ({count})",
+    "allOrdersAssigned": "Todos los pedidos están asignados.",
+    "items": "{count} artículo(s)",
+    "claimOrder": "Reclamar",
     "assignServer": "Asignar un camarero..."
   },
   "stockHistory": {
