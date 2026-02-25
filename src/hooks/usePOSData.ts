@@ -274,7 +274,6 @@ export function usePOSData(tenantId: string) {
     loading,
     total,
     orderNumber,
-    currentAdminUser,
 
     // Filters
     searchQuery,
