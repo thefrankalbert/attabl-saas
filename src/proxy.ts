@@ -44,9 +44,15 @@ export async function proxy(request: NextRequest) {
   }
 
   // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
-  // Sur un sous-domaine, TOUJOURS réécrire (y compris /admin, /api, etc.)
   // Le domaine principal (sans subdomain) sert les routes marketing, auth, super admin
   if (subdomain && subdomain !== 'www') {
+    // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
+    // Don't rewrite — just set the x-tenant-slug header so the API can identify the tenant
+    if (pathname.startsWith('/api/')) {
+      sessionResponse.headers.set('x-tenant-slug', subdomain);
+      return sessionResponse;
+    }
+
     const url = request.nextUrl.clone();
 
     // Réécrire vers /sites/[subdomain]/[path]
@@ -118,6 +124,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!_next/static|_next/image|favicon.ico|sounds/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|wav|mp3|ogg|pdf|xlsx|xls|csv|woff|woff2|ttf|eot)$).*)',
   ],
 };
