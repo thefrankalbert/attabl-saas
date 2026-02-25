@@ -28,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
+import { useDevice } from '@/hooks/useDevice';
 import PaymentModal from '@/components/admin/PaymentModal';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
@@ -78,6 +79,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
       icon: <BellRing className="w-4 h-4" />,
     },
   ];
+  const { isMobile } = useDevice();
   const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
@@ -304,44 +306,45 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   return (
     <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden">
-      {/* Mobile View Toggle */}
-      <div className="md:hidden flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
-        <button
-          onClick={() => setMobileView('products')}
-          className={cn(
-            'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
-            mobileView === 'products'
-              ? 'border-b-2 border-neutral-900 text-neutral-900'
-              : 'text-neutral-400',
-          )}
-        >
-          {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
-        </button>
-        <button
-          onClick={() => setMobileView('cart')}
-          className={cn(
-            'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
-            mobileView === 'cart'
-              ? 'border-b-2 border-neutral-900 text-neutral-900'
-              : 'text-neutral-400',
-          )}
-        >
-          {t('cart')}{' '}
-          {cart.length > 0 && (
-            <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
-              {cart.length}
-            </span>
-          )}
-        </button>
-      </div>
+      {/* Mobile View Toggle — only on phone */}
+      {isMobile && (
+        <div className="flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
+          <button
+            onClick={() => setMobileView('products')}
+            className={cn(
+              'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
+              mobileView === 'products'
+                ? 'border-b-2 border-neutral-900 text-neutral-900'
+                : 'text-neutral-400',
+            )}
+          >
+            {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
+          </button>
+          <button
+            onClick={() => setMobileView('cart')}
+            className={cn(
+              'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
+              mobileView === 'cart'
+                ? 'border-b-2 border-neutral-900 text-neutral-900'
+                : 'text-neutral-400',
+            )}
+          >
+            {t('cart')}{' '}
+            {cart.length > 0 && (
+              <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+                {cart.length}
+              </span>
+            )}
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden min-h-0">
         {/* Products Section */}
         <div
           className={cn(
             'flex-1 flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden',
-            mobileView === 'products' ? 'flex' : 'hidden',
-            'md:flex',
+            isMobile ? (mobileView === 'products' ? 'flex' : 'hidden') : 'flex',
           )}
         >
           {/* Header Filters */}
@@ -363,7 +366,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 variant={selectedCategory === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setSelectedCategory('all')}
-                className="rounded-full"
+                className="rounded-full min-h-[44px]"
               >
                 {tc('all')}
               </Button>
@@ -373,7 +376,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   variant={selectedCategory === cat.id ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setSelectedCategory(cat.id)}
-                  className="rounded-full whitespace-nowrap"
+                  className="rounded-full whitespace-nowrap min-h-[44px]"
                 >
                   {cat.name}
                 </Button>
@@ -384,7 +387,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Grid */}
           <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
             {filteredItems.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
                 {filteredItems.map((item) => (
                   <button
                     key={item.id}
@@ -426,9 +429,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
         {/* Cart Section */}
         <div
           className={cn(
-            'w-full md:w-[350px] lg:w-[400px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0 md:max-h-[50vh] lg:max-h-none',
-            mobileView === 'cart' ? 'flex' : 'hidden',
-            'md:flex',
+            'w-full md:w-[350px] lg:w-[400px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
+            isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
           )}
         >
           <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
@@ -443,7 +445,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-10 w-10 text-neutral-400 hover:text-red-500"
+                className="h-11 w-11 min-h-[48px] min-w-[48px] text-neutral-400 hover:text-red-500"
                 onClick={() => setCart([])}
               >
                 <Trash2 className="w-4 h-4" />

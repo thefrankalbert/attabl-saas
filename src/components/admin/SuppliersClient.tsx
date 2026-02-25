@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import AdminModal from '@/components/admin/AdminModal';
 import { createSupplierService } from '@/services/supplier.service';
 import type { ColumnDef } from '@tanstack/react-table';
@@ -331,8 +331,64 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         </div>
       </div>
 
-      {/* Table */}
-      <DataTable columns={columns} data={filtered} emptyMessage={t('noSuppliersFound')} />
+      {/* Table / Cards */}
+      <ResponsiveDataTable
+        columns={columns}
+        data={filtered}
+        emptyMessage={t('noSuppliersFound')}
+        mobileConfig={{
+          renderCard: (supplier) => (
+            <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3">
+              {/* Row 1: Name + Status */}
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="font-medium text-neutral-900 truncate">{supplier.name}</p>
+                  {supplier.contact_name && (
+                    <p className="text-xs text-neutral-500">{supplier.contact_name}</p>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
+                    supplier.is_active
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-neutral-100 text-neutral-500',
+                  )}
+                >
+                  {supplier.is_active ? t('active') : t('inactive')}
+                </span>
+              </div>
+
+              {/* Row 2: Contact info */}
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500">
+                {supplier.phone && <span>{supplier.phone}</span>}
+                {supplier.email && <span className="truncate">{supplier.email}</span>}
+              </div>
+
+              {/* Row 3: Actions */}
+              <div className="flex justify-end gap-1 pt-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => openEdit(supplier)}
+                  className="gap-1 text-xs min-h-[44px]"
+                >
+                  <Pencil className="w-3 h-3" />
+                  {t('edit')}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleToggleActive(supplier)}
+                  className="text-xs min-h-[44px]"
+                >
+                  {supplier.is_active ? t('disable') : t('enable')}
+                </Button>
+              </div>
+            </div>
+          ),
+        }}
+      />
 
       {/* Modal — Add / Edit */}
       <AdminModal

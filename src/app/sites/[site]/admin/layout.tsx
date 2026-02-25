@@ -161,7 +161,7 @@ export default async function AdminLayout({
                     : null
                 }
               >
-                <div className="max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 lg:p-8 pt-14">
+                <div className="max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14">
                   <TrialBanner tenantSlug={tenantSlug} />
                   {children}
                 </div>

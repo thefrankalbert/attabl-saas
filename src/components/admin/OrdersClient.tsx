@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Search, Volume2, VolumeX, ChevronRight, Eye } from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
-import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
@@ -253,9 +253,9 @@ export default function OrdersClient({
                   e.stopPropagation();
                   setSelectedOrder(order);
                 }}
-                className="text-xs gap-1"
+                className="text-xs gap-1 min-h-[44px]"
               >
-                <Eye className="w-3 h-3" />
+                <Eye className="w-4 h-4" />
               </Button>
               {config.nextStatus && (
                 <Button
@@ -265,12 +265,12 @@ export default function OrdersClient({
                     handleStatusChange(order.id, config.nextStatus!);
                   }}
                   className={cn(
-                    'text-xs text-white gap-1',
+                    'text-xs text-white gap-1 min-h-[44px]',
                     config.actionBg,
                     `hover:${config.actionBg}/90`,
                   )}
                 >
-                  {config.nextLabel} <ChevronRight className="w-3 h-3" />
+                  {config.nextLabel} <ChevronRight className="w-4 h-4" />
                 </Button>
               )}
             </div>
@@ -335,12 +335,78 @@ export default function OrdersClient({
         </Tabs>
       </div>
 
-      {/* Orders Table */}
-      <DataTable
+      {/* Orders Table / Cards */}
+      <ResponsiveDataTable
         columns={columns}
         data={filteredOrders}
         emptyMessage={t('noOrdersMatch')}
         onRowClick={(order) => setSelectedOrder(order)}
+        mobileConfig={{
+          renderCard: (order) => {
+            const config = statusConfig[order.status];
+            const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
+            const items = order.items || [];
+            return (
+              <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3 active:bg-neutral-50 transition-colors">
+                {/* Row 1: Table + Status + Time */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900 text-xs">
+                      {order.table_number}
+                    </div>
+                    <span className="font-semibold text-neutral-900">{order.table_number}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-neutral-400">
+                      {new Date(order.created_at).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                    <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
+                      {config.label}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 2: Server + Items + Total */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-400 truncate">
+                    {order.server?.full_name ?? '—'}
+                  </span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-neutral-500">
+                      {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                    </span>
+                    <span className="font-mono font-bold text-neutral-900">
+                      {total.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Row 3: Actions */}
+                {config.nextStatus && (
+                  <div className="flex justify-end pt-1">
+                    <Button
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleStatusChange(order.id, config.nextStatus!);
+                      }}
+                      className={cn(
+                        'text-xs text-white gap-1 min-h-[44px]',
+                        config.actionBg,
+                        `hover:${config.actionBg}/90`,
+                      )}
+                    >
+                      {config.nextLabel} <ChevronRight className="w-4 h-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          },
+        }}
       />
 
       {/* Detail Modal */}

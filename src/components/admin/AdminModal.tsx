@@ -12,9 +12,9 @@ interface AdminModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
-  md: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',
-  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl',
+  sm: 'sm:max-w-md',
+  md: 'sm:max-w-lg',
+  lg: 'sm:max-w-2xl',
 };
 
 export default function AdminModal({
@@ -26,13 +26,20 @@ export default function AdminModal({
 }: AdminModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={cn('p-0', sizeClasses[size])}>
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100">
+      <DialogContent
+        className={cn(
+          'p-0 flex flex-col gap-0 max-h-[85dvh] sm:max-h-[calc(100dvh-4rem)]',
+          sizeClasses[size],
+        )}
+      >
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
           <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900">
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="px-6 pb-6 max-h-[calc(100dvh-8rem)] overflow-y-auto">{children}</div>
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          {children}
+        </div>
       </DialogContent>
     </Dialog>
   );

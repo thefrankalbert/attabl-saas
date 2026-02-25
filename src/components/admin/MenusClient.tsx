@@ -785,20 +785,25 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               size="sm"
               onClick={onAddChild}
               title={t('addSubMenu')}
-              className="h-8 w-8 p-0"
+              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
             >
-              <Plus className="w-3.5 h-3.5" />
+              <Plus className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 w-8 p-0">
-              <Edit2 className="w-3.5 h-3.5" />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onEdit}
+              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
+            >
+              <Edit2 className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={onDelete}
-              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 hover:bg-red-50"
             >
-              <Trash2 className="w-3.5 h-3.5" />
+              <Trash2 className="w-4 h-4" />
             </Button>
           </div>
 
