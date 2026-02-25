@@ -1,0 +1,149 @@
+import { describe, it, expect, vi } from 'vitest';
+import { createPlanEnforcementService } from '../plan-enforcement.service';
+import { ServiceError } from '../errors';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Tenant } from '@/types/admin.types';
+
+/**
+ * Creates a chainable mock that resolves to the given result when awaited.
+ * Supports any number of chained .select().eq().eq() calls.
+ */
+function chainable(result: { count?: number | null; error?: unknown; data?: unknown }) {
+  const obj: Record<string, unknown> = {};
+  // Every method returns the same chainable object
+  obj.select = vi.fn(() => obj);
+  obj.eq = vi.fn(() => obj);
+  obj.single = vi.fn(() => Promise.resolve(result));
+  // Make the chain itself thenable (await-able)
+  obj.then = (resolve: (v: unknown) => void, reject?: (e: unknown) => void) =>
+    Promise.resolve(result).then(resolve, reject);
+  return obj;
+}
+
+function createMockSupabase(
+  tableResults: Record<string, { count?: number | null; error?: unknown }>,
+) {
+  const tableChains: Record<string, ReturnType<typeof chainable>> = {};
+  for (const [table, result] of Object.entries(tableResults)) {
+    tableChains[table] = chainable(result);
+  }
+
+  return {
+    from: vi.fn((table: string) => tableChains[table] || chainable({ count: 0, error: null })),
+  } as unknown as SupabaseClient;
+}
+
+function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
+  return {
+    id: 'tenant-1',
+    name: 'Test Restaurant',
+    slug: 'test-restaurant',
+    subscription_plan: 'essentiel',
+    subscription_status: 'active',
+    trial_ends_at: null,
+    ...overrides,
+  } as Tenant;
+}
+
+describe('canAddAdmin', () => {
+  it('allows when under limit', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 1, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddAdmin(makeTenant())).resolves.toBeUndefined();
+  });
+
+  it('throws VALIDATION when limit reached (essentiel = 2)', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 2, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddAdmin(makeTenant())).rejects.toThrow(ServiceError);
+  });
+
+  it('uses premium limits during active trial', async () => {
+    const trialTenant = makeTenant({
+      subscription_status: 'trial',
+      trial_ends_at: new Date(Date.now() + 86400000).toISOString(),
+    });
+    // Premium allows 5 admins, so 3 should be fine
+    const supabase = createMockSupabase({
+      admin_users: { count: 3, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddAdmin(trialTenant)).resolves.toBeUndefined();
+  });
+
+  it('throws INTERNAL on database error', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: null, error: { message: 'DB error' } },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddAdmin(makeTenant())).rejects.toThrow('vérification des limites');
+  });
+});
+
+describe('canAddMenuItem', () => {
+  it('throws when item limit reached (essentiel = 100)', async () => {
+    const supabase = createMockSupabase({
+      menu_items: { count: 100, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddMenuItem(makeTenant())).rejects.toThrow(ServiceError);
+  });
+
+  it('allows when under limit', async () => {
+    const supabase = createMockSupabase({
+      menu_items: { count: 50, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddMenuItem(makeTenant())).resolves.toBeUndefined();
+  });
+});
+
+describe('canAddVenue', () => {
+  it('throws when venue limit reached (essentiel = 1)', async () => {
+    const supabase = createMockSupabase({
+      venues: { count: 1, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddVenue(makeTenant())).rejects.toThrow(ServiceError);
+  });
+});
+
+describe('canAddMenu', () => {
+  it('throws when menu limit reached (essentiel = 2)', async () => {
+    const supabase = createMockSupabase({
+      menus: { count: 2, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    await expect(service.canAddMenu(makeTenant())).rejects.toThrow(ServiceError);
+  });
+});
+
+describe('getUsageCounts', () => {
+  it('returns counts from all tables', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: 2, error: null },
+      menu_items: { count: 50, error: null },
+      venues: { count: 1, error: null },
+      menus: { count: 3, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    const result = await service.getUsageCounts('tenant-1');
+    expect(result).toEqual({ admins: 2, items: 50, venues: 1, menus: 3 });
+  });
+
+  it('handles null counts gracefully', async () => {
+    const supabase = createMockSupabase({
+      admin_users: { count: null, error: null },
+      menu_items: { count: null, error: null },
+      venues: { count: null, error: null },
+      menus: { count: null, error: null },
+    });
+    const service = createPlanEnforcementService(supabase);
+    const result = await service.getUsageCounts('tenant-1');
+    expect(result).toEqual({ admins: 0, items: 0, venues: 0, menus: 0 });
+  });
+});
