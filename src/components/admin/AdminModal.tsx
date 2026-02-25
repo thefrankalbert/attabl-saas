@@ -32,7 +32,7 @@ export default function AdminModal({
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="px-6 pb-6">{children}</div>
+        <div className="px-6 pb-6 max-h-[calc(100dvh-8rem)] overflow-y-auto">{children}</div>
       </DialogContent>
     </Dialog>
   );
