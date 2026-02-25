@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import AdminModal from '@/components/admin/AdminModal';
 import type { CurrencyCode } from '@/types/admin.types';
 
@@ -182,20 +183,20 @@ export default function CouponForm({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="validFrom">{t('startDateField')}</Label>
-            <Input
+            <DatePickerField
               id="validFrom"
-              type="date"
               value={validFrom}
-              onChange={(e) => setValidFrom(e.target.value)}
+              onChange={setValidFrom}
+              placeholder={t('startDateField')}
             />
           </div>
           <div className="space-y-2">
             <Label htmlFor="validUntil">{t('endDateField')}</Label>
-            <Input
+            <DatePickerField
               id="validUntil"
-              type="date"
               value={validUntil}
-              onChange={(e) => setValidUntil(e.target.value)}
+              onChange={setValidUntil}
+              placeholder={t('endDateField')}
             />
           </div>
         </div>
