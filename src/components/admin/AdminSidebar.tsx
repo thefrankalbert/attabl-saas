@@ -110,7 +110,12 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 h-[100dvh] bg-white border-r border-neutral-100 z-40 flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0',
+          // Mobile: fixed overlay drawer
+          'fixed inset-y-0 left-0 z-40',
+          // Desktop (lg+): in-flow inside flex parent, not fixed
+          'lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shrink-0',
+          // Common styles
+          'h-full bg-white border-r border-neutral-100 flex flex-col transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-16' : 'w-64',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           className,

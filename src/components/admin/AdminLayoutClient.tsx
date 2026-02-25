@@ -1,6 +1,6 @@
 'use client';
 
-import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
+import { SidebarProvider } from '@/contexts/SidebarContext';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { AdminBottomNav } from './AdminBottomNav';
 import { cn } from '@/lib/utils';
@@ -25,39 +25,21 @@ function AdminLayoutInner({
   primaryColor,
   sidebar,
 }: AdminLayoutInnerProps) {
-  const { isCollapsed } = useSidebar();
-  const { isMobile, isTablet } = useDeviceContext();
-
-  // On mobile: no sidebar margin, bottom padding for bottom nav
-  // On tablet: always collapsed sidebar (w-16), so ml-16
-  // On desktop: respect collapse state (ml-16 or ml-64)
-  const marginClass = isMobile
-    ? '' // no margin — sidebar is hidden
-    : isTablet
-      ? 'lg:ml-16' // tablet: always collapsed
-      : isCollapsed
-        ? 'lg:ml-16'
-        : 'lg:ml-64';
+  const { isMobile } = useDeviceContext();
 
   return (
-    <>
-      {/* Sidebar: hidden on mobile (drawer only), visible on tablet/desktop */}
+    <div className="h-dvh overflow-hidden flex flex-col lg:flex-row bg-neutral-100">
+      {/* Sidebar: overlay drawer on mobile, in-flow on lg+ */}
       {sidebar}
 
-      <main
-        className={cn(
-          'h-[100dvh] overflow-y-auto transition-[margin-left] duration-300 ease-in-out',
-          marginClass,
-          isMobile && 'pb-16', // space for bottom nav
-          isDevMode && 'pt-6',
-        )}
-      >
-        {children}
-      </main>
+      {/* Content zone: fills remaining space */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <main className={cn('flex-1 overflow-y-auto', isDevMode && 'pt-6')}>{children}</main>
 
-      {/* Bottom navigation for mobile only */}
-      {isMobile && <AdminBottomNav basePath={basePath} role={role} primaryColor={primaryColor} />}
-    </>
+        {/* Bottom navigation: in-flow at bottom on mobile */}
+        {isMobile && <AdminBottomNav basePath={basePath} role={role} primaryColor={primaryColor} />}
+      </div>
+    </div>
   );
 }
 

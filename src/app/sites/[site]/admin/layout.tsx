@@ -127,7 +127,7 @@ export default async function AdminLayout({
   );
 
   return (
-    <div className="min-h-screen bg-neutral-100">
+    <div>
       <OfflineIndicator />
       {/* Dev Mode Banner */}
       {isDevMode && (
@@ -161,7 +161,7 @@ export default async function AdminLayout({
                     : null
                 }
               >
-                <div className="p-3 sm:p-4 lg:p-8 pt-14 md:pt-8 pb-20 md:pb-4">
+                <div className="p-3 sm:p-4 lg:p-8 pt-14 md:pt-4 pb-4">
                   <TrialBanner tenantSlug={tenantSlug} />
                   {children}
                 </div>
