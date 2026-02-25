@@ -32,7 +32,7 @@ export default function SegmentHero({
 
           <Link
             href={ctaHref}
-            className="bg-brand-green text-white px-8 py-4 rounded-xl text-base font-semibold hover:bg-brand-green-dark transition-colors inline-block"
+            className="bg-brand-green text-black px-8 py-4 rounded-xl text-base font-semibold hover:bg-brand-green-dark transition-colors inline-block"
           >
             {ctaText}
           </Link>

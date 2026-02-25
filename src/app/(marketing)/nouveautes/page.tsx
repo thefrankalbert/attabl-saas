@@ -120,7 +120,7 @@ export default function NouveautesPage() {
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         update.tag === 'Nouveau'
-                          ? 'bg-primary/10 text-primary'
+                          ? 'bg-primary/10 text-lime-700'
                           : 'bg-neutral-100 text-neutral-600'
                       }`}
                     >

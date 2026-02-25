@@ -94,7 +94,7 @@ export default function SegmentGrid() {
                   <div className="w-12 h-12 rounded-lg bg-brand-green-light flex items-center justify-center mb-4">
                     <Icon className="h-6 w-6 text-brand-green" />
                   </div>
-                  <h3 className="font-[family-name:var(--font-sora)] font-semibold text-lg text-neutral-900 mb-2 group-hover:text-brand-green transition-colors">
+                  <h3 className="font-[family-name:var(--font-sora)] font-semibold text-lg text-neutral-900 mb-2 group-hover:text-lime-700 transition-colors">
                     {segment.title}
                   </h3>
                   <p className="text-neutral-700 text-sm">{segment.description}</p>
