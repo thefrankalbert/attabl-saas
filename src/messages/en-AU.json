@@ -344,6 +344,8 @@
     "noSuggestions": "No suggestions",
     "addServerAdvice": "Add tips for your servers",
     "activeSuggestions": "{count} active suggestion(s)",
+    "autoGenerate": "Auto-generate",
+    "suggestionsGenerated": "{count} suggestion(s) generated",
     "confirmRupture": "Confirm out of stock",
     "markRuptureButton": "Mark as out of stock",
     "confirmBackInStock": "Confirm back in stock",
