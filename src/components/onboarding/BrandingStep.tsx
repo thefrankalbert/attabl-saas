@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Layout, Image, Type, Crop } from 'lucide-react';
+import { Upload, X, Layout, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { LogoCropper } from '@/components/onboarding/LogoCropper';
@@ -31,8 +31,6 @@ const colorPresets = [
   { name: 'Wine', primary: '#9F1239', secondary: '#FFF1F2' },
   { name: 'Charcoal', primary: '#374151', secondary: '#F3F4F6' },
 ];
-
-type BrandingTab = 'logo' | 'colors' | 'description';
 
 const colorGrid = [
   '#EF4444',
@@ -65,7 +63,6 @@ const colorGrid = [
 export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const t = useTranslations('onboarding');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<BrandingTab>('logo');
   const [showPickerFor, setShowPickerFor] = useState<'primary' | 'secondary' | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
 
@@ -160,7 +157,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
           {/* Logo Upload */}
           <div>
             <Label className="text-neutral-700 font-medium mb-2 block text-sm flex items-center gap-2">
-              <Image className="h-4 w-4 text-neutral-400" />
+              <ImageIcon className="h-4 w-4 text-neutral-400" />
               {t('logoLabel') || 'Logo'}
             </Label>
             <input
