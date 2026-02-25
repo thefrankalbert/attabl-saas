@@ -59,7 +59,7 @@ export default function ProductShowcase() {
             <div className="mt-8 flex items-center gap-4">
               <Link
                 href="/features"
-                className="text-base font-semibold text-primary underline decoration-2 underline-offset-4 transition-colors hover:text-primary-dark"
+                className="text-base font-semibold text-lime-700 underline decoration-2 underline-offset-4 transition-colors hover:text-lime-800"
               >
                 En savoir plus
               </Link>

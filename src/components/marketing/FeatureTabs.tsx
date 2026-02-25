@@ -101,7 +101,7 @@ export default function FeatureTabs() {
                 onClick={() => setActiveTab(index)}
                 className={`px-4 sm:px-6 py-3 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
                   isActive
-                    ? 'bg-brand-green text-white shadow-sm'
+                    ? 'bg-brand-green text-black shadow-sm'
                     : 'text-neutral-700 hover:bg-neutral-50'
                 }`}
               >

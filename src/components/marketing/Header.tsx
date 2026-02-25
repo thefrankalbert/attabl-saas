@@ -29,7 +29,11 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 50);
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 50;
+      setScrolled(isScrolled);
+      if (isScrolled) setActiveMegaMenu(null);
+    };
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -51,17 +55,17 @@ export default function Header() {
           scrolled || menuOpen ? 'bg-white' : 'bg-transparent'
         }`}
       >
-        {/* Subtle dark gradient visible only on transparent (hero) state */}
+        {/* Subtle dark gradient visible only on transparent (hero) state — z-0 keeps it behind nav text */}
         {!scrolled && !menuOpen && (
           <div
-            className="pointer-events-none absolute inset-x-0 top-0 h-28"
+            className="pointer-events-none absolute inset-x-0 top-0 z-0 h-40"
             style={{
               background:
-                'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.15) 70%, transparent 100%)',
+                'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.35) 30%, rgba(0,0,0,0.15) 60%, transparent 100%)',
             }}
           />
         )}
-        <div className="flex w-full items-center px-4 py-5 sm:px-6 lg:px-8">
+        <div className="relative z-10 flex w-full items-center px-4 py-5 sm:px-6 lg:px-8">
           {/* Logo - Far Left */}
           <Link
             href="/"
@@ -72,100 +76,119 @@ export default function Header() {
             Attabl
           </Link>
 
-          {/* Navigation - Left with spacing */}
-          <nav className="ml-8 hidden items-center gap-6 lg:ml-16 lg:flex lg:gap-10">
-            <button
-              type="button"
-              onMouseEnter={() => setActiveMegaMenu('solutions')}
-              onClick={() =>
-                setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
-              }
-              className={`text-base font-semibold transition-colors ${
-                scrolled || menuOpen
-                  ? 'text-neutral-900 hover:text-neutral-600'
-                  : 'text-white hover:text-white/80'
-              }`}
-            >
-              Solutions
-            </button>
-            <button
-              type="button"
-              onMouseEnter={() => setActiveMegaMenu('features')}
-              onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
-              className={`text-base font-semibold transition-colors ${
-                scrolled || menuOpen
-                  ? 'text-neutral-900 hover:text-neutral-600'
-                  : 'text-white hover:text-white/80'
-              }`}
-            >
-              Fonctionnalités
-            </button>
-            <Link
-              href="/pricing"
-              className={`text-base font-semibold transition-colors ${
-                scrolled || menuOpen
-                  ? 'text-neutral-900 hover:text-neutral-600'
-                  : 'text-white hover:text-white/80'
-              }`}
-            >
-              Tarifs
-            </Link>
-            <Link
-              href="/nouveautes"
-              className={`text-base font-semibold transition-colors ${
-                scrolled || menuOpen
-                  ? 'text-neutral-900 hover:text-neutral-600'
-                  : 'text-white hover:text-white/80'
-              }`}
-            >
-              Nouveautés
-            </Link>
-          </nav>
+          {/* Navigation - Left with spacing (hidden when scrolled) */}
+          {!scrolled && (
+            <nav className="ml-8 hidden items-center gap-6 lg:ml-16 lg:flex lg:gap-10">
+              <button
+                type="button"
+                onMouseEnter={() => setActiveMegaMenu('solutions')}
+                onClick={() =>
+                  setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
+                }
+                className={`text-base font-semibold transition-colors ${
+                  menuOpen
+                    ? 'text-neutral-900 hover:text-neutral-600'
+                    : 'text-white hover:text-white/80'
+                }`}
+              >
+                Solutions
+              </button>
+              <button
+                type="button"
+                onMouseEnter={() => setActiveMegaMenu('features')}
+                onClick={() =>
+                  setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))
+                }
+                className={`text-base font-semibold transition-colors ${
+                  menuOpen
+                    ? 'text-neutral-900 hover:text-neutral-600'
+                    : 'text-white hover:text-white/80'
+                }`}
+              >
+                Fonctionnalités
+              </button>
+              <Link
+                href="/pricing"
+                className={`text-base font-semibold transition-colors ${
+                  menuOpen
+                    ? 'text-neutral-900 hover:text-neutral-600'
+                    : 'text-white hover:text-white/80'
+                }`}
+              >
+                Tarifs
+              </Link>
+              <Link
+                href="/nouveautes"
+                className={`text-base font-semibold transition-colors ${
+                  menuOpen
+                    ? 'text-neutral-900 hover:text-neutral-600'
+                    : 'text-white hover:text-white/80'
+                }`}
+              >
+                Nouveautés
+              </Link>
+            </nav>
+          )}
 
           {/* Actions - Right */}
           <div className="ml-auto flex items-center gap-3 lg:gap-6">
-            <div className="hidden items-center gap-3 lg:flex lg:gap-6">
-              <Link
-                href="/login"
-                className={`text-base font-semibold transition-colors ${
-                  scrolled || menuOpen
-                    ? 'text-neutral-900 hover:text-neutral-600'
-                    : 'text-white hover:text-white/80'
-                }`}
-              >
-                Se connecter
-              </Link>
+            {/* Scrolled state: only CTA button */}
+            {scrolled && (
               <Link
                 href="/contact"
-                className={`text-base font-semibold transition-colors ${
-                  scrolled || menuOpen
-                    ? 'text-neutral-900 hover:text-neutral-600'
-                    : 'text-white hover:text-white/80'
-                }`}
+                className="hidden rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-black transition-all hover:bg-primary-dark hover:scale-105 lg:block"
               >
-                Support
+                Contacter l&apos;équipe
               </Link>
-              <button
-                type="button"
-                className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
-                  scrolled || menuOpen
-                    ? 'text-neutral-900 hover:text-neutral-600'
-                    : 'text-white hover:text-white/80'
-                }`}
-              >
-                <Search className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
-                  scrolled || menuOpen
-                    ? 'text-neutral-900 hover:text-neutral-600'
-                    : 'text-white hover:text-white/80'
-                }`}
-              >
-                <ShoppingCart className="h-5 w-5" />
-              </button>
-            </div>
+            )}
+
+            {/* Non-scrolled state: full nav links */}
+            {!scrolled && (
+              <div className="hidden items-center gap-3 lg:flex lg:gap-6">
+                <Link
+                  href="/login"
+                  className={`text-base font-semibold transition-colors ${
+                    menuOpen
+                      ? 'text-neutral-900 hover:text-neutral-600'
+                      : 'text-white hover:text-white/80'
+                  }`}
+                >
+                  Se connecter
+                </Link>
+                <Link
+                  href="/contact"
+                  className={`text-base font-semibold transition-colors ${
+                    menuOpen
+                      ? 'text-neutral-900 hover:text-neutral-600'
+                      : 'text-white hover:text-white/80'
+                  }`}
+                >
+                  Support
+                </Link>
+                <button
+                  type="button"
+                  className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
+                    menuOpen
+                      ? 'text-neutral-900 hover:text-neutral-600'
+                      : 'text-white hover:text-white/80'
+                  }`}
+                >
+                  <Search className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  className={`flex min-h-[44px] min-w-[44px] items-center justify-center transition-colors ${
+                    menuOpen
+                      ? 'text-neutral-900 hover:text-neutral-600'
+                      : 'text-white hover:text-white/80'
+                  }`}
+                >
+                  <ShoppingCart className="h-5 w-5" />
+                </button>
+              </div>
+            )}
+
+            {/* Mobile hamburger - always visible on mobile */}
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
@@ -197,7 +220,7 @@ export default function Header() {
                     onClick={() => setActiveMegaMenu(null)}
                     className="group flex flex-col gap-1 transition-all hover:translate-x-1"
                   >
-                    <span className="text-2xl font-semibold text-neutral-900 group-hover:text-primary">
+                    <span className="text-2xl font-semibold text-neutral-900 group-hover:text-lime-700">
                       {seg.label}
                     </span>
                     <p className="text-sm text-neutral-600">{seg.description}</p>
@@ -214,7 +237,7 @@ export default function Header() {
                     onClick={() => setActiveMegaMenu(null)}
                     className="group flex flex-col gap-1 transition-all hover:translate-x-1"
                   >
-                    <span className="text-2xl font-semibold text-neutral-900 group-hover:text-primary">
+                    <span className="text-2xl font-semibold text-neutral-900 group-hover:text-lime-700">
                       {feat.label}
                     </span>
                     <p className="text-sm text-neutral-600">{feat.description}</p>
@@ -223,7 +246,7 @@ export default function Header() {
                 <Link
                   href="/features"
                   onClick={() => setActiveMegaMenu(null)}
-                  className="mt-4 text-base font-semibold text-primary transition-all hover:translate-x-1"
+                  className="mt-4 text-base font-semibold text-lime-700 transition-all hover:translate-x-1 hover:text-lime-800"
                 >
                   Toutes les fonctionnalités →
                 </Link>

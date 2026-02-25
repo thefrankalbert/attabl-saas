@@ -28,7 +28,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row gap-4 mt-10 justify-center">
             <Link
               href="/signup"
-              className="bg-brand-green text-white px-8 py-4 rounded-xl text-base font-semibold hover:bg-brand-green-dark transition-colors"
+              className="bg-brand-green text-black px-8 py-4 rounded-xl text-base font-semibold hover:bg-brand-green-dark transition-colors"
             >
               Commencer gratuitement
             </Link>
