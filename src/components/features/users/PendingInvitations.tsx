@@ -1,33 +1,12 @@
 'use client';
 
-import {
-  Users,
-  Shield,
-  CreditCard,
-  ChefHat,
-  Coffee,
-  Mail,
-  Loader2,
-  Crown,
-  RefreshCw,
-  Clock,
-  X,
-} from 'lucide-react';
+import { Mail, Loader2, RefreshCw, Clock, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { AdminRole } from '@/types/admin.types';
+import { getRoleConfig } from '@/lib/role-config';
 import type { Invitation } from '@/types/invitation.types';
 import { timeAgo, timeUntil } from '@/hooks/useUsersData';
-
-// ─── Types ─────────────────────────────────────────────────
-
-type RoleConfigEntry = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
-};
 
 interface PendingInvitationsProps {
   pendingOnly: Invitation[];
@@ -49,54 +28,25 @@ export default function PendingInvitations({
   onCancel,
 }: PendingInvitationsProps) {
   const t = useTranslations('users');
-
-  const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
-    owner: { label: t('roleOwner'), icon: Crown, color: 'text-lime-700', bg: 'bg-lime-100' },
-    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
-    manager: { label: t('roleManager'), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    cashier: {
-      label: t('roleCashier'),
-      icon: CreditCard,
-      color: 'text-gray-600',
-      bg: 'bg-gray-100',
-    },
-    chef: { label: t('roleChef'), icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
-    waiter: {
-      label: t('roleWaiter'),
-      icon: Coffee,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-  };
-
-  const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
-    label: t('roleUser'),
-    icon: Users,
-    color: 'text-neutral-600',
-    bg: 'bg-neutral-50',
-  };
-
-  function getRoleConfig(role: string): RoleConfigEntry {
-    return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
-  }
+  const tc = useTranslations('common');
 
   return (
     <div className="space-y-3">
-      <h2 className="text-lg font-semibold tracking-tight">Invitations en attente</h2>
+      <h2 className="text-lg font-semibold tracking-tight">{t('pendingInvitationsTitle')}</h2>
 
       {loadingInvitations ? (
         <div className="flex items-center justify-center py-8 text-neutral-400">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          Chargement...
+          {tc('loading')}
         </div>
       ) : pendingOnly.length === 0 ? (
         <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500">
-          Aucune invitation en attente
+          {t('noPendingInvitations')}
         </div>
       ) : (
         <div className="grid gap-3">
           {pendingOnly.map((invitation) => {
-            const roleConfig = getRoleConfig(invitation.role);
+            const roleConfig = getRoleConfig(invitation.role, t);
             const RoleIcon = roleConfig.icon;
             return (
               <div
@@ -119,10 +69,10 @@ export default function PendingInvitations({
                           <RoleIcon className="w-3 h-3" />
                           {roleConfig.label}
                         </div>
-                        <span>Envoyee il y a {timeAgo(invitation.created_at)}</span>
+                        <span>{t('sentAgo', { time: timeAgo(invitation.created_at) })}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          Expire dans {timeUntil(invitation.expires_at)}
+                          {t('expiresIn', { time: timeUntil(invitation.expires_at) })}
                         </span>
                       </div>
                     </div>
@@ -140,7 +90,7 @@ export default function PendingInvitations({
                       ) : (
                         <RefreshCw className="w-3.5 h-3.5" />
                       )}
-                      Renvoyer
+                      {t('resend')}
                     </Button>
                     <Button
                       variant="ghost"
@@ -154,7 +104,7 @@ export default function PendingInvitations({
                       ) : (
                         <X className="w-3.5 h-3.5" />
                       )}
-                      Annuler
+                      {t('cancel')}
                     </Button>
                   </div>
                 </div>

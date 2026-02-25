@@ -1,18 +1,6 @@
 'use client';
 
-import {
-  Users,
-  UserX,
-  Shield,
-  CreditCard,
-  ChefHat,
-  Coffee,
-  MoreVertical,
-  Check,
-  X,
-  Crown,
-  Activity,
-} from 'lucide-react';
+import { UserX, MoreVertical, Check, X, Activity } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,16 +14,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import type { AdminUser, AdminRole } from '@/types/admin.types';
-
-// ─── Types ─────────────────────────────────────────────────
-
-type RoleConfigEntry = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
-};
+import { getRoleConfig } from '@/lib/role-config';
+import type { AdminUser } from '@/types/admin.types';
 
 interface UsersTableProps {
   users: AdminUser[];
@@ -56,41 +36,11 @@ export default function UsersTable({
   const tc = useTranslations('common');
   const locale = useLocale();
 
-  const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
-    owner: { label: t('roleOwner'), icon: Crown, color: 'text-lime-700', bg: 'bg-lime-100' },
-    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
-    manager: { label: t('roleManager'), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    cashier: {
-      label: t('roleCashier'),
-      icon: CreditCard,
-      color: 'text-gray-600',
-      bg: 'bg-gray-100',
-    },
-    chef: { label: t('roleChef'), icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
-    waiter: {
-      label: t('roleWaiter'),
-      icon: Coffee,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-  };
-
-  const DEFAULT_ROLE_CONFIG: RoleConfigEntry = {
-    label: t('roleUser'),
-    icon: Users,
-    color: 'text-neutral-600',
-    bg: 'bg-neutral-50',
-  };
-
-  function getRoleConfig(role: string): RoleConfigEntry {
-    return ROLE_CONFIG[role as AdminRole] ?? DEFAULT_ROLE_CONFIG;
-  }
-
   return (
     <div className="bg-white border border-neutral-100 rounded-xl overflow-hidden">
       <div className="divide-y divide-neutral-100">
         {users.map((user) => {
-          const roleConfig = getRoleConfig(user.role);
+          const roleConfig = getRoleConfig(user.role, t);
           const RoleIcon = roleConfig.icon;
           return (
             <div
