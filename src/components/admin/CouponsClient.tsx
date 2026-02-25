@@ -19,6 +19,7 @@ interface CouponsClientProps {
 export default function CouponsClient({ tenantId, initialCoupons, currency }: CouponsClientProps) {
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [showForm, setShowForm] = useState(false);
+  const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
   const [, setLoading] = useState(false);
   const { toast } = useToast();
   const t = useTranslations('coupons');
@@ -73,6 +74,11 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
     }
   };
 
+  const openEdit = (coupon: Coupon) => {
+    setEditingCoupon(coupon);
+    setShowForm(true);
+  };
+
   const formatDiscount = (coupon: Coupon) => {
     if (coupon.discount_type === 'percentage') {
       return `${coupon.discount_value}%`;
@@ -89,7 +95,14 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           <p className="text-xs text-neutral-500 mt-1">{t('subtitleClient')}</p>
         </div>
 
-        <Button onClick={() => setShowForm(true)} variant="lime" className="gap-2">
+        <Button
+          onClick={() => {
+            setEditingCoupon(null);
+            setShowForm(true);
+          }}
+          variant="lime"
+          className="gap-2"
+        >
           <Plus className="h-4 w-4" />
           {t('newCoupon')}
         </Button>
@@ -109,7 +122,11 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           </div>
 
           {coupons.map((coupon) => (
-            <div key={coupon.id} className="bg-white rounded-xl border border-neutral-100 p-4">
+            <div
+              key={coupon.id}
+              className="bg-white rounded-xl border border-neutral-100 p-4 cursor-pointer hover:border-neutral-300"
+              onClick={() => openEdit(coupon)}
+            >
               <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
                 {/* Code */}
                 <div className="flex items-center gap-2">
@@ -143,7 +160,10 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
                 {/* Status Toggle */}
                 <button
-                  onClick={() => toggleActive(coupon)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    toggleActive(coupon);
+                  }}
                   className="flex items-center gap-1.5 group"
                   title={coupon.is_active ? t('deactivate') : t('activate')}
                 >
@@ -165,7 +185,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 </button>
 
                 {/* Delete */}
-                <div className="flex justify-end">
+                <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -211,7 +231,14 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
           <h3 className="text-sm font-semibold text-neutral-900">{t('noCoupons')}</h3>
           <p className="text-xs text-neutral-500 mt-1">{t('noCouponsDesc')}</p>
-          <Button onClick={() => setShowForm(true)} variant="outline" className="mt-4 gap-2">
+          <Button
+            onClick={() => {
+              setEditingCoupon(null);
+              setShowForm(true);
+            }}
+            variant="outline"
+            className="mt-4 gap-2"
+          >
             <Plus className="h-4 w-4" />
             {t('newCoupon')}
           </Button>
@@ -220,14 +247,20 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
       {/* Coupon Form Modal */}
       <CouponForm
+        key={editingCoupon?.id ?? 'new'}
         tenantId={tenantId}
         currency={currency}
         isOpen={showForm}
-        onClose={() => setShowForm(false)}
+        onClose={() => {
+          setShowForm(false);
+          setEditingCoupon(null);
+        }}
         onSuccess={() => {
           setShowForm(false);
+          setEditingCoupon(null);
           refetch();
         }}
+        initialData={editingCoupon}
       />
     </div>
   );

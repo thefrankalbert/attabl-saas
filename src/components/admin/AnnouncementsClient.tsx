@@ -28,6 +28,7 @@ export default function AnnouncementsClient({
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [loading, setLoading] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -42,6 +43,7 @@ export default function AnnouncementsClient({
   const supabase = createClient();
 
   const resetForm = () => {
+    setEditingAnnouncement(null);
     setTitle('');
     setDescription('');
     setStartDate(new Date().toISOString().split('T')[0]);
@@ -65,23 +67,39 @@ export default function AnnouncementsClient({
 
     setLoading(true);
     try {
-      const { data: newAnnouncement, error } = await supabase
-        .from('announcements')
-        .insert({
-          tenant_id: tenantId,
-          title,
-          description: description || null,
-          start_date: new Date(startDate).toISOString(),
-          end_date: endDate ? new Date(endDate).toISOString() : null,
-          is_active: isActive,
-        })
-        .select()
-        .single();
+      const payload = {
+        title,
+        description: description || null,
+        start_date: new Date(startDate).toISOString(),
+        end_date: endDate ? new Date(endDate).toISOString() : null,
+        is_active: isActive,
+      };
 
-      if (error) throw error;
+      if (editingAnnouncement) {
+        const { data, error } = await supabase
+          .from('announcements')
+          .update(payload)
+          .eq('id', editingAnnouncement.id)
+          .select()
+          .single();
 
-      setAnnouncements((prev) => [newAnnouncement as Announcement, ...prev]);
-      toast({ title: t('announcementCreated') });
+        if (error) throw error;
+        setAnnouncements((prev) =>
+          prev.map((a) => (a.id === editingAnnouncement.id ? (data as Announcement) : a)),
+        );
+        toast({ title: t('announcementUpdated') });
+      } else {
+        const { data: newAnnouncement, error } = await supabase
+          .from('announcements')
+          .insert({ tenant_id: tenantId, ...payload })
+          .select()
+          .single();
+
+        if (error) throw error;
+        setAnnouncements((prev) => [newAnnouncement as Announcement, ...prev]);
+        toast({ title: t('announcementCreated') });
+      }
+
       setIsModalOpen(false);
       resetForm();
     } catch (e: unknown) {
@@ -94,6 +112,16 @@ export default function AnnouncementsClient({
     } finally {
       setLoading(false);
     }
+  };
+
+  const openEdit = (ann: Announcement) => {
+    setEditingAnnouncement(ann);
+    setTitle(ann.title);
+    setDescription(ann.description || '');
+    setStartDate(ann.start_date ? new Date(ann.start_date).toISOString().split('T')[0] : '');
+    setEndDate(ann.end_date ? new Date(ann.end_date).toISOString().split('T')[0] : '');
+    setIsActive(ann.is_active);
+    setIsModalOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -153,7 +181,8 @@ export default function AnnouncementsClient({
         {announcements.map((ann) => (
           <div
             key={ann.id}
-            className="group bg-white border border-neutral-100 rounded-xl p-5 transition-all flex flex-col h-full"
+            className="group bg-white border border-neutral-100 rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-neutral-300"
+            onClick={() => openEdit(ann)}
           >
             <div className="flex justify-between items-start mb-3">
               <div
@@ -168,9 +197,9 @@ export default function AnnouncementsClient({
               </div>
             </div>
 
-            <h3 className="font-bold text-neutral-900 mb-2 line-clamp-1">{ann.title}</h3>
+            <h3 className="font-bold text-neutral-900 mb-2">{ann.title}</h3>
             {ann.description && (
-              <p className="text-sm text-neutral-500 line-clamp-2 mb-4 flex-1">{ann.description}</p>
+              <p className="text-sm text-neutral-500 line-clamp-3 mb-4 flex-1">{ann.description}</p>
             )}
 
             <div className="mt-auto space-y-4">
@@ -186,7 +215,7 @@ export default function AnnouncementsClient({
                 )}
               </div>
 
-              <div className="flex gap-2 border-t pt-4">
+              <div className="flex gap-2 border-t pt-4" onClick={(e) => e.stopPropagation()}>
                 <Button
                   variant="outline"
                   size="sm"
@@ -224,7 +253,7 @@ export default function AnnouncementsClient({
       <AdminModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={t('newAnnouncement')}
+        title={editingAnnouncement ? t('editAnnouncement') : t('newAnnouncement')}
         size="lg"
       >
         <div className="space-y-4 pt-4">
@@ -280,7 +309,7 @@ export default function AnnouncementsClient({
             </Button>
             <Button onClick={handleSave} disabled={loading} variant="lime">
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {t('publish')}
+              {editingAnnouncement ? tc('save') : t('publish')}
             </Button>
           </div>
         </div>
