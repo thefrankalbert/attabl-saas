@@ -3,7 +3,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import KDSTicket from '@/components/features/kitchen/KDSTicket';
-import type { Order, OrderStatus } from '@/types/admin.types';
+import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
 import type { ColumnKey, ColumnConfig } from '@/hooks/useKitchenData';
 
 interface KitchenBoardProps {
@@ -12,6 +12,13 @@ interface KitchenBoardProps {
   activeTab: ColumnKey;
   showMockData: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => Promise<void>;
+  onUpdateItemStatus: (
+    orderId: string,
+    itemId: string,
+    newStatus: ItemStatus,
+    allItems: { id: string; item_status?: string }[],
+  ) => Promise<void>;
+  onMarkAllReady: (orderId: string, itemIds: string[]) => Promise<void>;
   onUpdate: () => void;
   /** true = chef/admin full view, false = server/waiter simplified view (ready only) */
   isChefView: boolean;
@@ -40,6 +47,8 @@ export default function KitchenBoard({
   activeTab,
   showMockData,
   onStatusChange,
+  onUpdateItemStatus,
+  onMarkAllReady,
   onUpdate,
   isChefView,
 }: KitchenBoardProps) {
@@ -108,6 +117,8 @@ export default function KitchenBoard({
                     key={o.id}
                     order={o}
                     onStatusChange={onStatusChange}
+                    onUpdateItemStatus={onUpdateItemStatus}
+                    onMarkAllReady={onMarkAllReady}
                     onUpdate={onUpdate}
                     isMock={showMockData}
                   />

@@ -18,8 +18,6 @@ import {
   User,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
-import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import type { Order, OrderItem, ItemStatus, OrderStatus } from '@/types/admin.types';
 import RuptureButton from '@/components/admin/RuptureButton';
@@ -27,6 +25,13 @@ import RuptureButton from '@/components/admin/RuptureButton';
 interface KDSTicketProps {
   order: Order;
   onStatusChange: (id: string, status: OrderStatus) => void;
+  onUpdateItemStatus?: (
+    orderId: string,
+    itemId: string,
+    newStatus: ItemStatus,
+    allItems: { id: string; item_status?: string }[],
+  ) => Promise<void>;
+  onMarkAllReady?: (orderId: string, itemIds: string[]) => Promise<void>;
   onUpdate?: () => void;
   isMock?: boolean;
 }
@@ -40,11 +45,12 @@ const ITEM_NEXT: Record<string, ItemStatus> = {
 export default function KDSTicket({
   order,
   onStatusChange,
+  onUpdateItemStatus,
+  onMarkAllReady,
   onUpdate,
   isMock = false,
 }: KDSTicketProps) {
   const [elapsed, setElapsed] = useState(0);
-  const { toast } = useToast();
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
   const to = useTranslations('orders');
@@ -187,64 +193,19 @@ export default function KDSTicket({
     if (cfg.next) onStatusChange(order.id, cfg.next);
   };
 
-  const updateItemStatus = async (itemId: string, newStatus: ItemStatus) => {
-    if (isMock) return;
-
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('order_items')
-      .update({ item_status: newStatus })
-      .eq('id', itemId);
-
-    if (error) {
-      toast({ title: tc('updateError'), variant: 'destructive' });
-      return;
-    }
-
-    const allReady = items.every((i) =>
-      i.id === itemId ? newStatus === 'ready' : i.item_status === 'ready',
-    );
-
-    if (allReady && items.length > 0) {
-      await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
-      toast({ title: t('allItemsReady') });
-    }
-
-    onUpdate?.();
-  };
-
   const handleItemClick = (item: OrderItem) => {
+    if (isMock) return;
     const current = item.item_status || 'pending';
-    updateItemStatus(item.id, ITEM_NEXT[current] || 'pending');
+    const newStatus = ITEM_NEXT[current] || 'pending';
+    onUpdateItemStatus?.(order.id, item.id, newStatus, items);
   };
 
-  const handleMarkAllReady = async () => {
+  const handleMarkAllReady = () => {
     if (isMock) return;
-
-    const supabase = createClient();
-    const itemIds = items.map((i) => i.id);
-
-    if (itemIds.length > 0) {
-      const { error } = await supabase
-        .from('order_items')
-        .update({ item_status: 'ready' })
-        .in('id', itemIds);
-
-      if (error) {
-        toast({ title: tc('updateError'), variant: 'destructive' });
-        return;
-      }
-    }
-
-    const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', order.id);
-
-    if (error) {
-      toast({ title: tc('updateError'), variant: 'destructive' });
-      return;
-    }
-
-    toast({ title: t('orderMarkedReady') });
-    onUpdate?.();
+    onMarkAllReady?.(
+      order.id,
+      items.map((i) => i.id),
+    );
   };
 
   // ─── Group items by course ─────────────────────────────────

@@ -1,18 +1,6 @@
 'use client';
 
-import {
-  Users,
-  UserPlus,
-  Shield,
-  CreditCard,
-  ChefHat,
-  Coffee,
-  Mail,
-  Lock,
-  Loader2,
-  Crown,
-  Send,
-} from 'lucide-react';
+import { Users, UserPlus, Mail, Lock, Loader2, Send } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,17 +13,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import { buildRoleConfig } from '@/lib/role-config';
 import type { AdminRole } from '@/types/admin.types';
 import type { ModalTab, CreateUserFormData } from '@/hooks/useUsersData';
-
-// ─── Types ─────────────────────────────────────────────────
-
-type RoleConfigEntry = {
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  color: string;
-  bg: string;
-};
 
 interface UserFormProps {
   activeTab: ModalTab;
@@ -77,28 +57,11 @@ export default function UserForm({
 }: UserFormProps) {
   const t = useTranslations('users');
 
-  const ROLE_CONFIG: Record<AdminRole, RoleConfigEntry> = {
-    owner: { label: t('roleOwner'), icon: Crown, color: 'text-lime-700', bg: 'bg-lime-100' },
-    admin: { label: t('roleAdmin'), icon: Shield, color: 'text-blue-600', bg: 'bg-blue-50' },
-    manager: { label: t('roleManager'), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
-    cashier: {
-      label: t('roleCashier'),
-      icon: CreditCard,
-      color: 'text-gray-600',
-      bg: 'bg-gray-100',
-    },
-    chef: { label: t('roleChef'), icon: ChefHat, color: 'text-orange-600', bg: 'bg-orange-50' },
-    waiter: {
-      label: t('roleWaiter'),
-      icon: Coffee,
-      color: 'text-green-600',
-      bg: 'bg-green-50',
-    },
-  };
+  const ROLE_CONFIG = buildRoleConfig(t);
 
   const INVITABLE_ROLE_CONFIG = Object.fromEntries(
     Object.entries(ROLE_CONFIG).filter(([key]) => key !== 'owner'),
-  ) as Record<string, RoleConfigEntry>;
+  ) as Record<string, (typeof ROLE_CONFIG)[AdminRole]>;
 
   return (
     <div className="space-y-4">
@@ -115,7 +78,7 @@ export default function UserForm({
           onClick={() => setActiveTab('invite')}
         >
           <Mail className="w-4 h-4" />
-          Inviter par email
+          {t('inviteByEmail')}
         </button>
         <button
           type="button"
@@ -128,7 +91,7 @@ export default function UserForm({
           onClick={() => setActiveTab('direct')}
         >
           <UserPlus className="w-4 h-4" />
-          Creation directe
+          {t('directCreation')}
         </button>
       </div>
 
@@ -136,7 +99,7 @@ export default function UserForm({
       {activeTab === 'invite' && (
         <div className="space-y-4">
           <div className="space-y-2">
-            <Label>Email du membre</Label>
+            <Label>{t('memberEmail')}</Label>
             <div className="relative">
               <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
               <Input
@@ -179,7 +142,7 @@ export default function UserForm({
               ) : (
                 <Send className="w-4 h-4 mr-2" />
               )}
-              Envoyer l&apos;invitation
+              {t('sendInvitation')}
             </Button>
           </div>
         </div>

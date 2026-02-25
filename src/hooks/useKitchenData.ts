@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { logger } from '@/lib/logger';
-import type { Order, OrderStatus } from '@/types/admin.types';
+import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -55,6 +55,13 @@ export interface UseKitchenDataReturn {
 
   // Actions
   handleStatusChange: (orderId: string, newStatus: OrderStatus) => Promise<void>;
+  updateItemStatus: (
+    orderId: string,
+    itemId: string,
+    newStatus: ItemStatus,
+    allItems: { id: string; item_status?: string }[],
+  ) => Promise<void>;
+  markAllItemsReady: (orderId: string, itemIds: string[]) => Promise<void>;
   toggleFullscreen: () => void;
   loadOrders: () => Promise<void>;
   goBack: () => void;
@@ -333,6 +340,69 @@ export function useKitchenData({
     }
   };
 
+  // ─── Item-level mutations ──────────────────────────────
+  const updateItemStatus = async (
+    orderId: string,
+    itemId: string,
+    newStatus: ItemStatus,
+    allItems: { id: string; item_status?: string }[],
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('order_items')
+        .update({ item_status: newStatus })
+        .eq('id', itemId);
+
+      if (error) {
+        toast({ title: tc('error'), variant: 'destructive' });
+        return;
+      }
+
+      const allReady = allItems.every((i) =>
+        i.id === itemId ? newStatus === 'ready' : i.item_status === 'ready',
+      );
+
+      if (allReady && allItems.length > 0) {
+        await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId);
+        toast({ title: t('actionAllReady') });
+      }
+
+      loadOrders();
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+      loadOrders();
+    }
+  };
+
+  const markAllItemsReady = async (orderId: string, itemIds: string[]) => {
+    try {
+      if (itemIds.length > 0) {
+        const { error } = await supabase
+          .from('order_items')
+          .update({ item_status: 'ready' })
+          .in('id', itemIds);
+
+        if (error) {
+          toast({ title: tc('error'), variant: 'destructive' });
+          return;
+        }
+      }
+
+      const { error } = await supabase.from('orders').update({ status: 'ready' }).eq('id', orderId);
+
+      if (error) {
+        toast({ title: tc('error'), variant: 'destructive' });
+        return;
+      }
+
+      toast({ title: t('orderMarkedReady') });
+      loadOrders();
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+      loadOrders();
+    }
+  };
+
   // ─── Fullscreen toggle ──────────────────────────────────
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -390,6 +460,8 @@ export function useKitchenData({
 
     // Actions
     handleStatusChange,
+    updateItemStatus,
+    markAllItemsReady,
     toggleFullscreen,
     loadOrders,
     goBack,

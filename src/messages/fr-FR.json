@@ -663,7 +663,16 @@
     "userDeletedConfirm": "Utilisateur supprimé",
     "userActivated": "Utilisateur activé",
     "userDeactivated": "Utilisateur désactivé",
-    "noMembers": "Aucun membre dans l'équipe"
+    "noMembers": "Aucun membre dans l'équipe",
+    "inviteByEmail": "Inviter par email",
+    "directCreation": "Création directe",
+    "memberEmail": "Email du membre",
+    "sendInvitation": "Envoyer l'invitation",
+    "pendingInvitationsTitle": "Invitations en attente",
+    "noPendingInvitations": "Aucune invitation en attente",
+    "sentAgo": "Envoyée il y a {time}",
+    "expiresIn": "Expire dans {time}",
+    "resend": "Renvoyer"
   },
   "reports": {
     "title": "Rapports",

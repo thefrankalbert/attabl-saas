@@ -663,7 +663,16 @@
     "userDeletedConfirm": "User deleted",
     "userActivated": "User activated",
     "userDeactivated": "User deactivated",
-    "noMembers": "No team members"
+    "noMembers": "No team members",
+    "inviteByEmail": "Invite by email",
+    "directCreation": "Direct creation",
+    "memberEmail": "Member email",
+    "sendInvitation": "Send invitation",
+    "pendingInvitationsTitle": "Pending invitations",
+    "noPendingInvitations": "No pending invitations",
+    "sentAgo": "Sent {time} ago",
+    "expiresIn": "Expires in {time}",
+    "resend": "Resend"
   },
   "reports": {
     "title": "Reports",

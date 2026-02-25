@@ -61,6 +61,8 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
         activeTab={kitchen.activeTab}
         showMockData={kitchen.showMockData}
         onStatusChange={kitchen.handleStatusChange}
+        onUpdateItemStatus={kitchen.updateItemStatus}
+        onMarkAllReady={kitchen.markAllItemsReady}
         onUpdate={kitchen.loadOrders}
         isChefView={isChefView}
       />
