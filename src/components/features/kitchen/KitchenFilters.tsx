@@ -25,6 +25,8 @@ interface KitchenFiltersProps {
   toggleFullscreen: () => void;
   goBack: () => void;
   audioRef: React.RefObject<HTMLAudioElement | null>;
+  /** true = chef/admin full view, false = server/waiter simplified view */
+  isChefView: boolean;
 }
 
 export default function KitchenFilters({
@@ -45,6 +47,7 @@ export default function KitchenFilters({
   toggleFullscreen,
   goBack,
   audioRef,
+  isChefView,
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
 
@@ -57,11 +60,13 @@ export default function KitchenFilters({
         {/* Left: Logo + counters */}
         <div className="flex items-center gap-1.5 sm:gap-2">
           <ChefHat className="w-5 h-5 text-amber-400" />
-          <span className="font-black text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1">KDS</span>
+          <span className="font-black text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1">
+            {isChefView ? 'KDS' : t('readyForService')}
+          </span>
 
           {/* Inline status counters */}
           <div className="flex items-center gap-1">
-            {pendingOrders.length > 0 && (
+            {isChefView && pendingOrders.length > 0 && (
               <div
                 className={cn(
                   'flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400/10',
@@ -74,19 +79,23 @@ export default function KitchenFilters({
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-400/10">
-              <span className="font-mono text-xs xl:text-sm font-black text-blue-400 tabular-nums">
-                {preparingOrders.length}
-              </span>
-            </div>
+            {isChefView && (
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-400/10">
+                <span className="font-mono text-xs xl:text-sm font-black text-blue-400 tabular-nums">
+                  {preparingOrders.length}
+                </span>
+              </div>
+            )}
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/10">
               <span className="font-mono text-xs xl:text-sm font-black text-emerald-400 tabular-nums">
                 {readyOrders.length}
               </span>
             </div>
-            <span className="text-xs xl:text-sm text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
-              {t('inProgress', { count: totalActive })}
-            </span>
+            {isChefView && (
+              <span className="text-xs xl:text-sm text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
+                {t('inProgress', { count: totalActive })}
+              </span>
+            )}
           </div>
         </div>
 
@@ -99,17 +108,19 @@ export default function KitchenFilters({
               second: '2-digit',
             })}
           </span>
-          <button
-            onClick={() => setShowMockData(!showMockData)}
-            className={cn(
-              'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors',
-              showMockData
-                ? 'bg-amber-400/20 text-amber-400'
-                : 'text-neutral-600 hover:text-neutral-400',
-            )}
-          >
-            Demo
-          </button>
+          {isChefView && (
+            <button
+              onClick={() => setShowMockData(!showMockData)}
+              className={cn(
+                'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors',
+                showMockData
+                  ? 'bg-amber-400/20 text-amber-400'
+                  : 'text-neutral-600 hover:text-neutral-400',
+              )}
+            >
+              Demo
+            </button>
+          )}
           <button
             onClick={toggleSound}
             className={cn(
@@ -137,38 +148,40 @@ export default function KitchenFilters({
         </div>
       </header>
 
-      {/* ━━━ MOBILE TAB BAR ━━━ */}
-      <div className="flex md:hidden border-b border-white/[0.06] shrink-0">
-        {(Object.keys(columns) as Array<ColumnKey>).map((key) => {
-          const col = columns[key];
-          const count = columnOrders[key].length;
-          const isActive = activeTab === key;
-          const borderColor =
-            key === 'pending' ? '#fbbf24' : key === 'preparing' ? '#60a5fa' : '#34d399';
-          return (
-            <button
-              key={key}
-              onClick={() => setActiveTab(key)}
-              className={cn(
-                'flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
-                isActive ? 'border-b-2 text-white' : 'text-neutral-600',
-              )}
-              style={isActive ? { borderColor } : undefined}
-            >
-              <div className={cn('w-2 h-2 rounded-full', col.dot)} />
-              {col.label}
-              <span
+      {/* ━━━ MOBILE TAB BAR (chef view only) ━━━ */}
+      {isChefView && (
+        <div className="flex md:hidden border-b border-white/[0.06] shrink-0">
+          {(Object.keys(columns) as Array<ColumnKey>).map((key) => {
+            const col = columns[key];
+            const count = columnOrders[key].length;
+            const isActive = activeTab === key;
+            const borderColor =
+              key === 'pending' ? '#fbbf24' : key === 'preparing' ? '#60a5fa' : '#34d399';
+            return (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
                 className={cn(
-                  'px-1.5 py-0.5 rounded text-xs xl:text-sm tabular-nums font-black',
-                  col.countBadge,
+                  'flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
+                  isActive ? 'border-b-2 text-white' : 'text-neutral-600',
                 )}
+                style={isActive ? { borderColor } : undefined}
               >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                <div className={cn('w-2 h-2 rounded-full', col.dot)} />
+                {col.label}
+                <span
+                  className={cn(
+                    'px-1.5 py-0.5 rounded text-xs xl:text-sm tabular-nums font-black',
+                    col.countBadge,
+                  )}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }

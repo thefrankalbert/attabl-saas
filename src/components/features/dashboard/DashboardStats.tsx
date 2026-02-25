@@ -11,15 +11,26 @@ interface DashboardStatsProps {
   loading: boolean;
   t: (key: string) => string;
   fmtCompact: (amount: number) => string;
+  /** When false, hides revenue/financial cards (for non-financial roles) */
+  showFinancials?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────
 
-export default function DashboardStats({ stats, loading, t, fmtCompact }: DashboardStatsProps) {
+export default function DashboardStats({
+  stats,
+  loading,
+  t,
+  fmtCompact,
+  showFinancials = true,
+}: DashboardStatsProps) {
+  // Non-financial roles see fewer cards
+  const cardCount = showFinancials ? 4 : 2;
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map((i) => (
+        {Array.from({ length: cardCount }, (_, i) => (
           <StatsCardSkeleton key={i} />
         ))}
       </div>
@@ -35,13 +46,15 @@ export default function DashboardStats({ stats, loading, t, fmtCompact }: Dashbo
         color="blue"
         subtitle={t('todayLabel')}
       />
-      <StatsCard
-        title={t('revenue')}
-        value={fmtCompact(stats.revenueToday)}
-        icon={Banknote}
-        color="lime"
-        subtitle={t('todayLabel')}
-      />
+      {showFinancials && (
+        <StatsCard
+          title={t('revenue')}
+          value={fmtCompact(stats.revenueToday)}
+          icon={Banknote}
+          color="lime"
+          subtitle={t('todayLabel')}
+        />
+      )}
       <StatsCard
         title={t('activeDishes')}
         value={stats.activeItems}
@@ -49,13 +62,15 @@ export default function DashboardStats({ stats, loading, t, fmtCompact }: Dashbo
         color="purple"
         subtitle={t('onMenuSubtitle')}
       />
-      <StatsCard
-        title={t('salesPoints')}
-        value={stats.activeCards}
-        icon={Users}
-        color="orange"
-        subtitle={t('activePlural')}
-      />
+      {showFinancials && (
+        <StatsCard
+          title={t('salesPoints')}
+          value={stats.activeCards}
+          icon={Users}
+          color="orange"
+          subtitle={t('activePlural')}
+        />
+      )}
     </div>
   );
 }

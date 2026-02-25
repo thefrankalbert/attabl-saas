@@ -12,6 +12,7 @@ import type { MenuFormData } from '@/hooks/useMenusData';
 import MenuForm from '@/components/features/menus/MenuForm';
 import MenuImportExcel from '@/components/features/menus/MenuImportExcel';
 import MenusTable from '@/components/features/menus/MenusTable';
+import RoleGuard from '@/components/admin/RoleGuard';
 import type { Menu, Venue } from '@/types/admin.types';
 
 interface MenusClientProps {
@@ -83,109 +84,114 @@ export default function MenusClient({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
-          <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
+    <RoleGuard permission="canManageMenus">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+            <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setShowImportModal(true)}
+              variant="outline"
+              className="gap-2 rounded-xl"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              {t('importExcel')}
+            </Button>
+            <Button
+              onClick={() => openNewMenuModal()}
+              variant="lime"
+              disabled={isLimitReached}
+              className="gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              {t('newMenu')}
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => setShowImportModal(true)}
-            variant="outline"
-            className="gap-2 rounded-xl"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            {t('importExcel')}
-          </Button>
-          <Button
-            onClick={() => openNewMenuModal()}
-            variant="lime"
-            disabled={isLimitReached}
-            className="gap-2"
-          >
-            <Plus className="w-4 h-4" />
-            {t('newMenu')}
-          </Button>
-        </div>
-      </div>
 
-      {/* Limit warning */}
-      {isLimitReached && (
-        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm text-amber-800 font-medium">
-            {t('limitReached', { max: maxMenus })}{' '}
-            <Link href={`/sites/${tenantSlug}/admin/subscription`} className="underline font-bold">
-              {t('upgradeToPremium')}
-            </Link>
-          </p>
-        </div>
-      )}
+        {/* Limit warning */}
+        {isLimitReached && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <p className="text-sm text-amber-800 font-medium">
+              {t('limitReached', { max: maxMenus })}{' '}
+              <Link
+                href={`/sites/${tenantSlug}/admin/subscription`}
+                className="underline font-bold"
+              >
+                {t('upgradeToPremium')}
+              </Link>
+            </p>
+          </div>
+        )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-        <Input
-          placeholder={t('searchPlaceholder')}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <Input
+            placeholder={t('searchPlaceholder')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+
+        {/* Menu list */}
+        <MenusTable
+          tenantSlug={tenantSlug}
+          menus={menus}
+          venues={venues}
+          filteredStandalone={filteredStandalone}
+          menusByVenue={menusByVenue}
+          searchQuery={searchQuery}
+          loading={loading}
+          onEdit={openEditMenuModal}
+          onDelete={deleteMenu}
+          onToggle={toggleActive}
+          onAddChild={(parentId) => openNewMenuModal(parentId)}
+          onReorder={reorder}
+          onCreateFirst={() => openNewMenuModal()}
         />
+
+        {/* Create/Edit Modal */}
+        <AdminModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingMenu ? t('editMenuTitle') : t('newMenuTitle')}
+          size="lg"
+        >
+          {showModal && (
+            <MenuForm
+              key={editingMenu?.id ?? 'new'}
+              editingMenu={editingMenu}
+              menus={menus}
+              venues={venues}
+              parentMenuId={parentMenuId}
+              onSubmit={handleFormSubmit}
+              onCancel={() => setShowModal(false)}
+            />
+          )}
+        </AdminModal>
+
+        {/* Import Excel Modal */}
+        <AdminModal
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          title={t('importExcel')}
+          size="lg"
+        >
+          {showImportModal && (
+            <MenuImportExcel
+              menus={menus}
+              onImportComplete={loadMenus}
+              onCancel={() => setShowImportModal(false)}
+            />
+          )}
+        </AdminModal>
       </div>
-
-      {/* Menu list */}
-      <MenusTable
-        tenantSlug={tenantSlug}
-        menus={menus}
-        venues={venues}
-        filteredStandalone={filteredStandalone}
-        menusByVenue={menusByVenue}
-        searchQuery={searchQuery}
-        loading={loading}
-        onEdit={openEditMenuModal}
-        onDelete={deleteMenu}
-        onToggle={toggleActive}
-        onAddChild={(parentId) => openNewMenuModal(parentId)}
-        onReorder={reorder}
-        onCreateFirst={() => openNewMenuModal()}
-      />
-
-      {/* Create/Edit Modal */}
-      <AdminModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingMenu ? t('editMenuTitle') : t('newMenuTitle')}
-        size="lg"
-      >
-        {showModal && (
-          <MenuForm
-            key={editingMenu?.id ?? 'new'}
-            editingMenu={editingMenu}
-            menus={menus}
-            venues={venues}
-            parentMenuId={parentMenuId}
-            onSubmit={handleFormSubmit}
-            onCancel={() => setShowModal(false)}
-          />
-        )}
-      </AdminModal>
-
-      {/* Import Excel Modal */}
-      <AdminModal
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        title={t('importExcel')}
-        size="lg"
-      >
-        {showImportModal && (
-          <MenuImportExcel
-            menus={menus}
-            onImportComplete={loadMenus}
-            onCancel={() => setShowImportModal(false)}
-          />
-        )}
-      </AdminModal>
-    </div>
+    </RoleGuard>
   );
 }

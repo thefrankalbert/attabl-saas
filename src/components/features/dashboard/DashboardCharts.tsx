@@ -15,64 +15,75 @@ interface DashboardChartsProps {
   revenueChartData: RevenueChartDataPoint[];
   adminBase: string;
   t: (key: string) => string;
+  /** When false, hides the revenue chart (for non-financial roles) */
+  showRevenueChart?: boolean;
 }
 
 // ─── Component ─────────────────────────────────────────────
 
-export default function DashboardCharts({ revenueChartData, adminBase, t }: DashboardChartsProps) {
+export default function DashboardCharts({
+  revenueChartData,
+  adminBase,
+  t,
+  showRevenueChart = true,
+}: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
-      {/* Revenue Chart (col-span-2) */}
-      <div className="col-span-1 md:col-span-2 aspect-[16/9] md:aspect-auto md:min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-4 h-4 text-neutral-600" />
-            <div>
-              <h2 className="text-base font-bold text-neutral-900">{t('revenue')}</h2>
-              <p className="text-xs text-neutral-500">{t('todayLabel')}</p>
+      {/* Revenue Chart (col-span-2) — hidden for non-financial roles */}
+      {showRevenueChart && (
+        <div className="col-span-1 md:col-span-2 aspect-[16/9] md:aspect-auto md:min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-neutral-600" />
+              <div>
+                <h2 className="text-base font-bold text-neutral-900">{t('revenue')}</h2>
+                <p className="text-xs text-neutral-500">{t('todayLabel')}</p>
+              </div>
             </div>
+            <Link
+              href={`${adminBase}/reports`}
+              className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
+            >
+              {t('viewAll')} <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
-          <Link
-            href={`${adminBase}/reports`}
-            className="flex items-center gap-1.5 text-sm font-semibold text-neutral-900 hover:text-[#CCFF00] transition-colors"
-          >
-            {t('viewAll')} <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="flex-1 min-h-0 p-4">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={revenueChartData}>
+                <defs>
+                  <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
+                    <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <Tooltip
+                  contentStyle={{
+                    background: '#171717',
+                    border: '1px solid #262626',
+                    borderRadius: '8px',
+                    fontSize: '12px',
+                    color: '#fff',
+                  }}
+                  formatter={(value: number | undefined) => [value ?? 0, t('ordersCount')]}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#CCFF00"
+                  fill="url(#revenueGradient)"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        <div className="flex-1 min-h-0 p-4">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={revenueChartData}>
-              <defs>
-                <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.4} />
-                  <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <Tooltip
-                contentStyle={{
-                  background: '#171717',
-                  border: '1px solid #262626',
-                  borderRadius: '8px',
-                  fontSize: '12px',
-                  color: '#fff',
-                }}
-                formatter={(value: number | undefined) => [value ?? 0, t('ordersCount')]}
-              />
-              <Area
-                type="monotone"
-                dataKey="orders"
-                stroke="#CCFF00"
-                fill="url(#revenueGradient)"
-                strokeWidth={2}
-                dot={false}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
+      )}
 
-      {/* Quick Actions (col-span-1) */}
-      <div className="overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col">
+      {/* Quick Actions — spans full width when revenue chart is hidden */}
+      <div
+        className={`overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col ${!showRevenueChart ? 'col-span-1 md:col-span-3' : ''}`}
+      >
         <div className="px-4 py-3 border-b border-neutral-100">
           <h2 className="text-base font-bold text-neutral-900">{t('quickActions')}</h2>
         </div>

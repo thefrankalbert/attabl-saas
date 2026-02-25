@@ -13,6 +13,8 @@ interface KitchenBoardProps {
   showMockData: boolean;
   onStatusChange: (orderId: string, newStatus: OrderStatus) => Promise<void>;
   onUpdate: () => void;
+  /** true = chef/admin full view, false = server/waiter simplified view (ready only) */
+  isChefView: boolean;
 }
 
 function EmptyColumn({
@@ -39,10 +41,21 @@ export default function KitchenBoard({
   showMockData,
   onStatusChange,
   onUpdate,
+  isChefView,
 }: KitchenBoardProps) {
+  // Server/waiter view: only show the "ready" column
+  const visibleColumns: ColumnKey[] = isChefView
+    ? (Object.keys(columns) as Array<ColumnKey>)
+    : ['ready'];
+
   return (
-    <div className="flex-1 grid grid-cols-1 md:grid-cols-3 overflow-hidden">
-      {(Object.keys(columns) as Array<ColumnKey>).map((key, idx) => {
+    <div
+      className={cn(
+        'flex-1 grid overflow-hidden',
+        isChefView ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1',
+      )}
+    >
+      {visibleColumns.map((key, idx) => {
         const col = columns[key];
         const colOrders = columnOrders[key];
         const isActive = activeTab === key;
@@ -53,13 +66,19 @@ export default function KitchenBoard({
             className={cn(
               'flex-col overflow-hidden',
               col.colBg,
-              idx < 2 && 'md:border-r border-white/[0.04]',
-              // Mobile: only show active tab; Desktop: always show all
-              isActive ? 'flex' : 'hidden md:flex',
+              isChefView && idx < 2 && 'md:border-r border-white/[0.04]',
+              // Chef view mobile: only show active tab; Desktop: always show all
+              // Server view: always show (single column)
+              isChefView ? (isActive ? 'flex' : 'hidden md:flex') : 'flex',
             )}
           >
             {/* Column Header — hidden on mobile (tabs serve this role) */}
-            <div className="hidden md:flex py-2 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30">
+            <div
+              className={cn(
+                'py-2 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30',
+                isChefView ? 'hidden md:flex' : 'flex',
+              )}
+            >
               <div className={cn('w-2 h-2 rounded-full', col.dot)} />
               <span className="text-xs xl:text-sm font-bold uppercase tracking-[0.15em] text-neutral-500">
                 {col.label}
@@ -75,7 +94,14 @@ export default function KitchenBoard({
             </div>
 
             {/* Column Content */}
-            <div className="flex-1 overflow-y-auto p-2 sm:p-2.5 space-y-2 sm:space-y-2.5 custom-scrollbar">
+            <div
+              className={cn(
+                'flex-1 overflow-y-auto p-2 sm:p-2.5 custom-scrollbar',
+                !isChefView
+                  ? 'max-w-3xl mx-auto w-full space-y-3 sm:space-y-4'
+                  : 'space-y-2 sm:space-y-2.5',
+              )}
+            >
               {colOrders.length > 0 ? (
                 colOrders.map((o) => (
                   <KDSTicket

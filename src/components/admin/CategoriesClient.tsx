@@ -29,6 +29,7 @@ import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category } from '@/types/admin.types';
 
 interface CategoriesClientProps {
@@ -255,129 +256,135 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
-          <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
-        </div>
-        <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
-          <Plus className="w-4 h-4" /> {t('newCategory')}
-        </Button>
-      </div>
-
-      {/* Counter */}
-      <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
-        <Folder className="w-4 h-4 text-neutral-400" />
-        <span className="text-xs text-neutral-500 font-medium">
-          {t('categoryCount', { count: categories.length })}
-        </span>
-      </div>
-
-      {/* List */}
-      {loading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-16 bg-white rounded-xl border border-neutral-100 animate-pulse"
-            />
-          ))}
-        </div>
-      ) : categories.length > 0 ? (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext
-            items={categories.map((cat) => cat.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div className="space-y-2">
-              {categories.map((cat) => (
-                <SortableRow
-                  key={cat.id}
-                  cat={cat}
-                  onEdit={openEditModal}
-                  onDelete={handleDelete}
-                  editLabel={tc('edit')}
-                  deleteLabel={tc('delete')}
-                  dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      ) : (
-        <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
-          <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Folder className="w-8 h-8 text-neutral-400" />
+    <RoleGuard permission="canManageMenus">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
+            <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
           </div>
-          <h3 className="text-lg font-bold text-neutral-900">{t('noCategories')}</h3>
-          <p className="text-sm text-neutral-500 mt-2">{t('noCategoriesDesc')}</p>
-          <Button onClick={openNewModal} variant="lime" className="mt-6">
-            {t('createCategory')}
+          <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
+            <Plus className="w-4 h-4" /> {t('newCategory')}
           </Button>
         </div>
-      )}
 
-      {/* Modal */}
-      <AdminModal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingCategory ? t('editCategoryTitle') : t('newCategoryTitle')}
-        size="lg"
-      >
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-name" className="text-neutral-900">
-                {t('nameFr')}
-              </Label>
-              <Input
-                id="cat-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder={t('nameFrPlaceholder')}
-                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
-                required
+        {/* Counter */}
+        <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
+          <Folder className="w-4 h-4 text-neutral-400" />
+          <span className="text-xs text-neutral-500 font-medium">
+            {t('categoryCount', { count: categories.length })}
+          </span>
+        </div>
+
+        {/* List */}
+        {loading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-16 bg-white rounded-xl border border-neutral-100 animate-pulse"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="cat-name-en" className="text-neutral-900">
-                {t('nameEn')}
-              </Label>
-              <Input
-                id="cat-name-en"
-                value={nameEn}
-                onChange={(e) => setNameEn(e.target.value)}
-                placeholder={t('nameEnPlaceholder')}
-                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
-              />
-            </div>
+            ))}
           </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="cat-order" className="text-neutral-900">
-              {t('displayOrder')}
-            </Label>
-            <Input
-              id="cat-order"
-              type="number"
-              value={displayOrder}
-              onChange={(e) => setDisplayOrder(Number(e.target.value))}
-              min={0}
-              className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
-            />
-          </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
-            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-              {tc('cancel')}
-            </Button>
-            <Button type="submit" disabled={saving} variant="lime">
-              {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {editingCategory ? t('update') : t('create')}
+        ) : categories.length > 0 ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={categories.map((cat) => cat.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {categories.map((cat) => (
+                  <SortableRow
+                    key={cat.id}
+                    cat={cat}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                    editLabel={tc('edit')}
+                    deleteLabel={tc('delete')}
+                    dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
+            <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Folder className="w-8 h-8 text-neutral-400" />
+            </div>
+            <h3 className="text-lg font-bold text-neutral-900">{t('noCategories')}</h3>
+            <p className="text-sm text-neutral-500 mt-2">{t('noCategoriesDesc')}</p>
+            <Button onClick={openNewModal} variant="lime" className="mt-6">
+              {t('createCategory')}
             </Button>
           </div>
-        </form>
-      </AdminModal>
-    </div>
+        )}
+
+        {/* Modal */}
+        <AdminModal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingCategory ? t('editCategoryTitle') : t('newCategoryTitle')}
+          size="lg"
+        >
+          <form onSubmit={handleSubmit} className="space-y-5 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="cat-name" className="text-neutral-900">
+                  {t('nameFr')}
+                </Label>
+                <Input
+                  id="cat-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder={t('nameFrPlaceholder')}
+                  className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                  required
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="cat-name-en" className="text-neutral-900">
+                  {t('nameEn')}
+                </Label>
+                <Input
+                  id="cat-name-en"
+                  value={nameEn}
+                  onChange={(e) => setNameEn(e.target.value)}
+                  placeholder={t('nameEnPlaceholder')}
+                  className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                />
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cat-order" className="text-neutral-900">
+                {t('displayOrder')}
+              </Label>
+              <Input
+                id="cat-order"
+                type="number"
+                value={displayOrder}
+                onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                min={0}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+              />
+            </div>
+            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+              <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
+                {tc('cancel')}
+              </Button>
+              <Button type="submit" disabled={saving} variant="lime">
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                {editingCategory ? t('update') : t('create')}
+              </Button>
+            </div>
+          </form>
+        </AdminModal>
+      </div>
+    </RoleGuard>
   );
 }
