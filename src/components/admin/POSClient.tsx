@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
 import PaymentModal from '@/components/admin/PaymentModal';
+import RoleGuard from '@/components/admin/RoleGuard';
 
 interface POSClientProps {
   tenantId: string;
@@ -26,140 +27,142 @@ export default function POSClient({ tenantId }: POSClientProps) {
   if (pos.loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
-    <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden">
-      {/* Mobile View Toggle — only on phone */}
-      {isMobile && (
-        <div className="flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
-          <button
-            onClick={() => setMobileView('products')}
+    <RoleGuard permission="canConfigurePOS">
+      <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden">
+        {/* Mobile View Toggle — only on phone */}
+        {isMobile && (
+          <div className="flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
+            <button
+              onClick={() => setMobileView('products')}
+              className={cn(
+                'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
+                mobileView === 'products'
+                  ? 'border-b-2 border-neutral-900 text-neutral-900'
+                  : 'text-neutral-400',
+              )}
+            >
+              {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
+            </button>
+            <button
+              onClick={() => setMobileView('cart')}
+              className={cn(
+                'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
+                mobileView === 'cart'
+                  ? 'border-b-2 border-neutral-900 text-neutral-900'
+                  : 'text-neutral-400',
+              )}
+            >
+              {t('cart')}{' '}
+              {pos.cart.length > 0 && (
+                <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
+                  {pos.cart.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden min-h-0">
+          {/* Products Section */}
+          <div
             className={cn(
-              'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
-              mobileView === 'products'
-                ? 'border-b-2 border-neutral-900 text-neutral-900'
-                : 'text-neutral-400',
+              'flex-1 flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden',
+              isMobile ? (mobileView === 'products' ? 'flex' : 'hidden') : 'flex',
             )}
           >
-            {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
-          </button>
-          <button
-            onClick={() => setMobileView('cart')}
-            className={cn(
-              'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
-              mobileView === 'cart'
-                ? 'border-b-2 border-neutral-900 text-neutral-900'
-                : 'text-neutral-400',
-            )}
-          >
-            {t('cart')}{' '}
-            {pos.cart.length > 0 && (
-              <span className="ml-1 bg-primary text-white text-xs rounded-full px-1.5 py-0.5">
-                {pos.cart.length}
-              </span>
-            )}
-          </button>
-        </div>
-      )}
-
-      <div className="flex-1 flex flex-col md:flex-row gap-3 sm:gap-4 lg:gap-6 overflow-hidden min-h-0">
-        {/* Products Section */}
-        <div
-          className={cn(
-            'flex-1 flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden',
-            isMobile ? (mobileView === 'products' ? 'flex' : 'hidden') : 'flex',
-          )}
-        >
-          <POSProductBrowser
-            items={pos.filteredItems}
-            categories={pos.categories}
-            cart={pos.cart}
-            searchQuery={pos.searchQuery}
-            setSearchQuery={pos.setSearchQuery}
-            selectedCategory={pos.selectedCategory}
-            setSelectedCategory={pos.setSelectedCategory}
-            onAddToCart={pos.addToCart}
-            currency={pos.currency}
-          />
-        </div>
-
-        {/* Cart Section */}
-        <div
-          className={cn(
-            'w-full md:w-[350px] lg:w-[400px] xl:w-[440px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
-            isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
-          )}
-        >
-          <POSCart
-            cart={pos.cart}
-            menuItems={pos.menuItems}
-            currency={pos.currency}
-            suggestions={pos.suggestions}
-            total={pos.total}
-            orderNumber={pos.orderNumber}
-            serviceType={pos.serviceType}
-            setServiceType={pos.setServiceType}
-            selectedTable={pos.selectedTable}
-            setSelectedTable={pos.setSelectedTable}
-            roomNumber={pos.roomNumber}
-            setRoomNumber={pos.setRoomNumber}
-            deliveryAddress={pos.deliveryAddress}
-            setDeliveryAddress={pos.setDeliveryAddress}
-            onAddToCart={pos.addToCart}
-            onUpdateQuantity={pos.updateQuantity}
-            onClearCart={pos.clearCart}
-            onEditNotes={(itemId, currentNotes) => {
-              pos.setEditingNotes(itemId);
-              pos.setNotesText(currentNotes);
-            }}
-            onPrintOrder={() => pos.handleOrder('pending')}
-            onCheckout={() => setShowPaymentModal(true)}
-          />
-        </div>
-      </div>
-
-      {/* Note Modal */}
-      {pos.editingNotes && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
-            <h3 className="font-bold text-lg mb-4">{t('kitchenNoteTitle')}</h3>
-            <textarea
-              autoFocus
-              className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
-              placeholder={t('kitchenNotePlaceholder')}
-              value={pos.notesText}
-              onChange={(e) => pos.setNotesText(e.target.value)}
+            <POSProductBrowser
+              items={pos.filteredItems}
+              categories={pos.categories}
+              cart={pos.cart}
+              searchQuery={pos.searchQuery}
+              setSearchQuery={pos.setSearchQuery}
+              selectedCategory={pos.selectedCategory}
+              setSelectedCategory={pos.setSelectedCategory}
+              onAddToCart={pos.addToCart}
+              currency={pos.currency}
             />
-            <div className="flex justify-end gap-2 mt-4">
-              <Button
-                variant="ghost"
-                className="rounded-xl"
-                onClick={() => pos.setEditingNotes(null)}
-              >
-                {tc('cancel')}
-              </Button>
-              <Button
-                className="bg-neutral-900 text-white hover:bg-neutral-800 rounded-xl"
-                onClick={pos.saveNotes}
-              >
-                {tc('save')}
-              </Button>
-            </div>
+          </div>
+
+          {/* Cart Section */}
+          <div
+            className={cn(
+              'w-full md:w-[350px] lg:w-[400px] xl:w-[440px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
+              isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
+            )}
+          >
+            <POSCart
+              cart={pos.cart}
+              menuItems={pos.menuItems}
+              currency={pos.currency}
+              suggestions={pos.suggestions}
+              total={pos.total}
+              orderNumber={pos.orderNumber}
+              serviceType={pos.serviceType}
+              setServiceType={pos.setServiceType}
+              selectedTable={pos.selectedTable}
+              setSelectedTable={pos.setSelectedTable}
+              roomNumber={pos.roomNumber}
+              setRoomNumber={pos.setRoomNumber}
+              deliveryAddress={pos.deliveryAddress}
+              setDeliveryAddress={pos.setDeliveryAddress}
+              onAddToCart={pos.addToCart}
+              onUpdateQuantity={pos.updateQuantity}
+              onClearCart={pos.clearCart}
+              onEditNotes={(itemId, currentNotes) => {
+                pos.setEditingNotes(itemId);
+                pos.setNotesText(currentNotes);
+              }}
+              onPrintOrder={() => pos.handleOrder('pending')}
+              onCheckout={() => setShowPaymentModal(true)}
+            />
           </div>
         </div>
-      )}
 
-      {/* Payment Modal Reuse */}
-      <PaymentModal
-        isOpen={showPaymentModal}
-        onClose={() => setShowPaymentModal(false)}
-        orderNumber={pos.orderNumber}
-        total={pos.total}
-        tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
-        onSuccess={() =>
-          pos.handleOrder('delivered', {
-            onPaymentModalClose: () => setShowPaymentModal(false),
-          })
-        }
-      />
-    </div>
+        {/* Note Modal */}
+        {pos.editingNotes && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
+              <h3 className="font-bold text-lg mb-4">{t('kitchenNoteTitle')}</h3>
+              <textarea
+                autoFocus
+                className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
+                placeholder={t('kitchenNotePlaceholder')}
+                value={pos.notesText}
+                onChange={(e) => pos.setNotesText(e.target.value)}
+              />
+              <div className="flex justify-end gap-2 mt-4">
+                <Button
+                  variant="ghost"
+                  className="rounded-xl"
+                  onClick={() => pos.setEditingNotes(null)}
+                >
+                  {tc('cancel')}
+                </Button>
+                <Button
+                  className="bg-neutral-900 text-white hover:bg-neutral-800 rounded-xl"
+                  onClick={pos.saveNotes}
+                >
+                  {tc('save')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Modal Reuse */}
+        <PaymentModal
+          isOpen={showPaymentModal}
+          onClose={() => setShowPaymentModal(false)}
+          orderNumber={pos.orderNumber}
+          total={pos.total}
+          tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
+          onSuccess={() =>
+            pos.handleOrder('delivered', {
+              onPaymentModalClose: () => setShowPaymentModal(false),
+            })
+          }
+        />
+      </div>
+    </RoleGuard>
   );
 }
