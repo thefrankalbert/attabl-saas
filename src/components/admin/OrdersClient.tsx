@@ -17,6 +17,7 @@ import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
+import RoleGuard from '@/components/admin/RoleGuard';
 import type { Order, OrderStatus } from '@/types/admin.types';
 
 interface OrdersClientProps {
@@ -288,145 +289,147 @@ export default function OrdersClient({
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
-      {/* Hidden Audio */}
-      <audio ref={audioRef} preload="auto" />
+    <RoleGuard permission="canViewAllOrders">
+      <div className="space-y-6 h-full flex flex-col">
+        {/* Hidden Audio */}
+        <audio ref={audioRef} preload="auto" />
 
-      {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl xl:text-2xl font-bold tracking-tight">{ta('ordersCount')}</h1>
-          <p className="text-xs text-neutral-500 mt-1">{t('manageRealTime')}</p>
-        </div>
+        {/* Header & Controls */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl xl:text-2xl font-bold tracking-tight">{ta('ordersCount')}</h1>
+            <p className="text-xs text-neutral-500 mt-1">{t('manageRealTime')}</p>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={toggleSound}
-            className={soundEnabled ? 'text-primary border-primary bg-primary/5' : ''}
-            title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-          >
-            {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-          </Button>
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
-            <Input
-              placeholder={t('searchTable')}
-              className="pl-9 w-full sm:w-[200px] xl:w-[280px]"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleSound}
+              className={soundEnabled ? 'text-primary border-primary bg-primary/5' : ''}
+              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
+              <Input
+                placeholder={t('searchTable')}
+                className="pl-9 w-full sm:w-[200px] xl:w-[280px]"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Tabs / Filters */}
-      <div className="flex items-center justify-between overflow-x-auto scrollbar-hide pb-2">
-        <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
-          <TabsList>
-            <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
-            <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
-            <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
-            <TabsTrigger value="preparing">{t('tabInKitchen')}</TabsTrigger>
-            <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
-            <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+        {/* Tabs / Filters */}
+        <div className="flex items-center justify-between overflow-x-auto scrollbar-hide pb-2">
+          <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+            <TabsList>
+              <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
+              <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
+              <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
+              <TabsTrigger value="preparing">{t('tabInKitchen')}</TabsTrigger>
+              <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
+              <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
 
-      {/* Orders Table / Cards */}
-      <ResponsiveDataTable
-        columns={columns}
-        data={filteredOrders}
-        emptyMessage={t('noOrdersMatch')}
-        onRowClick={(order) => setSelectedOrder(order)}
-        mobileConfig={{
-          renderCard: (order) => {
-            const config = statusConfig[order.status];
-            const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
-            const items = order.items || [];
-            return (
-              <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3 active:bg-neutral-50 transition-colors">
-                {/* Row 1: Table + Status + Time */}
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900 text-xs">
-                      {order.table_number}
+        {/* Orders Table / Cards */}
+        <ResponsiveDataTable
+          columns={columns}
+          data={filteredOrders}
+          emptyMessage={t('noOrdersMatch')}
+          onRowClick={(order) => setSelectedOrder(order)}
+          mobileConfig={{
+            renderCard: (order) => {
+              const config = statusConfig[order.status];
+              const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
+              const items = order.items || [];
+              return (
+                <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3 active:bg-neutral-50 transition-colors">
+                  {/* Row 1: Table + Status + Time */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900 text-xs">
+                        {order.table_number}
+                      </div>
+                      <span className="font-semibold text-neutral-900">{order.table_number}</span>
                     </div>
-                    <span className="font-semibold text-neutral-900">{order.table_number}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-neutral-400">
+                        {new Date(order.created_at).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                        })}
+                      </span>
+                      <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
+                        {config.label}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-neutral-400">
-                      {new Date(order.created_at).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+
+                  {/* Row 2: Server + Items + Total */}
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-neutral-400 truncate">
+                      {order.server?.full_name ?? '—'}
                     </span>
-                    <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
-                      {config.label}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <span className="text-neutral-500">
+                        {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                      </span>
+                      <span className="font-mono font-bold text-neutral-900">
+                        {total.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
+
+                  {/* Row 3: Actions */}
+                  {config.nextStatus && (
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleStatusChange(order.id, config.nextStatus!);
+                        }}
+                        className={cn(
+                          'text-xs text-white gap-1 min-h-[44px]',
+                          config.actionBg,
+                          `hover:${config.actionBg}/90`,
+                        )}
+                      >
+                        {config.nextLabel} <ChevronRight className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
+              );
+            },
+          }}
+        />
 
-                {/* Row 2: Server + Items + Total */}
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-neutral-400 truncate">
-                    {order.server?.full_name ?? '—'}
-                  </span>
-                  <div className="flex items-center gap-3">
-                    <span className="text-neutral-500">
-                      {items.length} {items.length === 1 ? tc('item') : tc('items')}
-                    </span>
-                    <span className="font-mono font-bold text-neutral-900">
-                      {total.toLocaleString()}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Row 3: Actions */}
-                {config.nextStatus && (
-                  <div className="flex justify-end pt-1">
-                    <Button
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStatusChange(order.id, config.nextStatus!);
-                      }}
-                      className={cn(
-                        'text-xs text-white gap-1 min-h-[44px]',
-                        config.actionBg,
-                        `hover:${config.actionBg}/90`,
-                      )}
-                    >
-                      {config.nextLabel} <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            );
-          },
-        }}
-      />
-
-      {/* Detail Modal */}
-      <AdminModal
-        isOpen={!!selectedOrder}
-        onClose={() => setSelectedOrder(null)}
-        title={`${tk('ticketOrder')} #${selectedOrder?.id.slice(0, 8)}`}
-        size="lg"
-      >
-        {selectedOrder && (
-          <OrderDetails
-            order={selectedOrder}
-            onClose={() => setSelectedOrder(null)}
-            onUpdate={() => {
-              // Trigger a refresh logic if usually needed, but generic realtime handles it mostly.
-              // We can force status update in local state here if specialized logic requires it.
-            }}
-          />
-        )}
-      </AdminModal>
-    </div>
+        {/* Detail Modal */}
+        <AdminModal
+          isOpen={!!selectedOrder}
+          onClose={() => setSelectedOrder(null)}
+          title={`${tk('ticketOrder')} #${selectedOrder?.id.slice(0, 8)}`}
+          size="lg"
+        >
+          {selectedOrder && (
+            <OrderDetails
+              order={selectedOrder}
+              onClose={() => setSelectedOrder(null)}
+              onUpdate={() => {
+                // Trigger a refresh logic if usually needed, but generic realtime handles it mostly.
+                // We can force status update in local state here if specialized logic requires it.
+              }}
+            />
+          )}
+        </AdminModal>
+      </div>
+    </RoleGuard>
   );
 }
