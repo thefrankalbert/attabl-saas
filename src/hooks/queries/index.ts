@@ -1,6 +1,7 @@
 export { useMenuItems } from './useMenuItems';
 export { useCategories } from './useCategories';
 export { useIngredients } from './useIngredients';
+export { useTables } from './useTables';
 export { useSuppliers } from './useSuppliers';
 export { useOrders } from './useOrders';
 export { useDashboardStats } from './useDashboardStats';
