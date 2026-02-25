@@ -1102,6 +1102,8 @@
     "categoryDeleted": "Catégorie supprimée",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Importer Excel",
+    "targetMenu": "Menu cible",
+    "selectTargetMenu": "Sélectionnez un menu…",
     "downloadTemplate": "Télécharger le modèle Excel",
     "selectFile": "Sélectionner un fichier",
     "dragAndDrop": "Glissez-déposez un fichier .xlsx ici ou cliquez pour parcourir",

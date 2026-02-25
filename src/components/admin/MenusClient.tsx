@@ -58,6 +58,7 @@ export default function MenusClient({
 
   // Import Excel state
   const [showImportModal, setShowImportModal] = useState(false);
+  const [importMenuId, setImportMenuId] = useState<string>('');
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState<{
@@ -210,6 +211,7 @@ export default function MenusClient({
 
   const openImportModal = () => {
     setImportFile(null);
+    setImportMenuId(menus.length === 1 ? menus[0].id : '');
     setImportResult(null);
     setImporting(false);
     setIsDragOver(false);
@@ -259,7 +261,7 @@ export default function MenusClient({
     try {
       const formData = new FormData();
       formData.append('file', importFile);
-      formData.append('tenantId', tenantId);
+      formData.append('menuId', importMenuId);
 
       const response = await fetch('/api/menu-import', {
         method: 'POST',
@@ -591,6 +593,27 @@ export default function MenusClient({
             {t('downloadTemplate')}
           </a>
 
+          {/* Target menu selector */}
+          <div className="space-y-1.5">
+            <Label htmlFor="import-menu" className="text-neutral-900">
+              {t('targetMenu')}
+            </Label>
+            <select
+              id="import-menu"
+              value={importMenuId}
+              onChange={(e) => setImportMenuId(e.target.value)}
+              className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
+              required
+            >
+              <option value="">{t('selectTargetMenu')}</option>
+              {menus.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           {/* File upload drop zone */}
           <div
             onDrop={handleDrop}
@@ -673,7 +696,7 @@ export default function MenusClient({
             </Button>
             <Button
               variant="lime"
-              disabled={!importFile || importing}
+              disabled={!importFile || !importMenuId || importing}
               onClick={handleImport}
               className="gap-2 rounded-xl"
             >

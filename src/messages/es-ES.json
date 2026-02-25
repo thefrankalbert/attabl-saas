@@ -1102,6 +1102,8 @@
     "categoryDeleted": "Categoría eliminada",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Importar Excel",
+    "targetMenu": "Menú destino",
+    "selectTargetMenu": "Seleccione un menú…",
     "downloadTemplate": "Descargar plantilla Excel",
     "selectFile": "Seleccionar un archivo",
     "dragAndDrop": "Arrastre y suelte un archivo .xlsx aquí o haga clic para explorar",
