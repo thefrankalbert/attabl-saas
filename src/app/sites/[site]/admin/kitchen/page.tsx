@@ -19,7 +19,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
 
   if (!tenant) {
     return (
-      <div className="h-screen bg-neutral-950 flex items-center justify-center p-8">
+      <div className="h-full bg-neutral-950 flex items-center justify-center p-8">
         <div className="flex items-start gap-3 p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl max-w-md">
           <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5 flex-shrink-0" />
           <div>

@@ -303,7 +303,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
   if (loading) return <div className="p-8 text-center">{t('loading')}</div>;
 
   return (
-    <div className="h-[calc(100vh-8rem)] md:h-[calc(100vh-4rem)] flex flex-col overflow-hidden">
+    <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden">
       {/* Mobile View Toggle */}
       <div className="md:hidden flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
         <button
