@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AdminModal from '@/components/admin/AdminModal';
+import { DatePickerField } from '@/components/ui/date-picker-field';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
 
@@ -250,20 +251,18 @@ export default function AnnouncementsClient({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label className="mb-1.5 block text-neutral-900">{t('startDateRequired')}</Label>
-              <Input
-                type="date"
+              <DatePickerField
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="rounded-lg focus-visible:ring-lime-400"
+                onChange={setStartDate}
+                placeholder={t('startDateRequired')}
               />
             </div>
             <div>
               <Label className="mb-1.5 block text-neutral-900">{t('endDateOptional')}</Label>
-              <Input
-                type="date"
+              <DatePickerField
                 value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="rounded-lg focus-visible:ring-lime-400"
+                onChange={setEndDate}
+                placeholder={t('endDateOptional')}
               />
             </div>
           </div>
