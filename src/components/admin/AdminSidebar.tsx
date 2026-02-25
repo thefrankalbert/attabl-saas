@@ -110,7 +110,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 bg-white border-r border-neutral-100 z-40 flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 h-[100dvh] bg-white border-r border-neutral-100 z-40 flex flex-col transition-all duration-300 ease-in-out lg:translate-x-0',
           isCollapsed ? 'w-16' : 'w-64',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           className,

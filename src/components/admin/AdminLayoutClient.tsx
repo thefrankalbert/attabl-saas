@@ -46,7 +46,7 @@ function AdminLayoutInner({
 
       <main
         className={cn(
-          'min-h-screen transition-[margin-left] duration-300 ease-in-out',
+          'h-[100dvh] overflow-y-auto transition-[margin-left] duration-300 ease-in-out',
           marginClass,
           isMobile && 'pb-16', // space for bottom nav
           isDevMode && 'pt-6',
