@@ -6,6 +6,7 @@ import { useDashboardData, timeAgo, getLast7DaysData } from '@/hooks/useDashboar
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
+import { usePermissions } from '@/hooks/usePermissions';
 import DashboardStatsSection from '@/components/features/dashboard/DashboardStats';
 import DashboardCharts from '@/components/features/dashboard/DashboardCharts';
 import DashboardRecentOrders from '@/components/features/dashboard/DashboardRecentOrders';
@@ -27,22 +28,44 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   const { stats, recentOrders, stockItems, loading, handleStatusChange } = useDashboardData(props);
 
+  // ─── Role-based visibility ───────────────────────────────
+  const { can } = usePermissions();
+
+  const showFinancials = can('canViewAllFinances');
+  const showRevenueChart = can('canViewAllFinances');
+  const showOrders = can('canViewAllOrders') || can('canViewOwnOrders');
+  const showStock = can('canViewStocks');
+
   if (loading) {
     return (
       <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map((i) => (
+          {Array.from({ length: showFinancials ? 4 : 2 }, (_, i) => (
             <StatsCardSkeleton key={i} />
           ))}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
-          <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
-          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
+          {showRevenueChart && (
+            <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
+          )}
+          <div
+            className={`bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px] ${!showRevenueChart ? 'col-span-1 md:col-span-3' : ''}`}
+          />
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
-          <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
-          <div className="bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
-        </div>
+        {(showOrders || showStock) && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+            {showOrders && (
+              <div
+                className={`bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px] ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
+              />
+            )}
+            {showStock && (
+              <div
+                className={`bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px] ${!showOrders ? 'col-span-1 md:col-span-3' : ''}`}
+              />
+            )}
+          </div>
+        )}
       </div>
     );
   }
@@ -56,13 +79,24 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   return (
     <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
-      {/* Row 1 -- KPI Cards */}
-      <DashboardStatsSection stats={stats} loading={false} t={t} fmtCompact={fmtCompact} />
+      {/* Row 1 -- KPI Cards (financial cards hidden for non-financial roles) */}
+      <DashboardStatsSection
+        stats={stats}
+        loading={false}
+        t={t}
+        fmtCompact={fmtCompact}
+        showFinancials={showFinancials}
+      />
 
-      {/* Row 2 -- Revenue Chart + Quick Actions */}
-      <DashboardCharts revenueChartData={revenueChartData} adminBase={adminBase} t={t} />
+      {/* Row 2 -- Revenue Chart + Quick Actions (chart hidden for non-financial roles) */}
+      <DashboardCharts
+        revenueChartData={revenueChartData}
+        adminBase={adminBase}
+        t={t}
+        showRevenueChart={showRevenueChart}
+      />
 
-      {/* Row 3 -- Recent Orders + Stock Alerts */}
+      {/* Row 3 -- Recent Orders + Stock Alerts (role-dependent visibility) */}
       <DashboardRecentOrders
         recentOrders={recentOrders}
         stockItems={stockItems}
@@ -73,6 +107,8 @@ export default function DashboardClient(props: DashboardClientProps) {
         fmt={fmt}
         timeAgoFn={timeAgo}
         onStatusChange={handleStatusChange}
+        showOrders={showOrders}
+        showStock={showStock}
       />
     </div>
   );

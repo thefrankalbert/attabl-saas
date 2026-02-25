@@ -3,6 +3,7 @@
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
+import { usePermissions } from '@/hooks/usePermissions';
 import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
 
@@ -11,9 +12,13 @@ interface KitchenClientProps {
   notificationSoundId?: string;
 }
 
+const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
+
 export default function KitchenClient({ tenantId, notificationSoundId }: KitchenClientProps) {
   const t = useTranslations('kitchen');
+  const { role } = usePermissions();
 
+  const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
 
   if (kitchen.loading) {
@@ -47,6 +52,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
         toggleFullscreen={kitchen.toggleFullscreen}
         goBack={kitchen.goBack}
         audioRef={kitchen.audioRef}
+        isChefView={isChefView}
       />
 
       <KitchenBoard
@@ -56,6 +62,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
         showMockData={kitchen.showMockData}
         onStatusChange={kitchen.handleStatusChange}
         onUpdate={kitchen.loadOrders}
+        isChefView={isChefView}
       />
     </div>
   );

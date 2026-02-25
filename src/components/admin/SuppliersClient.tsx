@@ -15,6 +15,7 @@ import { ResponsiveDataTable, SortableHeader } from '@/components/admin/Responsi
 import AdminModal from '@/components/admin/AdminModal';
 import { createSupplierService } from '@/services/supplier.service';
 import type { ColumnDef } from '@tanstack/react-table';
+import RoleGuard from '@/components/admin/RoleGuard';
 import type { Supplier, CreateSupplierInput } from '@/types/supplier.types';
 
 interface SuppliersClientProps {
@@ -283,209 +284,211 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   }
 
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
-            <Truck className="w-6 h-6" />
-            {t('title')}
-          </h1>
-          <p className="text-sm text-neutral-500 mt-1">
-            {t('supplierCount', { count: suppliers.length })}
-          </p>
+    <RoleGuard permission="canManageStocks">
+      <div className="p-4 sm:p-6 space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-2">
+              <Truck className="w-6 h-6" />
+              {t('title')}
+            </h1>
+            <p className="text-sm text-neutral-500 mt-1">
+              {t('supplierCount', { count: suppliers.length })}
+            </p>
+          </div>
+          <Button onClick={openAdd} variant="lime" className="gap-2">
+            <Plus className="w-4 h-4" />
+            {t('addSupplier')}
+          </Button>
         </div>
-        <Button onClick={openAdd} variant="lime" className="gap-2">
-          <Plus className="w-4 h-4" />
-          {t('addSupplier')}
-        </Button>
-      </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
-          <Input
-            placeholder={t('searchPlaceholder')}
-            className="pl-9"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
+            <Input
+              placeholder={t('searchPlaceholder')}
+              className="pl-9"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            {(['all', 'active', 'inactive'] as const).map((status) => (
+              <Button
+                key={status}
+                variant={filterActive === status ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilterActive(status)}
+                className="rounded-full"
+              >
+                {status === 'all'
+                  ? t('filterAll')
+                  : status === 'active'
+                    ? t('filterActive')
+                    : t('filterInactive')}
+              </Button>
+            ))}
+          </div>
         </div>
-        <div className="flex gap-2">
-          {(['all', 'active', 'inactive'] as const).map((status) => (
-            <Button
-              key={status}
-              variant={filterActive === status ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilterActive(status)}
-              className="rounded-full"
-            >
-              {status === 'all'
-                ? t('filterAll')
-                : status === 'active'
-                  ? t('filterActive')
-                  : t('filterInactive')}
-            </Button>
-          ))}
-        </div>
-      </div>
 
-      {/* Table / Cards */}
-      <ResponsiveDataTable
-        columns={columns}
-        data={filtered}
-        emptyMessage={t('noSuppliersFound')}
-        mobileConfig={{
-          renderCard: (supplier) => (
-            <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3">
-              {/* Row 1: Name + Status */}
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="font-medium text-neutral-900 truncate">{supplier.name}</p>
-                  {supplier.contact_name && (
-                    <p className="text-xs text-neutral-500">{supplier.contact_name}</p>
-                  )}
+        {/* Table / Cards */}
+        <ResponsiveDataTable
+          columns={columns}
+          data={filtered}
+          emptyMessage={t('noSuppliersFound')}
+          mobileConfig={{
+            renderCard: (supplier) => (
+              <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3">
+                {/* Row 1: Name + Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-neutral-900 truncate">{supplier.name}</p>
+                    {supplier.contact_name && (
+                      <p className="text-xs text-neutral-500">{supplier.contact_name}</p>
+                    )}
+                  </div>
+                  <span
+                    className={cn(
+                      'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
+                      supplier.is_active
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-neutral-100 text-neutral-500',
+                    )}
+                  >
+                    {supplier.is_active ? t('active') : t('inactive')}
+                  </span>
                 </div>
-                <span
-                  className={cn(
-                    'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
-                    supplier.is_active
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-neutral-100 text-neutral-500',
-                  )}
-                >
-                  {supplier.is_active ? t('active') : t('inactive')}
-                </span>
+
+                {/* Row 2: Contact info */}
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500">
+                  {supplier.phone && <span>{supplier.phone}</span>}
+                  {supplier.email && <span className="truncate">{supplier.email}</span>}
+                </div>
+
+                {/* Row 3: Actions */}
+                <div className="flex justify-end gap-1 pt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEdit(supplier)}
+                    className="gap-1 text-xs min-h-[44px]"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    {t('edit')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleToggleActive(supplier)}
+                    className="text-xs min-h-[44px]"
+                  >
+                    {supplier.is_active ? t('disable') : t('enable')}
+                  </Button>
+                </div>
               </div>
+            ),
+          }}
+        />
 
-              {/* Row 2: Contact info */}
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-neutral-500">
-                {supplier.phone && <span>{supplier.phone}</span>}
-                {supplier.email && <span className="truncate">{supplier.email}</span>}
-              </div>
-
-              {/* Row 3: Actions */}
-              <div className="flex justify-end gap-1 pt-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEdit(supplier)}
-                  className="gap-1 text-xs min-h-[44px]"
-                >
-                  <Pencil className="w-3 h-3" />
-                  {t('edit')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleToggleActive(supplier)}
-                  className="text-xs min-h-[44px]"
-                >
-                  {supplier.is_active ? t('disable') : t('enable')}
-                </Button>
-              </div>
-            </div>
-          ),
-        }}
-      />
-
-      {/* Modal — Add / Edit */}
-      <AdminModal
-        isOpen={modalMode !== null}
-        onClose={() => {
-          setModalMode(null);
-          resetForm();
-        }}
-        title={modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
-        size="lg"
-      >
-        <div className="space-y-4 pt-4">
-          <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-              {t('nameLabel')}
-            </Label>
-            <Input
-              value={formName}
-              onChange={(e) => setFormName(e.target.value)}
-              placeholder={t('namePlaceholder')}
-              autoFocus
-            />
-          </div>
-
-          <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-              {t('contactPerson')}
-            </Label>
-            <Input
-              value={formContact}
-              onChange={(e) => setFormContact(e.target.value)}
-              placeholder={t('contactPlaceholder')}
-            />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Modal — Add / Edit */}
+        <AdminModal
+          isOpen={modalMode !== null}
+          onClose={() => {
+            setModalMode(null);
+            resetForm();
+          }}
+          title={modalMode === 'add' ? t('addSupplierTitle') : t('editSupplierTitle')}
+          size="lg"
+        >
+          <div className="space-y-4 pt-4">
             <div>
               <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-                {t('phoneLabel')}
+                {t('nameLabel')}
               </Label>
               <Input
-                value={formPhone}
-                onChange={(e) => setFormPhone(e.target.value)}
-                placeholder="+237..."
+                value={formName}
+                onChange={(e) => setFormName(e.target.value)}
+                placeholder={t('namePlaceholder')}
+                autoFocus
               />
             </div>
+
             <div>
               <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-                {t('emailLabel')}
+                {t('contactPerson')}
               </Label>
               <Input
-                type="email"
-                value={formEmail}
-                onChange={(e) => setFormEmail(e.target.value)}
-                placeholder="contact@..."
+                value={formContact}
+                onChange={(e) => setFormContact(e.target.value)}
+                placeholder={t('contactPlaceholder')}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('phoneLabel')}
+                </Label>
+                <Input
+                  value={formPhone}
+                  onChange={(e) => setFormPhone(e.target.value)}
+                  placeholder="+237..."
+                />
+              </div>
+              <div>
+                <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                  {t('emailLabel')}
+                </Label>
+                <Input
+                  type="email"
+                  value={formEmail}
+                  onChange={(e) => setFormEmail(e.target.value)}
+                  placeholder="contact@..."
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('addressLabel')}
+              </Label>
+              <Input
+                value={formAddress}
+                onChange={(e) => setFormAddress(e.target.value)}
+                placeholder={t('addressPlaceholder')}
+              />
+            </div>
+
+            <div>
+              <Label className="text-xs font-medium text-neutral-600 mb-1 block">
+                {t('notesLabel')}
+              </Label>
+              <Input
+                value={formNotes}
+                onChange={(e) => setFormNotes(e.target.value)}
+                placeholder={t('notesPlaceholder')}
               />
             </div>
           </div>
 
-          <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-              {t('addressLabel')}
-            </Label>
-            <Input
-              value={formAddress}
-              onChange={(e) => setFormAddress(e.target.value)}
-              placeholder={t('addressPlaceholder')}
-            />
+          <div className="flex justify-end gap-2 mt-6">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setModalMode(null);
+                resetForm();
+              }}
+            >
+              {t('cancelAction')}
+            </Button>
+            <Button onClick={handleSave} variant="lime">
+              {t('save')}
+            </Button>
           </div>
-
-          <div>
-            <Label className="text-xs font-medium text-neutral-600 mb-1 block">
-              {t('notesLabel')}
-            </Label>
-            <Input
-              value={formNotes}
-              onChange={(e) => setFormNotes(e.target.value)}
-              placeholder={t('notesPlaceholder')}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-2 mt-6">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setModalMode(null);
-              resetForm();
-            }}
-          >
-            {t('cancelAction')}
-          </Button>
-          <Button onClick={handleSave} variant="lime">
-            {t('save')}
-          </Button>
-        </div>
-      </AdminModal>
-    </div>
+        </AdminModal>
+      </div>
+    </RoleGuard>
   );
 }
