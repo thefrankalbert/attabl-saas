@@ -28,7 +28,7 @@ export default function DashboardCharts({
   showRevenueChart = true,
 }: DashboardChartsProps) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 xl:gap-4 min-h-0">
       {/* Revenue Chart (col-span-2) — hidden for non-financial roles */}
       {showRevenueChart && (
         <div className="col-span-1 md:col-span-2 aspect-[16/9] md:aspect-auto md:min-h-0 overflow-hidden bg-white border border-neutral-100 rounded-xl flex flex-col">
@@ -36,7 +36,7 @@ export default function DashboardCharts({
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-neutral-600" />
               <div>
-                <h2 className="text-base font-bold text-neutral-900">{t('revenue')}</h2>
+                <h2 className="text-base xl:text-lg font-bold text-neutral-900">{t('revenue')}</h2>
                 <p className="text-xs text-neutral-500">{t('todayLabel')}</p>
               </div>
             </div>
@@ -85,7 +85,7 @@ export default function DashboardCharts({
         className={`overflow-auto bg-white border border-neutral-100 rounded-xl flex flex-col ${!showRevenueChart ? 'col-span-1 md:col-span-3' : ''}`}
       >
         <div className="px-4 py-3 border-b border-neutral-100">
-          <h2 className="text-base font-bold text-neutral-900">{t('quickActions')}</h2>
+          <h2 className="text-base xl:text-lg font-bold text-neutral-900">{t('quickActions')}</h2>
         </div>
         <div className="flex-1 min-h-0 overflow-auto p-3 space-y-2">
           <Link

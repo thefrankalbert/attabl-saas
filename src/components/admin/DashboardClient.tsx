@@ -38,13 +38,13 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+      <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 xl:gap-4 overflow-auto lg:overflow-hidden">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 xl:gap-4">
           {Array.from({ length: showFinancials ? 4 : 2 }, (_, i) => (
             <StatsCardSkeleton key={i} />
           ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 xl:gap-4 min-h-0">
           {showRevenueChart && (
             <div className="col-span-1 md:col-span-2 bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px]" />
           )}
@@ -53,7 +53,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           />
         </div>
         {(showOrders || showStock) && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 xl:gap-4 min-h-0">
             {showOrders && (
               <div
                 className={`bg-white border border-neutral-100 rounded-xl animate-pulse min-h-[200px] ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
@@ -78,7 +78,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   });
 
   return (
-    <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
+    <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 xl:gap-4 overflow-auto lg:overflow-hidden">
       {/* Row 1 -- KPI Cards (financial cards hidden for non-financial roles) */}
       <DashboardStatsSection
         stats={stats}

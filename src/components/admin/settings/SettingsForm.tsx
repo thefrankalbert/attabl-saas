@@ -63,7 +63,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     <RoleGuard permission="canManageSettings">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="max-w-4xl flex flex-col h-full min-h-0"
+        className="max-w-4xl xl:max-w-5xl flex flex-col h-full min-h-0"
       >
         <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
           <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-neutral-200 bg-transparent p-0">
