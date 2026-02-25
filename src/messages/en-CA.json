@@ -1102,6 +1102,8 @@
     "categoryDeleted": "Category deleted",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Import Excel",
+    "targetMenu": "Target menu",
+    "selectTargetMenu": "Select a menu…",
     "downloadTemplate": "Download Excel template",
     "selectFile": "Select a file",
     "dragAndDrop": "Drag and drop a .xlsx file here or click to browse",
