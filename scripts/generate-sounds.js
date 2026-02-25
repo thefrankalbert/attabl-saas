@@ -259,14 +259,12 @@ for (const [name, generator] of Object.entries(sounds)) {
   const samplesArray = Array.from(samples);
   const wavBuffer = createWav(samplesArray);
 
-  // Save as .mp3 extension but WAV content (browsers play both)
-  // Actually let's use .mp3 extension for consistency with the library definition
-  const filePath = path.join(OUTPUT_DIR, `${name}.mp3`);
+  const filePath = path.join(OUTPUT_DIR, `${name}.wav`);
   fs.writeFileSync(filePath, wavBuffer);
 
   const sizeKB = (wavBuffer.length / 1024).toFixed(1);
   const durationSec = (samples.length / SAMPLE_RATE).toFixed(1);
-  console.log(`  ✓ ${name}.mp3 (${sizeKB} KB, ${durationSec}s)`);
+  console.log(`  ✓ ${name}.wav (${sizeKB} KB, ${durationSec}s)`);
 }
 
 console.log(`\nDone! ${Object.keys(sounds).length} sounds generated in ${OUTPUT_DIR}`);
