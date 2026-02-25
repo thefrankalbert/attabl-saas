@@ -135,7 +135,7 @@ export default function POSCart({
               type="button"
               onClick={() => setServiceType(st.value)}
               className={cn(
-                'flex items-center gap-1.5 rounded-xl px-3 py-2 transition-all whitespace-nowrap text-xs font-medium',
+                'flex items-center gap-1.5 rounded-xl px-3 py-2 min-h-[44px] transition-all whitespace-nowrap text-xs font-medium',
                 serviceType === st.value
                   ? 'bg-neutral-900 text-white'
                   : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50',
@@ -201,7 +201,7 @@ export default function POSCart({
               <div className="flex items-center gap-1 bg-neutral-50 rounded-lg p-0.5 border border-neutral-100">
                 <button
                   onClick={() => onUpdateQuantity(item.id, -1)}
-                  className="w-9 h-9 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
+                  className="w-11 h-11 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
@@ -210,14 +210,14 @@ export default function POSCart({
                 </span>
                 <button
                   onClick={() => onUpdateQuantity(item.id, 1)}
-                  className="w-9 h-9 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
+                  className="w-11 h-11 flex items-center justify-center hover:bg-white rounded text-neutral-500 transition-all"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
               <button
                 onClick={() => onEditNotes(item.id, item.notes || '')}
-                className="text-xs text-primary hover:underline font-medium"
+                className="text-xs text-primary hover:underline font-medium min-h-[44px] px-2 flex items-center"
               >
                 {item.notes ? tc('edit') : t('kitchenNote')}
               </button>
@@ -234,7 +234,7 @@ export default function POSCart({
                     const suggestedItem = menuItems.find((mi) => mi.id === s.suggested_item_id);
                     if (suggestedItem) onAddToCart(suggestedItem);
                   }}
-                  className="mt-1.5 flex items-center gap-1.5 px-2 py-1 bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-medium hover:bg-amber-100 transition-colors w-full"
+                  className="mt-1.5 flex items-center gap-1.5 px-2.5 py-2 min-h-[44px] bg-amber-50 border border-amber-100 rounded-lg text-[10px] text-amber-700 font-medium hover:bg-amber-100 transition-colors w-full"
                 >
                   <Lightbulb className="w-3 h-3 shrink-0" />
                   <span className="truncate">

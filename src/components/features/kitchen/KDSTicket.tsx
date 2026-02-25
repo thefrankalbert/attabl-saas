@@ -432,7 +432,7 @@ export default function KDSTicket({
                       onClick={() => handleItemClick(item)}
                       disabled={isMock}
                       className={cn(
-                        'flex items-center gap-1 px-2 py-1 rounded-lg text-xs xl:text-sm font-bold shrink-0 transition-all',
+                        'flex items-center gap-1 px-2.5 py-1.5 min-h-[44px] rounded-lg text-xs xl:text-sm font-bold shrink-0 transition-all',
                         st.bg,
                         st.text,
                         !isMock && 'cursor-pointer active:scale-95',
@@ -480,7 +480,7 @@ export default function KDSTicket({
           <button
             onClick={handleMarkAllReady}
             disabled={isMock}
-            className="flex-1 py-2.5 text-xs xl:text-sm font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/[0.06] hover:bg-emerald-400/[0.12] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 min-h-[44px] text-xs xl:text-sm font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/[0.06] hover:bg-emerald-400/[0.12] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             {t('actionAllReady')}
@@ -493,7 +493,7 @@ export default function KDSTicket({
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 py-2.5 font-black text-xs uppercase tracking-[0.15em] text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
+              'flex-1 py-2.5 min-h-[44px] font-black text-xs uppercase tracking-[0.15em] text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
               cfg.actionBg,
             )}
           >
