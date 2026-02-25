@@ -9,6 +9,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
+import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -30,8 +31,6 @@ export type ColumnKey = 'pending' | 'preparing' | 'ready';
 
 export interface UseKitchenDataReturn {
   // Data
-  orders: Order[];
-  displayOrders: Order[];
   pendingOrders: Order[];
   preparingOrders: Order[];
   readyOrders: Order[];
@@ -88,143 +87,6 @@ const COLUMN_STYLES = {
     emptyIcon: CheckCircle2,
   },
 } as const;
-
-// ─── Rich mock data for demo ─────────────────────────────────
-const MOCK_ORDERS: Order[] = [
-  {
-    id: 'mock-1',
-    order_number: '047',
-    table_number: '12',
-    status: 'pending',
-    service_type: 'dine_in',
-    created_at: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
-    total_price: 28500,
-    notes: 'Allergie aux noix \u2014 table VIP',
-    items: [
-      {
-        id: 'm1',
-        name: 'Tartare de Saumon',
-        quantity: 2,
-        price: 6500,
-        item_status: 'pending',
-        course: 'appetizer',
-      },
-      {
-        id: 'm2',
-        name: 'Entrec\u00f4te Grill\u00e9e',
-        quantity: 1,
-        price: 9500,
-        item_status: 'pending',
-        course: 'main',
-        notes: 'Cuisson saignante',
-        modifiers: [{ name: 'Sauce b\u00e9arnaise', price: 500 }],
-      },
-      {
-        id: 'm3',
-        name: 'Risotto Truffe',
-        quantity: 1,
-        price: 8500,
-        item_status: 'pending',
-        course: 'main',
-      },
-      {
-        id: 'm4',
-        name: 'Frites Maison',
-        quantity: 2,
-        price: 1750,
-        item_status: 'pending',
-        course: 'main',
-      },
-    ],
-    tenant_id: 'mock',
-  },
-  {
-    id: 'mock-2',
-    order_number: '045',
-    table_number: '05',
-    status: 'preparing',
-    service_type: 'dine_in',
-    created_at: new Date(Date.now() - 14 * 60 * 1000).toISOString(),
-    total_price: 18000,
-    items: [
-      {
-        id: 'm5',
-        name: 'Pizza Margherita',
-        quantity: 1,
-        price: 8000,
-        item_status: 'preparing',
-        course: 'main',
-        customer_notes: 'Sans olives, extra mozzarella',
-      },
-      {
-        id: 'm6',
-        name: 'Tiramisu',
-        quantity: 2,
-        price: 5000,
-        item_status: 'pending',
-        course: 'dessert',
-      },
-    ],
-    tenant_id: 'mock',
-  },
-  {
-    id: 'mock-4',
-    order_number: '044',
-    table_number: '03',
-    status: 'preparing',
-    service_type: 'takeaway',
-    created_at: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
-    total_price: 12000,
-    items: [
-      {
-        id: 'm9',
-        name: 'Burger Classic',
-        quantity: 2,
-        price: 4500,
-        item_status: 'ready',
-        course: 'main',
-      },
-      {
-        id: 'm10',
-        name: 'Onion Rings',
-        quantity: 1,
-        price: 3000,
-        item_status: 'preparing',
-        course: 'main',
-      },
-    ],
-    tenant_id: 'mock',
-  },
-  {
-    id: 'mock-3',
-    order_number: '042',
-    table_number: '08',
-    status: 'ready',
-    service_type: 'room_service',
-    room_number: '304',
-    created_at: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
-    total_price: 14500,
-    items: [
-      {
-        id: 'm7',
-        name: 'Salade C\u00e9sar',
-        quantity: 1,
-        price: 4500,
-        item_status: 'ready',
-        course: 'appetizer',
-      },
-      {
-        id: 'm8',
-        name: 'Fondant Chocolat',
-        quantity: 2,
-        price: 5000,
-        item_status: 'ready',
-        course: 'dessert',
-      },
-    ],
-    tenant_id: 'mock',
-  },
-];
 
 // ─── Hook ───────────────────────────────────────────────
 
@@ -435,8 +297,6 @@ export function useKitchenData({
 
   return {
     // Data
-    orders,
-    displayOrders,
     pendingOrders,
     preparingOrders,
     readyOrders,
