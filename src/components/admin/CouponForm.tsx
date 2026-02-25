@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/select';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import AdminModal from '@/components/admin/AdminModal';
-import type { CurrencyCode } from '@/types/admin.types';
+import type { Coupon, CurrencyCode } from '@/types/admin.types';
 
 interface CouponFormProps {
   tenantId: string;
@@ -24,6 +24,7 @@ interface CouponFormProps {
   onClose: () => void;
   onSuccess: () => void;
   currency: CurrencyCode;
+  initialData?: Coupon | null;
 }
 
 export default function CouponForm({
@@ -33,17 +34,28 @@ export default function CouponForm({
   onSuccess,
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   currency,
+  initialData,
 }: CouponFormProps) {
   const t = useTranslations('coupons');
   const tc = useTranslations('common');
-  const [code, setCode] = useState('');
-  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>('percentage');
-  const [discountValue, setDiscountValue] = useState<number | ''>('');
-  const [minAmount, setMinAmount] = useState<number | ''>('');
-  const [maxDiscount, setMaxDiscount] = useState<number | ''>('');
-  const [validFrom, setValidFrom] = useState('');
-  const [validUntil, setValidUntil] = useState('');
-  const [maxUses, setMaxUses] = useState<number | ''>('');
+  const [code, setCode] = useState(initialData?.code || '');
+  const [discountType, setDiscountType] = useState<'percentage' | 'fixed'>(
+    initialData?.discount_type || 'percentage',
+  );
+  const [discountValue, setDiscountValue] = useState<number | ''>(
+    initialData?.discount_value ?? '',
+  );
+  const [minAmount, setMinAmount] = useState<number | ''>(initialData?.min_order_amount ?? '');
+  const [maxDiscount, setMaxDiscount] = useState<number | ''>(
+    initialData?.max_discount_amount ?? '',
+  );
+  const [validFrom, setValidFrom] = useState(
+    initialData?.valid_from ? new Date(initialData.valid_from).toISOString().split('T')[0] : '',
+  );
+  const [validUntil, setValidUntil] = useState(
+    initialData?.valid_until ? new Date(initialData.valid_until).toISOString().split('T')[0] : '',
+  );
+  const [maxUses, setMaxUses] = useState<number | ''>(initialData?.max_uses ?? '');
   const [submitting, setSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -68,8 +80,7 @@ export default function CouponForm({
     setSubmitting(true);
 
     const supabase = createClient();
-    const { error } = await supabase.from('coupons').insert({
-      tenant_id: tenantId,
+    const payload = {
       code: code.toUpperCase().trim(),
       discount_type: discountType,
       discount_value: Number(discountValue),
@@ -78,9 +89,19 @@ export default function CouponForm({
       valid_from: validFrom || null,
       valid_until: validUntil || null,
       max_uses: maxUses ? Number(maxUses) : null,
-      is_active: true,
-      current_uses: 0,
-    });
+    };
+
+    let error;
+    if (initialData) {
+      ({ error } = await supabase.from('coupons').update(payload).eq('id', initialData.id));
+    } else {
+      ({ error } = await supabase.from('coupons').insert({
+        tenant_id: tenantId,
+        ...payload,
+        is_active: true,
+        current_uses: 0,
+      }));
+    }
 
     setSubmitting(false);
 
@@ -101,7 +122,11 @@ export default function CouponForm({
   };
 
   return (
-    <AdminModal isOpen={isOpen} onClose={onClose} title={t('newCoupon')}>
+    <AdminModal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={initialData ? t('editCoupon') : t('newCoupon')}
+    >
       <form onSubmit={handleSubmit} className="pt-5 space-y-5">
         {/* Code */}
         <div className="space-y-2">
@@ -221,7 +246,7 @@ export default function CouponForm({
             {tc('cancel')}
           </Button>
           <Button type="submit" variant="lime" disabled={submitting}>
-            {submitting ? t('creating') : t('createCoupon')}
+            {submitting ? tc('saving') : initialData ? tc('save') : t('createCoupon')}
           </Button>
         </div>
       </form>
