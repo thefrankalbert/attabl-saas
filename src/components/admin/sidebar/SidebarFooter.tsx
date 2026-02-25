@@ -76,8 +76,10 @@ export function SidebarFooter({
             type="button"
             onClick={onToggleCollapsed}
             className={cn(
-              'hidden lg:flex items-center rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors text-sm font-medium w-full',
-              isCollapsed ? 'justify-center px-2 py-2.5' : 'gap-3 px-3 py-2.5',
+              'hidden lg:flex items-center rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors text-sm font-medium w-full touch-manipulation',
+              isCollapsed
+                ? 'justify-center px-2 py-2.5 min-h-[44px]'
+                : 'gap-3 px-3 py-2.5 min-h-[44px]',
             )}
           >
             {isCollapsed ? (
@@ -97,7 +99,7 @@ export function SidebarFooter({
             <SidebarTooltip label={t('navGeneral')} show={isCollapsed}>
               <Link
                 href={`${basePath}/settings`}
-                className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
+                className="flex items-center justify-center w-full px-2 py-2.5 min-h-[44px] rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors touch-manipulation"
                 aria-label={t('navGeneral')}
               >
                 <Settings className="h-4 w-4" />
@@ -107,7 +109,7 @@ export function SidebarFooter({
               <form action="/api/auth/signout" method="post">
                 <button
                   type="submit"
-                  className="flex items-center justify-center w-full px-2 py-2.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors group"
+                  className="flex items-center justify-center w-full px-2 py-2.5 min-h-[44px] rounded-lg text-red-600 hover:bg-red-50 transition-colors group touch-manipulation"
                 >
                   <LogOut className="h-4 w-4 group-hover:text-red-700" />
                 </button>

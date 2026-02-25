@@ -93,7 +93,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden bg-white border border-neutral-200"
+        className="fixed top-3 left-3 z-50 lg:hidden bg-white border border-neutral-200 min-w-[44px] min-h-[44px] touch-manipulation"
         onClick={toggleSidebar}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
