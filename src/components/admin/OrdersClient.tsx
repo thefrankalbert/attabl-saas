@@ -295,7 +295,7 @@ export default function OrdersClient({
       {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight">{ta('ordersCount')}</h1>
+          <h1 className="text-xl xl:text-2xl font-bold tracking-tight">{ta('ordersCount')}</h1>
           <p className="text-xs text-neutral-500 mt-1">{t('manageRealTime')}</p>
         </div>
 
@@ -313,7 +313,7 @@ export default function OrdersClient({
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
             <Input
               placeholder={t('searchTable')}
-              className="pl-9 w-full sm:w-[200px]"
+              className="pl-9 w-full sm:w-[200px] xl:w-[280px]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

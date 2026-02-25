@@ -57,7 +57,7 @@ export default function DashboardRecentOrders({
   if (!showOrders && !showStock) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-0">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3 xl:gap-4 min-h-0">
       {/* Recent Orders — spans full width when stock is hidden */}
       {showOrders && (
         <div
@@ -66,7 +66,9 @@ export default function DashboardRecentOrders({
           <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-100 shrink-0">
             <div className="flex items-center gap-3">
               <div>
-                <h2 className="text-base font-bold text-neutral-900">{t('recentOrders')}</h2>
+                <h2 className="text-base xl:text-lg font-bold text-neutral-900">
+                  {t('recentOrders')}
+                </h2>
                 <p className="text-xs text-neutral-500">
                   {t('ordersCountLabel', { count: recentOrders.length })}
                 </p>
@@ -186,7 +188,9 @@ export default function DashboardRecentOrders({
             <div className="flex items-center gap-2">
               <Package className="w-4 h-4 text-neutral-600" />
               <div>
-                <h2 className="text-base font-bold text-neutral-900">{t('stockLive')}</h2>
+                <h2 className="text-base xl:text-lg font-bold text-neutral-900">
+                  {t('stockLive')}
+                </h2>
                 <p className="text-xs text-neutral-500">{t('stockTop10')}</p>
               </div>
             </div>
