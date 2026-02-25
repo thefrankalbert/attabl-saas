@@ -344,6 +344,8 @@
     "noSuggestions": "Sin sugerencias",
     "addServerAdvice": "Agregue consejos para sus camareros",
     "activeSuggestions": "{count} sugerencia(s) activa(s)",
+    "autoGenerate": "Auto-generar",
+    "suggestionsGenerated": "{count} sugerencia(s) generada(s)",
     "confirmRupture": "Confirmar agotado",
     "markRuptureButton": "Marcar como agotado",
     "confirmBackInStock": "Confirmar reposición",

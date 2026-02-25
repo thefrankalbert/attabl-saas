@@ -40,6 +40,7 @@ export interface PlanLimits {
   patronDashboard: boolean;
   stockAlerts: boolean;
   waiterSuggestions: boolean;
+  autoSuggestions: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
@@ -72,6 +73,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     patronDashboard: false,
     stockAlerts: false,
     waiterSuggestions: false,
+    autoSuggestions: false,
   },
   premium: {
     maxAdmins: 5,
@@ -100,6 +102,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     patronDashboard: true,
     stockAlerts: true,
     waiterSuggestions: false,
+    autoSuggestions: true,
   },
   enterprise: {
     maxAdmins: 99,
@@ -128,6 +131,7 @@ export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     patronDashboard: true,
     stockAlerts: true,
     waiterSuggestions: true,
+    autoSuggestions: true,
   },
 };
 
@@ -209,6 +213,7 @@ export function canAccessFeature(
     | 'patronDashboard'
     | 'stockAlerts'
     | 'waiterSuggestions'
+    | 'autoSuggestions'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Lightbulb, Plus, Trash2, Search } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, Search, Wand2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -11,9 +11,15 @@ import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
 import type { SuggestionType } from '@/types/inventory.types';
+import { generateAndSaveSuggestions } from '@/services/suggestion.service';
+import { canAccessFeature } from '@/lib/plans/features';
+import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 interface SuggestionsClientProps {
   tenantId: string;
+  subscriptionPlan?: SubscriptionPlan | null;
+  subscriptionStatus?: SubscriptionStatus | null;
+  trialEndsAt?: string | null;
 }
 
 interface MenuItem {
@@ -34,7 +40,12 @@ interface Suggestion {
   suggested_item?: { name: string };
 }
 
-export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) {
+export default function SuggestionsClient({
+  tenantId,
+  subscriptionPlan,
+  subscriptionStatus,
+  trialEndsAt,
+}: SuggestionsClientProps) {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +62,13 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
   const t = useTranslations('inventory');
   const tc = useTranslations('common');
   const supabase = createClient();
+  const [generating, setGenerating] = useState(false);
+  const canAutoGenerate = canAccessFeature(
+    'autoSuggestions',
+    subscriptionPlan,
+    subscriptionStatus,
+    trialEndsAt,
+  );
 
   const SUGGESTION_TYPES: { value: SuggestionType; label: string; emoji: string; color: string }[] =
     [
@@ -154,6 +172,19 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
     }
   };
 
+  const handleAutoGenerate = async () => {
+    setGenerating(true);
+    try {
+      const count = await generateAndSaveSuggestions(supabase, tenantId);
+      toast({ title: t('suggestionsGenerated', { count }) });
+      loadData();
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const filtered = suggestions.filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -180,10 +211,23 @@ export default function SuggestionsClient({ tenantId }: SuggestionsClientProps) 
             {t('activeSuggestions', { count: suggestions.length })}
           </p>
         </div>
-        <Button onClick={() => setShowAdd(true)} variant="lime" className="gap-2">
-          <Plus className="w-4 h-4" />
-          {t('addSuggestion')}
-        </Button>
+        <div className="flex items-center gap-2">
+          {canAutoGenerate && (
+            <Button
+              onClick={handleAutoGenerate}
+              variant="outline"
+              className="gap-2"
+              disabled={generating || menuItems.length === 0}
+            >
+              <Wand2 className="w-4 h-4" />
+              {generating ? tc('loading') : t('autoGenerate')}
+            </Button>
+          )}
+          <Button onClick={() => setShowAdd(true)} variant="lime" className="gap-2">
+            <Plus className="w-4 h-4" />
+            {t('addSuggestion')}
+          </Button>
+        </div>
       </div>
 
       {/* Search */}

@@ -344,6 +344,8 @@
     "noSuggestions": "Aucune suggestion",
     "addServerAdvice": "Ajoutez des conseils pour vos serveurs",
     "activeSuggestions": "{count} suggestion(s) active(s)",
+    "autoGenerate": "Auto-générer",
+    "suggestionsGenerated": "{count} suggestion(s) générée(s)",
     "confirmRupture": "Confirmer rupture",
     "markRuptureButton": "Marquer en rupture",
     "confirmBackInStock": "Confirmer remise en service",

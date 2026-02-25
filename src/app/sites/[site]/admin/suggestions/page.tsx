@@ -13,7 +13,7 @@ export default async function SuggestionsPage({ params }: { params: Promise<{ si
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id')
+    .select('id, subscription_plan, subscription_status, trial_ends_at')
     .eq('slug', tenantSlug)
     .single();
 
@@ -28,5 +28,12 @@ export default async function SuggestionsPage({ params }: { params: Promise<{ si
     );
   }
 
-  return <SuggestionsClient tenantId={tenant.id} />;
+  return (
+    <SuggestionsClient
+      tenantId={tenant.id}
+      subscriptionPlan={tenant.subscription_plan}
+      subscriptionStatus={tenant.subscription_status}
+      trialEndsAt={tenant.trial_ends_at}
+    />
+  );
 }
