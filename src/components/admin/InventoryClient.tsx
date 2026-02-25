@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
-import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import { useTranslations } from 'next-intl';
 import { createInventoryService } from '@/services/inventory.service';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -378,8 +378,70 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         </div>
       </div>
 
-      {/* Table */}
-      <DataTable columns={columns} data={filtered} emptyMessage={t('noProductFound')} />
+      {/* Table / Cards */}
+      <ResponsiveDataTable
+        columns={columns}
+        data={filtered}
+        emptyMessage={t('noProductFound')}
+        mobileConfig={{
+          renderCard: (ing) => {
+            const badge = getStockBadge(ing);
+            const unitLabel = INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit;
+            return (
+              <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-3">
+                {/* Row 1: Name + Status */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-neutral-900 truncate">{ing.name}</p>
+                    {ing.category && <p className="text-xs text-neutral-500">{ing.category}</p>}
+                  </div>
+                  <span
+                    className={cn('px-2 py-1 rounded-full text-xs font-bold shrink-0', badge.bg)}
+                  >
+                    {badge.label}
+                  </span>
+                </div>
+
+                {/* Row 2: Stock + Cost */}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-neutral-500">
+                    {t('currentStock')}:{' '}
+                    <span className="font-mono font-bold text-neutral-900">
+                      {ing.current_stock.toFixed(
+                        ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2,
+                      )}
+                    </span>{' '}
+                    {unitLabel}
+                  </span>
+                  <span className="text-neutral-500">
+                    {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}/{unitLabel}
+                  </span>
+                </div>
+
+                {/* Row 3: Actions */}
+                <div className="flex justify-end gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openAdjust(ing)}
+                    className="text-xs min-h-[44px]"
+                  >
+                    +/-
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openEdit(ing)}
+                    className="text-xs min-h-[44px]"
+                  >
+                    {tc('edit')}
+                  </Button>
+                </div>
+              </div>
+            );
+          },
+        }}
+      />
 
       {/* Modal — Add / Edit */}
       <AdminModal

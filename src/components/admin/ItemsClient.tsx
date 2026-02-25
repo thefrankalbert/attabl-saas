@@ -313,7 +313,7 @@ export default function ItemsClient({
                   toggleFeatured(item);
                 }}
                 className={cn(
-                  'p-2 rounded-lg transition-all',
+                  'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
                   item.is_featured
                     ? 'text-amber-500 bg-amber-50'
                     : 'text-neutral-300 hover:text-amber-500 hover:bg-neutral-50',
@@ -329,7 +329,7 @@ export default function ItemsClient({
                     e.stopPropagation();
                     openEditModal(item);
                   }}
-                  className="text-xs h-8"
+                  className="text-xs h-10 min-h-[44px]"
                 >
                   {t('edit')}
                 </Button>
@@ -340,7 +340,7 @@ export default function ItemsClient({
                     e.stopPropagation();
                     handleDelete(item);
                   }}
-                  className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-50"
                 >
                   {t('delete')}
                 </Button>
@@ -378,7 +378,7 @@ export default function ItemsClient({
               <h2 className="text-base font-bold text-neutral-900">{t('details')}</h2>
               <button
                 onClick={closePanel}
-                className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors"
+                className="p-2.5 rounded-lg hover:bg-neutral-100 transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
               >
                 <X className="w-4 h-4 text-neutral-500" />
               </button>
@@ -495,7 +495,7 @@ export default function ItemsClient({
         title={editingItem ? t('editItemTitle') : t('newItemTitle')}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-5 pt-2 max-h-[70vh] overflow-y-auto">
+        <form onSubmit={handleSubmit} className="space-y-5 pt-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-neutral-900">{t('nameFr')}</Label>

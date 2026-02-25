@@ -155,7 +155,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   if (loading) {
     return (
       <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {[1, 2, 3, 4].map((i) => (
             <StatsCardSkeleton key={i} />
           ))}
@@ -182,7 +182,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   return (
     <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] grid grid-rows-[auto_auto_auto] lg:grid-rows-[auto_1fr_1fr] gap-3 overflow-auto lg:overflow-hidden">
       {/* Row 1 — KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         <StatsCard
           title={t('ordersCount')}
           value={stats.ordersToday}

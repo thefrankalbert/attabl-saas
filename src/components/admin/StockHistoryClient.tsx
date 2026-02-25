@@ -6,7 +6,7 @@ import { History, Search, Filter } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { DataTable, SortableHeader } from '@/components/admin/DataTable';
+import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import { MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
@@ -199,8 +199,63 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         </div>
       </div>
 
-      {/* Table */}
-      <DataTable columns={columns} data={filtered} emptyMessage={t('noMovements')} />
+      {/* Table / Cards */}
+      <ResponsiveDataTable
+        columns={columns}
+        data={filtered}
+        emptyMessage={t('noMovements')}
+        mobileConfig={{
+          renderCard: (movement) => {
+            const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
+            const isPositive = movement.quantity > 0;
+            return (
+              <div className="bg-white border border-neutral-100 rounded-xl p-4 space-y-2">
+                {/* Row 1: Ingredient + Date */}
+                <div className="flex items-start justify-between gap-2">
+                  <span className="font-medium text-neutral-900 truncate">
+                    {movement.ingredient?.name || '\u2014'}
+                    {movement.ingredient?.unit && (
+                      <span className="text-neutral-400 ml-1 text-xs">
+                        ({movement.ingredient.unit})
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-xs text-neutral-400 whitespace-nowrap shrink-0">
+                    {formatDate(movement.created_at)}
+                  </span>
+                </div>
+
+                {/* Row 2: Type + Quantity */}
+                <div className="flex items-center justify-between">
+                  <span
+                    className={cn('text-xs font-medium', typeInfo?.color || 'text-neutral-600')}
+                  >
+                    {typeInfo?.label || movement.movement_type}
+                  </span>
+                  <span
+                    className={cn(
+                      'font-mono font-bold',
+                      isPositive ? 'text-green-600' : 'text-red-600',
+                    )}
+                  >
+                    {isPositive ? '+' : ''}
+                    {movement.quantity}
+                  </span>
+                </div>
+
+                {/* Row 3: Supplier + Notes */}
+                {(movement.supplier?.name || movement.notes) && (
+                  <div className="text-xs text-neutral-500 truncate">
+                    {movement.supplier?.name && <span>{movement.supplier.name}</span>}
+                    {movement.supplier?.name && movement.notes && <span> — </span>}
+                    {movement.notes && <span>{movement.notes}</span>}
+                  </div>
+                )}
+              </div>
+            );
+          },
+        }}
+      />
     </div>
   );
 }

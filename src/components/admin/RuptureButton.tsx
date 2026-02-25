@@ -69,7 +69,7 @@ export default function RuptureButton({
         onClick={handleToggle}
         title={confirming ? 'Confirmer rupture' : 'Marquer en rupture'}
         className={cn(
-          'p-1 rounded transition-all shrink-0',
+          'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
           confirming
             ? 'bg-red-500/30 text-red-300 animate-pulse'
             : 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10',
@@ -86,7 +86,7 @@ export default function RuptureButton({
       onClick={handleToggle}
       title={confirming ? 'Confirmer remise en service' : 'Remettre en service'}
       className={cn(
-        'p-1 rounded transition-all shrink-0',
+        'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
         confirming
           ? 'bg-green-500/30 text-green-300 animate-pulse'
           : 'text-green-400/60 hover:text-green-400 hover:bg-green-500/10',

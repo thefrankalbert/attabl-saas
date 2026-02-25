@@ -126,7 +126,7 @@ export default function ServiceManager({ tenantId }: Props) {
         zones.map((zone) => (
           <div key={zone.id} className="space-y-3">
             <h2 className="text-lg font-semibold text-neutral-900">{zone.name}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {zone.tables
                 .filter((tbl: Table) => tbl.is_active)
                 .map((table: Table) => {

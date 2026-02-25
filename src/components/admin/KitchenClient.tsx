@@ -368,22 +368,22 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
                 )}
               >
                 {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400" />}
-                <span className="font-mono text-[11px] font-black text-amber-400 tabular-nums">
+                <span className="font-mono text-xs xl:text-sm font-black text-amber-400 tabular-nums">
                   {pendingOrders.length}
                 </span>
               </div>
             )}
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-400/10">
-              <span className="font-mono text-[11px] font-black text-blue-400 tabular-nums">
+              <span className="font-mono text-xs xl:text-sm font-black text-blue-400 tabular-nums">
                 {preparingOrders.length}
               </span>
             </div>
             <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/10">
-              <span className="font-mono text-[11px] font-black text-emerald-400 tabular-nums">
+              <span className="font-mono text-xs xl:text-sm font-black text-emerald-400 tabular-nums">
                 {readyOrders.length}
               </span>
             </div>
-            <span className="text-[10px] text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
+            <span className="text-xs xl:text-sm text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
               {t('inProgress', { count: totalActive })}
             </span>
           </div>
@@ -391,7 +391,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
         {/* Right: Controls */}
         <div className="flex items-center gap-1 sm:gap-1.5">
-          <span className="text-[10px] text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
+          <span className="text-xs xl:text-sm text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
             {lastUpdate.toLocaleTimeString('fr-FR', {
               hour: '2-digit',
               minute: '2-digit',
@@ -401,7 +401,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
           <button
             onClick={() => setShowMockData(!showMockData)}
             className={cn(
-              'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
+              'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors',
               showMockData
                 ? 'bg-amber-400/20 text-amber-400'
                 : 'text-neutral-600 hover:text-neutral-400',
@@ -458,7 +458,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
               {col.label}
               <span
                 className={cn(
-                  'px-1.5 py-0.5 rounded text-[10px] tabular-nums font-black',
+                  'px-1.5 py-0.5 rounded text-xs xl:text-sm tabular-nums font-black',
                   col.countBadge,
                 )}
               >
@@ -490,12 +490,12 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
               {/* Column Header — hidden on mobile (tabs serve this role) */}
               <div className="hidden md:flex py-2 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30">
                 <div className={cn('w-2 h-2 rounded-full', col.dot)} />
-                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] text-neutral-500">
+                <span className="text-xs xl:text-sm font-bold uppercase tracking-[0.15em] text-neutral-500">
                   {col.label}
                 </span>
                 <span
                   className={cn(
-                    'ml-auto px-2 py-0.5 rounded-md text-[11px] font-black tabular-nums',
+                    'ml-auto px-2 py-0.5 rounded-md text-xs xl:text-sm font-black tabular-nums',
                     col.countBadge,
                   )}
                 >
