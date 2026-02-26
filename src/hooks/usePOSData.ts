@@ -267,7 +267,7 @@ export function usePOSData(tenantId: string) {
         tenant_id: tenantId,
         table_number: selectedTable || `CMD-${orderNumber}`,
         status,
-        total_price: total,
+        total,
         service_type: serviceType,
         cashier_id: currentAdminUser?.id ?? null,
         server_id: currentAdminUser?.id ?? null,
