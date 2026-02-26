@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
 import { createTenantService } from '@/services/tenant.service';
+import { createAuditService } from '@/services/audit.service';
 
 /**
  * Update tenant settings.
@@ -15,7 +16,7 @@ import { createTenantService } from '@/services/tenant.service';
 export async function updateTenantSettings(formData: FormData) {
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
-    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
+    const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
 
     // 2. Extract and validate form data with Zod
     const rawData = {
@@ -51,6 +52,19 @@ export async function updateTenantSettings(formData: FormData) {
     // 3. Update via service
     const tenantService = createTenantService(supabase);
     await tenantService.updateSettings(tenantId, parseResult.data);
+
+    // Fire-and-forget audit log
+    const audit = createAuditService(supabase, {
+      tenantId,
+      userId: user.id,
+      userEmail: user.email,
+      userRole: role,
+    });
+    audit.log({
+      action: 'update',
+      entityType: 'setting',
+      newData: parseResult.data as Record<string, unknown>,
+    });
 
     // 4. Revalidate caches — tenant routes are under /sites/[site]/admin
     revalidatePath('/sites', 'layout');

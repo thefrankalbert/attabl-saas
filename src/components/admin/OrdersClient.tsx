@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrders } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,7 +52,6 @@ export default function OrdersClient({
   });
 
   const { toast } = useToast();
-  const supabase = createClient();
   const queryClient = useQueryClient();
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
@@ -60,32 +59,22 @@ export default function OrdersClient({
   const { data: queryOrders } = useOrders(tenantId);
   const orders = queryOrders ?? initialOrders;
 
-  // Realtime subscription
-  useEffect(() => {
-    const channel = supabase
-      .channel('orders_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
-        async (payload) => {
-          if (payload.eventType === 'INSERT') {
-            playNotification();
-            const newOrder = payload.new as Record<string, unknown>;
-            toast({
-              title: t('newOrderAlert'),
-              description: `Table ${newOrder.table_number}`,
-            });
-          }
-          queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, tenantId, playNotification, toast, t, queryClient]);
+  // Realtime subscription via shared hook
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `orders_admin_${tenantId}`,
+    table: 'orders',
+    filter: `tenant_id=eq.${tenantId}`,
+    onInsert: (record) => {
+      playNotification();
+      toast({
+        title: t('newOrderAlert'),
+        description: `Table ${String(record.table_number ?? '')}`,
+      });
+    },
+    onChange: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+    },
+  });
 
   // Filtering logic (derived state via useMemo)
   const filteredOrders = useMemo(() => {

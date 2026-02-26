@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -66,30 +67,26 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   const { data: ingredients = [], isLoading: loading } = useIngredients(tenantId);
   const { data: activeSuppliers = [] } = useSuppliers(tenantId, { activeOnly: true });
 
-  useEffect(() => {
-    // Realtime updates on ingredients
-    const channel = supabase
-      .channel(`inventory-${tenantId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'ingredients',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
-        },
-      )
-      .subscribe();
-
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, queryClient]);
+  // ─── Realtime: ingredients updates with low-stock alerts ─
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `inventory_${tenantId}`,
+    table: 'ingredients',
+    filter: `tenant_id=eq.${tenantId}`,
+    onUpdate: (record) => {
+      const stock = record.current_stock as number | undefined;
+      const minAlert = record.min_stock_alert as number | undefined;
+      if (stock != null && minAlert != null && stock <= minAlert && stock > 0) {
+        toast({
+          title: t('lowStock'),
+          description: `${String(record.name)} — ${String(stock)} ${String(record.unit || '')}`,
+          variant: 'destructive',
+        });
+      }
+    },
+    onChange: () => {
+      queryClient.invalidateQueries({ queryKey: ['ingredients', tenantId] });
+    },
+  });
 
   // Filtered list
   const filtered = ingredients.filter((ing) => {

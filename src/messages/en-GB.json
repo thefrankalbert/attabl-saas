@@ -621,6 +621,7 @@
     "sentToKitchen": "Sent to kitchen!",
     "saleRecorded": "Sale recorded!",
     "orderError": "Order error",
+    "orderReady": "Order ready!",
     "loading": "Loading POS...",
     "loadingPos": "Loading POS...",
     "sendToKitchen": "Send to kitchen",

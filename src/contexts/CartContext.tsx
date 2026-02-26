@@ -71,6 +71,56 @@ type CartContextType = {
   setDeliveryAddress: (addr: string) => void;
 };
 
+// Split into data + actions to prevent unnecessary re-renders.
+// Components that only dispatch actions (addToCart, removeFromCart…)
+// don't re-render when cart items change.
+type CartDataContextType = Pick<
+  CartContextType,
+  | 'items'
+  | 'totalItems'
+  | 'totalPrice'
+  | 'currentRestaurantId'
+  | 'restaurantId'
+  | 'lastVisitedMenuUrl'
+  | 'pendingAddToCart'
+  | 'notes'
+  | 'appliedCoupon'
+  | 'serviceType'
+  | 'roomNumber'
+  | 'deliveryAddress'
+  | 'subtotal'
+  | 'taxAmount'
+  | 'serviceChargeAmount'
+  | 'discountAmount'
+  | 'grandTotal'
+  | 'currencyCode'
+  | 'enableTax'
+  | 'enableServiceCharge'
+  | 'taxRate'
+  | 'serviceChargeRate'
+>;
+
+type CartActionsContextType = Pick<
+  CartContextType,
+  | 'addToCart'
+  | 'removeFromCart'
+  | 'updateQuantity'
+  | 'clearCart'
+  | 'setLastVisitedMenuUrl'
+  | 'confirmPendingAddToCart'
+  | 'cancelPendingAddToCart'
+  | 'setNotes'
+  | 'canAddToCart'
+  | 'applyCoupon'
+  | 'removeCoupon'
+  | 'setServiceType'
+  | 'setRoomNumber'
+  | 'setDeliveryAddress'
+>;
+
+const CartDataContext = createContext<CartDataContextType | undefined>(undefined);
+const CartActionsContext = createContext<CartActionsContextType | undefined>(undefined);
+// Legacy combined context for backward compatibility
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 // Génère une clé unique pour identifier un item du panier (inclut option/variante/modifiers)
@@ -406,57 +456,125 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   // Backward compat: totalPrice = subtotal
   const totalPrice = subtotal;
 
+  // Memoize data and actions separately to prevent unnecessary re-renders
+  const dataValue: CartDataContextType = useMemo(
+    () => ({
+      items,
+      totalItems,
+      totalPrice,
+      currentRestaurantId,
+      restaurantId: currentRestaurantId,
+      lastVisitedMenuUrl,
+      pendingAddToCart,
+      notes,
+      appliedCoupon,
+      serviceType,
+      roomNumber,
+      deliveryAddress,
+      subtotal: pricing.subtotal,
+      taxAmount: pricing.taxAmount,
+      serviceChargeAmount: pricing.serviceChargeAmount,
+      discountAmount: pricing.discountAmount,
+      grandTotal: pricing.total,
+      currencyCode,
+      enableTax,
+      enableServiceCharge,
+      taxRate,
+      serviceChargeRate,
+    }),
+    [
+      items,
+      totalItems,
+      totalPrice,
+      currentRestaurantId,
+      lastVisitedMenuUrl,
+      pendingAddToCart,
+      notes,
+      appliedCoupon,
+      serviceType,
+      roomNumber,
+      deliveryAddress,
+      pricing,
+      currencyCode,
+      enableTax,
+      enableServiceCharge,
+      taxRate,
+      serviceChargeRate,
+    ],
+  );
+
+  const actionsValue: CartActionsContextType = useMemo(
+    () => ({
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      setLastVisitedMenuUrl,
+      confirmPendingAddToCart,
+      cancelPendingAddToCart,
+      setNotes,
+      canAddToCart,
+      applyCoupon,
+      removeCoupon,
+      setServiceType,
+      setRoomNumber,
+      setDeliveryAddress,
+    }),
+    [
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      setLastVisitedMenuUrl,
+      confirmPendingAddToCart,
+      cancelPendingAddToCart,
+      canAddToCart,
+      applyCoupon,
+      removeCoupon,
+      setServiceType,
+      setRoomNumber,
+      setDeliveryAddress,
+    ],
+  );
+
+  // Combined value for backward compat
+  const combinedValue: CartContextType = useMemo(
+    () => ({ ...dataValue, ...actionsValue }),
+    [dataValue, actionsValue],
+  );
+
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        totalPrice,
-        currentRestaurantId,
-        restaurantId: currentRestaurantId,
-        lastVisitedMenuUrl,
-        setLastVisitedMenuUrl,
-        pendingAddToCart,
-        confirmPendingAddToCart,
-        cancelPendingAddToCart,
-        notes,
-        setNotes,
-        canAddToCart,
-        // Phase 3
-        appliedCoupon,
-        serviceType,
-        roomNumber,
-        deliveryAddress,
-        subtotal: pricing.subtotal,
-        taxAmount: pricing.taxAmount,
-        serviceChargeAmount: pricing.serviceChargeAmount,
-        discountAmount: pricing.discountAmount,
-        grandTotal: pricing.total,
-        currencyCode,
-        enableTax,
-        enableServiceCharge,
-        taxRate,
-        serviceChargeRate,
-        applyCoupon,
-        removeCoupon,
-        setServiceType,
-        setRoomNumber,
-        setDeliveryAddress,
-      }}
-    >
-      {children}
-    </CartContext.Provider>
+    <CartActionsContext.Provider value={actionsValue}>
+      <CartDataContext.Provider value={dataValue}>
+        <CartContext.Provider value={combinedValue}>{children}</CartContext.Provider>
+      </CartDataContext.Provider>
+    </CartActionsContext.Provider>
   );
 };
 
+/** Full cart context (data + actions). Use when you need both. */
 export const useCart = () => {
   const context = useContext(CartContext);
   if (!context) {
     throw new Error('useCart must be used within a CartProvider');
+  }
+  return context;
+};
+
+/** Cart data only — re-renders when items/pricing change. */
+export const useCartData = () => {
+  const context = useContext(CartDataContext);
+  if (!context) {
+    throw new Error('useCartData must be used within a CartProvider');
+  }
+  return context;
+};
+
+/** Cart actions only — stable refs, never causes re-renders. */
+export const useCartActions = () => {
+  const context = useContext(CartActionsContext);
+  if (!context) {
+    throw new Error('useCartActions must be used within a CartProvider');
   }
   return context;
 };

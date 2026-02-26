@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems, useCategories } from '@/hooks/queries';
 import { useCreateOrder } from '@/hooks/mutations';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
@@ -144,32 +145,37 @@ export function usePOSData(tenantId: string) {
     }
   }, [supabase, tenantId]);
 
-  // ─── Realtime subscription for menu_items updates ───────
+  // ─── Initial load of extras ────────────────────────────
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- Async data fetch requires setState
     loadExtras();
+  }, [loadExtras]);
 
-    const channel = supabase
-      .channel('pos_menu_realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'menu_items',
-          filter: `tenant_id=eq.${tenantId}`,
-        },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
-        },
-      )
-      .subscribe();
+  // ─── Realtime: menu_items updates ─────────────────────
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `pos_menu_${tenantId}`,
+    table: 'menu_items',
+    filter: `tenant_id=eq.${tenantId}`,
+    event: 'UPDATE',
+    onChange: () => {
+      queryClient.invalidateQueries({ queryKey: ['menu-items', tenantId] });
+    },
+  });
 
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, [loadExtras, supabase, tenantId, queryClient]);
+  // ─── Realtime: orders status changes (ready notifications) ─
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `pos_orders_${tenantId}`,
+    table: 'orders',
+    filter: `tenant_id=eq.${tenantId}`,
+    onUpdate: (record) => {
+      if (record.status === 'ready') {
+        toast({
+          title: t('orderReady'),
+          description: `#${String(record.order_number || record.table_number || '')}`,
+        });
+      }
+    },
+  });
 
   // ─── Filtered items ─────────────────────────────────────
   const filteredItems = useMemo(() => {
