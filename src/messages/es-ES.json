@@ -1472,6 +1472,7 @@
     "currencyLabel": "Moneda",
     "tablesTitle": "Configuración de sus mesas",
     "tablesSubtitle": "Organice sus zonas y mesas",
+    "modeSelectTitle": "Método de configuración",
     "modeComplete": "Configuración completa",
     "modeCompleteDesc": "Zonas, prefijos, capacidad",
     "modeMinimum": "Configuración rápida",

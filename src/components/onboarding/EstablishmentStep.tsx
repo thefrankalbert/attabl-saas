@@ -14,8 +14,6 @@ import {
   Plus,
   UtensilsCrossed,
   Wine,
-  ClipboardList,
-  Settings2,
 } from 'lucide-react';
 import {
   Select,
@@ -141,23 +139,16 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
   const router = useRouter();
 
   return (
-    <div>
+    <div className="h-full flex flex-col">
       {/* Title & Subtitle */}
-      <div className="mb-3">
+      <div className="shrink-0 mb-3">
         <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('establishmentTitle')}</h1>
         <p className="text-neutral-500 text-sm">{t('establishmentSubtitle')}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
-        {/* LEFT COLUMN: Details */}
-        <div className="space-y-4">
-          <div className="mb-2">
-            <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-neutral-400" />
-              {t('detailsTab')}
-            </h3>
-          </div>
-
+      <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
+          {/* Left column: Name, Type, Address, City/Country, Phone */}
           <div className="space-y-4">
             <div>
               <Label htmlFor="tenantName" className="text-sm font-medium text-neutral-700">
@@ -267,17 +258,8 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               />
             </div>
           </div>
-        </div>
 
-        {/* RIGHT COLUMN: Preferences */}
-        <div className="space-y-4 border-t lg:border-t-0 lg:border-l border-neutral-100 lg:pl-10 pt-6 lg:pt-0">
-          <div className="mb-2">
-            <h3 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-              <Settings2 className="h-4 w-4 text-neutral-400" />
-              {t('preferencesTab')}
-            </h3>
-          </div>
-
+          {/* Right column: Language, Currency, Type-specific fields */}
           <div className="space-y-4">
             {/* Language */}
             <div>
@@ -340,7 +322,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </div>
             )}
 
-            {/* restaurant: table count + total capacity */}
             {data.establishmentType === 'restaurant' && (
               <>
                 <NumberStepper
@@ -360,7 +341,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </>
             )}
 
-            {/* hotel: room count + star rating + has restaurant */}
             {data.establishmentType === 'hotel' && (
               <>
                 <NumberStepper
@@ -395,7 +375,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </>
             )}
 
-            {/* bar: table count + terrace toggle */}
             {data.establishmentType === 'bar' && (
               <>
                 <NumberStepper
@@ -413,7 +392,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </>
             )}
 
-            {/* cafe: seat count + wifi toggle */}
             {data.establishmentType === 'cafe' && (
               <>
                 <NumberStepper
@@ -431,7 +409,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </>
             )}
 
-            {/* fastfood: register count + delivery toggle */}
             {data.establishmentType === 'fastfood' && (
               <>
                 <NumberStepper
@@ -449,7 +426,6 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </>
             )}
 
-            {/* other: generic table count */}
             {data.establishmentType === 'other' && (
               <NumberStepper
                 label={t('tableCountLabel')}

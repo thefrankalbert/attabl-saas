@@ -1472,6 +1472,7 @@
     "currencyLabel": "Currency",
     "tablesTitle": "Table configuration",
     "tablesSubtitle": "Organize your zones and tables",
+    "modeSelectTitle": "Configuration method",
     "modeComplete": "Full configuration",
     "modeCompleteDesc": "Zones, prefixes, capacity",
     "modeMinimum": "Quick setup",

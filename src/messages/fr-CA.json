@@ -1472,6 +1472,7 @@
     "currencyLabel": "Devise",
     "tablesTitle": "Configuration de vos tables",
     "tablesSubtitle": "Organisez vos zones et tables",
+    "modeSelectTitle": "Méthode de configuration",
     "modeComplete": "Configuration complète",
     "modeCompleteDesc": "Zones, préfixes, capacité",
     "modeMinimum": "Configuration rapide",

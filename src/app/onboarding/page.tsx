@@ -211,7 +211,7 @@ export default function OnboardingPage() {
   };
 
   const scrollToTop = () => {
-    document.getElementById('onboarding-content')?.scrollTo({ top: 0, behavior: 'instant' });
+    document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const nextStep = async () => {
@@ -450,7 +450,7 @@ export default function OnboardingPage() {
         {/* Step Content */}
         <div
           id="onboarding-content"
-          className="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8"
+          className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 lg:p-8"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
           }}
@@ -462,11 +462,11 @@ export default function OnboardingPage() {
             }
           }}
         >
-          <div className="w-full max-w-5xl mx-auto">
+          <div className="w-full max-w-5xl mx-auto flex flex-col flex-1 min-h-0">
             {/* Step badge — hidden on step 0 */}
             {currentStep > 0 && (
-              <div className="mb-4">
-                <span className="inline-block text-xs font-medium text-neutral-400 uppercase tracking-wide mb-1">
+              <div className="shrink-0 mb-4">
+                <span className="inline-block text-xs font-medium text-neutral-400 uppercase tracking-wide">
                   {t('step')} {currentStep} {t('stepOf')} 5
                 </span>
               </div>
@@ -474,13 +474,13 @@ export default function OnboardingPage() {
 
             <div
               key={currentStep}
-              className={
+              className={`flex-1 min-h-0 ${
                 currentStep > 0
                   ? direction === 'forward'
                     ? 'animate-in slide-in-from-right-4 fade-in duration-200'
                     : 'animate-in slide-in-from-left-4 fade-in duration-200'
                   : ''
-              }
+              }`}
             >
               {currentStep === 0 && (
                 <WelcomeStep
@@ -538,7 +538,7 @@ export default function OnboardingPage() {
               )}
 
               <div className="flex items-center gap-2">
-                {/* Skip button — not on step 5 */}
+                {/* Skip button — skips entire step (not on step 5) */}
                 {currentStep < 5 && (
                   <Button
                     variant="ghost"
