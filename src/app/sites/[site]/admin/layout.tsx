@@ -9,6 +9,9 @@ import { TrialBanner } from '@/components/admin/TrialBanner';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
+import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
+import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
+import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
@@ -145,6 +148,7 @@ export default async function AdminLayout({
       >
         <QueryProvider>
           <PermissionsProvider role={userRole}>
+            <CommandPalette />
             <AdminIdleWrapper
               idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
               screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
@@ -162,7 +166,12 @@ export default async function AdminLayout({
                 }
               >
                 <div className="max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14">
+                  {/* Top-right notification bell (mirrors mobile hamburger on left) */}
+                  <div className="fixed top-3 right-3 z-40 lg:absolute lg:top-4 lg:right-4">
+                    <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+                  </div>
                   <TrialBanner tenantSlug={tenantSlug} />
+                  <AdminBreadcrumbs />
                   {children}
                 </div>
               </SubscriptionProvider>

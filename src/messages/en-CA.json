@@ -485,6 +485,34 @@
     "pageTitle": "Settings",
     "pageDescription": "Manage your establishment's information and branding."
   },
+  "commandPalette": {
+    "placeholder": "Search for a page or action...",
+    "noResults": "No results found.",
+    "navigation": "Navigation",
+    "quickActions": "Quick actions",
+    "newOrder": "New order",
+    "addDish": "Add a dish",
+    "inviteUser": "Invite a user",
+    "settings": "Settings",
+    "users": "Users"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No notifications",
+    "markAllRead": "Mark all as read",
+    "justNow": "Just now",
+    "minutesAgo": "{count} min ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago"
+  },
+  "pushNotifications": {
+    "title": "Push Notifications",
+    "enabledDesc": "You will receive push notifications on this device.",
+    "disabledDesc": "Enable to receive real-time alerts on this device.",
+    "enable": "Enable",
+    "disable": "Disable",
+    "loading": "Loading..."
+  },
   "sidebar": {
     "groupMain": "Main",
     "groupOrganization": "Organization",
