@@ -17,9 +17,14 @@ interface AdminBottomNavProps {
 
 // ─── Component ──────────────────────────────────────────
 
+const IMMERSIVE_SEGMENTS = ['/kitchen', '/pos'];
+
 export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavProps) {
   const pathname = usePathname();
   const t = useTranslations('sidebar');
+
+  // Hide bottom nav on immersive pages (KDS, POS) — they need full screen
+  if (IMMERSIVE_SEGMENTS.some((seg) => pathname?.includes(`/admin${seg}`))) return null;
 
   // Get the 5 bottom nav item IDs for this role
   const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;

@@ -30,7 +30,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       }
     : undefined;
 
-  const containerClass = isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-3.5rem)] lg:h-dvh';
+  const containerClass = isFs ? 'fixed inset-0 z-[200]' : 'h-full';
 
   if (kitchen.loading) {
     return (
