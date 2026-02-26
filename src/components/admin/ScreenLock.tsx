@@ -105,7 +105,7 @@ export function ScreenLock({
             className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-amber-500 px-4 py-2.5 text-sm font-medium text-black"
           >
             <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>{t('lockingIn', { seconds: formatTime(remainingSeconds) })}</span>
+            <span>{t('lockingIn', { time: formatTime(remainingSeconds) })}</span>
           </motion.div>
         )}
       </AnimatePresence>
