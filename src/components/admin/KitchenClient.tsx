@@ -23,18 +23,20 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   const isFs = kitchen.isFullscreen;
 
+  const safeAreaStyle = isFs
+    ? {
+        padding:
+          'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+      }
+    : undefined;
+
+  const containerClass = isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-3.5rem)] lg:h-dvh';
+
   if (kitchen.loading) {
     return (
       <div
-        className={`${isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-1rem)]'} bg-neutral-950 flex items-center justify-center text-white`}
-        style={
-          isFs
-            ? {
-                padding:
-                  'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
-              }
-            : undefined
-        }
+        className={`${containerClass} bg-neutral-950 flex items-center justify-center text-white`}
+        style={safeAreaStyle}
       >
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
@@ -46,21 +48,13 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   return (
     <div
-      className={`${isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-1rem)] rounded-xl overflow-hidden'} bg-neutral-950 text-white flex flex-col overflow-hidden`}
-      style={
-        isFs
-          ? {
-              padding:
-                'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
-            }
-          : undefined
-      }
+      className={`${containerClass} bg-neutral-950 text-white flex flex-col overflow-hidden`}
+      style={safeAreaStyle}
     >
       <KitchenFilters
         pendingOrders={kitchen.pendingOrders}
         preparingOrders={kitchen.preparingOrders}
         readyOrders={kitchen.readyOrders}
-        totalActive={kitchen.totalActive}
         columns={kitchen.columns}
         columnOrders={kitchen.columnOrders}
         activeTab={kitchen.activeTab}

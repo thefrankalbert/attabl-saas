@@ -4,18 +4,12 @@ import { useEffect, useState } from 'react';
 import {
   Flame,
   AlertTriangle,
-  CheckCircle2,
   Package,
   Hotel,
   Truck,
-  UtensilsCrossed,
   Clock,
-  CircleDot,
-  Pause,
   Check,
-  Play,
   ChevronRight,
-  User,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -53,105 +47,69 @@ export default function KDSTicket({
   const [elapsed, setElapsed] = useState(0);
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
-  const to = useTranslations('orders');
-
-  // ─── Course labels ──────────────────────────────────────────
-  const COURSE_LABELS: Record<string, { emoji: string; label: string; order: number }> = {
-    appetizer: { emoji: '\u{1F957}', label: t('courseStarters'), order: 1 },
-    main: { emoji: '\u{1F356}', label: t('courseMains'), order: 2 },
-    dessert: { emoji: '\u{1F370}', label: t('courseDesserts'), order: 3 },
-    drink: { emoji: '\u{1F964}', label: t('courseDrinks'), order: 4 },
-  };
 
   // ─── Service type config ────────────────────────────────────
-  const SERVICE_TYPES: Record<
+  const SERVICE_ICONS: Record<
     string,
     { icon: React.ComponentType<{ className?: string }>; label: string }
   > = {
-    dine_in: { icon: UtensilsCrossed, label: t('serviceOnSite') },
     takeaway: { icon: Package, label: t('serviceTakeaway') },
     delivery: { icon: Truck, label: t('serviceDelivery') },
     room_service: { icon: Hotel, label: t('serviceRoom') },
   };
 
-  // ─── Item status ────────────────────────────────────────────
-  const ITEM_STATUSES: Record<
-    string,
-    {
-      label: string;
-      dot: string;
-      text: string;
-      bg: string;
-    }
-  > = {
+  // ─── Item status badges ────────────────────────────────────
+  const ITEM_BADGES: Record<string, { dot: string; text: string; bg: string }> = {
     pending: {
-      label: t('itemPending'),
       dot: 'bg-neutral-500',
-      text: 'text-neutral-500',
-      bg: 'bg-neutral-500/10 hover:bg-neutral-500/15',
+      text: 'text-neutral-400',
+      bg: 'bg-neutral-800 hover:bg-neutral-700',
     },
     preparing: {
-      label: t('itemPreparing'),
-      dot: 'bg-amber-400/70',
-      text: 'text-amber-400/70',
-      bg: 'bg-amber-400/[0.06] hover:bg-amber-400/10',
+      dot: 'bg-amber-400',
+      text: 'text-amber-400',
+      bg: 'bg-amber-500/10 hover:bg-amber-500/20',
     },
     ready: {
-      label: t('itemReady'),
-      dot: 'bg-emerald-400/70',
-      text: 'text-emerald-400/70',
-      bg: 'bg-emerald-400/[0.06] hover:bg-emerald-400/10',
+      dot: 'bg-emerald-400',
+      text: 'text-emerald-400',
+      bg: 'bg-emerald-500/10 hover:bg-emerald-500/20',
     },
   };
 
-  // ─── Order status → visual config (subdued palette) ────────
+  // ─── Order status → visual config ─────────────────────────
   const STATUS_CONFIG = {
     pending: {
-      headerBg: 'bg-neutral-800/60',
-      headerText: 'text-neutral-200',
-      accentBorder: 'border-l-amber-400',
-      icon: Play,
-      statusLabel: t('columnPending'),
-      actionBg: 'bg-amber-500/80 hover:bg-amber-500 active:bg-amber-600',
+      headerBg: 'bg-amber-500',
+      headerText: 'text-black',
+      actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
       actionLabel: t('actionStart').toUpperCase(),
       next: 'preparing' as OrderStatus,
     },
     preparing: {
-      headerBg: 'bg-neutral-800/60',
-      headerText: 'text-neutral-200',
-      accentBorder: 'border-l-blue-400',
-      icon: Pause,
-      statusLabel: t('columnPreparing'),
-      actionBg: 'bg-blue-500/80 hover:bg-blue-500 active:bg-blue-600',
+      headerBg: 'bg-blue-500',
+      headerText: 'text-white',
+      actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
       actionLabel: t('actionFinish').toUpperCase(),
       next: 'ready' as OrderStatus,
     },
     ready: {
-      headerBg: 'bg-neutral-800/60',
-      headerText: 'text-neutral-200',
-      accentBorder: 'border-l-emerald-400',
-      icon: Check,
-      statusLabel: t('columnReady'),
-      actionBg: 'bg-emerald-500/80 hover:bg-emerald-500 active:bg-emerald-600',
+      headerBg: 'bg-emerald-500',
+      headerText: 'text-white',
+      actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
       actionLabel: t('actionServe').toUpperCase(),
       next: 'delivered' as OrderStatus,
     },
     delivered: {
-      headerBg: 'bg-neutral-800/40',
-      headerText: 'text-neutral-400',
-      accentBorder: 'border-l-neutral-600',
-      icon: Check,
-      statusLabel: to('delivered'),
+      headerBg: 'bg-neutral-700',
+      headerText: 'text-neutral-300',
       actionBg: '',
       actionLabel: '',
       next: undefined,
     },
     cancelled: {
-      headerBg: 'bg-neutral-800/40',
-      headerText: 'text-neutral-400',
-      accentBorder: 'border-l-red-500',
-      icon: CircleDot,
-      statusLabel: to('cancelled'),
+      headerBg: 'bg-red-900/60',
+      headerText: 'text-red-300',
       actionBg: '',
       actionLabel: '',
       next: undefined,
@@ -177,20 +135,10 @@ export default function KDSTicket({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatElapsedHuman = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const hours = Math.floor(mins / 60);
-    if (mins < 1) return tc('justNow');
-    if (hours >= 1) return tc('hoursShort', { count: hours });
-    return tc('minutesShort', { count: mins });
-  };
-
   const minutes = Math.floor(elapsed / 60);
   const isLate = minutes >= 20;
-  const isWarning = minutes >= 10 && minutes < 20;
 
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
-  const StatusIcon = cfg.icon;
 
   // ─── Actions ────────────────────────────────────────────────
   const handleAction = () => {
@@ -213,198 +161,127 @@ export default function KDSTicket({
     );
   };
 
-  // ─── Group items by course ─────────────────────────────────
-  const groupedItems = items.reduce<Record<string, OrderItem[]>>((acc, item) => {
-    const course = item.course || 'main';
-    if (!acc[course]) acc[course] = [];
-    acc[course].push(item);
-    return acc;
-  }, {});
-
-  const sortedCourses = Object.keys(groupedItems).sort((a, b) => {
-    return (COURSE_LABELS[a]?.order ?? 99) - (COURSE_LABELS[b]?.order ?? 99);
-  });
-
-  // Progress
-  const readyCount = items.filter((i) => i.item_status === 'ready').length;
-  const progress = items.length > 0 ? Math.round((readyCount / items.length) * 100) : 0;
-
   const serviceType = order.service_type;
-  const svc = serviceType ? SERVICE_TYPES[serviceType] : null;
+  const svc = serviceType && serviceType !== 'dine_in' ? SERVICE_ICONS[serviceType] : null;
 
-  const timerColor = isLate ? 'text-red-400' : isWarning ? 'text-amber-400' : 'text-neutral-500';
+  // Ready count for inline indicator
+  const readyCount = items.filter((i) => i.item_status === 'ready').length;
 
   return (
     <div
       className={cn(
-        'flex flex-col rounded-xl overflow-hidden transition-all duration-300 bg-neutral-900/90 border border-white/[0.06]',
+        'flex flex-col rounded-lg overflow-hidden bg-neutral-900 border border-white/[0.06]',
         isLate && 'ring-1 ring-red-500/40',
-        isMock && 'opacity-90',
+        isMock && 'opacity-80',
       )}
     >
-      {/* ━━━ HEADER ━━━ */}
-      <div
-        className={cn('px-3 py-2.5 border-l-[3px]', cfg.headerBg, cfg.headerText, cfg.accentBorder)}
-      >
+      {/* ━━━ COLORED HEADER (Square KDS style) ━━━ */}
+      <div className={cn('px-3 py-2', cfg.headerBg, cfg.headerText)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <StatusIcon className="w-4 h-4 shrink-0 opacity-60" />
-            <div className="min-w-0">
-              <div className="flex items-center gap-1.5">
-                {order.order_number ? (
-                  <span className="font-mono text-sm font-black">
-                    COMMANDE #{order.order_number}
-                  </span>
-                ) : (
-                  <span className="text-sm font-black uppercase tracking-wide">
-                    {cfg.statusLabel}
-                  </span>
-                )}
-              </div>
-              <p className="text-xs xl:text-sm font-medium opacity-80 truncate">
-                {formatElapsedHuman(elapsed)}
-                {order.customer_name && ` \u00b7 ${order.customer_name}`}
-              </p>
-            </div>
-          </div>
-          {svc && (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.06] text-neutral-400 shrink-0">
-              <svc.icon className="w-3 h-3" />
-              <span className="text-xs font-medium uppercase tracking-wide">{svc.label}</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ━━━ INFO ROW ━━━ */}
-      <div className="flex items-center gap-4 px-3 py-2 border-b border-white/[0.04] bg-neutral-800/30">
-        {/* Table */}
-        <div className="flex items-center gap-1.5">
-          <UtensilsCrossed className="w-3.5 h-3.5 text-neutral-500" />
-          <span className="font-mono text-sm font-black text-white">{order.table_number}</span>
-        </div>
-        {/* Order # */}
-        {order.order_number && (
-          <div className="flex items-center gap-1.5">
-            <CircleDot className="w-3.5 h-3.5 text-neutral-500" />
-            <span className="font-mono text-sm font-bold text-neutral-300">
-              {order.order_number}
+            <span className="font-black text-sm truncate">
+              {order.table_number || order.order_number}
             </span>
+            {svc && (
+              <div className="flex items-center gap-1 opacity-80">
+                <svc.icon className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold uppercase">{svc.label}</span>
+              </div>
+            )}
           </div>
-        )}
-        {/* Room */}
-        {serviceType === 'room_service' && order.room_number && (
-          <div className="flex items-center gap-1.5">
-            <Hotel className="w-3.5 h-3.5 text-neutral-500" />
-            <span className="text-xs font-bold text-neutral-300">{order.room_number}</span>
+          <div
+            className={cn(
+              'flex items-center gap-1 font-mono text-xs font-black',
+              isLate ? 'animate-pulse' : '',
+            )}
+          >
+            {isLate ? (
+              <Flame className="w-3.5 h-3.5" />
+            ) : (
+              <Clock className="w-3.5 h-3.5 opacity-70" />
+            )}
+            {formatTime(elapsed)}
           </div>
-        )}
-        {/* Server */}
-        {order.server && (
-          <div className="flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-neutral-500" />
-            <span className="text-xs font-medium text-neutral-400">{order.server.full_name}</span>
-          </div>
-        )}
-        {/* Timer — pushed right */}
-        <div className={cn('flex items-center gap-1 ml-auto', timerColor)}>
-          {isLate ? <Flame className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-          <span className="font-mono text-sm font-black tabular-nums">{formatTime(elapsed)}</span>
         </div>
+        {/* Order number + server (second line, compact) */}
+        {(order.order_number || order.server) && (
+          <div className="flex items-center gap-2 mt-0.5 text-xs opacity-70">
+            {order.order_number && order.table_number && (
+              <span className="font-mono font-bold">#{order.order_number}</span>
+            )}
+            {order.server && <span>{order.server.full_name}</span>}
+            {serviceType === 'room_service' && order.room_number && (
+              <span>Ch. {order.room_number}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* ━━━ Customer Notes ━━━ */}
       {order.notes && (
-        <div className="px-3 py-2 bg-amber-500/[0.05] border-b border-white/[0.04]">
+        <div className="px-3 py-1.5 bg-amber-500/[0.08] border-b border-white/[0.04]">
           <div className="flex items-start gap-1.5 text-amber-300/80">
-            <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
             <p className="text-xs font-medium leading-snug">{order.notes}</p>
           </div>
         </div>
       )}
 
-      {/* ━━━ ITEMS LIST ━━━ */}
-      <div className="flex-1 overflow-y-auto max-h-[280px] custom-scrollbar">
-        {sortedCourses.map((course) => {
-          const courseConf = COURSE_LABELS[course] || {
-            emoji: '\u{1F37D}\u{FE0F}',
-            label: course,
-            order: 99,
-          };
-          const courseItems = groupedItems[course];
+      {/* ━━━ ITEMS LIST (clean, numbered) ━━━ */}
+      <div className="flex-1 overflow-y-auto max-h-[260px] custom-scrollbar divide-y divide-white/[0.03]">
+        {items.map((item) => {
+          const badge = ITEM_BADGES[item.item_status || 'pending'] || ITEM_BADGES.pending;
+          const hasNotes = item.notes || item.customer_notes;
+          const hasMods = item.modifiers && item.modifiers.length > 0;
 
           return (
-            <div key={course}>
-              {sortedCourses.length > 1 && (
-                <div className="flex items-center gap-1.5 px-3 pt-2 pb-1">
-                  <span className="text-xs">{courseConf.emoji}</span>
-                  <span className="text-xs xl:text-sm font-bold uppercase tracking-[0.15em] text-neutral-600">
-                    {courseConf.label}
+            <div key={item.id} className="flex items-start gap-2 px-3 py-2">
+              {/* Number + Name */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-neutral-500 font-bold tabular-nums shrink-0">
+                    {item.quantity}x
                   </span>
-                  <div className="flex-1 h-px bg-neutral-800/50" />
+                  <span className="text-sm font-semibold text-white leading-tight truncate">
+                    {item.name}
+                  </span>
+                  {!isMock && item.menu_item_id && (
+                    <RuptureButton
+                      menuItemId={item.menu_item_id}
+                      itemName={item.name}
+                      onRupture={onUpdate}
+                    />
+                  )}
                 </div>
-              )}
-
-              {courseItems.map((item) => {
-                const st = ITEM_STATUSES[item.item_status || 'pending'] || ITEM_STATUSES.pending;
-                const hasNotes = item.notes || item.customer_notes;
-                const hasMods = item.modifiers && item.modifiers.length > 0;
-
-                return (
-                  <div
-                    key={item.id}
-                    className="flex items-start gap-2.5 px-3 py-1.5 border-b border-white/[0.02] last:border-b-0"
-                  >
-                    {/* Qty + Name */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span className="text-[13px] text-neutral-400 font-medium shrink-0">
-                          {item.quantity} x
-                        </span>
-                        <span className="text-[13px] font-bold text-white leading-tight truncate">
-                          {item.name}
-                        </span>
-                        {!isMock && item.menu_item_id && (
-                          <RuptureButton
-                            menuItemId={item.menu_item_id}
-                            itemName={item.name}
-                            onRupture={onUpdate}
-                          />
-                        )}
-                      </div>
-                      {hasMods && (
-                        <div className="flex flex-wrap gap-x-2 ml-6 mt-0.5">
-                          {item.modifiers!.map((mod, idx) => (
-                            <span key={idx} className="text-xs text-neutral-400 font-medium">
-                              +{mod.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {hasNotes && (
-                        <p className="text-xs text-amber-300/60 font-medium ml-6 mt-0.5 italic">
-                          {item.customer_notes || item.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Status badge — clickable to cycle */}
-                    <button
-                      onClick={() => handleItemClick(item)}
-                      disabled={isMock}
-                      className={cn(
-                        'flex items-center gap-1 px-2.5 py-1.5 min-h-[44px] rounded-lg text-xs xl:text-sm font-bold shrink-0 transition-all',
-                        st.bg,
-                        st.text,
-                        !isMock && 'cursor-pointer active:scale-95',
-                      )}
-                    >
-                      <div className={cn('w-1.5 h-1.5 rounded-full', st.dot)} />
-                      {st.label}
-                    </button>
+                {hasMods && (
+                  <div className="flex flex-wrap gap-x-2 ml-5 mt-0.5">
+                    {item.modifiers!.map((mod, modIdx) => (
+                      <span key={modIdx} className="text-xs text-neutral-500">
+                        + {mod.name}
+                      </span>
+                    ))}
                   </div>
-                );
-              })}
+                )}
+                {hasNotes && (
+                  <p className="text-xs text-amber-400/60 ml-5 mt-0.5 italic">
+                    {item.customer_notes || item.notes}
+                  </p>
+                )}
+              </div>
+
+              {/* Status badge — tap to cycle */}
+              <button
+                onClick={() => handleItemClick(item)}
+                disabled={isMock}
+                className={cn(
+                  'flex items-center gap-1 px-2 py-1.5 min-h-[44px] rounded-md text-xs font-bold shrink-0 transition-all',
+                  badge.bg,
+                  badge.text,
+                  !isMock && 'cursor-pointer active:scale-95',
+                )}
+              >
+                <div className={cn('w-1.5 h-1.5 rounded-full', badge.dot)} />
+              </button>
             </div>
           );
         })}
@@ -414,55 +291,39 @@ export default function KDSTicket({
         )}
       </div>
 
-      {/* ━━━ PROGRESS BAR ━━━ */}
-      {items.length > 0 && progress > 0 && (
-        <div className="px-3 py-1.5 border-t border-white/[0.04]">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-1 rounded-full bg-neutral-800 overflow-hidden">
-              <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500',
-                  progress === 100 ? 'bg-emerald-400' : 'bg-blue-400',
-                )}
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-            <span className="text-xs xl:text-sm font-bold text-neutral-500 tabular-nums">
-              {readyCount}/{items.length}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* ━━━ ACTION BAR ━━━ */}
+      {cfg.actionLabel && (
+        <div className="flex border-t border-white/[0.06]">
+          {/* Mark all ready shortcut */}
+          {order.status !== 'ready' && items.length > 0 && (
+            <button
+              onClick={handleMarkAllReady}
+              disabled={isMock}
+              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-neutral-500 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border-r border-white/[0.06] transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+              {readyCount > 0 && (
+                <span className="tabular-nums">
+                  {readyCount}/{items.length}
+                </span>
+              )}
+            </button>
+          )}
 
-      {/* ━━━ ACTIONS ━━━ */}
-      <div className="flex">
-        {/* "Tout pr\u00eat" shortcut */}
-        {order.status !== 'ready' && order.status !== 'delivered' && items.length > 0 && (
-          <button
-            onClick={handleMarkAllReady}
-            disabled={isMock}
-            className="flex-1 py-2.5 min-h-[44px] text-xs font-bold uppercase tracking-widest text-neutral-400 bg-white/[0.03] hover:bg-white/[0.06] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {t('actionAllReady')}
-          </button>
-        )}
-
-        {/* Main action — BIG touch target */}
-        {cfg.actionLabel && (
+          {/* Main action button — big, colored, full-width */}
           <button
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 py-2.5 min-h-[44px] font-bold text-xs uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
+              'flex-1 min-h-[48px] font-black text-sm uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2',
               cfg.actionBg,
             )}
           >
             {cfg.actionLabel}
             <ChevronRight className="w-4 h-4" />
           </button>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

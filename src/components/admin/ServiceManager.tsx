@@ -59,7 +59,7 @@ export default function ServiceManager({ tenantId }: Props) {
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel('assignments-realtime')
+      .channel(`assignments-realtime-${tenantId}`)
       .on(
         'postgres_changes',
         {
