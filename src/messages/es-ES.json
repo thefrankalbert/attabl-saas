@@ -485,6 +485,34 @@
     "pageTitle": "Configuración",
     "pageDescription": "Gestione la información y el branding de su establecimiento."
   },
+  "commandPalette": {
+    "placeholder": "Buscar una página o acción...",
+    "noResults": "Sin resultados.",
+    "navigation": "Navegación",
+    "quickActions": "Acciones rápidas",
+    "newOrder": "Nuevo pedido",
+    "addDish": "Añadir un plato",
+    "inviteUser": "Invitar a un usuario",
+    "settings": "Ajustes",
+    "users": "Usuarios"
+  },
+  "notifications": {
+    "title": "Notificaciones",
+    "empty": "Sin notificaciones",
+    "markAllRead": "Marcar todo como leído",
+    "justNow": "Ahora mismo",
+    "minutesAgo": "Hace {count} min",
+    "hoursAgo": "Hace {count}h",
+    "daysAgo": "Hace {count}d"
+  },
+  "pushNotifications": {
+    "title": "Notificaciones push",
+    "enabledDesc": "Recibirás notificaciones push en este dispositivo.",
+    "disabledDesc": "Activa para recibir alertas en tiempo real en este dispositivo.",
+    "enable": "Activar",
+    "disable": "Desactivar",
+    "loading": "Cargando..."
+  },
   "sidebar": {
     "groupMain": "Principal",
     "groupOrganization": "Organización",

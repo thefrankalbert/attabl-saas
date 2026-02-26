@@ -34,7 +34,17 @@ function AdminLayoutInner({
 
       {/* Content zone: fills remaining space */}
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <main className={cn('flex-1 overflow-y-auto', isDevMode && 'pt-6')}>{children}</main>
+        {/* Skip link: visible only on Tab focus for keyboard users */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-neutral-900"
+        >
+          Skip to content
+        </a>
+
+        <main id="main-content" className={cn('flex-1 overflow-y-auto', isDevMode && 'pt-6')}>
+          {children}
+        </main>
 
         {/* Bottom navigation: in-flow at bottom on mobile */}
         {isMobile && <AdminBottomNav basePath={basePath} role={role} primaryColor={primaryColor} />}

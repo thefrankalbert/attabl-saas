@@ -485,6 +485,34 @@
     "pageTitle": "Paramètres",
     "pageDescription": "Gérez les informations et le branding de votre établissement."
   },
+  "commandPalette": {
+    "placeholder": "Rechercher une page ou une action...",
+    "noResults": "Aucun résultat trouvé.",
+    "navigation": "Navigation",
+    "quickActions": "Actions rapides",
+    "newOrder": "Nouvelle commande",
+    "addDish": "Ajouter un plat",
+    "inviteUser": "Inviter un utilisateur",
+    "settings": "Paramètres",
+    "users": "Utilisateurs"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "Aucune notification",
+    "markAllRead": "Tout marquer comme lu",
+    "justNow": "À l'instant",
+    "minutesAgo": "Il y a {count} min",
+    "hoursAgo": "Il y a {count}h",
+    "daysAgo": "Il y a {count}j"
+  },
+  "pushNotifications": {
+    "title": "Notifications push",
+    "enabledDesc": "Vous recevrez des notifications push sur cet appareil.",
+    "disabledDesc": "Activez pour recevoir des alertes en temps réel sur cet appareil.",
+    "enable": "Activer",
+    "disable": "Désactiver",
+    "loading": "Chargement..."
+  },
   "sidebar": {
     "groupMain": "Principal",
     "groupOrganization": "Organisation",

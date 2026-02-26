@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
+import { PushOptIn } from '@/components/admin/PushOptIn';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
@@ -55,6 +56,10 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           screen_lock_mode: tenant.screen_lock_mode,
         }}
       />
+
+      <div className="mt-6 flex-shrink-0">
+        <PushOptIn tenantId={tenant.id} />
+      </div>
     </div>
   );
 }
