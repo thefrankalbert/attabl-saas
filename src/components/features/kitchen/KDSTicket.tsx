@@ -86,56 +86,60 @@ export default function KDSTicket({
   > = {
     pending: {
       label: t('itemPending'),
-      dot: 'bg-neutral-400',
-      text: 'text-neutral-400',
-      bg: 'bg-neutral-400/10 hover:bg-neutral-400/20',
+      dot: 'bg-neutral-500',
+      text: 'text-neutral-500',
+      bg: 'bg-neutral-500/10 hover:bg-neutral-500/15',
     },
     preparing: {
       label: t('itemPreparing'),
-      dot: 'bg-yellow-400',
-      text: 'text-yellow-400',
-      bg: 'bg-yellow-400/10 hover:bg-yellow-400/20',
+      dot: 'bg-amber-400/70',
+      text: 'text-amber-400/70',
+      bg: 'bg-amber-400/[0.06] hover:bg-amber-400/10',
     },
     ready: {
       label: t('itemReady'),
-      dot: 'bg-emerald-400',
-      text: 'text-emerald-400',
-      bg: 'bg-emerald-400/10 hover:bg-emerald-400/20',
+      dot: 'bg-emerald-400/70',
+      text: 'text-emerald-400/70',
+      bg: 'bg-emerald-400/[0.06] hover:bg-emerald-400/10',
     },
   };
 
-  // ─── Order status → visual config ───────────────────────────
+  // ─── Order status → visual config (subdued palette) ────────
   const STATUS_CONFIG = {
     pending: {
-      headerBg: 'bg-amber-500',
-      headerText: 'text-white',
+      headerBg: 'bg-neutral-800/60',
+      headerText: 'text-neutral-200',
+      accentBorder: 'border-l-amber-400',
       icon: Play,
       statusLabel: t('columnPending'),
-      actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
+      actionBg: 'bg-amber-500/80 hover:bg-amber-500 active:bg-amber-600',
       actionLabel: t('actionStart').toUpperCase(),
       next: 'preparing' as OrderStatus,
     },
     preparing: {
-      headerBg: 'bg-blue-500',
-      headerText: 'text-white',
+      headerBg: 'bg-neutral-800/60',
+      headerText: 'text-neutral-200',
+      accentBorder: 'border-l-blue-400',
       icon: Pause,
       statusLabel: t('columnPreparing'),
-      actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
+      actionBg: 'bg-blue-500/80 hover:bg-blue-500 active:bg-blue-600',
       actionLabel: t('actionFinish').toUpperCase(),
       next: 'ready' as OrderStatus,
     },
     ready: {
-      headerBg: 'bg-emerald-500',
-      headerText: 'text-white',
+      headerBg: 'bg-neutral-800/60',
+      headerText: 'text-neutral-200',
+      accentBorder: 'border-l-emerald-400',
       icon: Check,
       statusLabel: t('columnReady'),
-      actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
+      actionBg: 'bg-emerald-500/80 hover:bg-emerald-500 active:bg-emerald-600',
       actionLabel: t('actionServe').toUpperCase(),
       next: 'delivered' as OrderStatus,
     },
     delivered: {
-      headerBg: 'bg-neutral-600',
-      headerText: 'text-white',
+      headerBg: 'bg-neutral-800/40',
+      headerText: 'text-neutral-400',
+      accentBorder: 'border-l-neutral-600',
       icon: Check,
       statusLabel: to('delivered'),
       actionBg: '',
@@ -143,8 +147,9 @@ export default function KDSTicket({
       next: undefined,
     },
     cancelled: {
-      headerBg: 'bg-red-500',
-      headerText: 'text-white',
+      headerBg: 'bg-neutral-800/40',
+      headerText: 'text-neutral-400',
+      accentBorder: 'border-l-red-500',
       icon: CircleDot,
       statusLabel: to('cancelled'),
       actionBg: '',
@@ -237,13 +242,13 @@ export default function KDSTicket({
         isMock && 'opacity-90',
       )}
     >
-      {/* ━━━ COLORED HEADER BANNER ━━━ */}
-      <div className={cn('px-3 py-2.5', cfg.headerBg, cfg.headerText)}>
+      {/* ━━━ HEADER ━━━ */}
+      <div
+        className={cn('px-3 py-2.5 border-l-[3px]', cfg.headerBg, cfg.headerText, cfg.accentBorder)}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="w-7 h-7 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-              <StatusIcon className="w-4 h-4" />
-            </div>
+            <StatusIcon className="w-4 h-4 shrink-0 opacity-60" />
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 {order.order_number ? (
@@ -263,11 +268,9 @@ export default function KDSTicket({
             </div>
           </div>
           {svc && (
-            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/15 shrink-0">
+            <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.06] text-neutral-400 shrink-0">
               <svc.icon className="w-3 h-3" />
-              <span className="text-xs xl:text-sm font-bold uppercase tracking-wide">
-                {svc.label}
-              </span>
+              <span className="text-xs font-medium uppercase tracking-wide">{svc.label}</span>
             </div>
           )}
         </div>
@@ -292,15 +295,15 @@ export default function KDSTicket({
         {/* Room */}
         {serviceType === 'room_service' && order.room_number && (
           <div className="flex items-center gap-1.5">
-            <Hotel className="w-3.5 h-3.5 text-pink-400" />
-            <span className="text-xs font-bold text-pink-400">{order.room_number}</span>
+            <Hotel className="w-3.5 h-3.5 text-neutral-500" />
+            <span className="text-xs font-bold text-neutral-300">{order.room_number}</span>
           </div>
         )}
         {/* Server */}
         {order.server && (
           <div className="flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-lime-400" />
-            <span className="text-xs font-medium text-lime-400">{order.server.full_name}</span>
+            <User className="w-3.5 h-3.5 text-neutral-500" />
+            <span className="text-xs font-medium text-neutral-400">{order.server.full_name}</span>
           </div>
         )}
         {/* Timer — pushed right */}
@@ -312,10 +315,10 @@ export default function KDSTicket({
 
       {/* ━━━ Customer Notes ━━━ */}
       {order.notes && (
-        <div className="px-3 py-2 bg-yellow-500/[0.07] border-b border-yellow-500/10">
-          <div className="flex items-start gap-1.5 text-yellow-400">
+        <div className="px-3 py-2 bg-amber-500/[0.05] border-b border-white/[0.04]">
+          <div className="flex items-start gap-1.5 text-amber-300/80">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-            <p className="text-xs xl:text-sm font-bold leading-snug">{order.notes}</p>
+            <p className="text-xs font-medium leading-snug">{order.notes}</p>
           </div>
         </div>
       )}
@@ -372,17 +375,14 @@ export default function KDSTicket({
                       {hasMods && (
                         <div className="flex flex-wrap gap-x-2 ml-6 mt-0.5">
                           {item.modifiers!.map((mod, idx) => (
-                            <span
-                              key={idx}
-                              className="text-xs xl:text-sm text-blue-400 font-medium"
-                            >
+                            <span key={idx} className="text-xs text-neutral-400 font-medium">
                               +{mod.name}
                             </span>
                           ))}
                         </div>
                       )}
                       {hasNotes && (
-                        <p className="text-xs xl:text-sm text-amber-400/80 font-medium ml-6 mt-0.5 italic">
+                        <p className="text-xs text-amber-300/60 font-medium ml-6 mt-0.5 italic">
                           {item.customer_notes || item.notes}
                         </p>
                       )}
@@ -441,7 +441,7 @@ export default function KDSTicket({
           <button
             onClick={handleMarkAllReady}
             disabled={isMock}
-            className="flex-1 py-2.5 min-h-[44px] text-xs xl:text-sm font-bold uppercase tracking-widest text-emerald-400 bg-emerald-400/[0.06] hover:bg-emerald-400/[0.12] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
+            className="flex-1 py-2.5 min-h-[44px] text-xs font-bold uppercase tracking-widest text-neutral-400 bg-white/[0.03] hover:bg-white/[0.06] border-t border-r border-white/[0.04] transition-colors flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
             {t('actionAllReady')}
@@ -454,7 +454,7 @@ export default function KDSTicket({
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 py-2.5 min-h-[44px] font-black text-xs uppercase tracking-[0.15em] text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
+              'flex-1 py-2.5 min-h-[44px] font-bold text-xs uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-1.5',
               cfg.actionBg,
             )}
           >

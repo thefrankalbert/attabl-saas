@@ -657,7 +657,9 @@
     "loadingPos": "Chargement du POS...",
     "sendToKitchen": "Envoyer en cuisine",
     "selectTableFirst": "Veuillez sélectionner une table d'abord",
-    "server": "Serveur"
+    "server": "Serveur",
+    "itemsCount": "articles",
+    "printShort": "Cuisine"
   },
   "users": {
     "title": "Utilisateurs",

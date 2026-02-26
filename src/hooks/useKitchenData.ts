@@ -71,21 +71,21 @@ export interface UseKitchenDataReturn {
 // ─── Column style config (no translatable text) ────────────
 const COLUMN_STYLES = {
   pending: {
-    dot: 'bg-amber-400',
-    countBadge: 'text-amber-400 bg-amber-400/10',
-    colBg: 'bg-amber-500/[0.025]',
+    dot: 'bg-amber-400/60',
+    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    colBg: '',
     emptyIcon: Bell,
   },
   preparing: {
-    dot: 'bg-blue-400',
-    countBadge: 'text-blue-400 bg-blue-400/10',
-    colBg: 'bg-blue-500/[0.025]',
+    dot: 'bg-blue-400/60',
+    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    colBg: '',
     emptyIcon: Utensils,
   },
   ready: {
-    dot: 'bg-emerald-400',
-    countBadge: 'text-emerald-400 bg-emerald-400/10',
-    colBg: 'bg-emerald-500/[0.025]',
+    dot: 'bg-emerald-400/60',
+    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    colBg: '',
     emptyIcon: CheckCircle2,
   },
 } as const;
