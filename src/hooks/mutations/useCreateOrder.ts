@@ -10,7 +10,7 @@ interface CreateOrderInput {
   tenant_id: string;
   table_number: string;
   status: string;
-  total_price: number;
+  total: number;
   service_type: string;
   cashier_id?: string | null;
   server_id?: string | null;
@@ -48,7 +48,7 @@ export function useCreateOrder(tenantId: string) {
           tenant_id: input.tenant_id,
           table_number: input.table_number,
           status: input.status,
-          total_price: input.total_price,
+          total: input.total,
           service_type: input.service_type,
           cashier_id: input.cashier_id ?? null,
           server_id: input.server_id ?? null,
@@ -88,9 +88,15 @@ export function useCreateOrder(tenantId: string) {
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
     },
-    onError: (error: Error) => {
-      logger.error('Failed to create order', error);
-      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error !== null && 'message' in error
+            ? String((error as { message: string }).message)
+            : String(error);
+      logger.error('Failed to create order', { message, error });
+      toast({ title: 'Erreur', description: message, variant: 'destructive' });
     },
     retry: 10,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
