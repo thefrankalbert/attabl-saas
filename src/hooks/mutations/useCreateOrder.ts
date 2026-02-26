@@ -22,6 +22,7 @@ interface CreateOrderInput {
     price_at_order: number;
     notes?: string | null;
     name: string;
+    modifiers?: Array<{ name: string; price: number }>;
   }[];
 }
 
@@ -68,6 +69,7 @@ export function useCreateOrder(tenantId: string) {
         price_at_order: item.price_at_order,
         notes: item.notes || null,
         name: item.name,
+        modifiers: item.modifiers?.length ? item.modifiers : [],
       }));
 
       const { error: itemsError } = await supabase.from('order_items').insert(orderItems);

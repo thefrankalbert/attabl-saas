@@ -143,7 +143,6 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
         <SidebarFooter
           basePath={basePath}
           isCollapsed={isCollapsed}
-          adminUser={adminUser}
           onToggleCollapsed={toggleCollapsed}
           isFullscreen={isFullscreen}
           onToggleFullscreen={toggleFullscreen}

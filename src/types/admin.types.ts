@@ -201,6 +201,8 @@ export interface MenuItem {
   is_vegetarian?: boolean;
   is_spicy?: boolean;
   is_drink?: boolean;
+  allergens?: string[];
+  calories?: number;
   category_id: string;
   category?: Category;
   display_order?: number;

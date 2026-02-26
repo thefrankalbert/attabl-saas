@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Loader2, Star, Check, X, Image as ImageIcon } from 'lucide-react';
+import { Plus, Loader2, Star, Check, X, Image as ImageIcon, AlertTriangle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { checkCanAddMenuItemAction } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
+import { ALLERGENS } from '@/lib/config/allergens';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 interface ItemsClientProps {
@@ -57,10 +58,13 @@ export default function ItemsClient({
   const [imageUrl, setImageUrl] = useState('');
   const [isAvailable, setIsAvailable] = useState(true);
   const [isFeatured, setIsFeatured] = useState(false);
+  const [allergens, setAllergens] = useState<string[]>([]);
+  const [calories, setCalories] = useState<number | ''>('');
 
   const { toast } = useToast();
   const t = useTranslations('items');
   const tc = useTranslations('common');
+  const ta = useTranslations('allergens');
   const supabase = createClient();
   const queryClient = useQueryClient();
 
@@ -95,6 +99,8 @@ export default function ItemsClient({
     setImageUrl('');
     setIsAvailable(true);
     setIsFeatured(false);
+    setAllergens([]);
+    setCalories('');
   };
 
   const openNewModal = () => {
@@ -114,6 +120,8 @@ export default function ItemsClient({
     setImageUrl(item.image_url || '');
     setIsAvailable(item.is_available);
     setIsFeatured(item.is_featured);
+    setAllergens(item.allergens || []);
+    setCalories(item.calories ?? '');
     setShowModal(true);
   };
 
@@ -132,6 +140,8 @@ export default function ItemsClient({
         image_url: imageUrl.trim() || null,
         is_available: isAvailable,
         is_featured: isFeatured,
+        allergens,
+        calories: calories === '' ? null : Number(calories),
         tenant_id: tenantId,
       };
       if (editingItem) {
@@ -444,6 +454,34 @@ export default function ItemsClient({
                   </p>
                 </div>
 
+                {/* Allergens */}
+                {selectedItem.allergens && selectedItem.allergens.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-neutral-400 font-medium flex items-center gap-1">
+                      <AlertTriangle className="w-3 h-3" />
+                      {ta('title')}
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {selectedItem.allergens.map((a) => (
+                        <span
+                          key={a}
+                          className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100"
+                        >
+                          {ta(a)}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Calories */}
+                {selectedItem.calories != null && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-neutral-400 font-medium">{ta('calories')}</p>
+                    <p className="text-sm text-neutral-700">{selectedItem.calories} kcal</p>
+                  </div>
+                )}
+
                 {/* Availability & Featured badges */}
                 <div className="flex items-center gap-2">
                   <span
@@ -576,6 +614,47 @@ export default function ItemsClient({
                 onChange={(e) => setImageUrl(e.target.value)}
                 placeholder="https://..."
                 className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900 flex items-center gap-1">
+                <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+                {ta('title')}
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {ALLERGENS.map((a) => {
+                  const selected = allergens.includes(a);
+                  return (
+                    <button
+                      key={a}
+                      type="button"
+                      onClick={() =>
+                        setAllergens((prev) =>
+                          selected ? prev.filter((x) => x !== a) : [...prev, a],
+                        )
+                      }
+                      className={cn(
+                        'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                        selected
+                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                          : 'bg-neutral-50 text-neutral-500 border-neutral-200 hover:border-neutral-300',
+                      )}
+                    >
+                      {ta(a)}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-neutral-900">{ta('calories')}</Label>
+              <Input
+                type="number"
+                value={calories}
+                onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
+                min={0}
+                placeholder={ta('caloriesPlaceholder')}
+                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400 w-full sm:w-[200px]"
               />
             </div>
             <div className="flex items-center gap-6 pt-2">

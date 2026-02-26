@@ -240,8 +240,8 @@ export function SoundSettings({
         )}
       </div>
 
-      {/* Sound List */}
-      <div className="grid gap-2">
+      {/* Sound List — 2-column grid on desktop */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {displaySounds.map((sound) => {
           const isSelected = selectedId === sound.id;
           const isPlaying = playingId === sound.id;
@@ -249,26 +249,36 @@ export function SoundSettings({
           const isCustom = isCustomSound(sound.id);
 
           return (
-            <div
+            <button
               key={sound.id}
-              className={`flex items-center gap-3 p-3 rounded-xl border transition-all group ${
+              type="button"
+              onClick={() => !isLocked && handleSelect(sound)}
+              disabled={isLocked}
+              className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left group ${
                 isSelected
-                  ? 'border-amber-400 bg-amber-50'
+                  ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-200'
                   : isLocked
-                    ? 'border-neutral-100 bg-neutral-50/50 opacity-60'
+                    ? 'border-neutral-100 bg-neutral-50/50 opacity-60 cursor-not-allowed'
                     : isCustom
-                      ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300'
-                      : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300 cursor-pointer'
+                      : 'border-neutral-200 bg-white hover:border-neutral-300 cursor-pointer'
               }`}
             >
-              {/* Play button — preview only, does NOT select */}
-              <button
-                type="button"
-                onClick={() => {
+              {/* Play button */}
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
                   if (!isLocked) handlePreview(sound);
                 }}
-                disabled={isLocked}
-                className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors ${
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    if (!isLocked) handlePreview(sound);
+                  }
+                }}
+                className={`w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-colors ${
                   isPlaying
                     ? 'bg-amber-500 text-white'
                     : isLocked
@@ -276,55 +286,64 @@ export function SoundSettings({
                       : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
                 }`}
               >
-                {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4 ml-0.5" />}
-              </button>
+                {isPlaying ? (
+                  <Pause className="w-3.5 h-3.5" />
+                ) : (
+                  <Play className="w-3.5 h-3.5 ml-0.5" />
+                )}
+              </div>
 
-              {/* Sound info — click to select */}
-              <button
-                type="button"
-                onClick={() => !isLocked && handleSelect(sound)}
-                disabled={isLocked}
-                className="flex-1 min-w-0 text-left cursor-pointer"
-              >
-                <div className="flex items-center gap-2">
+              {/* Sound info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5">
                   <span
-                    className={`text-sm font-medium ${isLocked ? 'text-neutral-400' : 'text-neutral-900'}`}
+                    className={`text-xs font-medium truncate ${isLocked ? 'text-neutral-400' : 'text-neutral-900'}`}
                   >
                     {sound.name}
                   </span>
                   {sound.isPremium && !isPremium && <PremiumBadge />}
                   {isCustom && (
-                    <span className="text-[10px] uppercase tracking-wide bg-purple-100 text-purple-600 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[9px] uppercase tracking-wide bg-purple-100 text-purple-600 px-1 py-0.5 rounded-full flex-shrink-0">
                       {t('customBadge')}
                     </span>
                   )}
+                  {!isCustom && (
+                    <span className="text-[10px] text-neutral-400 flex-shrink-0">
+                      {sound.duration}s
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs text-neutral-500 truncate">{sound.description}</p>
-              </button>
-
-              {/* Duration (skip for custom since we don't know it) */}
-              {!isCustom && (
-                <span className="text-xs text-neutral-400 flex-shrink-0">{sound.duration}s</span>
-              )}
+                <p className="text-[11px] text-neutral-500 truncate">{sound.description}</p>
+              </div>
 
               {/* Delete custom sound */}
               {isCustom && (
-                <button
-                  type="button"
-                  onClick={handleDeleteCustomSound}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteCustomSound();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      handleDeleteCustomSound();
+                    }
+                  }}
+                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
+                  <Trash2 className="w-3 h-3" />
+                </div>
               )}
 
               {/* Selected indicator */}
               {isSelected && (
-                <div className="w-6 h-6 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-3.5 h-3.5 text-white" />
+                <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-3 h-3 text-white" />
                 </div>
               )}
-            </div>
+            </button>
           );
         })}
       </div>

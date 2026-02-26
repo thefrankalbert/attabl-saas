@@ -16,6 +16,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Loader2,
+  Settings2,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -24,6 +25,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import AdminModal from '@/components/admin/AdminModal';
+import ItemModifierEditor from '@/components/admin/ItemModifierEditor';
 import { cn } from '@/lib/utils';
 import { actionUpdateMenu } from '@/app/actions/menus';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
@@ -56,6 +58,9 @@ export default function MenuDetailClient({
   const [catOrder, setCatOrder] = useState(0);
   const [savingCategory, setSavingCategory] = useState(false);
 
+  // Modifier editor state
+  const [editingModifiersItem, setEditingModifiersItem] = useState<MenuItem | null>(null);
+
   const { toast } = useToast();
   const t = useTranslations('menus');
   const tc = useTranslations('common');
@@ -84,7 +89,7 @@ export default function MenuDetailClient({
       if (catIds.length > 0) {
         const { data: itemsData } = await supabase
           .from('menu_items')
-          .select('*, category:categories(id, name)')
+          .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
           .eq('tenant_id', tenantId)
           .in('category_id', catIds)
           .order('display_order', { ascending: true });
@@ -335,6 +340,21 @@ export default function MenuDetailClient({
                           <span className="text-sm font-bold text-neutral-900 tabular-nums">
                             {t('priceFcfa', { count: item.price })}
                           </span>
+                          {(item.modifiers?.length ?? 0) > 0 && (
+                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                              {item.modifiers!.length} mod.
+                            </span>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingModifiersItem(item);
+                            }}
+                            className="p-1.5 rounded-md text-neutral-400 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                            title={t('manageModifiers')}
+                          >
+                            <Settings2 className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             onClick={() => toggleItemAvailable(item)}
                             className={cn(
@@ -426,6 +446,24 @@ export default function MenuDetailClient({
             </Button>
           </div>
         </form>
+      </AdminModal>
+
+      {/* Modifier Editor Modal */}
+      <AdminModal
+        isOpen={!!editingModifiersItem}
+        onClose={() => setEditingModifiersItem(null)}
+        title={t('modifiersTitle')}
+      >
+        {editingModifiersItem && (
+          <ItemModifierEditor
+            tenantId={tenantId}
+            menuItemId={editingModifiersItem.id}
+            menuItemName={editingModifiersItem.name}
+            modifiers={editingModifiersItem.modifiers || []}
+            onUpdate={loadData}
+            onClose={() => setEditingModifiersItem(null)}
+          />
+        )}
       </AdminModal>
     </div>
   );
