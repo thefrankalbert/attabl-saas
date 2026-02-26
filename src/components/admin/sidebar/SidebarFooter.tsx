@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import { Settings, LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Settings, LogOut, ChevronsLeft, ChevronsRight, Maximize, Minimize } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { SidebarTooltip } from './SidebarTooltip';
 
@@ -16,6 +16,8 @@ interface SidebarFooterProps {
     role: string;
   };
   onToggleCollapsed: () => void;
+  isFullscreen: boolean;
+  onToggleFullscreen: () => void;
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -25,6 +27,8 @@ export function SidebarFooter({
   isCollapsed,
   adminUser,
   onToggleCollapsed,
+  isFullscreen,
+  onToggleFullscreen,
 }: SidebarFooterProps) {
   const t = useTranslations('sidebar');
   const tc = useTranslations('common');
@@ -58,6 +62,14 @@ export function SidebarFooter({
                 {tc('logout')}
               </button>
             </form>
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className="flex items-center justify-center px-2.5 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
+              aria-label={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
+            >
+              {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+            </button>
             <Link
               href={`${basePath}/settings`}
               className="flex items-center justify-center px-2.5 py-2.5 rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors"
@@ -96,6 +108,19 @@ export function SidebarFooter({
         {/* Collapsed mode: show settings + sign-out icons */}
         {isCollapsed && (
           <>
+            <SidebarTooltip
+              label={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
+              show={isCollapsed}
+            >
+              <button
+                type="button"
+                onClick={onToggleFullscreen}
+                className="flex items-center justify-center w-full px-2 py-2.5 min-h-[44px] rounded-lg text-neutral-500 hover:bg-neutral-50 hover:text-neutral-700 transition-colors touch-manipulation"
+                aria-label={isFullscreen ? t('exitFullscreen') : t('fullscreen')}
+              >
+                {isFullscreen ? <Minimize className="h-4 w-4" /> : <Maximize className="h-4 w-4" />}
+              </button>
+            </SidebarTooltip>
             <SidebarTooltip label={t('navGeneral')} show={isCollapsed}>
               <Link
                 href={`${basePath}/settings`}

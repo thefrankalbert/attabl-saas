@@ -10,6 +10,7 @@ import { getRolePermissions } from '@/lib/permissions';
 import { getEffectivePermissions } from '@/lib/permissions';
 import { useSidebar } from '@/contexts/SidebarContext';
 import { useRolePermissions } from '@/hooks/queries/useRolePermissions';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { SidebarHeader } from './sidebar/SidebarHeader';
 import { SidebarNav } from './sidebar/SidebarNav';
 import { SidebarFooter } from './sidebar/SidebarFooter';
@@ -41,6 +42,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
   const [openForPath, setOpenForPath] = useState<string | null>(null);
   const t = useTranslations('sidebar');
   const { isCollapsed, toggleCollapsed } = useSidebar();
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
 
   // Mobile sidebar: open only if toggled for current pathname
   const isOpen = openForPath === pathname;
@@ -143,6 +145,8 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           isCollapsed={isCollapsed}
           adminUser={adminUser}
           onToggleCollapsed={toggleCollapsed}
+          isFullscreen={isFullscreen}
+          onToggleFullscreen={toggleFullscreen}
         />
       </aside>
     </>

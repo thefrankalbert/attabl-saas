@@ -3,10 +3,11 @@
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Bell, Utensils, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
 import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
@@ -102,7 +103,7 @@ export function useKitchenData({
   const [loading, setLoading] = useState(true);
   const [showMockData, setShowMockData] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
   const [activeTab, setActiveTab] = useState<ColumnKey>('pending');
 
   const {
@@ -265,16 +266,7 @@ export function useKitchenData({
     }
   };
 
-  // ─── Fullscreen toggle ──────────────────────────────────
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true));
-    } else {
-      if (document.exitFullscreen) {
-        document.exitFullscreen().then(() => setIsFullscreen(false));
-      }
-    }
-  };
+  // ─── Fullscreen (shared hook) ───────────────────────────
 
   // ─── Derived data ───────────────────────────────────────
   const displayOrders = useMemo(() => {
@@ -293,7 +285,15 @@ export function useKitchenData({
 
   const totalActive = pendingOrders.length + preparingOrders.length + readyOrders.length;
 
-  const goBack = () => router.back();
+  const params = useParams();
+  const goBack = () => {
+    // Exit fullscreen before navigating away
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    const site = params?.site as string | undefined;
+    router.push(site ? `/sites/${site}/admin` : '/');
+  };
 
   return {
     // Data
