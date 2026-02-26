@@ -75,12 +75,14 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
   // Build dynamic QR URL
   const qrUrl = buildQRUrl(
     menuUrl,
-    selectedTable?.display_name || undefined,
+    selectedTable?.table_number || undefined,
     selectedMenu?.slug || undefined,
   );
 
-  // Subtitle for the QR code
-  const qrSubtitle = selectedTable ? selectedTable.display_name : undefined;
+  // Subtitle for the QR code (display_name for human readability)
+  const qrSubtitle = selectedTable
+    ? selectedTable.display_name || selectedTable.table_number
+    : undefined;
 
   return (
     <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)]">

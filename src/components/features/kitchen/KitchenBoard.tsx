@@ -32,11 +32,11 @@ function EmptyColumn({
   icon: React.ComponentType<{ className?: string }>;
 }) {
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-6 text-center">
-      <div className="w-14 h-14 rounded-2xl bg-neutral-800/40 flex items-center justify-center mb-4">
-        <Icon className="w-7 h-7 text-neutral-700" />
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="w-12 h-12 rounded-xl bg-neutral-800/30 flex items-center justify-center mb-3">
+        <Icon className="w-6 h-6 text-neutral-700" />
       </div>
-      <p className="text-sm font-semibold text-neutral-600">{label}</p>
+      <p className="text-xs font-medium text-neutral-600">{label}</p>
     </div>
   );
 }
@@ -76,25 +76,23 @@ export default function KitchenBoard({
               'flex-col overflow-hidden',
               col.colBg,
               isChefView && idx < 2 && 'md:border-r border-white/[0.04]',
-              // Chef view mobile: only show active tab; Desktop: always show all
-              // Server view: always show (single column)
               isChefView ? (isActive ? 'flex' : 'hidden md:flex') : 'flex',
             )}
           >
             {/* Column Header — hidden on mobile (tabs serve this role) */}
             <div
               className={cn(
-                'py-2 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/30',
+                'py-1.5 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/20',
                 isChefView ? 'hidden md:flex' : 'flex',
               )}
             >
               <div className={cn('w-2 h-2 rounded-full', col.dot)} />
-              <span className="text-xs xl:text-sm font-bold uppercase tracking-[0.15em] text-neutral-500">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-600">
                 {col.label}
               </span>
               <span
                 className={cn(
-                  'ml-auto px-2 py-0.5 rounded-md text-xs xl:text-sm font-black tabular-nums',
+                  'ml-auto px-1.5 py-0.5 rounded text-xs font-black tabular-nums',
                   col.countBadge,
                 )}
               >
@@ -105,10 +103,10 @@ export default function KitchenBoard({
             {/* Column Content */}
             <div
               className={cn(
-                'flex-1 overflow-y-auto p-2 sm:p-2.5 custom-scrollbar',
+                'flex-1 overflow-y-auto p-1.5 sm:p-2 custom-scrollbar',
                 !isChefView
-                  ? 'max-w-3xl mx-auto w-full space-y-3 sm:space-y-4'
-                  : 'space-y-2 sm:space-y-2.5',
+                  ? 'max-w-3xl mx-auto w-full space-y-2 sm:space-y-3'
+                  : 'space-y-1.5 sm:space-y-2',
               )}
             >
               {colOrders.length > 0 ? (

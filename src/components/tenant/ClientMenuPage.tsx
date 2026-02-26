@@ -78,7 +78,7 @@ export default function ClientMenuPage({
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel('menu_realtime')
+      .channel(`menu_realtime_${tenant.id}`)
       .on(
         'postgres_changes',
         {

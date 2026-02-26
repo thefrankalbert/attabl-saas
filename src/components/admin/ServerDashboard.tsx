@@ -31,7 +31,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
-      .channel('server-orders-realtime')
+      .channel(`server-orders-realtime-${tenantId}`)
       .on(
         'postgres_changes',
         {

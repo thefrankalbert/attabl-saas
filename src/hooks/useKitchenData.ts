@@ -119,7 +119,7 @@ export function useKitchenData({
 
   const { toast } = useToast();
   const router = useRouter();
-  const supabase = createClient();
+  const [supabase] = useState(() => createClient());
 
   // ─── Columns with translated labels ─────────────────────
   const columns: Record<ColumnKey, ColumnConfig> = {
@@ -264,9 +264,10 @@ export function useKitchenData({
   // ─── Fullscreen (shared hook) ───────────────────────────
 
   // ─── Derived data ───────────────────────────────────────
+  // Only show mock data when user explicitly toggles Demo mode
   const displayOrders = useMemo(() => {
-    return showMockData || (orders.length === 0 && loading === false) ? MOCK_ORDERS : orders;
-  }, [orders, showMockData, loading]);
+    return showMockData ? MOCK_ORDERS : orders;
+  }, [orders, showMockData]);
 
   const pendingOrders = displayOrders.filter((o) => o.status === 'pending');
   const preparingOrders = displayOrders.filter((o) => o.status === 'preparing');

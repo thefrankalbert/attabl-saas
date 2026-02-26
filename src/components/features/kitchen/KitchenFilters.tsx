@@ -11,7 +11,6 @@ interface KitchenFiltersProps {
   pendingOrders: Order[];
   preparingOrders: Order[];
   readyOrders: Order[];
-  totalActive: number;
   columns: Record<ColumnKey, ColumnConfig>;
   columnOrders: Record<ColumnKey, Order[]>;
   activeTab: ColumnKey;
@@ -33,7 +32,6 @@ export default function KitchenFilters({
   pendingOrders,
   preparingOrders,
   readyOrders,
-  totalActive,
   columns,
   columnOrders,
   activeTab,
@@ -55,64 +53,58 @@ export default function KitchenFilters({
     <>
       <audio ref={audioRef} preload="auto" />
 
-      {/* ━━━ HEADER ━━━ */}
-      <header className="h-12 sm:h-14 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/90 backdrop-blur-sm shrink-0">
+      {/* ━━━ COMPACT HEADER ━━━ */}
+      <header className="h-11 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/80 shrink-0">
         {/* Left: Logo + counters */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <ChefHat className="w-5 h-5 text-neutral-400" />
-          <span className="font-bold text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1 text-neutral-300">
+          <ChefHat className="w-4 h-4 text-neutral-500" />
+          <span className="font-bold text-xs tracking-tight text-neutral-400 hidden sm:inline">
             {isChefView ? 'KDS' : t('readyForService')}
           </span>
 
-          {/* Inline status counters — subdued */}
+          {/* Inline status pills */}
           <div className="flex items-center gap-1">
-            {isChefView && pendingOrders.length > 0 && (
+            {isChefView && (
               <div
                 className={cn(
-                  'flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]',
+                  'flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-500/10',
                   pendingOrders.length > 3 && 'animate-pulse',
                 )}
               >
-                {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400/70" />}
-                <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
+                {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400" />}
+                <span className="font-mono text-xs font-bold text-amber-400 tabular-nums">
                   {pendingOrders.length}
                 </span>
               </div>
             )}
             {isChefView && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]">
-                <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
+              <div className="px-1.5 py-0.5 rounded bg-blue-500/10">
+                <span className="font-mono text-xs font-bold text-blue-400 tabular-nums">
                   {preparingOrders.length}
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]">
-              <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
+            <div className="px-1.5 py-0.5 rounded bg-emerald-500/10">
+              <span className="font-mono text-xs font-bold text-emerald-400 tabular-nums">
                 {readyOrders.length}
               </span>
             </div>
-            {isChefView && (
-              <span className="text-xs xl:text-sm text-neutral-600 ml-1 hidden md:inline tabular-nums font-mono">
-                {t('inProgress', { count: totalActive })}
-              </span>
-            )}
           </div>
         </div>
 
         {/* Right: Controls */}
-        <div className="flex items-center gap-1 sm:gap-1.5">
-          <span className="text-xs xl:text-sm text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
+        <div className="flex items-center gap-0.5">
+          <span className="text-[10px] text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
             {lastUpdate.toLocaleTimeString('fr-FR', {
               hour: '2-digit',
               minute: '2-digit',
-              second: '2-digit',
             })}
           </span>
           {isChefView && (
             <button
               onClick={() => setShowMockData(!showMockData)}
               className={cn(
-                'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors',
+                'px-2 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
                 showMockData ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
               )}
             >
@@ -122,7 +114,7 @@ export default function KitchenFilters({
           <button
             onClick={toggleSound}
             className={cn(
-              'p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
+              'p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
               soundEnabled ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
             )}
           >
@@ -130,13 +122,13 @@ export default function KitchenFilters({
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </button>
           <button
             onClick={goBack}
-            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
             title={isFullscreen ? t('exitFullscreen') : t('backToDashboard')}
           >
             {isFullscreen ? <X className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
@@ -156,7 +148,7 @@ export default function KitchenFilters({
                 key={key}
                 onClick={() => setActiveTab(key)}
                 className={cn(
-                  'flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
+                  'flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
                   isActive ? 'border-b-2 border-white/40 text-white' : 'text-neutral-600',
                 )}
               >
@@ -164,7 +156,7 @@ export default function KitchenFilters({
                 {col.label}
                 <span
                   className={cn(
-                    'px-1.5 py-0.5 rounded text-xs xl:text-sm tabular-nums font-black',
+                    'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
                     col.countBadge,
                   )}
                 >

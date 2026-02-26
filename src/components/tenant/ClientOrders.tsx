@@ -97,7 +97,7 @@ export default function ClientOrders({
 
     // Écouter les changements de statut en temps réel
     const channel = supabase
-      .channel('client_orders_realtime')
+      .channel(`client_orders_realtime_${tenantId}`)
       .on(
         'postgres_changes',
         {

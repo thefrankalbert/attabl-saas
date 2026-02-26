@@ -12,6 +12,7 @@ import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
+import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
 import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
@@ -165,15 +166,19 @@ export default async function AdminLayout({
                     : null
                 }
               >
-                <div className="max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14">
-                  {/* Top-right notification bell (mirrors mobile hamburger on left) */}
-                  <div className="fixed top-3 right-3 z-40 lg:absolute lg:top-4 lg:right-4">
-                    <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-                  </div>
-                  <TrialBanner tenantSlug={tenantSlug} />
-                  <AdminBreadcrumbs />
+                <AdminContentWrapper
+                  chrome={
+                    <>
+                      <div className="fixed top-3 right-3 z-40 lg:absolute lg:top-4 lg:right-4">
+                        <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+                      </div>
+                      <TrialBanner tenantSlug={tenantSlug} />
+                      <AdminBreadcrumbs />
+                    </>
+                  }
+                >
                   {children}
-                </div>
+                </AdminContentWrapper>
               </SubscriptionProvider>
             </AdminIdleWrapper>
           </PermissionsProvider>
