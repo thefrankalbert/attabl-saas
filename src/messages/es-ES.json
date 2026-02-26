@@ -657,7 +657,9 @@
     "loadingPos": "Cargando TPV...",
     "sendToKitchen": "Enviar a cocina",
     "selectTableFirst": "Por favor seleccione una mesa primero",
-    "server": "Camarero"
+    "server": "Camarero",
+    "itemsCount": "artículos",
+    "printShort": "Cocina"
   },
   "users": {
     "title": "Usuarios",

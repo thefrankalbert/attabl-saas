@@ -259,16 +259,17 @@ export default function OrderDetails({
         )}
       </div>
 
-      <PaymentModal
-        isOpen={showPayment}
-        onClose={() => setShowPayment(false)}
-        order={order}
-        onSuccess={() => {
-          handleStatusUpdate('delivered');
-          setShowPayment(false);
-          onClose();
-        }}
-      />
+      {showPayment && (
+        <PaymentModal
+          onClose={() => setShowPayment(false)}
+          order={order}
+          onSuccess={() => {
+            handleStatusUpdate('delivered');
+            setShowPayment(false);
+            onClose();
+          }}
+        />
+      )}
     </>
   );
 }

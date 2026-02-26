@@ -59,35 +59,35 @@ export default function KitchenFilters({
       <header className="h-12 sm:h-14 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/90 backdrop-blur-sm shrink-0">
         {/* Left: Logo + counters */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <ChefHat className="w-5 h-5 text-amber-400" />
-          <span className="font-black text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1">
+          <ChefHat className="w-5 h-5 text-neutral-400" />
+          <span className="font-bold text-xs sm:text-sm tracking-tight mr-0.5 sm:mr-1 text-neutral-300">
             {isChefView ? 'KDS' : t('readyForService')}
           </span>
 
-          {/* Inline status counters */}
+          {/* Inline status counters — subdued */}
           <div className="flex items-center gap-1">
             {isChefView && pendingOrders.length > 0 && (
               <div
                 className={cn(
-                  'flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-400/10',
+                  'flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]',
                   pendingOrders.length > 3 && 'animate-pulse',
                 )}
               >
-                {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400" />}
-                <span className="font-mono text-xs xl:text-sm font-black text-amber-400 tabular-nums">
+                {pendingOrders.length > 3 && <Flame className="w-3 h-3 text-amber-400/70" />}
+                <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
                   {pendingOrders.length}
                 </span>
               </div>
             )}
             {isChefView && (
-              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-400/10">
-                <span className="font-mono text-xs xl:text-sm font-black text-blue-400 tabular-nums">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]">
+                <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
                   {preparingOrders.length}
                 </span>
               </div>
             )}
-            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-400/10">
-              <span className="font-mono text-xs xl:text-sm font-black text-emerald-400 tabular-nums">
+            <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-white/[0.05]">
+              <span className="font-mono text-xs font-bold text-neutral-300 tabular-nums">
                 {readyOrders.length}
               </span>
             </div>
@@ -113,9 +113,7 @@ export default function KitchenFilters({
               onClick={() => setShowMockData(!showMockData)}
               className={cn(
                 'px-2 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-xs xl:text-sm font-bold uppercase tracking-wide transition-colors',
-                showMockData
-                  ? 'bg-amber-400/20 text-amber-400'
-                  : 'text-neutral-600 hover:text-neutral-400',
+                showMockData ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
               )}
             >
               Demo
@@ -125,9 +123,7 @@ export default function KitchenFilters({
             onClick={toggleSound}
             className={cn(
               'p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
-              soundEnabled
-                ? 'bg-amber-400/20 text-amber-400'
-                : 'text-neutral-600 hover:text-neutral-400',
+              soundEnabled ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
             )}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
@@ -155,17 +151,14 @@ export default function KitchenFilters({
             const col = columns[key];
             const count = columnOrders[key].length;
             const isActive = activeTab === key;
-            const borderColor =
-              key === 'pending' ? '#fbbf24' : key === 'preparing' ? '#60a5fa' : '#34d399';
             return (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-2 py-3 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
-                  isActive ? 'border-b-2 text-white' : 'text-neutral-600',
+                  isActive ? 'border-b-2 border-white/40 text-white' : 'text-neutral-600',
                 )}
-                style={isActive ? { borderColor } : undefined}
               >
                 <div className={cn('w-2 h-2 rounded-full', col.dot)} />
                 {col.label}

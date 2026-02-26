@@ -657,7 +657,9 @@
     "loadingPos": "Loading POS...",
     "sendToKitchen": "Send to kitchen",
     "selectTableFirst": "Please select a table first",
-    "server": "Server"
+    "server": "Server",
+    "itemsCount": "items",
+    "printShort": "Kitchen"
   },
   "users": {
     "title": "Users",

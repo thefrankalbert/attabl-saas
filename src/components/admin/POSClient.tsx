@@ -83,10 +83,10 @@ export default function POSClient({ tenantId }: POSClientProps) {
             />
           </div>
 
-          {/* Cart Section */}
+          {/* Cart Section — takes ~45% of width for a proper register feel */}
           <div
             className={cn(
-              'w-full sm:w-[280px] md:w-[320px] lg:w-[380px] xl:w-[440px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
+              'w-full md:w-[45%] lg:w-[42%] xl:w-[40%] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
               isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
             )}
           >
@@ -150,18 +150,26 @@ export default function POSClient({ tenantId }: POSClientProps) {
         )}
 
         {/* Payment Modal Reuse */}
-        <PaymentModal
-          isOpen={showPaymentModal}
-          onClose={() => setShowPaymentModal(false)}
-          orderNumber={pos.orderNumber}
-          total={pos.total}
-          tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
-          onSuccess={() =>
-            pos.handleOrder('delivered', {
-              onPaymentModalClose: () => setShowPaymentModal(false),
-            })
-          }
-        />
+        {showPaymentModal && (
+          <PaymentModal
+            onClose={() => setShowPaymentModal(false)}
+            orderNumber={pos.orderNumber}
+            total={pos.total}
+            tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
+            cartItems={pos.cart.map((item) => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price + (item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0),
+              modifiers: item.selectedModifiers?.map((m) => m.name),
+            }))}
+            currency={pos.currency}
+            onSuccess={() =>
+              pos.handleOrder('delivered', {
+                onPaymentModalClose: () => setShowPaymentModal(false),
+              })
+            }
+          />
+        )}
       </div>
     </RoleGuard>
   );
