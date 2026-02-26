@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChefHat, Volume2, VolumeX, Maximize, Minimize, Flame, X } from 'lucide-react';
+import { ChefHat, Volume2, VolumeX, Maximize, Minimize, Flame, X, ArrowLeft } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import type { Order } from '@/types/admin.types';
@@ -141,9 +141,9 @@ export default function KitchenFilters({
           <button
             onClick={goBack}
             className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
-            title={t('backToDashboard')}
+            title={isFullscreen ? t('exitFullscreen') : t('backToDashboard')}
           >
-            <X className="w-4 h-4" />
+            {isFullscreen ? <X className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
           </button>
         </div>
       </header>

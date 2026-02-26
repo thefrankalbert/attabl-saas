@@ -1,0 +1,300 @@
+'use client';
+
+import { useState, useEffect, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
+import { Receipt, Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+interface StripeInvoice {
+  id: string;
+  number: string | null;
+  status: string | null;
+  amount_paid: number;
+  amount_due: number;
+  currency: string;
+  created: number;
+  period_start: number;
+  period_end: number;
+  hosted_invoice_url: string | null;
+  invoice_pdf: string | null;
+}
+
+interface InvoiceHistoryClientProps {
+  tenantId: string;
+  hasStripeCustomer: boolean;
+  currency: string;
+}
+
+export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHistoryClientProps) {
+  const t = useTranslations('invoices');
+  const [invoices, setInvoices] = useState<StripeInvoice[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchInvoices = useCallback(async () => {
+    if (!hasStripeCustomer) {
+      setLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch('/api/invoices');
+      if (!res.ok) throw new Error('Failed to fetch');
+      const data = await res.json();
+      setInvoices(data.invoices || []);
+    } catch {
+      setError(t('fetchError'));
+    } finally {
+      setLoading(false);
+    }
+  }, [hasStripeCustomer, t]);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  const formatDate = (timestamp: number) => {
+    return new Date(timestamp * 1000).toLocaleDateString(undefined, {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+    });
+  };
+
+  const formatAmount = (amount: number, currency: string) => {
+    // Stripe amounts are in smallest unit (cents for most currencies, but XAF is zero-decimal)
+    const zeroDecimal = [
+      'xaf',
+      'xof',
+      'bif',
+      'clp',
+      'djf',
+      'gnf',
+      'jpy',
+      'kmf',
+      'krw',
+      'mga',
+      'pyg',
+      'rwf',
+      'ugx',
+      'vnd',
+      'vuv',
+    ];
+    const divisor = zeroDecimal.includes(currency.toLowerCase()) ? 1 : 100;
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: currency.toUpperCase(),
+      minimumFractionDigits: 0,
+    }).format(amount / divisor);
+  };
+
+  const statusVariant = (
+    status: string | null,
+  ): 'default' | 'secondary' | 'destructive' | 'outline' => {
+    switch (status) {
+      case 'paid':
+        return 'default';
+      case 'open':
+        return 'secondary';
+      case 'uncollectible':
+      case 'void':
+        return 'destructive';
+      default:
+        return 'outline';
+    }
+  };
+
+  const statusLabel = (status: string | null): string => {
+    switch (status) {
+      case 'paid':
+        return t('statusPaid');
+      case 'open':
+        return t('statusOpen');
+      case 'draft':
+        return t('statusDraft');
+      case 'uncollectible':
+        return t('statusUncollectible');
+      case 'void':
+        return t('statusVoid');
+      default:
+        return status || '—';
+    }
+  };
+
+  return (
+    <div className="container mx-auto py-8 space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-3">
+          <Receipt className="w-6 h-6 text-neutral-500" />
+          {t('title')}
+        </h1>
+        <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
+      </div>
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        </div>
+      ) : error ? (
+        <div className="text-center py-12">
+          <p className="text-sm text-red-600">{error}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={fetchInvoices}>
+            {t('retry')}
+          </Button>
+        </div>
+      ) : !hasStripeCustomer || invoices.length === 0 ? (
+        <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center">
+          <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <FileX2 className="w-7 h-7 text-neutral-400" />
+          </div>
+          <h3 className="text-base font-bold text-neutral-900">{t('empty')}</h3>
+          <p className="text-sm text-neutral-500 mt-2">{t('emptyDesc')}</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-neutral-100 bg-neutral-50/50">
+                  <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colNumber')}
+                  </th>
+                  <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colDate')}
+                  </th>
+                  <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colPeriod')}
+                  </th>
+                  <th className="text-right text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colAmount')}
+                  </th>
+                  <th className="text-center text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colStatus')}
+                  </th>
+                  <th className="text-right text-xs font-semibold text-neutral-500 px-4 py-3">
+                    {t('colActions')}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {invoices.map((inv) => (
+                  <tr
+                    key={inv.id}
+                    className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors"
+                  >
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-medium text-neutral-900">
+                        {inv.number || '—'}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-600">
+                      {formatDate(inv.created)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-neutral-500">
+                      {formatDate(inv.period_start)} → {formatDate(inv.period_end)}
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <span className="text-sm font-bold text-neutral-900 tabular-nums">
+                        {formatAmount(inv.amount_paid, inv.currency)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge
+                        variant={statusVariant(inv.status)}
+                        className={cn(
+                          'text-[10px]',
+                          inv.status === 'paid' &&
+                            'bg-emerald-50 text-emerald-700 border-emerald-100',
+                        )}
+                      >
+                        {statusLabel(inv.status)}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        {inv.invoice_pdf && (
+                          <a
+                            href={inv.invoice_pdf}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            PDF
+                          </a>
+                        )}
+                        {inv.hosted_invoice_url && (
+                          <a
+                            href={inv.hosted_invoice_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 px-2 py-1 min-h-[44px] text-xs font-medium text-primary hover:underline transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5" />
+                            {t('view')}
+                          </a>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="md:hidden divide-y divide-neutral-100">
+            {invoices.map((inv) => (
+              <div key={inv.id} className="p-4 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-neutral-900">{inv.number || '—'}</span>
+                  <Badge
+                    variant={statusVariant(inv.status)}
+                    className={cn(
+                      'text-[10px]',
+                      inv.status === 'paid' && 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                    )}
+                  >
+                    {statusLabel(inv.status)}
+                  </Badge>
+                </div>
+                <div className="flex items-center justify-between text-xs text-neutral-500">
+                  <span>{formatDate(inv.created)}</span>
+                  <span className="font-bold text-sm text-neutral-900 tabular-nums">
+                    {formatAmount(inv.amount_paid, inv.currency)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 pt-1">
+                  {inv.invoice_pdf && (
+                    <a
+                      href={inv.invoice_pdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-medium bg-neutral-50 rounded-lg text-neutral-700 hover:bg-neutral-100 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      PDF
+                    </a>
+                  )}
+                  {inv.hosted_invoice_url && (
+                    <a
+                      href={inv.hosted_invoice_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-2 min-h-[44px] text-xs font-medium text-primary hover:underline transition-colors"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      {t('view')}
+                    </a>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -15,6 +15,8 @@ import {
   UserCheck,
   BarChart3,
   History,
+  Receipt,
+  ScrollText,
 } from 'lucide-react';
 import type { NavItemPermission } from '@/lib/permissions';
 import type { PermissionCode } from '@/types/permission.types';
@@ -188,6 +190,18 @@ export const NAV_GROUPS: NavGroupConfig[] = [
         labelKey: 'navStockHistory',
         requiredPermission: 'canViewStocks',
         permissionCode: 'inventory.view',
+      },
+      {
+        path: '/invoices',
+        icon: Receipt,
+        labelKey: 'navInvoices',
+        ownerOnly: true,
+      },
+      {
+        path: '/audit-logs',
+        icon: ScrollText,
+        labelKey: 'navAuditLogs',
+        ownerOnly: true,
       },
     ],
   },

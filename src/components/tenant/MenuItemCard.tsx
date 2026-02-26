@@ -1,12 +1,12 @@
 'use client';
 
-import { Plus, Minus, Leaf, Flame, Utensils, ChevronDown, Wine } from 'lucide-react';
+import { Plus, Minus, Leaf, Flame, Utensils, ChevronDown, Wine, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
 import { useState, useEffect, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
-import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
+import { MenuItem, ItemOption, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -53,6 +53,7 @@ export default function MenuItemCard({
   // État pour les sélections
   const [selectedOption, setSelectedOption] = useState<ItemOption | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ItemPriceVariant | null>(null);
+  const [selectedModifiers, setSelectedModifiers] = useState<ItemModifier[]>([]);
   const [showVariantDropdown, setShowVariantDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -89,14 +90,21 @@ export default function MenuItemCard({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Obtenir le prix actuel (avec variante si applicable)
-  const currentPrice = selectedVariant ? selectedVariant.price : item.price;
+  // Obtenir le prix actuel (avec variante + modifiers si applicable)
+  const modifiersTotal = selectedModifiers.reduce((sum, m) => sum + m.price, 0);
+  const currentPrice = (selectedVariant ? selectedVariant.price : item.price) + modifiersTotal;
 
-  // Clé unique pour le panier (inclut option/variante)
+  // Clé unique pour le panier (inclut option/variante/modifiers)
   const getCartKey = () => {
     let key = item.id;
     if (selectedOption) key += `-opt-${selectedOption.name_fr}`;
     if (selectedVariant) key += `-var-${selectedVariant.variant_name_fr}`;
+    if (selectedModifiers.length > 0) {
+      key += `-mod-${selectedModifiers
+        .map((m) => m.id)
+        .sort()
+        .join(',')}`;
+    }
     return key;
   };
 
@@ -135,6 +143,10 @@ export default function MenuItemCard({
             price: selectedVariant.price,
           }
         : undefined,
+      modifiers:
+        selectedModifiers.length > 0
+          ? selectedModifiers.map((m) => ({ name: m.name, price: m.price }))
+          : undefined,
     };
 
     addToCart(cartItemData, restaurantId);
@@ -149,6 +161,16 @@ export default function MenuItemCard({
   };
 
   const hasVariants = item.price_variants && item.price_variants.length > 0;
+  const hasModifiers =
+    item.modifiers && item.modifiers.length > 0 && item.modifiers.some((m) => m.is_available);
+  const availableModifiers = (item.modifiers || []).filter((m) => m.is_available);
+
+  const toggleModifier = (mod: ItemModifier, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedModifiers((prev) =>
+      prev.some((m) => m.id === mod.id) ? prev.filter((m) => m.id !== mod.id) : [...prev, mod],
+    );
+  };
   const isUnavailable = item.is_available === false;
   const hasValidImage =
     item.image_url &&
@@ -170,6 +192,9 @@ export default function MenuItemCard({
           <div className="flex gap-1 flex-shrink-0 mt-0.5">
             {item.is_vegetarian && <Leaf size={12} className="text-green-500" />}
             {item.is_spicy && <Flame size={12} className="text-red-500" />}
+            {item.allergens && item.allergens.length > 0 && (
+              <AlertTriangle size={12} className="text-orange-500" />
+            )}
           </div>
         </div>
 
@@ -222,6 +247,30 @@ export default function MenuItemCard({
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Modifiers (paid add-ons) */}
+        {hasModifiers && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {availableModifiers.map((mod) => {
+              const isSelected = selectedModifiers.some((m) => m.id === mod.id);
+              return (
+                <button
+                  key={mod.id}
+                  onClick={(e) => toggleModifier(mod, e)}
+                  className={`text-[11px] px-2 py-1 rounded-full border transition-all ${
+                    isSelected
+                      ? 'border-current bg-current/10 font-semibold'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                  }`}
+                  style={isSelected ? { color: 'var(--tenant-primary)' } : undefined}
+                >
+                  +{getTranslatedContent(language, mod.name, mod.name_en)}{' '}
+                  {mod.price > 0 && `(${formatPrice(mod.price, currency, locale)})`}
+                </button>
+              );
+            })}
           </div>
         )}
       </div>

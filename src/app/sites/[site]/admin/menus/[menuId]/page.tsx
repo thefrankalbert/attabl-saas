@@ -47,7 +47,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
   if (categoryIds.length > 0) {
     const { data: itemsData } = await supabase
       .from('menu_items')
-      .select('*, category:categories(id, name)')
+      .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
       .eq('tenant_id', tenant.id)
       .in('category_id', categoryIds)
       .order('display_order', { ascending: true });

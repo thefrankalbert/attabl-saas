@@ -101,15 +101,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             {/* Sounds tab */}
             <TabsContent value="sounds" className="mt-0">
               <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-amber-50 rounded-lg">
-                    <Bell className="h-5 w-5 text-amber-600" />
+                    <Bell className="h-4 w-4 text-amber-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-neutral-900">
+                    <h2 className="text-base font-semibold text-neutral-900">
                       {t('notificationSounds')}
                     </h2>
-                    <p className="text-sm text-neutral-500">{t('soundPlayedOnOrderReceived')}</p>
+                    <p className="text-xs text-neutral-500">{t('soundPlayedOnOrderReceived')}</p>
                   </div>
                 </div>
 

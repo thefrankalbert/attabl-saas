@@ -21,14 +21,20 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
 
+  const isFs = kitchen.isFullscreen;
+
   if (kitchen.loading) {
     return (
       <div
-        className="fixed inset-0 z-[200] bg-neutral-950 flex items-center justify-center text-white"
-        style={{
-          padding:
-            'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
-        }}
+        className={`${isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-1rem)]'} bg-neutral-950 flex items-center justify-center text-white`}
+        style={
+          isFs
+            ? {
+                padding:
+                  'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+              }
+            : undefined
+        }
       >
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
@@ -40,11 +46,15 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   return (
     <div
-      className="fixed inset-0 z-[200] bg-neutral-950 text-white flex flex-col overflow-hidden"
-      style={{
-        padding:
-          'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
-      }}
+      className={`${isFs ? 'fixed inset-0 z-[200]' : 'h-[calc(100dvh-4rem)] lg:h-[calc(100dvh-1rem)] rounded-xl overflow-hidden'} bg-neutral-950 text-white flex flex-col overflow-hidden`}
+      style={
+        isFs
+          ? {
+              padding:
+                'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+            }
+          : undefined
+      }
     >
       <KitchenFilters
         pendingOrders={kitchen.pendingOrders}

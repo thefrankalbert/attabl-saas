@@ -282,10 +282,12 @@ export function useKitchenData({
 
   const params = useParams();
   const goBack = () => {
-    // Exit fullscreen before navigating away
+    // If in fullscreen, just exit fullscreen (stay on page)
     if (document.fullscreenElement) {
       document.exitFullscreen().catch(() => {});
+      return;
     }
+    // Otherwise navigate back to dashboard
     const site = params?.site as string | undefined;
     router.push(site ? `/sites/${site}/admin` : '/');
   };

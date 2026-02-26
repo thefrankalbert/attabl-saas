@@ -1,6 +1,6 @@
 'use client';
 
-import { UserX, MoreVertical, Check, X, Activity } from 'lucide-react';
+import { UserX, MoreVertical, Check, X, Activity, Pencil } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +22,7 @@ interface UsersTableProps {
   canManageUsers: boolean;
   onToggleStatus: (user: AdminUser) => Promise<void>;
   onDeleteUser: (userId: string) => Promise<void>;
+  onEditUser?: (user: AdminUser) => void;
 }
 
 // ─── Component ─────────────────────────────────────────────
@@ -31,6 +32,7 @@ export default function UsersTable({
   canManageUsers,
   onToggleStatus,
   onDeleteUser,
+  onEditUser,
 }: UsersTableProps) {
   const t = useTranslations('users');
   const tc = useTranslations('common');
@@ -106,6 +108,12 @@ export default function UsersTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuLabel>{tc('actions')}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
+                      {onEditUser && (
+                        <DropdownMenuItem onClick={() => onEditUser(user)}>
+                          <Pencil className="w-4 h-4 mr-2" />
+                          {t('editUser')}
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem onClick={() => onToggleStatus(user)}>
                         {user.is_active ? (
                           <UserX className="w-4 h-4 mr-2" />

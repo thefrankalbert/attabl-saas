@@ -263,3 +263,123 @@ export async function updateAdminUserAction(
 
   return { success: true };
 }
+
+/**
+ * Resets a collaborator's password (admin-only).
+ */
+export async function resetUserPasswordAction(
+  tenantId: string,
+  userId: string,
+  newPassword: string,
+): Promise<ActionResponse> {
+  const {
+    error: permError,
+    user: currentUser,
+    role,
+  } = await checkPermissions(tenantId, ['owner', 'admin']);
+  if (permError) return { error: permError };
+
+  if (!newPassword || newPassword.length < 6) {
+    return { error: 'Le mot de passe doit contenir au moins 6 caractères' };
+  }
+
+  const adminClient = createAdminClient();
+
+  // Get the auth user_id from admin_users
+  const { data: targetUser } = await adminClient
+    .from('admin_users')
+    .select('user_id, email')
+    .eq('id', userId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (!targetUser) return { error: 'Utilisateur introuvable' };
+
+  const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
+    password: newPassword,
+  });
+
+  if (authError) return { error: authError.message };
+
+  // Audit log
+  const audit = createAuditService(adminClient, {
+    tenantId,
+    userId: currentUser?.id,
+    userEmail: currentUser?.email ?? undefined,
+    userRole: role ?? undefined,
+  });
+  audit.log({
+    action: 'update',
+    entityType: 'user',
+    entityId: userId,
+    newData: { passwordReset: true },
+  });
+
+  return { success: true };
+}
+
+/**
+ * Updates a collaborator's email (admin-only).
+ */
+export async function updateUserEmailAction(
+  tenantId: string,
+  userId: string,
+  newEmail: string,
+): Promise<ActionResponse> {
+  const {
+    error: permError,
+    user: currentUser,
+    role,
+  } = await checkPermissions(tenantId, ['owner', 'admin']);
+  if (permError) return { error: permError };
+
+  if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
+    return { error: 'Email invalide' };
+  }
+
+  const adminClient = createAdminClient();
+
+  // Get the auth user_id from admin_users
+  const { data: targetUser } = await adminClient
+    .from('admin_users')
+    .select('user_id, email')
+    .eq('id', userId)
+    .eq('tenant_id', tenantId)
+    .single();
+
+  if (!targetUser) return { error: 'Utilisateur introuvable' };
+
+  // Update auth email
+  const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
+    email: newEmail,
+    email_confirm: true,
+  });
+
+  if (authError) return { error: authError.message };
+
+  // Update admin_users record
+  const { error: dbError } = await adminClient
+    .from('admin_users')
+    .update({ email: newEmail })
+    .eq('id', userId)
+    .eq('tenant_id', tenantId);
+
+  if (dbError) return { error: dbError.message };
+
+  // Audit log
+  const audit = createAuditService(adminClient, {
+    tenantId,
+    userId: currentUser?.id,
+    userEmail: currentUser?.email ?? undefined,
+    userRole: role ?? undefined,
+  });
+  audit.log({
+    action: 'update',
+    entityType: 'user',
+    entityId: userId,
+    oldData: { email: targetUser.email },
+    newData: { email: newEmail },
+  });
+
+  return { success: true };
+}

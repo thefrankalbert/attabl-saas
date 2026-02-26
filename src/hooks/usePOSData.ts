@@ -13,6 +13,8 @@ import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 export type CartItem = MenuItem & {
   quantity: number;
   notes?: string;
+  selectedModifiers?: Array<{ name: string; price: number }>;
+  cartKey?: string; // unique key when same item has different modifiers
 };
 
 export interface POSSuggestion {
@@ -191,22 +193,46 @@ export function usePOSData(tenantId: string) {
   }, [menuItems, searchQuery, selectedCategory]);
 
   // ─── Cart actions ───────────────────────────────────────
-  const addToCart = (item: MenuItem) => {
+  const getCartKey = (item: CartItem | MenuItem, mods?: Array<{ name: string; price: number }>) => {
+    const key = item.id;
+    const modifiers = mods || (item as CartItem).selectedModifiers;
+    if (modifiers && modifiers.length > 0) {
+      return `${key}-mod-${modifiers
+        .map((m) => m.name)
+        .sort()
+        .join(',')}`;
+    }
+    return key;
+  };
+
+  const addToCart = (item: MenuItem, modifiers?: Array<{ name: string; price: number }>) => {
+    const key = getCartKey(item, modifiers);
     setCart((prev) => {
-      const existing = prev.find((i) => i.id === item.id);
+      const existing = prev.find((i) => (i.cartKey || i.id) === key);
       if (existing)
-        return prev.map((i) => (i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i));
-      return [...prev, { ...item, quantity: 1 }];
+        return prev.map((i) =>
+          (i.cartKey || i.id) === key ? { ...i, quantity: i.quantity + 1 } : i,
+        );
+      return [
+        ...prev,
+        {
+          ...item,
+          quantity: 1,
+          selectedModifiers: modifiers,
+          cartKey: modifiers?.length ? key : undefined,
+        },
+      ];
     });
   };
 
   const updateQuantity = (itemId: string, delta: number) => {
     setCart((prev) => {
-      const item = prev.find((i) => i.id === itemId);
+      const item = prev.find((i) => (i.cartKey || i.id) === itemId);
       if (!item) return prev;
       const newQty = item.quantity + delta;
-      if (newQty <= 0) return prev.filter((i) => i.id !== itemId);
-      return prev.map((i) => (i.id === itemId ? { ...i, quantity: newQty } : i));
+      const key = item.cartKey || item.id;
+      if (newQty <= 0) return prev.filter((i) => (i.cartKey || i.id) !== key);
+      return prev.map((i) => ((i.cartKey || i.id) === key ? { ...i, quantity: newQty } : i));
     });
   };
 
@@ -215,14 +241,19 @@ export function usePOSData(tenantId: string) {
   // ─── Note editing ───────────────────────────────────────
   const saveNotes = () => {
     if (editingNotes) {
-      setCart((prev) => prev.map((i) => (i.id === editingNotes ? { ...i, notes: notesText } : i)));
+      setCart((prev) =>
+        prev.map((i) => ((i.cartKey || i.id) === editingNotes ? { ...i, notes: notesText } : i)),
+      );
       setEditingNotes(null);
       setNotesText('');
     }
   };
 
   // ─── Total calculation ──────────────────────────────────
-  const total = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const total = cart.reduce((acc, item) => {
+    const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
+    return acc + (item.price + modCost) * item.quantity;
+  }, 0);
 
   // ─── Order creation ─────────────────────────────────────
   const handleOrder = (
@@ -249,6 +280,7 @@ export function usePOSData(tenantId: string) {
           price_at_order: item.price,
           notes: item.notes || null,
           name: item.name,
+          modifiers: item.selectedModifiers,
         })),
       },
       {
