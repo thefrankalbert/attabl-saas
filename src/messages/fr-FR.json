@@ -1705,5 +1705,27 @@
     "sulphites": "Sulfites",
     "lupin": "Lupin",
     "molluscs": "Mollusques"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "description": "Acc\u00e9l\u00e9rez votre travail avec les raccourcis clavier",
+    "sectionGlobal": "G\u00e9n\u00e9ral",
+    "sectionNavigation": "Navigation",
+    "sectionContextual": "Page actuelle",
+    "commandPalette": "Palette de commandes",
+    "openHelp": "Ouvrir l'aide raccourcis",
+    "focusSearch": "Focus sur la recherche",
+    "then": "puis",
+    "goToDashboard": "Aller au Tableau de bord",
+    "goToOrders": "Aller aux Commandes",
+    "goToKitchen": "Aller \u00e0 la Cuisine",
+    "goToPOS": "Aller au POS",
+    "goToSettings": "Aller aux Param\u00e8tres",
+    "advanceTicket": "Avancer le premier ticket en attente",
+    "markAllReady": "Marquer tout pr\u00eat",
+    "repeatLastItem": "R\u00e9p\u00e9ter le dernier article",
+    "openPayment": "Ouvrir le paiement",
+    "toggleFilters": "Basculer les filtres / Focus recherche",
+    "modifierNote": "Utilisez {modifier} comme touche modificateur sur votre syst\u00e8me"
   }
 }

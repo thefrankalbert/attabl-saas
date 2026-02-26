@@ -1,15 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
+import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import { Button } from '@/components/ui/button';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
 import PaymentModal from '@/components/admin/PaymentModal';
 import RoleGuard from '@/components/admin/RoleGuard';
+import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
 interface POSClientProps {
   tenantId: string;
@@ -22,7 +24,38 @@ export default function POSClient({ tenantId }: POSClientProps) {
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
 
+  const ts = useTranslations('shortcuts');
   const pos = usePOSData(tenantId);
+
+  // ── Contextual keyboard shortcuts ──
+  const shortcuts = useMemo<ShortcutDefinition[]>(
+    () => [
+      {
+        id: 'pos-repeat',
+        label: ts('repeatLastItem'),
+        section: 'contextual',
+        keys: ['+'],
+        action: () => {
+          const lastItem = pos.cart[pos.cart.length - 1];
+          if (lastItem) {
+            const menuItem = pos.menuItems.find((m: { id: string }) => m.id === lastItem.id);
+            if (menuItem) pos.addToCart(menuItem, lastItem.selectedModifiers);
+          }
+        },
+      },
+      {
+        id: 'pos-payment',
+        label: ts('openPayment'),
+        section: 'contextual',
+        keys: ['p'],
+        action: () => {
+          if (pos.cart.length > 0) setShowPaymentModal(true);
+        },
+      },
+    ],
+    [ts, pos],
+  );
+  useContextualShortcuts(shortcuts);
 
   if (pos.loading) return <div className="p-8 text-center">{t('loading')}</div>;
 

@@ -6,6 +6,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useOrders } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,6 +20,7 @@ import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Order, OrderStatus } from '@/types/admin.types';
+import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
 interface OrdersClientProps {
   tenantId: string;
@@ -35,6 +37,7 @@ export default function OrdersClient({
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
   const tk = useTranslations('kitchen');
+  const ts = useTranslations('shortcuts');
 
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -75,6 +78,26 @@ export default function OrdersClient({
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
     },
   });
+
+  // ── Contextual keyboard shortcuts ──
+  const shortcuts = useMemo<ShortcutDefinition[]>(
+    () => [
+      {
+        id: 'orders-filter',
+        label: ts('toggleFilters'),
+        section: 'contextual',
+        keys: ['f'],
+        action: () => {
+          const searchInput = document.querySelector<HTMLInputElement>('[data-search-input]');
+          if (searchInput) {
+            searchInput.focus();
+          }
+        },
+      },
+    ],
+    [ts],
+  );
+  useContextualShortcuts(shortcuts);
 
   // Filtering logic (derived state via useMemo)
   const filteredOrders = useMemo(() => {
@@ -303,6 +326,7 @@ export default function OrdersClient({
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
               <Input
+                data-search-input
                 placeholder={t('searchTable')}
                 className="pl-9 w-full sm:w-[200px] xl:w-[280px]"
                 value={search}
