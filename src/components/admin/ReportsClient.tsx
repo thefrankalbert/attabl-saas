@@ -305,7 +305,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       </div>
 
       {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Revenue -- primary metric with lime accent */}
         <div className="p-6 bg-white border border-neutral-100 rounded-xl">
           <div className="flex items-center gap-4">
@@ -402,7 +402,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       </div>
 
       {/* Chart & Top Items */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {/* Chart Section */}
         <div className="lg:col-span-2 bg-white border border-neutral-100 rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">

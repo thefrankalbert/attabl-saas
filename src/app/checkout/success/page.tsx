@@ -38,14 +38,8 @@ function CheckoutSuccessContent() {
     verifySession();
   }, [sessionId]);
 
-  // Déterminer l'URL du dashboard
-  const getDashboardUrl = (slug: string) => {
-    const isDev = typeof window !== 'undefined' && window.location.hostname === 'localhost';
-    if (isDev) {
-      return `http://${slug}.localhost:3000/admin`;
-    }
-    return `https://${slug}.attabl.com/admin`;
-  };
+  // Déterminer l'URL du dashboard — use /sites/ path which works everywhere
+  const getDashboardUrl = (slug: string) => `/sites/${slug}/admin`;
 
   if (loading) {
     return (

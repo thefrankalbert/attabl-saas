@@ -196,7 +196,7 @@ export default function CartPage() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
           {/* Items List */}
           <div className="md:col-span-2 space-y-3">
             {items.map((item) => {
@@ -290,7 +290,7 @@ export default function CartPage() {
 
           {/* Summary Sidebar */}
           <div className="md:col-span-1">
-            <div className="bg-white rounded-xl p-6 shadow-sm sticky top-20">
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm md:sticky md:top-20">
               <h2 className="text-lg font-bold mb-4">Récapitulatif</h2>
 
               {/* Items Summary */}

@@ -145,21 +145,11 @@ export default function TenantsPage() {
 
   // ─── Navigation helpers ─────────────────────────────────────
   const handleSelectTenant = (slug: string) => {
-    const isDev = window.location.hostname === 'localhost';
-    if (isDev) {
-      window.location.assign(`http://${slug}.localhost:3000/admin`);
-    } else {
-      window.location.assign(`https://${slug}.attabl.com/admin`);
-    }
+    router.push(`/sites/${slug}/admin`);
   };
 
   const handleViewMenu = (slug: string) => {
-    const isDev = window.location.hostname === 'localhost';
-    if (isDev) {
-      window.location.href = `http://${slug}.localhost:3000`;
-    } else {
-      window.location.href = `https://${slug}.attabl.com`;
-    }
+    router.push(`/sites/${slug}`);
   };
 
   const handleLogout = async () => {
@@ -171,12 +161,7 @@ export default function TenantsPage() {
   if (mode === 'loading') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4">
-          <div className="rounded-2xl bg-black p-4">
-            <Building2 className="h-8 w-8 text-[#CCFF00]" />
-          </div>
-          <LoadingIndicator type="dot-circle" size="md" className="text-neutral-400" />
-        </div>
+        <LoadingIndicator type="dot-circle" size="lg" className="text-neutral-400" />
       </div>
     );
   }
@@ -378,34 +363,35 @@ export default function TenantsPage() {
     <div className="min-h-screen bg-white">
       {/* Header */}
       <header className="border-b border-neutral-100">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <div className="flex items-center gap-4">
-            <div className="rounded-xl bg-black p-2.5">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4 sm:py-5">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <div className="rounded-xl bg-black p-2.5 shrink-0">
               <Building2 className="h-5 w-5 text-[#CCFF00]" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight text-neutral-900">
+            <div className="min-w-0">
+              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 truncate">
                 Mes Etablissements
               </h1>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-400 hidden sm:block">
                 Gerez tous vos restaurants depuis un seul endroit
               </p>
             </div>
           </div>
           <Button
             variant="outline"
+            size="sm"
             onClick={handleLogout}
-            className="gap-2 rounded-lg border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900"
+            className="gap-2 rounded-lg border-neutral-200 text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 shrink-0"
           >
             <LogOut className="h-4 w-4" />
-            Deconnexion
+            <span className="hidden sm:inline">Deconnexion</span>
           </Button>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-6 py-8">
+      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-6 sm:py-8">
         {/* Global KPIs */}
-        <div className="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+        <div className="mb-6 sm:mb-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="rounded-xl border border-neutral-100 bg-white p-5">
             <div className="mb-3 flex items-center gap-2">
               <div className="rounded-lg bg-[#CCFF00] p-1.5">
@@ -573,13 +559,7 @@ export default function TenantsPage() {
           onClose={() => setShowWizard(false)}
           onSuccess={(slug) => {
             setShowWizard(false);
-            // Navigate to the new restaurant's dashboard
-            const isDev = window.location.hostname === 'localhost';
-            if (isDev) {
-              window.location.assign(`http://${slug}.localhost:3000/admin`);
-            } else {
-              window.location.assign(`https://${slug}.attabl.com/admin`);
-            }
+            router.push(`/sites/${slug}/admin`);
           }}
         />
       )}
