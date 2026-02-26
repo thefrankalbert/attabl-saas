@@ -225,6 +225,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         <div className="relative flex-1">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <Input
+            data-search-input
             placeholder={t('searchDish')}
             className="pl-9"
             value={searchQuery}

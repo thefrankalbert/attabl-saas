@@ -10,6 +10,7 @@ import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
+import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
@@ -150,37 +151,39 @@ export default async function AdminLayout({
         <QueryProvider>
           <PermissionsProvider role={userRole}>
             <CommandPalette />
-            <AdminIdleWrapper
-              idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-              screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-              tenantName={tenant.name}
-            >
-              <SubscriptionProvider
-                tenant={
-                  tenant
-                    ? {
-                        subscription_plan: tenant.subscription_plan,
-                        subscription_status: tenant.subscription_status,
-                        trial_ends_at: tenant.trial_ends_at,
-                      }
-                    : null
-                }
+            <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+              <AdminIdleWrapper
+                idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                tenantName={tenant.name}
               >
-                <AdminContentWrapper
-                  chrome={
-                    <>
-                      <div className="absolute top-3 right-3 z-40">
-                        <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-                      </div>
-                      <TrialBanner tenantSlug={tenantSlug} />
-                      <AdminBreadcrumbs />
-                    </>
+                <SubscriptionProvider
+                  tenant={
+                    tenant
+                      ? {
+                          subscription_plan: tenant.subscription_plan,
+                          subscription_status: tenant.subscription_status,
+                          trial_ends_at: tenant.trial_ends_at,
+                        }
+                      : null
                   }
                 >
-                  {children}
-                </AdminContentWrapper>
-              </SubscriptionProvider>
-            </AdminIdleWrapper>
+                  <AdminContentWrapper
+                    chrome={
+                      <>
+                        <div className="absolute top-3 right-3 z-40">
+                          <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+                        </div>
+                        <TrialBanner tenantSlug={tenantSlug} />
+                        <AdminBreadcrumbs />
+                      </>
+                    }
+                  >
+                    {children}
+                  </AdminContentWrapper>
+                </SubscriptionProvider>
+              </AdminIdleWrapper>
+            </ShortcutsProvider>
           </PermissionsProvider>
         </QueryProvider>
       </AdminLayoutClient>

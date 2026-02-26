@@ -1,11 +1,14 @@
 'use client';
 
+import { useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
 import { usePermissions } from '@/hooks/usePermissions';
+import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
+import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
 interface KitchenClientProps {
   tenantId: string;
@@ -18,8 +21,40 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const t = useTranslations('kitchen');
   const { role } = usePermissions();
 
+  const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
+
+  // ── Contextual keyboard shortcuts ──
+  const shortcuts = useMemo<ShortcutDefinition[]>(
+    () => [
+      {
+        id: 'kds-advance',
+        label: ts('advanceTicket'),
+        section: 'contextual',
+        keys: ['n'],
+        action: () => {
+          const first = kitchen.pendingOrders[0];
+          if (first) kitchen.handleStatusChange(first.id, 'preparing');
+        },
+      },
+      {
+        id: 'kds-all-ready',
+        label: ts('markAllReady'),
+        section: 'contextual',
+        keys: ['r'],
+        action: () => {
+          const first = kitchen.preparingOrders[0];
+          if (first) {
+            const itemIds = (first.items || []).map((i: { id: string }) => i.id);
+            if (itemIds.length > 0) kitchen.markAllItemsReady(first.id, itemIds);
+          }
+        },
+      },
+    ],
+    [ts, kitchen],
+  );
+  useContextualShortcuts(shortcuts);
 
   const isFs = kitchen.isFullscreen;
 

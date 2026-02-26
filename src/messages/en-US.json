@@ -1705,5 +1705,27 @@
     "sulphites": "Sulphites",
     "lupin": "Lupin",
     "molluscs": "Molluscs"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "description": "Speed up your workflow with keyboard shortcuts",
+    "sectionGlobal": "Global",
+    "sectionNavigation": "Navigation",
+    "sectionContextual": "Current Page",
+    "commandPalette": "Command palette",
+    "openHelp": "Open shortcuts help",
+    "focusSearch": "Focus page search",
+    "then": "then",
+    "goToDashboard": "Go to Dashboard",
+    "goToOrders": "Go to Orders",
+    "goToKitchen": "Go to Kitchen",
+    "goToPOS": "Go to POS",
+    "goToSettings": "Go to Settings",
+    "advanceTicket": "Advance first pending ticket",
+    "markAllReady": "Mark all items ready",
+    "repeatLastItem": "Repeat last item",
+    "openPayment": "Open payment",
+    "toggleFilters": "Toggle filters / Focus search",
+    "modifierNote": "Use {modifier} as the modifier key on your system"
   }
 }
