@@ -4,7 +4,7 @@ import { redirect, notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/admin/MenuDetailClient';
 import type { Category, MenuItem } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface MenuDetailPageProps {
   params: Promise<{ site: string; menuId: string }>;

@@ -4,6 +4,8 @@ import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 
+export const revalidate = 300;
+
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
 }

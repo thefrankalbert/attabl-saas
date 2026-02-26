@@ -4,7 +4,7 @@ import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
 import { AlertCircle } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function AdminDashboard({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

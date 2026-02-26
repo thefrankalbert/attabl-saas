@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useIdleTimeout } from '@/hooks/useIdleTimeout';
-import { ScreenLock } from './ScreenLock';
+
+const ScreenLock = dynamic(() => import('./ScreenLock').then((mod) => mod.ScreenLock), {
+  ssr: false,
+});
 
 interface AdminIdleWrapperProps {
   children: React.ReactNode;

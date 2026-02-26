@@ -4,7 +4,7 @@ import UsersClient from '@/components/admin/UsersClient';
 import { AlertCircle } from 'lucide-react';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 120;
 
 export default async function UsersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

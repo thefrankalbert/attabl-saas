@@ -4,7 +4,7 @@ import AnnouncementsClient from '@/components/admin/AnnouncementsClient';
 import { AlertCircle } from 'lucide-react';
 import type { Announcement } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function AnnouncementsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import ServiceManager from '@/components/admin/ServiceManager';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ServicePage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
