@@ -1,6 +1,6 @@
 'use client';
 
-import { Clock } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TabsContent } from '@/components/ui/tabs';
@@ -32,7 +32,7 @@ export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
       <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-indigo-50 rounded-lg">
-            <Clock className="h-5 w-5 text-indigo-600" />
+            <Shield className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
             <h2 className="text-lg font-semibold text-neutral-900">{t('idleLock')}</h2>

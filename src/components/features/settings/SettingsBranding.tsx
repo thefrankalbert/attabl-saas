@@ -17,8 +17,14 @@ interface SettingsBrandingProps {
 // ─── Component ─────────────────────────────────────────────
 
 export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
-  const { register, watch } = form;
+  const {
+    register,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
   const watchedPrimaryColor = watch('primaryColor');
+  const watchedSecondaryColor = watch('secondaryColor');
 
   return (
     <TabsContent value="branding" className="mt-0">
@@ -38,9 +44,11 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
             <div className="space-y-2">
               <Label htmlFor="primaryColor">{t('primaryColor')}</Label>
               <div className="flex gap-3">
-                <div
-                  className="w-10 h-10 rounded-lg border border-neutral-200 flex-shrink-0"
-                  style={{ backgroundColor: watchedPrimaryColor }}
+                <input
+                  type="color"
+                  value={watchedPrimaryColor}
+                  onChange={(e) => setValue('primaryColor', e.target.value)}
+                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-neutral-200"
                 />
                 <Input
                   id="primaryColor"
@@ -48,20 +56,30 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
                   className="font-mono min-h-[44px]"
                 />
               </div>
+              {errors.primaryColor && (
+                <p className="text-xs text-red-500">{errors.primaryColor.message}</p>
+              )}
               <p className="text-xs text-neutral-500">{t('usedForButtonsAndTitles')}</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="secondaryColor">{t('secondaryColor')}</Label>
               <div className="flex gap-3">
+                <input
+                  type="color"
+                  value={watchedSecondaryColor}
+                  onChange={(e) => setValue('secondaryColor', e.target.value)}
+                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-neutral-200"
+                />
                 <Input
                   id="secondaryColor"
-                  type="color"
-                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0"
                   {...register('secondaryColor')}
+                  className="font-mono flex-1 min-h-[44px]"
                 />
-                <Input {...register('secondaryColor')} className="font-mono flex-1 min-h-[44px]" />
               </div>
+              {errors.secondaryColor && (
+                <p className="text-xs text-red-500">{errors.secondaryColor.message}</p>
+              )}
               <p className="text-xs text-neutral-500">{t('usedForTextOnColoredBg')}</p>
             </div>
           </div>
@@ -77,7 +95,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
                 className="px-6 py-2.5 rounded-lg font-medium transition-transform active:scale-95"
                 style={{
                   backgroundColor: watchedPrimaryColor,
-                  color: watch('secondaryColor'),
+                  color: watchedSecondaryColor,
                 }}
               >
                 {t('orderButtonPreview')}

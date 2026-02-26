@@ -10,7 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import type { CurrencyCode } from '@/types/admin.types';
-import type { UseFormReturn } from 'react-hook-form';
+import type { UseFormReturn, FieldErrors } from 'react-hook-form';
 
 // ─── Schema ────────────────────────────────────────────────
 
@@ -68,6 +68,7 @@ export interface UseSettingsDataReturn {
   setSelectedSoundId: (id: string) => void;
   handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onSubmit: (data: SettingsFormValues) => Promise<void>;
+  onValidationError: (errors: FieldErrors<SettingsFormValues>) => void;
 }
 
 // ─── Hook ──────────────────────────────────────────────────
@@ -112,6 +113,17 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/svg+xml', 'image/gif'];
+    if (!allowedTypes.includes(file.type)) {
+      toast({
+        title: t('invalidFileType'),
+        description: t('logoAcceptedFormats'),
+        variant: 'destructive',
+      });
+      return;
+    }
 
     // Validate file size (max 2MB)
     if (file.size > 2 * 1024 * 1024) {
@@ -168,6 +180,17 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     }
   };
 
+  const onValidationError = (errors: FieldErrors<SettingsFormValues>) => {
+    const firstError = Object.values(errors)[0];
+    const message =
+      typeof firstError?.message === 'string' ? firstError.message : t('validationError');
+    toast({
+      title: t('validationErrorTitle'),
+      description: message,
+      variant: 'destructive',
+    });
+  };
+
   const onSubmit = async (data: SettingsFormValues) => {
     setSaving(true);
     try {
@@ -181,12 +204,15 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('phone', data.phone || '');
       if (data.logo_url) formData.append('logoUrl', data.logo_url);
       formData.append('notificationSoundId', selectedSoundId);
-      // Billing fields
+      // Billing fields — reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       formData.append('enableTax', data.enableTax ? 'true' : 'false');
-      formData.append('taxRate', String(data.taxRate ?? 0));
+      formData.append('taxRate', String(data.enableTax ? (data.taxRate ?? 0) : 0));
       formData.append('enableServiceCharge', data.enableServiceCharge ? 'true' : 'false');
-      formData.append('serviceChargeRate', String(data.serviceChargeRate ?? 0));
+      formData.append(
+        'serviceChargeRate',
+        String(data.enableServiceCharge ? (data.serviceChargeRate ?? 0) : 0),
+      );
       // Idle timeout
       if (data.idleTimeoutMinutes !== null && data.idleTimeoutMinutes !== undefined) {
         formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
@@ -224,5 +250,6 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     setSelectedSoundId,
     handleLogoUpload,
     onSubmit,
+    onValidationError,
   };
 }

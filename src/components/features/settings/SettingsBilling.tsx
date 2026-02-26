@@ -48,9 +48,9 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               {...register('currency')}
               className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <option value="XAF">Franc CFA (XAF)</option>
-              <option value="EUR">Euro (EUR)</option>
-              <option value="USD">Dollar US (USD)</option>
+              <option value="XAF">{t('currencyXAF')}</option>
+              <option value="EUR">{t('currencyEUR')}</option>
+              <option value="USD">{t('currencyUSD')}</option>
             </select>
             <p className="text-xs text-neutral-500">{t('currencyUsedForPriceDisplay')}</p>
           </div>

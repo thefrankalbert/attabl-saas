@@ -57,12 +57,13 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     setSelectedSoundId,
     handleLogoUpload,
     onSubmit,
+    onValidationError,
   } = useSettingsData(tenant);
 
   return (
     <RoleGuard permission="canManageSettings">
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="max-w-4xl xl:max-w-5xl flex flex-col h-full min-h-0"
       >
         <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
@@ -79,7 +80,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             ))}
           </TabsList>
 
-          <div className="flex-1 mt-4 sm:mt-6">
+          <div className="flex-1 min-h-0 overflow-y-auto mt-4 sm:mt-6">
             {/* Identity tab */}
             <SettingsIdentity
               form={form}
@@ -155,10 +156,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             disabled={saving || uploading}
             className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
           >
-            {saving || uploading ? (
+            {saving ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {tc('saving')}
+              </>
+            ) : uploading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {t('logoUploading')}
               </>
             ) : (
               <>
