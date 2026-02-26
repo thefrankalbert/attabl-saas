@@ -92,7 +92,7 @@ export default function InstallPrompt() {
     <div
       role="dialog"
       aria-labelledby="install-prompt-title"
-      className="fixed bottom-20 left-2 right-2 md:left-auto md:right-4 md:max-w-sm z-[110] bg-[#003366] text-white rounded-xl shadow-lg border border-white/10 animate-fade-in-up overflow-hidden"
+      className="fixed bottom-20 left-2 right-2 max-w-sm z-[110] bg-[#003366] text-white rounded-xl shadow-lg border border-white/10 animate-fade-in-up overflow-hidden"
     >
       <div className="flex items-center gap-3 p-3">
         <Image

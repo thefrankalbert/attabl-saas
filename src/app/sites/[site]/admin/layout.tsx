@@ -169,7 +169,7 @@ export default async function AdminLayout({
                 <AdminContentWrapper
                   chrome={
                     <>
-                      <div className="fixed top-3 right-3 z-40 lg:absolute lg:top-4 lg:right-4">
+                      <div className="absolute top-3 right-3 z-40">
                         <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
                       </div>
                       <TrialBanner tenantSlug={tenantSlug} />

@@ -75,7 +75,7 @@ export default function InstallPrompt({ appName = 'Attabl', logoUrl }: InstallPr
   if (!show || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm z-50 bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed bottom-24 left-4 right-4 max-w-sm z-50 bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-3 p-3">
         {logoUrl ? (
           <Image

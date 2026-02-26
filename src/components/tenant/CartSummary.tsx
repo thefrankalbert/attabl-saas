@@ -18,7 +18,7 @@ export default function CartSummary() {
   if (totalItems === 0 || pathname?.includes('/cart')) return null;
 
   return (
-    <div className="fixed bottom-24 right-4 lg:bottom-8 lg:right-6 z-[100] transition-all duration-300">
+    <div className="fixed bottom-24 right-4 z-[100]">
       <Link
         href={cartPath}
         aria-label={`Voir mon panier (${totalItems} articles)`}
