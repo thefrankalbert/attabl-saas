@@ -621,6 +621,7 @@
     "sentToKitchen": "¡Enviado a cocina!",
     "saleRecorded": "¡Venta registrada!",
     "orderError": "Error en el pedido",
+    "orderReady": "Pedido listo!",
     "loading": "Cargando TPV...",
     "loadingPos": "Cargando TPV...",
     "sendToKitchen": "Enviar a cocina",

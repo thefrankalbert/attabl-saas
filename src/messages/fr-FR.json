@@ -621,6 +621,7 @@
     "sentToKitchen": "Envoyé en cuisine !",
     "saleRecorded": "Vente enregistrée !",
     "orderError": "Erreur lors de la commande",
+    "orderReady": "Commande prête !",
     "loading": "Chargement du POS...",
     "loadingPos": "Chargement du POS...",
     "sendToKitchen": "Envoyer en cuisine",

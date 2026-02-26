@@ -7,6 +7,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
 import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
@@ -163,31 +164,25 @@ export function useKitchenData({
     }
   }, [supabase, tenantId]);
 
-  // ─── Realtime subscription ──────────────────────────────
+  // ─── Initial load + polling fallback ────────────────────
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 10000);
+    const interval = setInterval(loadOrders, 15000); // Polling as fallback only
+    return () => clearInterval(interval);
+  }, [loadOrders]);
 
-    const channel = supabase
-      .channel('kds_realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'orders', filter: `tenant_id=eq.${tenantId}` },
-        async (payload) => {
-          if (payload.eventType === 'INSERT') {
-            playNotification();
-          }
-          loadOrders();
-        },
-      )
-      .subscribe();
-
-    return () => {
-      clearInterval(interval);
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, [loadOrders, playNotification, supabase, tenantId]);
+  // ─── Realtime subscription via shared hook ─────────────
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `kds_orders_${tenantId}`,
+    table: 'orders',
+    filter: `tenant_id=eq.${tenantId}`,
+    onInsert: () => {
+      playNotification();
+      loadOrders();
+    },
+    onUpdate: () => loadOrders(),
+    onDelete: () => loadOrders(),
+  });
 
   // ─── Status mutation ────────────────────────────────────
   const handleStatusChange = async (orderId: string, newStatus: OrderStatus) => {

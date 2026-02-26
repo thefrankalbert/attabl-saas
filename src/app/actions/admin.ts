@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { AdminRole, AdminUser } from '@/types/admin.types';
 import { createAdminUserSchema } from '@/lib/validations/admin-user.schema';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 
@@ -25,7 +26,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return { error: 'Non authentifié', user: null };
+    return { error: 'Non authentifié', user: null, role: null };
   }
 
   // Check if user belongs to the tenant and has the required role
@@ -37,10 +38,10 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
     .single();
 
   if (dbError || !adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
-    return { error: 'Permission refusée', user: null };
+    return { error: 'Permission refusée', user: null, role: null };
   }
 
-  return { error: null, user };
+  return { error: null, user, role: adminUser.role as string };
 }
 
 /**
@@ -50,10 +51,11 @@ export async function createAdminUserAction(
   tenantId: string,
   formData: { email: string; password: string; full_name: string; role: string },
 ): Promise<ActionResponse> {
-  const { error: permError, user: currentUser } = await checkPermissions(tenantId, [
-    'owner',
-    'admin',
-  ]);
+  const {
+    error: permError,
+    user: currentUser,
+    role,
+  } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
   // Validation Zod des données d'entrée
@@ -129,6 +131,20 @@ export async function createAdminUserAction(
     return { error: 'Erreur lors de la liaison au tenant: ' + dbError.message };
   }
 
+  // Fire-and-forget audit log
+  const audit = createAuditService(adminClient, {
+    tenantId,
+    userId: currentUser!.id,
+    userEmail: currentUser!.email ?? undefined,
+    userRole: role ?? undefined,
+  });
+  audit.log({
+    action: 'create',
+    entityType: 'user',
+    entityId: authUser.user.id,
+    newData: { email: parsed.data.email, full_name: parsed.data.full_name, role: parsed.data.role },
+  });
+
   revalidatePath(`/sites/${tenantId}/admin/users`);
 
   return { success: true };
@@ -142,7 +158,11 @@ export async function deleteAdminUserAction(
   tenantId: string,
   userId: string,
 ): Promise<ActionResponse> {
-  const { error: permError } = await checkPermissions(tenantId, ['owner', 'admin']);
+  const {
+    error: permError,
+    user: currentUser,
+    role,
+  } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
   const adminClient = createAdminClient();
@@ -150,7 +170,7 @@ export async function deleteAdminUserAction(
   // Get the user to find auth_id
   const { data: targetUser } = await adminClient
     .from('admin_users')
-    .select('user_id')
+    .select('user_id, email, full_name, role')
     .eq('id', userId)
     .eq('tenant_id', tenantId)
     .single();
@@ -177,10 +197,23 @@ export async function deleteAdminUserAction(
   if (!otherTenants || otherTenants.length === 0) {
     const { error: authError } = await adminClient.auth.admin.deleteUser(targetUser.user_id);
     if (authError) {
-      console.warn('Erreur lors de la suppression du compte auth:', authError);
-      // Ne pas bloquer la suppression du lien si le compte auth ne peut pas être supprimé
+      logger.warn('Erreur lors de la suppression du compte auth:', { error: authError });
     }
   }
+
+  // Fire-and-forget audit log
+  const audit = createAuditService(adminClient, {
+    tenantId,
+    userId: currentUser?.id,
+    userEmail: currentUser?.email ?? undefined,
+    userRole: role ?? undefined,
+  });
+  audit.log({
+    action: 'delete',
+    entityType: 'user',
+    entityId: userId,
+    oldData: { email: targetUser.email, full_name: targetUser.full_name, role: targetUser.role },
+  });
 
   return { success: true };
 }
@@ -193,7 +226,11 @@ export async function updateAdminUserAction(
   userId: string,
   data: Partial<AdminUser>,
 ): Promise<ActionResponse> {
-  const { error: permError } = await checkPermissions(tenantId, ['owner', 'admin']);
+  const {
+    error: permError,
+    user: currentUser,
+    role: currentRole,
+  } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
   const adminClient = createAdminClient();
@@ -209,6 +246,20 @@ export async function updateAdminUserAction(
     .eq('tenant_id', tenantId); // Safety check
 
   if (error) return { error: error.message };
+
+  // Fire-and-forget audit log
+  const audit = createAuditService(adminClient, {
+    tenantId,
+    userId: currentUser?.id,
+    userEmail: currentUser?.email ?? undefined,
+    userRole: currentRole ?? undefined,
+  });
+  audit.log({
+    action: 'update',
+    entityType: 'user',
+    entityId: userId,
+    newData: { role: data.role, full_name: data.full_name, is_active: data.is_active },
+  });
 
   return { success: true };
 }
