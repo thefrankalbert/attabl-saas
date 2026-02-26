@@ -23,7 +23,13 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   if (kitchen.loading) {
     return (
-      <div className="fixed inset-0 z-[200] bg-neutral-950 flex items-center justify-center text-white">
+      <div
+        className="fixed inset-0 z-[200] bg-neutral-950 flex items-center justify-center text-white"
+        style={{
+          padding:
+            'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+        }}
+      >
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
           <p className="text-sm font-medium text-neutral-500">{t('loadingKds')}</p>
@@ -33,7 +39,13 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   }
 
   return (
-    <div className="fixed inset-0 z-[200] bg-neutral-950 text-white flex flex-col overflow-hidden">
+    <div
+      className="fixed inset-0 z-[200] bg-neutral-950 text-white flex flex-col overflow-hidden"
+      style={{
+        padding:
+          'env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)',
+      }}
+    >
       <KitchenFilters
         pendingOrders={kitchen.pendingOrders}
         preparingOrders={kitchen.preparingOrders}

@@ -86,7 +86,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Cart Section */}
           <div
             className={cn(
-              'w-full md:w-[350px] lg:w-[400px] xl:w-[440px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
+              'w-full sm:w-[280px] md:w-[320px] lg:w-[380px] xl:w-[440px] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
               isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
             )}
           >

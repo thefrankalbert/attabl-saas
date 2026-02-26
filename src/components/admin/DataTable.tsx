@@ -89,8 +89,8 @@ export function DataTable<TData>({
 
   return (
     <div className="border border-neutral-100 rounded-xl overflow-hidden">
-      <div className="overflow-x-auto scrollbar-hide">
-        <table className="w-full text-sm min-w-[600px]">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[500px] sm:min-w-[600px]">
           {/* Header */}
           <thead className="bg-neutral-50">
             {table.getHeaderGroups().map((headerGroup) => (

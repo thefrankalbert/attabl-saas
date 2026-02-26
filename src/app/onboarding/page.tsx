@@ -293,7 +293,7 @@ export default function OnboardingPage() {
       {/* Sidebar — Desktop (lg+): w-72, icons + titles + descriptions */}
       {/* Sidebar — Tablet (md): w-56, icons + titles only */}
       {currentStep > 0 && (
-        <aside className="hidden lg:flex lg:w-72 shrink-0 flex-col bg-neutral-50 border-r border-neutral-100">
+        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-neutral-50 border-r border-neutral-100">
           {/* Logo */}
           <div className="p-6 lg:p-8">
             <Link href="/" className="flex items-center gap-3">
@@ -401,7 +401,7 @@ export default function OnboardingPage() {
             </div>
 
             {/* Horizontal step circles */}
-            <div className="flex items-center justify-center gap-0 py-3 px-4">
+            <div className="flex items-center justify-center gap-0 py-3 px-2 sm:px-4">
               {STEP_ICONS.map((Icon, index) => {
                 const stepId = index + 1;
                 const isCompleted = currentStep > stepId;
@@ -435,7 +435,7 @@ export default function OnboardingPage() {
                     {/* Connecting line */}
                     {index < STEP_ICONS.length - 1 && (
                       <div
-                        className={`w-6 sm:w-10 h-0.5 ${
+                        className={`w-4 sm:w-10 h-0.5 ${
                           currentStep > stepId ? 'bg-[#CCFF00]' : 'bg-neutral-200'
                         }`}
                       />
@@ -450,7 +450,7 @@ export default function OnboardingPage() {
         {/* Step Content */}
         <div
           id="onboarding-content"
-          className="flex-1 flex flex-col overflow-hidden p-4 md:p-6 lg:p-8"
+          className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 md:p-6 lg:p-8"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
           }}

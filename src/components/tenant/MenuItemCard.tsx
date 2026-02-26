@@ -255,7 +255,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
-                className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white touch-manipulation`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
                 <Minus size={16} strokeWidth={2.5} />
@@ -268,7 +268,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
-                className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white`}
+                className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white touch-manipulation`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
                 <Plus size={16} strokeWidth={2.5} />
@@ -281,7 +281,7 @@ export default function MenuItemCard({
                 handleAdd();
               }}
               disabled={isUnavailable}
-              className={`w-10 h-10 rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-md hover:border-current/30 active:scale-90 transition-all ${isAnimating ? 'scale-110 bg-current/10' : ''}`}
+              className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-md hover:border-current/30 active:scale-90 transition-all touch-manipulation ${isAnimating ? 'scale-110 bg-current/10' : ''}`}
               style={{ color: 'var(--tenant-primary)' }}
             >
               <Plus size={20} strokeWidth={2.5} />

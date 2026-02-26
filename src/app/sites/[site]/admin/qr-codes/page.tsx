@@ -37,11 +37,9 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
       .order('display_order', { ascending: true }),
   ]);
 
-  // Construct menu URL
-  const menuUrl =
-    process.env.NODE_ENV === 'development'
-      ? `http://${tenant.slug}.localhost:3000`
-      : `https://${tenant.slug}.attabl.com`;
+  // Construct menu URL — use /sites/ path which works everywhere
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+  const menuUrl = `${baseUrl}/sites/${tenant.slug}`;
 
   return (
     <QRCodePage
