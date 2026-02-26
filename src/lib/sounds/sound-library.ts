@@ -109,9 +109,15 @@ export function getSoundById(id: string): SoundDefinition | undefined {
   return SOUND_LIBRARY.find((s) => s.id === id);
 }
 
+/** Check if a sound ID represents a custom uploaded sound */
+export function isCustomSound(id?: string | null): boolean {
+  return !!id && id.startsWith('http');
+}
+
 /** Get the file path for a sound ID (with fallback to default) */
 export function getSoundFile(id?: string | null): string {
   if (!id) return SOUND_LIBRARY[0].file;
+  if (isCustomSound(id)) return id;
   const sound = getSoundById(id);
   return sound?.file || SOUND_LIBRARY[0].file;
 }

@@ -17,7 +17,10 @@ interface SettingsContactProps {
 // ─── Component ─────────────────────────────────────────────
 
 export default function SettingsContact({ form, t }: SettingsContactProps) {
-  const { register } = form;
+  const {
+    register,
+    formState: { errors },
+  } = form;
 
   return (
     <TabsContent value="contact" className="mt-0">
@@ -41,6 +44,7 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
               placeholder={t('addressPlaceholder')}
               className="min-h-[44px]"
             />
+            {errors.address && <p className="text-xs text-red-500">{errors.address.message}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="phone">{t('phone')}</Label>
@@ -50,6 +54,7 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
               placeholder={t('phonePlaceholder')}
               className="min-h-[44px]"
             />
+            {errors.phone && <p className="text-xs text-red-500">{errors.phone.message}</p>}
           </div>
         </div>
       </div>

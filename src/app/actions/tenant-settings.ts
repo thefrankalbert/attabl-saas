@@ -27,6 +27,14 @@ export async function updateTenantSettings(formData: FormData) {
       phone: (formData.get('phone') as string) || undefined,
       logoUrl: (formData.get('logoUrl') as string) || undefined,
       notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
+      // Billing fields
+      currency: (formData.get('currency') as string) || 'XAF',
+      enableTax: formData.get('enableTax') === 'true',
+      taxRate: formData.get('taxRate') ? Number(formData.get('taxRate')) : 0,
+      enableServiceCharge: formData.get('enableServiceCharge') === 'true',
+      serviceChargeRate: formData.get('serviceChargeRate')
+        ? Number(formData.get('serviceChargeRate'))
+        : 0,
       // Idle timeout
       idleTimeoutMinutes: formData.get('idleTimeoutMinutes')
         ? Number(formData.get('idleTimeoutMinutes'))
@@ -44,9 +52,8 @@ export async function updateTenantSettings(formData: FormData) {
     const tenantService = createTenantService(supabase);
     await tenantService.updateSettings(tenantId, parseResult.data);
 
-    // 4. Revalidate caches
-    revalidatePath('/admin');
-    revalidatePath('/admin/settings');
+    // 4. Revalidate caches — tenant routes are under /sites/[site]/admin
+    revalidatePath('/sites', 'layout');
     revalidatePath('/', 'layout');
 
     return { success: true };

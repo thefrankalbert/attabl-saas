@@ -21,7 +21,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
   const t = useTranslations('onboarding');
 
   return (
-    <div className="flex flex-col items-center justify-center text-center py-8">
+    <div className="h-full flex flex-col items-center justify-center text-center py-8">
       <div className="bg-[#CCFF00] rounded-2xl p-4 mb-6">
         <Rocket className="h-8 w-8 text-black" />
       </div>

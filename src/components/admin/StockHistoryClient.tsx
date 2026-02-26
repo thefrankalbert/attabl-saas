@@ -163,7 +163,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             <div>
               <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
               <p className="text-sm text-neutral-500">
-                {filtered.length} {t('movementsCount')}
+                {t('movementsCount', { count: filtered.length })}
               </p>
             </div>
           </div>

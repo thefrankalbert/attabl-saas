@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -22,13 +23,13 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
 
   if (!tenant) notFound();
 
+  const t = await getTranslations('settings');
+
   return (
     <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)]">
       <div className="mb-8 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-neutral-900">Paramètres</h1>
-        <p className="text-neutral-500">
-          Gérez les informations et le branding de votre établissement.
-        </p>
+        <h1 className="text-2xl font-bold text-neutral-900">{t('pageTitle')}</h1>
+        <p className="text-neutral-500">{t('pageDescription')}</p>
       </div>
 
       <SettingsForm
