@@ -524,7 +524,9 @@
     "expand": "Expandir",
     "navService": "Servicio",
     "navTables": "Mesas",
-    "navPermissions": "Permisos"
+    "navPermissions": "Permisos",
+    "fullscreen": "Pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa"
   },
   "kitchen": {
     "title": "Cocina (KDS)",

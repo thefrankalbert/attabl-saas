@@ -524,7 +524,9 @@
     "expand": "Expand",
     "navService": "Service",
     "navTables": "Tables",
-    "navPermissions": "Permissions"
+    "navPermissions": "Permissions",
+    "fullscreen": "Full screen",
+    "exitFullscreen": "Exit full screen"
   },
   "kitchen": {
     "title": "Kitchen (KDS)",
