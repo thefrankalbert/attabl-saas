@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import ReportsClient from '@/components/admin/ReportsClient';
 import { AlertCircle } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function ReportsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

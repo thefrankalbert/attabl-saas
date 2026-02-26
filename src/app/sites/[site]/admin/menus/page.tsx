@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import MenusClient from '@/components/admin/MenusClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 interface MenusPageProps {
   params: Promise<{ site: string }>;

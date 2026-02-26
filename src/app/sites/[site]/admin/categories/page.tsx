@@ -4,7 +4,7 @@ import CategoriesClient from '@/components/admin/CategoriesClient';
 import { AlertCircle } from 'lucide-react';
 import type { Category } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function CategoriesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

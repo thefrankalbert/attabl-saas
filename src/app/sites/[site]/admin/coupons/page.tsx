@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import CouponsClient from '@/components/admin/CouponsClient';
 import { AlertCircle } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 120;
 
 export default async function CouponsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

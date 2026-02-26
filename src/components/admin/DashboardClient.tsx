@@ -8,7 +8,17 @@ import { formatCurrency, formatCurrencyCompact } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import DashboardStatsSection from '@/components/features/dashboard/DashboardStats';
-import DashboardCharts from '@/components/features/dashboard/DashboardCharts';
+import dynamic from 'next/dynamic';
+
+const DashboardCharts = dynamic(() => import('@/components/features/dashboard/DashboardCharts'), {
+  loading: () => (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div className="lg:col-span-2 h-72 bg-neutral-100 animate-pulse rounded-xl" />
+      <div className="h-72 bg-neutral-100 animate-pulse rounded-xl" />
+    </div>
+  ),
+  ssr: false,
+});
 import DashboardRecentOrders from '@/components/features/dashboard/DashboardRecentOrders';
 
 // ─── Types ─────────────────────────────────────────────────

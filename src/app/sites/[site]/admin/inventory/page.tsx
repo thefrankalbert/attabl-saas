@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import InventoryClient from '@/components/admin/InventoryClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function InventoryPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

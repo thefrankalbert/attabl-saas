@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import SuppliersClient from '@/components/admin/SuppliersClient';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 120;
 
 export default async function SuppliersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

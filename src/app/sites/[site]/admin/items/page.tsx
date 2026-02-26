@@ -4,7 +4,7 @@ import ItemsClient from '@/components/admin/ItemsClient';
 import { AlertCircle } from 'lucide-react';
 import type { MenuItem, Category } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 60;
 
 export default async function ItemsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;

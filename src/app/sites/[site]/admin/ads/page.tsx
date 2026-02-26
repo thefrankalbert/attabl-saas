@@ -4,7 +4,7 @@ import AdsClient from '@/components/admin/AdsClient';
 import { AlertCircle } from 'lucide-react';
 import type { Ad } from '@/types/admin.types';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 300;
 
 export default async function AdsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
