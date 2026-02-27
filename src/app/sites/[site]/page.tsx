@@ -62,12 +62,13 @@ export default async function MenuPage({
   searchParams,
 }: {
   params: Promise<{ site: string }>;
-  searchParams: Promise<{ table?: string; menu?: string; t?: string }>;
+  searchParams: Promise<{ table?: string; menu?: string; t?: string; v?: string }>;
 }) {
   const { site } = await params;
   const resolvedSearchParams = await searchParams;
   const initialTable = resolvedSearchParams.table || resolvedSearchParams.t || undefined;
   const initialMenuSlug = resolvedSearchParams.menu || undefined;
+  const initialVenueSlug = resolvedSearchParams.v || undefined;
 
   const headersList = await headers();
   // Use header if available (from middleware), otherwise use route params
@@ -187,6 +188,7 @@ export default async function MenuPage({
       menus={menus}
       initialMenuSlug={initialMenuSlug}
       initialTable={initialTable}
+      initialVenueSlug={initialVenueSlug}
       categories={categories || []}
       itemsByCategory={itemsByCategory}
       ads={ads || []}

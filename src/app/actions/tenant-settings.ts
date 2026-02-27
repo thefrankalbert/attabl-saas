@@ -41,6 +41,10 @@ export async function updateTenantSettings(formData: FormData) {
         ? Number(formData.get('idleTimeoutMinutes'))
         : null,
       screenLockMode: (formData.get('screenLockMode') as string) || 'overlay',
+      // Custom domain
+      customDomain: formData.has('customDomain')
+        ? (formData.get('customDomain') as string) || null
+        : undefined,
     };
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);

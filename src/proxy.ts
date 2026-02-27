@@ -1,4 +1,5 @@
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
+import { getCachedTenantByDomain } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -55,7 +56,35 @@ export async function proxy(request: NextRequest) {
   const subdomain = extractSubdomain(hostname);
   const pathname = request.nextUrl.pathname;
 
-  // 2. OPTIMISATION : Sur le domaine principal (sans subdomain), les routes publiques
+  // 2. Custom domain check: hostname is not *.attabl.com and not localhost
+  const hostWithoutPort = hostname.split(':')[0];
+  const isMainDomain = hostWithoutPort === 'attabl.com' || hostWithoutPort === 'www.attabl.com';
+  const isLocalhost = hostWithoutPort === 'localhost' || hostWithoutPort.endsWith('.localhost');
+
+  if (!subdomain && !isMainDomain && !isLocalhost) {
+    // Might be a custom domain (e.g., theblutable.com)
+    const tenantSlug = await getCachedTenantByDomain(hostWithoutPort);
+    if (tenantSlug) {
+      // Custom domain matched — treat like a subdomain rewrite
+      const { response: sessionResponse } = await createMiddlewareClient(request);
+      const url = request.nextUrl.clone();
+
+      if (pathname.startsWith('/api/')) {
+        sessionResponse.headers.set('x-tenant-slug', tenantSlug);
+        return sessionResponse;
+      }
+
+      url.pathname = `/sites/${tenantSlug}${pathname}`;
+      const response = NextResponse.rewrite(url, { headers: sessionResponse.headers });
+      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      response.headers.set('x-tenant-slug', tenantSlug);
+      return response;
+    }
+  }
+
+  // 3. OPTIMISATION : Sur le domaine principal (sans subdomain), les routes publiques
   //    n'ont pas besoin de rafraîchir la session → skip createMiddlewareClient entièrement
   if (!subdomain || subdomain === 'www') {
     if (isPublicMainDomainPath(pathname)) {
@@ -63,10 +92,10 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 3. Rafraîchir la session (createMiddlewareClient appelle getUser() en interne)
+  // 4. Rafraîchir la session (createMiddlewareClient appelle getUser() en interne)
   const { response: sessionResponse, supabase } = await createMiddlewareClient(request);
 
-  // 4. Vérifier l'authentification pour les routes protégées
+  // 5. Vérifier l'authentification pour les routes protégées
   //    createMiddlewareClient a déjà validé/rafraîchi le token via getUser().
   //    On utilise getSession() pour lire le résultat sans re-appeler le serveur auth.
   const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
@@ -89,7 +118,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 5. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
+  // 6. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
@@ -97,7 +126,7 @@ export async function proxy(request: NextRequest) {
     return sessionResponse;
   }
 
-  // 6. Si subdomain détecté, réécrire l'URL vers /sites/[site]
+  // 7. Si subdomain détecté, réécrire l'URL vers /sites/[site]
   // Le domaine principal (sans subdomain) sert les routes marketing, auth, super admin
   if (subdomain && subdomain !== 'www') {
     // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
@@ -128,7 +157,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // 7. Pas de subdomain → retourner la réponse avec session rafraîchie
+  // 8. Pas de subdomain → retourner la réponse avec session rafraîchie
   return sessionResponse;
 }
 

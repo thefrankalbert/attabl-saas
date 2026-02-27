@@ -46,6 +46,12 @@ export const updateTenantSettingsSchema = z.object({
     .nullable()
     .optional(),
   screenLockMode: z.enum(['overlay', 'password']).optional(),
+  // ─── Custom domain ───────────────────────────────────────
+  customDomain: z
+    .string()
+    .max(255, 'Le domaine ne doit pas dépasser 255 caractères')
+    .nullable()
+    .optional(),
 });
 
 export type UpdateTenantSettingsInput = z.infer<typeof updateTenantSettingsSchema>;

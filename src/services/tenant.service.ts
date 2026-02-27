@@ -20,6 +20,8 @@ interface TenantSettings {
   // Idle timeout
   idleTimeoutMinutes?: number | null;
   screenLockMode?: 'overlay' | 'password';
+  // Custom domain
+  customDomain?: string | null;
 }
 
 /**
@@ -54,6 +56,10 @@ export function createTenantService(supabase: SupabaseClient) {
           // Idle timeout
           idle_timeout_minutes: settings.idleTimeoutMinutes ?? null,
           screen_lock_mode: settings.screenLockMode ?? 'overlay',
+          // Custom domain
+          ...(settings.customDomain !== undefined && {
+            custom_domain: settings.customDomain || null,
+          }),
           updated_at: new Date().toISOString(),
         })
         .eq('id', tenantId);

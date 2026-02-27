@@ -29,6 +29,7 @@ interface ClientMenuPageProps {
   menus: Menu[];
   initialMenuSlug?: string;
   initialTable?: string;
+  initialVenueSlug?: string;
   categories: Category[];
   itemsByCategory: { id: string; name: string; items: MenuItem[] }[];
   ads: Ad[];
@@ -42,6 +43,7 @@ export default function ClientMenuPage({
   menus,
   initialMenuSlug,
   initialTable,
+  initialVenueSlug,
   categories,
   itemsByCategory,
   ads,
@@ -60,6 +62,15 @@ export default function ClientMenuPage({
   );
   const [activeSubMenuId, setActiveSubMenuId] = useState<string | null>(null);
 
+  // Venue filter state
+  const [activeVenueId, setActiveVenueId] = useState<string | null>(() => {
+    if (initialVenueSlug) {
+      const venue = venues.find((v) => v.slug === initialVenueSlug);
+      return venue?.id || null;
+    }
+    return null;
+  });
+
   // Table auto-detection from URL: show toast once on initial load
   // Using useState initializer (runs once) to avoid ref access during render
   const [tableToastShown] = useState(() => {
@@ -77,6 +88,20 @@ export default function ClientMenuPage({
   });
   // Suppress unused var warning — tableToastShown is only used as a run-once guard
   void tableToastShown;
+
+  // Filter menus by active venue (show venue menus + shared menus with no venue_id)
+  const filteredMenus = activeVenueId
+    ? menus.filter((m) => m.venue_id === activeVenueId || !m.venue_id)
+    : menus;
+
+  // Reset menu selection when venue changes
+  useEffect(() => {
+    if (filteredMenus.length > 0 && !filteredMenus.find((m) => m.slug === activeMenuSlug)) {
+      setActiveMenuSlug(filteredMenus[0].slug);
+      setActiveSubMenuId(null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeVenueId]);
 
   // Realtime: track availability changes for menu items
   const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
@@ -114,8 +139,8 @@ export default function ClientMenuPage({
     };
   }, [tenant.id]);
 
-  // Derive active menu from slug
-  const activeMenu = menus.find((m) => m.slug === activeMenuSlug) || null;
+  // Derive active menu from slug (using venue-filtered menus)
+  const activeMenu = filteredMenus.find((m) => m.slug === activeMenuSlug) || null;
 
   // Filter itemsByCategory based on active menu (backward compatible)
   const filteredItemsByCategory =
@@ -261,13 +286,29 @@ export default function ClientMenuPage({
 
         {/* Venues Selector */}
         {venues && venues.length > 1 && (
-          <div className="mb-8">
-            <h2 className="text-lg font-bold mb-3 px-1">Nos espaces</h2>
-            <div className="flex gap-3 overflow-x-auto pb-4 scrollbar-hide -mx-4 px-4">
+          <div className="mb-6">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+              <button
+                onClick={() => setActiveVenueId(null)}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
+                  !activeVenueId
+                    ? 'bg-gray-900 text-white shadow-md'
+                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                )}
+              >
+                {t('allSpaces')}
+              </button>
               {venues.map((venue: Venue) => (
                 <button
                   key={venue.id}
-                  className="flex-shrink-0 px-5 py-3 bg-white rounded-xl shadow-sm border border-gray-100 whitespace-nowrap hover:shadow-md transition-all font-medium text-sm"
+                  onClick={() => setActiveVenueId(venue.id)}
+                  className={cn(
+                    'flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
+                    activeVenueId === venue.id
+                      ? 'bg-gray-900 text-white shadow-md'
+                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                  )}
                 >
                   {venue.name}
                 </button>
@@ -277,12 +318,12 @@ export default function ClientMenuPage({
         )}
 
         {/* Menu Tabs (only if multiple menus) */}
-        {menus.length > 1 && (
+        {filteredMenus.length > 1 && (
           <div
             className="flex gap-1 overflow-x-auto pb-2 mb-4 scrollbar-hide -mx-4 px-4"
             data-tab-pane
           >
-            {menus.map((menu) => (
+            {filteredMenus.map((menu) => (
               <button
                 key={menu.slug}
                 onClick={() => handleMenuChange(menu.slug)}
