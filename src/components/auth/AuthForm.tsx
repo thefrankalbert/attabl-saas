@@ -205,15 +205,15 @@ function AuthForm({ mode }: AuthFormProps) {
             <path d="M9 21V9" />
           </svg>
         </div>
-        <span className="text-xl font-bold tracking-tight text-neutral-900">ATTABL</span>
+        <span className="text-xl font-semibold tracking-tight text-zinc-900">ATTABL</span>
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900 mb-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 mb-2">
           {isLogin ? 'Bon retour parmi nous' : 'Lancez votre menu digital'}
         </h1>
-        <p className="text-neutral-500 text-sm">
+        <p className="text-zinc-500 text-sm">
           {isLogin
             ? 'Connectez-vous pour piloter votre \u00e9tablissement.'
             : 'Cr\u00e9ez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
@@ -223,7 +223,7 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-neutral-700 font-medium text-sm">
+          <Label htmlFor="email" className="text-zinc-700 font-medium text-sm">
             Email
           </Label>
           <Input
@@ -233,19 +233,19 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-12 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
+            className="h-10 bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-1 focus:ring-zinc-900 transition-all rounded-md"
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-neutral-700 font-medium text-sm">
+            <Label htmlFor="password" className="text-zinc-700 font-medium text-sm">
               Mot de passe
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-sm text-neutral-400 hover:text-neutral-900 transition-colors whitespace-nowrap"
+                className="text-sm text-zinc-400 hover:text-zinc-900 transition-colors whitespace-nowrap"
               >
                 Mot de passe oubli&eacute; ?
               </Link>
@@ -264,12 +264,12 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-12 pr-12 sm:pr-20 bg-white border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20 transition-all rounded-lg"
+              className="h-10 pr-12 bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-1 focus:ring-zinc-900 transition-all rounded-md"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
             >
               {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
             </button>
@@ -289,12 +289,12 @@ function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          className="w-full h-12 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-lg shadow-sm transition-all hover:scale-[1.01] active:scale-[0.99]"
+          className="w-full h-9 bg-[#CCFF00] hover:bg-[#b3e600] text-black text-sm font-medium rounded-md shadow-sm transition-colors"
           disabled={loading}
         >
           {loading ? (
             <>
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               {isLogin ? 'Connexion...' : 'Cr\u00e9ation en cours...'}
             </>
           ) : isLogin ? (
@@ -306,7 +306,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         {/* Trust signal for signup */}
         {!isLogin && (
-          <p className="text-center text-xs text-neutral-400">
+          <p className="text-center text-xs text-zinc-400">
             14 jours gratuits &mdash; aucun engagement
           </p>
         )}
@@ -315,10 +315,10 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Divider */}
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-neutral-200" />
+          <div className="w-full border-t border-zinc-200" />
         </div>
         <div className="relative flex justify-center text-xs uppercase tracking-widest">
-          <span className="bg-white px-4 text-neutral-400">ou</span>
+          <span className="bg-white px-4 text-zinc-400">ou</span>
         </div>
       </div>
 
@@ -329,7 +329,7 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="w-full h-12 rounded-lg border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-700 font-medium transition-all"
+          className="w-full h-10 rounded-md border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-medium transition-colors"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="mr-3 h-5 w-5 animate-spin" />
@@ -341,11 +341,11 @@ function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       {/* Footer Link */}
-      <p className="mt-8 text-center text-sm text-neutral-500">
+      <p className="mt-8 text-center text-sm text-zinc-500">
         {isLogin ? 'Pas encore de compte ?' : 'D\u00e9j\u00e0 un compte ?'}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}
-          className="font-semibold text-neutral-900 hover:underline"
+          className="font-semibold text-zinc-900 hover:underline"
         >
           {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
         </Link>
