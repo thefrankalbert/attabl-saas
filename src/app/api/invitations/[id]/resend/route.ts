@@ -14,7 +14,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 

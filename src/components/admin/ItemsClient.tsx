@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { checkCanAddMenuItemAction } from '@/app/actions/menu-items';
@@ -273,10 +274,11 @@ export default function ItemsClient({
                 className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group cursor-pointer"
               >
                 {item.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={item.image_url}
                     alt={item.name}
+                    width={48}
+                    height={48}
                     className="w-12 h-12 rounded-lg object-cover border border-neutral-100"
                   />
                 ) : (
@@ -400,12 +402,15 @@ export default function ItemsClient({
               <div className="p-5 space-y-5">
                 {/* Image */}
                 {selectedItem.image_url ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={selectedItem.image_url}
-                    alt={selectedItem.name}
-                    className="w-full h-48 rounded-xl object-cover border border-neutral-100"
-                  />
+                  <div className="relative w-full h-48">
+                    <Image
+                      src={selectedItem.image_url}
+                      alt={selectedItem.name}
+                      fill
+                      sizes="(max-width: 640px) 100vw, 400px"
+                      className="rounded-xl object-cover border border-neutral-100"
+                    />
+                  </div>
                 ) : (
                   <div className="w-full h-48 rounded-xl bg-neutral-50 border border-neutral-100 flex items-center justify-center">
                     <ImageIcon className="w-12 h-12 text-neutral-300" />

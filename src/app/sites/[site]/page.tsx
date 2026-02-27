@@ -1,8 +1,36 @@
+import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
+import { getCachedTenant } from '@/lib/cache';
 import type { Menu } from '@/types/admin.types';
+
+// ─── SEO Metadata ─────────────────────────────────────────
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ site: string }>;
+}): Promise<Metadata> {
+  const { site } = await params;
+  const tenant = await getCachedTenant(site);
+
+  if (!tenant) {
+    return { title: 'Menu | ATTABL' };
+  }
+
+  const description = `Consultez le menu de ${tenant.name} et commandez en ligne.`;
+
+  return {
+    title: `${tenant.name} — Menu Digital | ATTABL`,
+    description,
+    openGraph: {
+      title: `${tenant.name} — Menu Digital`,
+      description,
+      ...(tenant.logo_url ? { images: [{ url: tenant.logo_url }] } : {}),
+    },
+  };
+}
 
 // Types pour les donnees
 interface Category {
@@ -51,15 +79,10 @@ export default async function MenuPage({
 
   const supabase = await createClient();
 
-  // 1. Recuperer le tenant (requis avant les autres requetes)
-  const { data: tenant, error: tenantError } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .eq('is_active', true)
-    .single();
+  // 1. Recuperer le tenant via cache (requis avant les autres requetes)
+  const tenant = await getCachedTenant(tenantSlug);
 
-  if (tenantError || !tenant) {
+  if (!tenant) {
     // En mode dev, afficher un placeholder si pas de tenant
     return (
       <div className="min-h-screen bg-gray-50">

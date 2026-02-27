@@ -8,6 +8,8 @@ import FeaturesShowcase from '@/components/marketing/FeaturesShowcase';
 import SocialProof from '@/components/marketing/SocialProof';
 import CTASection from '@/components/marketing/CTASection';
 
+export const revalidate = 3600; // ISR: regenerate every hour
+
 export const metadata: Metadata = {
   title: 'Attabl — Menu digital & gestion pour restaurants',
   description:

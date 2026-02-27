@@ -1,7 +1,7 @@
 import { TenantProvider } from '@/contexts/TenantContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
-import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 
 export default async function SiteLayout({
   children,
@@ -12,9 +12,8 @@ export default async function SiteLayout({
 }) {
   const { site } = await params;
 
-  // Fetch tenant from database
-  const supabase = await createClient();
-  const { data: tenant } = await supabase.from('tenants').select('*').eq('slug', site).single();
+  // Fetch tenant from cache (revalidated every 60s or on tenant-config tag)
+  const tenant = await getCachedTenant(site);
 
   const tenantId = tenant?.id || null;
 

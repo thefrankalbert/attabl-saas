@@ -30,7 +30,6 @@ import { useReportData } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
-import { jsPDF } from 'jspdf';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -133,9 +132,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     [summary.avgBasket, previousSummary.avgBasket, trendPercent],
   );
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     setExporting(true);
     try {
+      const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
 
       // Title

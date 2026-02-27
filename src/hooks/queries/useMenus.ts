@@ -27,5 +27,6 @@ export function useMenus(tenantId: string, initialData?: Menu[]) {
     },
     enabled: !!tenantId,
     initialData,
+    staleTime: 10 * 60 * 1000,
   });
 }

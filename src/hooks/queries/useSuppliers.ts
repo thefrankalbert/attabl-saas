@@ -26,5 +26,6 @@ export function useSuppliers(tenantId: string, options?: { activeOnly?: boolean 
       return (data as Supplier[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 10 * 60 * 1000,
   });
 }

@@ -265,5 +265,6 @@ export function useReportData(tenantId: string, period: Period) {
       return { dailyStats, topItems, categories, serverStats, summary, previousSummary };
     },
     enabled: !!tenantId,
+    staleTime: 2 * 60 * 1000,
   });
 }

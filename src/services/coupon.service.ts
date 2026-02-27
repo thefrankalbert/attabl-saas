@@ -28,7 +28,9 @@ export function createCouponService(supabase: SupabaseClient) {
     ): Promise<CouponValidationResult> {
       const { data: coupon, error } = await supabase
         .from('coupons')
-        .select('*')
+        .select(
+          'id, tenant_id, code, discount_type, discount_value, min_order_amount, max_discount_amount, valid_from, valid_until, max_uses, current_uses, is_active, created_at, updated_at',
+        )
         .eq('tenant_id', tenantId)
         .eq('code', code.toUpperCase().trim())
         .eq('is_active', true)
@@ -129,7 +131,9 @@ export function createCouponService(supabase: SupabaseClient) {
           is_active: true,
           current_uses: 0,
         })
-        .select('*')
+        .select(
+          'id, tenant_id, code, discount_type, discount_value, min_order_amount, max_discount_amount, valid_from, valid_until, max_uses, current_uses, is_active, created_at, updated_at',
+        )
         .single();
 
       if (error) {

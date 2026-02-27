@@ -167,11 +167,14 @@ export function useKitchenData({
   // ─── Initial load + polling fallback ────────────────────
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 15000); // Polling as fallback only
+    const interval = setInterval(loadOrders, 60000); // Polling as fallback only (realtime handles most updates)
     return () => clearInterval(interval);
   }, [loadOrders]);
 
   // ─── Realtime subscription via shared hook ─────────────
+  // Optimised: only full-refetch on INSERT (needs joined data like order_items).
+  // UPDATE: apply status change in-place (avoids re-fetching all orders).
+  // DELETE: remove order from state directly.
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `kds_orders_${tenantId}`,
     table: 'orders',
@@ -180,8 +183,28 @@ export function useKitchenData({
       playNotification();
       loadOrders();
     },
-    onUpdate: () => loadOrders(),
-    onDelete: () => loadOrders(),
+    onUpdate: (record) => {
+      const updated = record as Record<string, unknown>;
+      const id = updated.id as string | undefined;
+      const newStatus = updated.status as OrderStatus | undefined;
+      if (id && newStatus) {
+        // Optimistic in-place status update — no refetch needed
+        setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
+        setLastUpdate(new Date());
+      } else {
+        // Fallback: field we don't handle → full reload
+        loadOrders();
+      }
+    },
+    onDelete: (oldRecord) => {
+      const id = (oldRecord as Record<string, unknown>).id as string | undefined;
+      if (id) {
+        setOrders((prev) => prev.filter((o) => o.id !== id));
+        setLastUpdate(new Date());
+      } else {
+        loadOrders();
+      }
+    },
   });
 
   // ─── Status mutation ────────────────────────────────────

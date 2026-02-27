@@ -2,7 +2,7 @@
 
 import { Plus, Minus, Leaf, Flame, Utensils, ChevronDown, Wine, AlertTriangle } from 'lucide-react';
 import { useCart } from '@/contexts/CartContext';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 
@@ -95,7 +95,7 @@ export default function MenuItemCard({
   const currentPrice = (selectedVariant ? selectedVariant.price : item.price) + modifiersTotal;
 
   // Clé unique pour le panier (inclut option/variante/modifiers)
-  const getCartKey = () => {
+  const getCartKey = useCallback(() => {
     let key = item.id;
     if (selectedOption) key += `-opt-${selectedOption.name_fr}`;
     if (selectedVariant) key += `-var-${selectedVariant.variant_name_fr}`;
@@ -106,7 +106,7 @@ export default function MenuItemCard({
         .join(',')}`;
     }
     return key;
-  };
+  }, [item.id, selectedOption, selectedVariant, selectedModifiers]);
 
   // Trouver l'item dans le panier
   const cartItem = items.find((i) => {
@@ -116,7 +116,7 @@ export default function MenuItemCard({
     return itemKey === getCartKey();
   });
 
-  const handleAdd = () => {
+  const handleAdd = useCallback(() => {
     if (item.is_available === false) return;
 
     setIsAnimating(true);
@@ -151,7 +151,16 @@ export default function MenuItemCard({
 
     addToCart(cartItemData, restaurantId);
     setTimeout(() => setIsAnimating(false), 300);
-  };
+  }, [
+    item,
+    currentPrice,
+    category,
+    selectedOption,
+    selectedVariant,
+    selectedModifiers,
+    addToCart,
+    restaurantId,
+  ]);
 
   // Helper pour obtenir le nom traduit
   const getVariantName = (variant: ItemPriceVariant) => {
@@ -171,6 +180,42 @@ export default function MenuItemCard({
       prev.some((m) => m.id === mod.id) ? prev.filter((m) => m.id !== mod.id) : [...prev, mod],
     );
   };
+
+  const handleToggleVariantDropdown = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setShowVariantDropdown((prev) => !prev);
+  }, []);
+
+  const handleSelectVariant = useCallback((variant: ItemPriceVariant, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedVariant(variant);
+    setShowVariantDropdown(false);
+  }, []);
+
+  const handleDecrement = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateQuantity(getCartKey(), cartItem ? cartItem.quantity - 1 : 0);
+    },
+    [updateQuantity, getCartKey, cartItem],
+  );
+
+  const handleIncrement = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      updateQuantity(getCartKey(), cartItem ? cartItem.quantity + 1 : 1);
+    },
+    [updateQuantity, getCartKey, cartItem],
+  );
+
+  const handleAddClick = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      handleAdd();
+    },
+    [handleAdd],
+  );
+
   const isUnavailable = item.is_available === false;
   const hasValidImage =
     item.image_url &&
@@ -212,10 +257,7 @@ export default function MenuItemCard({
         {hasVariants && (
           <div className="mt-2 relative" ref={dropdownRef}>
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowVariantDropdown(!showVariantDropdown);
-              }}
+              onClick={handleToggleVariantDropdown}
               className="flex items-center gap-1 text-[12px] bg-gray-50 px-2 py-1 rounded-md"
               style={{ color: 'var(--tenant-primary)' }}
             >
@@ -230,11 +272,7 @@ export default function MenuItemCard({
                 {item.price_variants?.map((variant) => (
                   <button
                     key={variant.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedVariant(variant);
-                      setShowVariantDropdown(false);
-                    }}
+                    onClick={(e) => handleSelectVariant(variant, e)}
                     className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-50 ${selectedVariant?.id === variant.id ? 'font-bold bg-gray-50' : 'text-gray-700'}`}
                     style={
                       selectedVariant?.id === variant.id
@@ -300,10 +338,7 @@ export default function MenuItemCard({
           {cartItem ? (
             <div className="flex items-center bg-white rounded-full shadow-md border border-gray-200 p-0.5">
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(getCartKey(), cartItem.quantity - 1);
-                }}
+                onClick={handleDecrement}
                 className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white touch-manipulation`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
@@ -313,10 +348,7 @@ export default function MenuItemCard({
                 {cartItem.quantity}
               </span>
               <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(getCartKey(), cartItem.quantity + 1);
-                }}
+                onClick={handleIncrement}
                 className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all text-white touch-manipulation`}
                 style={{ backgroundColor: 'var(--tenant-primary)' }}
               >
@@ -325,10 +357,7 @@ export default function MenuItemCard({
             </div>
           ) : (
             <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAdd();
-              }}
+              onClick={handleAddClick}
               disabled={isUnavailable}
               className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-full bg-white border-2 border-gray-100 flex items-center justify-center shadow-md hover:border-current/30 active:scale-90 transition-all touch-manipulation ${isAnimating ? 'scale-110 bg-current/10' : ''}`}
               style={{ color: 'var(--tenant-primary)' }}

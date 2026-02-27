@@ -13,7 +13,7 @@ export async function POST(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 

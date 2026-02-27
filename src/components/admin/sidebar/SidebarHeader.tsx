@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 // ─── Types ──────────────────────────────────────────────
@@ -31,10 +32,11 @@ export function SidebarHeader({ basePath, tenant, roleLabel, isCollapsed }: Side
         className={cn('flex items-center group', isCollapsed ? 'justify-center' : 'gap-3')}
       >
         {tenant.logo_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <Image
             src={tenant.logo_url}
             alt={tenant.name}
+            width={isCollapsed ? 32 : 40}
+            height={isCollapsed ? 32 : 40}
             className={cn('rounded-lg object-contain', isCollapsed ? 'w-8 h-8' : 'w-10 h-10')}
           />
         ) : (

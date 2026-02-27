@@ -11,7 +11,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     const ip = getClientIp(request);
     const { success: allowed } = await assignmentLimiter.check(ip);
-    if (!allowed) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+    if (!allowed)
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
 
     const supabase = await createClient();
     const {

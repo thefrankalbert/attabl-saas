@@ -7,6 +7,11 @@ interface Category {
   name: string;
 }
 
+const OBSERVER_OPTIONS: IntersectionObserverInit = {
+  rootMargin: '-80px 0px -70% 0px',
+  threshold: [0, 0.1, 0.3, 0.5, 0.7, 1.0],
+};
+
 interface CategoryNavProps {
   categories: Category[];
 }
@@ -55,29 +60,23 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
   }, [activeCategory]);
 
   React.useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        // Trouver l'entrée avec le meilleur ratio d'intersection
-        let bestEntry = entries[0];
-        let bestRatio = 0;
+    const observer = new IntersectionObserver((entries) => {
+      // Trouver l'entrée avec le meilleur ratio d'intersection
+      let bestEntry = entries[0];
+      let bestRatio = 0;
 
-        entries.forEach((entry) => {
-          if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
-            bestRatio = entry.intersectionRatio;
-            bestEntry = entry;
-          }
-        });
-
-        if (bestEntry && bestEntry.isIntersecting) {
-          const id = bestEntry.target.id.replace('cat-', '');
-          setActiveCategory(id);
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > bestRatio) {
+          bestRatio = entry.intersectionRatio;
+          bestEntry = entry;
         }
-      },
-      {
-        rootMargin: '-80px 0px -70% 0px', // Ajusté pour mieux détecter les sections visibles
-        threshold: [0, 0.1, 0.3, 0.5, 0.7, 1.0], // Plusieurs seuils pour une détection plus précise
-      },
-    );
+      });
+
+      if (bestEntry && bestEntry.isIntersecting) {
+        const id = bestEntry.target.id.replace('cat-', '');
+        setActiveCategory(id);
+      }
+    }, OBSERVER_OPTIONS);
 
     categories.forEach((category) => {
       const element = document.getElementById(`cat-${category.id}`);

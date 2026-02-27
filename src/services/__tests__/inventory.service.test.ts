@@ -107,7 +107,9 @@ describe('InventoryService', () => {
       const result = await service.getIngredients('t1');
 
       expect(supabase.from).toHaveBeenCalledWith('ingredients');
-      expect(selectFn).toHaveBeenCalledWith('*');
+      expect(selectFn).toHaveBeenCalledWith(
+        'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+      );
       expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
       expect(eqIsActive).toHaveBeenCalledWith('is_active', true);
       expect(orderFn).toHaveBeenCalledWith('name');

@@ -21,5 +21,6 @@ export function useAssignments(tenantId: string) {
       return (data as TableAssignment[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 0,
   });
 }

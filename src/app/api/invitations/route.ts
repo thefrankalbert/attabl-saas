@@ -7,6 +7,7 @@ import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createInvitationService } from '@/services/invitation.service';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
+import { jsonWithCache } from '@/lib/cache-headers';
 
 export async function GET(request: Request) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 
@@ -49,7 +50,7 @@ export async function GET(request: Request) {
     const service = createInvitationService(adminClient);
     const invitations = await service.getPendingInvitations(tenantId);
 
-    return NextResponse.json({ invitations });
+    return jsonWithCache({ invitations }, 'dynamic');
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requetes. Reessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 
