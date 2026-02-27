@@ -1,15 +1,7 @@
 -- Performance indexes for critical query paths
 -- Applied: 2026-02-27
-
--- Index for active table assignments lookup (order.service.ts, assignment.service.ts)
-CREATE INDEX IF NOT EXISTS idx_table_assignments_active
-  ON table_assignments (tenant_id, table_id, ended_at, started_at DESC)
-  WHERE ended_at IS NULL;
-
--- Index for tenant-level active assignments
-CREATE INDEX IF NOT EXISTS idx_table_assignments_tenant_active
-  ON table_assignments (tenant_id, ended_at)
-  WHERE ended_at IS NULL;
+-- Note: table_assignments indexes removed (table does not exist yet)
+-- Note: menu_items index uses (tenant_id, category_id) - display_order column does not exist
 
 -- Index for stock movements listing (inventory.service.ts)
 CREATE INDEX IF NOT EXISTS idx_stock_movements_tenant_created
@@ -25,7 +17,7 @@ CREATE INDEX IF NOT EXISTS idx_order_items_order
 
 -- Index for menu items by tenant + category (menu page)
 CREATE INDEX IF NOT EXISTS idx_menu_items_tenant_category
-  ON menu_items (tenant_id, category_id, display_order);
+  ON menu_items (tenant_id, category_id);
 
 -- Index for ingredients stock alerts (notification.service.ts)
 CREATE INDEX IF NOT EXISTS idx_ingredients_stock_alert
