@@ -5,24 +5,78 @@ import type { NextRequest } from 'next/server';
 // Routes qui nécessitent une authentification
 const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard', '/sites'];
 
+// Routes publiques sur le domaine principal — aucun appel auth nécessaire (~50-100ms économisés)
+// Inclut : marketing, auth, webhooks, monitoring, assets statiques
+const SKIP_AUTH_PREFIXES = [
+  '/login',
+  '/signup',
+  '/auth',
+  '/api/webhooks',
+  '/monitoring',
+  '/contact',
+  '/_next',
+  '/favicon.ico',
+];
+
+// Routes marketing exactes (path = "/" ou commence par un segment marketing connu)
+const SKIP_AUTH_MARKETING_PREFIXES = [
+  '/pricing',
+  '/features',
+  '/restaurants',
+  '/hotels',
+  '/bars-cafes',
+  '/boulangeries',
+  '/dark-kitchens',
+  '/food-trucks',
+  '/nouveautes',
+  '/quick-service',
+];
+
+/**
+ * Vérifie si un chemin sur le domaine principal peut être servi sans aucun appel auth.
+ * Cela couvre les pages marketing, les pages auth (login/signup), les webhooks et le monitoring.
+ */
+function isPublicMainDomainPath(pathname: string): boolean {
+  // Page d'accueil marketing
+  if (pathname === '/') return true;
+
+  // Préfixes connus qui ne nécessitent jamais d'auth
+  if (SKIP_AUTH_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+
+  // Pages marketing (pricing, features, verticals, etc.)
+  if (SKIP_AUTH_MARKETING_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return true;
+
+  return false;
+}
+
 export async function proxy(request: NextRequest) {
-  // 1. Extract subdomain
+  // 1. Extract subdomain and pathname early for routing decisions
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);
+  const pathname = request.nextUrl.pathname;
 
-  // 2. Toujours rafraîchir la session en premier (pour éviter expiration des tokens)
+  // 2. OPTIMISATION : Sur le domaine principal (sans subdomain), les routes publiques
+  //    n'ont pas besoin de rafraîchir la session → skip createMiddlewareClient entièrement
+  if (!subdomain || subdomain === 'www') {
+    if (isPublicMainDomainPath(pathname)) {
+      return NextResponse.next();
+    }
+  }
+
+  // 3. Rafraîchir la session (createMiddlewareClient appelle getUser() en interne)
   const { response: sessionResponse, supabase } = await createMiddlewareClient(request);
 
-  // 3. Vérifier l'authentification pour les routes protégées
-  const pathname = request.nextUrl.pathname;
+  // 4. Vérifier l'authentification pour les routes protégées
+  //    createMiddlewareClient a déjà validé/rafraîchi le token via getUser().
+  //    On utilise getSession() pour lire le résultat sans re-appeler le serveur auth.
   const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
 
   if (isProtectedPath) {
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: { session },
+    } = await supabase.auth.getSession();
 
-    if (!user) {
+    if (!session?.user) {
       // Rediriger vers login avec URL de retour
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
@@ -35,7 +89,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 4. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
+  // 5. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
@@ -43,7 +97,7 @@ export async function proxy(request: NextRequest) {
     return sessionResponse;
   }
 
-  // 5. Si subdomain détecté, réécrire l'URL vers /sites/[site]
+  // 6. Si subdomain détecté, réécrire l'URL vers /sites/[site]
   // Le domaine principal (sans subdomain) sert les routes marketing, auth, super admin
   if (subdomain && subdomain !== 'www') {
     // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
@@ -74,7 +128,7 @@ export async function proxy(request: NextRequest) {
     return response;
   }
 
-  // 6. Pas de subdomain → retourner la réponse avec session rafraîchie
+  // 7. Pas de subdomain → retourner la réponse avec session rafraîchie
   return sessionResponse;
 }
 

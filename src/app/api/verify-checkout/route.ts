@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { verifyCheckoutLimiter, getClientIp } from '@/lib/rate-limit';
+import { jsonWithCache } from '@/lib/cache-headers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -19,7 +20,7 @@ export async function GET(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 
@@ -84,11 +85,14 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 
-    return NextResponse.json({
-      success: true,
-      slug: tenant.slug,
-      status: session.payment_status,
-    });
+    return jsonWithCache(
+      {
+        success: true,
+        slug: tenant.slug,
+        status: session.payment_status,
+      },
+      'dynamic',
+    );
   } catch (error: unknown) {
     logger.error('Verify checkout error', error);
     const errorMessage = error instanceof Error ? error.message : 'Erreur serveur';

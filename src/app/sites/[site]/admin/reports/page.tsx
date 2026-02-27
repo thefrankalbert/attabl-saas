@@ -1,7 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import ReportsClient from '@/components/admin/ReportsClient';
+import dynamic from 'next/dynamic';
 import { AlertCircle } from 'lucide-react';
+
+const ReportsClient = dynamic(() => import('@/components/admin/ReportsClient'), {
+  loading: () => (
+    <div className="p-12 text-center text-neutral-500 animate-pulse">
+      Chargement des rapports...
+    </div>
+  ),
+});
 
 export const revalidate = 300;
 

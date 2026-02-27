@@ -1,6 +1,6 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
@@ -66,9 +66,8 @@ export async function updateTenantSettings(formData: FormData) {
       newData: parseResult.data as Record<string, unknown>,
     });
 
-    // 4. Revalidate caches — tenant routes are under /sites/[site]/admin
-    revalidatePath('/sites', 'layout');
-    revalidatePath('/', 'layout');
+    // 4. Revalidate cached tenant config (used by site + admin layouts)
+    revalidateTag('tenant-config', { expire: 0 });
 
     return { success: true };
   } catch (error) {

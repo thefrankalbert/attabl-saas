@@ -29,5 +29,6 @@ export function useTenantSettings(tenantId: string) {
       return data as TenantSettings;
     },
     enabled: !!tenantId,
+    staleTime: 15 * 60 * 1000,
   });
 }

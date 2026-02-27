@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
-        { status: 429 },
+        { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
 
@@ -178,7 +178,7 @@ export async function GET(request: Request) {
 
     // 4. Generate blank template via service
     const importService = createExcelImportService(supabase);
-    const templateBuffer = importService.generateTemplate();
+    const templateBuffer = await importService.generateTemplate();
 
     // 5. Return as downloadable Excel file
     const bytes = new Uint8Array(templateBuffer);

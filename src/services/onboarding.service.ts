@@ -270,7 +270,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       // Get onboarding progress
       const { data: progress } = await supabase
         .from('onboarding_progress')
-        .select('*')
+        .select('step, completed')
         .eq('tenant_id', tenant.id)
         .single();
 

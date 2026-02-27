@@ -24,5 +24,6 @@ export function useIngredients(tenantId: string) {
       return (data as Ingredient[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 2 * 60 * 1000,
   });
 }

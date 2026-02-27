@@ -29,5 +29,6 @@ export function useOrders(tenantId: string, statusFilter?: string) {
       return (data as Order[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 0,
   });
 }

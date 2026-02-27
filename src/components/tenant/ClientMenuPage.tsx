@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
@@ -15,7 +16,12 @@ import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
 import CartSummary from '@/components/tenant/CartSummary';
 import TablePicker from '@/components/tenant/TablePicker';
-import QRScanner, { QRScanResult } from '@/components/tenant/QRScanner';
+import type { QRScanResult } from '@/components/tenant/QRScanner';
+
+const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
+  ssr: false,
+  loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-lg" />,
+});
 
 interface ClientMenuPageProps {
   tenant: Tenant;

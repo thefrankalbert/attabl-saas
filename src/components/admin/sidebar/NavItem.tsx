@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SidebarTooltip } from './SidebarTooltip';
 import type { LucideIcon } from 'lucide-react';
@@ -33,6 +34,7 @@ export function NavItem({
   isSubItem,
 }: NavItemProps) {
   const accentColor = primaryColor || '#000000';
+  const prefersReduced = useReducedMotion();
 
   return (
     <SidebarTooltip label={label} show={isCollapsed}>
@@ -50,9 +52,13 @@ export function NavItem({
         )}
       >
         {isActive && (
-          <div
+          <motion.div
+            layoutId={isSubItem ? undefined : 'sidebar-active-indicator'}
             className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
             style={{ backgroundColor: accentColor }}
+            transition={
+              prefersReduced ? { duration: 0 } : { type: 'spring', stiffness: 350, damping: 30 }
+            }
           />
         )}
         <Icon

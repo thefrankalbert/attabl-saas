@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
+import { jsonWithCache } from '@/lib/cache-headers';
 
 /**
  * GET /api/invoices
@@ -14,7 +15,10 @@ export async function GET(request: Request) {
     const ip = getClientIp(request);
     const { success: allowed } = await checkoutLimiter.check(ip);
     if (!allowed) {
-      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
     }
 
     const supabase = await createClient();
@@ -45,7 +49,7 @@ export async function GET(request: Request) {
 
     if (!customerId) {
       // No Stripe customer yet — return empty list
-      return NextResponse.json({ invoices: [] });
+      return jsonWithCache({ invoices: [] }, 'dynamic');
     }
 
     // Fetch invoices from Stripe
@@ -68,7 +72,7 @@ export async function GET(request: Request) {
       invoice_pdf: inv.invoice_pdf,
     }));
 
-    return NextResponse.json({ invoices });
+    return jsonWithCache({ invoices }, 'dynamic');
   } catch (error: unknown) {
     logger.error('Failed to fetch invoices', error);
     return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });

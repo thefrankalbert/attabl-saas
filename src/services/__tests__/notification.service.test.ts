@@ -5,7 +5,7 @@ import { checkAndNotifyLowStock } from '../notification.service';
 const mockFrom = vi.fn();
 const mockAuth = {
   admin: {
-    getUserById: vi.fn(),
+    listUsers: vi.fn(),
   },
 };
 const mockSupabase = {
@@ -102,8 +102,8 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.getUserById.mockResolvedValue({
-      data: { user: { email: 'admin@test.com' } },
+    mockAuth.admin.listUsers.mockResolvedValue({
+      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
     });
     mockSendStockAlertEmail.mockResolvedValue(true);
 
@@ -180,8 +180,8 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.getUserById.mockResolvedValue({
-      data: { user: { email: 'admin@test.com' } },
+    mockAuth.admin.listUsers.mockResolvedValue({
+      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
     });
     mockSendStockAlertEmail.mockResolvedValue(false);
 
@@ -230,9 +230,14 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.getUserById
-      .mockResolvedValueOnce({ data: { user: { email: 'admin1@test.com' } } })
-      .mockResolvedValueOnce({ data: { user: { email: 'admin2@test.com' } } });
+    mockAuth.admin.listUsers.mockResolvedValue({
+      data: {
+        users: [
+          { id: 'user-1', email: 'admin1@test.com' },
+          { id: 'user-2', email: 'admin2@test.com' },
+        ],
+      },
+    });
     mockSendStockAlertEmail.mockResolvedValue(true);
 
     await checkAndNotifyLowStock('tenant-1');
@@ -288,8 +293,8 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.getUserById.mockResolvedValue({
-      data: { user: { email: 'admin@test.com' } },
+    mockAuth.admin.listUsers.mockResolvedValue({
+      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
     });
     mockSendStockAlertEmail.mockResolvedValue(true);
 

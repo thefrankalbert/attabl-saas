@@ -7,7 +7,11 @@ export async function PUT(request: Request) {
   try {
     const ip = getClientIp(request);
     const { success: allowed } = await permissionLimiter.check(ip);
-    if (!allowed) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+    if (!allowed)
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
 
     const supabase = await createClient();
     const {
@@ -78,7 +82,11 @@ export async function DELETE(request: Request) {
   try {
     const ip = getClientIp(request);
     const { success: allowed } = await permissionLimiter.check(ip);
-    if (!allowed) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+    if (!allowed)
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
 
     const supabase = await createClient();
     const {

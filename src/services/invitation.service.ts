@@ -89,7 +89,9 @@ export function createInvitationService(supabase: SupabaseClient) {
           expires_at: expiresAt,
           status: 'pending',
         })
-        .select()
+        .select(
+          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+        )
         .single();
 
       if (error || !invitation) {
@@ -211,7 +213,9 @@ export function createInvitationService(supabase: SupabaseClient) {
         .from('invitations')
         .update({ token, expires_at: expiresAt, status: 'pending' })
         .eq('id', invitationId)
-        .select()
+        .select(
+          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+        )
         .single();
 
       if (error || !invitation) {
@@ -228,7 +232,9 @@ export function createInvitationService(supabase: SupabaseClient) {
     async getPendingInvitations(tenantId: string): Promise<Invitation[]> {
       const { data, error } = await supabase
         .from('invitations')
-        .select('*')
+        .select(
+          'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
+        )
         .eq('tenant_id', tenantId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });

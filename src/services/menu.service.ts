@@ -19,7 +19,7 @@ export function createMenuService(supabase: SupabaseClient) {
       const { data, error } = await supabase
         .from('menus')
         .select(
-          '*, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
         )
         .eq('tenant_id', tenantId)
         .is('parent_menu_id', null)
@@ -39,7 +39,9 @@ export function createMenuService(supabase: SupabaseClient) {
     async getAllMenusFlat(tenantId: string) {
       const { data, error } = await supabase
         .from('menus')
-        .select('*')
+        .select(
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+        )
         .eq('tenant_id', tenantId)
         .order('display_order', { ascending: true });
 
@@ -59,7 +61,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .from('menus')
         .select(
           `
-          *,
+          id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at,
           venue:venues(id, name, slug),
           children:menus!parent_menu_id(
             id, name, name_en, slug, description, is_active, display_order
@@ -83,7 +85,7 @@ export function createMenuService(supabase: SupabaseClient) {
       const { data, error } = await supabase
         .from('menus')
         .select(
-          '*, children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
         )
         .eq('tenant_id', tenantId)
         .eq('slug', slug)
@@ -131,7 +133,9 @@ export function createMenuService(supabase: SupabaseClient) {
             is_active: input.is_active ?? true,
             display_order: input.display_order ?? 0,
           })
-          .select()
+          .select(
+            'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+          )
           .single();
 
         if (error) {
@@ -157,7 +161,9 @@ export function createMenuService(supabase: SupabaseClient) {
           is_active: input.is_active ?? true,
           display_order: input.display_order ?? 0,
         })
-        .select()
+        .select(
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+        )
         .single();
 
       if (error) {
@@ -212,7 +218,9 @@ export function createMenuService(supabase: SupabaseClient) {
         .from('menus')
         .update(payload)
         .eq('id', id)
-        .select()
+        .select(
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+        )
         .single();
 
       if (error) {

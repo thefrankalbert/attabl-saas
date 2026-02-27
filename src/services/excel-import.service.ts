@@ -1,5 +1,4 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import * as XLSX from 'xlsx';
 import { z } from 'zod';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
@@ -211,7 +210,10 @@ export function createExcelImportService(supabase: SupabaseClient) {
      * Parses an Excel ArrayBuffer into validated rows.
      * Collects errors per row instead of throwing on the first invalid row.
      */
-    parseExcel(buffer: ArrayBuffer): { rows: ParsedRow[]; errors: ImportRowError[] } {
+    async parseExcel(
+      buffer: ArrayBuffer,
+    ): Promise<{ rows: ParsedRow[]; errors: ImportRowError[] }> {
+      const XLSX = await import('xlsx');
       const workbook = XLSX.read(buffer, { type: 'array' });
       const sheetName = workbook.SheetNames[0];
 
@@ -521,7 +523,7 @@ export function createExcelImportService(supabase: SupabaseClient) {
     ): Promise<ImportResult> {
       logger.info('Starting Excel menu import', { tenantId, menuId });
 
-      const { rows, errors: parseErrors } = this.parseExcel(buffer);
+      const { rows, errors: parseErrors } = await this.parseExcel(buffer);
 
       if (rows.length === 0 && parseErrors.length > 0) {
         return {
@@ -550,7 +552,8 @@ export function createExcelImportService(supabase: SupabaseClient) {
      * Generates a blank Excel template with correct headers and example rows.
      * Returns the file as a Buffer ready for download.
      */
-    generateTemplate(): Buffer {
+    async generateTemplate(): Promise<Buffer> {
+      const XLSX = await import('xlsx');
       const headers = [
         'Category',
         'Category EN',

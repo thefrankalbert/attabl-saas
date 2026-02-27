@@ -1,6 +1,9 @@
 import { withSentryConfig } from '@sentry/nextjs';
+import withBundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
 import withPWAInit from '@ducanh2912/next-pwa';
+
+const analyze = withBundleAnalyzer({ enabled: process.env.ANALYZE === 'true' });
 
 const withPWA = withPWAInit({
   dest: 'public',
@@ -51,16 +54,18 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.stripe.com https://*.sentry.io",
+              "script-src 'self' 'unsafe-inline' https://*.stripe.com https://*.sentry.io",
               "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co",
+              "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com",
               "font-src 'self'",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io",
               'frame-src https://*.stripe.com',
-              "worker-src 'self'",
+              "worker-src 'self' blob:",
               "manifest-src 'self'",
               "object-src 'none'",
               "base-uri 'self'",
+              "form-action 'self'",
+              'upgrade-insecure-requests',
             ].join('; '),
           },
         ],
@@ -71,7 +76,7 @@ const nextConfig = {
   // async rewrites() { ... }
 };
 
-export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
+export default withSentryConfig(analyze(withPWA(withNextIntl(nextConfig))), {
   // For all available options, see:
   // https://github.com/getsentry/sentry-webpack-plugin#options
 

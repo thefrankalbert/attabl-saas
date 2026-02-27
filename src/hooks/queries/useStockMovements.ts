@@ -24,5 +24,6 @@ export function useStockMovements(tenantId: string) {
       return (data as StockMovement[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 2 * 60 * 1000,
   });
 }

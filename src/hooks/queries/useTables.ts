@@ -35,5 +35,6 @@ export function useTables(tenantId: string, options?: { zoneId?: string; activeO
       return (data as Table[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 10 * 60 * 1000,
   });
 }

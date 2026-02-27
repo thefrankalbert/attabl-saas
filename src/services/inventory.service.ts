@@ -22,7 +22,9 @@ export function createInventoryService(supabase: SupabaseClient) {
     async getIngredients(tenantId: string): Promise<Ingredient[]> {
       const { data, error } = await supabase
         .from('ingredients')
-        .select('*')
+        .select(
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+        )
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
         .order('name');
@@ -43,7 +45,9 @@ export function createInventoryService(supabase: SupabaseClient) {
           cost_per_unit: input.cost_per_unit ?? 0,
           category: input.category || null,
         })
-        .select()
+        .select(
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+        )
         .single();
 
       if (error) throw new ServiceError('Erreur création ingrédient', 'INTERNAL', error);
@@ -60,7 +64,9 @@ export function createInventoryService(supabase: SupabaseClient) {
         .update(input)
         .eq('id', ingredientId)
         .eq('tenant_id', tenantId)
-        .select()
+        .select(
+          'id, tenant_id, name, unit, current_stock, min_stock_alert, cost_per_unit, category, is_active, created_at, updated_at',
+        )
         .single();
 
       if (error) throw new ServiceError('Erreur mise à jour ingrédient', 'INTERNAL', error);

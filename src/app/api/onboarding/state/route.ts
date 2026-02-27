@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { jsonWithCache } from '@/lib/cache-headers';
 
 export async function GET() {
   try {
@@ -21,7 +22,7 @@ export async function GET() {
     const onboardingService = createOnboardingService(supabase);
     const state = await onboardingService.getState(user.id);
 
-    return NextResponse.json(state);
+    return jsonWithCache(state, 'dynamic');
   } catch (error) {
     if (error instanceof ServiceError) {
       return NextResponse.json(

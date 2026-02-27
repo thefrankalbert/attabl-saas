@@ -11,7 +11,9 @@ export function createSupplierService(supabase: SupabaseClient) {
     async getSuppliers(tenantId: string): Promise<Supplier[]> {
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
+        .select(
+          'id, tenant_id, name, contact_name, phone, email, address, notes, is_active, created_at, updated_at',
+        )
         .eq('tenant_id', tenantId)
         .order('name');
 
@@ -22,7 +24,9 @@ export function createSupplierService(supabase: SupabaseClient) {
     async getActiveSuppliers(tenantId: string): Promise<Supplier[]> {
       const { data, error } = await supabase
         .from('suppliers')
-        .select('*')
+        .select(
+          'id, tenant_id, name, contact_name, phone, email, address, notes, is_active, created_at, updated_at',
+        )
         .eq('tenant_id', tenantId)
         .eq('is_active', true)
         .order('name');
@@ -43,7 +47,9 @@ export function createSupplierService(supabase: SupabaseClient) {
           address: input.address || null,
           notes: input.notes || null,
         })
-        .select()
+        .select(
+          'id, tenant_id, name, contact_name, phone, email, address, notes, is_active, created_at, updated_at',
+        )
         .single();
 
       if (error) throw new ServiceError('Erreur création fournisseur', 'INTERNAL', error);
@@ -60,7 +66,9 @@ export function createSupplierService(supabase: SupabaseClient) {
         .update(input)
         .eq('id', supplierId)
         .eq('tenant_id', tenantId)
-        .select()
+        .select(
+          'id, tenant_id, name, contact_name, phone, email, address, notes, is_active, created_at, updated_at',
+        )
         .single();
 
       if (error) throw new ServiceError('Erreur mise à jour fournisseur', 'INTERNAL', error);

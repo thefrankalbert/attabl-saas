@@ -6,12 +6,17 @@ import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createAssignmentSchema } from '@/lib/validations/assignment.schema';
+import { jsonWithCache } from '@/lib/cache-headers';
 
 export async function GET(request: Request) {
   try {
     const ip = getClientIp(request);
     const { success: allowed } = await assignmentLimiter.check(ip);
-    if (!allowed) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+    if (!allowed)
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
 
     const supabase = await createClient();
     const {
@@ -32,7 +37,7 @@ export async function GET(request: Request) {
 
     const service = createAssignmentService(supabase);
     const assignments = await service.getActiveAssignments(tenant.id);
-    return NextResponse.json(assignments);
+    return jsonWithCache(assignments, 'realtime');
   } catch (error) {
     if (error instanceof ServiceError)
       return NextResponse.json(
@@ -48,7 +53,11 @@ export async function POST(request: Request) {
   try {
     const ip = getClientIp(request);
     const { success: allowed } = await assignmentLimiter.check(ip);
-    if (!allowed) return NextResponse.json({ error: 'Trop de requêtes' }, { status: 429 });
+    if (!allowed)
+      return NextResponse.json(
+        { error: 'Trop de requêtes' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
 
     const supabase = await createClient();
     const {

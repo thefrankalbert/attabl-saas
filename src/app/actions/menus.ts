@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { revalidatePath } from 'next/cache';
+import { revalidateTag } from 'next/cache';
 import type { AdminRole } from '@/types/admin.types';
 import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
 import { createMenuService } from '@/services/menu.service';
@@ -34,7 +34,7 @@ async function checkMenuPermissions(
 
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('*')
+    .select('id, user_id, tenant_id, role, is_active, custom_permissions')
     .eq('user_id', user.id)
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
@@ -75,7 +75,13 @@ export async function actionCreateMenu(
 
   try {
     // Check plan limits
-    const { data: tenant } = await supabase.from('tenants').select('*').eq('id', tenantId).single();
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select(
+        'id, name, slug, is_active, created_at, subscription_plan, subscription_status, trial_ends_at',
+      )
+      .eq('id', tenantId)
+      .single();
 
     if (tenant) {
       const enforcement = createPlanEnforcementService(supabase);
@@ -99,7 +105,7 @@ export async function actionCreateMenu(
       newData: parsed.data,
     });
 
-    revalidatePath(`/sites/[site]/admin/menus`, 'page');
+    revalidateTag('menus', { expire: 0 });
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -153,7 +159,7 @@ export async function actionUpdateMenu(
       newData: parsed.data,
     });
 
-    revalidatePath(`/sites/[site]/admin/menus`, 'page');
+    revalidateTag('menus', { expire: 0 });
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -188,7 +194,7 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
     });
     audit.log({ action: 'delete', entityType: 'menu', entityId: menuId });
 
-    revalidatePath(`/sites/[site]/admin/menus`, 'page');
+    revalidateTag('menus', { expire: 0 });
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -212,7 +218,7 @@ export async function actionReorderMenus(
     const menuService = createMenuService(supabase);
     await menuService.reorderMenus(tenantId, orderedIds);
 
-    revalidatePath(`/sites/[site]/admin/menus`, 'page');
+    revalidateTag('menus', { expire: 0 });
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {

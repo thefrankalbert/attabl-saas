@@ -36,5 +36,6 @@ export function useCategories(tenantId: string, options?: { withItemCount?: bool
       return (data as unknown as CategoryWithCount[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 10 * 60 * 1000,
   });
 }

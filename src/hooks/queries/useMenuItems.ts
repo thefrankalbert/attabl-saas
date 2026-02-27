@@ -60,5 +60,6 @@ export function useMenuItems(
       return (data as unknown as MenuItemWithCategory[]) ?? [];
     },
     enabled: !!tenantId,
+    staleTime: 3 * 60 * 1000,
   });
 }
