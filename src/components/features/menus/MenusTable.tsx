@@ -1,5 +1,6 @@
 'use client';
 
+import { useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -11,7 +12,20 @@ import {
   ToggleLeft,
   ToggleRight,
   Building2,
+  Globe,
+  GripVertical,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -38,21 +52,62 @@ interface MenusTableProps {
 interface MenuCardProps {
   menu: Menu;
   tenantSlug: string;
-  index: number;
+  venues: Venue[];
   onEdit: () => void;
   onDelete: () => void;
   onToggle: () => void;
   onAddChild: () => void;
-  onReorder: (from: number, to: number) => void;
 }
 
 // ─── MenuCard Component ─────────────────────────────────
 
-function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: MenuCardProps) {
+function MenuCard({
+  menu,
+  tenantSlug,
+  venues,
+  onEdit,
+  onDelete,
+  onToggle,
+  onAddChild,
+}: MenuCardProps) {
   const t = useTranslations('menus');
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: menu.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
   return (
-    <div className="bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        'bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group',
+        isDragging && 'shadow-lg border-[#CCFF00]',
+      )}
+    >
       <div className="flex items-center gap-4 p-4">
+        <button
+          type="button"
+          ref={setActivatorNodeRef}
+          className="touch-none cursor-grab active:cursor-grabbing focus:outline-none"
+          aria-label="Drag to reorder"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="w-4 h-4 text-neutral-300" />
+        </button>
         <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center flex-shrink-0">
           <Folder className="w-5 h-5 text-neutral-500" />
         </div>
@@ -73,6 +128,15 @@ function MenuCard({ menu, tenantSlug, onEdit, onDelete, onToggle, onAddChild }: 
               <Badge variant="outline" className="text-[10px] gap-1">
                 <Building2 className="w-2.5 h-2.5" />
                 {menu.venue.name}
+              </Badge>
+            )}
+            {!menu.venue_id && venues.length > 0 && (
+              <Badge
+                variant="outline"
+                className="text-[10px] gap-1 border-lime-200 text-lime-700 bg-lime-50"
+              >
+                <Globe className="w-2.5 h-2.5" />
+                {t('sharedMenuBadge')}
               </Badge>
             )}
             {menu.children && menu.children.length > 0 && (
@@ -181,8 +245,38 @@ export default function MenusTable({
 }: MenusTableProps) {
   const t = useTranslations('menus');
 
+  // @dnd-kit sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor),
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+
+      if (!over || active.id === over.id) {
+        return;
+      }
+
+      const oldIndex = menus.findIndex((m) => m.id === active.id);
+      const newIndex = menus.findIndex((m) => m.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        return;
+      }
+
+      onReorder(oldIndex, newIndex);
+    },
+    [menus, onReorder],
+  );
+
   return (
-    <>
+    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
       {/* Loading state */}
       {loading && (
         <div className="space-y-3">
@@ -201,19 +295,23 @@ export default function MenusTable({
           <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
             {t('independentMenus')}
           </p>
-          {filteredStandalone.map((menu, index) => (
-            <MenuCard
-              key={menu.id}
-              menu={menu}
-              tenantSlug={tenantSlug}
-              index={index}
-              onEdit={() => onEdit(menu)}
-              onDelete={() => onDelete(menu)}
-              onToggle={() => onToggle(menu)}
-              onAddChild={() => onAddChild(menu.id)}
-              onReorder={onReorder}
-            />
-          ))}
+          <SortableContext
+            items={filteredStandalone.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {filteredStandalone.map((menu) => (
+              <MenuCard
+                key={menu.id}
+                menu={menu}
+                tenantSlug={tenantSlug}
+                venues={venues}
+                onEdit={() => onEdit(menu)}
+                onDelete={() => onDelete(menu)}
+                onToggle={() => onToggle(menu)}
+                onAddChild={() => onAddChild(menu.id)}
+              />
+            ))}
+          </SortableContext>
         </div>
       )}
 
@@ -233,19 +331,23 @@ export default function MenusTable({
                 {venue?.name || t('space')}
               </p>
             </div>
-            {filtered.map((menu, index) => (
-              <MenuCard
-                key={menu.id}
-                menu={menu}
-                tenantSlug={tenantSlug}
-                index={index}
-                onEdit={() => onEdit(menu)}
-                onDelete={() => onDelete(menu)}
-                onToggle={() => onToggle(menu)}
-                onAddChild={() => onAddChild(menu.id)}
-                onReorder={onReorder}
-              />
-            ))}
+            <SortableContext
+              items={filtered.map((m) => m.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {filtered.map((menu) => (
+                <MenuCard
+                  key={menu.id}
+                  menu={menu}
+                  tenantSlug={tenantSlug}
+                  venues={venues}
+                  onEdit={() => onEdit(menu)}
+                  onDelete={() => onDelete(menu)}
+                  onToggle={() => onToggle(menu)}
+                  onAddChild={() => onAddChild(menu.id)}
+                />
+              ))}
+            </SortableContext>
           </div>
         );
       })}
@@ -263,6 +365,6 @@ export default function MenusTable({
           </Button>
         </div>
       )}
-    </>
+    </DndContext>
   );
 }

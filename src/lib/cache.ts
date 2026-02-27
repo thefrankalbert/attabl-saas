@@ -18,7 +18,7 @@ export const getCachedTenant = unstable_cache(
     const { data, error } = await supabase
       .from('tenants')
       .select(
-        'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, font_family, created_at',
+        'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, font_family, custom_domain, created_at',
       )
       .eq('slug', slug)
       .single();
@@ -32,6 +32,26 @@ export const getCachedTenant = unstable_cache(
   },
   ['tenant-config'],
   { revalidate: 60, tags: ['tenant-config'] },
+);
+
+/**
+ * Cached tenant lookup by custom domain.
+ * Used by middleware when the hostname doesn't match *.attabl.com
+ */
+export const getCachedTenantByDomain = unstable_cache(
+  async (domain: string) => {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('slug')
+      .eq('custom_domain', domain)
+      .single();
+
+    if (error || !data) return null;
+    return data.slug;
+  },
+  ['tenant-domain'],
+  { revalidate: 300, tags: ['tenant-config'] },
 );
 
 /**

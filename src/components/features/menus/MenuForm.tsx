@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2 } from 'lucide-react';
+import { Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -40,6 +40,9 @@ export default function MenuForm({
   const [formVenueId, setFormVenueId] = useState<string | null>(editingMenu?.venue_id ?? null);
   const [formParentMenuId, setFormParentMenuId] = useState<string | null>(
     editingMenu?.parent_menu_id ?? parentMenuId ?? null,
+  );
+  const [formIsShared, setFormIsShared] = useState<boolean>(
+    editingMenu ? !editingMenu.venue_id : false,
   );
   const [formIsActive, setFormIsActive] = useState(editingMenu?.is_active ?? true);
   const [saving, setSaving] = useState(false);
@@ -123,8 +126,30 @@ export default function MenuForm({
         </div>
       </div>
 
+      {venues.length > 0 && (
+        <div className="flex items-center gap-3 p-3 bg-lime-50/50 border border-lime-100 rounded-lg">
+          <input
+            type="checkbox"
+            id="menu-shared"
+            checked={formIsShared}
+            onChange={(e) => {
+              setFormIsShared(e.target.checked);
+              if (e.target.checked) setFormVenueId(null);
+            }}
+            className="rounded border-neutral-200 text-lime-500 focus:ring-lime-400"
+          />
+          <Globe className="w-4 h-4 text-lime-600 flex-shrink-0" />
+          <div>
+            <Label htmlFor="menu-shared" className="text-neutral-900 font-medium">
+              {t('sharedMenu')}
+            </Label>
+            <p className="text-xs text-neutral-500 mt-0.5">{t('sharedMenuHint')}</p>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
+        <div className={`space-y-1.5 ${formIsShared ? 'opacity-50' : ''}`}>
           <Label htmlFor="menu-venue" className="text-neutral-900">
             {t('spaceOptional')}
           </Label>
@@ -132,7 +157,8 @@ export default function MenuForm({
             id="menu-venue"
             value={formVenueId || ''}
             onChange={(e) => setFormVenueId(e.target.value || null)}
-            className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
+            disabled={formIsShared}
+            className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400 disabled:cursor-not-allowed disabled:bg-neutral-50"
           >
             <option value="">{t('noSpaceIndependent')}</option>
             {venues.map((v) => (

@@ -1,10 +1,22 @@
 'use client';
 
-import { Loader2, Save, Store, Palette, MapPin, Bell, Receipt, Globe, Shield } from 'lucide-react';
+import {
+  Loader2,
+  Save,
+  Store,
+  Palette,
+  MapPin,
+  Bell,
+  Receipt,
+  Globe,
+  Shield,
+  Link2,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
+import { updateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
 import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 import { useTranslations } from 'next-intl';
@@ -16,6 +28,7 @@ import SettingsBranding from '@/components/features/settings/SettingsBranding';
 import SettingsBilling from '@/components/features/settings/SettingsBilling';
 import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
+import SettingsDomain from '@/components/features/settings/SettingsDomain';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -26,6 +39,7 @@ type SettingsTab =
   | 'sounds'
   | 'security'
   | 'contact'
+  | 'domain'
   | 'language';
 
 interface SettingsFormProps {
@@ -39,6 +53,7 @@ const TAB_CONFIG: { key: SettingsTab; icon: React.ElementType; labelKey: string 
   { key: 'sounds', icon: Bell, labelKey: 'tabSounds' },
   { key: 'security', icon: Shield, labelKey: 'tabSecurity' },
   { key: 'contact', icon: MapPin, labelKey: 'tabContact' },
+  { key: 'domain', icon: Link2, labelKey: 'tabDomain' },
   { key: 'language', icon: Globe, labelKey: 'tabLanguage' },
 ];
 
@@ -126,6 +141,22 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Contact tab */}
             <SettingsContact form={form} t={t} />
+
+            {/* Domain tab */}
+            <SettingsDomain
+              currentDomain={tenant.custom_domain || null}
+              tenantSlug={tenant.slug}
+              onSave={async (domain) => {
+                const formData = new FormData();
+                // Pass required fields from current form values
+                formData.append('name', form.getValues('name'));
+                formData.append('primaryColor', form.getValues('primaryColor'));
+                formData.append('secondaryColor', form.getValues('secondaryColor'));
+                formData.append('customDomain', domain || '');
+                const result = await updateTenantSettings(formData);
+                if (!result.success) throw new Error(result.error);
+              }}
+            />
 
             {/* Language tab */}
             <TabsContent value="language" className="mt-0">

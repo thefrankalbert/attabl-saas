@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Plus, FileSpreadsheet, Search } from 'lucide-react';
+import { Plus, FileSpreadsheet, FileText, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
@@ -11,6 +11,7 @@ import { useMenusData } from '@/hooks/useMenusData';
 import type { MenuFormData } from '@/hooks/useMenusData';
 import MenuForm from '@/components/features/menus/MenuForm';
 import MenuImportExcel from '@/components/features/menus/MenuImportExcel';
+import MenuImportPDF from '@/components/features/menus/MenuImportPDF';
 import MenusTable from '@/components/features/menus/MenusTable';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Menu, Venue } from '@/types/admin.types';
@@ -33,6 +34,7 @@ export default function MenusClient({
   // Modal state
   const [showModal, setShowModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  const [showPdfImportModal, setShowPdfImportModal] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
   const [parentMenuId, setParentMenuId] = useState<string | null>(null);
 
@@ -102,6 +104,14 @@ export default function MenusClient({
             >
               <FileSpreadsheet className="w-4 h-4" />
               {t('importExcel')}
+            </Button>
+            <Button
+              onClick={() => setShowPdfImportModal(true)}
+              variant="outline"
+              className="gap-2 rounded-xl"
+            >
+              <FileText className="w-4 h-4" />
+              {t('importPdf')}
             </Button>
             <Button
               onClick={() => openNewMenuModal()}
@@ -191,6 +201,22 @@ export default function MenusClient({
               menus={menus}
               onImportComplete={loadMenus}
               onCancel={() => setShowImportModal(false)}
+            />
+          )}
+        </AdminModal>
+
+        {/* Import PDF Modal */}
+        <AdminModal
+          isOpen={showPdfImportModal}
+          onClose={() => setShowPdfImportModal(false)}
+          title={t('importPdfTitle')}
+          size="lg"
+        >
+          {showPdfImportModal && (
+            <MenuImportPDF
+              menus={menus}
+              onImportComplete={loadMenus}
+              onCancel={() => setShowPdfImportModal(false)}
             />
           )}
         </AdminModal>

@@ -57,6 +57,7 @@ export interface SettingsTenant {
   service_charge_rate?: number;
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
+  custom_domain?: string | null;
 }
 
 export interface UseSettingsDataReturn {
