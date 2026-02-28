@@ -4,7 +4,8 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 // Routes qui nécessitent une authentification
-const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard', '/sites'];
+// Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
+const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard'];
 
 // Routes publiques sur le domaine principal — aucun appel auth nécessaire (~50-100ms économisés)
 // Inclut : marketing, auth, webhooks, monitoring, assets statiques
@@ -13,10 +14,12 @@ const SKIP_AUTH_PREFIXES = [
   '/signup',
   '/auth',
   '/api/webhooks',
+  '/api/orders',
   '/monitoring',
   '/contact',
   '/_next',
   '/favicon.ico',
+  '/checkout',
 ];
 
 // Routes marketing exactes (path = "/" ou commence par un segment marketing connu)
@@ -60,8 +63,9 @@ export async function proxy(request: NextRequest) {
   const hostWithoutPort = hostname.split(':')[0];
   const isMainDomain = hostWithoutPort === 'attabl.com' || hostWithoutPort === 'www.attabl.com';
   const isLocalhost = hostWithoutPort === 'localhost' || hostWithoutPort.endsWith('.localhost');
+  const isVercelPreview = hostWithoutPort.endsWith('.vercel.app');
 
-  if (!subdomain && !isMainDomain && !isLocalhost) {
+  if (!subdomain && !isMainDomain && !isLocalhost && !isVercelPreview) {
     // Might be a custom domain (e.g., theblutable.com)
     const tenantSlug = await getCachedTenantByDomain(hostWithoutPort);
     if (tenantSlug) {
@@ -98,7 +102,11 @@ export async function proxy(request: NextRequest) {
   // 5. Vérifier l'authentification pour les routes protégées
   //    createMiddlewareClient a déjà validé/rafraîchi le token via getUser().
   //    On utilise getSession() pour lire le résultat sans re-appeler le serveur auth.
-  const isProtectedPath = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
+  // Check top-level protected paths (/admin, /onboarding, /dashboard)
+  // AND /sites/{slug}/admin/* paths (admin dashboard accessed via main domain)
+  const isProtectedPath =
+    PROTECTED_PATHS.some((path) => pathname.startsWith(path)) ||
+    /^\/sites\/[^/]+\/admin(\/|$)/.test(pathname);
 
   if (isProtectedPath) {
     const {
@@ -107,7 +115,9 @@ export async function proxy(request: NextRequest) {
 
     if (!session?.user) {
       // Rediriger vers login avec URL de retour
-      const loginUrl = new URL('/login', request.url);
+      // Pour les subdomains, rediriger vers le domaine principal pour éviter les 404
+      const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+      const loginUrl = new URL('/login', mainDomain);
       loginUrl.searchParams.set('redirect', pathname);
       const redirectResponse = NextResponse.redirect(loginUrl);
       // Copier les cookies de session rafraîchie vers la redirection
@@ -179,6 +189,12 @@ function extractSubdomain(hostname: string): string | null {
 
   // Dev local sans subdomain: localhost → null
   if (hostWithoutPort === 'localhost') {
+    return null;
+  }
+
+  // Vercel preview/production URLs — no subdomain extraction
+  // e.g., attabl-saas-xxx.vercel.app → treated as main domain
+  if (hostWithoutPort.endsWith('.vercel.app')) {
     return null;
   }
 
