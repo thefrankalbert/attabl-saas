@@ -177,8 +177,8 @@ export default function ClientMenuPage({
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
     toast({
-      title: 'Table s\u00e9lectionn\u00e9e',
-      description: `Vous \u00eates install\u00e9 \u00e0 la table ${table.table_number}`,
+      title: t('tableSelected'),
+      description: t('seatedAtTable', { table: table.table_number }),
     });
     // Persist logic here if needed (context or localStorage)
     localStorage.setItem('attabl_table', table.table_number);
@@ -201,14 +201,14 @@ export default function ClientMenuPage({
         setTableNumber(result.tableNumber);
         localStorage.setItem('attabl_table', result.tableNumber);
         toast({
-          title: 'Table identifi\u00e9e',
-          description: `Table ${result.tableNumber} via QR code`,
+          title: t('tableIdentified'),
+          description: t('seatedAtTable', { table: result.tableNumber }),
         });
       }
     } else {
       toast({
-        title: 'QR Code scann\u00e9',
-        description: 'Aucun num\u00e9ro de table d\u00e9tect\u00e9 dans ce QR code.',
+        title: t('qrScanned'),
+        description: t('noTableDetected'),
         variant: 'destructive',
       });
     }
@@ -230,7 +230,7 @@ export default function ClientMenuPage({
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] pb-32">
+    <div className="pb-32">
       {/* Header */}
       <header className="sticky top-0 z-40">
         <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
@@ -420,7 +420,7 @@ export default function ClientMenuPage({
         ) : (
           <div className="text-center py-20">
             <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm mx-auto">
-              <p className="text-neutral-500 font-medium">Aucun menu disponible pour le moment.</p>
+              <p className="text-neutral-500 font-medium">{t('noMenuAvailable')}</p>
             </div>
           </div>
         )}
