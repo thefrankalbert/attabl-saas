@@ -1,63 +1,48 @@
 'use client';
 
-import type { LucideIcon } from 'lucide-react';
 import { TrendingUp, TrendingDown } from 'lucide-react';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { cn } from '@/lib/utils';
+
+interface SparklinePoint {
+  value: number;
+}
 
 interface StatsCardProps {
   title: string;
   value: string | number;
-  icon?: LucideIcon;
   trend?: {
     value: number;
     isPositive: boolean;
   };
-  color?: 'blue' | 'green' | 'orange' | 'purple' | 'gold' | 'lime';
   subtitle?: string;
+  sparklineData?: SparklinePoint[];
 }
-
-const COLOR_MAP: Record<string, string> = {
-  blue: 'text-blue-600 bg-blue-50',
-  green: 'text-emerald-600 bg-emerald-50',
-  orange: 'text-orange-600 bg-orange-50',
-  purple: 'text-purple-600 bg-purple-50',
-  gold: 'text-amber-600 bg-amber-50',
-  lime: 'text-black bg-[#CCFF00]',
-};
 
 export default function StatsCard({
   title,
   value,
-  icon: Icon,
   trend,
   subtitle,
-  color = 'blue',
+  sparklineData,
 }: StatsCardProps) {
-  const [textColor, bgColor] = (COLOR_MAP[color] || COLOR_MAP.blue).split(' ');
-
   return (
-    <div className="bg-white border border-neutral-100 rounded-xl p-4 sm:p-6 flex flex-col justify-between h-full hover:bg-neutral-50/50 transition-colors duration-300">
-      <div className="flex justify-between items-start mb-3 sm:mb-4">
-        <div className="space-y-1">
-          <h3 className="text-xs sm:text-sm text-neutral-500">{title}</h3>
-          <div className="text-2xl sm:text-3xl font-bold text-neutral-900 tracking-tight">
-            {value}
-          </div>
-        </div>
+    <div className="bg-white border border-zinc-100 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
+      {/* Label */}
+      <p className="text-xs uppercase tracking-wide text-zinc-400 font-medium">{title}</p>
 
-        {Icon && (
-          <div className={cn('p-2.5 sm:p-3 rounded-xl', bgColor, textColor)}>
-            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-          </div>
-        )}
+      {/* Value */}
+      <div className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight mt-1">
+        {value}
       </div>
 
-      <div className="flex items-center gap-2 mt-auto pt-2">
+      {/* Trend pill + subtitle */}
+      <div className="flex items-center gap-2 mt-2">
         {trend && (
-          <div
+          <span
             className={cn(
-              'flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-              trend.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700',
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
+              trend.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600',
             )}
           >
             {trend.isPositive ? (
@@ -65,29 +50,54 @@ export default function StatsCard({
             ) : (
               <TrendingDown className="w-3 h-3" />
             )}
-            <span>{trend.value}%</span>
-          </div>
+            {trend.value > 0 ? '+' : ''}
+            {trend.value}%
+          </span>
         )}
-        {subtitle && (
-          <span className="text-xs text-neutral-400 font-medium ml-auto">{subtitle}</span>
-        )}
+        {subtitle && <span className="text-xs text-zinc-400 font-medium">{subtitle}</span>}
       </div>
+
+      {/* Sparkline */}
+      {sparklineData && sparklineData.length > 0 && (
+        <div className="mt-3 -mx-1">
+          <ResponsiveContainer width="100%" height={28}>
+            <AreaChart data={sparklineData} margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient
+                  id={`spark-${title.replace(/\s/g, '')}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop offset="0%" stopColor="#CCFF00" stopOpacity={0.3} />
+                  <stop offset="100%" stopColor="#CCFF00" stopOpacity={0} />
+                </linearGradient>
+              </defs>
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke="#CCFF00"
+                fill={`url(#spark-${title.replace(/\s/g, '')})`}
+                strokeWidth={1.5}
+                dot={false}
+                isAnimationActive={false}
+              />
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      )}
     </div>
   );
 }
 
-// Skeleton pour l'état de chargement
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-white border border-neutral-100 rounded-xl p-4 sm:p-6 animate-pulse">
-      <div className="flex justify-between items-start mb-4">
-        <div className="space-y-2">
-          <div className="h-3 w-20 bg-neutral-200 rounded" />
-          <div className="h-8 w-16 bg-neutral-200 rounded" />
-        </div>
-        <div className="w-12 h-12 bg-neutral-100 rounded-xl" />
-      </div>
-      <div className="h-3 w-24 bg-neutral-100 rounded mt-4" />
+    <div className="bg-white border border-zinc-100 rounded-2xl p-5 sm:p-6 animate-pulse shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+      <div className="h-3 w-16 bg-zinc-200 rounded" />
+      <div className="h-9 w-20 bg-zinc-200 rounded mt-2" />
+      <div className="h-4 w-14 bg-zinc-100 rounded-full mt-3" />
+      <div className="h-7 w-full bg-zinc-50 rounded mt-3" />
     </div>
   );
 }

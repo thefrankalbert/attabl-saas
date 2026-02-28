@@ -6,8 +6,15 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStats } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
-import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
-import type { CurrencyCode } from '@/types/admin.types';
+import type {
+  Order,
+  DashboardStats,
+  PopularItem,
+  CurrencyCode,
+  CategoryBreakdown,
+  HourlyOrderCount,
+  SparklinePoint,
+} from '@/types/admin.types';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -33,6 +40,11 @@ export interface UseDashboardDataReturn {
   stats: DashboardStats;
   recentOrders: Order[];
   stockItems: StockItem[];
+  categoryBreakdown: CategoryBreakdown[];
+  hourlyOrders: HourlyOrderCount[];
+  revenueSparkline: SparklinePoint[];
+  ordersSparkline: SparklinePoint[];
+  itemsSparkline: SparklinePoint[];
   loading: boolean;
   handleStatusChange: (orderId: string, newStatus: string) => Promise<void>;
 }
@@ -76,11 +88,21 @@ export function useDashboardData({
     stats: initialStats,
     recentOrders: initialRecentOrders,
     stockItems: [],
+    categoryBreakdown: [],
+    hourlyOrders: [],
+    revenueSparkline: [],
+    ordersSparkline: [],
+    itemsSparkline: [],
   });
 
   const stats = dashboardData?.stats ?? initialStats;
   const recentOrders = dashboardData?.recentOrders ?? initialRecentOrders;
   const stockItems = dashboardData?.stockItems ?? [];
+  const categoryBreakdown = dashboardData?.categoryBreakdown ?? [];
+  const hourlyOrders = dashboardData?.hourlyOrders ?? [];
+  const revenueSparkline = dashboardData?.revenueSparkline ?? [];
+  const ordersSparkline = dashboardData?.ordersSparkline ?? [];
+  const itemsSparkline = dashboardData?.itemsSparkline ?? [];
 
   // Mutation for order status changes
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
@@ -145,6 +167,11 @@ export function useDashboardData({
     stats,
     recentOrders,
     stockItems,
+    categoryBreakdown,
+    hourlyOrders,
+    revenueSparkline,
+    ordersSparkline,
+    itemsSparkline,
     loading,
     handleStatusChange,
   };
