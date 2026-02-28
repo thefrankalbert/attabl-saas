@@ -405,11 +405,6 @@ export default function ClientMenuPage({
                               item={effectiveItem}
                               restaurantId={tenant.id}
                               category={category.name}
-                              accentColor={
-                                tenant.primary_color
-                                  ? `text-[${tenant.primary_color}]`
-                                  : 'text-amber-600'
-                              }
                             />
                           </div>
                         );
