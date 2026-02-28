@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
@@ -17,6 +17,7 @@ import CategoryNav from '@/components/tenant/CategoryNav';
 import TablePicker from '@/components/tenant/TablePicker';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
+import SearchOverlay from '@/components/tenant/SearchOverlay';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
@@ -55,6 +56,7 @@ export default function ClientMenuPage({
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState<string | null>(initialTable || null);
 
   // Menu tab state
@@ -173,6 +175,8 @@ export default function ClientMenuPage({
           }
           return !c.menu_id || activeMenuIds.includes(c.menu_id);
         });
+
+  const allItems = useMemo(() => itemsByCategory.flatMap((cat) => cat.items), [itemsByCategory]);
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
@@ -454,11 +458,24 @@ export default function ClientMenuPage({
         currency={tenant.currency}
       />
 
+      {/* Search Overlay */}
+      <SearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        items={allItems}
+        restaurantId={tenant.id}
+        currency={tenant.currency}
+        onOpenDetail={(item) => {
+          setIsSearchOpen(false);
+          setSelectedItem(item);
+        }}
+      />
+
       {/* Bottom Nav */}
       <BottomNav
         tenantSlug={tenant.slug}
         primaryColor={tenant.primary_color || '#000000'}
-        onSearchClick={() => {}}
+        onSearchClick={() => setIsSearchOpen(true)}
       />
     </div>
   );
