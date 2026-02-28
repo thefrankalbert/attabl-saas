@@ -2,11 +2,15 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { Clock, ShoppingBag, XCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ShoppingBag, XCircle, Loader2, AlertTriangle, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { formatCurrency } from '@/lib/utils/currency';
+import { cn } from '@/lib/utils';
+import OrderProgressBar from './OrderProgressBar';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -58,7 +62,9 @@ export default function ClientOrders({
   const [loading, setLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [confirmCancelId, setConfirmCancelId] = useState<string | null>(null);
+  const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
+  const t = useTranslations('tenant');
 
   // ─── Initialisation : charger les commandes + Supabase Realtime ─────
 
@@ -151,12 +157,17 @@ export default function ClientOrders({
     setCancellingId(null);
   };
 
+  // ─── Dérivation : commandes actives vs passées ────────
+
+  const activeOrders = orders.filter((o) => !['served', 'cancelled'].includes(o.status));
+  const pastOrders = orders.filter((o) => ['served', 'cancelled'].includes(o.status));
+
   // ─── États de chargement et vide ────────────────────
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
       </div>
     );
   }
@@ -164,18 +175,19 @@ export default function ClientOrders({
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4 text-gray-400">
+        <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4 text-neutral-400">
           <ShoppingBag size={32} />
         </div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Aucune commande</h2>
-        <p className="text-gray-500 mb-8 max-w-xs">
+        <h2 className="text-xl font-bold text-neutral-900 mb-2">Aucune commande</h2>
+        <p className="text-neutral-500 mb-8 max-w-xs">
           Vous n&apos;avez pas encore passé de commande. Découvrez notre menu !
         </p>
         <Link
           href={`/sites/${tenantSlug}`}
-          className="bg-gray-900 text-white px-6 py-3 rounded-xl font-medium shadow-lg shadow-gray-200 active:scale-95 transition-all"
+          className="text-white px-6 py-3 rounded-xl font-medium active:scale-95 transition-all"
+          style={{ backgroundColor: 'var(--tenant-primary)' }}
         >
-          Voir le menu
+          {t('browseMenu')}
         </Link>
       </div>
     );
@@ -184,116 +196,170 @@ export default function ClientOrders({
   // ─── Rendu des commandes ────────────────────────────
 
   return (
-    <div className="space-y-4 pb-24">
+    <div className="space-y-6 pb-24">
       {/* Indicateur temps réel */}
-      <div className="flex items-center gap-2 text-xs text-gray-400 px-1">
+      <div className="flex items-center gap-2 text-xs text-neutral-400 px-1">
         <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
         Suivi en direct
       </div>
 
-      {orders.map((order) => (
-        <div
-          key={order.id}
-          className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 flex flex-col gap-3"
-        >
-          {/* En-tête de commande */}
-          <div className="flex items-center justify-between border-b border-gray-50 pb-3">
-            <div className="flex items-center gap-2">
-              <StatusIcon status={order.status} />
-              <div>
-                <p className="text-xs text-gray-500">
-                  Commande #{order.order_number || order.id.slice(0, 5)}
-                </p>
-                <p className="text-sm font-bold text-gray-900">
+      {/* Active Orders */}
+      {activeOrders.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-widest px-1">
+            {t('activeOrder')}
+          </h2>
+          {activeOrders.map((order) => (
+            <motion.div
+              key={order.id}
+              layout
+              className="bg-white rounded-2xl border border-neutral-100 p-4 space-y-3"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-bold text-sm text-neutral-900">
+                  #{order.order_number || order.id.slice(0, 5)}
+                </h3>
+                <span className="text-xs text-neutral-400">
                   {format(new Date(order.created_at), 'dd MMM HH:mm', { locale: fr })}
-                </p>
-              </div>
-            </div>
-            <div className="text-right">
-              <BadgeStatus status={order.status} />
-            </div>
-          </div>
-
-          {/* Articles */}
-          <div className="space-y-1">
-            {(order.items || []).map((item: OrderItem, idx: number) => (
-              <div key={idx} className="flex justify-between text-sm text-gray-600">
-                <span>
-                  {item.quantity}x {item.name}
                 </span>
-                <span>{formatCurrency(item.price * item.quantity, currency)}</span>
               </div>
-            ))}
-          </div>
 
-          {/* Total */}
-          <div className="flex justify-between items-center pt-2 border-t border-gray-50">
-            <span className="text-gray-500 text-sm">Total</span>
-            <span className="font-bold text-lg text-gray-900">
-              {formatCurrency(order.total, currency)}
-            </span>
-          </div>
+              <OrderProgressBar status={order.status} />
 
-          {/* Bouton annulation (uniquement pending) */}
-          {CANCELLABLE_STATUSES.includes(order.status) && (
-            <div className="pt-1">
-              {confirmCancelId === order.id ? (
-                <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
-                  <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                  <p className="text-sm text-red-700 flex-1">Annuler cette commande ?</p>
-                  <button
-                    onClick={() => handleCancel(order.id)}
-                    disabled={cancellingId === order.id}
-                    className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
-                  >
-                    {cancellingId === order.id ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      'Confirmer'
-                    )}
-                  </button>
-                  <button
-                    onClick={() => setConfirmCancelId(null)}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                  >
-                    Non
-                  </button>
+              {/* Items */}
+              <div className="space-y-1">
+                {(order.items || []).map((item: OrderItem, idx: number) => (
+                  <div key={idx} className="flex justify-between text-sm text-neutral-600">
+                    <span>
+                      {item.quantity}x {item.name}
+                    </span>
+                    <span>{formatCurrency(item.price * item.quantity, currency)}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Total */}
+              <div className="flex justify-between items-center pt-2 border-t border-neutral-50">
+                <span className="text-neutral-500 text-sm">{t('total')}</span>
+                <span className="font-bold text-lg" style={{ color: 'var(--tenant-primary)' }}>
+                  {formatCurrency(order.total, currency)}
+                </span>
+              </div>
+
+              {/* Bouton annulation (uniquement pending) */}
+              {CANCELLABLE_STATUSES.includes(order.status) && (
+                <div className="pt-1">
+                  {confirmCancelId === order.id ? (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
+                      <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      <p className="text-sm text-red-700 flex-1">Annuler cette commande ?</p>
+                      <button
+                        onClick={() => handleCancel(order.id)}
+                        disabled={cancellingId === order.id}
+                        className="px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 disabled:opacity-50 transition-colors"
+                      >
+                        {cancellingId === order.id ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          'Confirmer'
+                        )}
+                      </button>
+                      <button
+                        onClick={() => setConfirmCancelId(null)}
+                        className="px-3 py-1.5 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-lg hover:bg-neutral-200 transition-colors"
+                      >
+                        Non
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmCancelId(order.id)}
+                      className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 transition-colors"
+                    >
+                      <XCircle className="w-4 h-4" />
+                      Annuler la commande
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <button
-                  onClick={() => setConfirmCancelId(order.id)}
-                  className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 transition-colors"
-                >
-                  <XCircle className="w-4 h-4" />
-                  Annuler la commande
-                </button>
               )}
-            </div>
-          )}
+            </motion.div>
+          ))}
         </div>
-      ))}
+      )}
+
+      {/* Past Orders */}
+      {pastOrders.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-widest px-1">
+            {t('previousOrders')}
+          </h2>
+          {pastOrders.map((order) => (
+            <motion.div
+              key={order.id}
+              layout
+              className="bg-white rounded-2xl border border-neutral-100 overflow-hidden"
+            >
+              {/* Collapsed header — always visible */}
+              <button
+                onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
+                className="w-full flex items-center justify-between p-4"
+              >
+                <div className="flex items-center gap-3">
+                  <BadgeStatus status={order.status} />
+                  <span className="text-sm font-semibold text-neutral-900">
+                    #{order.order_number || order.id.slice(0, 5)}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold" style={{ color: 'var(--tenant-primary)' }}>
+                    {formatCurrency(order.total, currency)}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 text-neutral-400 transition-transform',
+                      expandedOrderId === order.id && 'rotate-180',
+                    )}
+                  />
+                </div>
+              </button>
+
+              {/* Expanded details */}
+              <AnimatePresence>
+                {expandedOrderId === order.id && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="px-4 pb-4 space-y-2 border-t border-neutral-50">
+                      <div className="pt-3 space-y-1">
+                        {(order.items || []).map((item: OrderItem, idx: number) => (
+                          <div key={idx} className="flex justify-between text-sm text-neutral-600">
+                            <span>
+                              {item.quantity}x {item.name}
+                            </span>
+                            <span>{formatCurrency(item.price * item.quantity, currency)}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="text-xs text-neutral-400 pt-1">
+                        {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
 // ─── Sous-composants ──────────────────────────────────
-
-function StatusIcon({ status }: { status: string }) {
-  const iconStyles: Record<string, string> = {
-    pending: 'bg-yellow-50 text-yellow-600',
-    confirmed: 'bg-blue-50 text-blue-600',
-    preparing: 'bg-purple-50 text-purple-600',
-    ready: 'bg-green-50 text-green-600',
-    served: 'bg-gray-50 text-gray-600',
-    cancelled: 'bg-red-50 text-red-500',
-  };
-
-  return (
-    <div className={`p-2 rounded-lg ${iconStyles[status] || iconStyles.pending}`}>
-      <Clock size={16} />
-    </div>
-  );
-}
 
 function BadgeStatus({ status }: { status: string }) {
   const styles: Record<string, string> = {
@@ -301,7 +367,7 @@ function BadgeStatus({ status }: { status: string }) {
     confirmed: 'bg-blue-50 text-blue-700 border-blue-100',
     preparing: 'bg-purple-50 text-purple-700 border-purple-100',
     ready: 'bg-green-50 text-green-700 border-green-100',
-    served: 'bg-gray-50 text-gray-700 border-gray-100',
+    served: 'bg-neutral-50 text-neutral-700 border-neutral-100',
     cancelled: 'bg-red-50 text-red-700 border-red-100',
   };
 
