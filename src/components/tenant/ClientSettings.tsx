@@ -16,21 +16,21 @@ export default function ClientSettings() {
   return (
     <div className="space-y-6">
       {/* Language Section */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-          <Globe className="text-gray-400" size={20} />
-          <h2 className="font-semibold text-gray-900">Langue / Language</h2>
+      <section className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        <div className="p-4 border-b border-neutral-50 flex items-center gap-3">
+          <Globe className="text-neutral-400" size={20} />
+          <h2 className="font-semibold text-neutral-900">Langue / Language</h2>
         </div>
 
         <div className="p-4 space-y-4">
           <button
             onClick={() => setLocale('fr-FR')}
-            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 bg-white"
+            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 bg-white"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇫🇷</span>
               <span
-                className={`font-medium ${locale.startsWith('fr') ? 'text-gray-900' : 'text-gray-500'}`}
+                className={`font-medium ${locale.startsWith('fr') ? 'text-neutral-900' : 'text-neutral-500'}`}
               >
                 Français
               </span>
@@ -40,12 +40,12 @@ export default function ClientSettings() {
 
           <button
             onClick={() => setLocale('en-US')}
-            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 bg-white"
+            className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-neutral-50 bg-white"
           >
             <div className="flex items-center gap-3">
               <span className="text-2xl">🇬🇧</span>
               <span
-                className={`font-medium ${locale.startsWith('en') ? 'text-gray-900' : 'text-gray-500'}`}
+                className={`font-medium ${locale.startsWith('en') ? 'text-neutral-900' : 'text-neutral-500'}`}
               >
                 English
               </span>
@@ -56,58 +56,58 @@ export default function ClientSettings() {
       </section>
 
       {/* About Section */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="p-4 border-b border-gray-50 flex items-center gap-3">
-          <Info className="text-gray-400" size={20} />
-          <h2 className="font-semibold text-gray-900">
+      <section className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
+        <div className="p-4 border-b border-neutral-50 flex items-center gap-3">
+          <Info className="text-neutral-400" size={20} />
+          <h2 className="font-semibold text-neutral-900">
             {locale.startsWith('fr') ? 'À propos' : 'About'}
           </h2>
         </div>
 
-        <div className="divide-y divide-gray-50">
+        <div className="divide-y divide-neutral-50">
           {tenant && (
             <div className="p-4 flex items-center justify-between">
-              <span className="text-gray-600 text-sm">Restaurant</span>
-              <span className="font-medium text-gray-900">{tenant.name}</span>
+              <span className="text-neutral-600 text-sm">Restaurant</span>
+              <span className="font-medium text-neutral-900">{tenant.name}</span>
             </div>
           )}
 
           <a
             href="#"
-            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors"
           >
-            <div className="flex items-center gap-3 text-gray-600">
+            <div className="flex items-center gap-3 text-neutral-600">
               <FileText size={18} />
               <span className="text-sm">Mentions Légales</span>
             </div>
-            <ChevronRight size={16} className="text-gray-400" />
+            <ChevronRight size={16} className="text-neutral-400" />
           </a>
 
           <a
             href="#"
-            className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+            className="flex items-center justify-between p-4 hover:bg-neutral-50 transition-colors"
           >
-            <div className="flex items-center gap-3 text-gray-600">
+            <div className="flex items-center gap-3 text-neutral-600">
               <FileText size={18} />
               <span className="text-sm">Politique de Confidentialité</span>
             </div>
-            <ChevronRight size={16} className="text-gray-400" />
+            <ChevronRight size={16} className="text-neutral-400" />
           </a>
         </div>
       </section>
 
       {/* Support Section */}
-      <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <section className="bg-white rounded-xl shadow-sm border border-neutral-100 overflow-hidden">
         <div className="p-4 flex items-center gap-3">
           <MessageCircle className="text-blue-500" size={20} />
           <div>
-            <h2 className="font-semibold text-gray-900">Besoin d&apos;aide ?</h2>
-            <p className="text-xs text-gray-500">Contactez le personnel au restaurant</p>
+            <h2 className="font-semibold text-neutral-900">Besoin d&apos;aide ?</h2>
+            <p className="text-xs text-neutral-500">Contactez le personnel au restaurant</p>
           </div>
         </div>
       </section>
 
-      <div className="text-center text-xs text-gray-300 mt-8 pb-8">
+      <div className="text-center text-xs text-neutral-300 mt-8 pb-8">
         Powered by Attabl SaaS v0.1.0
       </div>
     </div>

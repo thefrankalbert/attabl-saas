@@ -30,13 +30,17 @@ export default async function SettingsPage({ params }: { params: Promise<{ site:
   if (!tenant) return notFound();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white sticky top-0 z-40 border-b border-gray-100">
-        <div className="container mx-auto px-4 py-3 flex items-center gap-3">
-          <Link href={`/sites/${tenantSlug}`} className="p-2 -ml-2 hover:bg-gray-100 rounded-full">
-            <ArrowLeft className="w-5 h-5 text-gray-600" />
+    <div className="min-h-screen bg-[#FAFAFA]">
+      <header className="sticky top-0 z-40">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
+        <div className="relative container mx-auto px-4 py-3 flex items-center gap-3">
+          <Link
+            href={`/sites/${tenantSlug}`}
+            className="p-2 -ml-2 hover:bg-neutral-100 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-neutral-600" />
           </Link>
-          <h1 className="text-lg font-bold text-gray-900">Paramètres</h1>
+          <h1 className="text-lg font-bold text-neutral-900">Paramètres</h1>
         </div>
       </header>
 

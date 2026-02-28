@@ -64,7 +64,7 @@ export default function TablePicker({
           <div className="flex gap-4 h-64">
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">
+              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 text-center">
                 {t('zone')}
               </label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
@@ -76,23 +76,23 @@ export default function TablePicker({
                       'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedZone?.id === zone.id
                         ? 'bg-gray-900 text-white font-medium'
-                        : 'text-gray-600 hover:bg-gray-100',
+                        : 'text-neutral-600 hover:bg-neutral-100',
                     )}
                   >
                     {zone.name}
                   </button>
                 ))}
                 {zones.length === 0 && (
-                  <p className="text-xs text-gray-400 text-center py-4">{t('noZone')}</p>
+                  <p className="text-xs text-neutral-400 text-center py-4">{t('noZone')}</p>
                 )}
               </div>
             </div>
 
-            <div className="w-px bg-gray-100 my-2"></div>
+            <div className="w-px bg-neutral-100 my-2"></div>
 
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 text-center">
+              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 text-center">
                 {t('table')}
               </label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
@@ -103,18 +103,23 @@ export default function TablePicker({
                     className={cn(
                       'w-full text-center px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedTable?.id === table.id
-                        ? 'bg-amber-500 text-white font-bold'
-                        : 'text-gray-600 hover:bg-gray-100',
+                        ? 'text-white font-bold'
+                        : 'text-neutral-600 hover:bg-neutral-100',
                     )}
+                    style={
+                      selectedTable?.id === table.id
+                        ? { backgroundColor: 'var(--tenant-primary)' }
+                        : undefined
+                    }
                   >
                     {table.table_number}
                   </button>
                 ))}
                 {selectedZone && availableTables.length === 0 && (
-                  <p className="text-xs text-gray-400 text-center py-4">{t('noTable')}</p>
+                  <p className="text-xs text-neutral-400 text-center py-4">{t('noTable')}</p>
                 )}
                 {!selectedZone && (
-                  <p className="text-xs text-gray-400 text-center py-4">{t('selectZone')}</p>
+                  <p className="text-xs text-neutral-400 text-center py-4">{t('selectZone')}</p>
                 )}
               </div>
             </div>
