@@ -252,7 +252,16 @@
     "unassigned": "Unassigned",
     "noActiveAssignments": "No active assignments",
     "assignedTo": "Assigned to {name}",
-    "serverPerformance": "Server performance"
+    "serverPerformance": "Server performance",
+    "periodDay": "Day",
+    "periodWeek": "Week",
+    "periodMonth": "Month",
+    "categoryBreakdown": "Breakdown",
+    "categoryOthers": "Others",
+    "hourlyOrders": "Orders / hour",
+    "revenueThisWeek": "Revenue this week",
+    "ordersPerHour": "orders",
+    "totalOrders": "Total"
   },
   "dishes": {
     "addItem": "ADD A DISH",
