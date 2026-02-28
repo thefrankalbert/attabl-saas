@@ -78,7 +78,7 @@ export default async function AdminLayout({
       };
     } else {
       // En production OU si bypass non explicitement activé
-      redirect(`/admin/login`);
+      redirect(`/login`);
     }
   } else {
     // Vérifier que l'user est admin de CE tenant

@@ -99,12 +99,50 @@ export default function TenantsPage() {
         setTenants(tenantsData || []);
         setMode('superadmin');
       } else {
-        // Load owner dashboard via RPC
-        const { data } = await supabase.rpc('get_owner_dashboard', {
+        // Load owner dashboard via RPC (fallback to direct query if RPC doesn't exist)
+        const { data, error: rpcError } = await supabase.rpc('get_owner_dashboard', {
           p_user_id: user.id,
         });
 
-        setRestaurants((data as OwnerDashboardRow[]) || []);
+        if (rpcError) {
+          // RPC not available — fallback: query tenants linked to this user via admin_users
+          const { data: userTenants } = await supabase
+            .from('admin_users')
+            .select(
+              'tenant_id, tenants(id, name, slug, subscription_plan, subscription_status, logo_url, is_active)',
+            )
+            .eq('user_id', user.id);
+
+          const fallbackRestaurants: OwnerDashboardRow[] = (userTenants || [])
+            .filter((ut) => ut.tenants)
+            .map((ut) => {
+              const t = ut.tenants as unknown as {
+                id: string;
+                name: string;
+                slug: string;
+                subscription_plan: string;
+                subscription_status: string;
+                logo_url: string;
+                is_active: boolean;
+              };
+              return {
+                tenant_id: t.id,
+                tenant_name: t.name,
+                tenant_slug: t.slug,
+                tenant_plan: t.subscription_plan,
+                tenant_status: t.subscription_status,
+                tenant_logo_url: t.logo_url,
+                tenant_is_active: t.is_active,
+                orders_today: 0,
+                revenue_today: 0,
+                orders_month: 0,
+                revenue_month: 0,
+              };
+            });
+          setRestaurants(fallbackRestaurants);
+        } else {
+          setRestaurants((data as OwnerDashboardRow[]) || []);
+        }
         setMode('owner');
       }
     }

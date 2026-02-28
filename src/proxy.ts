@@ -73,17 +73,26 @@ export async function proxy(request: NextRequest) {
       const { response: sessionResponse } = await createMiddlewareClient(request);
       const url = request.nextUrl.clone();
 
+      // Set x-tenant-slug on REQUEST headers so server components can read it
+      request.headers.set('x-tenant-slug', tenantSlug);
+
       if (pathname.startsWith('/api/')) {
-        sessionResponse.headers.set('x-tenant-slug', tenantSlug);
-        return sessionResponse;
+        const response = NextResponse.next({
+          request: { headers: request.headers },
+        });
+        sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+          response.cookies.set(cookie.name, cookie.value);
+        });
+        return response;
       }
 
       url.pathname = `/sites/${tenantSlug}${pathname}`;
-      const response = NextResponse.rewrite(url, { headers: sessionResponse.headers });
+      const response = NextResponse.rewrite(url, {
+        request: { headers: request.headers },
+      });
       sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
         response.cookies.set(cookie.name, cookie.value);
       });
-      response.headers.set('x-tenant-slug', tenantSlug);
       return response;
     }
   }
@@ -129,11 +138,19 @@ export async function proxy(request: NextRequest) {
   }
 
   // 6. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
+  //    Must be set on REQUEST headers (not response) so headers() in server components can read it
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
-    sessionResponse.headers.set('x-tenant-slug', tenantSlug);
-    return sessionResponse;
+    request.headers.set('x-tenant-slug', tenantSlug);
+    const response = NextResponse.next({
+      request: { headers: request.headers },
+    });
+    // Copy session cookies to the new response
+    sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+      response.cookies.set(cookie.name, cookie.value);
+    });
+    return response;
   }
 
   // 7. Si subdomain détecté, réécrire l'URL vers /sites/[site]
@@ -142,8 +159,14 @@ export async function proxy(request: NextRequest) {
     // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
     // Don't rewrite — just set the x-tenant-slug header so the API can identify the tenant
     if (pathname.startsWith('/api/')) {
-      sessionResponse.headers.set('x-tenant-slug', subdomain);
-      return sessionResponse;
+      request.headers.set('x-tenant-slug', subdomain);
+      const response = NextResponse.next({
+        request: { headers: request.headers },
+      });
+      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      return response;
     }
 
     const url = request.nextUrl.clone();
@@ -151,18 +174,18 @@ export async function proxy(request: NextRequest) {
     // Réécrire vers /sites/[subdomain]/[path]
     url.pathname = `/sites/${subdomain}${pathname}`;
 
+    // Set x-tenant-slug on REQUEST headers so server components can read it via headers()
+    request.headers.set('x-tenant-slug', subdomain);
+
     // Créer la réponse de rewrite avec les cookies de session
     const response = NextResponse.rewrite(url, {
-      headers: sessionResponse.headers,
+      request: { headers: request.headers },
     });
 
     // Copier les cookies de session vers la nouvelle réponse
     sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
       response.cookies.set(cookie.name, cookie.value);
     });
-
-    // Ajouter le header tenant
-    response.headers.set('x-tenant-slug', subdomain);
 
     return response;
   }
