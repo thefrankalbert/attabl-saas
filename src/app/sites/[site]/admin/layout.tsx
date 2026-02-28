@@ -14,6 +14,7 @@ import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
+import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialog';
 import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
@@ -45,15 +46,11 @@ export default async function AdminLayout({
     .eq('slug', tenantSlug)
     .single();
 
-  // ⚡ Vérifier si onboarding est terminé
-  // Si non, rediriger vers le wizard d'onboarding
   if (!tenant) {
     redirect('/login');
   }
 
-  if (tenant.onboarding_completed === false) {
-    redirect('/onboarding');
-  }
+  const showOnboardingResume = tenant.onboarding_completed === false;
 
   // Vérifier l'authentification
   const {
@@ -134,6 +131,7 @@ export default async function AdminLayout({
   return (
     <div>
       <OfflineIndicator />
+      {showOnboardingResume && <OnboardingResumeDialog />}
       {/* Dev Mode Banner */}
       {isDevMode && (
         <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-xs text-center py-1 z-50">

@@ -4,8 +4,10 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
-import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed } from 'lucide-react';
+import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
+import { compressImage, uploadToStorage } from '@/lib/image-compress';
+import { createClient } from '@/lib/supabase/client';
 
 interface MenuStepProps {
   data: OnboardingData;
@@ -67,6 +69,7 @@ function buildCategoriesFromData(menuItems: OnboardingData['menuItems']): Catego
 
 export function MenuStep({ data, updateData }: MenuStepProps) {
   const t = useTranslations('onboarding');
+  const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>(() =>
     buildCategoriesFromData(data.menuItems),
   );
@@ -167,6 +170,28 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
     });
     setCategories(updated);
     syncToParent(updated);
+  };
+
+  const handleItemPhotoUpload = async (categoryId: string, itemId: string, file: File) => {
+    if (file.size > 15 * 1024 * 1024) return;
+    setUploadingItemId(itemId);
+    try {
+      const compressed = await compressImage(file, {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.8,
+        type: 'image/jpeg',
+      });
+      const supabase = createClient();
+      const publicUrl = await uploadToStorage(compressed, 'menu-items', supabase);
+      updateArticle(categoryId, itemId, 'imageUrl', publicUrl);
+    } catch {
+      // Fallback to object URL if upload fails
+      const url = URL.createObjectURL(file);
+      updateArticle(categoryId, itemId, 'imageUrl', url);
+    } finally {
+      setUploadingItemId(null);
+    }
   };
 
   return (
@@ -307,12 +332,16 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 id={`photo-${item.id}`}
                                 onChange={(e) => {
                                   const file = e.target.files?.[0];
-                                  if (!file || file.size > 15 * 1024 * 1024) return;
-                                  const url = URL.createObjectURL(file);
-                                  updateArticle(category.id, item.id, 'imageUrl', url);
+                                  if (!file) return;
+                                  handleItemPhotoUpload(category.id, item.id, file);
+                                  if (e.target) e.target.value = '';
                                 }}
                               />
-                              {item.imageUrl ? (
+                              {uploadingItemId === item.id ? (
+                                <div className="w-8 h-8 rounded-md border border-neutral-300 flex items-center justify-center">
+                                  <Loader2 className="h-3.5 w-3.5 text-neutral-400 animate-spin" />
+                                </div>
+                              ) : item.imageUrl ? (
                                 <div className="relative w-8 h-8">
                                   <img
                                     src={item.imageUrl}

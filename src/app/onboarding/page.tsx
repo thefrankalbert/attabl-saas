@@ -164,7 +164,7 @@ export default function OnboardingPage() {
       } catch {
         setAutoSaveStatus('idle');
       }
-    }, 5000);
+    }, 2000);
     return () => clearTimeout(timer);
   }, [data, currentStep, loading]);
 
@@ -192,7 +192,6 @@ export default function OnboardingPage() {
   }, []);
 
   const saveStep = async () => {
-    setSaving(true);
     try {
       const res = await fetch('/api/onboarding/save', {
         method: 'POST',
@@ -205,8 +204,6 @@ export default function OnboardingPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error';
       toast({ title: t('saveError'), description: message, variant: 'destructive' });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -214,13 +211,16 @@ export default function OnboardingPage() {
     document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  const nextStep = async () => {
+  const nextStep = () => {
     setError(null);
-    if (currentStep > 0) await saveStep();
     setDirection('forward');
     if (currentStep < 5) {
       setCurrentStep((prev) => prev + 1);
       scrollToTop();
+    }
+    // Save in background (non-blocking)
+    if (currentStep > 0) {
+      saveStep();
     }
   };
 
@@ -263,6 +263,9 @@ export default function OnboardingPage() {
 
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
+        if (errData.details && Array.isArray(errData.details)) {
+          throw new Error(`${t('validationFailed')}: ${errData.details.join(', ')}`);
+        }
         throw new Error(errData.error || t('completeError'));
       }
 

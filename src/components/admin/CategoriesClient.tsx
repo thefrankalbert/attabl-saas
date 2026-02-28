@@ -10,8 +10,9 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragOverlay,
 } from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragStartEvent } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -69,7 +70,7 @@ function SortableRow({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : undefined,
+    opacity: isDragging ? 0.4 : undefined,
     zIndex: isDragging ? 10 : undefined,
   };
 
@@ -79,18 +80,18 @@ function SortableRow({
       style={style}
       className={cn(
         'flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group',
-        isDragging && 'shadow-lg border-[#CCFF00]',
+        isDragging && 'shadow-lg border-lime-400 bg-lime-50/20',
       )}
     >
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none"
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 rounded hover:bg-neutral-100 transition-colors"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="w-4 h-4 text-neutral-300" />
+        <GripVertical className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
       </button>
       <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
         <Folder className="w-4 h-4 text-neutral-500" />
@@ -129,6 +130,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const [name, setName] = useState('');
   const [nameEn, setNameEn] = useState('');
   const [displayOrder, setDisplayOrder] = useState(0);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -151,8 +153,13 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
   }, [queryClient, tenantId]);
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveDragId(String(event.active.id));
+  }, []);
+
   const handleDragEnd = useCallback(
     async (event: DragEndEvent) => {
+      setActiveDragId(null);
       const { active, over } = event;
 
       if (!over || active.id === over.id) {
@@ -291,6 +298,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
           >
             <SortableContext
@@ -311,6 +319,32 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 ))}
               </div>
             </SortableContext>
+            <DragOverlay>
+              {activeDragId
+                ? (() => {
+                    const cat = categories.find((c) => c.id === activeDragId);
+                    if (!cat) return null;
+                    return (
+                      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-lime-400 shadow-xl">
+                        <GripVertical className="w-4 h-4 text-neutral-600" />
+                        <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
+                          <Folder className="w-4 h-4 text-neutral-500" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
+                          {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                          <Utensils className="w-3.5 h-3.5" />
+                          <span className="font-medium">
+                            {t('dishCount', { count: cat.items_count || 0 })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })()
+                : null}
+            </DragOverlay>
           </DndContext>
         ) : (
           <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">

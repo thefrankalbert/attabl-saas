@@ -8,6 +8,7 @@ import { Upload, X, Layout, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { LogoCropper } from '@/components/onboarding/LogoCropper';
+import { useToast } from '@/components/ui/use-toast';
 
 interface BrandingStepProps {
   data: OnboardingData;
@@ -62,6 +63,7 @@ const colorGrid = [
 
 export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const t = useTranslations('onboarding');
+  const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showPickerFor, setShowPickerFor] = useState<'primary' | 'secondary' | null>(null);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
@@ -69,19 +71,33 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 15 * 1024 * 1024) return;
+    if (file.size > 15 * 1024 * 1024) {
+      toast({
+        title: t('logoFileTooLarge'),
+        variant: 'destructive',
+      });
+      return;
+    }
     const objectUrl = URL.createObjectURL(file);
     setCropSrc(objectUrl);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleCropComplete = (croppedUrl: string) => {
-    updateData({ logoUrl: croppedUrl });
+  const handleCropComplete = (publicUrl: string) => {
+    updateData({ logoUrl: publicUrl });
     setCropSrc(null);
   };
 
   const handleCropCancel = () => {
     setCropSrc(null);
+  };
+
+  const handleCropError = (message: string) => {
+    toast({
+      title: t('uploadError'),
+      description: message,
+      variant: 'destructive',
+    });
   };
 
   const removeLogo = () => {
@@ -103,6 +119,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
           imageSrc={cropSrc}
           onComplete={handleCropComplete}
           onCancel={handleCropCancel}
+          onError={handleCropError}
         />
       )}
       {/* Title & Subtitle */}

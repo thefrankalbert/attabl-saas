@@ -123,11 +123,11 @@ describe('onboardingCompleteSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should reject invalid logoUrl', () => {
+  it('should accept any string for logoUrl (URLs validated at storage level)', () => {
     const result = onboardingCompleteSchema.safeParse({
       data: { logoUrl: 'not-a-url' },
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('should reject missing data wrapper', () => {

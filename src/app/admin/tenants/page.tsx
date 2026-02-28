@@ -221,7 +221,7 @@ export default function TenantsPage() {
                   <span className="text-sm font-medium text-neutral-500">Super Admin</span>
                 </div>
                 <p className="text-xs text-neutral-400">
-                  Gestion centralisee de tous les etablissements
+                  Gestion centralisée de tous les établissements
                 </p>
               </div>
             </div>
@@ -295,8 +295,8 @@ export default function TenantsPage() {
               />
             </div>
             <p className="text-xs text-neutral-400">
-              {filteredTenants.length} etablissement{filteredTenants.length !== 1 ? 's' : ''}{' '}
-              {searchQuery && 'trouves'}
+              {filteredTenants.length} établissement{filteredTenants.length !== 1 ? 's' : ''}{' '}
+              {searchQuery && 'trouvés'}
             </p>
           </div>
 
@@ -373,12 +373,12 @@ export default function TenantsPage() {
                 <Building2 className="h-10 w-10 text-neutral-300" />
               </div>
               <h3 className="mb-1 text-sm font-semibold text-neutral-900">
-                {searchQuery ? 'Aucun resultat' : 'Aucun etablissement'}
+                {searchQuery ? 'Aucun résultat' : 'Aucun établissement'}
               </h3>
               <p className="max-w-xs text-center text-xs text-neutral-400">
                 {searchQuery
-                  ? `Aucun etablissement ne correspond a "${searchQuery}". Essayez un autre terme.`
-                  : 'Aucun etablissement enregistre pour le moment.'}
+                  ? `Aucun établissement ne correspond a "${searchQuery}". Essayez un autre terme.`
+                  : 'Aucun établissement enregistré pour le moment.'}
               </p>
               {searchQuery && (
                 <Button
@@ -408,7 +408,7 @@ export default function TenantsPage() {
             </div>
             <div className="min-w-0">
               <h1 className="text-lg sm:text-xl font-bold tracking-tight text-neutral-900 truncate">
-                Mes Etablissements
+                Mes Établissements
               </h1>
               <p className="text-xs text-neutral-400 hidden sm:block">
                 Gerez tous vos restaurants depuis un seul endroit
@@ -585,7 +585,7 @@ export default function TenantsPage() {
             <div className="mb-3 rounded-xl bg-neutral-100 p-3">
               <Plus className="h-6 w-6 text-neutral-400" />
             </div>
-            <p className="text-sm font-semibold text-neutral-600">Ajouter un etablissement</p>
+            <p className="text-sm font-semibold text-neutral-600">Ajouter un établissement</p>
             <p className="mt-1 text-xs text-neutral-400">Creez un nouveau restaurant</p>
           </button>
         </div>

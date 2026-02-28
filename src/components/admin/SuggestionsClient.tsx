@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { Lightbulb, Plus, Trash2, Search, Wand2 } from 'lucide-react';
+import { Lightbulb, Plus, Trash2, Search, Wand2, CheckSquare, Square, XCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,8 @@ export default function SuggestionsClient({
   const [targetItemId, setTargetItemId] = useState('');
   const [suggestionType, setSuggestionType] = useState<SuggestionType>('pairing');
   const [description, setDescription] = useState('');
+
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const { toast } = useToast();
   const t = useTranslations('inventory');
@@ -185,6 +187,40 @@ export default function SuggestionsClient({
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filtered.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filtered.map((s) => s.id)));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      const { error } = await supabase
+        .from('item_suggestions')
+        .update({ is_active: false })
+        .in('id', Array.from(selectedIds));
+
+      if (error) throw error;
+      toast({ title: t('suggestionsDeleted', { count: selectedIds.size }) });
+      setSelectedIds(new Set());
+      loadData();
+    } catch {
+      toast({ title: tc('error'), variant: 'destructive' });
+    }
+  };
+
   const filtered = suggestions.filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
@@ -241,21 +277,64 @@ export default function SuggestionsClient({
         />
       </div>
 
+      {/* Bulk actions */}
+      {suggestions.length > 0 && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
+            {selectedIds.size === filtered.length && filtered.length > 0 ? (
+              <CheckSquare className="w-4 h-4" />
+            ) : (
+              <Square className="w-4 h-4" />
+            )}
+            {selectedIds.size === filtered.length && filtered.length > 0
+              ? t('deselectAll')
+              : t('selectAll')}
+          </Button>
+          {selectedIds.size > 0 && (
+            <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleBulkDelete}>
+              <XCircle className="w-4 h-4" />
+              {t('deleteSelected', { count: selectedIds.size })}
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Suggestions Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((suggestion) => {
           const typeConfig = SUGGESTION_TYPES.find((st) => st.value === suggestion.suggestion_type);
           return (
-            <div key={suggestion.id} className="bg-white rounded-xl border border-neutral-100 p-4">
+            <div
+              key={suggestion.id}
+              className={cn(
+                'bg-white rounded-xl border p-4 transition-colors',
+                selectedIds.has(suggestion.id)
+                  ? 'border-lime-400 bg-lime-50/30'
+                  : 'border-neutral-100',
+              )}
+            >
               <div className="flex items-start justify-between">
-                <span
-                  className={cn(
-                    'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-                    typeConfig?.color || 'bg-neutral-100 text-neutral-600',
-                  )}
-                >
-                  {typeConfig?.emoji} {typeConfig?.label}
-                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(suggestion.id)}
+                    className="text-neutral-400 hover:text-neutral-600 transition-colors"
+                  >
+                    {selectedIds.has(suggestion.id) ? (
+                      <CheckSquare className="w-4 h-4 text-lime-600" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                  </button>
+                  <span
+                    className={cn(
+                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
+                      typeConfig?.color || 'bg-neutral-100 text-neutral-600',
+                    )}
+                  >
+                    {typeConfig?.emoji} {typeConfig?.label}
+                  </span>
+                </div>
                 <button
                   onClick={() => handleDelete(suggestion.id)}
                   className="p-1 text-neutral-400 hover:text-red-500 transition-colors"

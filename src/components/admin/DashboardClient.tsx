@@ -76,7 +76,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] flex flex-col gap-4 xl:gap-5 overflow-auto lg:overflow-hidden">
+      <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
         <div className="flex items-center justify-between shrink-0">
           <div className="h-7 w-48 bg-zinc-200 rounded animate-pulse" />
           <div className="h-8 w-36 bg-zinc-100 rounded-xl animate-pulse" />
@@ -98,7 +98,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   }
 
   return (
-    <div className="min-h-0 lg:h-[calc(100dvh-4.5rem)] flex flex-col gap-4 xl:gap-5 overflow-auto lg:overflow-hidden">
+    <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
       {/* Greeting Bar */}
       <div className="flex items-center justify-between shrink-0">
         <h1 className="text-xl font-semibold text-zinc-900">

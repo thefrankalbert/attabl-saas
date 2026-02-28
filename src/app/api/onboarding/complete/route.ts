@@ -29,8 +29,11 @@ export async function POST(request: Request) {
 
     const parseResult = onboardingCompleteSchema.safeParse(body);
     if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
-      return NextResponse.json({ error: firstError }, { status: 400 });
+      const fieldErrors = parseResult.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`);
+      return NextResponse.json(
+        { error: 'Validation failed', details: fieldErrors },
+        { status: 400 },
+      );
     }
 
     const { data } = parseResult.data;

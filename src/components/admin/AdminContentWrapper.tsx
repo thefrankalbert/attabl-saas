@@ -28,11 +28,12 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   const duration = prefersReduced ? 0 : 0.2;
 
   return (
-    <div className="max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14">
+    <div className="h-full max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14 flex flex-col">
       {chrome}
       <AnimatePresence mode="wait">
         <motion.div
           key={pathname}
+          className="flex-1 min-h-0"
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
