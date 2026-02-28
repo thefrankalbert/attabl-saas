@@ -14,7 +14,6 @@ import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
-import CartSummary from '@/components/tenant/CartSummary';
 import TablePicker from '@/components/tenant/TablePicker';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
 
@@ -428,9 +427,6 @@ export default function ClientMenuPage({
           </div>
         )}
       </main>
-
-      {/* Cart Summary — floating FAB visible on all screen sizes */}
-      <CartSummary />
 
       {/* Feature Modals */}
       <TablePicker
