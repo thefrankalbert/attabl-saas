@@ -40,10 +40,10 @@ const mockOrders = [
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-screen w-full flex bg-white">
+    <div className="min-h-dvh md:h-dvh w-full flex bg-white">
       {/* ── Left — Form panel ─────────────────────────────── */}
-      <div className="w-full md:w-[55%] flex items-center justify-center bg-white px-4 sm:px-8 md:px-12 lg:px-20 py-10 overflow-y-auto">
-        <div className="w-full max-w-[420px]">{children}</div>
+      <div className="w-full md:w-[55%] flex flex-col bg-white px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
+        <div className="w-full max-w-[420px] m-auto">{children}</div>
       </div>
 
       {/* ── Right — Showcase panel ────────────────────────── */}
