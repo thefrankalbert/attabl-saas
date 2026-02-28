@@ -15,11 +15,12 @@ import InstallPrompt from '@/components/tenant/InstallPrompt';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
 import TablePicker from '@/components/tenant/TablePicker';
+import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-lg" />,
+  loading: () => <div className="h-64 animate-pulse bg-neutral-100 rounded-lg" />,
 });
 
 interface ClientMenuPageProps {
@@ -51,6 +52,7 @@ export default function ClientMenuPage({
 }: ClientMenuPageProps) {
   const t = useTranslations('tenant');
   const { toast } = useToast();
+  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [tableNumber, setTableNumber] = useState<string | null>(initialTable || null);
@@ -228,28 +230,30 @@ export default function ClientMenuPage({
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-32">
+    <div className="min-h-screen bg-[#FAFAFA] pb-32">
       {/* Header */}
-      <header className="bg-white sticky top-0 z-40 border-b border-gray-100">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          {tenant.logo_url ? (
-            <Image
-              src={tenant.logo_url}
-              alt={tenant.name}
-              width={120}
-              height={40}
-              className="h-10 w-auto object-contain"
-              priority
-            />
-          ) : (
-            <h1 className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
-              {tenant.name}
-            </h1>
-          )}
-
+      <header className="sticky top-0 z-40">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
+        <div className="relative max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {tenant.logo_url ? (
+              <Image
+                src={tenant.logo_url}
+                alt={tenant.name}
+                width={120}
+                height={40}
+                className="h-10 w-auto object-contain"
+                priority
+              />
+            ) : (
+              <h1 className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
+                {tenant.name}
+              </h1>
+            )}
+          </div>
           {tableNumber && (
-            <div className="text-xs font-semibold px-2 py-1 bg-gray-100 rounded-lg text-gray-600">
-              Table {tableNumber}
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 rounded-full">
+              <span className="text-xs font-semibold text-neutral-700">Table {tableNumber}</span>
             </div>
           )}
         </div>
@@ -267,22 +271,6 @@ export default function ClientMenuPage({
           // Extend ClientShortcuts to accept onDineInClick -> Open Table Picker
         />
 
-        {/* Temporary Button for Table Picker until ClientShortcuts is fully wired */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          <button
-            onClick={() => setIsTablePickerOpen(true)}
-            className="px-4 py-2 bg-white border rounded-lg text-sm font-medium whitespace-nowrap"
-          >
-            Choisir ma table
-          </button>
-          <button
-            onClick={() => setIsQRScannerOpen(true)}
-            className="px-4 py-2 bg-white border rounded-lg text-sm font-medium whitespace-nowrap"
-          >
-            Scanner QR
-          </button>
-        </div>
-
         {/* Venues Selector */}
         {venues && venues.length > 1 && (
           <div className="mb-6">
@@ -290,11 +278,12 @@ export default function ClientMenuPage({
               <button
                 onClick={() => setActiveVenueId(null)}
                 className={cn(
-                  'flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
+                  'flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
                   !activeVenueId
-                    ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                    ? 'text-white'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
                 )}
+                style={!activeVenueId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
               >
                 {t('allSpaces')}
               </button>
@@ -303,11 +292,16 @@ export default function ClientMenuPage({
                   key={venue.id}
                   onClick={() => setActiveVenueId(venue.id)}
                   className={cn(
-                    'flex-shrink-0 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all whitespace-nowrap',
+                    'flex-shrink-0 px-4 py-2.5 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
                     activeVenueId === venue.id
-                      ? 'bg-gray-900 text-white shadow-md'
-                      : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                      ? 'text-white'
+                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
                   )}
+                  style={
+                    activeVenueId === venue.id
+                      ? { backgroundColor: 'var(--tenant-primary)' }
+                      : undefined
+                  }
                 >
                   {venue.name}
                 </button>
@@ -329,9 +323,14 @@ export default function ClientMenuPage({
                 className={cn(
                   'flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap',
                   activeMenuSlug === menu.slug
-                    ? 'bg-gray-900 text-white shadow-md'
-                    : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50',
+                    ? 'text-white'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200',
                 )}
+                style={
+                  activeMenuSlug === menu.slug
+                    ? { backgroundColor: 'var(--tenant-primary)' }
+                    : undefined
+                }
               >
                 {menu.name}
               </button>
@@ -347,11 +346,12 @@ export default function ClientMenuPage({
               className={cn(
                 'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
                 !activeSubMenuId
-                  ? 'bg-gray-700 text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                  ? 'text-white'
+                  : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200',
               )}
+              style={!activeSubMenuId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
             >
-              Tout
+              {t('all')}
             </button>
             {activeMenu.children
               .filter((c) => c.is_active)
@@ -362,9 +362,14 @@ export default function ClientMenuPage({
                   className={cn(
                     'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
                     activeSubMenuId === child.id
-                      ? 'bg-gray-700 text-white'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                      ? 'text-white'
+                      : 'bg-neutral-100 text-neutral-500 hover:bg-neutral-200',
                   )}
+                  style={
+                    activeSubMenuId === child.id
+                      ? { backgroundColor: 'var(--tenant-primary)' }
+                      : undefined
+                  }
                 >
                   {child.name}
                 </button>
@@ -385,28 +390,26 @@ export default function ClientMenuPage({
                 category.items.length > 0 && (
                   <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-32">
                     <div className="flex items-center gap-3 mb-4 px-1">
-                      <h2 className="text-lg font-extrabold text-gray-900 uppercase tracking-tight">
+                      <h2 className="text-sm font-bold text-neutral-400 uppercase tracking-widest">
                         {category.name}
                       </h2>
-                      <div className="h-px bg-gray-200 flex-1"></div>
+                      <div className="h-px bg-neutral-100 flex-1"></div>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 sm:gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
                       {category.items.map((item: MenuItem) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
                         const effectiveItem = isRealtimeDisabled
                           ? { ...item, is_available: false }
                           : item;
                         return (
-                          <div
+                          <MenuItemCard
                             key={item.id}
-                            className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
-                          >
-                            <MenuItemCard
-                              item={effectiveItem}
-                              restaurantId={tenant.id}
-                              category={category.name}
-                            />
-                          </div>
+                            item={effectiveItem}
+                            restaurantId={tenant.id}
+                            category={category.name}
+                            currency={tenant.currency}
+                            onOpenDetail={() => setSelectedItem(effectiveItem)}
+                          />
                         );
                       })}
                     </div>
@@ -417,7 +420,7 @@ export default function ClientMenuPage({
         ) : (
           <div className="text-center py-20">
             <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm mx-auto">
-              <p className="text-gray-500 font-medium">Aucun menu disponible pour le moment.</p>
+              <p className="text-neutral-500 font-medium">Aucun menu disponible pour le moment.</p>
             </div>
           </div>
         )}
@@ -441,6 +444,15 @@ export default function ClientMenuPage({
 
       {/* Install Prompt */}
       <InstallPrompt appName={tenant.name} logoUrl={tenant.logo_url} />
+
+      {/* Item Detail Sheet */}
+      <ItemDetailSheet
+        item={selectedItem}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
+        restaurantId={tenant.id}
+        currency={tenant.currency}
+      />
 
       {/* Bottom Nav */}
       <BottomNav
