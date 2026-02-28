@@ -63,7 +63,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         // Today's orders for stats
         supabase
           .from('orders')
-          .select('id, total_price, total, created_at')
+          .select('id, total_price, total, status, created_at')
           .eq('tenant_id', tenantId)
           .gte('created_at', today.toISOString()),
         // Active items count
@@ -87,7 +87,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           )
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
-          .limit(6),
+          .limit(8),
         // Low stock items
         supabase
           .from('ingredients')
@@ -99,7 +99,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         // Yesterday's orders for trend comparison
         supabase
           .from('orders')
-          .select('id, total_price, total')
+          .select('id, total_price, total, status')
           .eq('tenant_id', tenantId)
           .gte('created_at', yesterday.toISOString())
           .lt('created_at', today.toISOString()),
@@ -119,16 +119,18 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       const ordersData = ordersRes.data || [];
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
-        revenueToday: ordersData.reduce(
-          (sum, o) =>
-            sum +
-            Number(
-              (o as Record<string, unknown>).total_price ||
-                (o as Record<string, unknown>).total ||
-                0,
-            ),
-          0,
-        ),
+        revenueToday: ordersData
+          .filter((o) => (o as Record<string, unknown>).status === 'delivered')
+          .reduce(
+            (sum, o) =>
+              sum +
+              Number(
+                (o as Record<string, unknown>).total_price ||
+                  (o as Record<string, unknown>).total ||
+                  0,
+              ),
+            0,
+          ),
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -156,14 +158,18 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
 
       // Trend calculations
       const yesterdayOrders = yesterdayRes.data || [];
-      const yesterdayRevenue = yesterdayOrders.reduce(
-        (sum, o) =>
-          sum +
-          Number(
-            (o as Record<string, unknown>).total_price || (o as Record<string, unknown>).total || 0,
-          ),
-        0,
-      );
+      const yesterdayRevenue = yesterdayOrders
+        .filter((o) => (o as Record<string, unknown>).status === 'delivered')
+        .reduce(
+          (sum, o) =>
+            sum +
+            Number(
+              (o as Record<string, unknown>).total_price ||
+                (o as Record<string, unknown>).total ||
+                0,
+            ),
+          0,
+        );
       const yesterdayCount = yesterdayOrders.length;
 
       if (yesterdayCount > 0) {

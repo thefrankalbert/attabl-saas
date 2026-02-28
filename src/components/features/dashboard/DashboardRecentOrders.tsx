@@ -61,7 +61,7 @@ export default function DashboardRecentOrders({
       {/* Recent Orders — spans full width when stock is hidden */}
       {showOrders && (
         <div
-          className={`min-h-[300px] md:min-h-0 overflow-hidden bg-white border border-zinc-100 rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow flex flex-col ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
+          className={`min-h-[300px] md:min-h-0 overflow-hidden rounded-2xl bg-white border border-zinc-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow flex flex-col ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
         >
           <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100 shrink-0">
             <div className="flex items-center gap-3">

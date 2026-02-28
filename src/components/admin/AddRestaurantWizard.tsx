@@ -153,8 +153,8 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <Building2 className="h-5 w-5 text-black" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">Nouvel etablissement</h2>
-              <p className="text-xs text-neutral-400">Etape {step} sur 3</p>
+              <h2 className="text-lg font-bold text-neutral-900">Nouvel établissement</h2>
+              <p className="text-xs text-neutral-400">Étape {step} sur 3</p>
             </div>
           </div>
 
@@ -178,7 +178,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
-                  Nom de l&apos;etablissement
+                  Nom de l&apos;établissement
                 </Label>
                 <Input
                   id="name"
@@ -191,7 +191,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
               <div className="space-y-1.5">
                 <Label htmlFor="type" className="text-sm font-medium text-neutral-700">
-                  Type d&apos;etablissement
+                  Type d&apos;établissement
                 </Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger className="h-11 rounded-lg border-neutral-200">
@@ -350,7 +350,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  Creer l&apos;etablissement
+                  Créer l&apos;établissement
                 </>
               )}
             </Button>

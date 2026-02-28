@@ -34,7 +34,7 @@ export const onboardingCompleteSchema = z.object({
     country: z.string().max(100).optional(),
     phone: z.string().max(20).optional(),
     tableCount: z.number().int().min(0).max(500).optional(),
-    logoUrl: z.union([z.string().url(), z.literal('')]).optional(),
+    logoUrl: z.string().optional(),
     primaryColor: z
       .string()
       .regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)

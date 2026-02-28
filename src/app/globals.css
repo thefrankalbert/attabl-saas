@@ -1,5 +1,9 @@
 @import 'tailwindcss';
 
+/* SCROLL CONTRACT: Only <main#main-content> scrolls.
+   Child pages must NOT set viewport heights (100dvh, 100vh).
+   Use h-full to fill the parent flex container. */
+
 @custom-variant dark (&:is(.dark *));
 
 @theme {

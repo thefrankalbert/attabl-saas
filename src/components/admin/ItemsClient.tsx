@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { checkCanAddMenuItemAction } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
+import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
@@ -614,11 +615,11 @@ export default function ItemsClient({
             </div>
             <div className="space-y-1.5">
               <Label className="text-neutral-900">{t('imageUrl')}</Label>
-              <Input
+              <ImageUpload
                 value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-                placeholder="https://..."
-                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                onChange={(url) => setImageUrl(url)}
+                onRemove={() => setImageUrl('')}
+                bucket="menu-items"
               />
             </div>
             <div className="space-y-1.5">

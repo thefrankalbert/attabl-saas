@@ -110,9 +110,9 @@ export function useReportData(tenantId: string, period: Period) {
       const supabase = createClient();
       const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period);
 
-      let dailyRes, topRes, summaryRes, prevSummaryRes, categoryRes;
+      let dailyRes, topRes, summaryRes, prevSummaryRes;
       try {
-        [dailyRes, topRes, summaryRes, prevSummaryRes, categoryRes] = await Promise.all([
+        [dailyRes, topRes, summaryRes, prevSummaryRes] = await Promise.all([
           supabase.rpc('get_daily_revenue', {
             p_tenant_id: tenantId,
             p_start_date: startDate,
@@ -134,11 +134,6 @@ export function useReportData(tenantId: string, period: Period) {
             p_start_date: prevStartDate,
             p_end_date: prevEndDate,
           }),
-          supabase.rpc('get_category_breakdown', {
-            p_tenant_id: tenantId,
-            p_start_date: startDate,
-            p_end_date: endDate,
-          }),
         ]);
       } catch {
         return emptyDefaults;
@@ -149,6 +144,12 @@ export function useReportData(tenantId: string, period: Period) {
         return emptyDefaults;
       }
 
+      // Category breakdown via direct query (no RPC needed)
+      const categoryRes = await supabase
+        .from('order_items')
+        .select('quantity, price_at_order, menu_items!inner(categories!inner(name))')
+        .eq('tenant_id', tenantId);
+
       // Fetch server performance stats (separate query, non-blocking)
       const serverRes = await supabase
         .from('orders')
@@ -158,30 +159,30 @@ export function useReportData(tenantId: string, period: Period) {
         .lte('created_at', endDate + 'T23:59:59')
         .not('server_id', 'is', null);
 
-      // Process daily stats
+      // Process daily stats (RPC returns: day, revenue, order_count)
       const rawDaily = (dailyRes.data || []) as {
-        report_date: string;
+        day: string;
         revenue: number;
         order_count: number;
       }[];
       const dailyStats = rawDaily.map((d) => ({
-        date: d.report_date,
+        date: d.day,
         revenue: Number(d.revenue) || 0,
         orders: Number(d.order_count) || 0,
       }));
 
-      // Process top items
+      // Process top items (RPC returns: item_id, item_name, quantity_sold, revenue)
       const rawTop = (topRes.data || []) as {
         item_id: string;
         item_name: string;
-        total_quantity: number;
-        total_revenue: number;
+        quantity_sold: number;
+        revenue: number;
       }[];
       const topItems = rawTop.map((t) => ({
         id: t.item_id,
         name: t.item_name,
-        quantity: Number(t.total_quantity) || 0,
-        revenue: Number(t.total_revenue) || 0,
+        quantity: Number(t.quantity_sold) || 0,
+        revenue: Number(t.revenue) || 0,
       }));
 
       // Process summary
@@ -208,22 +209,25 @@ export function useReportData(tenantId: string, period: Period) {
         avgBasket: Math.round(Number(rawPrev?.avg_basket) || 0),
       };
 
-      // Category breakdown
+      // Category breakdown from direct query
       let categories: CategoryBreakdown[] = [];
       if (!categoryRes.error && categoryRes.data) {
-        const rawCats = (categoryRes.data || []) as {
-          category_name: string;
-          total_revenue: number;
-        }[];
-        const totalCatRevenue = rawCats.reduce((sum, c) => sum + (Number(c.total_revenue) || 0), 0);
-        categories = rawCats.map((c) => ({
-          category: c.category_name || 'Uncategorized',
-          revenue: Number(c.total_revenue) || 0,
-          percentage:
-            totalCatRevenue > 0
-              ? Math.round(((Number(c.total_revenue) || 0) / totalCatRevenue) * 100)
-              : 0,
-        }));
+        const categoryMap: Record<string, number> = {};
+        for (const item of categoryRes.data as Array<Record<string, unknown>>) {
+          const menuItem = item.menu_items as Record<string, unknown> | null;
+          const category = menuItem?.categories as Record<string, unknown> | null;
+          const name = (category?.name as string) || 'Autres';
+          const revenue = Number(item.quantity || 0) * Number(item.price_at_order || 0);
+          categoryMap[name] = (categoryMap[name] || 0) + revenue;
+        }
+        const totalCatRevenue = Object.values(categoryMap).reduce((sum, v) => sum + v, 0);
+        categories = Object.entries(categoryMap)
+          .sort(([, a], [, b]) => b - a)
+          .map(([name, rev]) => ({
+            category: name,
+            revenue: rev,
+            percentage: totalCatRevenue > 0 ? Math.round((rev / totalCatRevenue) * 100) : 0,
+          }));
       }
 
       // Server performance stats

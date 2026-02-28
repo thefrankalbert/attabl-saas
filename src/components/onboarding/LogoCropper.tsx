@@ -3,17 +3,20 @@
 import { useState, useCallback } from 'react';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
-import { X, Check, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Check, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { compressImage, uploadToStorage } from '@/lib/image-compress';
+import { createClient } from '@/lib/supabase/client';
 
 interface LogoCropperProps {
   imageSrc: string;
-  onComplete: (croppedUrl: string) => void;
+  onComplete: (publicUrl: string) => void;
   onCancel: () => void;
+  onError?: (message: string) => void;
 }
 
-/** Turn the pixel crop from react-easy-crop into a data URL */
-async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<string> {
+/** Turn the pixel crop from react-easy-crop into a Blob */
+async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> {
   const image = await new Promise<HTMLImageElement>((resolve, reject) => {
     const img = new Image();
     img.addEventListener('load', () => resolve(img));
@@ -39,10 +42,19 @@ async function getCroppedImg(imageSrc: string, pixelCrop: Area): Promise<string>
     pixelCrop.height,
   );
 
-  return canvas.toDataURL('image/png');
+  return new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(
+      (blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Canvas toBlob failed'));
+      },
+      'image/png',
+      1,
+    );
+  });
 }
 
-export function LogoCropper({ imageSrc, onComplete, onCancel }: LogoCropperProps) {
+export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCropperProps) {
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -56,10 +68,28 @@ export function LogoCropper({ imageSrc, onComplete, onCancel }: LogoCropperProps
     if (!croppedAreaPixels) return;
     setApplying(true);
     try {
-      const url = await getCroppedImg(imageSrc, croppedAreaPixels);
-      onComplete(url);
-    } catch {
-      // fallback: return original
+      // 1. Crop the image to a blob
+      const croppedBlob = await getCroppedBlob(imageSrc, croppedAreaPixels);
+
+      // 2. Compress to max 512×512 JPEG
+      const compressed = await compressImage(croppedBlob, {
+        maxWidth: 512,
+        maxHeight: 512,
+        quality: 0.8,
+        type: 'image/jpeg',
+      });
+
+      // 3. Upload to Supabase Storage
+      const supabase = createClient();
+      const publicUrl = await uploadToStorage(compressed, 'logos', supabase);
+
+      onComplete(publicUrl);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Upload failed';
+      if (onError) {
+        onError(message);
+      }
+      // Fallback: still try to return original (as data URL) so user isn't stuck
       onComplete(imageSrc);
     } finally {
       setApplying(false);
@@ -75,6 +105,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel }: LogoCropperProps
           <button
             type="button"
             onClick={onCancel}
+            disabled={applying}
             className="p-1 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
           >
             <X className="h-5 w-5" />
@@ -127,7 +158,13 @@ export function LogoCropper({ imageSrc, onComplete, onCancel }: LogoCropperProps
 
         {/* Actions */}
         <div className="flex gap-3 px-5 py-4">
-          <Button type="button" variant="outline" className="flex-1 rounded-xl" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            className="flex-1 rounded-xl"
+            onClick={onCancel}
+            disabled={applying}
+          >
             Annuler
           </Button>
           <Button
@@ -136,8 +173,17 @@ export function LogoCropper({ imageSrc, onComplete, onCancel }: LogoCropperProps
             onClick={handleApply}
             disabled={applying}
           >
-            <Check className="h-4 w-4 mr-2" />
-            {applying ? 'Application…' : 'Appliquer'}
+            {applying ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Envoi…
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                Appliquer
+              </>
+            )}
           </Button>
         </div>
       </div>

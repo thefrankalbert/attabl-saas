@@ -10,7 +10,24 @@ import { logger } from '@/lib/logger';
 import { useTranslations } from 'next-intl';
 
 export default function CartPage() {
-  const { items, updateQuantity, totalPrice, totalItems, clearCart, notes, setNotes } = useCart();
+  const {
+    items,
+    updateQuantity,
+    totalItems,
+    clearCart,
+    notes,
+    setNotes,
+    subtotal,
+    taxAmount,
+    serviceChargeAmount,
+    discountAmount,
+    grandTotal,
+    enableTax,
+    enableServiceCharge,
+    taxRate,
+    serviceChargeRate,
+    currencyCode,
+  } = useCart();
   const { slug: tenantSlug, tenantId } = useTenant();
   const t = useTranslations('tenant');
   const menuPath = `/sites/${tenantSlug}`;
@@ -270,13 +287,45 @@ export default function CartPage() {
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-neutral-600">
               <span>{t('subtotal')}</span>
-              <span>{totalPrice.toLocaleString('fr-FR')} F</span>
+              <span>
+                {subtotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
+              </span>
             </div>
+            {enableTax && taxAmount > 0 && (
+              <div className="flex justify-between text-neutral-600">
+                <span>
+                  {t('tax')} ({taxRate}%)
+                </span>
+                <span>
+                  {taxAmount.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
+                </span>
+              </div>
+            )}
+            {enableServiceCharge && serviceChargeAmount > 0 && (
+              <div className="flex justify-between text-neutral-600">
+                <span>
+                  {t('serviceCharge')} ({serviceChargeRate}%)
+                </span>
+                <span>
+                  {serviceChargeAmount.toLocaleString('fr-FR')}{' '}
+                  {currencyCode === 'XAF' ? 'F' : currencyCode}
+                </span>
+              </div>
+            )}
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-green-600">
+                <span>{t('discount')}</span>
+                <span>
+                  -{discountAmount.toLocaleString('fr-FR')}{' '}
+                  {currencyCode === 'XAF' ? 'F' : currencyCode}
+                </span>
+              </div>
+            )}
             <div className="border-t border-neutral-100 pt-2 mt-2">
               <div className="flex justify-between items-baseline">
                 <span className="font-bold text-neutral-900">{t('total')}</span>
                 <span className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
-                  {totalPrice.toLocaleString('fr-FR')} F
+                  {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
                 </span>
               </div>
             </div>
@@ -312,7 +361,7 @@ export default function CartPage() {
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-neutral-500">{t('total')}</span>
           <span className="text-lg font-bold" style={{ color: 'var(--tenant-primary)' }}>
-            {totalPrice.toLocaleString('fr-FR')} F
+            {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
           </span>
         </div>
         <button

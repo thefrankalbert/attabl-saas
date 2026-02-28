@@ -27,16 +27,15 @@ const footerColumns = [
   {
     title: 'Entreprise',
     links: [
-      { label: 'À propos', href: '#' },
-      { label: 'Contact', href: 'mailto:contact@attabl.com' },
-      { label: 'Blog', href: '#' },
+      { label: 'À propos', href: '/about' },
+      { label: 'Contact', href: '/contact' },
     ],
   },
   {
     title: 'Légal',
     links: [
-      { label: 'CGU', href: '#' },
-      { label: 'Confidentialité', href: '#' },
+      { label: 'CGU', href: '/legal' },
+      { label: 'Confidentialité', href: '/privacy' },
     ],
   },
 ] as const;
