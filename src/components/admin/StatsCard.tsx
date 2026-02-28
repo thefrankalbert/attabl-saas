@@ -27,12 +27,12 @@ export default function StatsCard({
   sparklineData,
 }: StatsCardProps) {
   return (
-    <div className="bg-white border border-zinc-100 rounded-2xl p-5 sm:p-6 flex flex-col justify-between shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:shadow-md transition-shadow">
+    <div className="bg-surface-primary border border-border-default rounded-xl p-5 sm:p-6 flex flex-col justify-between shadow-none transition-colors hover:border-border-strong">
       {/* Label */}
-      <p className="text-xs uppercase tracking-wide text-zinc-400 font-medium">{title}</p>
+      <p className="text-xs uppercase tracking-wider text-text-secondary font-medium">{title}</p>
 
       {/* Value */}
-      <div className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight mt-1">
+      <div className="text-3xl sm:text-4xl font-bold text-text-primary tracking-tight mt-1">
         {value}
       </div>
 
@@ -42,7 +42,9 @@ export default function StatsCard({
           <span
             className={cn(
               'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold',
-              trend.isPositive ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-600',
+              trend.isPositive
+                ? 'bg-status-success-bg text-status-success'
+                : 'bg-status-error-bg text-status-error',
             )}
           >
             {trend.isPositive ? (
@@ -54,7 +56,7 @@ export default function StatsCard({
             {trend.value}%
           </span>
         )}
-        {subtitle && <span className="text-xs text-zinc-400 font-medium">{subtitle}</span>}
+        {subtitle && <span className="text-xs text-text-muted font-medium">{subtitle}</span>}
       </div>
 
       {/* Sparkline */}
@@ -93,11 +95,11 @@ export default function StatsCard({
 
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-white border border-zinc-100 rounded-2xl p-5 sm:p-6 animate-pulse shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
-      <div className="h-3 w-16 bg-zinc-200 rounded" />
-      <div className="h-9 w-20 bg-zinc-200 rounded mt-2" />
-      <div className="h-4 w-14 bg-zinc-100 rounded-full mt-3" />
-      <div className="h-7 w-full bg-zinc-50 rounded mt-3" />
+    <div className="bg-surface-primary border border-border-default rounded-xl p-5 sm:p-6 animate-pulse shadow-none">
+      <div className="h-3 w-16 bg-surface-tertiary rounded" />
+      <div className="h-9 w-20 bg-surface-tertiary rounded mt-2" />
+      <div className="h-4 w-14 bg-border-subtle rounded-full mt-3" />
+      <div className="h-7 w-full bg-surface-secondary rounded mt-3" />
     </div>
   );
 }

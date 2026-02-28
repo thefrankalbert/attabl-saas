@@ -135,7 +135,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
     if (entry.action === 'create' && entry.new_data) {
       const keys = Object.keys(entry.new_data).slice(0, 3);
       return (
-        <span className="text-[10px] text-neutral-400">
+        <span className="text-[10px] text-text-muted">
           {keys.map((k) => `${k}: ${String(entry.new_data![k])}`).join(', ')}
           {Object.keys(entry.new_data).length > 3 && '...'}
         </span>
@@ -147,7 +147,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
       );
       if (changedKeys.length === 0) return null;
       return (
-        <span className="text-[10px] text-neutral-400">
+        <span className="text-[10px] text-text-muted">
           {changedKeys.slice(0, 2).map((k) => (
             <span key={k}>
               {k}:{' '}
@@ -175,17 +175,17 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
     <div className="container mx-auto py-8 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-neutral-900 flex items-center gap-3">
-            <ScrollText className="w-6 h-6 text-neutral-500" />
+          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-3">
+            <ScrollText className="w-6 h-6 text-text-secondary" />
             {t('title')}
           </h1>
-          <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
+          <p className="text-sm text-text-secondary mt-1">{t('subtitle')}</p>
         </div>
         <Button
           variant="outline"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className={cn(showFilters && 'bg-neutral-100')}
+          className={cn(showFilters && 'bg-surface-secondary')}
         >
           <Filter className="w-4 h-4 mr-1.5" />
           {t('filters')}
@@ -194,10 +194,10 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white rounded-xl border border-neutral-100 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
+        <div className="bg-surface-primary rounded-xl border border-border-default p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
-              <label className="text-xs font-semibold text-neutral-700 mb-1 block">
+              <label className="text-xs font-semibold text-text-primary mb-1 block">
                 {t('filterAction')}
               </label>
               <select
@@ -206,7 +206,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                   setFilterAction(e.target.value);
                   setPage(0);
                 }}
-                className="w-full h-9 px-3 text-sm border border-neutral-200 rounded-lg bg-white"
+                className="w-full h-9 px-3 text-sm border border-border-default rounded-lg bg-surface-primary"
               >
                 <option value="">{tc('all')}</option>
                 {ACTIONS.map((a) => (
@@ -217,7 +217,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-neutral-700 mb-1 block">
+              <label className="text-xs font-semibold text-text-primary mb-1 block">
                 {t('filterEntity')}
               </label>
               <select
@@ -226,7 +226,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                   setFilterEntity(e.target.value);
                   setPage(0);
                 }}
-                className="w-full h-9 px-3 text-sm border border-neutral-200 rounded-lg bg-white"
+                className="w-full h-9 px-3 text-sm border border-border-default rounded-lg bg-surface-primary"
               >
                 <option value="">{tc('all')}</option>
                 {ENTITY_TYPES.map((e) => (
@@ -237,11 +237,11 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
               </select>
             </div>
             <div>
-              <label className="text-xs font-semibold text-neutral-700 mb-1 block">
+              <label className="text-xs font-semibold text-text-primary mb-1 block">
                 {t('filterUser')}
               </label>
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
                 <Input
                   value={searchEmail}
                   onChange={(e) => {
@@ -265,37 +265,37 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
       {/* Log entries */}
       {loading ? (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+          <Loader2 className="w-6 h-6 animate-spin text-text-muted" />
         </div>
       ) : logs.length === 0 ? (
-        <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center">
-          <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <ScrollText className="w-7 h-7 text-neutral-400" />
+        <div className="bg-surface-primary rounded-xl border border-border-default p-12 text-center">
+          <div className="w-14 h-14 bg-surface-secondary rounded-xl flex items-center justify-center mx-auto mb-4">
+            <ScrollText className="w-7 h-7 text-text-muted" />
           </div>
-          <h3 className="text-base font-bold text-neutral-900">{t('empty')}</h3>
-          <p className="text-sm text-neutral-500 mt-2">{t('emptyDesc')}</p>
+          <h3 className="text-base font-bold text-text-primary">{t('empty')}</h3>
+          <p className="text-sm text-text-secondary mt-2">{t('emptyDesc')}</p>
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-xl border border-neutral-100 overflow-hidden">
+          <div className="bg-surface-primary rounded-xl border border-border-default overflow-hidden">
             {/* Desktop table */}
             <div className="hidden md:block">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-neutral-100 bg-neutral-50/50">
-                    <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                  <tr className="border-b border-border-default bg-surface-secondary/50">
+                    <th className="text-left text-xs font-semibold text-text-secondary px-4 py-3">
                       {t('colDate')}
                     </th>
-                    <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    <th className="text-left text-xs font-semibold text-text-secondary px-4 py-3">
                       {t('colUser')}
                     </th>
-                    <th className="text-center text-xs font-semibold text-neutral-500 px-4 py-3">
+                    <th className="text-center text-xs font-semibold text-text-secondary px-4 py-3">
                       {t('colAction')}
                     </th>
-                    <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    <th className="text-left text-xs font-semibold text-text-secondary px-4 py-3">
                       {t('colEntity')}
                     </th>
-                    <th className="text-left text-xs font-semibold text-neutral-500 px-4 py-3">
+                    <th className="text-left text-xs font-semibold text-text-secondary px-4 py-3">
                       {t('colDetails')}
                     </th>
                   </tr>
@@ -304,18 +304,18 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                   {logs.map((entry) => (
                     <tr
                       key={entry.id}
-                      className="border-b border-neutral-50 last:border-0 hover:bg-neutral-50/50 transition-colors"
+                      className="border-b border-border-subtle last:border-0 hover:bg-surface-secondary transition-colors"
                     >
-                      <td className="px-4 py-3 text-xs text-neutral-500 whitespace-nowrap">
+                      <td className="px-4 py-3 text-xs text-text-secondary whitespace-nowrap">
                         {formatDate(entry.created_at)}
                       </td>
                       <td className="px-4 py-3">
                         <div>
-                          <span className="text-sm text-neutral-900">
+                          <span className="text-sm text-text-primary">
                             {entry.user_email || '—'}
                           </span>
                           {entry.user_role && (
-                            <span className="ml-1.5 text-[10px] text-neutral-400 font-medium">
+                            <span className="ml-1.5 text-[10px] text-text-muted font-medium">
                               ({entry.user_role})
                             </span>
                           )}
@@ -323,7 +323,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                       </td>
                       <td className="px-4 py-3 text-center">{actionBadge(entry.action)}</td>
                       <td className="px-4 py-3">
-                        <span className="text-sm font-medium text-neutral-700">
+                        <span className="text-sm font-medium text-text-primary">
                           {entityLabel(entry.entity_type)}
                         </span>
                       </td>
@@ -335,19 +335,19 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
             </div>
 
             {/* Mobile cards */}
-            <div className="md:hidden divide-y divide-neutral-100">
+            <div className="md:hidden divide-y divide-border-default">
               {logs.map((entry) => (
                 <div key={entry.id} className="p-4 space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs text-neutral-400">{formatDate(entry.created_at)}</span>
+                    <span className="text-xs text-text-muted">{formatDate(entry.created_at)}</span>
                     {actionBadge(entry.action)}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-neutral-900">
+                    <span className="text-sm font-medium text-text-primary">
                       {entityLabel(entry.entity_type)}
                     </span>
                   </div>
-                  <div className="text-xs text-neutral-500">
+                  <div className="text-xs text-text-secondary">
                     {entry.user_email || '—'}
                     {entry.user_role && ` (${entry.user_role})`}
                   </div>
@@ -360,7 +360,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
           {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-between">
-              <span className="text-xs text-neutral-500">
+              <span className="text-xs text-text-secondary">
                 {t('showing', {
                   from: page * PAGE_SIZE + 1,
                   to: Math.min((page + 1) * PAGE_SIZE, totalCount),
@@ -377,7 +377,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </Button>
-                <span className="text-sm font-medium text-neutral-700 px-3">
+                <span className="text-sm font-medium text-text-primary px-3">
                   {page + 1} / {totalPages}
                 </span>
                 <Button

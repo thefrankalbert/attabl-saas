@@ -17,13 +17,13 @@ import dynamic from 'next/dynamic';
 const DashboardCharts = dynamic(() => import('@/components/features/dashboard/DashboardCharts'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-white border border-zinc-100 rounded-2xl animate-pulse" />
+    <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
   ),
 });
 const DashboardDonut = dynamic(() => import('@/components/features/dashboard/DashboardDonut'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-white border border-zinc-100 rounded-2xl animate-pulse" />
+    <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
   ),
 });
 const DashboardHourlyBar = dynamic(
@@ -31,7 +31,7 @@ const DashboardHourlyBar = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-white border border-zinc-100 rounded-2xl animate-pulse" />
+      <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
     ),
   },
 );
@@ -78,8 +78,8 @@ export default function DashboardClient(props: DashboardClientProps) {
     return (
       <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
         <div className="flex items-center justify-between shrink-0">
-          <div className="h-7 w-48 bg-zinc-200 rounded animate-pulse" />
-          <div className="h-8 w-36 bg-zinc-100 rounded-xl animate-pulse" />
+          <div className="h-7 w-48 bg-surface-tertiary rounded animate-pulse" />
+          <div className="h-8 w-36 bg-surface-secondary rounded-xl animate-pulse" />
         </div>
         <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_260px] gap-4 xl:gap-5">
           <div className="flex lg:flex-col gap-3">
@@ -87,10 +87,10 @@ export default function DashboardClient(props: DashboardClientProps) {
               <StatsCardSkeleton key={i} />
             ))}
           </div>
-          <div className="bg-white border border-zinc-100 rounded-2xl animate-pulse min-h-[200px]" />
+          <div className="bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[200px]" />
           <div className="flex flex-col gap-4">
-            <div className="flex-1 bg-white border border-zinc-100 rounded-2xl animate-pulse min-h-[150px]" />
-            <div className="flex-1 bg-white border border-zinc-100 rounded-2xl animate-pulse min-h-[150px]" />
+            <div className="flex-1 bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[150px]" />
+            <div className="flex-1 bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[150px]" />
           </div>
         </div>
       </div>
@@ -101,7 +101,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
       {/* Greeting Bar */}
       <div className="flex items-center justify-between shrink-0">
-        <h1 className="text-xl font-semibold text-zinc-900">
+        <h1 className="text-xl font-semibold text-text-primary tracking-tight">
           {t('greeting')}, {tenantName}
         </h1>
         <PeriodSelector value={period} onChange={setPeriod} t={t} />

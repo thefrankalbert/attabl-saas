@@ -28,7 +28,7 @@ function AdminLayoutInner({
   const { isMobile } = useDeviceContext();
 
   return (
-    <div className="h-dvh overflow-hidden flex flex-col lg:flex-row bg-neutral-100">
+    <div className="h-dvh overflow-hidden flex flex-col lg:flex-row bg-surface-secondary">
       {/* Sidebar: overlay drawer on mobile, in-flow on lg+ */}
       {sidebar}
 
@@ -37,7 +37,7 @@ function AdminLayoutInner({
         {/* Skip link: visible only on Tab focus for keyboard users */}
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-neutral-900"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg focus:ring-2 focus:ring-action-primary/30"
         >
           Skip to content
         </a>
