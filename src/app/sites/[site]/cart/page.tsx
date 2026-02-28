@@ -2,34 +2,17 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
-import { Button } from '@/components/ui/button';
-import {
-  Trash2,
-  Plus,
-  Minus,
-  ArrowLeft,
-  ShoppingBag,
-  Loader2,
-  CheckCircle,
-  AlertCircle,
-} from 'lucide-react';
+import { Plus, Minus, ArrowLeft, Utensils, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
 import { logger } from '@/lib/logger';
+import { useTranslations } from 'next-intl';
 
 export default function CartPage() {
-  const {
-    items,
-    updateQuantity,
-    removeFromCart,
-    totalPrice,
-    totalItems,
-    clearCart,
-    notes,
-    setNotes,
-  } = useCart();
+  const { items, updateQuantity, totalPrice, totalItems, clearCart, notes, setNotes } = useCart();
   const { slug: tenantSlug, tenantId } = useTenant();
+  const t = useTranslations('tenant');
   const menuPath = `/sites/${tenantSlug}`;
 
   // États pour la soumission
@@ -112,27 +95,31 @@ export default function CartPage() {
   // Affichage succès
   if (orderSuccess) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Commande envoyée !</h2>
-          <p className="text-gray-600 mb-2">
-            Votre commande <span className="font-semibold">{orderSuccess.orderNumber}</span> a été
-            transmise à la cuisine.
+          <h2 className="text-2xl font-bold mb-2">{t('orderSent')}</h2>
+          <p className="text-neutral-600 mb-2">
+            {t('orderSentDesc', { number: orderSuccess.orderNumber })}
           </p>
-          <p className="text-2xl font-bold text-amber-600 mb-6">
+          <p className="text-2xl font-bold mb-6" style={{ color: 'var(--tenant-primary)' }}>
             {orderSuccess.total.toLocaleString('fr-FR')} F
           </p>
           <div className="flex flex-col gap-3">
             <Link href={`/sites/${tenantSlug}/orders`}>
-              <Button className="w-full bg-amber-600 hover:bg-amber-700">Suivre ma commande</Button>
+              <button
+                className="w-full h-12 rounded-xl text-white font-semibold transition-transform active:scale-[0.98]"
+                style={{ backgroundColor: 'var(--tenant-primary)' }}
+              >
+                {t('trackOrder')}
+              </button>
             </Link>
             <Link href={menuPath}>
-              <Button variant="outline" className="w-full">
-                Retour au menu
-              </Button>
+              <button className="w-full h-12 rounded-xl border border-neutral-200 font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors">
+                {t('backToMenu')}
+              </button>
             </Link>
           </div>
         </div>
@@ -143,18 +130,21 @@ export default function CartPage() {
   // Panier vide
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <ShoppingBag className="w-10 h-10 text-gray-400" />
+          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Utensils className="w-10 h-10 text-neutral-400" />
           </div>
-          <h2 className="text-2xl font-bold mb-4">Votre panier est vide</h2>
-          <p className="text-gray-600 mb-6">Commencez à ajouter des articles pour continuer</p>
+          <h2 className="text-2xl font-bold mb-4">{t('emptyCart')}</h2>
+          <p className="text-neutral-600 mb-6">{t('emptyCartDesc')}</p>
           <Link href={menuPath}>
-            <Button>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Retour au menu
-            </Button>
+            <button
+              className="h-12 px-6 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
+              style={{ backgroundColor: 'var(--tenant-primary)' }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('browseMenu')}
+            </button>
           </Link>
         </div>
       </div>
@@ -162,24 +152,27 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center gap-4">
-            <Link href={menuPath} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-              <ArrowLeft className="w-5 h-5" />
-            </Link>
-            <h1 className="text-xl font-bold">Votre panier</h1>
-            <span className="text-sm text-gray-500">({totalItems} articles)</span>
-          </div>
+    <div className="min-h-screen bg-[#FAFAFA]">
+      {/* Header — frosted glass */}
+      <header className="sticky top-0 z-40">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
+        <div className="relative flex items-center gap-3 px-4 py-3 max-w-4xl mx-auto">
+          <Link href={menuPath} className="p-2 rounded-full hover:bg-neutral-100 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-lg font-bold text-neutral-900">
+            {t('yourCart')}{' '}
+            <span className="text-sm font-normal text-neutral-500">
+              ({t('itemCount', { count: totalItems })})
+            </span>
+          </h1>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 max-w-4xl pb-32 lg:pb-6">
+      <main className="max-w-lg mx-auto px-4 py-6 pb-32 space-y-4">
         {/* Erreurs de validation */}
         {(error || validationErrors.length > 0) && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -196,193 +189,140 @@ export default function CartPage() {
           </div>
         )}
 
-        <div className="grid md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-          {/* Items List */}
-          <div className="md:col-span-2 space-y-3">
-            {items.map((item) => {
-              const itemKey = getItemKey(item);
-              return (
-                <div key={itemKey} className="bg-white rounded-xl p-4 shadow-sm">
-                  <div className="flex gap-4">
-                    {/* Image */}
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0 relative">
-                      {item.image_url ? (
-                        <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <ShoppingBag className="w-8 h-8 text-gray-300" />
-                        </div>
-                      )}
+        {/* Cart items card */}
+        <div className="bg-white rounded-2xl border border-neutral-100 divide-y divide-neutral-50">
+          {items.map((item) => {
+            const itemKey = getItemKey(item);
+            return (
+              <div key={itemKey} className="flex items-center gap-3 p-4">
+                {/* Thumbnail 48×48 */}
+                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 relative">
+                  {item.image_url ? (
+                    <Image src={item.image_url} alt={item.name} fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Utensils className="w-5 h-5 text-neutral-300" />
                     </div>
-
-                    {/* Details */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-gray-900 line-clamp-1">{item.name}</h3>
-
-                      {/* Option/Variant info */}
-                      {(item.selectedOption || item.selectedVariant) && (
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          {item.selectedOption && item.selectedOption.name_fr}
-                          {item.selectedOption && item.selectedVariant && ' • '}
-                          {item.selectedVariant && item.selectedVariant.name_fr}
-                        </p>
-                      )}
-
-                      <p className="text-lg font-bold text-amber-600 mt-2">
-                        {item.price.toLocaleString('fr-FR')} F
-                      </p>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col items-end justify-between">
-                      {/* Remove Button */}
-                      <button
-                        onClick={() => removeFromCart(itemKey)}
-                        className="p-2.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                        aria-label="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-
-                      {/* Quantity Controls */}
-                      <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1">
-                        <button
-                          onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors"
-                          aria-label="Diminuer la quantité"
-                        >
-                          <Minus className="w-4 h-4" />
-                        </button>
-
-                        <span className="w-8 text-center font-semibold text-sm">
-                          {item.quantity}
-                        </span>
-
-                        <button
-                          onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                          className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-white transition-colors"
-                          aria-label="Augmenter la quantité"
-                        >
-                          <Plus className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
 
-            {/* Notes */}
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                Notes pour la commande (optionnel)
-              </label>
-              <textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Allergies, préférences, instructions spéciales..."
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
-                rows={3}
-              />
-            </div>
-          </div>
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-neutral-900 truncate">{item.name}</h3>
+                  {(item.selectedOption || item.selectedVariant) && (
+                    <p className="text-xs text-neutral-400 truncate">
+                      {item.selectedOption && item.selectedOption.name_fr}
+                      {item.selectedOption && item.selectedVariant && ' · '}
+                      {item.selectedVariant && item.selectedVariant.name_fr}
+                    </p>
+                  )}
+                </div>
 
-          {/* Summary Sidebar */}
-          <div className="md:col-span-1">
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm md:sticky md:top-20">
-              <h2 className="text-lg font-bold mb-4">Récapitulatif</h2>
-
-              {/* Items Summary */}
-              <div className="space-y-2 text-sm">
-                {items.map((item) => {
-                  const itemKey = getItemKey(item);
-                  return (
-                    <div key={itemKey} className="flex justify-between">
-                      <span className="text-gray-600">
-                        {item.quantity}x{' '}
-                        {item.name.length > 20 ? item.name.substring(0, 20) + '...' : item.name}
-                      </span>
-                      <span className="font-medium">
-                        {(item.price * item.quantity).toLocaleString('fr-FR')} F
-                      </span>
-                    </div>
-                  );
-                })}
+                {/* Quantity + Price */}
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => updateQuantity(itemKey, item.quantity - 1)}
+                      className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                      aria-label="Decrease quantity"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-sm font-bold min-w-[20px] text-center">
+                      {item.quantity}
+                    </span>
+                    <button
+                      onClick={() => updateQuantity(itemKey, item.quantity + 1)}
+                      className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                      aria-label="Increase quantity"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                  <span
+                    className="text-sm font-bold min-w-[60px] text-right"
+                    style={{ color: 'var(--tenant-primary)' }}
+                  >
+                    {(item.price * item.quantity).toLocaleString('fr-FR')} F
+                  </span>
+                </div>
               </div>
+            );
+          })}
+        </div>
 
-              <hr className="my-4" />
+        {/* Notes card */}
+        <div className="bg-white rounded-2xl border border-neutral-100 p-4">
+          <label htmlFor="notes" className="block text-sm font-semibold text-neutral-900 mb-2">
+            {t('specialInstructions')}
+          </label>
+          <textarea
+            id="notes"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder={t('specialInstructionsPlaceholder')}
+            className="w-full px-3 py-2 border border-neutral-100 rounded-xl text-sm resize-none h-20 focus:outline-none focus:border-neutral-300"
+          />
+        </div>
 
-              {/* Total */}
-              <div className="flex justify-between items-center mb-6">
-                <span className="text-lg font-bold">Total</span>
-                <span className="text-xl font-bold text-amber-600">
+        {/* Summary card */}
+        <div className="bg-white rounded-2xl border border-neutral-100 p-5">
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between text-neutral-600">
+              <span>{t('subtotal')}</span>
+              <span>{totalPrice.toLocaleString('fr-FR')} F</span>
+            </div>
+            <div className="border-t border-neutral-100 pt-2 mt-2">
+              <div className="flex justify-between items-baseline">
+                <span className="font-bold text-neutral-900">{t('total')}</span>
+                <span className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
                   {totalPrice.toLocaleString('fr-FR')} F
                 </span>
               </div>
-
-              {/* Actions */}
-              <Button
-                className="w-full bg-amber-600 hover:bg-amber-700"
-                size="lg"
-                onClick={handleSubmitOrder}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Envoi en cours...
-                  </>
-                ) : (
-                  'Valider la commande'
-                )}
-              </Button>
-
-              <Button
-                variant="outline"
-                className="w-full mt-3"
-                onClick={clearCart}
-                disabled={isSubmitting}
-              >
-                Vider le panier
-              </Button>
-
-              <Link href={menuPath} className="block mt-3">
-                <Button variant="ghost" className="w-full" disabled={isSubmitting}>
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Continuer mes achats
-                </Button>
-              </Link>
             </div>
           </div>
+
+          <button
+            onClick={handleSubmitOrder}
+            disabled={isSubmitting}
+            className="w-full h-12 rounded-xl text-white font-semibold mt-4 transition-transform active:scale-[0.98] disabled:opacity-50"
+            style={{ backgroundColor: 'var(--tenant-primary)' }}
+          >
+            {isSubmitting ? (
+              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+            ) : (
+              t('confirmOrder')
+            )}
+          </button>
+
+          <button
+            onClick={clearCart}
+            className="w-full text-sm text-neutral-400 mt-3 hover:text-neutral-600 transition-colors"
+          >
+            {t('clearCart')}
+          </button>
         </div>
       </main>
 
       {/* Mobile Sticky Bottom Bar — visible only on phones */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-neutral-100 px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-500">Total</span>
-          <span className="text-lg font-bold text-amber-600">
+          <span className="text-sm font-medium text-neutral-500">{t('total')}</span>
+          <span className="text-lg font-bold" style={{ color: 'var(--tenant-primary)' }}>
             {totalPrice.toLocaleString('fr-FR')} F
           </span>
         </div>
-        <Button
-          className="w-full bg-amber-600 hover:bg-amber-700 h-12 text-base font-semibold"
+        <button
+          className="w-full h-12 rounded-xl text-white text-base font-semibold transition-transform active:scale-[0.98] disabled:opacity-50"
           onClick={handleSubmitOrder}
           disabled={isSubmitting}
+          style={{ backgroundColor: 'var(--tenant-primary)' }}
         >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Envoi en cours...
-            </>
-          ) : (
-            'Valider la commande'
-          )}
-        </Button>
+          {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t('confirmOrder')}
+        </button>
       </div>
     </div>
   );
