@@ -125,7 +125,10 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
               }
             }}
             onClick={() => scrollToCategory(category.id)}
-            className="relative px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors"
+            className={cn(
+              'relative px-4 py-2 text-sm font-medium whitespace-nowrap rounded-full transition-colors active:scale-[0.98]',
+              activeCategory !== category.id && 'bg-neutral-100 hover:bg-neutral-200',
+            )}
           >
             {activeCategory === category.id && (
               <motion.div
