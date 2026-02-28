@@ -7,24 +7,54 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Square-inspired neutral palette */
+  /* ===== FLAT PREMIUM DESIGN TOKENS ===== */
+
+  /* Surfaces */
+  --color-surface-primary: #ffffff;
+  --color-surface-secondary: #f9fafb;
+  --color-surface-tertiary: #f3f4f6;
+  --color-surface-accent: #f7ffd6;
+
+  /* Borders (subtle — no shadows) */
+  --color-border-default: #e5e7eb;
+  --color-border-subtle: #f3f4f6;
+  --color-border-strong: #d1d5db;
+  --color-border-accent: #ccff00;
+
+  /* Text hierarchy */
+  --color-text-primary: #111827;
+  --color-text-secondary: #6b7280;
+  --color-text-muted: #9ca3af;
+  --color-text-accent: #4d7c0f;
+
+  /* Actions */
+  --color-action-primary: #ccff00;
+  --color-action-primary-hover: #b8e600;
+  --color-action-secondary: #111827;
+  --color-action-danger: #ef4444;
+
+  /* Status colors */
+  --color-status-success: #059669;
+  --color-status-success-bg: #ecfdf5;
+  --color-status-warning: #d97706;
+  --color-status-warning-bg: #fffbeb;
+  --color-status-error: #dc2626;
+  --color-status-error-bg: #fef2f2;
+  --color-status-info: #2563eb;
+  --color-status-info-bg: #eff6ff;
+
+  /* Legacy — keep for backward compat during migration */
   --color-background: #ffffff;
   --color-foreground: #0a0a0a;
   --color-muted: #f9fafb;
   --color-muted-foreground: #6b7280;
   --color-border: #e5e7eb;
-
-  /* Accent colors - lime brand */
   --color-primary: #ccff00;
   --color-primary-dark: #b3e600;
   --color-primary-light: #f0ffc0;
-
-  /* Semantic colors */
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-error: #ef4444;
-
-  /* Legacy compatibility - keep these for existing components */
   --color-brand-green: #ccff00;
   --color-brand-green-dark: #b3e600;
   --color-brand-green-light: #f0ffc0;
@@ -35,18 +65,18 @@
   --color-neutral-700: #6b7280;
   --color-neutral-900: #0a0a0a;
 
-  /* Typography - System font stack similar to Square */
+  /* Typography — System font stack */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-display:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 }
 
 :root {
-  --background: #f9fafb;
-  --foreground: #09090b;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #09090b;
+  --background: var(--color-surface-secondary);
+  --foreground: var(--color-text-primary);
+  --border: var(--color-border-default);
+  --input: var(--color-border-default);
+  --ring: var(--color-action-primary);
 }
 
 body {
