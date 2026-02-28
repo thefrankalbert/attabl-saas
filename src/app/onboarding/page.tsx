@@ -384,9 +384,9 @@ export default function OnboardingPage() {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header (< md) — horizontal step bar */}
+        {/* Mobile Header — only below md (sidebar takes over at md+) */}
         {currentStep > 0 && (
-          <div className="lg:hidden shrink-0">
+          <div className="md:hidden shrink-0">
             {/* Logo row */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
               <Link href="/" className="flex items-center gap-2">
@@ -463,18 +463,9 @@ export default function OnboardingPage() {
           }}
         >
           <div className="w-full max-w-5xl mx-auto flex flex-col flex-1 min-h-0">
-            {/* Step badge — hidden on step 0 */}
-            {currentStep > 0 && (
-              <div className="shrink-0 mb-4">
-                <span className="inline-block text-xs font-medium text-zinc-400 uppercase tracking-wide">
-                  {t('step')} {currentStep} {t('stepOf')} 5
-                </span>
-              </div>
-            )}
-
             <div
               key={currentStep}
-              className={`flex-1 min-h-0 ${
+              className={`flex-1 min-h-0 flex flex-col ${
                 currentStep > 0
                   ? direction === 'forward'
                     ? 'animate-in slide-in-from-right-4 fade-in duration-200'
