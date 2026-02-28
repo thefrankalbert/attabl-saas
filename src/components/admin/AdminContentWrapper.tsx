@@ -34,7 +34,7 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
         <motion.div
           key={pathname}
           className="flex-1 min-h-0"
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
           transition={{ duration, ease: 'easeOut' }}

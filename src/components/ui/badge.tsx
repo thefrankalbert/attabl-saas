@@ -3,20 +3,18 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const badgeVariants = cva(
-  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
+  'inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2',
   {
     variants: {
       variant: {
-        default: 'border-transparent bg-primary text-primary-foreground hover:bg-primary/80',
-        secondary:
-          'border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
-        destructive:
-          'border-transparent bg-destructive text-destructive-foreground hover:bg-destructive/80',
-        outline: 'text-foreground',
-        success: 'border-transparent bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
-        warning: 'border-transparent bg-amber-500/10 text-amber-600 border-amber-500/20',
-        info: 'border-transparent bg-blue-500/10 text-blue-600 border-blue-500/20',
-        muted: 'border-transparent bg-slate-100 text-slate-500',
+        default: 'border-transparent bg-action-primary/10 text-text-accent',
+        secondary: 'border-border-default bg-surface-secondary text-text-secondary',
+        destructive: 'border-red-200/50 bg-status-error-bg text-status-error',
+        outline: 'text-text-primary border-border-default',
+        success: 'border-emerald-200/50 bg-status-success-bg text-status-success',
+        warning: 'border-amber-200/50 bg-status-warning-bg text-status-warning',
+        info: 'border-blue-200/50 bg-status-info-bg text-status-info',
+        muted: 'border-transparent bg-surface-tertiary text-text-muted',
       },
     },
     defaultVariants: {

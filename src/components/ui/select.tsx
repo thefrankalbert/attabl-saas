@@ -24,7 +24,7 @@ const SelectTrigger = React.forwardRef<
       'text-sm font-medium text-foreground',
       'ring-offset-background',
       'placeholder:text-muted-foreground',
-      'focus:outline-none focus:ring-1 focus:ring-ring',
+      'focus:outline-none focus:ring-1 focus:ring-action-primary/30 focus:border-action-primary',
       'disabled:cursor-not-allowed disabled:opacity-50',
       'transition-colors duration-150',
       '[&>span]:line-clamp-1',
