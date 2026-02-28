@@ -52,80 +52,55 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
 
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    sevenDaysAgo.setHours(0, 0, 0, 0);
-
     // Requêtes parallèles pour optimiser la performance
-    const [
-      ordersRes,
-      itemsCountRes,
-      venuesCountRes,
-      recentOrdersRes,
-      popularRes,
-      yesterdayRes,
-      weekRes,
-      categoryItemsRes,
-    ] = await Promise.all([
-      // Commandes du jour (pour stats)
-      supabase
-        .from('orders')
-        .select('id, total_price, total, status, created_at')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', today.toISOString()),
+    const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, popularRes, yesterdayRes] =
+      await Promise.all([
+        // Commandes du jour (pour stats)
+        supabase
+          .from('orders')
+          .select('id, total_price, total, status, created_at')
+          .eq('tenant_id', tenant.id)
+          .gte('created_at', today.toISOString()),
 
-      // Nombre d'items actifs
-      supabase
-        .from('menu_items')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .eq('is_available', true),
+        // Nombre d'items actifs
+        supabase
+          .from('menu_items')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id)
+          .eq('is_available', true),
 
-      // Nombre de venues actifs
-      supabase
-        .from('venues')
-        .select('id', { count: 'exact', head: true })
-        .eq('tenant_id', tenant.id)
-        .eq('is_active', true),
+        // Nombre de venues actifs
+        supabase
+          .from('venues')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenant.id)
+          .eq('is_active', true),
 
-      // Commandes récentes
-      supabase
-        .from('orders')
-        .select(
-          `id, table_number, status, total_price, total, created_at,
+        // Commandes récentes
+        supabase
+          .from('orders')
+          .select(
+            `id, table_number, status, total_price, total, created_at,
            order_items(id, quantity, price_at_order, menu_items(name))`,
-        )
-        .eq('tenant_id', tenant.id)
-        .order('created_at', { ascending: false })
-        .limit(8),
+          )
+          .eq('tenant_id', tenant.id)
+          .order('created_at', { ascending: false })
+          .limit(8),
 
-      // Items pour calcul de popularité
-      supabase
-        .from('order_items')
-        .select('menu_item_id, quantity, menu_items(id, name, image_url)')
-        .not('menu_item_id', 'is', null),
+        // Items pour calcul de popularité
+        supabase
+          .from('order_items')
+          .select('menu_item_id, quantity, menu_items(id, name, image_url)')
+          .not('menu_item_id', 'is', null),
 
-      // Yesterday's orders for trend
-      supabase
-        .from('orders')
-        .select('id, total_price, total, status')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', yesterday.toISOString())
-        .lt('created_at', today.toISOString()),
-
-      // Last 7 days for sparklines
-      supabase
-        .from('orders')
-        .select('id, total_price, total, created_at, status')
-        .eq('tenant_id', tenant.id)
-        .gte('created_at', sevenDaysAgo.toISOString()),
-
-      // Order items with categories for donut
-      supabase
-        .from('order_items')
-        .select('quantity, price_at_order, menu_items!inner(categories!inner(name))')
-        .eq('tenant_id', tenant.id),
-    ]);
+        // Yesterday's orders for trend
+        supabase
+          .from('orders')
+          .select('id, total_price, total, status')
+          .eq('tenant_id', tenant.id)
+          .gte('created_at', yesterday.toISOString())
+          .lt('created_at', today.toISOString()),
+      ]);
 
     // Stats
     const ordersData = ordersRes.data || [];
