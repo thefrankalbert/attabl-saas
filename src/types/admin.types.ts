@@ -304,6 +304,29 @@ export interface DashboardStats {
   revenueTrend?: number;
 }
 
+export interface CategoryBreakdown {
+  name: string;
+  value: number;
+  color: string;
+}
+
+export interface HourlyOrderCount {
+  hour: string; // "8h", "10h", etc.
+  count: number;
+}
+
+export interface SparklinePoint {
+  value: number;
+}
+
+export interface DashboardExtendedData {
+  categoryBreakdown: CategoryBreakdown[];
+  hourlyOrders: HourlyOrderCount[];
+  revenueSparkline: SparklinePoint[];
+  ordersSparkline: SparklinePoint[];
+  itemsSparkline: SparklinePoint[];
+}
+
 export interface PopularItem {
   id: string;
   name: string;
