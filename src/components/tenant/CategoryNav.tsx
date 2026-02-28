@@ -1,6 +1,8 @@
 'use client';
 
 import React from 'react';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 interface Category {
   id: string;
@@ -108,44 +110,41 @@ export default function CategoryNav({ categories }: CategoryNavProps) {
   return (
     <div
       ref={navRef}
-      className="fixed left-0 right-0 z-30 bg-white border-b border-gray-200 overflow-x-auto scrollbar-hide py-3 transition-all duration-150"
+      className="fixed left-0 right-0 z-30 bg-white/80 backdrop-blur-xl border-b border-neutral-100 overflow-x-auto scrollbar-hide py-3 transition-all duration-150"
       style={{ top: `${tabPaneHeight}px` }}
     >
-      <div className="max-w-3xl lg:max-w-5xl mx-auto px-6 flex gap-2 md:gap-4">
-        {categories.map((category) => {
-          const isActive = activeCategory === category.id;
-          return (
-            <button
-              key={category.id}
-              ref={(el) => {
-                if (el) {
-                  buttonRefs.current.set(category.id, el);
-                } else {
-                  buttonRefs.current.delete(category.id);
-                }
-              }}
-              onClick={() => scrollToCategory(category.id)}
-              className={`
-                                whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]
-                                ${
-                                  isActive
-                                    ? 'text-white'
-                                    : 'bg-gray-100 text-gray-600 border-transparent hover:bg-gray-200'
-                                }
-                            `}
-              style={
-                isActive
-                  ? {
-                      backgroundColor: 'var(--tenant-primary)',
-                      borderColor: 'var(--tenant-primary)',
-                    }
-                  : undefined
+      <div className="max-w-3xl lg:max-w-5xl mx-auto px-4 flex gap-2">
+        {categories.map((category) => (
+          <button
+            key={category.id}
+            ref={(el) => {
+              if (el) {
+                buttonRefs.current.set(category.id, el);
+              } else {
+                buttonRefs.current.delete(category.id);
               }
+            }}
+            onClick={() => scrollToCategory(category.id)}
+            className="relative px-4 py-2 text-sm font-medium whitespace-nowrap transition-colors"
+          >
+            {activeCategory === category.id && (
+              <motion.div
+                layoutId="activeCategoryPill"
+                className="absolute inset-0 rounded-full"
+                style={{ backgroundColor: 'var(--tenant-primary)' }}
+                transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span
+              className={cn(
+                'relative z-10',
+                activeCategory === category.id ? 'text-white' : 'text-neutral-600',
+              )}
             >
               {category.name}
-            </button>
-          );
-        })}
+            </span>
+          </button>
+        ))}
       </div>
     </div>
   );
