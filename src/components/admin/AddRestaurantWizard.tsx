@@ -137,24 +137,24 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-border-subtle bg-surface-primary">
+      <div className="relative w-full max-w-lg rounded-xl border border-app-border bg-app-card">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-text-secondary"
+          className="absolute right-4 top-4 rounded-lg p-1 text-app-text-muted transition-colors hover:bg-app-elevated hover:text-app-text-secondary"
         >
           <X className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <div className="border-b border-border-subtle px-6 pt-6 pb-4">
+        <div className="border-b border-app-border px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
-            <div className="rounded-lg bg-[#CCFF00] p-2">
-              <Building2 className="h-5 w-5 text-black" />
+            <div className="rounded-lg bg-accent p-2">
+              <Building2 className="h-5 w-5 text-accent-text" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-text-primary">Nouvel établissement</h2>
-              <p className="text-xs text-text-muted">Étape {step} sur 3</p>
+              <h2 className="text-lg font-bold text-app-text">Nouvel établissement</h2>
+              <p className="text-xs text-app-text-muted">Étape {step} sur 3</p>
             </div>
           </div>
 
@@ -164,7 +164,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  s <= step ? 'bg-[#CCFF00]' : 'bg-surface-tertiary'
+                  s <= step ? 'bg-accent' : 'bg-app-elevated'
                 }`}
               />
             ))}
@@ -177,7 +177,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm font-medium text-text-primary">
+                <Label htmlFor="name" className="text-sm font-medium text-app-text">
                   Nom de l&apos;établissement
                 </Label>
                 <Input
@@ -185,16 +185,16 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Ex: Le Petit Bistrot"
-                  className="h-11 rounded-lg border-border-default focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
+                  className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="type" className="text-sm font-medium text-text-primary">
+                <Label htmlFor="type" className="text-sm font-medium text-app-text">
                   Type d&apos;établissement
                 </Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="h-11 rounded-lg border-border-default">
+                  <SelectTrigger className="h-11 rounded-lg border-app-border">
                     <SelectValue placeholder="Selectionnez un type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,7 +208,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="slug" className="text-sm font-medium text-text-primary">
+                <Label htmlFor="slug" className="text-sm font-medium text-app-text">
                   Adresse web (slug)
                 </Label>
                 <div className="flex items-center gap-2">
@@ -217,9 +217,9 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     value={slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
                     placeholder="le-petit-bistrot"
-                    className="h-11 rounded-lg border-border-default focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
+                    className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
                   />
-                  <span className="shrink-0 text-xs text-text-muted">.attabl.com</span>
+                  <span className="shrink-0 text-xs text-app-text-muted">.attabl.com</span>
                 </div>
               </div>
             </div>
@@ -228,7 +228,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 2: Plan ───────────────────────────── */}
           {step === 2 && (
             <div className="space-y-3">
-              <p className="mb-2 text-sm font-medium text-text-primary">Choisissez votre formule</p>
+              <p className="mb-2 text-sm font-medium text-app-text">Choisissez votre formule</p>
               {PLAN_OPTIONS.map((p) => {
                 const info = PLAN_INFO[p];
                 return (
@@ -237,17 +237,17 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     onClick={() => setPlan(p)}
                     className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
                       plan === p
-                        ? 'border-[#CCFF00] bg-[#CCFF00]/5'
-                        : 'border-border-default hover:border-border-strong'
+                        ? 'border-accent bg-accent/5'
+                        : 'border-app-border hover:border-app-border-hover'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-text-primary">{info.label}</p>
-                        <p className="text-xs text-text-secondary">{info.description}</p>
+                        <p className="font-bold text-app-text">{info.label}</p>
+                        <p className="text-xs text-app-text-secondary">{info.description}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-text-primary">{info.price}</p>
+                        <p className="text-sm font-bold text-app-text">{info.price}</p>
                         {plan === p && (
                           <div className="mt-1 flex items-center justify-end">
                             <Check className="h-4 w-4 text-[#7a9900]" />
@@ -264,36 +264,36 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 3: Summary ────────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="rounded-xl bg-surface-secondary p-4">
+              <div className="rounded-xl bg-app-bg p-4">
                 <div className="mb-4 flex items-center gap-3">
-                  <Sparkles className="h-5 w-5 text-[#CCFF00]" />
-                  <p className="text-sm font-bold text-text-primary">Recapitulatif</p>
+                  <Sparkles className="h-5 w-5 text-accent" />
+                  <p className="text-sm font-bold text-app-text">Recapitulatif</p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-xs text-text-secondary">Nom</span>
-                    <span className="text-sm font-medium text-text-primary">{name}</span>
+                    <span className="text-xs text-app-text-secondary">Nom</span>
+                    <span className="text-sm font-medium text-app-text">{name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-text-secondary">Type</span>
-                    <span className="text-sm font-medium text-text-primary">
+                    <span className="text-xs text-app-text-secondary">Type</span>
+                    <span className="text-sm font-medium text-app-text">
                       {TYPE_LABELS[type] || type}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-text-secondary">Adresse</span>
-                    <span className="text-sm font-medium text-text-primary">{slug}.attabl.com</span>
+                    <span className="text-xs text-app-text-secondary">Adresse</span>
+                    <span className="text-sm font-medium text-app-text">{slug}.attabl.com</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-text-secondary">Formule</span>
-                    <span className="text-sm font-medium text-text-primary">
+                    <span className="text-xs text-app-text-secondary">Formule</span>
+                    <span className="text-sm font-medium text-app-text">
                       {PLAN_INFO[plan]?.label || plan}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-text-secondary">Prix</span>
-                    <span className="text-sm font-bold text-text-primary">
+                    <span className="text-xs text-app-text-secondary">Prix</span>
+                    <span className="text-sm font-bold text-app-text">
                       {PLAN_INFO[plan]?.price || '-'}
                     </span>
                   </div>
@@ -310,11 +310,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-border-subtle px-6 py-4">
+        <div className="flex items-center justify-between border-t border-app-border px-6 py-4">
           <Button
             variant="outline"
             onClick={step === 1 ? onClose : () => setStep(step - 1)}
-            className="gap-2 rounded-lg border-border-default text-sm text-text-secondary"
+            className="gap-2 rounded-lg border-app-border text-sm text-app-text-secondary"
             disabled={loading}
           >
             {step === 1 ? (
@@ -331,7 +331,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <Button
               onClick={() => setStep(step + 1)}
               disabled={step === 1 ? !step1Valid : !step2Valid}
-              className="gap-2 rounded-lg bg-[#CCFF00] text-sm font-semibold text-black hover:bg-[#b8e600] disabled:opacity-50"
+              className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-50"
             >
               Suivant
               <ArrowRight className="h-4 w-4" />
@@ -340,7 +340,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <Button
               onClick={handleSubmit}
               disabled={loading}
-              className="gap-2 rounded-lg bg-[#CCFF00] text-sm font-semibold text-black hover:bg-[#b8e600]"
+              className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover"
             >
               {loading ? (
                 <>

@@ -162,8 +162,8 @@ export default function AnnouncementsClient({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-text-primary">{t('title')}</h1>
-          <p className="text-sm text-text-secondary">{t('subtitleClient')}</p>
+          <h1 className="text-2xl font-bold tracking-tight text-app-text">{t('title')}</h1>
+          <p className="text-sm text-app-text-secondary">{t('subtitleClient')}</p>
         </div>
         <Button
           onClick={() => {
@@ -181,31 +181,31 @@ export default function AnnouncementsClient({
         {announcements.map((ann) => (
           <div
             key={ann.id}
-            className="group bg-surface-primary border border-border-default rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-border-strong"
+            className="group bg-app-card border border-app-border rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-app-border-hover"
             onClick={() => openEdit(ann)}
           >
             <div className="flex justify-between items-start mb-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-50 text-blue-600' : 'bg-surface-secondary text-text-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-50 text-blue-600' : 'bg-app-bg text-app-text-muted'}`}
               >
                 <Megaphone className="w-5 h-5" />
               </div>
               <div
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-surface-secondary text-text-secondary'}`}
+                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-app-bg text-app-text-secondary'}`}
               >
                 {ann.is_active ? t('statusActive') : t('statusInactive')}
               </div>
             </div>
 
-            <h3 className="font-bold text-text-primary mb-2">{ann.title}</h3>
+            <h3 className="font-bold text-app-text mb-2">{ann.title}</h3>
             {ann.description && (
-              <p className="text-sm text-text-secondary line-clamp-3 mb-4 flex-1">
+              <p className="text-sm text-app-text-secondary line-clamp-3 mb-4 flex-1">
                 {ann.description}
               </p>
             )}
 
             <div className="mt-auto space-y-4">
-              <div className="flex items-center gap-2 text-xs text-text-muted">
+              <div className="flex items-center gap-2 text-xs text-app-text-muted">
                 <Calendar className="w-3 h-3" />
                 <span>
                   {t('fromDate', { date: new Date(ann.start_date).toLocaleDateString(locale) })}
@@ -244,10 +244,10 @@ export default function AnnouncementsClient({
           </div>
         ))}
         {announcements.length === 0 && (
-          <div className="col-span-full py-12 text-center bg-surface-secondary border border-dashed border-border-default rounded-xl">
-            <Megaphone className="w-10 h-10 text-text-muted mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-text-primary">{t('noAnnouncements')}</h3>
-            <p className="text-xs text-text-secondary mt-1">{t('noAnnouncementsDesc')}</p>
+          <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
+            <Megaphone className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-app-text">{t('noAnnouncements')}</h3>
+            <p className="text-xs text-app-text-secondary mt-1">{t('noAnnouncementsDesc')}</p>
           </div>
         )}
       </div>
@@ -260,28 +260,28 @@ export default function AnnouncementsClient({
       >
         <div className="space-y-4 pt-4">
           <div>
-            <Label className="mb-1.5 block text-text-primary">{t('titleField')}</Label>
+            <Label className="mb-1.5 block text-app-text">{t('titleField')}</Label>
             <Input
               placeholder={t('titlePlaceholder')}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="rounded-lg focus-visible:ring-action-primary/30"
+              className="rounded-lg focus-visible:ring-accent/30"
             />
           </div>
 
           <div>
-            <Label className="mb-1.5 block text-text-primary">{t('descriptionField')}</Label>
+            <Label className="mb-1.5 block text-app-text">{t('descriptionField')}</Label>
             <Textarea
               placeholder={t('descriptionPlaceholder')}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="min-h-[100px] rounded-lg focus-visible:ring-action-primary/30"
+              className="min-h-[100px] rounded-lg focus-visible:ring-accent/30"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label className="mb-1.5 block text-text-primary">{t('startDateRequired')}</Label>
+              <Label className="mb-1.5 block text-app-text">{t('startDateRequired')}</Label>
               <DatePickerField
                 value={startDate}
                 onChange={setStartDate}
@@ -289,7 +289,7 @@ export default function AnnouncementsClient({
               />
             </div>
             <div>
-              <Label className="mb-1.5 block text-text-primary">{t('endDateOptional')}</Label>
+              <Label className="mb-1.5 block text-app-text">{t('endDateOptional')}</Label>
               <DatePickerField
                 value={endDate}
                 onChange={setEndDate}
@@ -300,7 +300,7 @@ export default function AnnouncementsClient({
 
           <div className="flex items-center gap-2 pt-2">
             <Switch checked={isActive} onCheckedChange={setIsActive} id="active-mode" />
-            <Label htmlFor="active-mode" className="text-text-primary">
+            <Label htmlFor="active-mode" className="text-app-text">
               {t('enableImmediately')}
             </Label>
           </div>

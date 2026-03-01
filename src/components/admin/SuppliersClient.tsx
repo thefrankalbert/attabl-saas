@@ -78,9 +78,9 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         header: ({ column }) => <SortableHeader column={column}>{t('name')}</SortableHeader>,
         cell: ({ row }) => (
           <div>
-            <p className="font-medium text-text-primary">{row.original.name}</p>
+            <p className="font-medium text-app-text">{row.original.name}</p>
             {row.original.contact_name && (
-              <p className="text-xs text-text-secondary">{row.original.contact_name}</p>
+              <p className="text-xs text-app-text-secondary">{row.original.contact_name}</p>
             )}
           </div>
         ),
@@ -89,7 +89,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'email',
         header: () => t('email'),
         cell: ({ row }) => (
-          <span className="text-text-secondary">{row.original.email || '\u2014'}</span>
+          <span className="text-app-text-secondary">{row.original.email || '\u2014'}</span>
         ),
         enableSorting: false,
       },
@@ -97,7 +97,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'phone',
         header: () => t('phone'),
         cell: ({ row }) => (
-          <span className="text-text-secondary">{row.original.phone || '\u2014'}</span>
+          <span className="text-app-text-secondary">{row.original.phone || '\u2014'}</span>
         ),
         enableSorting: false,
       },
@@ -105,7 +105,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'address',
         header: () => t('address'),
         cell: ({ row }) => (
-          <span className="text-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] truncate block">
             {row.original.address || '\u2014'}
           </span>
         ),
@@ -121,7 +121,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 'px-2 py-0.5 rounded-full text-xs font-medium',
                 row.original.is_active
                   ? 'bg-green-100 text-green-700'
-                  : 'bg-surface-secondary text-text-secondary',
+                  : 'bg-app-bg text-app-text-secondary',
               )}
             >
               {row.original.is_active ? t('active') : t('inactive')}
@@ -280,7 +280,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   };
 
   if (loading) {
-    return <div className="p-8 text-center text-text-secondary">{t('loadingSuppliers')}</div>;
+    return <div className="p-8 text-center text-app-text-secondary">{t('loadingSuppliers')}</div>;
   }
 
   return (
@@ -289,11 +289,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
               <Truck className="w-6 h-6" />
               {t('title')}
             </h1>
-            <p className="text-sm text-text-secondary mt-1">
+            <p className="text-sm text-app-text-secondary mt-1">
               {t('supplierCount', { count: suppliers.length })}
             </p>
           </div>
@@ -306,7 +306,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
             <Input
               data-search-input
               placeholder={t('searchPlaceholder')}
@@ -341,13 +341,13 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           emptyMessage={t('noSuppliersFound')}
           mobileConfig={{
             renderCard: (supplier) => (
-              <div className="bg-surface-primary border border-border-default rounded-xl p-4 space-y-3">
+              <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
                 {/* Row 1: Name + Status */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="font-medium text-text-primary truncate">{supplier.name}</p>
+                    <p className="font-medium text-app-text truncate">{supplier.name}</p>
                     {supplier.contact_name && (
-                      <p className="text-xs text-text-secondary">{supplier.contact_name}</p>
+                      <p className="text-xs text-app-text-secondary">{supplier.contact_name}</p>
                     )}
                   </div>
                   <span
@@ -355,7 +355,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
                       supplier.is_active
                         ? 'bg-green-100 text-green-700'
-                        : 'bg-surface-secondary text-text-secondary',
+                        : 'bg-app-bg text-app-text-secondary',
                     )}
                   >
                     {supplier.is_active ? t('active') : t('inactive')}
@@ -363,7 +363,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 </div>
 
                 {/* Row 2: Contact info */}
-                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-text-secondary">
                   {supplier.phone && <span>{supplier.phone}</span>}
                   {supplier.email && <span className="truncate">{supplier.email}</span>}
                 </div>
@@ -405,7 +405,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         >
           <div className="space-y-4 pt-4">
             <div>
-              <Label className="text-xs font-medium text-text-secondary mb-1 block">
+              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                 {t('nameLabel')}
               </Label>
               <Input
@@ -417,7 +417,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-text-secondary mb-1 block">
+              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                 {t('contactPerson')}
               </Label>
               <Input
@@ -429,7 +429,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <Label className="text-xs font-medium text-text-secondary mb-1 block">
+                <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                   {t('phoneLabel')}
                 </Label>
                 <Input
@@ -439,7 +439,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 />
               </div>
               <div>
-                <Label className="text-xs font-medium text-text-secondary mb-1 block">
+                <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                   {t('emailLabel')}
                 </Label>
                 <Input
@@ -452,7 +452,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-text-secondary mb-1 block">
+              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                 {t('addressLabel')}
               </Label>
               <Input
@@ -463,7 +463,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             </div>
 
             <div>
-              <Label className="text-xs font-medium text-text-secondary mb-1 block">
+              <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                 {t('notesLabel')}
               </Label>
               <Input

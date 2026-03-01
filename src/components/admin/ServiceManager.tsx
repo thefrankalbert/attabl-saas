@@ -93,12 +93,12 @@ export default function ServiceManager({ tenantId }: Props) {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-text-primary">{t('title')}</h1>
+        <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-24 bg-surface-secondary rounded-lg border border-border-subtle animate-pulse"
+              className="h-24 bg-app-bg rounded-lg border border-app-border animate-pulse"
             />
           ))}
         </div>
@@ -109,23 +109,23 @@ export default function ServiceManager({ tenantId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
-          <Users className="w-5 h-5 text-text-secondary" />
+        <h1 className="text-xl font-bold text-app-text flex items-center gap-2">
+          <Users className="w-5 h-5 text-app-text-secondary" />
           {t('title')}
         </h1>
-        <div className="text-sm text-text-secondary">
+        <div className="text-sm text-app-text-secondary">
           {t('activeAssignments', { count: assignments.length })}
         </div>
       </div>
 
       {zones.length === 0 ? (
-        <div className="text-center py-12 text-text-secondary bg-surface-primary rounded-lg border border-border-subtle p-6">
+        <div className="text-center py-12 text-app-text-secondary bg-app-card rounded-lg border border-app-border p-6">
           {t('noZones')}
         </div>
       ) : (
         zones.map((zone) => (
           <div key={zone.id} className="space-y-3">
-            <h2 className="text-lg font-semibold text-text-primary">{zone.name}</h2>
+            <h2 className="text-lg font-semibold text-app-text">{zone.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {zone.tables
                 .filter((tbl: Table) => tbl.is_active)
@@ -137,14 +137,14 @@ export default function ServiceManager({ tenantId }: Props) {
                       className={`rounded-lg border p-4 transition-colors ${
                         assignment
                           ? 'border-emerald-200 bg-emerald-50'
-                          : 'border-border-subtle bg-surface-primary'
+                          : 'border-app-border bg-app-card'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-mono font-bold text-text-primary">
+                        <span className="font-mono font-bold text-app-text">
                           {table.display_name || table.table_number}
                         </span>
-                        <span className="text-xs text-text-secondary">
+                        <span className="text-xs text-app-text-secondary">
                           {t('seats', { count: table.capacity })}
                         </span>
                       </div>
@@ -153,13 +153,13 @@ export default function ServiceManager({ tenantId }: Props) {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-text-primary">
+                            <span className="text-sm font-medium text-app-text">
                               {assignment.server?.full_name ?? t('server')}
                             </span>
                           </div>
                           <button
                             onClick={() => handleRelease(assignment.id)}
-                            className="p-1 rounded-lg hover:bg-surface-tertiary text-text-muted hover:text-red-500 transition-colors"
+                            className="p-1 rounded-lg hover:bg-app-elevated text-app-text-muted hover:text-red-500 transition-colors"
                             title={t('release')}
                           >
                             <X className="w-4 h-4" />

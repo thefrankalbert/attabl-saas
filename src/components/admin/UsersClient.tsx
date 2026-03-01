@@ -108,7 +108,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{t('teamTitle')}</h1>
-            <p className="text-sm text-text-secondary">{t('teamSubtitle')}</p>
+            <p className="text-sm text-app-text-secondary">{t('teamSubtitle')}</p>
           </div>
           {data.canManageUsers && (
             <Button variant="default" onClick={() => data.setIsModalOpen(true)} className="gap-2">
@@ -208,9 +208,9 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
                 placeholder={t('newPasswordPlaceholder')}
                 className="min-h-[44px]"
               />
-              <p className="text-xs text-text-secondary">{t('passwordHint')}</p>
+              <p className="text-xs text-app-text-secondary">{t('passwordHint')}</p>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-border-default">
+            <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button variant="ghost" onClick={() => setEditingUser(null)}>
                 {tc('cancel')}
               </Button>

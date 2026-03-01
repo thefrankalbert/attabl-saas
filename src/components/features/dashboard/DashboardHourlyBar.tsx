@@ -41,7 +41,7 @@ export default function DashboardHourlyBar({ data, t }: DashboardHourlyBarProps)
               labelStyle={{ color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}
               cursor={{ fill: 'rgba(204, 255, 0, 0.08)' }}
             />
-            <Bar dataKey="count" fill="#CCFF00" radius={[6, 6, 0, 0]} maxBarSize={28} />
+            <Bar dataKey="count" fill="var(--accent)" radius={[6, 6, 0, 0]} maxBarSize={28} />
           </BarChart>
         </ResponsiveContainer>
       </div>

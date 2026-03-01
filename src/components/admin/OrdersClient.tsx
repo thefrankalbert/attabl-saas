@@ -182,10 +182,10 @@ export default function OrdersClient({
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-surface-secondary rounded-lg flex items-center justify-center font-bold text-text-primary text-xs">
+            <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
               {row.original.table_number}
             </div>
-            <span className="font-medium text-text-primary">{row.original.table_number}</span>
+            <span className="font-medium text-app-text">{row.original.table_number}</span>
           </div>
         ),
       },
@@ -194,14 +194,14 @@ export default function OrdersClient({
         id: 'server',
         header: ({ column }) => <SortableHeader column={column}>{t('serverLabel')}</SortableHeader>,
         cell: ({ getValue }) => (
-          <span className="text-sm text-text-muted">{getValue() as string}</span>
+          <span className="text-sm text-app-text-muted">{getValue() as string}</span>
         ),
       },
       {
         accessorKey: 'created_at',
         header: ({ column }) => <SortableHeader column={column}>{t('dateColumn')}</SortableHeader>,
         cell: ({ row }) => (
-          <span className="text-text-secondary text-xs whitespace-nowrap">
+          <span className="text-app-text-secondary text-xs whitespace-nowrap">
             {new Date(row.original.created_at).toLocaleTimeString([], {
               hour: '2-digit',
               minute: '2-digit',
@@ -228,7 +228,7 @@ export default function OrdersClient({
         cell: ({ row }) => {
           const items = row.original.items || [];
           return (
-            <span className="text-text-secondary text-sm">
+            <span className="text-app-text-secondary text-sm">
               {items.length} {items.length === 1 ? tc('item') : tc('items')}
             </span>
           );
@@ -246,7 +246,7 @@ export default function OrdersClient({
           const total =
             row.original.total_price ?? row.original.total ?? row.original.total_amount ?? 0;
           return (
-            <span className="font-mono font-bold text-text-primary">{total.toLocaleString()}</span>
+            <span className="font-mono font-bold text-app-text">{total.toLocaleString()}</span>
           );
         },
         meta: { className: 'text-right' },
@@ -310,7 +310,7 @@ export default function OrdersClient({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl xl:text-2xl font-bold tracking-tight">{ta('ordersCount')}</h1>
-            <p className="text-xs text-text-secondary mt-1">{t('manageRealTime')}</p>
+            <p className="text-xs text-app-text-secondary mt-1">{t('manageRealTime')}</p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -324,7 +324,7 @@ export default function OrdersClient({
               {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
             </Button>
             <div className="relative">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-text-muted" />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 data-search-input
                 placeholder={t('searchTable')}
@@ -362,17 +362,17 @@ export default function OrdersClient({
               const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
               const items = order.items || [];
               return (
-                <div className="bg-surface-primary border border-border-default rounded-xl p-4 space-y-3 active:bg-surface-secondary transition-colors">
+                <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3 active:bg-app-bg transition-colors">
                   {/* Row 1: Table + Status + Time */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 bg-surface-secondary rounded-lg flex items-center justify-center font-bold text-text-primary text-xs">
+                      <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
                         {order.table_number}
                       </div>
-                      <span className="font-semibold text-text-primary">{order.table_number}</span>
+                      <span className="font-semibold text-app-text">{order.table_number}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-text-muted">
+                      <span className="text-xs text-app-text-muted">
                         {new Date(order.created_at).toLocaleTimeString([], {
                           hour: '2-digit',
                           minute: '2-digit',
@@ -386,14 +386,14 @@ export default function OrdersClient({
 
                   {/* Row 2: Server + Items + Total */}
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-text-muted truncate">
+                    <span className="text-app-text-muted truncate">
                       {order.server?.full_name ?? '—'}
                     </span>
                     <div className="flex items-center gap-3">
-                      <span className="text-text-secondary">
+                      <span className="text-app-text-secondary">
                         {items.length} {items.length === 1 ? tc('item') : tc('items')}
                       </span>
-                      <span className="font-mono font-bold text-text-primary">
+                      <span className="font-mono font-bold text-app-text">
                         {total.toLocaleString()}
                       </span>
                     </div>

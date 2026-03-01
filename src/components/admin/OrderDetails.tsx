@@ -89,10 +89,10 @@ export default function OrderDetails({
         {/* Header Info */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-text-primary">
+            <h2 className="text-2xl font-bold text-app-text">
               {order.order_number || t('tableNumber', { number: order.table_number })}
             </h2>
-            <div className="flex items-center gap-2 text-sm text-text-secondary">
+            <div className="flex items-center gap-2 text-sm text-app-text-secondary">
               <Clock className="w-4 h-4" />
               {new Date(order.created_at).toLocaleString(locale)}
             </div>
@@ -104,28 +104,28 @@ export default function OrderDetails({
             )}
           </div>
           <div className="text-right">
-            <p className="text-sm font-medium text-text-secondary uppercase">{tc('total')}</p>
-            <p className="text-2xl font-bold text-text-primary">{fmt(displayTotal)}</p>
+            <p className="text-sm font-medium text-app-text-secondary uppercase">{tc('total')}</p>
+            <p className="text-2xl font-bold text-app-text">{fmt(displayTotal)}</p>
           </div>
         </div>
 
         {/* Server */}
-        <div className="border border-border-subtle rounded-xl p-4">
+        <div className="border border-app-border rounded-xl p-4">
           <div className="flex items-center justify-between">
-            <span className="flex items-center gap-1.5 text-sm text-text-secondary">
+            <span className="flex items-center gap-1.5 text-sm text-app-text-secondary">
               <User className="w-4 h-4" />
               {t('serverLabel')}
             </span>
-            <span className="text-sm font-medium text-text-primary">
+            <span className="text-sm font-medium text-app-text">
               {order.server?.full_name ?? ta('unassigned')}
             </span>
           </div>
         </div>
 
         {/* Items */}
-        <div className="border border-border-subtle rounded-xl overflow-hidden">
-          <div className="px-4 py-3 bg-surface-secondary">
-            <p className="text-xs font-medium text-text-secondary uppercase tracking-wider">
+        <div className="border border-app-border rounded-xl overflow-hidden">
+          <div className="px-4 py-3 bg-app-bg">
+            <p className="text-xs font-medium text-app-text-secondary uppercase tracking-wider">
               {t('orderDetails')}
             </p>
           </div>
@@ -134,13 +134,13 @@ export default function OrderDetails({
               {(order.items || []).map((item, i) => (
                 <div key={i} className="flex justify-between items-start py-2">
                   <div className="flex gap-3">
-                    <div className="w-6 h-6 bg-surface-tertiary rounded flex items-center justify-center text-xs font-bold text-text-primary">
+                    <div className="w-6 h-6 bg-app-elevated rounded flex items-center justify-center text-xs font-bold text-app-text">
                       {item.quantity}
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-text-primary">{item.name}</p>
+                      <p className="font-medium text-sm text-app-text">{item.name}</p>
                       {item.notes && (
-                        <p className="text-xs text-text-secondary mt-0.5">{item.notes}</p>
+                        <p className="text-xs text-app-text-secondary mt-0.5">{item.notes}</p>
                       )}
                       {item.customer_notes && (
                         <p className="text-xs text-amber-600 mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded">
@@ -160,7 +160,7 @@ export default function OrderDetails({
                         )}
                     </div>
                   </div>
-                  <p className="font-medium text-sm text-text-primary">
+                  <p className="font-medium text-sm text-app-text">
                     {fmt(item.price * item.quantity)}
                   </p>
                 </div>
@@ -171,19 +171,19 @@ export default function OrderDetails({
 
         {/* Price Breakdown */}
         {hasBreakdown && (
-          <div className="border border-border-subtle rounded-xl p-4 space-y-2">
-            <div className="flex justify-between text-sm text-text-secondary">
+          <div className="border border-app-border rounded-xl p-4 space-y-2">
+            <div className="flex justify-between text-sm text-app-text-secondary">
               <span>{t('subtotal')}</span>
               <span>{fmt(order.subtotal || 0)}</span>
             </div>
             {(order.tax_amount ?? 0) > 0 && (
-              <div className="flex justify-between text-sm text-text-secondary">
+              <div className="flex justify-between text-sm text-app-text-secondary">
                 <span>{t('vat')}</span>
                 <span>{fmt(order.tax_amount!)}</span>
               </div>
             )}
             {(order.service_charge_amount ?? 0) > 0 && (
-              <div className="flex justify-between text-sm text-text-secondary">
+              <div className="flex justify-between text-sm text-app-text-secondary">
                 <span>{t('serviceCharge')}</span>
                 <span>{fmt(order.service_charge_amount!)}</span>
               </div>
@@ -194,7 +194,7 @@ export default function OrderDetails({
                 <span>-{fmt(order.discount_amount!)}</span>
               </div>
             )}
-            <div className="flex justify-between font-bold text-base text-text-primary border-t border-border-subtle pt-2">
+            <div className="flex justify-between font-bold text-base text-app-text border-t border-app-border pt-2">
               <span>{tc('total')}</span>
               <span>{fmt(displayTotal)}</span>
             </div>

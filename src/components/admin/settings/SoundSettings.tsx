@@ -232,11 +232,11 @@ export function SoundSettings({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Volume2 className="w-5 h-5 text-text-secondary" />
-          <h3 className="font-semibold text-text-primary">{t('notificationSoundsTitle')}</h3>
+          <Volume2 className="w-5 h-5 text-app-text-secondary" />
+          <h3 className="font-semibold text-app-text">{t('notificationSoundsTitle')}</h3>
         </div>
         {!isPremium && (
-          <span className="text-xs text-text-secondary">{t('soundsAvailableCount')}</span>
+          <span className="text-xs text-app-text-secondary">{t('soundsAvailableCount')}</span>
         )}
       </div>
 
@@ -258,10 +258,10 @@ export function SoundSettings({
                 isSelected
                   ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-200'
                   : isLocked
-                    ? 'border-border-subtle bg-surface-secondary/50 opacity-60 cursor-not-allowed'
+                    ? 'border-app-border bg-app-bg/50 opacity-60 cursor-not-allowed'
                     : isCustom
                       ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300 cursor-pointer'
-                      : 'border-border-default bg-surface-primary hover:border-border-strong cursor-pointer'
+                      : 'border-app-border bg-app-card hover:border-app-border-hover cursor-pointer'
               }`}
             >
               {/* Play button */}
@@ -282,8 +282,8 @@ export function SoundSettings({
                   isPlaying
                     ? 'bg-amber-500 text-white'
                     : isLocked
-                      ? 'bg-surface-tertiary text-text-muted'
-                      : 'bg-surface-tertiary text-text-secondary hover:bg-surface-tertiary'
+                      ? 'bg-app-elevated text-app-text-muted'
+                      : 'bg-app-elevated text-app-text-secondary hover:bg-app-elevated'
                 }`}
               >
                 {isPlaying ? (
@@ -297,7 +297,7 @@ export function SoundSettings({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`text-xs font-medium truncate ${isLocked ? 'text-text-muted' : 'text-text-primary'}`}
+                    className={`text-xs font-medium truncate ${isLocked ? 'text-app-text-muted' : 'text-app-text'}`}
                   >
                     {sound.name}
                   </span>
@@ -308,12 +308,12 @@ export function SoundSettings({
                     </span>
                   )}
                   {!isCustom && (
-                    <span className="text-[10px] text-text-muted flex-shrink-0">
+                    <span className="text-[10px] text-app-text-muted flex-shrink-0">
                       {sound.duration}s
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-text-secondary truncate">{sound.description}</p>
+                <p className="text-[11px] text-app-text-secondary truncate">{sound.description}</p>
               </div>
 
               {/* Delete custom sound */}
@@ -331,7 +331,7 @@ export function SoundSettings({
                       handleDeleteCustomSound();
                     }
                   }}
-                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </div>
@@ -364,7 +364,7 @@ export function SoundSettings({
             variant="outline"
             disabled={uploadingSound}
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-11 border-dashed border-border-strong text-text-secondary hover:border-text-muted hover:text-text-primary"
+            className="w-full h-11 border-dashed border-app-border-hover text-app-text-secondary hover:border-text-muted hover:text-app-text"
           >
             {uploadingSound ? (
               <>
@@ -378,7 +378,7 @@ export function SoundSettings({
               </>
             )}
           </Button>
-          <p className="text-xs text-text-muted mt-1.5 text-center">
+          <p className="text-xs text-app-text-muted mt-1.5 text-center">
             MP3, WAV, OGG — {t('maxFileSize', { size: '2 MB' })}
           </p>
         </div>

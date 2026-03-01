@@ -41,14 +41,14 @@ export function ResponsiveDataTable<TData>({
       return (
         <div className="space-y-3">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="animate-pulse bg-surface-tertiary rounded-xl h-24" />
+            <div key={i} className="animate-pulse bg-app-elevated rounded-xl h-24" />
           ))}
         </div>
       );
     }
 
     if (data.length === 0) {
-      return <div className="text-center py-12 text-text-muted text-sm">{emptyMessage}</div>;
+      return <div className="text-center py-12 text-app-text-muted text-sm">{emptyMessage}</div>;
     }
 
     return (
