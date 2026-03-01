@@ -244,7 +244,7 @@ export default function MenuImportExcel({
           {t('cancel')}
         </Button>
         <Button
-          variant="lime"
+          variant="default"
           disabled={!importFile || !importMenuId || importing}
           onClick={handleImport}
           className="gap-2 rounded-xl"

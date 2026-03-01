@@ -360,7 +360,7 @@ export default function MenusTable({
           </div>
           <h3 className="text-base font-bold text-neutral-900">{t('noMenus')}</h3>
           <p className="text-sm text-neutral-500 mt-2">{t('noMenusDesc')}</p>
-          <Button onClick={onCreateFirst} variant="lime" className="mt-4">
+          <Button onClick={onCreateFirst} variant="default" className="mt-4">
             {t('createMenu')}
           </Button>
         </div>

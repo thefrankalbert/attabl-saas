@@ -111,7 +111,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
             <p className="text-sm text-text-secondary">{t('teamSubtitle')}</p>
           </div>
           {data.canManageUsers && (
-            <Button variant="lime" onClick={() => data.setIsModalOpen(true)} className="gap-2">
+            <Button variant="default" onClick={() => data.setIsModalOpen(true)} className="gap-2">
               <UserPlus className="w-4 h-4" /> {t('newMember')}
             </Button>
           )}
@@ -214,7 +214,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
               <Button variant="ghost" onClick={() => setEditingUser(null)}>
                 {tc('cancel')}
               </Button>
-              <Button variant="lime" disabled={editSaving} onClick={handleEditSave}>
+              <Button variant="default" disabled={editSaving} onClick={handleEditSave}>
                 {editSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {tc('saveChanges')}
               </Button>

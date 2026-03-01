@@ -115,7 +115,7 @@ export default function MenusClient({
             </Button>
             <Button
               onClick={() => openNewMenuModal()}
-              variant="lime"
+              variant="default"
               disabled={isLimitReached}
               className="gap-2"
             >

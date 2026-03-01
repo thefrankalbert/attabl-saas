@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                 {/* Continue / Launch — with validation opacity (Task 8) */}
                 {currentStep < 5 ? (
                   <Button
-                    variant="lime"
+                    variant="default"
                     onClick={nextStep}
                     disabled={saving}
                     className={!stepIsComplete(currentStep) ? 'opacity-60' : ''}
@@ -561,7 +561,7 @@ export default function OnboardingPage() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button variant="lime" onClick={completeOnboarding} disabled={saving}>
+                  <Button variant="default" onClick={completeOnboarding} disabled={saving}>
                     {saving ? '...' : t('launchCTA')}
                     <Rocket className="h-4 w-4" />
                   </Button>

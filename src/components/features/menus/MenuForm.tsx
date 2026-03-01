@@ -207,7 +207,7 @@ export default function MenuForm({
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={saving} variant="lime">
+        <Button type="submit" disabled={saving} variant="default">
           {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {editingMenu ? t('update') : t('create')}
         </Button>

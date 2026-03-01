@@ -270,7 +270,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
               {t('exportCsv')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               className="rounded-xl"
               onClick={handleExportPDF}
               disabled={exporting}

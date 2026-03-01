@@ -377,7 +377,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  variant="lime"
+                  variant="default"
                   className="w-full gap-2"
                 >
                   <Check className="w-4 h-4" />

@@ -518,7 +518,7 @@ function BatchQRPreview({
       <Button
         onClick={handleBatchDownload}
         disabled={generating}
-        variant="lime"
+        variant="default"
         size="lg"
         className="w-full gap-2"
       >

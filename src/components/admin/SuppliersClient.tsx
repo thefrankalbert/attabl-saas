@@ -297,7 +297,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               {t('supplierCount', { count: suppliers.length })}
             </p>
           </div>
-          <Button onClick={openAdd} variant="lime" className="gap-2">
+          <Button onClick={openAdd} variant="default" className="gap-2">
             <Plus className="w-4 h-4" />
             {t('addSupplier')}
           </Button>
@@ -484,7 +484,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             >
               {t('cancelAction')}
             </Button>
-            <Button onClick={handleSave} variant="lime">
+            <Button onClick={handleSave} variant="default">
               {t('save')}
             </Button>
           </div>

@@ -170,7 +170,7 @@ export default function AnnouncementsClient({
             resetForm();
             setIsModalOpen(true);
           }}
-          variant="lime"
+          variant="default"
           className="gap-2"
         >
           <Plus className="w-4 h-4" /> {t('newAnnouncement')}
@@ -309,7 +309,7 @@ export default function AnnouncementsClient({
             <Button variant="ghost" onClick={() => setIsModalOpen(false)}>
               {t('cancel')}
             </Button>
-            <Button onClick={handleSave} disabled={loading} variant="lime">
+            <Button onClick={handleSave} disabled={loading} variant="default">
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {editingAnnouncement ? tc('save') : t('publish')}
             </Button>

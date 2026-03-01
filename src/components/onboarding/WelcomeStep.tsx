@@ -51,7 +51,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         })}
       </div>
 
-      <Button variant="lime" onClick={onStart}>
+      <Button variant="default" onClick={onStart}>
         {t('welcomeCTA')}
         <ArrowRight className="h-4 w-4" />
       </Button>

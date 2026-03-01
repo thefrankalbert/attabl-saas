@@ -136,7 +136,7 @@ export default function UserForm({
             <Button variant="ghost" onClick={onClose}>
               {t('cancel')}
             </Button>
-            <Button variant="lime" onClick={onSendInvitation} disabled={inviting}>
+            <Button variant="default" onClick={onSendInvitation} disabled={inviting}>
               {inviting ? (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               ) : (
@@ -219,7 +219,7 @@ export default function UserForm({
             <Button variant="ghost" onClick={onClose}>
               {t('cancel')}
             </Button>
-            <Button variant="lime" onClick={onCreateUser} disabled={loading}>
+            <Button variant="default" onClick={onCreateUser} disabled={loading}>
               {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
               {t('createAccount')}
             </Button>
