@@ -508,7 +508,7 @@ export default function PaymentModal({
               {t('cancel')}
             </button>
             <Button
-              variant="lime"
+              variant="default"
               onClick={handleProcessPayment}
               disabled={!isValid() || isProcessing}
               className="flex-1 rounded-lg py-2.5 min-h-[44px] text-sm font-bold"

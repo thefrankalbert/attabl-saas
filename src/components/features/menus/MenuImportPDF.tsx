@@ -284,7 +284,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               {t('cancel')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               disabled={!file || !menuId || step === 'extracting'}
               onClick={handleExtract}
               className="gap-2 rounded-xl"
@@ -365,7 +365,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               {t('cancel')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               disabled={extractedItems.length === 0}
               onClick={handleImport}
               className="gap-2 rounded-xl"
@@ -426,7 +426,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
 
           {/* Close button */}
           <div className="flex justify-end pt-4 border-t border-neutral-100">
-            <Button variant="lime" onClick={onCancel} className="rounded-xl">
+            <Button variant="default" onClick={onCancel} className="rounded-xl">
               {t('cancel')}
             </Button>
           </div>

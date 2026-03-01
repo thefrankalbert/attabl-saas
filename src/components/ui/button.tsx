@@ -5,18 +5,17 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action-primary/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 shadow-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium transition-colors duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/30 focus-visible:ring-offset-2 focus-visible:ring-offset-app-bg disabled:pointer-events-none disabled:opacity-50 shadow-none [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0',
   {
     variants: {
       variant: {
-        default: 'bg-action-secondary text-white hover:bg-[#1f2937]',
-        destructive: 'bg-action-danger text-white hover:bg-red-600',
+        default: 'bg-accent text-accent-text font-semibold hover:bg-accent-hover',
+        destructive: 'bg-danger text-white hover:bg-danger-hover',
         outline:
-          'border border-border-default bg-transparent text-text-secondary hover:bg-surface-secondary hover:border-border-strong',
-        secondary: 'bg-surface-tertiary text-text-primary hover:bg-border-default',
-        ghost: 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary',
-        link: 'text-text-accent underline-offset-4 hover:underline',
-        lime: 'bg-action-primary text-text-primary font-semibold hover:bg-action-primary-hover',
+          'border border-app-border bg-transparent text-app-text-secondary hover:bg-app-hover hover:border-app-border-hover',
+        secondary: 'bg-app-elevated text-app-text hover:bg-app-hover',
+        ghost: 'text-app-text-secondary hover:bg-app-hover hover:text-app-text',
+        link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-10 px-4 py-2',
@@ -25,10 +24,7 @@ const buttonVariants = cva(
         icon: 'h-10 w-10',
       },
     },
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-    },
+    defaultVariants: { variant: 'default', size: 'default' },
   },
 );
 

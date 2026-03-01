@@ -325,7 +325,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {ingredients.length} {t('ingredientsCount')}
             </p>
           </div>
-          <Button onClick={openAdd} variant="lime" className="gap-2">
+          <Button onClick={openAdd} variant="default" className="gap-2">
             <Plus className="w-4 h-4" />
             {t('addIngredient')}
           </Button>
@@ -552,7 +552,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             >
               {tc('cancel')}
             </Button>
-            <Button onClick={handleSave} variant="lime">
+            <Button onClick={handleSave} variant="default">
               {tc('save')}
             </Button>
           </div>
@@ -654,7 +654,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 >
                   {tc('cancel')}
                 </Button>
-                <Button onClick={handleAdjust} disabled={!adjustQty} variant="lime">
+                <Button onClick={handleAdjust} disabled={!adjustQty} variant="default">
                   {tc('confirm')}
                 </Button>
               </div>

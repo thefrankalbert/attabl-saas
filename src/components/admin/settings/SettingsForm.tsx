@@ -183,7 +183,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         <div className="flex-shrink-0 flex justify-end gap-4 border-t border-border-subtle pt-4 mt-4 px-0 sm:px-0">
           <Button
             type="submit"
-            variant="lime"
+            variant="default"
             disabled={saving || uploading}
             className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
           >

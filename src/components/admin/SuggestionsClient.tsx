@@ -259,7 +259,7 @@ export default function SuggestionsClient({
               {generating ? tc('loading') : t('autoGenerate')}
             </Button>
           )}
-          <Button onClick={() => setShowAdd(true)} variant="lime" className="gap-2">
+          <Button onClick={() => setShowAdd(true)} variant="default" className="gap-2">
             <Plus className="w-4 h-4" />
             {t('addSuggestion')}
           </Button>
@@ -456,7 +456,7 @@ export default function SuggestionsClient({
           <Button variant="ghost" onClick={() => setShowAdd(false)}>
             {tc('cancel')}
           </Button>
-          <Button onClick={handleAdd} variant="lime">
+          <Button onClick={handleAdd} variant="default">
             {tc('add')}
           </Button>
         </div>

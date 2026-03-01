@@ -140,7 +140,7 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
           <div className="flex gap-2">
             <Button
               type="button"
-              variant="lime"
+              variant="default"
               onClick={handleSave}
               disabled={saving || !domain.trim()}
             >

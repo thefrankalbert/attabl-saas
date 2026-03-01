@@ -271,7 +271,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             <h1 className="text-xl font-bold text-text-primary tracking-tight">{t('title')}</h1>
             <p className="text-xs text-text-secondary mt-1">{t('subtitle')}</p>
           </div>
-          <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
+          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> {t('newCategory')}
           </Button>
         </div>
@@ -353,7 +353,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             </div>
             <h3 className="text-lg font-bold text-text-primary">{t('noCategories')}</h3>
             <p className="text-sm text-text-secondary mt-2">{t('noCategoriesDesc')}</p>
-            <Button onClick={openNewModal} variant="lime" className="mt-6">
+            <Button onClick={openNewModal} variant="default" className="mt-6">
               {t('createCategory')}
             </Button>
           </div>
@@ -411,7 +411,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
               <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
                 {tc('cancel')}
               </Button>
-              <Button type="submit" disabled={saving} variant="lime">
+              <Button type="submit" disabled={saving} variant="default">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingCategory ? t('update') : t('create')}
               </Button>

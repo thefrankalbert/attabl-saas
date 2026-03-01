@@ -312,7 +312,7 @@ export default function POSCart({
             <span className="hidden lg:inline text-xs">{t('printShort')}</span>
           </Button>
           <Button
-            variant="lime"
+            variant="default"
             className="col-span-5 h-12 text-base font-bold"
             disabled={cart.length === 0}
             onClick={onCheckout}

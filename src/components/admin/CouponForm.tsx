@@ -245,7 +245,7 @@ export default function CouponForm({
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             {tc('cancel')}
           </Button>
-          <Button type="submit" variant="lime" disabled={submitting}>
+          <Button type="submit" variant="default" disabled={submitting}>
             {submitting ? tc('saving') : initialData ? tc('save') : t('createCoupon')}
           </Button>
         </div>

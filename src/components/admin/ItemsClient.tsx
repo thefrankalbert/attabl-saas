@@ -221,7 +221,7 @@ export default function ItemsClient({
             <h1 className="text-xl font-bold text-text-primary tracking-tight">{t('title')}</h1>
             <p className="text-xs text-text-secondary mt-1">{t('subtitle')}</p>
           </div>
-          <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
+          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> {t('newItem')}
           </Button>
         </div>
@@ -370,7 +370,7 @@ export default function ItemsClient({
             </div>
             <h3 className="text-lg font-bold text-text-primary">{t('noItems')}</h3>
             <p className="text-sm text-text-secondary mt-2">{t('noItemsDesc')}</p>
-            <Button onClick={openNewModal} variant="lime" className="mt-6">
+            <Button onClick={openNewModal} variant="default" className="mt-6">
               {t('addItem')}
             </Button>
           </div>
@@ -520,7 +520,7 @@ export default function ItemsClient({
 
                 {/* Edit Button */}
                 <Button
-                  variant="lime"
+                  variant="default"
                   className="w-full mt-2"
                   onClick={() => {
                     openEditModal(selectedItem);
@@ -677,7 +677,7 @@ export default function ItemsClient({
               <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
                 {t('cancel')}
               </Button>
-              <Button type="submit" disabled={saving} variant="lime">
+              <Button type="submit" disabled={saving} variant="default">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingItem ? t('update') : t('create')}
               </Button>
