@@ -110,7 +110,6 @@ export default async function AdminLayout({
             isDevMode={isDevMode}
             basePath={`/sites/${tenantSlug}/admin`}
             role={userRole}
-            primaryColor={tenant.primary_color ?? undefined}
             tenant={{
               name: tenant.name,
               slug: tenant.slug,
