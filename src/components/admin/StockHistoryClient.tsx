@@ -63,7 +63,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorKey: 'created_at',
         header: ({ column }) => <SortableHeader column={column}>{t('columnDate')}</SortableHeader>,
         cell: ({ row }) => (
-          <span className="text-text-secondary whitespace-nowrap">
+          <span className="text-app-text-secondary whitespace-nowrap">
             {formatDate(row.original.created_at)}
           </span>
         ),
@@ -75,10 +75,12 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           <SortableHeader column={column}>{t('columnIngredient')}</SortableHeader>
         ),
         cell: ({ row }) => (
-          <span className="font-medium text-text-primary">
+          <span className="font-medium text-app-text">
             {row.original.ingredient?.name || '\u2014'}
             {row.original.ingredient?.unit && (
-              <span className="text-text-muted ml-1 text-xs">({row.original.ingredient.unit})</span>
+              <span className="text-app-text-muted ml-1 text-xs">
+                ({row.original.ingredient.unit})
+              </span>
             )}
           </span>
         ),
@@ -89,7 +91,9 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         cell: ({ row }) => {
           const typeInfo = MOVEMENT_TYPE_LABELS[row.original.movement_type];
           return (
-            <span className={cn('text-xs font-medium', typeInfo?.color || 'text-text-secondary')}>
+            <span
+              className={cn('text-xs font-medium', typeInfo?.color || 'text-app-text-secondary')}
+            >
               {typeInfo?.label || row.original.movement_type}
             </span>
           );
@@ -124,7 +128,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorFn: (row) => row.supplier?.name ?? '',
         header: () => t('columnSupplier'),
         cell: ({ row }) => (
-          <span className="text-text-secondary whitespace-nowrap">
+          <span className="text-app-text-secondary whitespace-nowrap">
             {row.original.supplier?.name || '\u2014'}
           </span>
         ),
@@ -134,7 +138,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorKey: 'notes',
         header: () => t('columnNotes'),
         cell: ({ row }) => (
-          <span className="text-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] truncate block">
             {row.original.notes || '\u2014'}
           </span>
         ),
@@ -146,7 +150,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   );
 
   if (loading) {
-    return <div className="p-8 text-center text-text-secondary">{tc('loading')}</div>;
+    return <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>;
   }
 
   return (
@@ -155,12 +159,12 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-surface-secondary rounded-lg">
-              <History className="h-5 w-5 text-text-secondary" />
+            <div className="p-2 bg-app-bg rounded-lg">
+              <History className="h-5 w-5 text-app-text-secondary" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-text-primary">{t('title')}</h1>
-              <p className="text-sm text-text-secondary">
+              <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+              <p className="text-sm text-app-text-secondary">
                 {t('movementsCount', { count: filtered.length })}
               </p>
             </div>
@@ -168,19 +172,19 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         </div>
 
         {/* Filters */}
-        <div className="border border-border-default rounded-xl p-4">
+        <div className="border border-app-border rounded-xl p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" />
               <Input
                 placeholder={t('searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-lg focus:ring-action-primary/30"
+                className="pl-9 rounded-lg focus:ring-accent/30"
               />
             </div>
             <div className="flex items-center gap-2 overflow-x-auto">
-              <Filter className="h-4 w-4 text-text-muted flex-shrink-0" />
+              <Filter className="h-4 w-4 text-app-text-muted flex-shrink-0" />
               {movementFilters.map((f) => (
                 <button
                   key={f.value}
@@ -188,8 +192,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   className={cn(
                     'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
                     filterType === f.value
-                      ? 'bg-text-primary text-white'
-                      : 'bg-surface-secondary text-text-secondary hover:bg-surface-tertiary',
+                      ? 'bg-app-text text-accent-text'
+                      : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
                   )}
                 >
                   {f.label}
@@ -209,18 +213,18 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
               const isPositive = movement.quantity > 0;
               return (
-                <div className="bg-surface-primary border border-border-default rounded-xl p-4 space-y-2">
+                <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
                   {/* Row 1: Ingredient + Date */}
                   <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-text-primary truncate">
+                    <span className="font-medium text-app-text truncate">
                       {movement.ingredient?.name || '\u2014'}
                       {movement.ingredient?.unit && (
-                        <span className="text-text-muted ml-1 text-xs">
+                        <span className="text-app-text-muted ml-1 text-xs">
                           ({movement.ingredient.unit})
                         </span>
                       )}
                     </span>
-                    <span className="text-xs text-text-muted whitespace-nowrap shrink-0">
+                    <span className="text-xs text-app-text-muted whitespace-nowrap shrink-0">
                       {formatDate(movement.created_at)}
                     </span>
                   </div>
@@ -230,7 +234,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                     <span
                       className={cn(
                         'text-xs font-medium',
-                        typeInfo?.color || 'text-text-secondary',
+                        typeInfo?.color || 'text-app-text-secondary',
                       )}
                     >
                       {typeInfo?.label || movement.movement_type}
@@ -248,7 +252,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
                   {/* Row 3: Supplier + Notes */}
                   {(movement.supplier?.name || movement.notes) && (
-                    <div className="text-xs text-text-secondary truncate">
+                    <div className="text-xs text-app-text-secondary truncate">
                       {movement.supplier?.name && <span>{movement.supplier.name}</span>}
                       {movement.supplier?.name && movement.notes && <span> — </span>}
                       {movement.notes && <span>{movement.notes}</span>}

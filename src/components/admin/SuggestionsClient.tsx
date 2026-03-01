@@ -231,7 +231,7 @@ export default function SuggestionsClient({
   });
 
   if (loading) {
-    return <div className="p-8 text-center text-text-secondary">{tc('loading')}</div>;
+    return <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>;
   }
 
   return (
@@ -239,11 +239,11 @@ export default function SuggestionsClient({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
             <Lightbulb className="w-6 h-6" />
             {t('suggestions')}
           </h1>
-          <p className="text-sm text-text-secondary mt-1">
+          <p className="text-sm text-app-text-secondary mt-1">
             {t('activeSuggestions', { count: suggestions.length })}
           </p>
         </div>
@@ -268,10 +268,10 @@ export default function SuggestionsClient({
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
+        <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
         <Input
           placeholder={t('searchDish')}
-          className="pl-9 rounded-lg focus-visible:ring-lime-400"
+          className="pl-9 rounded-lg focus-visible:ring-accent"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
@@ -307,10 +307,10 @@ export default function SuggestionsClient({
             <div
               key={suggestion.id}
               className={cn(
-                'bg-surface-primary rounded-xl border p-4 transition-colors',
+                'bg-app-card rounded-xl border p-4 transition-colors',
                 selectedIds.has(suggestion.id)
-                  ? 'border-border-accent bg-surface-accent'
-                  : 'border-border-default',
+                  ? 'border-accent bg-accent-muted'
+                  : 'border-app-border',
               )}
             >
               <div className="flex items-start justify-between">
@@ -318,7 +318,7 @@ export default function SuggestionsClient({
                   <button
                     type="button"
                     onClick={() => toggleSelect(suggestion.id)}
-                    className="text-text-muted hover:text-text-secondary transition-colors"
+                    className="text-app-text-muted hover:text-app-text-secondary transition-colors"
                   >
                     {selectedIds.has(suggestion.id) ? (
                       <CheckSquare className="w-4 h-4 text-lime-600" />
@@ -329,7 +329,7 @@ export default function SuggestionsClient({
                   <span
                     className={cn(
                       'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-                      typeConfig?.color || 'bg-surface-secondary text-text-secondary',
+                      typeConfig?.color || 'bg-app-bg text-app-text-secondary',
                     )}
                   >
                     {typeConfig?.emoji} {typeConfig?.label}
@@ -337,24 +337,24 @@ export default function SuggestionsClient({
                 </div>
                 <button
                   onClick={() => handleDelete(suggestion.id)}
-                  className="p-1 text-text-muted hover:text-red-500 transition-colors"
+                  className="p-1 text-app-text-muted hover:text-red-500 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
 
               <div className="mt-3 space-y-1">
-                <p className="text-sm font-semibold text-text-primary">
+                <p className="text-sm font-semibold text-app-text">
                   {suggestion.menu_item?.name || tc('unknown')}
                 </p>
-                <p className="text-xs text-text-muted">{tc('suggests')}</p>
+                <p className="text-xs text-app-text-muted">{tc('suggests')}</p>
                 <p className="text-sm font-semibold text-primary">
                   {suggestion.suggested_item?.name || tc('unknown')}
                 </p>
               </div>
 
               {suggestion.description && (
-                <p className="mt-2 text-xs text-text-secondary italic">
+                <p className="mt-2 text-xs text-app-text-secondary italic">
                   &ldquo;{suggestion.description}&rdquo;
                 </p>
               )}
@@ -362,7 +362,7 @@ export default function SuggestionsClient({
           );
         })}
         {filtered.length === 0 && (
-          <div className="col-span-full text-center py-12 text-text-muted">
+          <div className="col-span-full text-center py-12 text-app-text-muted">
             <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="font-medium">{t('noSuggestions')}</p>
             <p className="text-xs mt-1">{t('addServerAdvice')}</p>
@@ -379,13 +379,13 @@ export default function SuggestionsClient({
       >
         <div className="space-y-4 pt-4">
           <div>
-            <Label className="text-sm font-medium text-text-primary mb-1.5 block">
+            <Label className="text-sm font-medium text-app-text mb-1.5 block">
               {t('sourceDish')}
             </Label>
             <select
               value={sourceItemId}
               onChange={(e) => setSourceItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-border-default rounded-lg text-sm bg-surface-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2"
+              className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               <option value="">{tc('selectPlaceholder')}</option>
               {menuItems.map((item) => (
@@ -397,7 +397,7 @@ export default function SuggestionsClient({
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-text-primary mb-1.5 block">
+            <Label className="text-sm font-medium text-app-text mb-1.5 block">
               {t('suggestionType')}
             </Label>
             <div className="grid grid-cols-3 gap-2">
@@ -409,8 +409,8 @@ export default function SuggestionsClient({
                   className={cn(
                     'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
                     suggestionType === st.value
-                      ? 'border-border-accent bg-surface-accent text-text-primary'
-                      : 'border-border-default text-text-secondary hover:bg-surface-secondary',
+                      ? 'border-accent bg-accent-muted text-app-text'
+                      : 'border-app-border text-app-text-secondary hover:bg-app-bg',
                   )}
                 >
                   <span>{st.emoji}</span>
@@ -421,13 +421,13 @@ export default function SuggestionsClient({
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-text-primary mb-1.5 block">
+            <Label className="text-sm font-medium text-app-text mb-1.5 block">
               {t('suggestedDish')}
             </Label>
             <select
               value={targetItemId}
               onChange={(e) => setTargetItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-border-default rounded-lg text-sm bg-surface-primary text-text-primary focus:outline-none focus:ring-2 focus:ring-lime-400 focus:ring-offset-2"
+              className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
             >
               <option value="">{tc('selectPlaceholder')}</option>
               {menuItems.map((item) => (
@@ -439,16 +439,16 @@ export default function SuggestionsClient({
           </div>
 
           <div>
-            <Label className="text-sm font-medium text-text-primary mb-1.5 block">
+            <Label className="text-sm font-medium text-app-text mb-1.5 block">
               {t('serverAdvice')}
             </Label>
             <Input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder={t('serverAdvicePlaceholder')}
-              className="rounded-lg focus-visible:ring-lime-400"
+              className="rounded-lg focus-visible:ring-accent"
             />
-            <p className="mt-1 text-xs text-text-secondary">{t('addServerAdvice')}</p>
+            <p className="mt-1 text-xs text-app-text-secondary">{t('addServerAdvice')}</p>
           </div>
         </div>
 

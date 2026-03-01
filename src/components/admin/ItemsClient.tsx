@@ -218,8 +218,8 @@ export default function ItemsClient({
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-text-primary tracking-tight">{t('title')}</h1>
-            <p className="text-xs text-text-secondary mt-1">{t('subtitle')}</p>
+            <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
+            <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
           </div>
           <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> {t('newItem')}
@@ -227,9 +227,9 @@ export default function ItemsClient({
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-surface-primary rounded-xl border border-border-default">
+        <div className="flex flex-wrap items-center gap-3 p-4 bg-app-card rounded-xl border border-app-border">
           <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-border-default text-text-primary focus:ring-lime-400">
+            <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
               <SelectValue placeholder={t('allCategories')} />
             </SelectTrigger>
             <SelectContent>
@@ -242,7 +242,7 @@ export default function ItemsClient({
             </SelectContent>
           </Select>
           <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-border-default text-text-primary focus:ring-lime-400">
+            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
               <SelectValue placeholder={t('all')} />
             </SelectTrigger>
             <SelectContent>
@@ -251,7 +251,7 @@ export default function ItemsClient({
               <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
             </SelectContent>
           </Select>
-          <span className="ml-auto text-xs text-text-muted font-medium">
+          <span className="ml-auto text-xs text-app-text-muted font-medium">
             {t('itemCount', { count: items.length })}
           </span>
         </div>
@@ -262,7 +262,7 @@ export default function ItemsClient({
             {[1, 2, 3, 4].map((i) => (
               <div
                 key={i}
-                className="h-20 bg-surface-primary rounded-xl border border-border-default animate-pulse"
+                className="h-20 bg-app-card rounded-xl border border-app-border animate-pulse"
               />
             ))}
           </div>
@@ -272,7 +272,7 @@ export default function ItemsClient({
               <div
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-surface-primary rounded-xl border border-border-default hover:bg-surface-secondary transition-colors group cursor-pointer"
+                className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
               >
                 {item.image_url ? (
                   <Image
@@ -280,21 +280,21 @@ export default function ItemsClient({
                     alt={item.name}
                     width={48}
                     height={48}
-                    className="w-12 h-12 rounded-lg object-cover border border-border-default"
+                    className="w-12 h-12 rounded-lg object-cover border border-app-border"
                   />
                 ) : (
-                  <div className="w-12 h-12 rounded-lg bg-surface-secondary flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-text-muted" />
+                  <div className="w-12 h-12 rounded-lg bg-app-bg flex items-center justify-center">
+                    <ImageIcon className="w-5 h-5 text-app-text-muted" />
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-text-primary text-sm truncate">{item.name}</p>
-                  <p className="text-xs text-text-muted mt-0.5">
+                  <p className="font-semibold text-app-text text-sm truncate">{item.name}</p>
+                  <p className="text-xs text-app-text-muted mt-0.5">
                     {item.category?.name || t('uncategorized')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-text-primary text-sm tabular-nums">
+                  <p className="font-bold text-app-text text-sm tabular-nums">
                     {formatCurrency(item.price, currency)}
                   </p>
                 </div>
@@ -307,7 +307,7 @@ export default function ItemsClient({
                     'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
                     item.is_available
                       ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                      : 'bg-surface-secondary text-text-secondary border-border-default',
+                      : 'bg-app-bg text-app-text-secondary border-app-border',
                   )}
                 >
                   {item.is_available ? (
@@ -331,7 +331,7 @@ export default function ItemsClient({
                     'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
                     item.is_featured
                       ? 'text-amber-500 bg-amber-50'
-                      : 'text-text-muted hover:text-amber-500 hover:bg-surface-secondary',
+                      : 'text-app-text-muted hover:text-amber-500 hover:bg-app-bg',
                   )}
                 >
                   <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
@@ -364,12 +364,12 @@ export default function ItemsClient({
             ))}
           </div>
         ) : (
-          <div className="bg-surface-primary rounded-xl border border-border-default p-16 text-center">
-            <div className="w-16 h-16 bg-surface-secondary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <ImageIcon className="w-8 h-8 text-text-muted" />
+          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <ImageIcon className="w-8 h-8 text-app-text-muted" />
             </div>
-            <h3 className="text-lg font-bold text-text-primary">{t('noItems')}</h3>
-            <p className="text-sm text-text-secondary mt-2">{t('noItemsDesc')}</p>
+            <h3 className="text-lg font-bold text-app-text">{t('noItems')}</h3>
+            <p className="text-sm text-app-text-secondary mt-2">{t('noItemsDesc')}</p>
             <Button onClick={openNewModal} variant="default" className="mt-6">
               {t('addItem')}
             </Button>
@@ -384,18 +384,18 @@ export default function ItemsClient({
             {/* Panel */}
             <div
               className={cn(
-                'fixed right-0 top-0 h-full w-full sm:w-[400px] z-50 bg-surface-primary border-l border-border-default rounded-l-xl overflow-y-auto',
+                'fixed right-0 top-0 h-full w-full sm:w-[400px] z-50 bg-app-card border-l border-app-border rounded-l-xl overflow-y-auto',
                 'transition-transform duration-300 ease-out translate-x-0',
               )}
             >
               {/* Panel Header */}
-              <div className="flex items-center justify-between p-5 border-b border-border-default">
-                <h2 className="text-base font-bold text-text-primary">{t('details')}</h2>
+              <div className="flex items-center justify-between p-5 border-b border-app-border">
+                <h2 className="text-base font-bold text-app-text">{t('details')}</h2>
                 <button
                   onClick={closePanel}
-                  className="p-2.5 rounded-lg hover:bg-surface-secondary transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
+                  className="p-2.5 rounded-lg hover:bg-app-bg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
                 >
-                  <X className="w-4 h-4 text-text-secondary" />
+                  <X className="w-4 h-4 text-app-text-secondary" />
                 </button>
               </div>
 
@@ -409,53 +409,53 @@ export default function ItemsClient({
                       alt={selectedItem.name}
                       fill
                       sizes="(max-width: 640px) 100vw, 400px"
-                      className="rounded-xl object-cover border border-border-default"
+                      className="rounded-xl object-cover border border-app-border"
                     />
                   </div>
                 ) : (
-                  <div className="w-full h-48 rounded-xl bg-surface-secondary border border-border-default flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-text-muted" />
+                  <div className="w-full h-48 rounded-xl bg-app-bg border border-app-border flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-app-text-muted" />
                   </div>
                 )}
 
                 {/* Name */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('nameFr')}</p>
-                  <p className="text-sm font-semibold text-text-primary">{selectedItem.name}</p>
+                  <p className="text-xs text-app-text-muted font-medium">{t('nameFr')}</p>
+                  <p className="text-sm font-semibold text-app-text">{selectedItem.name}</p>
                 </div>
 
                 {/* Name EN */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('nameEn')}</p>
-                  <p className="text-sm text-text-primary">{selectedItem.name_en || '—'}</p>
+                  <p className="text-xs text-app-text-muted font-medium">{t('nameEn')}</p>
+                  <p className="text-sm text-app-text">{selectedItem.name_en || '—'}</p>
                 </div>
 
                 {/* Description FR */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('descriptionFr')}</p>
-                  <p className="text-sm text-text-primary">
+                  <p className="text-xs text-app-text-muted font-medium">{t('descriptionFr')}</p>
+                  <p className="text-sm text-app-text">
                     {selectedItem.description || t('noDescription')}
                   </p>
                 </div>
 
                 {/* Description EN */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('descriptionEn')}</p>
-                  <p className="text-sm text-text-primary">{selectedItem.description_en || '—'}</p>
+                  <p className="text-xs text-app-text-muted font-medium">{t('descriptionEn')}</p>
+                  <p className="text-sm text-app-text">{selectedItem.description_en || '—'}</p>
                 </div>
 
                 {/* Price */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('price')}</p>
-                  <p className="text-lg font-bold text-text-primary tabular-nums">
+                  <p className="text-xs text-app-text-muted font-medium">{t('price')}</p>
+                  <p className="text-lg font-bold text-app-text tabular-nums">
                     {formatCurrency(selectedItem.price, currency)}
                   </p>
                 </div>
 
                 {/* Category */}
                 <div className="space-y-1">
-                  <p className="text-xs text-text-muted font-medium">{t('category')}</p>
-                  <p className="text-sm text-text-primary">
+                  <p className="text-xs text-app-text-muted font-medium">{t('category')}</p>
+                  <p className="text-sm text-app-text">
                     {selectedItem.category?.name || t('uncategorized')}
                   </p>
                 </div>
@@ -463,7 +463,7 @@ export default function ItemsClient({
                 {/* Allergens */}
                 {selectedItem.allergens && selectedItem.allergens.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs text-text-muted font-medium flex items-center gap-1">
+                    <p className="text-xs text-app-text-muted font-medium flex items-center gap-1">
                       <AlertTriangle className="w-3 h-3" />
                       {ta('title')}
                     </p>
@@ -483,8 +483,8 @@ export default function ItemsClient({
                 {/* Calories */}
                 {selectedItem.calories != null && (
                   <div className="space-y-1">
-                    <p className="text-xs text-text-muted font-medium">{ta('calories')}</p>
-                    <p className="text-sm text-text-primary">{selectedItem.calories} kcal</p>
+                    <p className="text-xs text-app-text-muted font-medium">{ta('calories')}</p>
+                    <p className="text-sm text-app-text">{selectedItem.calories} kcal</p>
                   </div>
                 )}
 
@@ -495,7 +495,7 @@ export default function ItemsClient({
                       'px-2.5 py-1 rounded-full text-xs font-semibold border',
                       selectedItem.is_available
                         ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                        : 'bg-surface-secondary text-text-secondary border-border-default',
+                        : 'bg-app-bg text-app-text-secondary border-app-border',
                     )}
                   >
                     {selectedItem.is_available ? (
@@ -544,63 +544,63 @@ export default function ItemsClient({
           <form onSubmit={handleSubmit} className="space-y-5 pt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('nameFr')}</Label>
+                <Label className="text-app-text">{t('nameFr')}</Label>
                 <Input
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('nameEn')}</Label>
+                <Label className="text-app-text">{t('nameEn')}</Label>
                 <Input
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('descriptionFr')}</Label>
+                <Label className="text-app-text">{t('descriptionFr')}</Label>
                 <Textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t('descriptionFrPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('descriptionEn')}</Label>
+                <Label className="text-app-text">{t('descriptionEn')}</Label>
                 <Textarea
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
                   placeholder={t('descriptionEnPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                 />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('price')}</Label>
+                <Label className="text-app-text">{t('price')}</Label>
                 <Input
                   type="number"
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
                   min={0}
-                  className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-text-primary">{t('category')}</Label>
+                <Label className="text-app-text">{t('category')}</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="rounded-lg border border-border-default text-text-primary focus:ring-lime-400">
+                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent">
                     <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -614,7 +614,7 @@ export default function ItemsClient({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-primary">{t('imageUrl')}</Label>
+              <Label className="text-app-text">{t('imageUrl')}</Label>
               <ImageUpload
                 value={imageUrl}
                 onChange={(url) => setImageUrl(url)}
@@ -623,7 +623,7 @@ export default function ItemsClient({
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-primary flex items-center gap-1">
+              <Label className="text-app-text flex items-center gap-1">
                 <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
                 {ta('title')}
               </Label>
@@ -643,7 +643,7 @@ export default function ItemsClient({
                         'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
                         selected
                           ? 'bg-orange-50 text-orange-700 border-orange-200'
-                          : 'bg-surface-secondary text-text-secondary border-border-default hover:border-border-strong',
+                          : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
                       )}
                     >
                       {ta(a)}
@@ -653,27 +653,27 @@ export default function ItemsClient({
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-text-primary">{ta('calories')}</Label>
+              <Label className="text-app-text">{ta('calories')}</Label>
               <Input
                 type="number"
                 value={calories}
                 onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
                 placeholder={ta('caloriesPlaceholder')}
-                className="rounded-lg border border-border-default text-text-primary focus-visible:ring-lime-400 w-full sm:w-[200px]"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent w-full sm:w-[200px]"
               />
             </div>
             <div className="flex items-center gap-6 pt-2">
               <div className="flex items-center gap-2">
                 <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
-                <Label className="text-sm text-text-primary">{t('available')}</Label>
+                <Label className="text-sm text-app-text">{t('available')}</Label>
               </div>
               <div className="flex items-center gap-2">
                 <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-                <Label className="text-sm text-text-primary">{t('featured')}</Label>
+                <Label className="text-sm text-app-text">{t('featured')}</Label>
               </div>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-border-default">
+            <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
                 {t('cancel')}
               </Button>

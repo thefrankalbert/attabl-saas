@@ -209,26 +209,26 @@ export default function MenuDetailClient({
   return (
     <div className="space-y-6">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-text-secondary">
+      <div className="flex items-center gap-2 text-sm text-app-text-secondary">
         <Link
           href={`/sites/${tenantSlug}/admin/menus`}
-          className="hover:text-text-primary transition-colors flex items-center gap-1"
+          className="hover:text-app-text transition-colors flex items-center gap-1"
         >
           <ArrowLeft className="w-4 h-4" />
           {t('breadcrumbMenus')}
         </Link>
         <span>/</span>
-        <span className="text-text-primary font-medium">{menu.name}</span>
+        <span className="text-app-text font-medium">{menu.name}</span>
       </div>
 
       {/* Menu info header */}
-      <div className="bg-surface-primary rounded-xl border border-border-default p-6">
+      <div className="bg-app-card rounded-xl border border-app-border p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
-            <h1 className="text-xl font-bold text-text-primary tracking-tight">{menu.name}</h1>
-            {menu.name_en && <p className="text-sm text-text-muted">{menu.name_en}</p>}
+            <h1 className="text-xl font-bold text-app-text tracking-tight">{menu.name}</h1>
+            {menu.name_en && <p className="text-sm text-app-text-muted">{menu.name_en}</p>}
             {menu.description && (
-              <p className="text-sm text-text-secondary mt-2">{menu.description}</p>
+              <p className="text-sm text-app-text-secondary mt-2">{menu.description}</p>
             )}
           </div>
           <div className="flex items-center gap-3">
@@ -244,7 +244,7 @@ export default function MenuDetailClient({
                 'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
                 menu.is_active
                   ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                  : 'bg-surface-secondary text-text-secondary border-border-default',
+                  : 'bg-app-bg text-app-text-secondary border-app-border',
               )}
             >
               {menu.is_active ? (
@@ -266,8 +266,8 @@ export default function MenuDetailClient({
       {/* Categories section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-            <Folder className="w-4 h-4 text-text-muted" />
+          <h2 className="text-sm font-semibold text-app-text flex items-center gap-2">
+            <Folder className="w-4 h-4 text-app-text-muted" />
             {t('categoriesCount', { count: categories.length })}
           </h2>
           <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
@@ -280,7 +280,7 @@ export default function MenuDetailClient({
             {[1, 2].map((i) => (
               <div
                 key={i}
-                className="h-16 bg-surface-primary rounded-xl border border-border-default animate-pulse"
+                className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
               />
             ))}
           </div>
@@ -291,15 +291,15 @@ export default function MenuDetailClient({
               return (
                 <div key={cat.id} className="space-y-2">
                   {/* Category header */}
-                  <div className="flex items-center gap-4 p-4 bg-surface-primary rounded-xl border border-border-default hover:bg-surface-secondary transition-colors group">
-                    <div className="w-9 h-9 bg-surface-secondary rounded-lg flex items-center justify-center">
-                      <Folder className="w-4 h-4 text-text-secondary" />
+                  <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group">
+                    <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+                      <Folder className="w-4 h-4 text-app-text-secondary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-text-primary text-sm">{cat.name}</p>
-                      {cat.name_en && <p className="text-xs text-text-muted">{cat.name_en}</p>}
+                      <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                      {cat.name_en && <p className="text-xs text-app-text-muted">{cat.name_en}</p>}
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+                    <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
                       <Utensils className="w-3.5 h-3.5" />
                       <span className="font-medium">
                         {t('dishCount', { count: catItems.length })}
@@ -331,13 +331,13 @@ export default function MenuDetailClient({
                       {catItems.map((item) => (
                         <div
                           key={item.id}
-                          className="flex items-center gap-3 p-3 bg-surface-secondary rounded-lg hover:bg-surface-secondary/80 transition-colors"
+                          className="flex items-center gap-3 p-3 bg-app-bg rounded-lg hover:bg-app-bg/80 transition-colors"
                         >
-                          <Utensils className="w-3.5 h-3.5 text-text-muted shrink-0" />
-                          <span className="flex-1 text-sm text-text-primary font-medium truncate">
+                          <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
+                          <span className="flex-1 text-sm text-app-text font-medium truncate">
                             {item.name}
                           </span>
-                          <span className="text-sm font-bold text-text-primary tabular-nums">
+                          <span className="text-sm font-bold text-app-text tabular-nums">
                             {t('priceFcfa', { count: item.price })}
                           </span>
                           {(item.modifiers?.length ?? 0) > 0 && (
@@ -350,7 +350,7 @@ export default function MenuDetailClient({
                               e.stopPropagation();
                               setEditingModifiersItem(item);
                             }}
-                            className="p-1.5 rounded-md text-text-muted hover:text-text-primary hover:bg-surface-secondary transition-colors"
+                            className="p-1.5 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-bg transition-colors"
                             title={t('manageModifiers')}
                           >
                             <Settings2 className="w-3.5 h-3.5" />
@@ -361,7 +361,7 @@ export default function MenuDetailClient({
                               'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
                               item.is_available
                                 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                                : 'bg-surface-secondary text-text-secondary border-border-default',
+                                : 'bg-app-bg text-app-text-secondary border-app-border',
                             )}
                           >
                             {item.is_available ? (
@@ -385,12 +385,12 @@ export default function MenuDetailClient({
             })}
           </div>
         ) : (
-          <div className="bg-surface-primary rounded-xl border border-border-default p-12 text-center">
-            <div className="w-14 h-14 bg-surface-secondary rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-7 h-7 text-text-muted" />
+          <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+            <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Folder className="w-7 h-7 text-app-text-muted" />
             </div>
-            <h3 className="text-base font-bold text-text-primary">{t('noCategoriesInMenu')}</h3>
-            <p className="text-sm text-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
+            <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
+            <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
             <Button onClick={openNewCategoryModal} className="mt-4">
               {t('createCategory')}
             </Button>

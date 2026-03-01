@@ -35,7 +35,7 @@ export function SortableHeader<TData, TValue>({
       type="button"
       onClick={() => column.toggleSorting(sorted === 'asc')}
       className={cn(
-        'inline-flex items-center gap-1 hover:text-text-primary transition-colors',
+        'inline-flex items-center gap-1 hover:text-app-text transition-colors',
         className,
       )}
     >
@@ -45,7 +45,7 @@ export function SortableHeader<TData, TValue>({
       ) : sorted === 'desc' ? (
         <ArrowDown className="w-3 h-3 text-lime-500" />
       ) : (
-        <ArrowUpDown className="w-3 h-3 text-text-muted" />
+        <ArrowUpDown className="w-3 h-3 text-app-text-muted" />
       )}
     </button>
   );
@@ -88,17 +88,17 @@ export function DataTable<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="border border-border-subtle rounded-xl overflow-hidden">
+    <div className="border border-app-border rounded-xl overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-sm min-w-[500px] sm:min-w-[600px]">
           {/* Header */}
-          <thead className="bg-surface-secondary">
+          <thead className="bg-app-bg">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-border-subtle">
+              <tr key={headerGroup.id} className="border-b border-app-border">
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider"
+                    className="px-4 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
@@ -111,14 +111,14 @@ export function DataTable<TData>({
           </thead>
 
           {/* Body */}
-          <tbody className="divide-y divide-border-subtle">
+          <tbody className="divide-y divide-app-border">
             {isLoading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, i) => (
                 <tr key={`skeleton-${String(i)}`}>
                   {columns.map((_, j) => (
                     <td key={`skeleton-cell-${String(i)}-${String(j)}`} className="px-4 py-3">
-                      <div className="animate-pulse bg-surface-tertiary rounded h-4 w-3/4" />
+                      <div className="animate-pulse bg-app-elevated rounded h-4 w-3/4" />
                     </td>
                   ))}
                 </tr>
@@ -128,7 +128,7 @@ export function DataTable<TData>({
                 <tr
                   key={row.id}
                   className={cn(
-                    'hover:bg-surface-secondary transition-colors',
+                    'hover:bg-app-bg transition-colors',
                     onRowClick && 'cursor-pointer',
                   )}
                   onClick={() => onRowClick?.(row.original)}
@@ -143,7 +143,7 @@ export function DataTable<TData>({
             ) : (
               // Empty state
               <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-text-muted">
+                <td colSpan={columns.length} className="px-4 py-12 text-center text-app-text-muted">
                   {emptyMessage}
                 </td>
               </tr>
@@ -154,8 +154,8 @@ export function DataTable<TData>({
 
       {/* Pagination footer — only show if more than one page */}
       {pageCount > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-border-subtle">
-          <p className="text-xs text-text-secondary">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
+          <p className="text-xs text-app-text-secondary">
             Page {currentPage} / {pageCount}
           </p>
           <div className="flex items-center gap-1">

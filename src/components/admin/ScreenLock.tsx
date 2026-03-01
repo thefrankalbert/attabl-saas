@@ -139,8 +139,8 @@ export function ScreenLock({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 className="mb-8"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#CCFF00]/10 ring-1 ring-[#CCFF00]/20">
-                  <Lock className="h-9 w-9 text-[#CCFF00]" />
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
+                  <Lock className="h-9 w-9 text-accent" />
                 </div>
               </motion.div>
 
@@ -148,7 +148,7 @@ export function ScreenLock({
               <div className="flex items-center gap-2 mb-3">
                 <div className="bg-white/10 rounded-lg p-1.5">
                   <svg
-                    className="h-4 w-4 text-[#CCFF00]"
+                    className="h-4 w-4 text-accent"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -193,7 +193,7 @@ export function ScreenLock({
                         }}
                         required
                         autoFocus
-                        className="h-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-[#CCFF00]/50 focus:ring-[#CCFF00]/20 rounded-lg"
+                        className="h-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
                       />
                       <button
                         type="button"
@@ -222,7 +222,7 @@ export function ScreenLock({
                   <Button
                     type="submit"
                     disabled={loading || !password}
-                    className="w-full h-11 bg-[#CCFF00] hover:bg-[#b3e600] text-black font-bold rounded-lg transition-all"
+                    className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text font-bold rounded-lg transition-all"
                   >
                     {loading ? t('verifying') : t('unlock')}
                   </Button>

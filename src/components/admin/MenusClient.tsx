@@ -91,10 +91,10 @@ export default function MenusClient({
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl xl:text-2xl font-bold text-text-primary tracking-tight">
+            <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
               {t('title')}
             </h1>
-            <p className="text-sm text-text-secondary mt-1">{t('subtitle')}</p>
+            <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -142,7 +142,7 @@ export default function MenusClient({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
           <Input
             data-search-input
             placeholder={t('searchPlaceholder')}

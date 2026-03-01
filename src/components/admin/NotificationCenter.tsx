@@ -89,7 +89,7 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
           {unreadCount > 0 && (
             <button
               onClick={() => markAllAsRead()}
-              className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors"
+              className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-app-text transition-colors"
             >
               <CheckCheck className="h-3.5 w-3.5" />
               {t('markAllRead')}
@@ -100,7 +100,7 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
         {/* List */}
         <div className="max-h-80 overflow-y-auto">
           {notifications.length === 0 ? (
-            <div className="py-8 text-center text-sm text-text-secondary">{t('empty')}</div>
+            <div className="py-8 text-center text-sm text-app-text-secondary">{t('empty')}</div>
           ) : (
             notifications.map((notification) => {
               const Icon = TYPE_ICONS[notification.type];
@@ -109,7 +109,7 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
                   key={notification.id}
                   onClick={() => handleClick(notification)}
                   className={cn(
-                    'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-secondary',
+                    'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-app-bg',
                     !notification.read && 'bg-blue-50/50',
                   )}
                 >
@@ -119,9 +119,7 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
                       <p
                         className={cn(
                           'text-sm truncate',
-                          !notification.read
-                            ? 'font-medium text-text-primary'
-                            : 'text-text-primary',
+                          !notification.read ? 'font-medium text-app-text' : 'text-app-text',
                         )}
                       >
                         {notification.title}
@@ -131,11 +129,11 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
                       )}
                     </div>
                     {notification.body && (
-                      <p className="mt-0.5 text-xs text-text-secondary line-clamp-2">
+                      <p className="mt-0.5 text-xs text-app-text-secondary line-clamp-2">
                         {notification.body}
                       </p>
                     )}
-                    <p className="mt-1 text-xs text-text-muted">
+                    <p className="mt-1 text-xs text-app-text-muted">
                       {formatTime(notification.created_at)}
                     </p>
                   </div>

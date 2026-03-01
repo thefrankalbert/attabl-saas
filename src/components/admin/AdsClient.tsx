@@ -148,7 +148,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-          <p className="text-sm text-text-secondary">{t('subtitle')}</p>
+          <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
         </div>
         <Button
           onClick={() => {
@@ -166,13 +166,13 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           <div
             key={ad.id}
             className={cn(
-              'group relative bg-surface-primary border rounded-xl overflow-hidden transition-all',
+              'group relative bg-app-card border rounded-xl overflow-hidden transition-all',
               !ad.is_active && 'opacity-60',
             )}
           >
-            <div className="aspect-video bg-surface-secondary relative">
+            <div className="aspect-video bg-app-bg relative">
               <Image src={ad.image_url} alt="" fill className="object-cover" />
-              <div className="absolute top-2 right-2 bg-surface-primary/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold">
+              <div className="absolute top-2 right-2 bg-app-card/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold">
                 {t('orderLabel', { order: ad.sort_order })}
               </div>
             </div>
@@ -219,10 +219,10 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           </div>
         ))}
         {ads.length === 0 && (
-          <div className="col-span-full py-12 text-center bg-surface-secondary border border-dashed border-border-default rounded-xl">
-            <ImageIcon className="w-10 h-10 text-text-muted mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-text-primary">{t('noAds')}</h3>
-            <p className="text-xs text-text-secondary mt-1">{t('noAdsDesc')}</p>
+          <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
+            <ImageIcon className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-app-text">{t('noAds')}</h3>
+            <p className="text-xs text-app-text-secondary mt-1">{t('noAdsDesc')}</p>
           </div>
         )}
       </div>
@@ -232,7 +232,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           {/* Image */}
           <div className="space-y-2">
             <Label>{t('bannerImage')}</Label>
-            <div className="border-2 border-dashed border-border-default rounded-xl p-4 text-center hover:bg-surface-secondary transition-colors cursor-pointer relative">
+            <div className="border-2 border-dashed border-app-border rounded-xl p-4 text-center hover:bg-app-bg transition-colors cursor-pointer relative">
               <input
                 type="file"
                 accept="image/*"
@@ -240,11 +240,11 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
               {previewUrl ? (
-                <div className="relative aspect-video rounded-lg overflow-hidden bg-surface-secondary">
+                <div className="relative aspect-video rounded-lg overflow-hidden bg-app-bg">
                   <Image src={previewUrl} alt="Preview" fill className="object-cover" unoptimized />
                 </div>
               ) : (
-                <div className="py-8 text-text-muted">
+                <div className="py-8 text-app-text-muted">
                   <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs">{t('clickToAddImage')}</p>
                 </div>
@@ -280,7 +280,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               id="active"
               checked={isActive}
               onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-border-strong text-primary focus:ring-primary"
+              className="w-4 h-4 rounded border-app-border-hover text-primary focus:ring-primary"
             />
             <Label htmlFor="active" className="cursor-pointer">
               {t('enableImmediately')}

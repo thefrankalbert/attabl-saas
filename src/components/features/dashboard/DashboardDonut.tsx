@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { CategoryBreakdown } from '@/types/admin.types';
 
-const COLORS = ['#CCFF00', '#F59E0B', '#3B82F6', '#D4D4D8'];
+const COLORS = ['var(--accent)', '#F59E0B', '#3B82F6', '#D4D4D8'];
 
 interface DashboardDonutProps {
   data: CategoryBreakdown[];

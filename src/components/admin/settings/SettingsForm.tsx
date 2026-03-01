@@ -82,12 +82,12 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         className="max-w-4xl xl:max-w-5xl flex flex-col h-full min-h-0"
       >
         <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
-          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-border-default bg-transparent p-0">
+          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
             {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
               <TabsTrigger
                 key={key}
                 value={key}
-                className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-2.5 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-text-secondary transition-colors hover:text-text-primary data-[state=active]:border-[#CCFF00] data-[state=active]:bg-transparent data-[state=active]:text-text-primary data-[state=active]:font-semibold data-[state=active]:shadow-none"
+                className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-2.5 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
                 <span className="hidden sm:inline">{t(labelKey)}</span>
@@ -115,16 +115,18 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Sounds tab */}
             <TabsContent value="sounds" className="mt-0">
-              <div className="bg-surface-primary rounded-xl border border-border-subtle p-4 sm:p-6">
+              <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="p-2 bg-amber-50 rounded-lg">
                     <Bell className="h-4 w-4 text-amber-600" />
                   </div>
                   <div>
-                    <h2 className="text-base font-semibold text-text-primary">
+                    <h2 className="text-base font-semibold text-app-text">
                       {t('notificationSounds')}
                     </h2>
-                    <p className="text-xs text-text-secondary">{t('soundPlayedOnOrderReceived')}</p>
+                    <p className="text-xs text-app-text-secondary">
+                      {t('soundPlayedOnOrderReceived')}
+                    </p>
                   </div>
                 </div>
 
@@ -160,16 +162,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Language tab */}
             <TabsContent value="language" className="mt-0">
-              <div className="bg-surface-primary rounded-xl border border-border-subtle p-4 sm:p-6">
+              <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="p-2 bg-blue-50 rounded-lg">
                     <Globe className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-semibold text-text-primary">
-                      {t('languageSection')}
-                    </h2>
-                    <p className="text-sm text-text-secondary">{t('languageDescription')}</p>
+                    <h2 className="text-lg font-semibold text-app-text">{t('languageSection')}</h2>
+                    <p className="text-sm text-app-text-secondary">{t('languageDescription')}</p>
                   </div>
                 </div>
 
@@ -180,7 +180,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </Tabs>
 
         {/* Actions - always visible */}
-        <div className="flex-shrink-0 flex justify-end gap-4 border-t border-border-subtle pt-4 mt-4 px-0 sm:px-0">
+        <div className="flex-shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4 px-0 sm:px-0">
           <Button
             type="submit"
             variant="default"

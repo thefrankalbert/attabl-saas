@@ -15,7 +15,7 @@ export function OfflineIndicator() {
     <div
       className={cn(
         'fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-2 py-2 text-sm font-medium transition-colors duration-300',
-        isOnline && wasOffline ? 'bg-[#CCFF00] text-black' : 'bg-neutral-900 text-white',
+        isOnline && wasOffline ? 'bg-accent text-accent-text' : 'bg-app-bg text-app-text',
       )}
     >
       {isOnline ? (
