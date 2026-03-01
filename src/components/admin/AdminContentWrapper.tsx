@@ -28,7 +28,7 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   const duration = prefersReduced ? 0 : 0.2;
 
   return (
-    <div className="h-full max-w-7xl mx-auto w-full px-3 pb-4 sm:px-4 md:px-6 lg:p-8 pt-14 flex flex-col">
+    <div className="h-full w-full px-4 pb-6 sm:px-6 md:px-8 lg:px-10 lg:py-8 pt-16 flex flex-col">
       {chrome}
       <AnimatePresence mode="wait">
         <motion.div

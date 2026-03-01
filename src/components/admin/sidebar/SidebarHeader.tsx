@@ -23,7 +23,7 @@ export function SidebarHeader({ basePath, tenant, roleLabel, isCollapsed }: Side
   return (
     <div
       className={cn(
-        'border-b border-neutral-100 flex-shrink-0 flex items-center',
+        'border-b border-white/10 flex-shrink-0 flex items-center',
         isCollapsed ? 'p-3 justify-center' : 'p-6 justify-between',
       )}
     >
@@ -42,20 +42,25 @@ export function SidebarHeader({ basePath, tenant, roleLabel, isCollapsed }: Side
         ) : (
           <div
             className={cn(
-              'rounded-lg flex items-center justify-center text-white font-bold',
-              isCollapsed ? 'w-8 h-8 text-xs' : 'w-10 h-10',
+              'rounded-lg flex items-center justify-center font-black',
+              isCollapsed ? 'w-8 h-8 text-xs' : 'w-10 h-10 text-sm',
             )}
-            style={{ backgroundColor: tenant.primary_color || '#374151' }}
+            style={{
+              backgroundColor: tenant.primary_color || '#CCFF00',
+              color: '#111827',
+            }}
           >
             {tenant.name.charAt(0).toUpperCase()}
           </div>
         )}
         {!isCollapsed && (
           <div className="flex-1 min-w-0">
-            <h2 className="text-sm font-bold text-neutral-900 truncate uppercase tracking-tight">
+            <h2 className="text-sm font-extrabold text-white truncate uppercase tracking-wider">
               {tenant.name}
             </h2>
-            <p className="text-xs text-neutral-500">{roleLabel}</p>
+            <p className="text-[10px] text-white/40 font-medium uppercase tracking-wider">
+              {roleLabel}
+            </p>
           </div>
         )}
       </Link>

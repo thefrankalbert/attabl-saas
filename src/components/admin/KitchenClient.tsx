@@ -75,7 +75,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
       >
         <div className="flex flex-col items-center gap-4">
           <RefreshCw className="w-8 h-8 animate-spin text-amber-400" />
-          <p className="text-sm font-medium text-neutral-500">{t('loadingKds')}</p>
+          <p className="text-sm font-medium text-text-secondary">{t('loadingKds')}</p>
         </div>
       </div>
     );

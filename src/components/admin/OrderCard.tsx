@@ -121,7 +121,7 @@ export default function OrderCard({
       layoutId={order.id}
       onClick={onClick}
       className={cn(
-        'bg-white rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
+        'bg-surface-primary rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
         config.border,
         isUrgent && 'ring-2 ring-red-500 ring-offset-2',
       )}
@@ -130,14 +130,14 @@ export default function OrderCard({
         {/* Header */}
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900">
+            <div className="w-10 h-10 bg-surface-tertiary rounded-lg flex items-center justify-center font-bold text-text-primary">
               {order.table_number}
             </div>
             <div>
-              <p className="font-bold text-neutral-900">
+              <p className="font-bold text-text-primary">
                 {t('tablePrefix')} {order.table_number}
               </p>
-              <div className="flex items-center gap-1 text-xs text-neutral-500">
+              <div className="flex items-center gap-1 text-xs text-text-secondary">
                 <Clock className="w-3 h-3" />
                 {new Date(order.created_at).toLocaleTimeString([], {
                   hour: '2-digit',
@@ -172,17 +172,17 @@ export default function OrderCard({
 
         {/* Items Preview */}
         {!compact && (
-          <div className="space-y-1 pt-2 border-t border-neutral-50">
+          <div className="space-y-1 pt-2 border-t border-border-subtle">
             {(order.items || []).slice(0, 3).map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="flex gap-2">
-                  <span className="font-bold w-5 text-neutral-500">{item.quantity}x</span>
-                  <span className="text-neutral-700 truncate max-w-[140px]">{item.name}</span>
+                  <span className="font-bold w-5 text-text-secondary">{item.quantity}x</span>
+                  <span className="text-text-primary truncate max-w-[140px]">{item.name}</span>
                 </span>
               </div>
             ))}
             {(order.items?.length || 0) > 3 && (
-              <p className="text-xs text-neutral-400 italic">
+              <p className="text-xs text-text-muted italic">
                 {t('moreItems', { count: order.items!.length - 3 })}
               </p>
             )}

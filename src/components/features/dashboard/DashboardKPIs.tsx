@@ -28,56 +28,48 @@ export default function DashboardKPIs({
 
   if (loading) {
     return (
-      <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible snap-x lg:snap-none pb-1 lg:pb-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {Array.from({ length: cardCount }, (_, i) => (
-          <div key={i} className="min-w-[160px] lg:min-w-0 snap-start">
-            <StatsCardSkeleton />
-          </div>
+          <StatsCardSkeleton key={i} />
         ))}
       </div>
     );
   }
 
   return (
-    <div className="flex lg:flex-col gap-3 overflow-x-auto lg:overflow-x-visible snap-x lg:snap-none pb-1 lg:pb-0">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {showFinancials && (
-        <div className="min-w-[160px] lg:min-w-0 snap-start">
-          <StatsCard
-            title={t('revenue')}
-            value={fmtCompact(stats.revenueToday)}
-            trend={
-              stats.revenueTrend !== undefined
-                ? { value: stats.revenueTrend, isPositive: stats.revenueTrend >= 0 }
-                : undefined
-            }
-            subtitle={t('todayLabel')}
-            sparklineData={revenueSparkline}
-          />
-        </div>
-      )}
-
-      <div className="min-w-[160px] lg:min-w-0 snap-start">
         <StatsCard
-          title={t('ordersCount')}
-          value={stats.ordersToday}
+          title={t('revenue')}
+          value={fmtCompact(stats.revenueToday)}
           trend={
-            stats.ordersTrend !== undefined
-              ? { value: stats.ordersTrend, isPositive: stats.ordersTrend >= 0 }
+            stats.revenueTrend !== undefined
+              ? { value: stats.revenueTrend, isPositive: stats.revenueTrend >= 0 }
               : undefined
           }
           subtitle={t('todayLabel')}
-          sparklineData={ordersSparkline}
+          sparklineData={revenueSparkline}
         />
-      </div>
+      )}
 
-      <div className="min-w-[160px] lg:min-w-0 snap-start">
-        <StatsCard
-          title={t('activeDishes')}
-          value={stats.activeItems}
-          subtitle={t('onMenuSubtitle')}
-          sparklineData={itemsSparkline}
-        />
-      </div>
+      <StatsCard
+        title={t('ordersCount')}
+        value={stats.ordersToday}
+        trend={
+          stats.ordersTrend !== undefined
+            ? { value: stats.ordersTrend, isPositive: stats.ordersTrend >= 0 }
+            : undefined
+        }
+        subtitle={t('todayLabel')}
+        sparklineData={ordersSparkline}
+      />
+
+      <StatsCard
+        title={t('activeDishes')}
+        value={stats.activeItems}
+        subtitle={t('onMenuSubtitle')}
+        sparklineData={itemsSparkline}
+      />
     </div>
   );
 }

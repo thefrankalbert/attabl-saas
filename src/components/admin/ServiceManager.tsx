@@ -93,12 +93,12 @@ export default function ServiceManager({ tenantId }: Props) {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
+        <h1 className="text-xl font-bold text-text-primary">{t('title')}</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <div
               key={i}
-              className="h-24 bg-neutral-50 rounded-lg border border-neutral-100 animate-pulse"
+              className="h-24 bg-surface-secondary rounded-lg border border-border-subtle animate-pulse"
             />
           ))}
         </div>
@@ -109,23 +109,23 @@ export default function ServiceManager({ tenantId }: Props) {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
-          <Users className="w-5 h-5 text-neutral-500" />
+        <h1 className="text-xl font-bold text-text-primary flex items-center gap-2">
+          <Users className="w-5 h-5 text-text-secondary" />
           {t('title')}
         </h1>
-        <div className="text-sm text-neutral-500">
+        <div className="text-sm text-text-secondary">
           {t('activeAssignments', { count: assignments.length })}
         </div>
       </div>
 
       {zones.length === 0 ? (
-        <div className="text-center py-12 text-neutral-500 bg-white rounded-lg border border-neutral-100 p-6">
+        <div className="text-center py-12 text-text-secondary bg-surface-primary rounded-lg border border-border-subtle p-6">
           {t('noZones')}
         </div>
       ) : (
         zones.map((zone) => (
           <div key={zone.id} className="space-y-3">
-            <h2 className="text-lg font-semibold text-neutral-900">{zone.name}</h2>
+            <h2 className="text-lg font-semibold text-text-primary">{zone.name}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {zone.tables
                 .filter((tbl: Table) => tbl.is_active)
@@ -137,14 +137,14 @@ export default function ServiceManager({ tenantId }: Props) {
                       className={`rounded-lg border p-4 transition-colors ${
                         assignment
                           ? 'border-emerald-200 bg-emerald-50'
-                          : 'border-neutral-100 bg-white'
+                          : 'border-border-subtle bg-surface-primary'
                       }`}
                     >
                       <div className="flex items-center justify-between mb-3">
-                        <span className="font-mono font-bold text-neutral-900">
+                        <span className="font-mono font-bold text-text-primary">
                           {table.display_name || table.table_number}
                         </span>
-                        <span className="text-xs text-neutral-500">
+                        <span className="text-xs text-text-secondary">
                           {t('seats', { count: table.capacity })}
                         </span>
                       </div>
@@ -153,13 +153,13 @@ export default function ServiceManager({ tenantId }: Props) {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <UserCheck className="w-4 h-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-neutral-900">
+                            <span className="text-sm font-medium text-text-primary">
                               {assignment.server?.full_name ?? t('server')}
                             </span>
                           </div>
                           <button
                             onClick={() => handleRelease(assignment.id)}
-                            className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400 hover:text-red-500 transition-colors"
+                            className="p-1 rounded-lg hover:bg-surface-tertiary text-text-muted hover:text-red-500 transition-colors"
                             title={t('release')}
                           >
                             <X className="w-4 h-4" />

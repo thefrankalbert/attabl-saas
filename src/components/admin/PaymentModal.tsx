@@ -153,7 +153,7 @@ export default function PaymentModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-500 hover:text-white transition-colors"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-text-secondary hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>

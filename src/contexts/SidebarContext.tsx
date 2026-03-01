@@ -35,15 +35,12 @@ function subscribe(callback: () => void): () => void {
 }
 
 function getSnapshot(): boolean {
-  try {
-    return localStorage.getItem(STORAGE_KEY) === 'true';
-  } catch {
-    return false;
-  }
+  // POS mode: sidebar always collapsed (icon rail)
+  return true;
 }
 
 function getServerSnapshot(): boolean {
-  return false;
+  return true;
 }
 
 // ─── Provider ───────────────────────────────────────────

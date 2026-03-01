@@ -570,7 +570,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
         >
           {selectedIngredient && (
             <>
-              <p className="text-sm text-neutral-500 mb-4">
+              <p className="text-sm text-text-secondary mb-4">
                 {selectedIngredient.name} — {t('currentStock')} :{' '}
                 <span className="font-bold">
                   {selectedIngredient.current_stock}{' '}

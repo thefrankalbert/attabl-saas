@@ -32,8 +32,8 @@ export default function AdminModal({
           sizeClasses[size],
         )}
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-neutral-100 shrink-0">
-          <DialogTitle className="text-lg font-bold tracking-tight text-neutral-900">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border-subtle shrink-0">
+          <DialogTitle className="text-lg font-bold tracking-tight text-text-primary">
             {title}
           </DialogTitle>
         </DialogHeader>

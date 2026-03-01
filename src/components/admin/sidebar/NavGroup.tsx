@@ -47,7 +47,6 @@ export function NavGroup({
   onToggleCollapsed,
 }: NavGroupProps) {
   const pathname = usePathname();
-  const accentColor = primaryColor || '#000000';
 
   // ─── Helper: check if group or children are active ───
   const isGroupActive = (): boolean => {
@@ -83,7 +82,6 @@ export function NavGroup({
           type="button"
           onClick={() => {
             if (isCollapsed) {
-              // In collapsed mode, expand the sidebar so user can see children
               onToggleCollapsed();
               if (!isExpanded) onToggle(id);
             } else {
@@ -94,29 +92,25 @@ export function NavGroup({
             'w-full group flex items-center rounded-lg transition-all duration-200 relative',
             isCollapsed ? 'px-2 py-2.5 justify-center' : 'px-3 py-2.5',
             active && !isExpanded
-              ? 'bg-neutral-50 text-neutral-900 font-semibold'
-              : 'text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 font-medium',
+              ? 'bg-white/10 text-white font-semibold'
+              : 'text-white/50 hover:bg-white/5 hover:text-white/80 font-medium',
           )}
         >
           {active && !isExpanded && (
-            <div
-              className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg"
-              style={{ backgroundColor: accentColor }}
-            />
+            <div className="absolute left-0 top-0 bottom-0 w-1 rounded-l-lg bg-[#CCFF00]" />
           )}
           <Icon
             className={cn(
               'w-[18px] h-[18px] flex-shrink-0 transition-transform group-hover:scale-105',
-              active ? '' : 'text-neutral-400 group-hover:text-neutral-600',
+              active ? 'text-[#CCFF00]' : 'text-white/30 group-hover:text-white/60',
             )}
-            style={active ? { color: accentColor } : undefined}
           />
           {!isCollapsed && (
             <>
               <span className="text-sm tracking-tight leading-none ml-3">{title}</span>
               <ChevronDown
                 className={cn(
-                  'h-4 w-4 ml-auto text-neutral-400 transition-transform duration-200',
+                  'h-4 w-4 ml-auto text-white/30 transition-transform duration-200',
                   isExpanded && 'rotate-180',
                 )}
               />

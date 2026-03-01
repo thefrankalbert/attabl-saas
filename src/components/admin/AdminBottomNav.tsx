@@ -36,7 +36,7 @@ export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavP
 
   return (
     <nav
-      className="shrink-0 bg-white border-t border-neutral-200"
+      className="shrink-0 bg-[#111827] border-t border-white/10"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-14">
@@ -65,8 +65,8 @@ export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavP
               href={href}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full',
-                'text-neutral-400 transition-colors duration-150',
-                isActive && 'text-neutral-900',
+                'text-white/40 transition-colors duration-150',
+                isActive && 'text-[#CCFF00]',
               )}
               style={isActive && primaryColor ? { color: primaryColor } : undefined}
             >

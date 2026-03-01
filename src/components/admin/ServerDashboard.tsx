@@ -64,12 +64,12 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
     <div className="space-y-6">
       {/* My Tables */}
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-3 flex items-center gap-2">
+        <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
           <UserCheck className="w-5 h-5 text-emerald-600" />
           {t('myTables', { count: myAssignments.length })}
         </h2>
         {myAssignments.length === 0 ? (
-          <p className="text-sm text-neutral-500">{t('noTablesAssigned')}</p>
+          <p className="text-sm text-text-secondary">{t('noTablesAssigned')}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {myAssignments.map((assignment) => {
@@ -78,14 +78,14 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
               return (
                 <div
                   key={assignment.id}
-                  className="rounded-lg border border-neutral-100 bg-white overflow-hidden"
+                  className="rounded-lg border border-border-subtle bg-surface-primary overflow-hidden"
                 >
                   <div
-                    className="p-4 cursor-pointer hover:bg-neutral-50 transition-colors touch-manipulation"
+                    className="p-4 cursor-pointer hover:bg-surface-secondary transition-colors touch-manipulation"
                     onClick={() => setExpandedTableId(isExpanded ? null : assignment.table_id)}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono font-bold text-neutral-900">
+                      <span className="font-mono font-bold text-text-primary">
                         {assignment.table?.display_name ??
                           assignment.table?.table_number ??
                           'Table'}
@@ -95,13 +95,13 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                           e.stopPropagation();
                           releaseAssignment.mutate(assignment.id);
                         }}
-                        className="flex items-center gap-1 text-xs text-neutral-500 hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
+                        className="flex items-center gap-1 text-xs text-text-secondary hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         {t('release')}
                       </button>
                     </div>
-                    <div className="flex items-center justify-between text-sm text-neutral-500">
+                    <div className="flex items-center justify-between text-sm text-text-secondary">
                       <span>{t('activeOrders', { count: tableOrders.length })}</span>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
@@ -110,14 +110,14 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                   </div>
 
                   {isExpanded && tableOrders.length > 0 && (
-                    <div className="border-t border-neutral-100 bg-neutral-50 p-3 space-y-2">
+                    <div className="border-t border-border-subtle bg-surface-secondary p-3 space-y-2">
                       {tableOrders.map((order: Order) => (
                         <div
                           key={order.id}
-                          className="bg-white rounded-lg p-3 border border-neutral-100"
+                          className="bg-surface-primary rounded-lg p-3 border border-border-subtle"
                         >
                           <div className="flex items-center justify-between mb-1">
-                            <span className="text-xs font-semibold text-neutral-600 uppercase">
+                            <span className="text-xs font-semibold text-text-secondary uppercase">
                               #{order.id.slice(0, 8)}
                             </span>
                             <span
@@ -128,15 +128,15 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                                     ? 'bg-purple-100 text-purple-700'
                                     : order.status === 'ready'
                                       ? 'bg-emerald-100 text-emerald-700'
-                                      : 'bg-neutral-100 text-neutral-600'
+                                      : 'bg-surface-tertiary text-text-secondary'
                               }`}
                             >
                               {order.status}
                             </span>
                           </div>
-                          <div className="text-sm text-neutral-900">
+                          <div className="text-sm text-text-primary">
                             {formatCurrency(order.total_price, currency)}
-                            <span className="text-neutral-400 ml-2">
+                            <span className="text-text-muted ml-2">
                               ({order.items?.length ?? 0}{' '}
                               {t('items', { count: order.items?.length ?? 0 })})
                             </span>
@@ -146,7 +146,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                     </div>
                   )}
                   {isExpanded && tableOrders.length === 0 && (
-                    <div className="border-t border-neutral-100 bg-neutral-50 p-4 text-center text-sm text-neutral-400">
+                    <div className="border-t border-border-subtle bg-surface-secondary p-4 text-center text-sm text-text-muted">
                       {t('noActiveOrders')}
                     </div>
                   )}
@@ -159,33 +159,36 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
 
       {/* Unassigned Orders */}
       <div>
-        <h2 className="text-lg font-semibold text-neutral-900 mb-3 flex items-center gap-2">
-          <ShoppingCart className="w-5 h-5 text-neutral-500" />
+        <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+          <ShoppingCart className="w-5 h-5 text-text-secondary" />
           {t('unassignedOrders', { count: unassignedOrders.length })}
         </h2>
         {unassignedOrders.length === 0 ? (
-          <p className="text-sm text-neutral-500">{t('allOrdersAssigned')}</p>
+          <p className="text-sm text-text-secondary">{t('allOrdersAssigned')}</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {unassignedOrders.map((order: Order) => (
-              <div key={order.id} className="rounded-lg border border-neutral-100 bg-white p-4">
+              <div
+                key={order.id}
+                className="rounded-lg border border-border-subtle bg-surface-primary p-4"
+              >
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono font-bold text-neutral-900">
+                  <span className="font-mono font-bold text-text-primary">
                     {order.table_number ?? '—'}
                   </span>
-                  <span className="text-xs text-neutral-500">
+                  <span className="text-xs text-text-secondary">
                     {t('items', { count: order.items?.length ?? 0 })}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-neutral-900">
+                  <span className="text-sm font-medium text-text-primary">
                     {formatCurrency(order.total_price, currency)}
                   </span>
                   <button
                     onClick={() =>
                       claimOrder.mutate({ orderId: order.id, serverId: currentServerId })
                     }
-                    className="rounded-lg bg-neutral-900 px-3 py-1 text-xs font-semibold text-white hover:bg-neutral-800 transition-colors"
+                    className="rounded-lg bg-text-primary px-3 py-1 text-xs font-semibold text-white hover:bg-text-primary transition-colors"
                   >
                     {t('claimOrder')}
                   </button>

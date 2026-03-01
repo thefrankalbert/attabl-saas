@@ -245,26 +245,26 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
-        <p className="text-neutral-500 text-sm mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold text-text-primary">{t('title')}</h1>
+        <p className="text-text-secondary text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {/* Saving indicator */}
       {saving && (
-        <div className="flex items-center gap-2 text-sm text-neutral-500">
+        <div className="flex items-center gap-2 text-sm text-text-secondary">
           <Loader2 className="w-4 h-4 animate-spin" />
           {t('saving')}
         </div>
       )}
 
       {/* Permissions Matrix */}
-      <div className="border border-neutral-100 rounded-xl overflow-hidden">
+      <div className="border border-border-subtle rounded-xl overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             {/* Sticky Header Row */}
             <thead>
-              <tr className="bg-neutral-50 border-b border-neutral-100">
-                <th className="text-left text-sm font-semibold text-neutral-900 px-5 py-3.5 min-w-[220px] sticky left-0 bg-neutral-50 z-10">
+              <tr className="bg-surface-secondary border-b border-border-subtle">
+                <th className="text-left text-sm font-semibold text-text-primary px-5 py-3.5 min-w-[220px] sticky left-0 bg-surface-secondary z-10">
                   {t('permissionColumn')}
                 </th>
                 {/* Owner column (locked) */}
@@ -296,7 +296,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                         <button
                           type="button"
                           onClick={() => handleRestoreDefaults(role)}
-                          className="inline-flex items-center gap-1 text-[10px] text-neutral-500 hover:text-neutral-900 transition-colors"
+                          className="inline-flex items-center gap-1 text-[10px] text-text-secondary hover:text-text-primary transition-colors"
                         >
                           <RotateCcw className="w-2.5 h-2.5" />
                           {t('reset')}
@@ -319,12 +319,12 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                 return (
                   <React.Fragment key={category.key}>
                     {/* Category header row */}
-                    <tr className="border-b border-neutral-100">
+                    <tr className="border-b border-border-subtle">
                       <td
                         colSpan={2 + EDITABLE_ROLES.length}
-                        className="px-5 py-2.5 bg-white sticky left-0"
+                        className="px-5 py-2.5 bg-surface-primary sticky left-0"
                       >
-                        <span className="text-xs font-medium text-neutral-500 uppercase tracking-wide">
+                        <span className="text-xs font-medium text-text-secondary uppercase tracking-wide">
                           {categoryLabel(category.key)}
                         </span>
                       </td>
@@ -335,12 +335,12 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                       <tr
                         key={perm}
                         className={cn(
-                          'border-b border-neutral-50 transition-colors hover:bg-neutral-50/80',
-                          rowIdx % 2 === 0 ? 'bg-white' : 'bg-neutral-50/50',
+                          'border-b border-border-subtle transition-colors hover:bg-surface-secondary/80',
+                          rowIdx % 2 === 0 ? 'bg-surface-primary' : 'bg-surface-secondary/50',
                         )}
                       >
                         {/* Permission label (no code column) */}
-                        <td className="text-sm text-neutral-900 px-5 py-3 sticky left-0 bg-inherit z-10">
+                        <td className="text-sm text-text-primary px-5 py-3 sticky left-0 bg-inherit z-10">
                           <span className="font-medium">{permissionLabel(perm)}</span>
                         </td>
 
@@ -377,7 +377,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                                       'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
                                       isEnabled !== defaultVal
                                         ? 'bg-amber-50 text-amber-600'
-                                        : 'bg-neutral-50 text-neutral-400',
+                                        : 'bg-surface-secondary text-text-muted',
                                     )}
                                   >
                                     {t('modified')}
@@ -398,11 +398,11 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
       </div>
 
       {/* Legend */}
-      <div className="border border-neutral-100 rounded-xl p-6 text-xs text-neutral-500 space-y-1.5">
+      <div className="border border-border-subtle rounded-xl p-6 text-xs text-text-secondary space-y-1.5">
         <p>
           <span className="inline-block w-3 h-3 rounded-full bg-lime-400 align-middle mr-1.5" />={' '}
           {t('legendAllowed')}
-          <span className="inline-block w-3 h-3 rounded-full bg-neutral-200 align-middle ml-4 mr-1.5" />
+          <span className="inline-block w-3 h-3 rounded-full bg-border-default align-middle ml-4 mr-1.5" />
           = {t('legendDenied')}
         </p>
         <p>
@@ -411,7 +411,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
           </span>
           = {t('legendModified')}
         </p>
-        <p className="text-neutral-500">{t('autoSaveNote')}</p>
+        <p className="text-text-secondary">{t('autoSaveNote')}</p>
       </div>
     </div>
   );

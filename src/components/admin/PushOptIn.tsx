@@ -18,16 +18,16 @@ export function PushOptIn({ tenantId }: PushOptInProps) {
   if (!isSupported) return null;
 
   return (
-    <div className="flex items-center justify-between rounded-lg border border-neutral-200 p-4">
+    <div className="flex items-center justify-between rounded-lg border border-border-default p-4">
       <div className="flex items-center gap-3">
         {isSubscribed ? (
           <Bell className="h-5 w-5 text-green-500" />
         ) : (
-          <BellOff className="h-5 w-5 text-neutral-400" />
+          <BellOff className="h-5 w-5 text-text-muted" />
         )}
         <div>
           <p className="text-sm font-medium">{t('title')}</p>
-          <p className="text-xs text-neutral-500">
+          <p className="text-xs text-text-secondary">
             {isSubscribed ? t('enabledDesc') : t('disabledDesc')}
           </p>
         </div>
