@@ -35,12 +35,14 @@ export default function DashboardCharts({
   if (!showRevenueChart) return null;
 
   return (
-    <div className="bg-surface-primary border border-border-default rounded-xl shadow-none transition-colors hover:border-border-strong flex flex-col h-full">
-      <div className="px-5 py-4 border-b border-border-default">
-        <h2 className="text-sm font-semibold text-text-primary">{t('revenueThisWeek')}</h2>
+    <div className="bg-white rounded-2xl border border-gray-100 flex flex-col h-full hover:border-gray-200 transition-colors">
+      <div className="px-6 py-5 border-b border-gray-50">
+        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+          {t('revenueThisWeek')}
+        </h2>
       </div>
 
-      <div className="flex-1 min-h-0 p-4">
+      <div className="flex-1 min-h-0 p-5">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={revenueChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
             <defs>
@@ -55,27 +57,27 @@ export default function DashboardCharts({
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: '#a1a1aa' }}
+              tick={{ fontSize: 12, fill: '#9ca3af', fontWeight: 500 }}
               dy={8}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: '#a1a1aa' }}
+              tick={{ fontSize: 12, fill: '#9ca3af', fontWeight: 500 }}
               tickFormatter={formatCompactValue}
-              width={45}
+              width={50}
             />
             <Tooltip
               contentStyle={{
-                background: '#18181b',
+                background: '#111827',
                 border: 'none',
-                borderRadius: '10px',
-                fontSize: '12px',
+                borderRadius: '12px',
+                fontSize: '13px',
                 color: '#fff',
-                padding: '8px 12px',
+                padding: '10px 14px',
               }}
               itemStyle={{ color: '#CCFF00', fontWeight: 700 }}
-              labelStyle={{ color: '#a1a1aa', fontSize: '11px', marginBottom: '4px' }}
+              labelStyle={{ color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}
               cursor={{ stroke: '#CCFF00', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Area
@@ -85,7 +87,7 @@ export default function DashboardCharts({
               fill="url(#revenueGradientLimeEmerald)"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 4, fill: '#CCFF00', stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: '#CCFF00', stroke: '#fff', strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>

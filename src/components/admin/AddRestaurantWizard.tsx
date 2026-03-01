@@ -137,24 +137,24 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="relative w-full max-w-lg rounded-xl border border-neutral-100 bg-white">
+      <div className="relative w-full max-w-lg rounded-xl border border-border-subtle bg-surface-primary">
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600"
+          className="absolute right-4 top-4 rounded-lg p-1 text-text-muted transition-colors hover:bg-surface-tertiary hover:text-text-secondary"
         >
           <X className="h-5 w-5" />
         </button>
 
         {/* Header */}
-        <div className="border-b border-neutral-100 px-6 pt-6 pb-4">
+        <div className="border-b border-border-subtle px-6 pt-6 pb-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-[#CCFF00] p-2">
               <Building2 className="h-5 w-5 text-black" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-neutral-900">Nouvel établissement</h2>
-              <p className="text-xs text-neutral-400">Étape {step} sur 3</p>
+              <h2 className="text-lg font-bold text-text-primary">Nouvel établissement</h2>
+              <p className="text-xs text-text-muted">Étape {step} sur 3</p>
             </div>
           </div>
 
@@ -164,7 +164,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <div
                 key={s}
                 className={`h-1 flex-1 rounded-full transition-colors ${
-                  s <= step ? 'bg-[#CCFF00]' : 'bg-neutral-100'
+                  s <= step ? 'bg-[#CCFF00]' : 'bg-surface-tertiary'
                 }`}
               />
             ))}
@@ -177,7 +177,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {step === 1 && (
             <div className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="name" className="text-sm font-medium text-neutral-700">
+                <Label htmlFor="name" className="text-sm font-medium text-text-primary">
                   Nom de l&apos;établissement
                 </Label>
                 <Input
@@ -185,16 +185,16 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Ex: Le Petit Bistrot"
-                  className="h-11 rounded-lg border-neutral-200 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
+                  className="h-11 rounded-lg border-border-default focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
                 />
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="type" className="text-sm font-medium text-neutral-700">
+                <Label htmlFor="type" className="text-sm font-medium text-text-primary">
                   Type d&apos;établissement
                 </Label>
                 <Select value={type} onValueChange={setType}>
-                  <SelectTrigger className="h-11 rounded-lg border-neutral-200">
+                  <SelectTrigger className="h-11 rounded-lg border-border-default">
                     <SelectValue placeholder="Selectionnez un type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -208,7 +208,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="slug" className="text-sm font-medium text-neutral-700">
+                <Label htmlFor="slug" className="text-sm font-medium text-text-primary">
                   Adresse web (slug)
                 </Label>
                 <div className="flex items-center gap-2">
@@ -217,9 +217,9 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     value={slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
                     placeholder="le-petit-bistrot"
-                    className="h-11 rounded-lg border-neutral-200 focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
+                    className="h-11 rounded-lg border-border-default focus:border-[#CCFF00] focus:ring-2 focus:ring-[#CCFF00]/20"
                   />
-                  <span className="shrink-0 text-xs text-neutral-400">.attabl.com</span>
+                  <span className="shrink-0 text-xs text-text-muted">.attabl.com</span>
                 </div>
               </div>
             </div>
@@ -228,7 +228,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 2: Plan ───────────────────────────── */}
           {step === 2 && (
             <div className="space-y-3">
-              <p className="mb-2 text-sm font-medium text-neutral-700">Choisissez votre formule</p>
+              <p className="mb-2 text-sm font-medium text-text-primary">Choisissez votre formule</p>
               {PLAN_OPTIONS.map((p) => {
                 const info = PLAN_INFO[p];
                 return (
@@ -238,16 +238,16 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
                       plan === p
                         ? 'border-[#CCFF00] bg-[#CCFF00]/5'
-                        : 'border-neutral-200 hover:border-neutral-300'
+                        : 'border-border-default hover:border-border-strong'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-neutral-900">{info.label}</p>
-                        <p className="text-xs text-neutral-500">{info.description}</p>
+                        <p className="font-bold text-text-primary">{info.label}</p>
+                        <p className="text-xs text-text-secondary">{info.description}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-neutral-900">{info.price}</p>
+                        <p className="text-sm font-bold text-text-primary">{info.price}</p>
                         {plan === p && (
                           <div className="mt-1 flex items-center justify-end">
                             <Check className="h-4 w-4 text-[#7a9900]" />
@@ -264,36 +264,36 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 3: Summary ────────────────────────── */}
           {step === 3 && (
             <div className="space-y-4">
-              <div className="rounded-xl bg-neutral-50 p-4">
+              <div className="rounded-xl bg-surface-secondary p-4">
                 <div className="mb-4 flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-[#CCFF00]" />
-                  <p className="text-sm font-bold text-neutral-900">Recapitulatif</p>
+                  <p className="text-sm font-bold text-text-primary">Recapitulatif</p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-xs text-neutral-500">Nom</span>
-                    <span className="text-sm font-medium text-neutral-900">{name}</span>
+                    <span className="text-xs text-text-secondary">Nom</span>
+                    <span className="text-sm font-medium text-text-primary">{name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-neutral-500">Type</span>
-                    <span className="text-sm font-medium text-neutral-900">
+                    <span className="text-xs text-text-secondary">Type</span>
+                    <span className="text-sm font-medium text-text-primary">
                       {TYPE_LABELS[type] || type}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-neutral-500">Adresse</span>
-                    <span className="text-sm font-medium text-neutral-900">{slug}.attabl.com</span>
+                    <span className="text-xs text-text-secondary">Adresse</span>
+                    <span className="text-sm font-medium text-text-primary">{slug}.attabl.com</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-neutral-500">Formule</span>
-                    <span className="text-sm font-medium text-neutral-900">
+                    <span className="text-xs text-text-secondary">Formule</span>
+                    <span className="text-sm font-medium text-text-primary">
                       {PLAN_INFO[plan]?.label || plan}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-neutral-500">Prix</span>
-                    <span className="text-sm font-bold text-neutral-900">
+                    <span className="text-xs text-text-secondary">Prix</span>
+                    <span className="text-sm font-bold text-text-primary">
                       {PLAN_INFO[plan]?.price || '-'}
                     </span>
                   </div>
@@ -310,11 +310,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between border-t border-neutral-100 px-6 py-4">
+        <div className="flex items-center justify-between border-t border-border-subtle px-6 py-4">
           <Button
             variant="outline"
             onClick={step === 1 ? onClose : () => setStep(step - 1)}
-            className="gap-2 rounded-lg border-neutral-200 text-sm text-neutral-600"
+            className="gap-2 rounded-lg border-border-default text-sm text-text-secondary"
             disabled={loading}
           >
             {step === 1 ? (

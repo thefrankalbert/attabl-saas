@@ -64,14 +64,14 @@ export default function POSClient({ tenantId }: POSClientProps) {
       <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden">
         {/* Mobile View Toggle — only on phone */}
         {isMobile && (
-          <div className="flex border-b border-neutral-100 bg-white rounded-t-xl shrink-0">
+          <div className="flex border-b border-border-subtle bg-surface-primary rounded-t-xl shrink-0">
             <button
               onClick={() => setMobileView('products')}
               className={cn(
                 'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
                 mobileView === 'products'
-                  ? 'border-b-2 border-neutral-900 text-neutral-900'
-                  : 'text-neutral-400',
+                  ? 'border-b-2 border-text-primary text-text-primary'
+                  : 'text-text-muted',
               )}
             >
               {t('searchProduct') ? t('searchProduct').split('...')[0] || 'Produits' : 'Produits'}
@@ -81,8 +81,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
               className={cn(
                 'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
                 mobileView === 'cart'
-                  ? 'border-b-2 border-neutral-900 text-neutral-900'
-                  : 'text-neutral-400',
+                  ? 'border-b-2 border-text-primary text-text-primary'
+                  : 'text-text-muted',
               )}
             >
               {t('cart')}{' '}
@@ -99,7 +99,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Products Section */}
           <div
             className={cn(
-              'flex-1 flex-col min-w-0 min-h-0 bg-white rounded-xl border border-neutral-100 overflow-hidden',
+              'flex-1 flex-col min-w-0 min-h-0 bg-surface-primary rounded-xl border border-border-subtle overflow-hidden',
               isMobile ? (mobileView === 'products' ? 'flex' : 'hidden') : 'flex',
             )}
           >
@@ -119,7 +119,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Cart Section — takes ~45% of width for a proper register feel */}
           <div
             className={cn(
-              'w-full md:w-[45%] lg:w-[42%] xl:w-[40%] bg-white rounded-xl border border-neutral-100 flex-col overflow-hidden shrink-0',
+              'w-full md:w-[45%] lg:w-[42%] xl:w-[40%] bg-surface-primary rounded-xl border border-border-subtle flex-col overflow-hidden shrink-0',
               isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
             )}
           >
@@ -154,11 +154,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         {/* Note Modal */}
         {pos.editingNotes && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
+            <div className="bg-surface-primary rounded-xl p-6 w-full max-w-sm animate-in zoom-in-95">
               <h3 className="font-bold text-lg mb-4">{t('kitchenNoteTitle')}</h3>
               <textarea
                 autoFocus
-                className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-neutral-50"
+                className="w-full h-32 p-3 border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-surface-secondary"
                 placeholder={t('kitchenNotePlaceholder')}
                 value={pos.notesText}
                 onChange={(e) => pos.setNotesText(e.target.value)}
@@ -172,7 +172,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   {tc('cancel')}
                 </Button>
                 <Button
-                  className="bg-neutral-900 text-white hover:bg-neutral-800 rounded-xl"
+                  className="bg-text-primary text-white hover:bg-text-primary rounded-xl"
                   onClick={pos.saveNotes}
                 >
                   {tc('save')}

@@ -95,7 +95,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
       <Button
         variant="ghost"
         size="icon"
-        className="fixed top-3 left-3 z-50 lg:hidden bg-white border border-neutral-200 min-w-[44px] min-h-[44px] touch-manipulation"
+        className="fixed top-3 left-3 z-50 lg:hidden bg-[#1a1f2e] text-white border border-white/10 min-w-[44px] min-h-[44px] touch-manipulation"
         onClick={toggleSidebar}
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -117,7 +117,7 @@ export function AdminSidebar({ tenant, adminUser, role, className }: AdminSideba
           // Desktop (lg+): in-flow inside flex parent, not fixed
           'lg:relative lg:inset-auto lg:z-auto lg:translate-x-0 lg:shrink-0',
           // Common styles
-          'h-full bg-white border-r border-neutral-100 flex flex-col transition-all duration-300 ease-in-out',
+          'h-full bg-[#111827] border-r border-white/5 flex flex-col transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-16' : 'w-64',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           className,

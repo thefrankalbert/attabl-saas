@@ -17,13 +17,13 @@ import dynamic from 'next/dynamic';
 const DashboardCharts = dynamic(() => import('@/components/features/dashboard/DashboardCharts'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
+    <div className="h-full bg-white border border-gray-100 rounded-2xl animate-pulse" />
   ),
 });
 const DashboardDonut = dynamic(() => import('@/components/features/dashboard/DashboardDonut'), {
   ssr: false,
   loading: () => (
-    <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
+    <div className="h-full bg-white border border-gray-100 rounded-2xl animate-pulse" />
   ),
 });
 const DashboardHourlyBar = dynamic(
@@ -31,7 +31,7 @@ const DashboardHourlyBar = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="h-full bg-surface-primary border border-border-default rounded-xl animate-pulse" />
+      <div className="h-full bg-white border border-gray-100 rounded-2xl animate-pulse" />
     ),
   },
 );
@@ -76,69 +76,73 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
-        <div className="flex items-center justify-between shrink-0">
-          <div className="h-7 w-48 bg-surface-tertiary rounded animate-pulse" />
-          <div className="h-8 w-36 bg-surface-secondary rounded-xl animate-pulse" />
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="h-8 w-64 bg-gray-100 rounded-lg animate-pulse" />
+          <div className="h-10 w-40 bg-gray-100 rounded-xl animate-pulse" />
         </div>
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-[220px_1fr_260px] gap-4 xl:gap-5">
-          <div className="flex lg:flex-col gap-3">
-            {[0, 1, 2].map((i) => (
-              <StatsCardSkeleton key={i} />
-            ))}
-          </div>
-          <div className="bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[200px]" />
-          <div className="flex flex-col gap-4">
-            <div className="flex-1 bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[150px]" />
-            <div className="flex-1 bg-surface-primary border border-border-default rounded-xl animate-pulse min-h-[150px]" />
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[0, 1, 2].map((i) => (
+            <StatsCardSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <div className="lg:col-span-2 bg-white border border-gray-100 rounded-2xl animate-pulse min-h-[300px]" />
+          <div className="bg-white border border-gray-100 rounded-2xl animate-pulse min-h-[300px]" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-0 lg:h-full flex flex-col gap-4 xl:gap-5 overflow-y-auto">
-      {/* Greeting Bar */}
-      <div className="flex items-center justify-between shrink-0">
-        <h1 className="text-xl font-semibold text-text-primary tracking-tight">
-          {t('greeting')}, {tenantName}
-        </h1>
+    <div className="space-y-6">
+      {/* Header — Bold greeting + date + period selector */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+            {t('greeting')}, {tenantName}
+          </h1>
+          <p className="text-sm text-gray-400 mt-1 font-medium">
+            {new Date().toLocaleDateString(locale, {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+          </p>
+        </div>
         <PeriodSelector value={period} onChange={setPeriod} t={t} />
       </div>
 
-      {/* Main Content: 3-column on desktop */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[220px_1fr_260px] gap-4 xl:gap-5">
-        {/* Left column: KPIs stacked vertically */}
-        <DashboardKPIs
-          stats={stats}
-          loading={false}
-          t={t}
-          fmtCompact={fmtCompact}
-          showFinancials={showFinancials}
-          revenueSparkline={revenueSparkline}
-          ordersSparkline={ordersSparkline}
-          itemsSparkline={itemsSparkline}
-        />
+      {/* KPIs — Full width row, large cards */}
+      <DashboardKPIs
+        stats={stats}
+        loading={false}
+        t={t}
+        fmtCompact={fmtCompact}
+        showFinancials={showFinancials}
+        revenueSparkline={revenueSparkline}
+        ordersSparkline={ordersSparkline}
+        itemsSparkline={itemsSparkline}
+      />
 
-        {/* Center column: AreaChart */}
-        <div className="min-h-[250px] lg:min-h-0">
+      {/* Charts — 2/3 + 1/3 layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2 min-h-[320px]">
           <DashboardCharts
             revenueChartData={revenueChartData}
             t={t}
             showRevenueChart={showRevenueChart}
           />
         </div>
-
-        {/* Right column: Donut + HourlyBar stacked */}
-        <div className="flex flex-col gap-4 xl:gap-5 min-h-0">
+        <div className="flex flex-col gap-4 min-h-[320px]">
           {showFinancials && (
-            <div className="flex-1 min-h-[180px]">
+            <div className="flex-1 min-h-[150px]">
               <DashboardDonut data={categoryBreakdown} t={t} fmtCompact={fmtCompact} />
             </div>
           )}
           {showOrders && (
-            <div className="flex-1 min-h-[180px]">
+            <div className="flex-1 min-h-[150px]">
               <DashboardHourlyBar data={hourlyOrders} t={t} />
             </div>
           )}
