@@ -15,9 +15,9 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 flex flex-col h-full hover:border-gray-200 transition-colors">
-      <div className="px-6 py-5 border-b border-gray-50">
-        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+    <div className="bg-app-card rounded-2xl border border-app-border flex flex-col h-full hover:border-app-border-hover transition-colors">
+      <div className="px-6 py-5 border-b border-app-border">
+        <h2 className="text-sm font-bold text-app-text uppercase tracking-wider">
           {t('categoryBreakdown')}
         </h2>
       </div>
@@ -55,8 +55,8 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="text-xl font-black text-gray-900">{fmtCompact(total)}</span>
-            <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">
+            <span className="text-xl font-black text-app-text">{fmtCompact(total)}</span>
+            <span className="text-[10px] text-app-text-muted font-semibold uppercase tracking-wider">
               {t('totalOrders')}
             </span>
           </div>
@@ -70,9 +70,9 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: COLORS[index % COLORS.length] }}
                 />
-                <span className="text-gray-500 font-medium">{item.name}</span>
+                <span className="text-app-text-secondary font-medium">{item.name}</span>
               </div>
-              <span className="text-gray-900 font-bold tabular-nums">{fmtCompact(item.value)}</span>
+              <span className="text-app-text font-bold tabular-nums">{fmtCompact(item.value)}</span>
             </div>
           ))}
         </div>

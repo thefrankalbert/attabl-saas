@@ -58,14 +58,14 @@ export default function DashboardRecentOrders({
       {/* Recent Orders */}
       {showOrders && (
         <div
-          className={`min-h-[300px] md:min-h-0 overflow-hidden rounded-2xl bg-white border border-gray-100 hover:border-gray-200 transition-colors flex flex-col ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
+          className={`min-h-[300px] md:min-h-0 overflow-hidden rounded-2xl bg-app-card border border-app-border hover:border-app-border-hover transition-colors flex flex-col ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
         >
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-3">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-app-text uppercase tracking-wider">
                 {t('recentOrders')}
               </h2>
-              <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-bold text-app-text-muted bg-app-bg px-2 py-0.5 rounded-full">
                 {recentOrders.length}
               </span>
               {recentOrders.filter((o) => o.status === 'pending').length > 0 && (
@@ -77,35 +77,35 @@ export default function DashboardRecentOrders({
             </div>
             <Link
               href={`${adminBase}/orders`}
-              className="flex items-center gap-1.5 text-sm font-bold text-gray-900 hover:text-[#CCFF00] transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-app-text hover:text-accent transition-colors"
             >
               {t('viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
           {recentOrders.length > 0 ? (
-            <div className="flex-1 min-h-0 overflow-auto divide-y divide-gray-50">
+            <div className="flex-1 min-h-0 overflow-auto divide-y divide-app-border">
               {recentOrders.map((order) => (
-                <div key={order.id} className="px-6 py-4 hover:bg-gray-50/50 transition-colors">
+                <div key={order.id} className="px-6 py-4 hover:bg-app-bg/50 transition-colors">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex items-start gap-4">
-                      <div className="w-11 h-11 rounded-xl bg-[#CCFF00]/10 border border-[#CCFF00]/20 flex items-center justify-center text-gray-900 font-black text-sm">
+                      <div className="w-11 h-11 rounded-xl bg-accent/10 border border-accent/20 flex items-center justify-center text-app-text font-black text-sm">
                         {order.table_number}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="font-bold text-gray-900">
+                          <h3 className="font-bold text-app-text">
                             {t('tableLabel')} {order.table_number}
                           </h3>
                           <StatusBadge status={order.status} />
                         </div>
-                        <p className="text-sm text-gray-400 mt-0.5">
+                        <p className="text-sm text-app-text-muted mt-0.5">
                           {order.items
                             ?.slice(0, 2)
                             .map((i) => i.name)
                             .join(', ')}
                           {order.items && order.items.length > 2 && ` +${order.items.length - 2}`}
                         </p>
-                        <div className="flex items-center gap-3 mt-2 text-xs text-gray-400">
+                        <div className="flex items-center gap-3 mt-2 text-xs text-app-text-muted">
                           <span className="flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
                             {timeAgoFn(order.created_at, tc, locale)}
@@ -118,7 +118,7 @@ export default function DashboardRecentOrders({
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-black text-gray-900 text-lg tabular-nums tracking-tight">
+                      <p className="font-black text-app-text text-lg tabular-nums tracking-tight">
                         {fmt(order.total_price)}
                       </p>
                       <div className="flex items-center gap-1 mt-2">
@@ -143,7 +143,7 @@ export default function DashboardRecentOrders({
                         {order.status === 'ready' && (
                           <button
                             onClick={() => onStatusChange(order.id, 'delivered')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated transition-colors"
                             title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -151,7 +151,7 @@ export default function DashboardRecentOrders({
                         )}
                         <Link
                           href={`${adminBase}/orders`}
-                          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors"
+                          className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated transition-colors"
                           title={t('viewDetails')}
                         >
                           <Eye className="w-4 h-4" />
@@ -165,11 +165,11 @@ export default function DashboardRecentOrders({
           ) : (
             <div className="flex-1 min-h-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                  <ShoppingBag className="w-8 h-8 text-gray-300" />
+                <div className="w-16 h-16 bg-app-bg rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <ShoppingBag className="w-8 h-8 text-app-text-muted" />
                 </div>
-                <h3 className="font-bold text-gray-900 mb-1">{t('noOrders')}</h3>
-                <p className="text-sm text-gray-400">{t('noOrdersDescAlt')}</p>
+                <h3 className="font-bold text-app-text mb-1">{t('noOrders')}</h3>
+                <p className="text-sm text-app-text-muted">{t('noOrdersDescAlt')}</p>
               </div>
             </div>
           )}
@@ -179,20 +179,20 @@ export default function DashboardRecentOrders({
       {/* Stock Alerts */}
       {showStock && (
         <div
-          className={`overflow-hidden bg-white border border-gray-100 rounded-2xl hover:border-gray-200 transition-colors flex flex-col ${!showOrders ? 'col-span-1 md:col-span-3' : ''}`}
+          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 md:col-span-3' : ''}`}
         >
-          <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 shrink-0">
+          <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-app-text uppercase tracking-wider">
                 {t('stockLive')}
               </h2>
-              <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-bold text-app-text-muted bg-app-bg px-2 py-0.5 rounded-full">
                 {stockItems.length}
               </span>
             </div>
             <Link
               href={`${adminBase}/inventory`}
-              className="flex items-center gap-1.5 text-sm font-bold text-gray-900 hover:text-[#CCFF00] transition-colors"
+              className="flex items-center gap-1.5 text-sm font-bold text-app-text hover:text-accent transition-colors"
             >
               {t('viewAll')} <ArrowRight className="w-4 h-4" />
             </Link>
@@ -214,21 +214,21 @@ export default function DashboardRecentOrders({
                         ? 'border-red-200 bg-red-50/50'
                         : isLow
                           ? 'border-amber-200 bg-amber-50/50'
-                          : 'border-gray-100 bg-gray-50/50',
+                          : 'border-app-border bg-app-bg/50',
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-gray-900 truncate">{item.name}</p>
-                      <span className="text-[10px] text-gray-400 font-semibold uppercase">
+                      <p className="text-xs font-bold text-app-text truncate">{item.name}</p>
+                      <span className="text-[10px] text-app-text-muted font-semibold uppercase">
                         {item.unit}
                       </span>
                     </div>
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-app-elevated rounded-full overflow-hidden">
                         <div
                           className={cn(
                             'h-full rounded-full transition-all',
-                            isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-[#CCFF00]',
+                            isOut ? 'bg-red-500' : isLow ? 'bg-amber-500' : 'bg-accent',
                           )}
                           style={{ width: `${Math.max(pct, 2)}%` }}
                         />
@@ -236,7 +236,7 @@ export default function DashboardRecentOrders({
                       <span
                         className={cn(
                           'text-sm font-black tabular-nums',
-                          isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-gray-900',
+                          isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-app-text',
                         )}
                       >
                         {item.current_stock}
@@ -249,10 +249,10 @@ export default function DashboardRecentOrders({
           ) : (
             <div className="flex-1 min-h-0 flex items-center justify-center">
               <div className="text-center">
-                <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mx-auto mb-3">
-                  <Package className="w-6 h-6 text-gray-300" />
+                <div className="w-14 h-14 bg-app-bg rounded-2xl flex items-center justify-center mx-auto mb-3">
+                  <Package className="w-6 h-6 text-app-text-muted" />
                 </div>
-                <p className="text-sm text-gray-400">{t('noDataAvailable')}</p>
+                <p className="text-sm text-app-text-muted">{t('noDataAvailable')}</p>
               </div>
             </div>
           )}
