@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { getCachedTenant } from '@/lib/cache';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
@@ -11,6 +11,7 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
@@ -37,14 +38,15 @@ export default async function AdminLayout({
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
+  // Run tenant fetch (cached) + auth check in PARALLEL to cut latency
   const supabase = await createClient();
-
-  // Récupérer le tenant
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const [
+    tenant,
+    {
+      data: { user },
+      error: authError,
+    },
+  ] = await Promise.all([getCachedTenant(tenantSlug), supabase.auth.getUser()]);
 
   if (!tenant) {
     redirect('/login');
@@ -52,38 +54,28 @@ export default async function AdminLayout({
 
   const showOnboardingResume = tenant.onboarding_completed === false;
 
-  // Vérifier l'authentification
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  // Mode développement : si pas d'auth configurée, afficher quand même
   let adminUser: AdminUser | null = null;
   let isDevMode = false;
 
   if (authError || !user) {
-    // ✅ SECURITY FIX: Require explicit env var for dev bypass
     if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true') {
       isDevMode = true;
       adminUser = {
         id: 'dev',
         user_id: 'dev',
-        tenant_id: tenant?.id || 'dev',
+        tenant_id: tenant.id || 'dev',
         role: 'owner',
         name: 'Dev User',
       };
     } else {
-      // En production OU si bypass non explicitement activé
       redirect(`/login`);
     }
   } else {
-    // Vérifier que l'user est admin de CE tenant
     const { data: adminData } = await supabase
       .from('admin_users')
       .select('*')
       .eq('user_id', user.id)
-      .eq('tenant_id', tenant?.id)
+      .eq('tenant_id', tenant.id)
       .single();
 
     if (!adminData && process.env.NODE_ENV !== 'development') {
@@ -93,40 +85,13 @@ export default async function AdminLayout({
     adminUser = adminData || {
       id: user.id,
       user_id: user.id,
-      tenant_id: tenant?.id || '',
+      tenant_id: tenant.id || '',
       role: 'admin' as const,
       name: user.email,
     };
   }
 
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
-
-  const sidebarElement = (
-    <AdminSidebar
-      tenant={
-        tenant
-          ? {
-              id: tenant.id,
-              name: tenant.name,
-              slug: tenant.slug,
-              logo_url: tenant.logo_url,
-              primary_color: tenant.primary_color,
-            }
-          : { name: tenantSlug, slug: tenantSlug }
-      }
-      adminUser={
-        adminUser
-          ? {
-              name: adminUser.name,
-              role: adminUser.role,
-              custom_permissions: adminUser.custom_permissions,
-            }
-          : undefined
-      }
-      role={userRole}
-      className={isDevMode ? 'pt-6' : ''}
-    />
-  );
 
   return (
     <div>
@@ -139,52 +104,56 @@ export default async function AdminLayout({
         </div>
       )}
 
-      <AdminLayoutClient
-        sidebar={sidebarElement}
-        isDevMode={isDevMode}
-        basePath={`/sites/${tenantSlug}/admin`}
-        role={userRole}
-        primaryColor={tenant.primary_color ?? undefined}
-      >
-        <QueryProvider>
-          <PermissionsProvider role={userRole}>
-            <CommandPalette />
-            <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
-              <AdminIdleWrapper
-                idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-                screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-                tenantName={tenant.name}
-              >
-                <SubscriptionProvider
-                  tenant={
-                    tenant
-                      ? {
-                          subscription_plan: tenant.subscription_plan,
-                          subscription_status: tenant.subscription_status,
-                          trial_ends_at: tenant.trial_ends_at,
-                        }
-                      : null
-                  }
+      <QueryProvider>
+        <ThemeProvider>
+          <AdminLayoutClient
+            isDevMode={isDevMode}
+            basePath={`/sites/${tenantSlug}/admin`}
+            role={userRole}
+            primaryColor={tenant.primary_color ?? undefined}
+            tenant={{
+              name: tenant.name,
+              slug: tenant.slug,
+              logo_url: tenant.logo_url ?? undefined,
+            }}
+            notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
+          >
+            <PermissionsProvider role={userRole}>
+              <CommandPalette />
+              <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+                <AdminIdleWrapper
+                  idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                  screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                  tenantName={tenant.name}
                 >
-                  <AdminContentWrapper
-                    chrome={
-                      <>
-                        <div className="absolute top-3 right-3 z-40">
-                          <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-                        </div>
-                        <TrialBanner tenantSlug={tenantSlug} />
-                        <AdminBreadcrumbs />
-                      </>
+                  <SubscriptionProvider
+                    tenant={
+                      tenant
+                        ? {
+                            subscription_plan: tenant.subscription_plan,
+                            subscription_status: tenant.subscription_status,
+                            trial_ends_at: tenant.trial_ends_at,
+                          }
+                        : null
                     }
                   >
-                    {children}
-                  </AdminContentWrapper>
-                </SubscriptionProvider>
-              </AdminIdleWrapper>
-            </ShortcutsProvider>
-          </PermissionsProvider>
-        </QueryProvider>
-      </AdminLayoutClient>
+                    <AdminContentWrapper
+                      chrome={
+                        <>
+                          <TrialBanner tenantSlug={tenantSlug} />
+                          <AdminBreadcrumbs />
+                        </>
+                      }
+                    >
+                      {children}
+                    </AdminContentWrapper>
+                  </SubscriptionProvider>
+                </AdminIdleWrapper>
+              </ShortcutsProvider>
+            </PermissionsProvider>
+          </AdminLayoutClient>
+        </ThemeProvider>
+      </QueryProvider>
     </div>
   );
 }
