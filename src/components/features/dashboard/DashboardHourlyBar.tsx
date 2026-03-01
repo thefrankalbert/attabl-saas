@@ -10,9 +10,9 @@ interface DashboardHourlyBarProps {
 
 export default function DashboardHourlyBar({ data, t }: DashboardHourlyBarProps) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 flex flex-col h-full hover:border-gray-200 transition-colors">
-      <div className="px-6 py-5 border-b border-gray-50">
-        <h2 className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+    <div className="bg-app-card rounded-2xl border border-app-border flex flex-col h-full hover:border-app-border-hover transition-colors">
+      <div className="px-6 py-5 border-b border-app-border">
+        <h2 className="text-sm font-bold text-app-text uppercase tracking-wider">
           {t('hourlyOrders')}
         </h2>
       </div>
