@@ -62,18 +62,18 @@ function ToggleSwitch({
 }) {
   return (
     <div className="flex items-center justify-between">
-      <Label className="text-sm font-medium text-neutral-700">{label}</Label>
+      <Label className="text-sm font-medium text-app-text-secondary">{label}</Label>
       <button
         type="button"
         role="switch"
         aria-checked={checked}
         onClick={onChange}
         className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
-          checked ? 'bg-[#CCFF00]' : 'bg-neutral-200'
+          checked ? 'bg-[#CCFF00]' : 'bg-app-elevated'
         }`}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-app-card shadow-sm transition-transform duration-200 ease-in-out ${
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
@@ -98,13 +98,13 @@ function NumberStepper({
 }) {
   return (
     <div>
-      <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">{label}</Label>
-      <div className="rounded-xl border border-neutral-200 inline-flex items-center h-10">
+      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">{label}</Label>
+      <div className="rounded-xl border border-app-border inline-flex items-center h-10">
         <button
           type="button"
           onClick={() => value > min && onChange(value - 1)}
           disabled={value <= min}
-          className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-3 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -119,13 +119,13 @@ function NumberStepper({
               onChange(val);
             }
           }}
-          className="w-14 text-center text-sm font-medium text-neutral-900 border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-14 text-center text-sm font-medium text-app-text border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button
           type="button"
           onClick={() => value < max && onChange(value + 1)}
           disabled={value >= max}
-          className="px-3 h-full flex items-center justify-center text-neutral-600 hover:text-neutral-900 disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-3 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -142,8 +142,8 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
     <div className="h-full flex flex-col">
       {/* Title & Subtitle */}
       <div className="shrink-0 mb-3">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('establishmentTitle')}</h1>
-        <p className="text-neutral-500 text-sm">{t('establishmentSubtitle')}</p>
+        <h1 className="text-2xl font-bold text-app-text mb-1">{t('establishmentTitle')}</h1>
+        <p className="text-app-text-secondary text-sm">{t('establishmentSubtitle')}</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
@@ -151,7 +151,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
           {/* Left column: Name, Type, Address, City/Country, Phone */}
           <div className="space-y-4">
             <div>
-              <Label htmlFor="tenantName" className="text-sm font-medium text-neutral-700">
+              <Label htmlFor="tenantName" className="text-sm font-medium text-app-text-secondary">
                 {t('nameLabel')}
               </Label>
               <Input
@@ -160,12 +160,12 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                 placeholder={t('namePlaceholder')}
                 value={data.tenantName}
                 onChange={(e) => updateData({ tenantName: e.target.value })}
-                className="mt-1 h-10 rounded-xl border-neutral-200 text-sm"
+                className="mt-1 h-10 rounded-xl border-app-border text-sm"
               />
             </div>
 
             <div>
-              <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
+              <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
                 {t('stepEstablishment')}
               </Label>
               <div className="grid grid-cols-3 gap-1.5">
@@ -180,11 +180,11 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                       className={`rounded-xl p-2 border text-center transition-all ${
                         isSelected
                           ? 'border-[#CCFF00] bg-[#CCFF00]/5'
-                          : 'border-neutral-200 hover:border-neutral-300'
+                          : 'border-app-border hover:border-app-border-hover'
                       }`}
                     >
-                      <Icon className="h-4 w-4 mx-auto mb-1 text-neutral-700" />
-                      <span className="font-medium text-neutral-900 text-xs block truncate">
+                      <Icon className="h-4 w-4 mx-auto mb-1 text-app-text-secondary" />
+                      <span className="font-medium text-app-text text-xs block truncate">
                         {t(type.titleKey)}
                       </span>
                     </button>
@@ -193,12 +193,12 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
               </div>
             </div>
 
-            <div className="pt-2 border-t border-neutral-100">
+            <div className="pt-2 border-t border-app-border">
               <Label
                 htmlFor="address"
-                className="text-sm font-medium text-neutral-700 flex items-center gap-2"
+                className="text-sm font-medium text-app-text-secondary flex items-center gap-2"
               >
-                <MapPin className="h-3.5 w-3.5 text-neutral-400" />
+                <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
                 {t('addressLabel')}
               </Label>
               <Input
@@ -207,13 +207,13 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                 placeholder={t('addressPlaceholder')}
                 value={data.address}
                 onChange={(e) => updateData({ address: e.target.value })}
-                className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm"
+                className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="city" className="text-sm font-medium text-neutral-700">
+                <Label htmlFor="city" className="text-sm font-medium text-app-text-secondary">
                   {t('cityLabel')}
                 </Label>
                 <Input
@@ -222,11 +222,11 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   placeholder={t('cityPlaceholder')}
                   value={data.city}
                   onChange={(e) => updateData({ city: e.target.value })}
-                  className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm"
+                  className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
                 />
               </div>
               <div>
-                <Label htmlFor="country" className="text-sm font-medium text-neutral-700">
+                <Label htmlFor="country" className="text-sm font-medium text-app-text-secondary">
                   {t('countryLabel')}
                 </Label>
                 <Input
@@ -235,7 +235,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   placeholder={t('countryLabel')}
                   value={data.country}
                   onChange={(e) => updateData({ country: e.target.value })}
-                  className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm"
+                  className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
                 />
               </div>
             </div>
@@ -243,7 +243,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
             <div>
               <Label
                 htmlFor="phone"
-                className="text-sm font-medium text-neutral-700 flex items-center gap-2"
+                className="text-sm font-medium text-app-text-secondary flex items-center gap-2"
               >
                 <Phone className="h-3.5 w-3.5" />
                 {t('phoneLabel')}
@@ -254,7 +254,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                 placeholder={t('phonePlaceholder')}
                 value={data.phone}
                 onChange={(e) => updateData({ phone: e.target.value })}
-                className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm"
+                className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
               />
             </div>
           </div>
@@ -263,7 +263,9 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
           <div className="space-y-4">
             {/* Language */}
             <div>
-              <Label className="text-sm font-medium text-neutral-700">{t('languageLabel')}</Label>
+              <Label className="text-sm font-medium text-app-text-secondary">
+                {t('languageLabel')}
+              </Label>
               <Select
                 value={data.language}
                 onValueChange={(val) => {
@@ -272,7 +274,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   router.refresh();
                 }}
               >
-                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm">
+                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-app-border text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -290,9 +292,11 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
 
             {/* Currency */}
             <div>
-              <Label className="text-sm font-medium text-neutral-700">{t('currencyLabel')}</Label>
+              <Label className="text-sm font-medium text-app-text-secondary">
+                {t('currencyLabel')}
+              </Label>
               <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
-                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-neutral-200 text-sm">
+                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-app-border text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -315,8 +319,8 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
 
             {/* Divider — type-specific section */}
             {data.establishmentType && (
-              <div className="pt-1 border-t border-neutral-100">
-                <p className="text-[10px] uppercase tracking-wide text-neutral-400 font-medium mb-2">
+              <div className="pt-1 border-t border-app-border">
+                <p className="text-[10px] uppercase tracking-wide text-app-text-muted font-medium mb-2">
                   {t('typeSpecificLabel')}
                 </p>
               </div>
@@ -351,7 +355,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                   onChange={(val) => updateData({ tableCount: val })}
                 />
                 <div>
-                  <Label className="text-sm font-medium text-neutral-700 mb-1.5 block">
+                  <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
                     {t('starRating')}
                   </Label>
                   <div className="flex gap-1">
@@ -360,7 +364,7 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                         key={star}
                         type="button"
                         onClick={() => updateData({ starRating: star })}
-                        className={`text-lg ${(data.starRating || 0) >= star ? 'text-yellow-400' : 'text-neutral-200'}`}
+                        className={`text-lg ${(data.starRating || 0) >= star ? 'text-yellow-400' : 'text-app-text-muted'}`}
                       >
                         ★
                       </button>

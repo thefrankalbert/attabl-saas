@@ -35,8 +35,7 @@ function createMockSupabase() {
   const mockFrom = vi.fn((table: string) => {
     const chain = getChain(table);
 
-    // update().eq().eq().is() => resolves   (releaseAllForServer)
-    // update().eq().is()     => resolves   (releaseAssignment)
+    // update().eq().eq().is() => resolves   (releaseAllForServer, releaseAssignment)
     // update().eq().eq()     => resolves   (claimOrder — awaited directly)
     // second .eq() must be both awaitable (claimOrder) and expose .is() (releaseAllForServer)
     const callResolve = chain.resolve as unknown as () => Promise<unknown>;
@@ -174,7 +173,7 @@ describe('AssignmentService', () => {
 
       const service = createAssignmentService(asSupabase(supabase));
 
-      await expect(service.releaseAssignment(ASSIGNMENT_ID)).resolves.toBeUndefined();
+      await expect(service.releaseAssignment(ASSIGNMENT_ID, TENANT_ID)).resolves.toBeUndefined();
     });
   });
 

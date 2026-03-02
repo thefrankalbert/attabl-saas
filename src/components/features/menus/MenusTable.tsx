@@ -93,7 +93,7 @@ function MenuCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'bg-white rounded-xl border border-neutral-100 hover:border-neutral-200 transition-all group',
+        'bg-app-card rounded-xl border border-app-border hover:border-app-border transition-all group',
         isDragging && 'shadow-lg border-[#CCFF00]',
       )}
     >
@@ -106,21 +106,21 @@ function MenuCard({
           {...attributes}
           {...listeners}
         >
-          <GripVertical className="w-4 h-4 text-neutral-300" />
+          <GripVertical className="w-4 h-4 text-app-text-muted" />
         </button>
-        <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center flex-shrink-0">
-          <Folder className="w-5 h-5 text-neutral-500" />
+        <div className="w-10 h-10 bg-app-elevated rounded-lg flex items-center justify-center flex-shrink-0">
+          <Folder className="w-5 h-5 text-app-text-secondary" />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
             <Link
               href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
-              className="font-semibold text-neutral-900 text-sm hover:underline truncate"
+              className="font-semibold text-app-text text-sm hover:underline truncate"
             >
               {menu.name}
             </Link>
             {menu.name_en && (
-              <span className="text-xs text-neutral-400 truncate">({menu.name_en})</span>
+              <span className="text-xs text-app-text-muted truncate">({menu.name_en})</span>
             )}
           </div>
           <div className="flex items-center gap-2 mt-0.5">
@@ -133,14 +133,14 @@ function MenuCard({
             {!menu.venue_id && venues.length > 0 && (
               <Badge
                 variant="outline"
-                className="text-[10px] gap-1 border-lime-200 text-lime-700 bg-lime-50"
+                className="text-[10px] gap-1 border-accent/15 text-accent bg-accent/5"
               >
                 <Globe className="w-2.5 h-2.5" />
                 {t('sharedMenuBadge')}
               </Badge>
             )}
             {menu.children && menu.children.length > 0 && (
-              <span className="text-xs text-neutral-400">
+              <span className="text-xs text-app-text-muted">
                 {t('subMenuCount', { count: menu.children.length })}
               </span>
             )}
@@ -154,7 +154,7 @@ function MenuCard({
               'px-2 py-1 rounded-full text-xs font-semibold border transition-all',
               menu.is_active
                 ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                : 'bg-neutral-100 text-neutral-500 border-neutral-200',
+                : 'bg-app-elevated text-app-text-secondary border-app-border',
             )}
           >
             {menu.is_active ? (
@@ -190,21 +190,21 @@ function MenuCard({
               variant="ghost"
               size="sm"
               onClick={onDelete}
-              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 hover:bg-red-50"
+              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px] text-red-600 hover:text-red-700 hover:bg-status-error/10"
             >
               <Trash2 className="w-4 h-4" />
             </Button>
           </div>
 
           <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}>
-            <ChevronRight className="w-4 h-4 text-neutral-400" />
+            <ChevronRight className="w-4 h-4 text-app-text-muted" />
           </Link>
         </div>
       </div>
 
       {/* Sub-menus (children) */}
       {menu.children && menu.children.length > 0 && (
-        <div className="border-t border-neutral-50 px-4 py-2 bg-neutral-50/50">
+        <div className="border-t border-app-border px-4 py-2 bg-app-elevated">
           <div className="flex flex-wrap gap-2">
             {menu.children.map((child) => (
               <span
@@ -212,8 +212,8 @@ function MenuCard({
                 className={cn(
                   'text-xs px-2.5 py-1 rounded-full border',
                   child.is_active
-                    ? 'bg-white text-neutral-700 border-neutral-200'
-                    : 'bg-neutral-100 text-neutral-400 border-neutral-200',
+                    ? 'bg-app-card text-app-text border-app-border'
+                    : 'bg-app-elevated text-app-text-muted border-app-border',
                 )}
               >
                 {child.name}
@@ -283,7 +283,7 @@ export default function MenusTable({
           {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-20 bg-white rounded-xl border border-neutral-100 animate-pulse"
+              className="h-20 bg-app-card rounded-xl border border-app-border animate-pulse"
             />
           ))}
         </div>
@@ -292,7 +292,7 @@ export default function MenusTable({
       {/* Standalone menus */}
       {filteredStandalone.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest px-1">
+          <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest px-1">
             {t('independentMenus')}
           </p>
           <SortableContext
@@ -326,8 +326,8 @@ export default function MenusTable({
         return (
           <div key={venueId} className="space-y-3">
             <div className="flex items-center gap-2 px-1">
-              <Building2 className="w-4 h-4 text-neutral-400" />
-              <p className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
+              <Building2 className="w-4 h-4 text-app-text-muted" />
+              <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest">
                 {venue?.name || t('space')}
               </p>
             </div>
@@ -354,13 +354,13 @@ export default function MenusTable({
 
       {/* Empty state */}
       {menus.length === 0 && !loading && (
-        <div className="bg-white rounded-xl border border-neutral-100 p-12 text-center">
-          <div className="w-14 h-14 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Folder className="w-7 h-7 text-neutral-400" />
+        <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+          <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Folder className="w-7 h-7 text-app-text-muted" />
           </div>
-          <h3 className="text-base font-bold text-neutral-900">{t('noMenus')}</h3>
-          <p className="text-sm text-neutral-500 mt-2">{t('noMenusDesc')}</p>
-          <Button onClick={onCreateFirst} variant="lime" className="mt-4">
+          <h3 className="text-base font-bold text-app-text">{t('noMenus')}</h3>
+          <p className="text-sm text-app-text-secondary mt-2">{t('noMenusDesc')}</p>
+          <Button onClick={onCreateFirst} variant="default" className="mt-4">
             {t('createMenu')}
           </Button>
         </div>

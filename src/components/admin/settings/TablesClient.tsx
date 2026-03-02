@@ -336,18 +336,18 @@ export function TablesClient({
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">{t('title')}</h1>
-        <p className="text-neutral-500 text-sm mt-1">{t('subtitle')}</p>
+        <h1 className="text-2xl font-bold text-app-text">{t('title')}</h1>
+        <p className="text-app-text-secondary text-sm mt-1">{t('subtitle')}</p>
       </div>
 
       {/* Main Layout */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Left Panel: Zone List */}
         <div className="w-full lg:w-72 flex-shrink-0">
-          <div className="bg-white rounded-xl border border-neutral-100 p-4">
+          <div className="bg-app-card rounded-xl border border-app-border p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-neutral-900">{t('zonesHeader')}</h2>
-              <span className="text-xs text-neutral-400">
+              <h2 className="text-sm font-semibold text-app-text">{t('zonesHeader')}</h2>
+              <span className="text-xs text-app-text-muted">
                 {t('zoneCount', { count: zones.length })}
               </span>
             </div>
@@ -359,8 +359,8 @@ export function TablesClient({
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-3 py-2.5 cursor-pointer transition-colors group',
                     selectedZoneId === zone.id
-                      ? 'bg-neutral-900/5 border border-neutral-200'
-                      : 'hover:bg-neutral-50 border border-transparent',
+                      ? 'bg-app-text/5 border border-app-border'
+                      : 'hover:bg-app-bg border border-transparent',
                   )}
                   onClick={() => {
                     if (editingZoneId !== zone.id) {
@@ -371,7 +371,7 @@ export function TablesClient({
                   <MapPin
                     className={cn(
                       'w-4 h-4 flex-shrink-0',
-                      selectedZoneId === zone.id ? 'text-neutral-700' : 'text-neutral-400',
+                      selectedZoneId === zone.id ? 'text-app-text' : 'text-app-text-muted',
                     )}
                   />
 
@@ -380,7 +380,7 @@ export function TablesClient({
                       <Input
                         value={editingZoneName}
                         onChange={(e) => setEditingZoneName(e.target.value)}
-                        className="h-7 text-sm rounded-lg focus:ring-lime-400"
+                        className="h-7 text-sm rounded-lg focus:ring-accent"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveZoneName(zone.id);
                           if (e.key === 'Escape') setEditingZoneId(null);
@@ -403,7 +403,7 @@ export function TablesClient({
                           e.stopPropagation();
                           setEditingZoneId(null);
                         }}
-                        className="p-1 text-neutral-400 hover:text-neutral-600"
+                        className="p-1 text-app-text-muted hover:text-app-text-secondary"
                       >
                         <X className="w-3.5 h-3.5" />
                       </button>
@@ -414,13 +414,13 @@ export function TablesClient({
                         className={cn(
                           'text-sm flex-1 min-w-0 truncate',
                           selectedZoneId === zone.id
-                            ? 'font-semibold text-neutral-900'
-                            : 'text-neutral-700',
+                            ? 'font-semibold text-app-text'
+                            : 'text-app-text',
                         )}
                       >
                         {zone.name}
                       </span>
-                      <span className="text-xs text-neutral-400 font-mono">{zone.prefix}</span>
+                      <span className="text-xs text-app-text-muted font-mono">{zone.prefix}</span>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           type="button"
@@ -428,7 +428,7 @@ export function TablesClient({
                             e.stopPropagation();
                             handleStartEditZone(zone);
                           }}
-                          className="p-1 text-neutral-400 hover:text-neutral-600"
+                          className="p-1 text-app-text-muted hover:text-app-text-secondary"
                         >
                           <Pencil className="w-3 h-3" />
                         </button>
@@ -468,15 +468,15 @@ export function TablesClient({
               {/* Zone header */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Grid3x3 className="w-5 h-5 text-neutral-400" />
-                  <h2 className="text-lg font-semibold text-neutral-900">{selectedZone.name}</h2>
-                  <span className="text-xs text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-full font-mono">
+                  <Grid3x3 className="w-5 h-5 text-app-text-muted" />
+                  <h2 className="text-lg font-semibold text-app-text">{selectedZone.name}</h2>
+                  <span className="text-xs text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-full font-mono">
                     {selectedZone.prefix}
                   </span>
                 </div>
                 <Button
                   size="sm"
-                  className="gap-2 bg-neutral-900 text-white hover:bg-neutral-800"
+                  className="gap-2 bg-accent text-accent-text hover:bg-accent-hover"
                   onClick={() => setShowAddTables(true)}
                 >
                   <Plus className="w-4 h-4" />
@@ -490,7 +490,7 @@ export function TablesClient({
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
-                      className="h-32 bg-white rounded-lg border border-neutral-100 animate-pulse"
+                      className="h-32 bg-app-card rounded-lg border border-app-border animate-pulse"
                     />
                   ))}
                 </div>
@@ -500,7 +500,7 @@ export function TablesClient({
                     <div
                       key={table.id}
                       className={cn(
-                        'bg-white rounded-lg border border-neutral-100 p-3 transition-colors relative group',
+                        'bg-app-card rounded-lg border border-app-border p-3 transition-colors relative group',
                         !table.is_active && 'opacity-60',
                       )}
                     >
@@ -513,14 +513,14 @@ export function TablesClient({
                               table.is_active ? 'bg-emerald-400' : 'bg-amber-400',
                             )}
                           />
-                          <span className="text-xs font-mono text-neutral-400">
+                          <span className="text-xs font-mono text-app-text-muted">
                             {table.table_number}
                           </span>
                         </div>
                         <button
                           type="button"
                           onClick={() => handleDeleteTable(table)}
-                          className="p-1 text-neutral-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="p-1 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -532,7 +532,7 @@ export function TablesClient({
                           <Input
                             value={editingDisplayName}
                             onChange={(e) => setEditingDisplayName(e.target.value)}
-                            className="h-7 text-sm rounded-lg focus:ring-lime-400"
+                            className="h-7 text-sm rounded-lg focus:ring-accent"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveTableName(table.id);
                               if (e.key === 'Escape') setEditingTableId(null);
@@ -550,7 +550,7 @@ export function TablesClient({
                       ) : (
                         <button
                           type="button"
-                          className="text-sm font-semibold text-neutral-900 mb-2 hover:text-neutral-600 text-left"
+                          className="text-sm font-semibold text-app-text mb-2 hover:text-app-text-secondary text-left"
                           onClick={() => handleStartEditTable(table)}
                         >
                           {table.display_name}
@@ -559,13 +559,13 @@ export function TablesClient({
 
                       {/* Capacity */}
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-xs text-neutral-500">{t('capacity')}</span>
+                        <span className="text-xs text-app-text-secondary">{t('capacity')}</span>
                         <select
                           value={table.capacity}
                           onChange={(e) =>
                             handleUpdateCapacity(table, parseInt(e.target.value, 10))
                           }
-                          className="text-xs border border-neutral-100 rounded-lg px-1.5 py-0.5 text-neutral-700 bg-white focus:ring-lime-400 focus:outline-none"
+                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-accent focus:outline-none"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
                             <option key={n} value={n}>
@@ -581,9 +581,9 @@ export function TablesClient({
                           type="checkbox"
                           checked={table.is_active}
                           onChange={() => handleToggleActive(table)}
-                          className="w-4 h-4 rounded border-neutral-300 accent-lime-400 focus:ring-lime-400"
+                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent"
                         />
-                        <span className="text-xs text-neutral-500">
+                        <span className="text-xs text-app-text-secondary">
                           {table.is_active ? t('active') : t('inactive')}
                         </span>
                       </label>
@@ -591,14 +591,14 @@ export function TablesClient({
                   ))}
                 </div>
               ) : (
-                <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
-                  <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Grid3x3 className="w-8 h-8 text-neutral-400" />
+                <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+                  <div className="w-16 h-16 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
+                    <Grid3x3 className="w-8 h-8 text-app-text-muted" />
                   </div>
-                  <h3 className="text-lg font-bold text-neutral-900">{t('noTableTitle')}</h3>
-                  <p className="text-sm text-neutral-500 mt-2">{t('noTableDesc')}</p>
+                  <h3 className="text-lg font-bold text-app-text">{t('noTableTitle')}</h3>
+                  <p className="text-sm text-app-text-secondary mt-2">{t('noTableDesc')}</p>
                   <Button
-                    className="mt-6 bg-neutral-900 text-white hover:bg-neutral-800"
+                    className="mt-6 bg-accent text-accent-text hover:bg-accent-hover"
                     onClick={() => setShowAddTables(true)}
                   >
                     {t('addTablesAction')}
@@ -607,14 +607,14 @@ export function TablesClient({
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
-              <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <MapPin className="w-8 h-8 text-neutral-400" />
+            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+              <div className="w-16 h-16 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
+                <MapPin className="w-8 h-8 text-app-text-muted" />
               </div>
-              <h3 className="text-lg font-bold text-neutral-900">{t('noZoneTitle')}</h3>
-              <p className="text-sm text-neutral-500 mt-2">{t('noZoneDesc')}</p>
+              <h3 className="text-lg font-bold text-app-text">{t('noZoneTitle')}</h3>
+              <p className="text-sm text-app-text-secondary mt-2">{t('noZoneDesc')}</p>
               <Button
-                className="mt-6 bg-neutral-900 text-white hover:bg-neutral-800"
+                className="mt-6 bg-accent text-accent-text hover:bg-accent-hover"
                 onClick={() => setShowAddZone(true)}
               >
                 {t('createZone')}
@@ -632,7 +632,7 @@ export function TablesClient({
       >
         <form onSubmit={handleAddZone} className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label htmlFor="zone-name" className="text-sm text-neutral-900">
+            <Label htmlFor="zone-name" className="text-sm text-app-text">
               {t('zoneNameLabel')}
             </Label>
             <Input
@@ -640,12 +640,12 @@ export function TablesClient({
               value={zoneName}
               onChange={(e) => setZoneName(e.target.value)}
               placeholder={t('zoneNamePlaceholder')}
-              className="rounded-lg focus:ring-lime-400"
+              className="rounded-lg focus:ring-accent"
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="zone-prefix" className="text-sm text-neutral-900">
+            <Label htmlFor="zone-prefix" className="text-sm text-app-text">
               {t('zonePrefixLabel')}
             </Label>
             <Input
@@ -653,19 +653,19 @@ export function TablesClient({
               value={zonePrefix}
               onChange={(e) => setZonePrefix(e.target.value)}
               placeholder={t('zonePrefixPlaceholder')}
-              className="rounded-lg focus:ring-lime-400"
+              className="rounded-lg focus:ring-accent"
               required
               maxLength={5}
             />
-            <p className="text-xs text-neutral-500">{t('zonePrefixHelp')}</p>
+            <p className="text-xs text-app-text-secondary">{t('zonePrefixHelp')}</p>
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <Button type="button" variant="ghost" onClick={() => setShowAddZone(false)}>
               {t('cancel')}
             </Button>
             <Button
               type="submit"
-              className="bg-neutral-900 text-white hover:bg-neutral-800"
+              className="bg-accent text-accent-text hover:bg-accent-hover"
               disabled={savingZone}
             >
               {savingZone && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -683,14 +683,14 @@ export function TablesClient({
       >
         <form onSubmit={handleAddTables} className="space-y-4 pt-2">
           {selectedZone && (
-            <p className="text-sm text-neutral-500">
+            <p className="text-sm text-app-text-secondary">
               {t('addTablesZoneLabel')}{' '}
-              <span className="font-medium text-neutral-900">{selectedZone.name}</span>
+              <span className="font-medium text-app-text">{selectedZone.name}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="table-count" className="text-sm text-neutral-900">
+              <Label htmlFor="table-count" className="text-sm text-app-text">
                 {t('tableCountLabel')}
               </Label>
               <Input
@@ -698,14 +698,14 @@ export function TablesClient({
                 type="number"
                 value={tableCount}
                 onChange={(e) => setTableCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="rounded-lg focus:ring-lime-400"
+                className="rounded-lg focus:ring-accent"
                 min={1}
                 max={50}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="table-capacity" className="text-sm text-neutral-900">
+              <Label htmlFor="table-capacity" className="text-sm text-app-text">
                 {t('tableCapacityLabel')}
               </Label>
               <Input
@@ -713,7 +713,7 @@ export function TablesClient({
                 type="number"
                 value={tableCapacity}
                 onChange={(e) => setTableCapacity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="rounded-lg focus:ring-lime-400"
+                className="rounded-lg focus:ring-accent"
                 min={1}
                 max={50}
                 required
@@ -721,24 +721,24 @@ export function TablesClient({
             </div>
           </div>
           {selectedZone && (
-            <div className="bg-neutral-50 rounded-lg border border-neutral-100 p-3 text-xs text-neutral-500">
+            <div className="bg-app-bg rounded-lg border border-app-border p-3 text-xs text-app-text-secondary">
               {t('tableNamingPreview')}{' '}
-              <span className="font-mono font-medium text-neutral-900">
+              <span className="font-mono font-medium text-app-text">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + 1}
               </span>{' '}
               {t('tableNamingTo')}{' '}
-              <span className="font-mono font-medium text-neutral-900">
+              <span className="font-mono font-medium text-app-text">
                 {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + tableCount}
               </span>
             </div>
           )}
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <Button type="button" variant="ghost" onClick={() => setShowAddTables(false)}>
               {t('cancel')}
             </Button>
             <Button
               type="submit"
-              className="bg-neutral-900 text-white hover:bg-neutral-800"
+              className="bg-accent text-accent-text hover:bg-accent-hover"
               disabled={savingTables}
             >
               {savingTables && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

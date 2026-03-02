@@ -79,28 +79,28 @@ function SortableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-4 p-4 bg-white rounded-xl border border-neutral-100 hover:bg-neutral-50/50 transition-colors group',
-        isDragging && 'shadow-lg border-lime-400 bg-lime-50/20',
+        'flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group',
+        isDragging && 'shadow-none border-accent bg-accent-muted',
       )}
     >
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 rounded hover:bg-neutral-100 transition-colors"
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 rounded hover:bg-app-bg transition-colors"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="w-4 h-4 text-neutral-400 group-hover:text-neutral-600 transition-colors" />
+        <GripVertical className="w-4 h-4 text-app-text-muted group-hover:text-app-text-secondary transition-colors" />
       </button>
-      <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
-        <Folder className="w-4 h-4 text-neutral-500" />
+      <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+        <Folder className="w-4 h-4 text-app-text-secondary" />
       </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
-        {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
+        <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+        {cat.name_en && <p className="text-xs text-app-text-muted">{cat.name_en}</p>}
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+      <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
         <Utensils className="w-3.5 h-3.5" />
         <span className="font-medium">{dishCountLabel}</span>
       </div>
@@ -112,7 +112,7 @@ function SortableRow({
           variant="outline"
           size="sm"
           onClick={() => onDelete(cat)}
-          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
           {deleteLabel}
         </Button>
@@ -268,18 +268,18 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-neutral-900 tracking-tight">{t('title')}</h1>
-            <p className="text-xs text-neutral-500 mt-1">{t('subtitle')}</p>
+            <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
+            <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
           </div>
-          <Button onClick={openNewModal} variant="lime" size="sm" className="gap-2">
+          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
             <Plus className="w-4 h-4" /> {t('newCategory')}
           </Button>
         </div>
 
         {/* Counter */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-white rounded-xl border border-neutral-100">
-          <Folder className="w-4 h-4 text-neutral-400" />
-          <span className="text-xs text-neutral-500 font-medium">
+        <div className="flex items-center gap-2 px-4 py-3 bg-app-card rounded-xl border border-app-border">
+          <Folder className="w-4 h-4 text-app-text-muted" />
+          <span className="text-xs text-app-text-secondary font-medium">
             {t('categoryCount', { count: categories.length })}
           </span>
         </div>
@@ -290,7 +290,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-16 bg-white rounded-xl border border-neutral-100 animate-pulse"
+                className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
               />
             ))}
           </div>
@@ -325,16 +325,18 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                     const cat = categories.find((c) => c.id === activeDragId);
                     if (!cat) return null;
                     return (
-                      <div className="flex items-center gap-4 p-4 bg-white rounded-xl border-2 border-lime-400 shadow-xl">
-                        <GripVertical className="w-4 h-4 text-neutral-600" />
-                        <div className="w-9 h-9 bg-neutral-100 rounded-lg flex items-center justify-center">
-                          <Folder className="w-4 h-4 text-neutral-500" />
+                      <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border-2 border-accent shadow-none">
+                        <GripVertical className="w-4 h-4 text-app-text-secondary" />
+                        <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+                          <Folder className="w-4 h-4 text-app-text-secondary" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-neutral-900 text-sm">{cat.name}</p>
-                          {cat.name_en && <p className="text-xs text-neutral-400">{cat.name_en}</p>}
+                          <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                          {cat.name_en && (
+                            <p className="text-xs text-app-text-muted">{cat.name_en}</p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1.5 text-xs text-neutral-500">
+                        <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
                           <Utensils className="w-3.5 h-3.5" />
                           <span className="font-medium">
                             {t('dishCount', { count: cat.items_count || 0 })}
@@ -347,13 +349,13 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             </DragOverlay>
           </DndContext>
         ) : (
-          <div className="bg-white rounded-xl border border-neutral-100 p-16 text-center">
-            <div className="w-16 h-16 bg-neutral-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-8 h-8 text-neutral-400" />
+          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Folder className="w-8 h-8 text-app-text-muted" />
             </div>
-            <h3 className="text-lg font-bold text-neutral-900">{t('noCategories')}</h3>
-            <p className="text-sm text-neutral-500 mt-2">{t('noCategoriesDesc')}</p>
-            <Button onClick={openNewModal} variant="lime" className="mt-6">
+            <h3 className="text-lg font-bold text-app-text">{t('noCategories')}</h3>
+            <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesDesc')}</p>
+            <Button onClick={openNewModal} variant="default" className="mt-6">
               {t('createCategory')}
             </Button>
           </div>
@@ -369,7 +371,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
           <form onSubmit={handleSubmit} className="space-y-5 pt-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="cat-name" className="text-neutral-900">
+                <Label htmlFor="cat-name" className="text-app-text">
                   {t('nameFr')}
                 </Label>
                 <Input
@@ -377,12 +379,12 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                   required
                 />
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="cat-name-en" className="text-neutral-900">
+                <Label htmlFor="cat-name-en" className="text-app-text">
                   {t('nameEn')}
                 </Label>
                 <Input
@@ -390,12 +392,12 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                 />
               </div>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cat-order" className="text-neutral-900">
+              <Label htmlFor="cat-order" className="text-app-text">
                 {t('displayOrder')}
               </Label>
               <Input
@@ -404,14 +406,14 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 value={displayOrder}
                 onChange={(e) => setDisplayOrder(Number(e.target.value))}
                 min={0}
-                className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
               />
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
                 {tc('cancel')}
               </Button>
-              <Button type="submit" disabled={saving} variant="lime">
+              <Button type="submit" disabled={saving} variant="default">
                 {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 {editingCategory ? t('update') : t('create')}
               </Button>

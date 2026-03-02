@@ -7,51 +7,135 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Square-inspired neutral palette */
-  --color-background: #ffffff;
-  --color-foreground: #0a0a0a;
-  --color-muted: #f9fafb;
-  --color-muted-foreground: #6b7280;
-  --color-border: #e5e7eb;
+  /* ===== DUAL-THEME TOKEN SYSTEM ===== */
+  /* Tailwind generates utilities like bg-app-bg, text-app-text, etc. */
 
-  /* Accent colors - lime brand */
-  --color-primary: #ccff00;
-  --color-primary-dark: #b3e600;
-  --color-primary-light: #f0ffc0;
+  /* Core surface colors (reference CSS vars for theme switching) */
+  --color-app-bg: var(--app-bg);
+  --color-app-card: var(--app-card);
+  --color-app-elevated: var(--app-elevated);
+  --color-app-hover: var(--app-hover);
 
-  /* Semantic colors */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-error: #ef4444;
+  /* Border colors */
+  --color-app-border: var(--app-border);
+  --color-app-border-hover: var(--app-border-hover);
 
-  /* Legacy compatibility - keep these for existing components */
-  --color-brand-green: #ccff00;
-  --color-brand-green-dark: #b3e600;
-  --color-brand-green-light: #f0ffc0;
-  --color-brand-orange: #f59e0b;
-  --color-brand-orange-dark: #d97706;
-  --color-neutral-50: #f9fafb;
-  --color-neutral-100: #f3f4f6;
-  --color-neutral-700: #6b7280;
-  --color-neutral-900: #0a0a0a;
+  /* Text colors */
+  --color-app-text: var(--app-text);
+  --color-app-text-secondary: var(--app-text-secondary);
+  --color-app-text-muted: var(--app-text-muted);
 
-  /* Typography - System font stack similar to Square */
+  /* Accent (lime/green) */
+  --color-accent: var(--app-accent);
+  --color-accent-hover: var(--app-accent-hover);
+  --color-accent-muted: var(--app-accent-muted);
+  --color-accent-text: var(--app-accent-text);
+
+  /* Danger */
+  --color-danger: #ef4444;
+  --color-danger-hover: #dc2626;
+
+  /* Status text colors (same in both themes) */
+  --color-status-success: #059669;
+  --color-status-warning: #d97706;
+  --color-status-error: #dc2626;
+  --color-status-info: #2563eb;
+
+  /* Status background colors (reference CSS vars for theme switching) */
+  --color-status-success-bg: var(--app-status-success-bg);
+  --color-status-warning-bg: var(--app-status-warning-bg);
+  --color-status-error-bg: var(--app-status-error-bg);
+  --color-status-info-bg: var(--app-status-info-bg);
+
+  /* Legacy compat — shadcn/ui + marketing pages still reference these */
+  --color-background: var(--app-bg);
+  --color-foreground: var(--app-text);
+  --color-muted: var(--app-elevated);
+  --color-muted-foreground: var(--app-text-secondary);
+  --color-border: var(--app-border);
+  --color-primary: var(--app-accent);
+  --color-primary-dark: var(--app-accent-hover);
+  --color-brand-green: var(--app-accent);
+  --color-brand-green-dark: var(--app-accent-hover);
+  --color-brand-green-light: var(--app-accent-muted);
+  --color-neutral-50: var(--app-card);
+  --color-neutral-100: var(--app-elevated);
+  --color-neutral-700: var(--app-text-secondary);
+  --color-neutral-900: var(--app-text);
+
+  /* Typography — System font stack */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-display:
     -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* ===== DARK MODE (default) ===== */
 :root {
-  --background: #f9fafb;
-  --foreground: #09090b;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #09090b;
+  color-scheme: dark;
+
+  --app-bg: #0f1117;
+  --app-card: #1a1d27;
+  --app-elevated: #242836;
+  --app-hover: #2a2f3d;
+
+  --app-border: rgba(255, 255, 255, 0.06);
+  --app-border-hover: rgba(255, 255, 255, 0.12);
+
+  --app-text: #f0f0f0;
+  --app-text-secondary: rgba(255, 255, 255, 0.55);
+  --app-text-muted: rgba(255, 255, 255, 0.3);
+
+  --app-accent: #ccff00;
+  --app-accent-hover: #b8e600;
+  --app-accent-muted: rgba(204, 255, 0, 0.12);
+  --app-accent-text: #111111;
+
+  --app-status-success-bg: rgba(5, 150, 105, 0.15);
+  --app-status-warning-bg: rgba(217, 119, 6, 0.15);
+  --app-status-error-bg: rgba(220, 38, 38, 0.15);
+  --app-status-info-bg: rgba(37, 99, 235, 0.15);
+
+  /* shadcn/ui compat vars */
+  --background: var(--app-bg);
+  --foreground: var(--app-text);
+  --border: var(--app-border);
+  --input: var(--app-border);
+  --ring: var(--app-accent);
+}
+
+/* ===== LIGHT MODE (.light class on <html>) ===== */
+.light {
+  color-scheme: light;
+
+  --app-bg: #f5f5f7;
+  --app-card: #ffffff;
+  --app-elevated: #f0f0f2;
+  --app-hover: #eaeaec;
+
+  --app-border: rgba(0, 0, 0, 0.08);
+  --app-border-hover: rgba(0, 0, 0, 0.15);
+
+  --app-text: #111111;
+  --app-text-secondary: rgba(0, 0, 0, 0.55);
+  --app-text-muted: rgba(0, 0, 0, 0.3);
+
+  --app-accent: #4d7c0f;
+  --app-accent-hover: #3f6212;
+  --app-accent-muted: rgba(77, 124, 15, 0.1);
+  --app-accent-text: #ffffff;
+
+  --app-status-success-bg: #ecfdf5;
+  --app-status-warning-bg: #fffbeb;
+  --app-status-error-bg: #fef2f2;
+  --app-status-info-bg: #eff6ff;
 }
 
 body {
-  background-color: var(--background);
-  color: var(--foreground);
+  background-color: var(--app-bg);
+  color: var(--app-text);
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* Base Light Mode Utilities */

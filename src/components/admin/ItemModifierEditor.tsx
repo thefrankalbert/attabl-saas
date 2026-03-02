@@ -108,24 +108,21 @@ export default function ItemModifierEditor({
 
   return (
     <div className="space-y-4">
-      <p className="text-sm text-neutral-500">{t('editingFor', { item: menuItemName })}</p>
+      <p className="text-sm text-app-text-secondary">{t('editingFor', { item: menuItemName })}</p>
 
       {/* Existing modifiers */}
       {modifiers.length > 0 ? (
         <div className="space-y-1.5">
           {modifiers.map((mod) => (
-            <div
-              key={mod.id}
-              className="flex items-center gap-2 p-2.5 bg-neutral-50 rounded-lg group"
-            >
-              <GripVertical className="w-3.5 h-3.5 text-neutral-300 shrink-0" />
+            <div key={mod.id} className="flex items-center gap-2 p-2.5 bg-app-bg rounded-lg group">
+              <GripVertical className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
               <div className="flex-1 min-w-0">
-                <span className="text-sm font-medium text-neutral-900">{mod.name}</span>
+                <span className="text-sm font-medium text-app-text">{mod.name}</span>
                 {mod.name_en && (
-                  <span className="text-xs text-neutral-400 ml-1.5">({mod.name_en})</span>
+                  <span className="text-xs text-app-text-muted ml-1.5">({mod.name_en})</span>
                 )}
               </div>
-              <span className="text-sm font-bold text-neutral-700 tabular-nums shrink-0">
+              <span className="text-sm font-bold text-app-text tabular-nums shrink-0">
                 +{mod.price} FCFA
               </span>
               <button
@@ -133,8 +130,8 @@ export default function ItemModifierEditor({
                 className={cn(
                   'px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all shrink-0',
                   mod.is_available
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
-                    : 'bg-neutral-100 text-neutral-500 border-neutral-200',
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    : 'bg-app-elevated text-app-text-secondary border-app-border',
                 )}
               >
                 {mod.is_available ? t('available') : t('unavailable')}
@@ -144,7 +141,7 @@ export default function ItemModifierEditor({
                 size="sm"
                 onClick={() => handleDelete(mod.id)}
                 disabled={deletingId === mod.id}
-                className="h-8 w-8 p-0 text-neutral-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 p-0 text-app-text-muted hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 {deletingId === mod.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -156,12 +153,12 @@ export default function ItemModifierEditor({
           ))}
         </div>
       ) : (
-        <p className="text-sm text-neutral-400 italic py-3">{t('empty')}</p>
+        <p className="text-sm text-app-text-muted italic py-3">{t('empty')}</p>
       )}
 
       {/* Add new modifier */}
-      <div className="border-t border-neutral-100 pt-4">
-        <p className="text-xs font-semibold text-neutral-700 mb-2">{t('addNew')}</p>
+      <div className="border-t border-app-border pt-4">
+        <p className="text-xs font-semibold text-app-text mb-2">{t('addNew')}</p>
         <div className="flex gap-2">
           <Input
             value={newName}
@@ -189,7 +186,7 @@ export default function ItemModifierEditor({
         </div>
       </div>
 
-      <div className="flex justify-end pt-2 border-t border-neutral-100">
+      <div className="flex justify-end pt-2 border-t border-app-border">
         <Button variant="outline" size="sm" onClick={onClose}>
           {tc('close')}
         </Button>

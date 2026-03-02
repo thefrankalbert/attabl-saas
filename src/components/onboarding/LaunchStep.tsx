@@ -140,8 +140,8 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
     <div className="h-full flex flex-col">
       {/* Title / Subtitle */}
       <div className="shrink-0 mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('launchTitle')}</h1>
-        <p className="text-neutral-500 text-sm">{t('launchSubtitle')}</p>
+        <h1 className="text-2xl font-bold text-app-text mb-1">{t('launchTitle')}</h1>
+        <p className="text-app-text-secondary text-sm">{t('launchSubtitle')}</p>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
@@ -150,7 +150,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
           <div className="space-y-6">
             {/* Summary Card */}
             <div
-              className="p-4 rounded-xl bg-white mb-4"
+              className="p-4 rounded-xl bg-app-card mb-4"
               style={{ border: `1px solid ${accentColor}20` }}
             >
               <div className="flex items-center gap-3 mb-4">
@@ -169,8 +169,8 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                   )}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-neutral-900">{data.tenantName}</h2>
-                  <p className="text-neutral-500 capitalize text-sm">
+                  <h2 className="text-lg font-bold text-app-text">{data.tenantName}</h2>
+                  <p className="text-app-text-secondary capitalize text-sm">
                     {data.establishmentType} &bull; {data.city || 'Non d\u00e9fini'}
                   </p>
                 </div>
@@ -191,7 +191,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                       <Check className="h-2.5 w-2.5" />
                     </div>
                     <span
-                      className={`text-sm ${item.done ? 'text-neutral-900' : 'text-neutral-400'}`}
+                      className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}
                     >
                       {item.label}
                     </span>
@@ -201,30 +201,30 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
             </div>
 
             {/* Menu URL */}
-            <div className="p-3 rounded-xl border border-neutral-200 bg-neutral-50 mb-4">
-              <p className="text-xs text-neutral-500 mb-1.5">{t('menuUrl')}</p>
+            <div className="p-3 rounded-xl border border-app-border bg-app-elevated mb-4">
+              <p className="text-xs text-app-text-secondary mb-1.5">{t('menuUrl')}</p>
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 bg-white rounded-lg border border-neutral-200 font-mono text-xs text-neutral-700 truncate">
+                <div className="flex-1 px-3 py-2 bg-app-card rounded-lg border border-app-border font-mono text-xs text-app-text truncate">
                   {menuUrl}
                 </div>
                 <button
                   onClick={handleCopyUrl}
-                  className="p-2 bg-white rounded-lg border border-neutral-200 hover:border-neutral-300 transition-colors"
+                  className="p-2 bg-app-card rounded-lg border border-app-border hover:border-app-text-muted transition-colors"
                   title={t('copyUrl')}
                 >
                   {copied ? (
                     <CheckCheck className="h-3.5 w-3.5 text-green-600" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 text-neutral-500" />
+                    <Copy className="h-3.5 w-3.5 text-app-text-secondary" />
                   )}
                 </button>
                 <a
                   href={menuUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-white rounded-lg border border-neutral-200 hover:border-neutral-300 transition-colors"
+                  className="p-2 bg-app-card rounded-lg border border-app-border hover:border-app-text-muted transition-colors"
                 >
-                  <ExternalLink className="h-3.5 w-3.5 text-neutral-500" />
+                  <ExternalLink className="h-3.5 w-3.5 text-app-text-secondary" />
                 </a>
               </div>
               {copied && (
@@ -236,9 +236,9 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
           </div>
 
           {/* Right Column: QR Customization */}
-          <div className="space-y-4 border-t lg:border-t-0 lg:border-l border-neutral-100 lg:pl-10 pt-6 lg:pt-0">
+          <div className="space-y-4 border-t lg:border-t-0 lg:border-l border-app-border lg:pl-10 pt-6 lg:pt-0">
             {/* QR Customization Sub-tabs */}
-            <div className="flex gap-1 mb-4 border-b border-neutral-100 pb-0">
+            <div className="flex gap-1 mb-4 border-b border-app-border pb-0">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -249,8 +249,8 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors ${
                       isActive
-                        ? 'border-[#CCFF00] text-neutral-900 bg-neutral-50'
-                        : 'border-transparent text-neutral-400 hover:text-neutral-600'
+                        ? 'border-[#CCFF00] text-app-text bg-app-elevated'
+                        : 'border-transparent text-app-text-muted hover:text-app-text-secondary'
                     }`}
                   >
                     <Icon className="h-3.5 w-3.5" />
@@ -265,7 +265,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
               <div className="space-y-4">
                 {/* Templates — Real mini-previews */}
                 <div>
-                  <p className="text-xs font-medium text-neutral-700 mb-2">Template</p>
+                  <p className="text-xs font-medium text-app-text-secondary mb-2">Template</p>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {TEMPLATES.map((tmpl) => {
                       const isSelected = data.qrTemplate === tmpl.id;
@@ -277,15 +277,15 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                           className={`rounded-xl border text-center transition-all overflow-hidden ${
                             isSelected
                               ? 'border-[#CCFF00] ring-1 ring-[#CCFF00] bg-[#CCFF00]/5'
-                              : 'border-neutral-200 hover:border-neutral-300'
+                              : 'border-app-border hover:border-app-text-muted'
                           }`}
                         >
                           {/* Mini template preview */}
                           <div className="pt-2 px-1">
                             <TemplateMiniPreview templateId={tmpl.id} data={data} />
                           </div>
-                          <div className="py-1.5 border-t border-neutral-100">
-                            <span className="text-[11px] font-medium text-neutral-700">
+                          <div className="py-1.5 border-t border-app-border">
+                            <span className="text-[11px] font-medium text-app-text-secondary">
                               {t(tmpl.labelKey)}
                             </span>
                           </div>
@@ -297,7 +297,9 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
 
                 {/* QR Color Styles */}
                 <div>
-                  <p className="text-xs font-medium text-neutral-700 mb-2">{t('qrCodeTitle')}</p>
+                  <p className="text-xs font-medium text-app-text-secondary mb-2">
+                    {t('qrCodeTitle')}
+                  </p>
                   <div className="flex gap-2">
                     {QR_STYLES.map((style) => {
                       const isActive = data.qrStyle === style.id;
@@ -309,7 +311,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                           type="button"
                           onClick={() => updateData({ qrStyle: style.id })}
                           className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center ${
-                            isActive ? 'border-[#CCFF00]' : 'border-neutral-200'
+                            isActive ? 'border-[#CCFF00]' : 'border-app-border'
                           }`}
                           style={{ backgroundColor: style.bg }}
                         >
@@ -330,7 +332,9 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
               <div className="space-y-4">
                 {/* CTA Presets */}
                 <div>
-                  <p className="text-xs font-medium text-neutral-700 mb-2">{t('qrCtaLabel')}</p>
+                  <p className="text-xs font-medium text-app-text-secondary mb-2">
+                    {t('qrCtaLabel')}
+                  </p>
                   <div className="flex flex-wrap gap-1.5 mb-2">
                     {CTA_PRESETS.map((preset) => {
                       const isActive = data.qrCta === preset.value;
@@ -342,7 +346,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                           className={`px-3 py-1.5 rounded-full text-xs transition-all ${
                             isActive
                               ? 'bg-[#CCFF00] text-black font-medium'
-                              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                              : 'bg-app-elevated text-app-text-secondary hover:bg-app-border'
                           }`}
                         >
                           {t(preset.key)}
@@ -355,14 +359,14 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                     value={data.qrCta}
                     onChange={(e) => updateData({ qrCta: e.target.value })}
                     placeholder={t('qrCtaLabel')}
-                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50"
+                    className="w-full px-3 py-2 text-sm border border-app-border rounded-xl bg-app-elevated text-app-text"
                     maxLength={60}
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <p className="text-xs font-medium text-neutral-700 mb-2">
+                  <p className="text-xs font-medium text-app-text-secondary mb-2">
                     {t('qrDescriptionLabel')}
                   </p>
                   <textarea
@@ -371,7 +375,7 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                     placeholder={t('qrDescriptionLabel')}
                     rows={2}
                     maxLength={120}
-                    className="w-full px-3 py-2 text-sm border border-neutral-200 rounded-xl bg-neutral-50 resize-none"
+                    className="w-full px-3 py-2 text-sm border border-app-border rounded-xl bg-app-elevated text-app-text resize-none"
                   />
                 </div>
               </div>

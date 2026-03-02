@@ -91,8 +91,8 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-neutral-900">{t('title')}</h1>
-          <p className="text-xs text-neutral-500 mt-1">{t('subtitleClient')}</p>
+          <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
+          <p className="text-xs text-app-text-secondary mt-1">{t('subtitleClient')}</p>
         </div>
 
         <Button
@@ -100,7 +100,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
             setEditingCoupon(null);
             setShowForm(true);
           }}
-          variant="lime"
+          variant="default"
           className="gap-2"
         >
           <Plus className="h-4 w-4" />
@@ -112,7 +112,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
       {coupons.length > 0 ? (
         <div className="grid gap-3">
           {/* Table Header (desktop) */}
-          <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-neutral-400 uppercase tracking-widest">
+          <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
             <span>{t('codeField')}</span>
             <span>{t('type')}</span>
             <span>{t('valueColumn')}</span>
@@ -124,13 +124,13 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           {coupons.map((coupon) => (
             <div
               key={coupon.id}
-              className="bg-white rounded-xl border border-neutral-100 p-4 cursor-pointer hover:border-neutral-300"
+              className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
               onClick={() => openEdit(coupon)}
             >
               <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
                 {/* Code */}
                 <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-neutral-400 flex-shrink-0" />
+                  <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />
                   <span className="font-bold font-mono text-sm tracking-wider">{coupon.code}</span>
                 </div>
 
@@ -139,8 +139,8 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                       coupon.discount_type === 'percentage'
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'bg-purple-50 text-purple-700'
+                        ? 'bg-blue-500/10 text-blue-500'
+                        : 'bg-purple-500/10 text-purple-500'
                     }`}
                   >
                     {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
@@ -148,12 +148,10 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 </div>
 
                 {/* Value */}
-                <div className="text-sm font-semibold text-neutral-900">
-                  {formatDiscount(coupon)}
-                </div>
+                <div className="text-sm font-semibold text-app-text">{formatDiscount(coupon)}</div>
 
                 {/* Usage */}
-                <div className="text-sm text-neutral-600">
+                <div className="text-sm text-app-text-secondary">
                   {coupon.current_uses}
                   {coupon.max_uses ? ` / ${coupon.max_uses}` : ' / ∞'}
                 </div>
@@ -170,14 +168,14 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   {coupon.is_active ? (
                     <>
                       <ToggleRight className="h-5 w-5 text-green-600" />
-                      <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
                         {t('active')}
                       </span>
                     </>
                   ) : (
                     <>
-                      <ToggleLeft className="h-5 w-5 text-neutral-400" />
-                      <span className="text-xs font-semibold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                      <ToggleLeft className="h-5 w-5 text-app-text-muted" />
+                      <span className="text-xs font-semibold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
                         {t('inactive')}
                       </span>
                     </>
@@ -190,7 +188,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(coupon.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
                     title={t('deleteAction')}
                   >
                     <Trash2 className="h-4 w-4" />
@@ -200,7 +198,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
               {/* Extra info row */}
               {(coupon.valid_from || coupon.valid_until || coupon.min_order_amount) && (
-                <div className="mt-3 pt-3 border-t border-neutral-50 flex flex-wrap gap-3 text-xs text-neutral-500">
+                <div className="mt-3 pt-3 border-t border-app-border flex flex-wrap gap-3 text-xs text-app-text-secondary">
                   {coupon.valid_from && (
                     <span>
                       {t('startLabel')} {new Date(coupon.valid_from).toLocaleDateString(locale)}
@@ -227,10 +225,10 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
           ))}
         </div>
       ) : (
-        <div className="py-12 text-center bg-neutral-50 rounded-xl border border-dashed border-neutral-200">
-          <ListFilter className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-neutral-900">{t('noCoupons')}</h3>
-          <p className="text-xs text-neutral-500 mt-1">{t('noCouponsDesc')}</p>
+        <div className="py-12 text-center bg-app-bg rounded-xl border border-dashed border-app-border">
+          <ListFilter className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
+          <h3 className="text-sm font-semibold text-app-text">{t('noCoupons')}</h3>
+          <p className="text-xs text-app-text-secondary mt-1">{t('noCouponsDesc')}</p>
           <Button
             onClick={() => {
               setEditingCoupon(null);

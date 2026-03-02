@@ -64,7 +64,7 @@ type CartContextType = {
   enableServiceCharge: boolean;
   taxRate: number;
   serviceChargeRate: number;
-  applyCoupon: (code: string, tenantId: string) => Promise<{ success: boolean; error?: string }>;
+  applyCoupon: (code: string) => Promise<{ success: boolean; error?: string }>;
   removeCoupon: () => void;
   setServiceType: (type: ServiceType) => void;
   setRoomNumber: (num: string) => void;
@@ -387,14 +387,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   }, []);
 
   const applyCoupon = useCallback(
-    async (code: string, tenantId: string): Promise<{ success: boolean; error?: string }> => {
+    async (code: string): Promise<{ success: boolean; error?: string }> => {
       try {
         const response = await fetch('/api/coupons/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             code,
-            tenantId,
             subtotal: items.reduce((acc, item) => {
               const modifiersTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) || 0;
               return acc + (item.price + modifiersTotal) * item.quantity;

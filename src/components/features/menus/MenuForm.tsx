@@ -73,7 +73,7 @@ export default function MenuForm({
     <form onSubmit={handleSubmit} className="space-y-5 pt-2">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="menu-name" className="text-neutral-900">
+          <Label htmlFor="menu-name" className="text-app-text">
             {t('nameFr')}
           </Label>
           <Input
@@ -81,12 +81,12 @@ export default function MenuForm({
             value={formName}
             onChange={(e) => setFormName(e.target.value)}
             placeholder={t('nameFrPlaceholder')}
-            className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
             required
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="menu-name-en" className="text-neutral-900">
+          <Label htmlFor="menu-name-en" className="text-app-text">
             {t('nameEn')}
           </Label>
           <Input
@@ -94,14 +94,14 @@ export default function MenuForm({
             value={formNameEn}
             onChange={(e) => setFormNameEn(e.target.value)}
             placeholder={t('nameEnPlaceholder')}
-            className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
           />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
-          <Label htmlFor="menu-desc" className="text-neutral-900">
+          <Label htmlFor="menu-desc" className="text-app-text">
             {t('descriptionFr')}
           </Label>
           <Input
@@ -109,11 +109,11 @@ export default function MenuForm({
             value={formDescription}
             onChange={(e) => setFormDescription(e.target.value)}
             placeholder={t('descriptionFrPlaceholder')}
-            className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="menu-desc-en" className="text-neutral-900">
+          <Label htmlFor="menu-desc-en" className="text-app-text">
             {t('descriptionEn')}
           </Label>
           <Input
@@ -121,13 +121,13 @@ export default function MenuForm({
             value={formDescriptionEn}
             onChange={(e) => setFormDescriptionEn(e.target.value)}
             placeholder={t('descriptionEnPlaceholder')}
-            className="rounded-lg border border-neutral-100 text-neutral-900 focus-visible:ring-lime-400"
+            className="rounded-lg border border-app-border text-app-text focus-visible:ring-lime-400"
           />
         </div>
       </div>
 
       {venues.length > 0 && (
-        <div className="flex items-center gap-3 p-3 bg-lime-50/50 border border-lime-100 rounded-lg">
+        <div className="flex items-center gap-3 p-3 bg-accent/5 border border-accent/15 rounded-lg">
           <input
             type="checkbox"
             id="menu-shared"
@@ -136,21 +136,21 @@ export default function MenuForm({
               setFormIsShared(e.target.checked);
               if (e.target.checked) setFormVenueId(null);
             }}
-            className="rounded border-neutral-200 text-lime-500 focus:ring-lime-400"
+            className="rounded border-app-border text-lime-500 focus:ring-lime-400"
           />
           <Globe className="w-4 h-4 text-lime-600 flex-shrink-0" />
           <div>
-            <Label htmlFor="menu-shared" className="text-neutral-900 font-medium">
+            <Label htmlFor="menu-shared" className="text-app-text font-medium">
               {t('sharedMenu')}
             </Label>
-            <p className="text-xs text-neutral-500 mt-0.5">{t('sharedMenuHint')}</p>
+            <p className="text-xs text-app-text-secondary mt-0.5">{t('sharedMenuHint')}</p>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className={`space-y-1.5 ${formIsShared ? 'opacity-50' : ''}`}>
-          <Label htmlFor="menu-venue" className="text-neutral-900">
+          <Label htmlFor="menu-venue" className="text-app-text">
             {t('spaceOptional')}
           </Label>
           <select
@@ -158,7 +158,7 @@ export default function MenuForm({
             value={formVenueId || ''}
             onChange={(e) => setFormVenueId(e.target.value || null)}
             disabled={formIsShared}
-            className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400 disabled:cursor-not-allowed disabled:bg-neutral-50"
+            className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400 disabled:cursor-not-allowed disabled:bg-app-elevated"
           >
             <option value="">{t('noSpaceIndependent')}</option>
             {venues.map((v) => (
@@ -169,14 +169,14 @@ export default function MenuForm({
           </select>
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor="menu-parent" className="text-neutral-900">
+          <Label htmlFor="menu-parent" className="text-app-text">
             {t('parentMenu')}
           </Label>
           <select
             id="menu-parent"
             value={formParentMenuId || ''}
             onChange={(e) => setFormParentMenuId(e.target.value || null)}
-            className="w-full rounded-lg border border-neutral-100 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
+            className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
           >
             <option value="">{t('noParentMain')}</option>
             {menus
@@ -196,18 +196,18 @@ export default function MenuForm({
           id="menu-active"
           checked={formIsActive}
           onChange={(e) => setFormIsActive(e.target.checked)}
-          className="rounded border-neutral-200 text-lime-500 focus:ring-lime-400"
+          className="rounded border-app-border text-lime-500 focus:ring-lime-400"
         />
-        <Label htmlFor="menu-active" className="text-neutral-900">
+        <Label htmlFor="menu-active" className="text-app-text">
           {t('activeVisibleToClients')}
         </Label>
       </div>
 
-      <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+      <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t('cancel')}
         </Button>
-        <Button type="submit" disabled={saving} variant="lime">
+        <Button type="submit" disabled={saving} variant="default">
           {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
           {editingMenu ? t('update') : t('create')}
         </Button>

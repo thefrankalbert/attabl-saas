@@ -18,8 +18,8 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   if (!tenant) {
     return (
       <div className="p-8">
-        <h1 className="text-2xl font-bold text-neutral-900">QR Codes</h1>
-        <p className="text-neutral-500 mt-2">Tenant non trouvé</p>
+        <h1 className="text-2xl font-bold text-app-text">QR Codes</h1>
+        <p className="text-app-text-secondary mt-2">Tenant non trouvé</p>
       </div>
     );
   }

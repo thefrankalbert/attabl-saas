@@ -19,7 +19,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   if (!tenant) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-neutral-600">Restaurant non trouvé</h2>
+        <h2 className="text-xl font-semibold text-app-text-secondary">Restaurant non trouvé</h2>
       </div>
     );
   }
@@ -34,8 +34,8 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   return (
     <div className="container mx-auto py-8 space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-neutral-900">Gestion de l&apos;abonnement</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+        <h1 className="text-2xl font-bold text-app-text">Gestion de l&apos;abonnement</h1>
+        <p className="text-sm text-app-text-secondary mt-1">
           Gérez votre plan et votre cycle de facturation
         </p>
       </div>

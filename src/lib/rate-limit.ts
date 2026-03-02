@@ -1,5 +1,6 @@
 import { Ratelimit } from '@upstash/ratelimit';
 import { Redis } from '@upstash/redis';
+import { logger } from '@/lib/logger';
 
 /**
  * Rate limiting module powered by Upstash Redis.
@@ -57,7 +58,9 @@ function createLimiter(
   return {
     async check(identifier: string): Promise<RateLimitResult> {
       if (!rl) {
-        // Graceful: no Redis configured → always allow
+        if (process.env.NODE_ENV === 'production') {
+          logger.error('Rate limiting is DISABLED in production — UPSTASH_REDIS not configured');
+        }
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
 

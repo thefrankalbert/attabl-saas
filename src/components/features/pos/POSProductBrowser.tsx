@@ -38,10 +38,10 @@ export default function POSProductBrowser({
   return (
     <>
       {/* Header Filters */}
-      <div className="p-3 sm:p-4 border-b border-neutral-100 space-y-3 sm:space-y-4">
+      <div className="p-3 sm:p-4 border-b border-app-border space-y-3 sm:space-y-4">
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
+            <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
             <Input
               data-search-input
               placeholder={t('searchProduct')}
@@ -83,25 +83,25 @@ export default function POSProductBrowser({
               <button
                 key={item.id}
                 onClick={() => onAddToCart(item)}
-                className="text-left group bg-neutral-50 hover:bg-white border border-neutral-100 hover:border-primary/50 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full"
+                className="text-left group bg-app-elevated hover:bg-app-hover border border-app-border hover:border-accent/30 rounded-xl p-3 transition-all active:scale-95 flex flex-col h-full"
               >
-                <div className="aspect-square bg-white rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
+                <div className="aspect-square bg-app-card rounded-lg mb-3 flex items-center justify-center relative overflow-hidden">
                   {item.image_url ? (
                     <Image src={item.image_url} alt="" fill className="object-cover" />
                   ) : (
-                    <Utensils className="w-8 h-8 text-neutral-300" />
+                    <Utensils className="w-8 h-8 text-app-text-muted/40" />
                   )}
                   {cart.find((c) => c.id === item.id) && (
-                    <div className="absolute top-2 right-2 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
+                    <div className="absolute top-2 right-2 bg-accent text-accent-text w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold">
                       {cart.find((c) => c.id === item.id)?.quantity}
                     </div>
                   )}
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <h3 className="font-semibold text-sm text-neutral-900 leading-tight mb-1 line-clamp-2">
+                  <h3 className="font-semibold text-sm text-app-text leading-tight mb-1 line-clamp-2">
                     {item.name}
                   </h3>
-                  <p className="text-xs font-bold text-neutral-500 mt-auto">
+                  <p className="text-xs font-bold text-app-text-secondary mt-auto">
                     {formatCurrency(item.price, currency)}
                   </p>
                 </div>
@@ -109,7 +109,7 @@ export default function POSProductBrowser({
             ))}
           </div>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-neutral-400">
+          <div className="h-full flex flex-col items-center justify-center text-app-text-muted">
             <SearchX className="w-12 h-12 mb-3 opacity-20" />
             <p className="text-sm font-medium">{t('noResults')}</p>
           </div>

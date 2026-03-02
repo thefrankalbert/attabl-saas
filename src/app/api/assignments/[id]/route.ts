@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { createAssignmentService } from '@/services/assignment.service';
@@ -21,9 +22,20 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
 
+    const headersList = await headers();
+    const tenantSlug = headersList.get('x-tenant-slug');
+    if (!tenantSlug) return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
+
+    const { data: tenant } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('slug', tenantSlug)
+      .single();
+    if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+
     const { id } = await params;
     const service = createAssignmentService(supabase);
-    await service.releaseAssignment(id);
+    await service.releaseAssignment(id, tenant.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof ServiceError)

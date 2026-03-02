@@ -136,7 +136,7 @@ export default function MenuImportExcel({
       <a
         href="/api/menu-import"
         download
-        className="inline-flex items-center gap-2 text-sm font-medium text-lime-700 hover:text-lime-800 transition-colors"
+        className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-accent/80 transition-colors"
       >
         <Download className="w-4 h-4" />
         {t('downloadTemplate')}
@@ -144,14 +144,14 @@ export default function MenuImportExcel({
 
       {/* Target menu selector */}
       <div className="space-y-1.5">
-        <Label htmlFor="import-menu" className="text-neutral-900">
+        <Label htmlFor="import-menu" className="text-app-text">
           {t('targetMenu')}
         </Label>
         <select
           id="import-menu"
           value={importMenuId}
           onChange={(e) => setImportMenuId(e.target.value)}
-          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
+          className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
           required
         >
           <option value="">{t('selectTargetMenu')}</option>
@@ -173,7 +173,7 @@ export default function MenuImportExcel({
           'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-all',
           isDragOver
             ? 'border-lime-400 bg-lime-50'
-            : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-neutral-100',
+            : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
         )}
       >
         <input
@@ -183,25 +183,27 @@ export default function MenuImportExcel({
           className="hidden"
           onChange={(e) => handleFileSelect(e.target.files?.[0])}
         />
-        <div className="w-12 h-12 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
-          <Upload className="w-5 h-5 text-neutral-400" />
+        <div className="w-12 h-12 bg-app-card rounded-xl border border-app-border flex items-center justify-center">
+          <Upload className="w-5 h-5 text-app-text-muted" />
         </div>
         {importFile ? (
           <div className="text-center">
-            <p className="text-sm font-semibold text-neutral-900">{importFile.name}</p>
-            <p className="text-xs text-neutral-500 mt-0.5">{formatFileSize(importFile.size)}</p>
+            <p className="text-sm font-semibold text-app-text">{importFile.name}</p>
+            <p className="text-xs text-app-text-secondary mt-0.5">
+              {formatFileSize(importFile.size)}
+            </p>
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-sm text-neutral-600">{t('dragAndDrop')}</p>
-            <p className="text-xs text-neutral-400 mt-1">{t('maxFileSize')}</p>
+            <p className="text-sm text-app-text-secondary">{t('dragAndDrop')}</p>
+            <p className="text-xs text-app-text-muted mt-1">{t('maxFileSize')}</p>
           </div>
         )}
       </div>
 
       {/* Import results */}
       {importResult && (
-        <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-4 space-y-2">
+        <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
           {importResult.categoriesCreated > 0 && (
             <div className="flex items-center gap-2 text-sm text-emerald-700">
               <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -239,12 +241,12 @@ export default function MenuImportExcel({
       )}
 
       {/* Action buttons */}
-      <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+      <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
         <Button type="button" variant="ghost" onClick={onCancel}>
           {t('cancel')}
         </Button>
         <Button
-          variant="lime"
+          variant="default"
           disabled={!importFile || !importMenuId || importing}
           onClick={handleImport}
           className="gap-2 rounded-xl"

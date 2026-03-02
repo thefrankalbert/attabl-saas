@@ -241,11 +241,11 @@ export default function CouponForm({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-neutral-100">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-app-border">
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             {tc('cancel')}
           </Button>
-          <Button type="submit" variant="lime" disabled={submitting}>
+          <Button type="submit" variant="default" disabled={submitting}>
             {submitting ? tc('saving') : initialData ? tc('save') : t('createCoupon')}
           </Button>
         </div>

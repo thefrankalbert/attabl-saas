@@ -36,11 +36,12 @@ export function createAssignmentService(supabase: SupabaseClient) {
       return data as TableAssignment;
     },
 
-    async releaseAssignment(assignmentId: string): Promise<void> {
+    async releaseAssignment(assignmentId: string, tenantId: string): Promise<void> {
       const { error } = await supabase
         .from('table_assignments')
         .update({ ended_at: new Date().toISOString() })
         .eq('id', assignmentId)
+        .eq('tenant_id', tenantId)
         .is('ended_at', null);
 
       if (error) throw new ServiceError('Erreur lors de la liberation', 'INTERNAL');

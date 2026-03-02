@@ -24,14 +24,14 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
 
   return (
     <TabsContent value="contact" className="mt-0">
-      <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+      <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-green-50 rounded-lg">
             <MapPin className="h-5 w-5 text-green-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">{t('contactInfo')}</h2>
-            <p className="text-sm text-neutral-500">{t('addressAndContact')}</p>
+            <h2 className="text-lg font-semibold text-app-text">{t('contactInfo')}</h2>
+            <p className="text-sm text-app-text-secondary">{t('addressAndContact')}</p>
           </div>
         </div>
 

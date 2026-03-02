@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Coins, CreditCard, Banknote, X, ArrowLeft } from 'lucide-react';
+import { Loader2, Coins, CreditCard, Banknote, X, ArrowLeft, Delete } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
@@ -33,7 +33,8 @@ interface PaymentModalProps {
 type PaymentMethod = 'cash' | 'card' | 'mobile_money';
 
 const TIP_AMOUNTS = [1000, 2000, 5000] as const;
-const NUMPAD_KEYS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '00', 'C'] as const;
+// Standard POS keypad: 4 columns — digits + backspace/clear
+const NUMPAD_KEYS = ['1', '2', '3', '⌫', '4', '5', '6', 'C', '7', '8', '9', '00', '0'] as const;
 
 // ─── Component ──────────────────────────────────
 
@@ -87,6 +88,8 @@ export default function PaymentModal({
   const handleKeypadPress = useCallback((key: string) => {
     if (key === 'C') {
       setAmountReceived('');
+    } else if (key === '⌫') {
+      setAmountReceived((prev) => prev.slice(0, -1));
     } else {
       setAmountReceived((prev) => prev + key);
     }
@@ -153,7 +156,7 @@ export default function PaymentModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-500 hover:text-white transition-colors"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-secondary hover:text-white transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
@@ -282,7 +285,7 @@ export default function PaymentModal({
                 className={cn(
                   'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all',
                   !showCustomTip && tipFixed === 0
-                    ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:bg-white/[0.06]',
                 )}
               >
@@ -300,7 +303,7 @@ export default function PaymentModal({
                   className={cn(
                     'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all tabular-nums',
                     !showCustomTip && tipFixed === amount
-                      ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                      ? 'border-accent/40 bg-accent/10 text-accent'
                       : 'border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:bg-white/[0.06]',
                   )}
                 >
@@ -316,7 +319,7 @@ export default function PaymentModal({
                 className={cn(
                   'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all',
                   showCustomTip
-                    ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-white/[0.08] bg-white/[0.03] text-neutral-400 hover:bg-white/[0.06]',
                 )}
               >
@@ -329,7 +332,7 @@ export default function PaymentModal({
                 placeholder="0"
                 value={customTip}
                 onChange={(e) => setCustomTip(e.target.value)}
-                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-base font-bold text-white placeholder:text-neutral-600 outline-none focus:border-[#CCFF00]/30"
+                className="w-full rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2 text-base font-bold text-white placeholder:text-neutral-600 outline-none focus:border-accent/30"
               />
             )}
           </div>
@@ -363,7 +366,7 @@ export default function PaymentModal({
                 className={cn(
                   'flex items-center justify-center gap-1.5 rounded-lg border p-2 min-h-[44px] transition-all',
                   method === pm.key
-                    ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-white/[0.08] bg-white/[0.03] text-neutral-500 hover:bg-white/[0.06] hover:text-neutral-300',
                 )}
               >
@@ -385,7 +388,7 @@ export default function PaymentModal({
               className={cn(
                 'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all',
                 !showCustomTip && tipFixed === 0
-                  ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                  ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-white/[0.08] bg-white/[0.03] text-neutral-400',
               )}
             >
@@ -403,7 +406,7 @@ export default function PaymentModal({
                 className={cn(
                   'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all tabular-nums',
                   !showCustomTip && tipFixed === amount
-                    ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                    ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-white/[0.08] bg-white/[0.03] text-neutral-400',
                 )}
               >
@@ -419,7 +422,7 @@ export default function PaymentModal({
               className={cn(
                 'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all',
                 showCustomTip
-                  ? 'border-[#CCFF00]/40 bg-[#CCFF00]/10 text-[#CCFF00]'
+                  ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-white/[0.08] bg-white/[0.03] text-neutral-400',
               )}
             >
@@ -441,9 +444,9 @@ export default function PaymentModal({
             </div>
           )}
 
-          {/* Cash: Numpad — fills available space */}
+          {/* Cash: Numpad — 4-column POS standard layout */}
           {method === 'cash' && (
-            <div className="flex-1 min-h-0 grid grid-cols-3 grid-rows-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+            <div className="flex-1 min-h-0 grid grid-cols-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               {NUMPAD_KEYS.map((key) => (
                 <button
                   key={key}
@@ -452,10 +455,20 @@ export default function PaymentModal({
                   className={cn(
                     'flex items-center justify-center rounded-lg border border-white/[0.08] bg-white/[0.04] text-lg sm:text-xl font-bold text-neutral-200 transition-all active:scale-95 hover:bg-white/[0.08]',
                     key === 'C' && 'text-red-400',
+                    key === '⌫' && 'text-amber-400',
+                    key === '0' && 'col-span-2',
                   )}
-                  aria-label={key === 'C' ? t('numpadClear') : key}
+                  aria-label={
+                    key === 'C' ? t('numpadClear') : key === '⌫' ? t('numpadBackspace') : key
+                  }
                 >
-                  {key === 'C' ? <X className="h-4 w-4 sm:h-5 sm:w-5" /> : key}
+                  {key === 'C' ? (
+                    <X className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : key === '⌫' ? (
+                    <Delete className="h-4 w-4 sm:h-5 sm:w-5" />
+                  ) : (
+                    key
+                  )}
                 </button>
               ))}
             </div>
@@ -508,7 +521,7 @@ export default function PaymentModal({
               {t('cancel')}
             </button>
             <Button
-              variant="lime"
+              variant="default"
               onClick={handleProcessPayment}
               disabled={!isValid() || isProcessing}
               className="flex-1 rounded-lg py-2.5 min-h-[44px] text-sm font-bold"

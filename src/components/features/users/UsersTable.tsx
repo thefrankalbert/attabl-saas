@@ -39,8 +39,8 @@ export default function UsersTable({
   const locale = useLocale();
 
   return (
-    <div className="bg-white border border-neutral-100 rounded-xl overflow-hidden">
-      <div className="divide-y divide-neutral-100">
+    <div className="bg-app-card border border-app-border rounded-xl overflow-hidden">
+      <div className="divide-y divide-app-border">
         {users.map((user) => {
           const roleConfig = getRoleConfig(user.role, t);
           const RoleIcon = roleConfig.icon;
@@ -48,8 +48,8 @@ export default function UsersTable({
             <div
               key={user.id}
               className={cn(
-                'p-4 flex items-center justify-between hover:bg-neutral-50 transition-colors',
-                !user.is_active && 'opacity-60 bg-neutral-50',
+                'p-4 flex items-center justify-between hover:bg-app-hover transition-colors',
+                !user.is_active && 'opacity-60 bg-app-elevated',
               )}
             >
               <div className="flex items-center gap-4">
@@ -61,14 +61,14 @@ export default function UsersTable({
                 </Avatar>
                 <div>
                   <div className="flex items-center gap-2">
-                    <p className="font-medium text-neutral-900">{user.full_name}</p>
+                    <p className="font-medium text-app-text">{user.full_name}</p>
                     {!user.is_active && (
                       <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">
                         {t('inactive')}
                       </Badge>
                     )}
                   </div>
-                  <p className="text-sm text-neutral-500">{user.email}</p>
+                  <p className="text-sm text-app-text-secondary">{user.email}</p>
                 </div>
               </div>
 
@@ -84,7 +84,7 @@ export default function UsersTable({
                   {roleConfig.label}
                 </div>
 
-                <div className="hidden md:block text-xs text-neutral-400">
+                <div className="hidden md:block text-xs text-app-text-muted">
                   {user.last_login_at || user.last_login ? (
                     <span className="flex items-center gap-1">
                       <Activity className="w-3 h-3" />{' '}
@@ -138,7 +138,7 @@ export default function UsersTable({
           );
         })}
         {users.length === 0 && (
-          <div className="p-12 text-center text-neutral-500">{t('emptyState')}</div>
+          <div className="p-12 text-center text-app-text-secondary">{t('emptyState')}</div>
         )}
       </div>
     </div>

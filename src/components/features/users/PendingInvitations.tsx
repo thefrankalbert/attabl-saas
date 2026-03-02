@@ -35,12 +35,12 @@ export default function PendingInvitations({
       <h2 className="text-lg font-semibold tracking-tight">{t('pendingInvitationsTitle')}</h2>
 
       {loadingInvitations ? (
-        <div className="flex items-center justify-center py-8 text-neutral-400">
+        <div className="flex items-center justify-center py-8 text-app-text-muted">
           <Loader2 className="w-5 h-5 animate-spin mr-2" />
           {tc('loading')}
         </div>
       ) : pendingOnly.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-neutral-300 p-8 text-center text-neutral-500">
+        <div className="rounded-xl border border-dashed border-app-border p-8 text-center text-app-text-secondary">
           {t('noPendingInvitations')}
         </div>
       ) : (
@@ -51,14 +51,14 @@ export default function PendingInvitations({
             return (
               <div
                 key={invitation.id}
-                className="rounded-xl border border-dashed border-neutral-300 p-4"
+                className="rounded-xl border border-dashed border-app-border p-4"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3">
-                    <Mail className="w-5 h-5 text-neutral-400 mt-0.5 shrink-0" />
+                    <Mail className="w-5 h-5 text-app-text-muted mt-0.5 shrink-0" />
                     <div className="space-y-1">
-                      <p className="font-medium text-neutral-900">{invitation.email}</p>
-                      <div className="flex items-center gap-3 text-xs text-neutral-500">
+                      <p className="font-medium text-app-text">{invitation.email}</p>
+                      <div className="flex items-center gap-3 text-xs text-app-text-secondary">
                         <div
                           className={cn(
                             'px-2 py-0.5 rounded-full font-medium flex items-center gap-1',
@@ -95,7 +95,7 @@ export default function PendingInvitations({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-600 hover:bg-red-50"
+                      className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-600 hover:bg-red-500/10"
                       onClick={() => onCancel(invitation.id)}
                       disabled={cancellingId === invitation.id}
                     >
