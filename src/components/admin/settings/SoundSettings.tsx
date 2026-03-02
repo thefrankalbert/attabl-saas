@@ -256,11 +256,11 @@ export function SoundSettings({
               disabled={isLocked}
               className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left group ${
                 isSelected
-                  ? 'border-amber-400 bg-amber-50 ring-1 ring-amber-200'
+                  ? 'border-amber-500/40 bg-amber-500/10 ring-1 ring-amber-500/20'
                   : isLocked
                     ? 'border-app-border bg-app-bg/50 opacity-60 cursor-not-allowed'
                     : isCustom
-                      ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300 cursor-pointer'
+                      ? 'border-purple-200 bg-purple-500/5 hover:border-purple-500/30 cursor-pointer'
                       : 'border-app-border bg-app-card hover:border-app-border-hover cursor-pointer'
               }`}
             >
@@ -331,7 +331,7 @@ export function SoundSettings({
                       handleDeleteCustomSound();
                     }
                   }}
-                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />
                 </div>
@@ -383,7 +383,7 @@ export function SoundSettings({
           </p>
         </div>
       ) : (
-        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 text-sm">
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-500 text-sm">
           <Crown className="w-4 h-4 flex-shrink-0" />
           <span>{t('customSoundPremiumOnly')}</span>
         </div>

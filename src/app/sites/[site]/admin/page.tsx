@@ -22,7 +22,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   if (tenantError || !tenant) {
     return (
       <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+        <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
           <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div>
             <p className="font-medium text-yellow-800">Configuration requise</p>
@@ -188,6 +188,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       initialRecentOrders={initialRecentOrders}
       initialPopularItems={initialPopularItems}
       currency={tenant.currency}
+      establishmentType={tenant.establishment_type ?? 'restaurant'}
     />
   );
 }

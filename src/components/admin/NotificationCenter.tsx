@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,20 +71,24 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative" aria-label={t('title')}>
-          <Bell className="h-5 w-5" />
+        <button
+          type="button"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation relative"
+          aria-label={t('title')}
+        >
+          <Bell className="w-4 h-4" />
           {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+            <span className="absolute top-1 right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-status-error px-0.5 text-[9px] font-bold text-white">
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
-        </Button>
+        </button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent align="end" className="w-80 p-0">
+      <DropdownMenuContent align="end" className="w-80 p-0 bg-app-card border border-app-border">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-4 py-3">
-          <h3 className="text-sm font-semibold">{t('title')}</h3>
+        <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
+          <h3 className="text-sm font-semibold text-app-text">{t('title')}</h3>
           {unreadCount > 0 && (
             <button
               onClick={() => markAllAsRead()}
@@ -98,9 +101,9 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
         </div>
 
         {/* List */}
-        <div className="max-h-80 overflow-y-auto">
+        <div className="max-h-80 overflow-y-auto divide-y divide-app-border">
           {notifications.length === 0 ? (
-            <div className="py-8 text-center text-sm text-app-text-secondary">{t('empty')}</div>
+            <div className="py-8 text-center text-sm text-app-text-muted">{t('empty')}</div>
           ) : (
             notifications.map((notification) => {
               const Icon = TYPE_ICONS[notification.type];
@@ -109,8 +112,8 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
                   key={notification.id}
                   onClick={() => handleClick(notification)}
                   className={cn(
-                    'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-app-bg',
-                    !notification.read && 'bg-blue-50/50',
+                    'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-app-hover',
+                    !notification.read && 'bg-accent/5',
                   )}
                 >
                   <Icon className={cn('mt-0.5 h-4 w-4 shrink-0', TYPE_COLORS[notification.type])} />
@@ -119,17 +122,19 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
                       <p
                         className={cn(
                           'text-sm truncate',
-                          !notification.read ? 'font-medium text-app-text' : 'text-app-text',
+                          !notification.read
+                            ? 'font-medium text-app-text'
+                            : 'text-app-text-secondary',
                         )}
                       >
                         {notification.title}
                       </p>
                       {!notification.read && (
-                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-blue-500" />
+                        <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-accent" />
                       )}
                     </div>
                     {notification.body && (
-                      <p className="mt-0.5 text-xs text-app-text-secondary line-clamp-2">
+                      <p className="mt-0.5 text-xs text-app-text-muted line-clamp-2">
                         {notification.body}
                       </p>
                     )}

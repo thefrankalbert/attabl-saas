@@ -37,7 +37,9 @@ export default function StatsCard({
           <span
             className={cn(
               'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold',
-              trend.isPositive ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500',
+              trend.isPositive
+                ? 'bg-status-success/10 text-status-success'
+                : 'bg-status-error/10 text-status-error',
             )}
           >
             {trend.isPositive ? (

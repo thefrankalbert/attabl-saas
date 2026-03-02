@@ -186,7 +186,7 @@ export default function AnnouncementsClient({
           >
             <div className="flex justify-between items-start mb-3">
               <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-50 text-blue-600' : 'bg-app-bg text-app-text-muted'}`}
+                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-500/10 text-blue-500' : 'bg-app-bg text-app-text-muted'}`}
               >
                 <Megaphone className="w-5 h-5" />
               </div>
@@ -234,7 +234,7 @@ export default function AnnouncementsClient({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                   onClick={() => handleDelete(ann.id)}
                 >
                   <Trash2 className="w-4 h-4" />

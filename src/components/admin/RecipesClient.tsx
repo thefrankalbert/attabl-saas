@@ -348,7 +348,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                       </div>
                       <button
                         onClick={() => removeLine(idx)}
-                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                        className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>

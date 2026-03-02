@@ -306,7 +306,7 @@ export default function ItemsClient({
                   className={cn(
                     'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
                     item.is_available
-                      ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                       : 'bg-app-bg text-app-text-secondary border-app-border',
                   )}
                 >
@@ -330,7 +330,7 @@ export default function ItemsClient({
                   className={cn(
                     'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
                     item.is_featured
-                      ? 'text-amber-500 bg-amber-50'
+                      ? 'text-amber-500 bg-amber-500/10'
                       : 'text-app-text-muted hover:text-amber-500 hover:bg-app-bg',
                   )}
                 >
@@ -355,7 +355,7 @@ export default function ItemsClient({
                       e.stopPropagation();
                       handleDelete(item);
                     }}
-                    className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-500/10"
                   >
                     {t('delete')}
                   </Button>
@@ -471,7 +471,7 @@ export default function ItemsClient({
                       {selectedItem.allergens.map((a) => (
                         <span
                           key={a}
-                          className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 border border-orange-100"
+                          className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20"
                         >
                           {ta(a)}
                         </span>
@@ -494,7 +494,7 @@ export default function ItemsClient({
                     className={cn(
                       'px-2.5 py-1 rounded-full text-xs font-semibold border',
                       selectedItem.is_available
-                        ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',
                     )}
                   >
@@ -511,7 +511,7 @@ export default function ItemsClient({
                     )}
                   </span>
                   {selectedItem.is_featured && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-100 inline-flex items-center gap-1">
+                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
                       <Star className="w-3 h-3 fill-current" />
                       {t('featured')}
                     </span>
@@ -642,7 +642,7 @@ export default function ItemsClient({
                       className={cn(
                         'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
                         selected
-                          ? 'bg-orange-50 text-orange-700 border-orange-200'
+                          ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                           : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
                       )}
                     >

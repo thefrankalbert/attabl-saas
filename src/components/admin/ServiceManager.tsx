@@ -136,7 +136,7 @@ export default function ServiceManager({ tenantId }: Props) {
                       key={table.id}
                       className={`rounded-lg border p-4 transition-colors ${
                         assignment
-                          ? 'border-emerald-200 bg-emerald-50'
+                          ? 'border-emerald-500/20 bg-emerald-500/10'
                           : 'border-app-border bg-app-card'
                       }`}
                     >

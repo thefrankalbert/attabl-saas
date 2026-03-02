@@ -209,7 +209,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                   onClick={() => handleDelete(ad.id)}
                 >
                   <Trash2 className="w-4 h-4" />

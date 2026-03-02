@@ -31,27 +31,47 @@ function createCacheClient() {
  * Cache key: `['tenant-config', slug]`
  * Revalidation: 60 seconds OR on-demand via `revalidateTag('tenant-config')`
  */
-export const getCachedTenant = unstable_cache(
+const TENANT_SELECT =
+  'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, created_at';
+
+const getCachedTenantInner = unstable_cache(
   async (slug: string) => {
     const supabase = createCacheClient();
-    const { data, error } = await supabase
-      .from('tenants')
-      .select(
-        'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, created_at',
-      )
-      .eq('slug', slug)
-      .single();
 
-    if (error) {
-      logger.error('getCachedTenant: failed to fetch tenant', error, { slug });
-      return null;
+    // Retry once to handle transient network failures
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const { data, error } = await supabase
+        .from('tenants')
+        .select(TENANT_SELECT)
+        .eq('slug', slug)
+        .single();
+
+      if (!error) return data;
+
+      if (attempt === 0) {
+        logger.warn('getCachedTenant: retrying after transient failure', { slug });
+      } else {
+        // Throw to prevent unstable_cache from caching a failure for 60s
+        throw new Error(`getCachedTenant failed for "${slug}": ${error.message}`);
+      }
     }
 
-    return data;
+    // Unreachable, but satisfies TS
+    throw new Error('getCachedTenant: unexpected code path');
   },
   ['tenant-config'],
   { revalidate: 60, tags: ['tenant-config'] },
 );
+
+/** Cached tenant config. Returns null on failure instead of crashing the page. */
+export async function getCachedTenant(slug: string) {
+  try {
+    return await getCachedTenantInner(slug);
+  } catch (err) {
+    logger.error('getCachedTenant: all attempts failed', err, { slug });
+    return null;
+  }
+}
 
 /**
  * Cached tenant lookup by custom domain.

@@ -47,7 +47,14 @@ function AdminLayoutInner({
           Skip to content
         </a>
 
-        <main id="main-content" className={cn('flex-1 overflow-y-auto', isDevMode && 'pt-6')}>
+        <main
+          id="main-content"
+          className={cn(
+            'flex-1 min-h-0',
+            isHome ? 'overflow-hidden' : 'overflow-y-auto',
+            isDevMode && 'pt-6',
+          )}
+        >
           {children}
         </main>
 

@@ -26,16 +26,21 @@ interface TileConfig {
   labelKey: string;
   path: string;
   featured?: boolean;
+  secondaryFeatured?: boolean;
 }
 
 // ─── Tile configurations per establishment type ─────────
-// Design language: Square-like monochrome. NO colored icon backgrounds.
-// Only the featured POS tile gets the lime accent.
 
 const RESTAURANT_TILES: TileConfig[] = [
   { id: 'pos', icon: Laptop, labelKey: 'navPos', path: '/pos', featured: true },
+  {
+    id: 'kitchen',
+    icon: ChefHat,
+    labelKey: 'navKitchen',
+    path: '/kitchen',
+    secondaryFeatured: true,
+  },
   { id: 'orders', icon: ShoppingBag, labelKey: 'navOrders', path: '/orders' },
-  { id: 'kitchen', icon: ChefHat, labelKey: 'navKitchen', path: '/kitchen' },
   { id: 'menus', icon: ClipboardList, labelKey: 'navMenus', path: '/menus' },
   { id: 'inventory', icon: Package, labelKey: 'navInventory', path: '/inventory' },
   { id: 'service', icon: UserCheck, labelKey: 'navService', path: '/service' },
@@ -48,8 +53,14 @@ const RESTAURANT_TILES: TileConfig[] = [
 
 const HOTEL_TILES: TileConfig[] = [
   { id: 'pos', icon: Laptop, labelKey: 'navPos', path: '/pos', featured: true },
+  {
+    id: 'kitchen',
+    icon: ChefHat,
+    labelKey: 'navKitchen',
+    path: '/kitchen',
+    secondaryFeatured: true,
+  },
   { id: 'orders', icon: ShoppingBag, labelKey: 'navOrders', path: '/orders' },
-  { id: 'kitchen', icon: ChefHat, labelKey: 'navKitchen', path: '/kitchen' },
   { id: 'menus', icon: ClipboardList, labelKey: 'navMenus', path: '/menus' },
   { id: 'inventory', icon: Package, labelKey: 'navInventory', path: '/inventory' },
   { id: 'service', icon: UserCheck, labelKey: 'navService', path: '/service' },
@@ -83,8 +94,14 @@ const BOULANGERIE_TILES: TileConfig[] = [
 
 const DARK_KITCHEN_TILES: TileConfig[] = [
   { id: 'pos', icon: Laptop, labelKey: 'navPos', path: '/pos', featured: true },
+  {
+    id: 'kitchen',
+    icon: ChefHat,
+    labelKey: 'navKitchen',
+    path: '/kitchen',
+    secondaryFeatured: true,
+  },
   { id: 'orders', icon: ShoppingBag, labelKey: 'navOrders', path: '/orders' },
-  { id: 'kitchen', icon: ChefHat, labelKey: 'navKitchen', path: '/kitchen' },
   { id: 'menus', icon: ClipboardList, labelKey: 'navMenus', path: '/menus' },
   { id: 'inventory', icon: Package, labelKey: 'navInventory', path: '/inventory' },
   { id: 'recipes', icon: BookOpenCheck, labelKey: 'navRecipes', path: '/recipes' },
@@ -104,8 +121,14 @@ const FOOD_TRUCK_TILES: TileConfig[] = [
 
 const QUICK_SERVICE_TILES: TileConfig[] = [
   { id: 'pos', icon: Laptop, labelKey: 'navPos', path: '/pos', featured: true },
+  {
+    id: 'kitchen',
+    icon: ChefHat,
+    labelKey: 'navKitchen',
+    path: '/kitchen',
+    secondaryFeatured: true,
+  },
   { id: 'orders', icon: ShoppingBag, labelKey: 'navOrders', path: '/orders' },
-  { id: 'kitchen', icon: ChefHat, labelKey: 'navKitchen', path: '/kitchen' },
   { id: 'menus', icon: ClipboardList, labelKey: 'navMenus', path: '/menus' },
   { id: 'inventory', icon: Package, labelKey: 'navInventory', path: '/inventory' },
   { id: 'reports', icon: BarChart3, labelKey: 'navReports', path: '/reports' },
@@ -134,40 +157,78 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
   const t = useTranslations('sidebar');
   const tiles = TILE_MAP[establishmentType || 'restaurant'] || RESTAURANT_TILES;
 
+  const featuredTiles = tiles.filter((tile) => tile.featured || tile.secondaryFeatured);
+  const regularTiles = tiles.filter((tile) => !tile.featured && !tile.secondaryFeatured);
+
+  // Calculate grid columns for regular tiles based on count
+  const cols =
+    regularTiles.length <= 6 ? 3 : regularTiles.length <= 8 ? 4 : regularTiles.length <= 12 ? 3 : 4;
+
   return (
-    <div className="flex-1 grid gap-3 auto-rows-fr grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-      {tiles.map((tile) => {
-        const Icon = tile.icon;
-        return (
-          <Link
-            key={tile.id}
-            href={`${basePath}${tile.path}`}
-            className={cn(
-              'relative flex flex-col items-center justify-center gap-2.5',
-              'rounded-xl border transition-colors duration-150',
-              'active:scale-[0.97] touch-manipulation min-h-[100px]',
-              tile.featured
-                ? 'col-span-2 row-span-2 bg-accent border-accent/20 hover:border-accent/40'
-                : 'bg-app-card border-app-border hover:border-app-border-hover hover:bg-app-hover',
-            )}
-          >
-            <Icon
-              className={cn(
-                tile.featured ? 'w-8 h-8 text-accent-text' : 'w-5 h-5 text-app-text-secondary',
-              )}
-              strokeWidth={1.6}
-            />
-            <span
-              className={cn(
-                'font-semibold text-center leading-tight px-2',
-                tile.featured ? 'text-sm text-accent-text' : 'text-xs text-app-text',
-              )}
+    <div className="flex-1 flex flex-col md:flex-row gap-3 min-h-0 overflow-hidden">
+      {/* ━━━ Left: Featured tiles (POS + Kitchen) — full height ━━━ */}
+      {featuredTiles.length > 0 && (
+        <div className="shrink-0 flex md:flex-col gap-3 md:w-[200px] lg:w-[220px]">
+          {featuredTiles.map((tile) => {
+            const Icon = tile.icon;
+            return (
+              <Link
+                key={tile.id}
+                href={`${basePath}${tile.path}`}
+                className={cn(
+                  'flex-1 flex flex-col items-center justify-center gap-2.5',
+                  'rounded-xl border transition-colors duration-150',
+                  'active:scale-[0.97] touch-manipulation min-h-[80px]',
+                  tile.featured
+                    ? 'bg-accent border-accent/20 hover:border-accent/40'
+                    : 'bg-accent/10 border-accent/15 hover:border-accent/25 hover:bg-accent/15',
+                )}
+              >
+                <Icon
+                  className={cn(
+                    'w-7 h-7 sm:w-8 sm:h-8',
+                    tile.featured ? 'text-accent-text' : 'text-accent',
+                  )}
+                  strokeWidth={1.6}
+                />
+                <span
+                  className={cn(
+                    'text-sm font-semibold text-center leading-tight px-2',
+                    tile.featured ? 'text-accent-text' : 'text-accent',
+                  )}
+                >
+                  {t(tile.labelKey)}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ━━━ Right: Regular tiles grid — fills remaining space ━━━ */}
+      <div
+        className={cn(
+          'flex-1 grid gap-3 min-h-0 auto-rows-fr',
+          cols === 3 && 'grid-cols-3',
+          cols === 4 && 'grid-cols-3 sm:grid-cols-4',
+        )}
+      >
+        {regularTiles.map((tile) => {
+          const Icon = tile.icon;
+          return (
+            <Link
+              key={tile.id}
+              href={`${basePath}${tile.path}`}
+              className="relative flex flex-col items-center justify-center gap-2 rounded-xl border border-app-border bg-app-card hover:border-app-border-hover hover:bg-app-hover transition-colors duration-150 active:scale-[0.97] touch-manipulation"
             >
-              {t(tile.labelKey)}
-            </span>
-          </Link>
-        );
-      })}
+              <Icon className="w-5 h-5 text-app-text-secondary" strokeWidth={1.6} />
+              <span className="text-xs font-semibold text-center leading-tight px-2 text-app-text">
+                {t(tile.labelKey)}
+              </span>
+            </Link>
+          );
+        })}
+      </div>
     </div>
   );
 }

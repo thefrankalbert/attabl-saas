@@ -2,33 +2,35 @@
 
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-
-/**
- * Pages that need immersive mode (no padding, no breadcrumbs, no notification bell).
- * The KDS and POS need maximum screen real estate.
- */
-const IMMERSIVE_SEGMENTS = ['/kitchen', '/pos'];
+import { isImmersivePage } from '@/lib/constants';
 
 interface AdminContentWrapperProps {
   children: React.ReactNode;
-  /** Content to show only on non-immersive pages (breadcrumbs, notification bell, etc.) */
   chrome?: React.ReactNode;
 }
 
 export function AdminContentWrapper({ children, chrome }: AdminContentWrapperProps) {
   const pathname = usePathname();
   const prefersReduced = useReducedMotion();
-  const isImmersive = IMMERSIVE_SEGMENTS.some((seg) => pathname?.includes(`/admin${seg}`));
+  const isImmersive = isImmersivePage(pathname);
 
-  // Immersive pages (KDS/POS) — no transition, instant render
+  // Check if this is the home/dashboard page (path ends with /admin or /admin/)
+  const isHome = /\/admin\/?$/.test(pathname ?? '');
+
+  // Immersive pages (KDS/POS) — no padding, no animation
   if (isImmersive) {
     return <div className="h-full">{children}</div>;
+  }
+
+  // Home page — minimal wrapper, dark bg handled by DashboardClient
+  if (isHome) {
+    return <div className="h-full w-full flex flex-col">{children}</div>;
   }
 
   const duration = prefersReduced ? 0 : 0.2;
 
   return (
-    <div className="h-full w-full px-4 pb-6 sm:px-6 md:px-8 lg:px-10 lg:py-8 pt-16 flex flex-col">
+    <div className="h-full w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 flex flex-col">
       {chrome}
       <AnimatePresence mode="wait">
         <motion.div

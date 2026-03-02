@@ -118,11 +118,15 @@ export async function proxy(request: NextRequest) {
     /^\/sites\/[^/]+\/admin(\/|$)/.test(pathname);
 
   if (isProtectedPath) {
+    // Dev bypass: skip auth check in development when explicitly enabled
+    const devBypass =
+      process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true';
+
     const {
       data: { session },
     } = await supabase.auth.getSession();
 
-    if (!session?.user) {
+    if (!session?.user && !devBypass) {
       // Rediriger vers login avec URL de retour
       // Pour les subdomains, rediriger vers le domaine principal pour éviter les 404
       const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
