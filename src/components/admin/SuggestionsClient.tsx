@@ -78,19 +78,19 @@ export default function SuggestionsClient({
         value: 'pairing',
         label: t('pairing'),
         emoji: '\uD83C\uDF77',
-        color: 'bg-purple-100 text-purple-700',
+        color: 'bg-purple-500/10 text-purple-500',
       },
       {
         value: 'upsell',
         label: t('upsell'),
         emoji: '\uD83D\uDCA1',
-        color: 'bg-amber-100 text-amber-700',
+        color: 'bg-amber-500/10 text-amber-500',
       },
       {
         value: 'alternative',
         label: t('alternativeItem'),
         emoji: '\uD83D\uDD04',
-        color: 'bg-blue-100 text-blue-700',
+        color: 'bg-blue-500/10 text-blue-500',
       },
     ];
 

@@ -120,7 +120,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-medium',
                 row.original.is_active
-                  ? 'bg-green-100 text-green-700'
+                  ? 'bg-green-500/10 text-green-500'
                   : 'bg-app-bg text-app-text-secondary',
               )}
             >
@@ -354,7 +354,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     className={cn(
                       'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
                       supplier.is_active
-                        ? 'bg-green-100 text-green-700'
+                        ? 'bg-green-500/10 text-green-500'
                         : 'bg-app-bg text-app-text-secondary',
                     )}
                   >

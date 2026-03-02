@@ -63,8 +63,7 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
 
   const { name, email, company, date, message } = validatedFields.data;
 
-  // HERE: Integration with Email Provider (Resend, Nodemailer, etc.)
-  // For now, we log and simulate a successful email sending.
+  // TODO: Integration with Email Provider (Resend, Nodemailer, etc.)
   // In production, use: await resend.emails.send({ ... })
 
   logger.info('New appointment request', {
@@ -74,11 +73,13 @@ export async function submitContactForm(prevState: ContactState, formData: FormD
     messageLength: message.length,
   });
 
-  // Simulate delay
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  logger.warn('Contact form submission received but email sending is not configured', {
+    name,
+    email,
+  });
 
   return {
     success: true,
-    message: 'Votre demande de rendez-vous a été envoyée ! Un expert vous contactera sous 24h.',
+    message: 'Votre demande a été enregistrée. Notre équipe vous contactera bientôt.',
   };
 }

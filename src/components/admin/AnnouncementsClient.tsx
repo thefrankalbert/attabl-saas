@@ -191,7 +191,7 @@ export default function AnnouncementsClient({
                 <Megaphone className="w-5 h-5" />
               </div>
               <div
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-100 text-emerald-700' : 'bg-app-bg text-app-text-secondary'}`}
+                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-app-bg text-app-text-secondary'}`}
               >
                 {ann.is_active ? t('statusActive') : t('statusInactive')}
               </div>

@@ -123,11 +123,11 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                             <span
                               className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                                 order.status === 'pending'
-                                  ? 'bg-amber-100 text-amber-700'
+                                  ? 'bg-amber-500/10 text-amber-500'
                                   : order.status === 'preparing'
-                                    ? 'bg-purple-100 text-purple-700'
+                                    ? 'bg-purple-500/10 text-purple-500'
                                     : order.status === 'ready'
-                                      ? 'bg-emerald-100 text-emerald-700'
+                                      ? 'bg-emerald-500/10 text-emerald-500'
                                       : 'bg-app-elevated text-app-text-secondary'
                               }`}
                             >

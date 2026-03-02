@@ -288,7 +288,8 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                             'bg-green-500/10 text-green-500 border border-green-500/20',
                           role === 'chef' &&
                             'bg-orange-500/10 text-orange-500 border border-orange-500/20',
-                          role === 'waiter' && 'bg-cyan-50 text-cyan-700 border border-cyan-200',
+                          role === 'waiter' &&
+                            'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20',
                         )}
                       >
                         {roleLabel(role)}
