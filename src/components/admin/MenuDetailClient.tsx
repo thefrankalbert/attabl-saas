@@ -207,195 +207,201 @@ export default function MenuDetailClient({
     items.filter((item) => item.category_id === categoryId);
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-app-text-secondary">
-        <Link
-          href={`/sites/${tenantSlug}/admin/menus`}
-          className="hover:text-app-text transition-colors flex items-center gap-1"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t('breadcrumbMenus')}
-        </Link>
-        <span>/</span>
-        <span className="text-app-text font-medium">{menu.name}</span>
-      </div>
-
-      {/* Menu info header */}
-      <div className="bg-app-card rounded-xl border border-app-border p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-xl font-bold text-app-text tracking-tight">{menu.name}</h1>
-            {menu.name_en && <p className="text-sm text-app-text-muted">{menu.name_en}</p>}
-            {menu.description && (
-              <p className="text-sm text-app-text-secondary mt-2">{menu.description}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-3">
-            {menu.venue && (
-              <Badge variant="outline" className="gap-1">
-                <Building2 className="w-3 h-3" />
-                {menu.venue.name}
-              </Badge>
-            )}
-            <button
-              onClick={toggleMenuActive}
-              className={cn(
-                'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
-                menu.is_active
-                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                  : 'bg-app-bg text-app-text-secondary border-app-border',
-              )}
-            >
-              {menu.is_active ? (
-                <>
-                  <ToggleRight className="w-3 h-3 inline mr-1" />
-                  {t('active')}
-                </>
-              ) : (
-                <>
-                  <ToggleLeft className="w-3 h-3 inline mr-1" />
-                  {t('inactive')}
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Categories section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-app-text flex items-center gap-2">
-            <Folder className="w-4 h-4 text-app-text-muted" />
-            {t('categoriesCount', { count: categories.length })}
-          </h2>
-          <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> {t('newCategory')}
-          </Button>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="shrink-0 space-y-4 sm:space-y-6">
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 text-sm text-app-text-secondary">
+          <Link
+            href={`/sites/${tenantSlug}/admin/menus`}
+            className="hover:text-app-text transition-colors flex items-center gap-1"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('breadcrumbMenus')}
+          </Link>
+          <span>/</span>
+          <span className="text-app-text font-medium">{menu.name}</span>
         </div>
 
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2].map((i) => (
-              <div
-                key={i}
-                className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
-              />
-            ))}
-          </div>
-        ) : categories.length > 0 ? (
-          <div className="space-y-4">
-            {categories.map((cat) => {
-              const catItems = getItemsForCategory(cat.id);
-              return (
-                <div key={cat.id} className="space-y-2">
-                  {/* Category header */}
-                  <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group">
-                    <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-                      <Folder className="w-4 h-4 text-app-text-secondary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-app-text text-sm">{cat.name}</p>
-                      {cat.name_en && <p className="text-xs text-app-text-muted">{cat.name_en}</p>}
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-                      <Utensils className="w-3.5 h-3.5" />
-                      <span className="font-medium">
-                        {t('dishCount', { count: catItems.length })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditCategoryModal(cat)}
-                        className="text-xs h-8"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteCategory(cat)}
-                        className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Items in this category */}
-                  {catItems.length > 0 && (
-                    <div className="ml-6 space-y-1">
-                      {catItems.map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center gap-3 p-3 bg-app-bg rounded-lg hover:bg-app-bg/80 transition-colors"
-                        >
-                          <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
-                          <span className="flex-1 text-sm text-app-text font-medium truncate">
-                            {item.name}
-                          </span>
-                          <span className="text-sm font-bold text-app-text tabular-nums">
-                            {t('priceFcfa', { count: item.price })}
-                          </span>
-                          {(item.modifiers?.length ?? 0) > 0 && (
-                            <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
-                              {item.modifiers!.length} mod.
-                            </span>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingModifiersItem(item);
-                            }}
-                            className="p-1.5 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-bg transition-colors"
-                            title={t('manageModifiers')}
-                          >
-                            <Settings2 className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => toggleItemAvailable(item)}
-                            className={cn(
-                              'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
-                              item.is_available
-                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                                : 'bg-app-bg text-app-text-secondary border-app-border',
-                            )}
-                          >
-                            {item.is_available ? (
-                              <>
-                                <Check className="w-3 h-3 inline mr-0.5" />
-                                {t('stockLabel')}
-                              </>
-                            ) : (
-                              <>
-                                <X className="w-3 h-3 inline mr-0.5" />
-                                {t('exhaustedLabel')}
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
-            <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-7 h-7 text-app-text-muted" />
+        {/* Menu info header */}
+        <div className="bg-app-card rounded-xl border border-app-border p-6">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div className="space-y-1">
+              <h1 className="text-xl font-bold text-app-text tracking-tight">{menu.name}</h1>
+              {menu.name_en && <p className="text-sm text-app-text-muted">{menu.name_en}</p>}
+              {menu.description && (
+                <p className="text-sm text-app-text-secondary mt-2">{menu.description}</p>
+              )}
             </div>
-            <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
-            <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
-            <Button onClick={openNewCategoryModal} className="mt-4">
-              {t('createCategory')}
+            <div className="flex items-center gap-3">
+              {menu.venue && (
+                <Badge variant="outline" className="gap-1">
+                  <Building2 className="w-3 h-3" />
+                  {menu.venue.name}
+                </Badge>
+              )}
+              <button
+                onClick={toggleMenuActive}
+                className={cn(
+                  'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                  menu.is_active
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                    : 'bg-app-bg text-app-text-secondary border-app-border',
+                )}
+              >
+                {menu.is_active ? (
+                  <>
+                    <ToggleRight className="w-3 h-3 inline mr-1" />
+                    {t('active')}
+                  </>
+                ) : (
+                  <>
+                    <ToggleLeft className="w-3 h-3 inline mr-1" />
+                    {t('inactive')}
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        {/* Categories section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-app-text flex items-center gap-2">
+              <Folder className="w-4 h-4 text-app-text-muted" />
+              {t('categoriesCount', { count: categories.length })}
+            </h2>
+            <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
+              <Plus className="w-4 h-4" /> {t('newCategory')}
             </Button>
           </div>
-        )}
+
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
+                />
+              ))}
+            </div>
+          ) : categories.length > 0 ? (
+            <div className="space-y-4">
+              {categories.map((cat) => {
+                const catItems = getItemsForCategory(cat.id);
+                return (
+                  <div key={cat.id} className="space-y-2">
+                    {/* Category header */}
+                    <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group">
+                      <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+                        <Folder className="w-4 h-4 text-app-text-secondary" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                        {cat.name_en && (
+                          <p className="text-xs text-app-text-muted">{cat.name_en}</p>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
+                        <Utensils className="w-3.5 h-3.5" />
+                        <span className="font-medium">
+                          {t('dishCount', { count: catItems.length })}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditCategoryModal(cat)}
+                          className="text-xs h-8"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteCategory(cat)}
+                          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    {/* Items in this category */}
+                    {catItems.length > 0 && (
+                      <div className="ml-6 space-y-1">
+                        {catItems.map((item) => (
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-3 p-3 bg-app-bg rounded-lg hover:bg-app-bg/80 transition-colors"
+                          >
+                            <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
+                            <span className="flex-1 text-sm text-app-text font-medium truncate">
+                              {item.name}
+                            </span>
+                            <span className="text-sm font-bold text-app-text tabular-nums">
+                              {t('priceFcfa', { count: item.price })}
+                            </span>
+                            {(item.modifiers?.length ?? 0) > 0 && (
+                              <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
+                                {item.modifiers!.length} mod.
+                              </span>
+                            )}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingModifiersItem(item);
+                              }}
+                              className="p-1.5 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-bg transition-colors"
+                              title={t('manageModifiers')}
+                            >
+                              <Settings2 className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => toggleItemAvailable(item)}
+                              className={cn(
+                                'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
+                                item.is_available
+                                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                  : 'bg-app-bg text-app-text-secondary border-app-border',
+                              )}
+                            >
+                              {item.is_available ? (
+                                <>
+                                  <Check className="w-3 h-3 inline mr-0.5" />
+                                  {t('stockLabel')}
+                                </>
+                              ) : (
+                                <>
+                                  <X className="w-3 h-3 inline mr-0.5" />
+                                  {t('exhaustedLabel')}
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+              <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Folder className="w-7 h-7 text-app-text-muted" />
+              </div>
+              <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
+              <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
+              <Button onClick={openNewCategoryModal} className="mt-4">
+                {t('createCategory')}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Category Modal */}

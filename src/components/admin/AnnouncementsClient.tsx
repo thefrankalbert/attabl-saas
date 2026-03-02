@@ -159,97 +159,101 @@ export default function AnnouncementsClient({
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-app-text">{t('title')}</h1>
-          <p className="text-sm text-app-text-secondary">{t('subtitleClient')}</p>
+    <div className="h-full flex flex-col overflow-hidden">
+      <div className="shrink-0 space-y-4 sm:space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-app-text">{t('title')}</h1>
+            <p className="text-sm text-app-text-secondary">{t('subtitleClient')}</p>
+          </div>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            variant="default"
+            className="gap-2"
+          >
+            <Plus className="w-4 h-4" /> {t('newAnnouncement')}
+          </Button>
         </div>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          variant="default"
-          className="gap-2"
-        >
-          <Plus className="w-4 h-4" /> {t('newAnnouncement')}
-        </Button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {announcements.map((ann) => (
-          <div
-            key={ann.id}
-            className="group bg-app-card border border-app-border rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-app-border-hover"
-            onClick={() => openEdit(ann)}
-          >
-            <div className="flex justify-between items-start mb-3">
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-500/10 text-blue-500' : 'bg-app-bg text-app-text-muted'}`}
-              >
-                <Megaphone className="w-5 h-5" />
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {announcements.map((ann) => (
+            <div
+              key={ann.id}
+              className="group bg-app-card border border-app-border rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-app-border-hover"
+              onClick={() => openEdit(ann)}
+            >
+              <div className="flex justify-between items-start mb-3">
+                <div
+                  className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-500/10 text-blue-500' : 'bg-app-bg text-app-text-muted'}`}
+                >
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div
+                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-app-bg text-app-text-secondary'}`}
+                >
+                  {ann.is_active ? t('statusActive') : t('statusInactive')}
+                </div>
               </div>
-              <div
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-app-bg text-app-text-secondary'}`}
-              >
-                {ann.is_active ? t('statusActive') : t('statusInactive')}
-              </div>
-            </div>
 
-            <h3 className="font-bold text-app-text mb-2">{ann.title}</h3>
-            {ann.description && (
-              <p className="text-sm text-app-text-secondary line-clamp-3 mb-4 flex-1">
-                {ann.description}
-              </p>
-            )}
+              <h3 className="font-bold text-app-text mb-2">{ann.title}</h3>
+              {ann.description && (
+                <p className="text-sm text-app-text-secondary line-clamp-3 mb-4 flex-1">
+                  {ann.description}
+                </p>
+              )}
 
-            <div className="mt-auto space-y-4">
-              <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                <Calendar className="w-3 h-3" />
-                <span>
-                  {t('fromDate', { date: new Date(ann.start_date).toLocaleDateString(locale) })}
-                </span>
-                {ann.end_date && (
+              <div className="mt-auto space-y-4">
+                <div className="flex items-center gap-2 text-xs text-app-text-muted">
+                  <Calendar className="w-3 h-3" />
                   <span>
-                    {t('toDate', { date: new Date(ann.end_date).toLocaleDateString(locale) })}
+                    {t('fromDate', { date: new Date(ann.start_date).toLocaleDateString(locale) })}
                   </span>
-                )}
-              </div>
-
-              <div className="flex gap-2 border-t pt-4" onClick={(e) => e.stopPropagation()}>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => toggleActive(ann)}
-                >
-                  {ann.is_active ? (
-                    <EyeOff className="w-3 h-3 mr-2" />
-                  ) : (
-                    <Eye className="w-3 h-3 mr-2" />
+                  {ann.end_date && (
+                    <span>
+                      {t('toDate', { date: new Date(ann.end_date).toLocaleDateString(locale) })}
+                    </span>
                   )}
-                  {ann.is_active ? t('hide') : t('show')}
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                  onClick={() => handleDelete(ann.id)}
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                </div>
+
+                <div className="flex gap-2 border-t pt-4" onClick={(e) => e.stopPropagation()}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => toggleActive(ann)}
+                  >
+                    {ann.is_active ? (
+                      <EyeOff className="w-3 h-3 mr-2" />
+                    ) : (
+                      <Eye className="w-3 h-3 mr-2" />
+                    )}
+                    {ann.is_active ? t('hide') : t('show')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    onClick={() => handleDelete(ann.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
-        {announcements.length === 0 && (
-          <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
-            <Megaphone className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
-            <h3 className="text-sm font-semibold text-app-text">{t('noAnnouncements')}</h3>
-            <p className="text-xs text-app-text-secondary mt-1">{t('noAnnouncementsDesc')}</p>
-          </div>
-        )}
+          ))}
+          {announcements.length === 0 && (
+            <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
+              <Megaphone className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
+              <h3 className="text-sm font-semibold text-app-text">{t('noAnnouncements')}</h3>
+              <p className="text-xs text-app-text-secondary mt-1">{t('noAnnouncementsDesc')}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       <AdminModal

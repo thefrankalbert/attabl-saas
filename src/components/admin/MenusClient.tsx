@@ -87,87 +87,91 @@ export default function MenusClient({
 
   return (
     <RoleGuard permission="canManageMenus">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
-              {t('title')}
-            </h1>
-            <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4 sm:space-y-6">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
+                {t('title')}
+              </h1>
+              <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => setShowImportModal(true)}
+                variant="outline"
+                className="gap-2 rounded-xl"
+              >
+                <FileSpreadsheet className="w-4 h-4" />
+                {t('importExcel')}
+              </Button>
+              <Button
+                onClick={() => setShowPdfImportModal(true)}
+                variant="outline"
+                className="gap-2 rounded-xl"
+              >
+                <FileText className="w-4 h-4" />
+                {t('importPdf')}
+              </Button>
+              <Button
+                onClick={() => openNewMenuModal()}
+                variant="default"
+                disabled={isLimitReached}
+                className="gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                {t('newMenu')}
+              </Button>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={() => setShowImportModal(true)}
-              variant="outline"
-              className="gap-2 rounded-xl"
-            >
-              <FileSpreadsheet className="w-4 h-4" />
-              {t('importExcel')}
-            </Button>
-            <Button
-              onClick={() => setShowPdfImportModal(true)}
-              variant="outline"
-              className="gap-2 rounded-xl"
-            >
-              <FileText className="w-4 h-4" />
-              {t('importPdf')}
-            </Button>
-            <Button
-              onClick={() => openNewMenuModal()}
-              variant="default"
-              disabled={isLimitReached}
-              className="gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              {t('newMenu')}
-            </Button>
+
+          {/* Limit warning */}
+          {isLimitReached && (
+            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
+              <p className="text-sm text-amber-800 font-medium">
+                {t('limitReached', { max: maxMenus })}{' '}
+                <Link
+                  href={`/sites/${tenantSlug}/admin/subscription`}
+                  className="underline font-bold"
+                >
+                  {t('upgradeToPremium')}
+                </Link>
+              </p>
+            </div>
+          )}
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
+            <Input
+              data-search-input
+              placeholder={t('searchPlaceholder')}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </div>
 
-        {/* Limit warning */}
-        {isLimitReached && (
-          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-            <p className="text-sm text-amber-800 font-medium">
-              {t('limitReached', { max: maxMenus })}{' '}
-              <Link
-                href={`/sites/${tenantSlug}/admin/subscription`}
-                className="underline font-bold"
-              >
-                {t('upgradeToPremium')}
-              </Link>
-            </p>
-          </div>
-        )}
-
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-          <Input
-            data-search-input
-            placeholder={t('searchPlaceholder')}
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {/* Menu list */}
+          <MenusTable
+            tenantSlug={tenantSlug}
+            menus={menus}
+            venues={venues}
+            filteredStandalone={filteredStandalone}
+            menusByVenue={menusByVenue}
+            searchQuery={searchQuery}
+            loading={loading}
+            onEdit={openEditMenuModal}
+            onDelete={deleteMenu}
+            onToggle={toggleActive}
+            onAddChild={(parentId) => openNewMenuModal(parentId)}
+            onReorder={reorder}
+            onCreateFirst={() => openNewMenuModal()}
           />
         </div>
-
-        {/* Menu list */}
-        <MenusTable
-          tenantSlug={tenantSlug}
-          menus={menus}
-          venues={venues}
-          filteredStandalone={filteredStandalone}
-          menusByVenue={menusByVenue}
-          searchQuery={searchQuery}
-          loading={loading}
-          onEdit={openEditMenuModal}
-          onDelete={deleteMenu}
-          onToggle={toggleActive}
-          onAddChild={(parentId) => openNewMenuModal(parentId)}
-          onReorder={reorder}
-          onCreateFirst={() => openNewMenuModal()}
-        />
 
         {/* Create/Edit Modal */}
         <AdminModal

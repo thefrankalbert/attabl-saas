@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Package, Plus, Search, AlertTriangle } from 'lucide-react';
+import { Package, Plus, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useIngredients, useSuppliers } from '@/hooks/queries';
@@ -307,339 +307,265 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   ).length;
   const outCount = ingredients.filter((i) => i.current_stock <= 0).length;
 
-  if (loading) {
-    return <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>;
-  }
-
   return (
     <RoleGuard permission="canViewStocks">
-      <div className="p-4 sm:p-6 xl:p-8 space-y-6">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
-              <Package className="w-6 h-6" />
-              {t('inventory')}
-            </h1>
-            <p className="text-sm text-app-text-secondary mt-1">
-              {ingredients.length} {t('ingredientsCount')}
-            </p>
+      <div className="h-full flex flex-col overflow-hidden">
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center text-app-text-secondary">
+            {tc('loading')}
           </div>
-          <Button onClick={openAdd} variant="default" className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('addIngredient')}
-          </Button>
-        </div>
+        ) : (
+          <>
+            {/* Fixed header area */}
+            <div className="shrink-0 space-y-3">
+              {/* Row 1: Title + Search + Filters + Add — all on one line (desktop) */}
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                {/* Title */}
+                <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                  <Package className="w-5 h-5" />
+                  {t('inventory')}
+                  <span className="text-sm font-normal text-app-text-muted">
+                    ({ingredients.length})
+                  </span>
+                </h1>
 
-        {/* Stats Badges */}
-        {(lowCount > 0 || outCount > 0) && (
-          <div className="flex gap-3">
-            {outCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg">
-                <AlertTriangle className="w-4 h-4 text-red-500" />
-                <span className="text-sm font-medium text-red-500">
-                  {outCount} {t('rupture')}
-                </span>
-              </div>
-            )}
-            {lowCount > 0 && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-medium text-amber-500">
-                  {lowCount} {t('lowStock')}
-                </span>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-            <Input
-              data-search-input
-              placeholder={t('searchProduct')}
-              className="pl-9"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            {(['all', 'low', 'out'] as const).map((status) => (
-              <Button
-                key={status}
-                variant={filterStatus === status ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterStatus(status)}
-                className="rounded-full"
-              >
-                {status === 'all' ? tc('all') : status === 'low' ? t('lowStock') : t('rupture')}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Table / Cards */}
-        <ResponsiveDataTable
-          columns={columns}
-          data={filtered}
-          emptyMessage={t('noProductFound')}
-          mobileConfig={{
-            renderCard: (ing) => {
-              const badge = getStockBadge(ing);
-              const unitLabel = INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit;
-              return (
-                <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
-                  {/* Row 1: Name + Status */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="font-medium text-app-text truncate">{ing.name}</p>
-                      {ing.category && (
-                        <p className="text-xs text-app-text-secondary">{ing.category}</p>
-                      )}
-                    </div>
-                    <span
-                      className={cn('px-2 py-1 rounded-full text-xs font-bold shrink-0', badge.bg)}
-                    >
-                      {badge.label}
-                    </span>
-                  </div>
-
-                  {/* Row 2: Stock + Cost */}
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-app-text-secondary">
-                      {t('currentStock')}:{' '}
-                      <span className="font-mono font-bold text-app-text">
-                        {ing.current_stock.toFixed(
-                          ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2,
-                        )}
-                      </span>{' '}
-                      {unitLabel}
-                    </span>
-                    <span className="text-app-text-secondary">
-                      {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}/{unitLabel}
-                    </span>
-                  </div>
-
-                  {/* Row 3: Actions */}
-                  <div className="flex justify-end gap-2 pt-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openAdjust(ing)}
-                      className="text-xs min-h-[44px]"
-                    >
-                      +/-
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEdit(ing)}
-                      className="text-xs min-h-[44px]"
-                    >
-                      {tc('edit')}
-                    </Button>
-                  </div>
-                </div>
-              );
-            },
-          }}
-        />
-
-        {/* Modal — Add / Edit */}
-        <AdminModal
-          isOpen={modalMode === 'add' || modalMode === 'edit'}
-          onClose={() => {
-            setModalMode(null);
-            resetForm();
-          }}
-          title={modalMode === 'add' ? t('addIngredient') : t('editIngredient')}
-          size="lg"
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                {tc('name')}
-              </label>
-              <Input
-                value={formName}
-                onChange={(e) => setFormName(e.target.value)}
-                placeholder={t('ingredientNamePlaceholder')}
-                autoFocus
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                  {tc('unit')}
-                </label>
-                <select
-                  value={formUnit}
-                  onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-2 focus:ring-accent"
-                >
-                  {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
-                    <option key={u} value={u}>
-                      {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {modalMode === 'add' && (
-                <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('currentStock')}
-                  </label>
+                {/* Search — compact */}
+                <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={formStock}
-                    onChange={(e) => setFormStock(e.target.value)}
-                    placeholder="0"
+                    data-search-input
+                    placeholder={t('searchProduct')}
+                    className="pl-9 h-9"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-              )}
+
+                {/* Filter pills */}
+                <div className="flex items-center gap-1.5">
+                  {(['all', 'low', 'out'] as const).map((status) => {
+                    const count =
+                      status === 'low'
+                        ? lowCount
+                        : status === 'out'
+                          ? outCount
+                          : ingredients.length;
+                    return (
+                      <Button
+                        key={status}
+                        variant={filterStatus === status ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setFilterStatus(status)}
+                        className={cn(
+                          'rounded-full h-8 text-xs px-3 gap-1.5',
+                          status === 'out' &&
+                            outCount > 0 &&
+                            filterStatus !== status &&
+                            'border-red-500/30 text-red-500',
+                          status === 'low' &&
+                            lowCount > 0 &&
+                            filterStatus !== status &&
+                            'border-amber-500/30 text-amber-500',
+                        )}
+                      >
+                        {status === 'all'
+                          ? tc('all')
+                          : status === 'low'
+                            ? t('lowStock')
+                            : t('rupture')}
+                        {status !== 'all' && count > 0 && (
+                          <span
+                            className={cn(
+                              'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
+                              filterStatus === status
+                                ? 'bg-white/20'
+                                : status === 'out'
+                                  ? 'bg-red-500/15'
+                                  : 'bg-amber-500/15',
+                            )}
+                          >
+                            {count}
+                          </span>
+                        )}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                {/* Add button — pushed right */}
+                <div className="lg:ml-auto shrink-0">
+                  <Button onClick={openAdd} variant="default" className="gap-2 h-9">
+                    <Plus className="w-4 h-4" />
+                    {t('addIngredient')}
+                  </Button>
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                  {t('minAlert')}
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formMinAlert}
-                  onChange={(e) => setFormMinAlert(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                  {t('costPerUnit')}
-                </label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formCostPerUnit}
-                  onChange={(e) => setFormCostPerUnit(e.target.value)}
-                  placeholder="0"
-                />
-              </div>
-            </div>
+            {/* Table / Cards */}
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+              <ResponsiveDataTable
+                columns={columns}
+                data={filtered}
+                emptyMessage={t('noProductFound')}
+                mobileConfig={{
+                  renderCard: (ing) => {
+                    const badge = getStockBadge(ing);
+                    const unitLabel = INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit;
+                    return (
+                      <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
+                        {/* Row 1: Name + Status */}
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-medium text-app-text truncate">{ing.name}</p>
+                            {ing.category && (
+                              <p className="text-xs text-app-text-secondary">{ing.category}</p>
+                            )}
+                          </div>
+                          <span
+                            className={cn(
+                              'px-2 py-1 rounded-full text-xs font-bold shrink-0',
+                              badge.bg,
+                            )}
+                          >
+                            {badge.label}
+                          </span>
+                        </div>
 
-            <div>
-              <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                {t('categoryOptional')}
-              </label>
-              <Input
-                value={formCategory}
-                onChange={(e) => setFormCategory(e.target.value)}
-                placeholder={t('categoryPlaceholder')}
+                        {/* Row 2: Stock + Cost */}
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-app-text-secondary">
+                            {t('currentStock')}:{' '}
+                            <span className="font-mono font-bold text-app-text">
+                              {ing.current_stock.toFixed(
+                                ing.unit === 'pièce' || ing.unit === 'bouteille' ? 0 : 2,
+                              )}
+                            </span>{' '}
+                            {unitLabel}
+                          </span>
+                          <span className="text-app-text-secondary">
+                            {formatCurrency(ing.cost_per_unit, currency as CurrencyCode)}/
+                            {unitLabel}
+                          </span>
+                        </div>
+
+                        {/* Row 3: Actions */}
+                        <div className="flex justify-end gap-2 pt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openAdjust(ing)}
+                            className="text-xs min-h-[44px]"
+                          >
+                            +/-
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openEdit(ing)}
+                            className="text-xs min-h-[44px]"
+                          >
+                            {tc('edit')}
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  },
+                }}
               />
             </div>
-          </div>
 
-          <div className="flex justify-end gap-2 mt-6">
-            <Button
-              variant="ghost"
-              onClick={() => {
+            {/* Modal — Add / Edit */}
+            <AdminModal
+              isOpen={modalMode === 'add' || modalMode === 'edit'}
+              onClose={() => {
                 setModalMode(null);
                 resetForm();
               }}
+              title={modalMode === 'add' ? t('addIngredient') : t('editIngredient')}
+              size="lg"
             >
-              {tc('cancel')}
-            </Button>
-            <Button onClick={handleSave} variant="default">
-              {tc('save')}
-            </Button>
-          </div>
-        </AdminModal>
-
-        {/* Modal — Adjust Stock */}
-        <AdminModal
-          isOpen={modalMode === 'adjust' && !!selectedIngredient}
-          onClose={() => {
-            setModalMode(null);
-            resetForm();
-          }}
-          title={t('adjustStock')}
-          size="lg"
-        >
-          {selectedIngredient && (
-            <>
-              <p className="text-sm text-app-text-secondary mb-4">
-                {selectedIngredient.name} — {t('currentStock')} :{' '}
-                <span className="font-bold">
-                  {selectedIngredient.current_stock}{' '}
-                  {INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort}
-                </span>
-              </p>
-
               <div className="space-y-4">
                 <div>
                   <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('movementType')}
-                  </label>
-                  <select
-                    value={adjustType}
-                    onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                    className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-2 focus:ring-accent"
-                  >
-                    {(
-                      ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
-                    ).map((mt) => (
-                      <option key={mt} value={mt}>
-                        {MOVEMENT_TYPE_LABELS[mt].label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {tc('quantity')}
+                    {tc('name')}
                   </label>
                   <Input
-                    type="number"
-                    step="0.01"
-                    value={adjustQty}
-                    onChange={(e) => setAdjustQty(e.target.value)}
-                    placeholder="0"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    placeholder={t('ingredientNamePlaceholder')}
                     autoFocus
                   />
                 </div>
 
-                {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                      {t('supplierOptional')}
+                      {tc('unit')}
                     </label>
                     <select
-                      value={adjustSupplierId}
-                      onChange={(e) => setAdjustSupplierId(e.target.value)}
-                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-2 focus:ring-accent"
+                      value={formUnit}
+                      onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
+                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
                     >
-                      <option value="">— {tc('none')} —</option>
-                      {activeSuppliers.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
+                      {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
+                        <option key={u} value={u}>
+                          {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
                         </option>
                       ))}
                     </select>
                   </div>
-                )}
+                  {modalMode === 'add' && (
+                    <div>
+                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        {t('currentStock')}
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formStock}
+                        onChange={(e) => setFormStock(e.target.value)}
+                        placeholder="0"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      {t('minAlert')}
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formMinAlert}
+                      onChange={(e) => setFormMinAlert(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      {t('costPerUnit')}
+                    </label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formCostPerUnit}
+                      onChange={(e) => setFormCostPerUnit(e.target.value)}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
 
                 <div>
                   <label className="text-xs font-medium text-app-text-secondary mb-1 block">
-                    {t('notesOptional')}
+                    {t('categoryOptional')}
                   </label>
                   <Input
-                    value={adjustNotes}
-                    onChange={(e) => setAdjustNotes(e.target.value)}
-                    placeholder={t('adjustReasonPlaceholder')}
+                    value={formCategory}
+                    onChange={(e) => setFormCategory(e.target.value)}
+                    placeholder={t('categoryPlaceholder')}
                   />
                 </div>
               </div>
@@ -654,13 +580,117 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 >
                   {tc('cancel')}
                 </Button>
-                <Button onClick={handleAdjust} disabled={!adjustQty} variant="default">
-                  {tc('confirm')}
+                <Button onClick={handleSave} variant="default">
+                  {tc('save')}
                 </Button>
               </div>
-            </>
-          )}
-        </AdminModal>
+            </AdminModal>
+
+            {/* Modal — Adjust Stock */}
+            <AdminModal
+              isOpen={modalMode === 'adjust' && !!selectedIngredient}
+              onClose={() => {
+                setModalMode(null);
+                resetForm();
+              }}
+              title={t('adjustStock')}
+              size="lg"
+            >
+              {selectedIngredient && (
+                <>
+                  <p className="text-sm text-app-text-secondary mb-4">
+                    {selectedIngredient.name} — {t('currentStock')} :{' '}
+                    <span className="font-bold">
+                      {selectedIngredient.current_stock}{' '}
+                      {INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort}
+                    </span>
+                  </p>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        {t('movementType')}
+                      </label>
+                      <select
+                        value={adjustType}
+                        onChange={(e) => setAdjustType(e.target.value as MovementType)}
+                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                      >
+                        {(
+                          ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
+                        ).map((mt) => (
+                          <option key={mt} value={mt}>
+                            {MOVEMENT_TYPE_LABELS[mt].label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        {tc('quantity')}
+                      </label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={adjustQty}
+                        onChange={(e) => setAdjustQty(e.target.value)}
+                        placeholder="0"
+                        autoFocus
+                      />
+                    </div>
+
+                    {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
+                      <div>
+                        <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                          {t('supplierOptional')}
+                        </label>
+                        <select
+                          value={adjustSupplierId}
+                          onChange={(e) => setAdjustSupplierId(e.target.value)}
+                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                        >
+                          <option value="">— {tc('none')} —</option>
+                          {activeSuppliers.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        {t('notesOptional')}
+                      </label>
+                      <Input
+                        value={adjustNotes}
+                        onChange={(e) => setAdjustNotes(e.target.value)}
+                        placeholder={t('adjustReasonPlaceholder')}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-2 mt-6">
+                    <Button
+                      variant="ghost"
+                      onClick={() => {
+                        setModalMode(null);
+                        resetForm();
+                      }}
+                    >
+                      {tc('cancel')}
+                    </Button>
+                    <Button onClick={handleAdjust} disabled={!adjustQty} variant="default">
+                      {tc('confirm')}
+                    </Button>
+                  </div>
+                </>
+              )}
+            </AdminModal>
+          </>
+        )}
       </div>
     </RoleGuard>
   );

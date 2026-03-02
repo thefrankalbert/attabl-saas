@@ -214,167 +214,171 @@ export default function ItemsClient({
 
   return (
     <RoleGuard permission="canManageMenus">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-            <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
-          </div>
-          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> {t('newItem')}
-          </Button>
-        </div>
-
-        {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3 p-4 bg-app-card rounded-xl border border-app-border">
-          <Select value={filterCategory} onValueChange={setFilterCategory}>
-            <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-              <SelectValue placeholder={t('allCategories')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('allCategories')}</SelectItem>
-              {categories.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-            <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-              <SelectValue placeholder={t('all')} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('all')}</SelectItem>
-              <SelectItem value="available">{t('inStock')}</SelectItem>
-              <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
-            </SelectContent>
-          </Select>
-          <span className="ml-auto text-xs text-app-text-muted font-medium">
-            {t('itemCount', { count: items.length })}
-          </span>
-        </div>
-
-        {/* Items List */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div
-                key={i}
-                className="h-20 bg-app-card rounded-xl border border-app-border animate-pulse"
-              />
-            ))}
-          </div>
-        ) : items.length > 0 ? (
-          <div className="space-y-2">
-            {items.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
-              >
-                {item.image_url ? (
-                  <Image
-                    src={item.image_url}
-                    alt={item.name}
-                    width={48}
-                    height={48}
-                    className="w-12 h-12 rounded-lg object-cover border border-app-border"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-lg bg-app-bg flex items-center justify-center">
-                    <ImageIcon className="w-5 h-5 text-app-text-muted" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-app-text text-sm truncate">{item.name}</p>
-                  <p className="text-xs text-app-text-muted mt-0.5">
-                    {item.category?.name || t('uncategorized')}
-                  </p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-app-text text-sm tabular-nums">
-                    {formatCurrency(item.price, currency)}
-                  </p>
-                </div>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleAvailable(item);
-                  }}
-                  className={cn(
-                    'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
-                    item.is_available
-                      ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                      : 'bg-app-bg text-app-text-secondary border-app-border',
-                  )}
-                >
-                  {item.is_available ? (
-                    <>
-                      <Check className="w-3 h-3 inline mr-1" />
-                      {t('stock')}
-                    </>
-                  ) : (
-                    <>
-                      <X className="w-3 h-3 inline mr-1" />
-                      {t('exhausted')}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleFeatured(item);
-                  }}
-                  className={cn(
-                    'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
-                    item.is_featured
-                      ? 'text-amber-500 bg-amber-500/10'
-                      : 'text-app-text-muted hover:text-amber-500 hover:bg-app-bg',
-                  )}
-                >
-                  <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
-                </button>
-                <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditModal(item);
-                    }}
-                    className="text-xs h-10 min-h-[44px]"
-                  >
-                    {t('edit')}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(item);
-                    }}
-                    className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                  >
-                    {t('delete')}
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-              <ImageIcon className="w-8 h-8 text-app-text-muted" />
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4 sm:space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
+              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
             </div>
-            <h3 className="text-lg font-bold text-app-text">{t('noItems')}</h3>
-            <p className="text-sm text-app-text-secondary mt-2">{t('noItemsDesc')}</p>
-            <Button onClick={openNewModal} variant="default" className="mt-6">
-              {t('addItem')}
+            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
+              <Plus className="w-4 h-4" /> {t('newItem')}
             </Button>
           </div>
-        )}
+
+          {/* Filters */}
+          <div className="flex flex-wrap items-center gap-3 p-4 bg-app-card rounded-xl border border-app-border">
+            <Select value={filterCategory} onValueChange={setFilterCategory}>
+              <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectValue placeholder={t('allCategories')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('allCategories')}</SelectItem>
+                {categories.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={filterAvailable} onValueChange={setFilterAvailable}>
+              <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectValue placeholder={t('all')} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('all')}</SelectItem>
+                <SelectItem value="available">{t('inStock')}</SelectItem>
+                <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
+              </SelectContent>
+            </Select>
+            <span className="ml-auto text-xs text-app-text-muted font-medium">
+              {t('itemCount', { count: items.length })}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {/* Items List */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div
+                  key={i}
+                  className="h-20 bg-app-card rounded-xl border border-app-border animate-pulse"
+                />
+              ))}
+            </div>
+          ) : items.length > 0 ? (
+            <div className="space-y-2">
+              {items.map((item) => (
+                <div
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
+                >
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      width={48}
+                      height={48}
+                      className="w-12 h-12 rounded-lg object-cover border border-app-border"
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-app-bg flex items-center justify-center">
+                      <ImageIcon className="w-5 h-5 text-app-text-muted" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-app-text text-sm truncate">{item.name}</p>
+                    <p className="text-xs text-app-text-muted mt-0.5">
+                      {item.category?.name || t('uncategorized')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-app-text text-sm tabular-nums">
+                      {formatCurrency(item.price, currency)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleAvailable(item);
+                    }}
+                    className={cn(
+                      'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
+                      item.is_available
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        : 'bg-app-bg text-app-text-secondary border-app-border',
+                    )}
+                  >
+                    {item.is_available ? (
+                      <>
+                        <Check className="w-3 h-3 inline mr-1" />
+                        {t('stock')}
+                      </>
+                    ) : (
+                      <>
+                        <X className="w-3 h-3 inline mr-1" />
+                        {t('exhausted')}
+                      </>
+                    )}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFeatured(item);
+                    }}
+                    className={cn(
+                      'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
+                      item.is_featured
+                        ? 'text-amber-500 bg-amber-500/10'
+                        : 'text-app-text-muted hover:text-amber-500 hover:bg-app-bg',
+                    )}
+                  >
+                    <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
+                  </button>
+                  <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditModal(item);
+                      }}
+                      className="text-xs h-10 min-h-[44px]"
+                    >
+                      {t('edit')}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item);
+                      }}
+                      className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                    >
+                      {t('delete')}
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+              <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+                <ImageIcon className="w-8 h-8 text-app-text-muted" />
+              </div>
+              <h3 className="text-lg font-bold text-app-text">{t('noItems')}</h3>
+              <p className="text-sm text-app-text-secondary mt-2">{t('noItemsDesc')}</p>
+              <Button onClick={openNewModal} variant="default" className="mt-6">
+                {t('addItem')}
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Detail Side Panel */}
         {selectedItem && (

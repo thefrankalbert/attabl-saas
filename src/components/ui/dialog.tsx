@@ -39,7 +39,7 @@ const DialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Shared base
-        'fixed z-50 grid w-full gap-4 border border-neutral-200 bg-white p-6 duration-200',
+        'fixed z-50 grid w-full gap-4 border border-app-border bg-app-card text-app-text p-6 duration-200',
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         // Mobile: bottom-sheet drawer
