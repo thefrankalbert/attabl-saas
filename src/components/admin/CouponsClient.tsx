@@ -139,8 +139,8 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   <span
                     className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
                       coupon.discount_type === 'percentage'
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'bg-purple-50 text-purple-700'
+                        ? 'bg-blue-500/10 text-blue-500'
+                        : 'bg-purple-500/10 text-purple-500'
                     }`}
                   >
                     {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
@@ -168,7 +168,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   {coupon.is_active ? (
                     <>
                       <ToggleRight className="h-5 w-5 text-green-600" />
-                      <span className="text-xs font-semibold text-green-700 bg-green-50 px-2 py-0.5 rounded-full">
+                      <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
                         {t('active')}
                       </span>
                     </>
@@ -188,7 +188,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     variant="ghost"
                     size="icon"
                     onClick={() => handleDelete(coupon.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                    className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
                     title={t('deleteAction')}
                   >
                     <Trash2 className="h-4 w-4" />

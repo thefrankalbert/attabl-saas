@@ -301,10 +301,10 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                        className="flex-1 h-9 bg-white border-neutral-200 rounded-lg text-sm font-medium"
+                        className="flex-1 h-9 bg-app-card border-app-border rounded-lg text-sm font-medium"
                       />
 
-                      <span className="text-xs text-neutral-500 whitespace-nowrap px-2 py-1 bg-white border border-neutral-200 rounded-full">
+                      <span className="text-xs text-app-text-secondary whitespace-nowrap px-2 py-1 bg-app-card border border-app-border rounded-full">
                         {t('articlesCount', { count: articleCount })}
                       </span>
 

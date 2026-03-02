@@ -117,7 +117,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             <TabsContent value="sounds" className="mt-0">
               <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-amber-50 rounded-lg">
+                  <div className="p-2 bg-amber-500/10 rounded-lg">
                     <Bell className="h-4 w-4 text-amber-600" />
                   </div>
                   <div>
@@ -164,7 +164,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             <TabsContent value="language" className="mt-0">
               <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-50 rounded-lg">
+                  <div className="p-2 bg-blue-500/10 rounded-lg">
                     <Globe className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>

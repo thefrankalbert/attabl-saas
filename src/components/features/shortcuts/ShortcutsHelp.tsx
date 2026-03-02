@@ -22,7 +22,7 @@ interface ShortcutsHelpProps {
 
 function Kbd({ children }: { children: React.ReactNode }) {
   return (
-    <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-neutral-100 border border-neutral-200 rounded-md text-xs font-mono font-medium text-neutral-700">
+    <kbd className="inline-flex items-center justify-center min-w-[24px] h-6 px-1.5 bg-app-elevated border border-app-border rounded-md text-xs font-mono font-medium text-app-text-secondary">
       {children}
     </kbd>
   );
@@ -47,7 +47,7 @@ function ShortcutKeys({ shortcut }: { shortcut: ShortcutDefinition }) {
     return (
       <span className="flex items-center gap-1">
         <Kbd>{shortcut.keys[0].toUpperCase()}</Kbd>
-        <span className="text-[10px] text-neutral-400">{t('then')}</span>
+        <span className="text-[10px] text-app-text-muted">{t('then')}</span>
         <Kbd>{shortcut.keys[1].toUpperCase()}</Kbd>
       </span>
     );
@@ -123,7 +123,7 @@ export function ShortcutsHelp({ open, onOpenChange, shortcuts }: ShortcutsHelpPr
           )}
         </div>
 
-        <p className="text-[11px] text-neutral-400 mt-3 text-center">
+        <p className="text-[11px] text-app-text-muted mt-3 text-center">
           {t('modifierNote', { modifier })}
         </p>
       </DialogContent>
@@ -136,7 +136,7 @@ export function ShortcutsHelp({ open, onOpenChange, shortcuts }: ShortcutsHelpPr
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h3 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2">
+      <h3 className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2">
         {title}
       </h3>
       <div className="space-y-1.5">{children}</div>
@@ -147,7 +147,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function ShortcutRow({ shortcut }: { shortcut: ShortcutDefinition }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-sm text-neutral-700">{shortcut.label}</span>
+      <span className="text-sm text-app-text-secondary">{shortcut.label}</span>
       <ShortcutKeys shortcut={shortcut} />
     </div>
   );

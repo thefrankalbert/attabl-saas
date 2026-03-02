@@ -192,6 +192,8 @@
     "revenueDay": "Recettes du Jour",
     "ordersCount": "Commandes",
     "activeItems": "Plats Actifs",
+    "ordersToday": "Commandes du jour",
+    "revenueToday": "Chiffre du jour",
     "satisfaction": "Satisfaction",
     "topPerformers": "Meilleures Performances",
     "profitAnalysis": "Analyse de Rentabilité",
@@ -1256,7 +1258,8 @@
     "amountDue": "Montant dû",
     "received": "Reçu",
     "customTip": "Personnalisé",
-    "numpadClear": "Effacer"
+    "numpadClear": "Effacer",
+    "numpadBackspace": "Retour arrière"
   },
   "qrCodes": {
     "title": "QR Codes",

@@ -250,7 +250,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                         <p className="text-sm font-bold text-app-text">{info.price}</p>
                         {plan === p && (
                           <div className="mt-1 flex items-center justify-end">
-                            <Check className="h-4 w-4 text-[#7a9900]" />
+                            <Check className="h-4 w-4 text-accent" />
                           </div>
                         )}
                       </div>
@@ -301,7 +301,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               </div>
 
               {error && (
-                <div className="rounded-lg bg-red-50 p-3">
+                <div className="rounded-lg bg-red-500/10 p-3">
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
               )}

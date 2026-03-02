@@ -204,7 +204,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                         className={cn(
                           'text-[10px]',
                           inv.status === 'paid' &&
-                            'bg-emerald-50 text-emerald-700 border-emerald-100',
+                            'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
                         )}
                       >
                         {statusLabel(inv.status)}
@@ -252,7 +252,8 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                     variant={statusVariant(inv.status)}
                     className={cn(
                       'text-[10px]',
-                      inv.status === 'paid' && 'bg-emerald-50 text-emerald-700 border-emerald-100',
+                      inv.status === 'paid' &&
+                        'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
                     )}
                   >
                     {statusLabel(inv.status)}

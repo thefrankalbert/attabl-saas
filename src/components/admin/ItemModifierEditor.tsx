@@ -130,7 +130,7 @@ export default function ItemModifierEditor({
                 className={cn(
                   'px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all shrink-0',
                   mod.is_available
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-app-elevated text-app-text-secondary border-app-border',
                 )}
               >

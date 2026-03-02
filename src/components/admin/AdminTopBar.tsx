@@ -1,8 +1,9 @@
 'use client';
 
+import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowLeft, LogOut, Sun, Moon } from 'lucide-react';
+import { ArrowLeft, LogOut, Sun, Moon, Maximize, Minimize, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
 import { isImmersivePage, isAdminHome } from '@/lib/constants';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -24,6 +25,22 @@ interface AdminTopBarProps {
 export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProps) {
   const pathname = usePathname();
   const { resolved, setTheme } = useTheme();
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Track fullscreen state
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  }, []);
 
   if (isImmersivePage(pathname)) return null;
 
@@ -32,12 +49,20 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
   return (
     <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="flex items-center gap-3">
-        {!isHome && (
+        {!isHome ? (
           <Link
             href={basePath}
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
           >
             <ArrowLeft className="w-4 h-4 text-app-text-secondary" />
+          </Link>
+        ) : (
+          <Link
+            href="/admin/tenants"
+            className="w-9 h-9 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
+            title="Mes espaces"
+          >
+            <LayoutGrid className="w-4 h-4 text-app-text-secondary" />
           </Link>
         )}
 
@@ -62,6 +87,14 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
 
       <div className="flex items-center gap-1">
         {notifications}
+        <button
+          type="button"
+          onClick={toggleFullscreen}
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation"
+          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+        >
+          {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
+        </button>
         <button
           type="button"
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}

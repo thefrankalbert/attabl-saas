@@ -143,7 +143,7 @@ export default function OrderDetails({
                         <p className="text-xs text-app-text-secondary mt-0.5">{item.notes}</p>
                       )}
                       {item.customer_notes && (
-                        <p className="text-xs text-amber-600 mt-0.5 bg-amber-50 px-1.5 py-0.5 rounded">
+                        <p className="text-xs text-amber-600 mt-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded">
                           {item.customer_notes}
                         </p>
                       )}
@@ -252,7 +252,7 @@ export default function OrderDetails({
 
         {/* Warnings */}
         {order.status !== 'ready' && order.status !== 'delivered' && (
-          <div className="flex items-center gap-2 p-4 border border-amber-200 bg-amber-50 text-amber-800 rounded-xl text-xs">
+          <div className="flex items-center gap-2 p-4 border border-amber-500/20 bg-amber-500/10 text-amber-500 rounded-xl text-xs">
             <AlertCircle className="w-4 h-4 shrink-0" />
             {t('warningReadyBeforeCheckout')}
           </div>

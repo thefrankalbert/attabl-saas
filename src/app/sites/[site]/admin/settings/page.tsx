@@ -31,8 +31,8 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   return (
     <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)]">
       <div className="mb-8 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-neutral-900">{t('pageTitle')}</h1>
-        <p className="text-neutral-500">{t('pageDescription')}</p>
+        <h1 className="text-2xl font-bold text-app-text">{t('pageTitle')}</h1>
+        <p className="text-app-text-secondary">{t('pageDescription')}</p>
       </div>
 
       <SettingsForm

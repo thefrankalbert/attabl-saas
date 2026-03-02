@@ -17,7 +17,7 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
   if (!tenant) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-neutral-600">Restaurant not found</h2>
+        <h2 className="text-xl font-semibold text-app-text-secondary">Restaurant not found</h2>
       </div>
     );
   }

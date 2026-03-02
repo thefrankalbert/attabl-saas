@@ -127,7 +127,7 @@ export default function MenusClient({
 
         {/* Limit warning */}
         {isLimitReached && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
             <p className="text-sm text-amber-800 font-medium">
               {t('limitReached', { max: maxMenus })}{' '}
               <Link

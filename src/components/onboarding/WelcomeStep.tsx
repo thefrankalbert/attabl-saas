@@ -26,10 +26,10 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         <Rocket className="h-8 w-8 text-black" />
       </div>
 
-      <h1 className="text-2xl font-bold text-neutral-900 mb-2">
+      <h1 className="text-2xl font-bold text-app-text mb-2">
         {t('welcomeTitle', { name: tenantName || '' })}
       </h1>
-      <p className="text-neutral-500 text-sm mb-8 max-w-sm">{t('welcomeSubtitle')}</p>
+      <p className="text-app-text-secondary text-sm mb-8 max-w-sm">{t('welcomeSubtitle')}</p>
 
       {/* Step overview */}
       <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
@@ -38,13 +38,13 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           return (
             <div key={i} className="flex items-center gap-3">
               <div className="flex flex-col items-center gap-1.5">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-neutral-100 flex items-center justify-center">
-                  <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-neutral-500" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-app-elevated flex items-center justify-center">
+                  <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-app-text-secondary" />
                 </div>
-                <span className="text-[10px] text-neutral-400 font-medium">{t(step.key)}</span>
+                <span className="text-[10px] text-app-text-muted font-medium">{t(step.key)}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="hidden sm:block w-4 h-px bg-neutral-200 mb-5" />
+                <div className="hidden sm:block w-4 h-px bg-app-border mb-5" />
               )}
             </div>
           );

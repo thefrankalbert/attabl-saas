@@ -265,7 +265,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
             {mode === 'complete' && (
               <div className="space-y-3">
                 {zones.map((zone, index) => (
-                  <div key={index} className="border border-neutral-200 rounded-xl p-4 bg-white">
+                  <div key={index} className="border border-app-border rounded-xl p-4 bg-app-card">
                     <div className="flex items-start justify-between mb-3">
                       <span className="text-xs font-medium text-neutral-400">Zone {index + 1}</span>
                       <button

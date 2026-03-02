@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 
@@ -31,8 +31,8 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
       : undefined;
 
   if (!persister) {
-    // SSR fallback - no persistence
-    return <>{children}</>;
+    // SSR fallback - provide QueryClient without persistence
+    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
   }
 
   return (

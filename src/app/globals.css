@@ -63,15 +63,6 @@
   --color-neutral-700: var(--app-text-secondary);
   --color-neutral-900: var(--app-text);
 
-  /* Legacy compat — POS, Kitchen, Permissions still reference these */
-  --color-surface-primary: var(--app-card);
-  --color-surface-secondary: var(--app-bg);
-  --color-border-default: var(--app-border);
-  --color-border-subtle: var(--app-border);
-  --color-text-primary: var(--app-text);
-  --color-text-secondary: var(--app-text-secondary);
-  --color-text-muted: var(--app-text-muted);
-
   /* Typography — System font stack */
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --font-display:

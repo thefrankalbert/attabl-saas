@@ -72,21 +72,21 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
 
   return (
     <TabsContent value="domain" className="mt-0">
-      <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+      <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-indigo-50 rounded-lg">
             <Globe className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">{t('customDomain')}</h2>
-            <p className="text-sm text-neutral-500">{t('customDomainDesc')}</p>
+            <h2 className="text-lg font-semibold text-app-text">{t('customDomain')}</h2>
+            <p className="text-sm text-app-text-secondary">{t('customDomainDesc')}</p>
           </div>
         </div>
 
         <div className="space-y-4">
           <div>
-            <Label className="text-neutral-900 font-medium">{t('customDomain')}</Label>
-            <p className="text-xs text-neutral-500 mt-0.5">{t('customDomainDesc')}</p>
+            <Label className="text-app-text font-medium">{t('customDomain')}</Label>
+            <p className="text-xs text-app-text-secondary mt-0.5">{t('customDomainDesc')}</p>
           </div>
 
           <div className="flex gap-2">
@@ -129,10 +129,10 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
             </div>
           )}
 
-          <div className="bg-neutral-50 rounded-lg p-3 text-xs text-neutral-500">
-            <p className="font-medium text-neutral-700 mb-1">DNS Configuration</p>
+          <div className="bg-app-elevated rounded-lg p-3 text-xs text-app-text-secondary">
+            <p className="font-medium text-app-text mb-1">DNS Configuration</p>
             <p>{t('domainInstructions')}</p>
-            <code className="block mt-2 bg-white p-2 rounded text-xs font-mono">
+            <code className="block mt-2 bg-app-card p-2 rounded text-xs font-mono">
               CNAME &rarr; cname.vercel-dns.com
             </code>
           </div>
@@ -160,9 +160,9 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
             )}
           </div>
 
-          <p className="text-xs text-neutral-400">
+          <p className="text-xs text-app-text-muted">
             URL actuelle :{' '}
-            <code className="bg-neutral-100 px-1 rounded">{tenantSlug}.attabl.com</code>
+            <code className="bg-app-elevated px-1 rounded">{tenantSlug}.attabl.com</code>
           </p>
         </div>
       </div>

@@ -243,7 +243,7 @@ export default function MenuDetailClient({
               className={cn(
                 'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
                 menu.is_active
-                  ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                   : 'bg-app-bg text-app-text-secondary border-app-border',
               )}
             >
@@ -318,7 +318,7 @@ export default function MenuDetailClient({
                         variant="outline"
                         size="sm"
                         onClick={() => handleDeleteCategory(cat)}
-                        className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </Button>
@@ -341,7 +341,7 @@ export default function MenuDetailClient({
                             {t('priceFcfa', { count: item.price })}
                           </span>
                           {(item.modifiers?.length ?? 0) > 0 && (
-                            <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
                               {item.modifiers!.length} mod.
                             </span>
                           )}
@@ -360,7 +360,7 @@ export default function MenuDetailClient({
                             className={cn(
                               'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
                               item.is_available
-                                ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                 : 'bg-app-bg text-app-text-secondary border-app-border',
                             )}
                           >

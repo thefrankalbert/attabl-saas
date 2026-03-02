@@ -66,14 +66,14 @@ export default function UserForm({
   return (
     <div className="space-y-4">
       {/* Tab Selector */}
-      <div className="flex border-b border-neutral-200">
+      <div className="flex border-b border-app-border">
         <button
           type="button"
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
             activeTab === 'invite'
-              ? 'border-b-2 border-[#CCFF00] text-black font-medium'
-              : 'text-neutral-400 hover:text-neutral-600',
+              ? 'border-b-2 border-accent text-app-text font-medium'
+              : 'text-app-text-muted hover:text-app-text-secondary',
           )}
           onClick={() => setActiveTab('invite')}
         >
@@ -85,8 +85,8 @@ export default function UserForm({
           className={cn(
             'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
             activeTab === 'direct'
-              ? 'border-b-2 border-[#CCFF00] text-black font-medium'
-              : 'text-neutral-400 hover:text-neutral-600',
+              ? 'border-b-2 border-accent text-app-text font-medium'
+              : 'text-app-text-muted hover:text-app-text-secondary',
           )}
           onClick={() => setActiveTab('direct')}
         >
@@ -101,7 +101,7 @@ export default function UserForm({
           <div className="space-y-2">
             <Label>{t('memberEmail')}</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-app-text-muted" />
               <Input
                 className="pl-9"
                 type="email"
@@ -129,7 +129,7 @@ export default function UserForm({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-neutral-500 mt-1">{t('roleDescription')}</p>
+            <p className="text-xs text-app-text-secondary mt-1">{t('roleDescription')}</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
@@ -154,7 +154,7 @@ export default function UserForm({
           <div className="space-y-2">
             <Label>{t('fullName')}</Label>
             <div className="relative">
-              <Users className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+              <Users className="absolute left-3 top-3 h-4 w-4 text-app-text-muted" />
               <Input
                 className="pl-9"
                 placeholder={t('fullNamePlaceholder')}
@@ -167,7 +167,7 @@ export default function UserForm({
           <div className="space-y-2">
             <Label>{t('professionalEmail')}</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+              <Mail className="absolute left-3 top-3 h-4 w-4 text-app-text-muted" />
               <Input
                 className="pl-9"
                 type="email"
@@ -181,7 +181,7 @@ export default function UserForm({
           <div className="space-y-2">
             <Label>{t('temporaryPassword')}</Label>
             <div className="relative">
-              <Lock className="absolute left-3 top-3 h-4 w-4 text-neutral-400" />
+              <Lock className="absolute left-3 top-3 h-4 w-4 text-app-text-muted" />
               <Input
                 className="pl-9"
                 type="password"
@@ -212,7 +212,7 @@ export default function UserForm({
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-xs text-neutral-500 mt-1">{t('roleDescription')}</p>
+            <p className="text-xs text-app-text-secondary mt-1">{t('roleDescription')}</p>
           </div>
 
           <div className="pt-4 flex justify-end gap-2">

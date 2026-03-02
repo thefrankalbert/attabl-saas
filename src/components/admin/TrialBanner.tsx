@@ -64,29 +64,29 @@ interface StyleConfig {
 function getStyleConfig(daysRemaining: number): StyleConfig {
   if (daysRemaining <= 1) {
     return {
-      containerClass: 'bg-red-50 border-b border-red-200',
+      containerClass: 'bg-red-500/10 border-b border-red-500/20',
       iconClass: 'text-red-500',
-      textClass: 'text-red-700',
-      linkClass: 'text-red-800',
-      closeClass: 'hover:bg-red-100 text-red-500',
+      textClass: 'text-red-500',
+      linkClass: 'text-red-400',
+      closeClass: 'hover:bg-red-500/20 text-red-500',
     };
   }
 
   if (daysRemaining === 2) {
     return {
-      containerClass: 'bg-amber-50 border-b border-amber-200',
+      containerClass: 'bg-amber-500/10 border-b border-amber-500/20',
       iconClass: 'text-amber-500',
-      textClass: 'text-amber-700',
-      linkClass: 'text-amber-800',
-      closeClass: 'hover:bg-amber-100 text-amber-500',
+      textClass: 'text-amber-500',
+      linkClass: 'text-amber-400',
+      closeClass: 'hover:bg-amber-500/20 text-amber-500',
     };
   }
 
   return {
-    containerClass: 'bg-blue-50 border-b border-blue-200',
+    containerClass: 'bg-blue-500/10 border-b border-blue-500/20',
     iconClass: 'text-blue-500',
-    textClass: 'text-blue-700',
-    linkClass: 'text-blue-800',
-    closeClass: 'hover:bg-blue-100 text-blue-500',
+    textClass: 'text-blue-500',
+    linkClass: 'text-blue-400',
+    closeClass: 'hover:bg-blue-500/20 text-blue-500',
   };
 }

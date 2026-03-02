@@ -97,19 +97,19 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
     switch (action) {
       case 'create':
         return (
-          <Badge className="bg-emerald-50 text-emerald-700 border-emerald-100 text-[10px]">
+          <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20 text-[10px]">
             {t('actionCreate')}
           </Badge>
         );
       case 'update':
         return (
-          <Badge className="bg-blue-50 text-blue-700 border-blue-100 text-[10px]">
+          <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-[10px]">
             {t('actionUpdate')}
           </Badge>
         );
       case 'delete':
         return (
-          <Badge className="bg-red-50 text-red-700 border-red-100 text-[10px]">
+          <Badge className="bg-red-500/10 text-red-500 border-red-500/20 text-[10px]">
             {t('actionDelete')}
           </Badge>
         );

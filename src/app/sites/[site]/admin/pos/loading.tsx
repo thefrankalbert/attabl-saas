@@ -6,19 +6,19 @@ export default function POSLoading() {
         {/* Category tabs */}
         <div className="flex gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-9 w-24 bg-neutral-100 rounded-lg shrink-0" />
+            <div key={i} className="h-9 w-24 bg-app-elevated rounded-lg shrink-0" />
           ))}
         </div>
         {/* Products */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 flex-1">
           {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="bg-neutral-100 rounded-xl h-28" />
+            <div key={i} className="bg-app-elevated rounded-xl h-28" />
           ))}
         </div>
       </div>
 
       {/* Cart sidebar */}
-      <div className="hidden md:flex w-[320px] lg:w-[380px] bg-neutral-100 rounded-xl shrink-0" />
+      <div className="hidden md:flex w-[320px] lg:w-[380px] bg-app-elevated rounded-xl shrink-0" />
     </div>
   );
 }

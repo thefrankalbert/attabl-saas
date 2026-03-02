@@ -23,17 +23,17 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   if (!tenant) return notFound();
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-app-bg">
       <header className="sticky top-0 z-40">
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
+        <div className="absolute inset-0 bg-app-card/80 backdrop-blur-xl border-b border-app-border" />
         <div className="relative container mx-auto px-4 py-3 flex items-center gap-3">
           <Link
             href={`/sites/${tenantSlug}`}
-            className="p-2 -ml-2 hover:bg-neutral-100 rounded-full transition-colors"
+            className="p-2 -ml-2 hover:bg-app-hover rounded-full transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-neutral-600" />
+            <ArrowLeft className="w-5 h-5 text-app-text-secondary" />
           </Link>
-          <h1 className="text-lg font-bold text-neutral-900">Mes Commandes</h1>
+          <h1 className="text-lg font-bold text-app-text">Mes Commandes</h1>
         </div>
       </header>
 

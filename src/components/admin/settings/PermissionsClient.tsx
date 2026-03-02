@@ -269,7 +269,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                 </th>
                 {/* Owner column (locked) */}
                 <th className="text-center px-3 py-3.5 min-w-[100px]">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
                     {roleLabel('owner')}
                   </span>
                 </th>
@@ -281,12 +281,13 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                         className={cn(
                           'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
                           role === 'admin' &&
-                            'bg-purple-50 text-purple-700 border border-purple-200',
-                          role === 'manager' && 'bg-blue-50 text-blue-700 border border-blue-200',
+                            'bg-purple-500/10 text-purple-500 border border-purple-500/20',
+                          role === 'manager' &&
+                            'bg-blue-500/10 text-blue-500 border border-blue-500/20',
                           role === 'cashier' &&
-                            'bg-green-50 text-green-700 border border-green-200',
+                            'bg-green-500/10 text-green-500 border border-green-500/20',
                           role === 'chef' &&
-                            'bg-orange-50 text-orange-700 border border-orange-200',
+                            'bg-orange-500/10 text-orange-500 border border-orange-500/20',
                           role === 'waiter' && 'bg-cyan-50 text-cyan-700 border border-cyan-200',
                         )}
                       >
@@ -376,7 +377,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                                     className={cn(
                                       'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
                                       isEnabled !== defaultVal
-                                        ? 'bg-amber-50 text-amber-600'
+                                        ? 'bg-amber-500/10 text-amber-500'
                                         : 'bg-app-bg text-app-text-muted',
                                     )}
                                   >
@@ -406,7 +407,7 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
           = {t('legendDenied')}
         </p>
         <p>
-          <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium align-middle mr-1.5">
+          <span className="inline-block px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-500 font-medium align-middle mr-1.5">
             {t('modified')}
           </span>
           = {t('legendModified')}

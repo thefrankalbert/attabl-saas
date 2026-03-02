@@ -62,7 +62,7 @@ export default function KDSTicket({
   const ITEM_BADGES: Record<string, { dot: string; text: string; bg: string }> = {
     pending: {
       dot: 'bg-neutral-500',
-      text: 'text-neutral-400',
+      text: 'text-app-text-muted',
       bg: 'bg-neutral-800 hover:bg-neutral-700',
     },
     preparing: {
@@ -102,7 +102,7 @@ export default function KDSTicket({
     },
     delivered: {
       headerBg: 'bg-neutral-700',
-      headerText: 'text-neutral-300',
+      headerText: 'text-app-text-secondary',
       actionBg: '',
       actionLabel: '',
       next: undefined,
@@ -239,7 +239,7 @@ export default function KDSTicket({
               {/* Number + Name */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-neutral-500 font-bold tabular-nums shrink-0">
+                  <span className="text-xs text-app-text-secondary font-bold tabular-nums shrink-0">
                     {item.quantity}x
                   </span>
                   <span className="text-sm font-semibold text-white leading-tight truncate">
@@ -256,7 +256,7 @@ export default function KDSTicket({
                 {hasMods && (
                   <div className="flex flex-wrap gap-x-2 ml-5 mt-0.5">
                     {item.modifiers!.map((mod, modIdx) => (
-                      <span key={modIdx} className="text-xs text-neutral-500">
+                      <span key={modIdx} className="text-xs text-app-text-secondary">
                         + {mod.name}
                       </span>
                     ))}
@@ -287,7 +287,7 @@ export default function KDSTicket({
         })}
 
         {items.length === 0 && (
-          <div className="text-center py-6 text-neutral-600 text-xs">{tc('noItems')}</div>
+          <div className="text-center py-6 text-app-text-secondary text-xs">{tc('noItems')}</div>
         )}
       </div>
 
@@ -299,7 +299,7 @@ export default function KDSTicket({
             <button
               onClick={handleMarkAllReady}
               disabled={isMock}
-              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-neutral-500 hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border-r border-white/[0.06] transition-colors"
+              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-app-text-secondary hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border-r border-white/[0.06] transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               {readyCount > 0 && (
