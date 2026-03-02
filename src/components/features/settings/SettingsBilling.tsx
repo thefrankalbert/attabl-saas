@@ -28,14 +28,14 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
 
   return (
     <TabsContent value="billing" className="mt-0">
-      <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+      <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-emerald-50 rounded-lg">
+          <div className="p-2 bg-emerald-500/10 rounded-lg">
             <Receipt className="h-5 w-5 text-emerald-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">{t('billing')}</h2>
-            <p className="text-sm text-neutral-500">{t('currencyTaxesAndFees')}</p>
+            <h2 className="text-lg font-semibold text-app-text">{t('billing')}</h2>
+            <p className="text-sm text-app-text-secondary">{t('currencyTaxesAndFees')}</p>
           </div>
         </div>
 
@@ -46,23 +46,23 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
             <select
               id="currency"
               {...register('currency')}
-              className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
               <option value="XAF">{t('currencyXAF')}</option>
               <option value="EUR">{t('currencyEUR')}</option>
               <option value="USD">{t('currencyUSD')}</option>
             </select>
-            <p className="text-xs text-neutral-500">{t('currencyUsedForPriceDisplay')}</p>
+            <p className="text-xs text-app-text-secondary">{t('currencyUsedForPriceDisplay')}</p>
           </div>
 
           {/* Tax Toggle + Rate */}
-          <div className="space-y-3 p-4 rounded-lg border border-neutral-100 bg-neutral-50/50">
+          <div className="space-y-3 p-4 rounded-lg border border-app-border bg-app-elevated">
             <div className="flex items-center justify-between">
               <div>
-                <Label htmlFor="enableTax" className="text-sm font-medium text-neutral-900">
+                <Label htmlFor="enableTax" className="text-sm font-medium text-app-text">
                   {t('enableVat')}
                 </Label>
-                <p className="text-xs text-neutral-500 mt-0.5">{t('applyTaxOnOrders')}</p>
+                <p className="text-xs text-app-text-secondary mt-0.5">{t('applyTaxOnOrders')}</p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -71,13 +71,16 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                   {...register('enableTax')}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500/100"></div>
               </label>
             </div>
 
             {watchEnableTax && (
               <div className="flex flex-wrap items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
-                <Label htmlFor="taxRate" className="text-sm text-neutral-600 whitespace-nowrap">
+                <Label
+                  htmlFor="taxRate"
+                  className="text-sm text-app-text-secondary whitespace-nowrap"
+                >
                   {t('vatRate')}
                 </Label>
                 <div className="relative w-32">
@@ -90,7 +93,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                     {...register('taxRate', { valueAsNumber: true })}
                     className="pr-8 min-h-[44px]"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-app-text-muted">
                     %
                   </span>
                 </div>
@@ -100,16 +103,15 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
           </div>
 
           {/* Service Charge Toggle + Rate */}
-          <div className="space-y-3 p-4 rounded-lg border border-neutral-100 bg-neutral-50/50">
+          <div className="space-y-3 p-4 rounded-lg border border-app-border bg-app-elevated">
             <div className="flex items-center justify-between">
               <div>
-                <Label
-                  htmlFor="enableServiceCharge"
-                  className="text-sm font-medium text-neutral-900"
-                >
+                <Label htmlFor="enableServiceCharge" className="text-sm font-medium text-app-text">
                   {t('enableServiceFee')}
                 </Label>
-                <p className="text-xs text-neutral-500 mt-0.5">{t('addServiceFeeToOrders')}</p>
+                <p className="text-xs text-app-text-secondary mt-0.5">
+                  {t('addServiceFeeToOrders')}
+                </p>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -118,7 +120,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                   {...register('enableServiceCharge')}
                   className="sr-only peer"
                 />
-                <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500/100"></div>
               </label>
             </div>
 
@@ -126,7 +128,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               <div className="flex flex-wrap items-center gap-3 pt-2 animate-in fade-in slide-in-from-top-2">
                 <Label
                   htmlFor="serviceChargeRate"
-                  className="text-sm text-neutral-600 whitespace-nowrap"
+                  className="text-sm text-app-text-secondary whitespace-nowrap"
                 >
                   {t('serviceFeeRate')}
                 </Label>
@@ -140,7 +142,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                     {...register('serviceChargeRate', { valueAsNumber: true })}
                     className="pr-8 min-h-[44px]"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-neutral-400">
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-app-text-muted">
                     %
                   </span>
                 </div>

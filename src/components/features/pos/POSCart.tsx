@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 import {
   Plus,
   Minus,
@@ -8,27 +9,26 @@ import {
   ShoppingBag,
   ArrowRight,
   Printer,
-  Lightbulb,
   UtensilsCrossed,
   Package,
   Truck,
   BellRing,
   Receipt,
+  LayoutGrid,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
-import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
-import type { CartItem, POSSuggestion } from '@/hooks/usePOSData';
+import type { ServiceType, CurrencyCode } from '@/types/admin.types';
+import type { CartItem } from '@/hooks/usePOSData';
 
 interface POSCartProps {
   cart: CartItem[];
-  menuItems: MenuItem[];
   currency: CurrencyCode;
-  suggestions: POSSuggestion[];
   total: number;
   orderNumber: number;
+  basePath: string;
 
   // Service type
   serviceType: ServiceType;
@@ -41,7 +41,6 @@ interface POSCartProps {
   setDeliveryAddress: (address: string) => void;
 
   // Cart actions
-  onAddToCart: (item: MenuItem) => void;
   onUpdateQuantity: (itemId: string, delta: number) => void;
   onClearCart: () => void;
 
@@ -55,11 +54,10 @@ interface POSCartProps {
 
 export default function POSCart({
   cart,
-  menuItems,
   currency,
-  suggestions,
   total,
   orderNumber,
+  basePath,
   serviceType,
   setServiceType,
   selectedTable,
@@ -68,7 +66,6 @@ export default function POSCart({
   setRoomNumber,
   deliveryAddress,
   setDeliveryAddress,
-  onAddToCart,
   onUpdateQuantity,
   onClearCart,
   onEditNotes,
@@ -110,24 +107,24 @@ export default function POSCart({
   return (
     <>
       {/* ━━━ HEADER ━━━ */}
-      <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between bg-neutral-900">
+      <div className="px-4 py-3 border-b border-app-border flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <Receipt className="w-4 h-4 text-neutral-400" />
-          <span className="font-bold text-sm text-white tracking-tight">{t('cart')}</span>
-          <span className="text-xs font-mono bg-white/10 text-neutral-300 px-2 py-0.5 rounded">
+          <Receipt className="w-4 h-4 text-app-text-muted" />
+          <span className="font-bold text-sm text-app-text tracking-tight">{t('cart')}</span>
+          <span className="text-xs font-mono bg-app-elevated text-app-text-secondary px-2 py-0.5 rounded">
             #{orderNumber}
           </span>
         </div>
         <button
           onClick={onClearCart}
-          className="h-10 w-10 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-500 hover:text-red-400 hover:bg-white/[0.06] transition-colors"
+          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation"
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
       {/* ━━━ SERVICE TYPE ━━━ */}
-      <div className="p-3 border-b border-neutral-100 space-y-2">
+      <div className="p-3 border-b border-app-border space-y-2">
         <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
           {SERVICE_TYPES.map((st) => (
             <button
@@ -137,8 +134,8 @@ export default function POSCart({
               className={cn(
                 'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] transition-all whitespace-nowrap text-xs font-medium',
                 serviceType === st.value
-                  ? 'bg-neutral-900 text-white'
-                  : 'border border-neutral-200 text-neutral-600 hover:bg-neutral-50',
+                  ? 'bg-accent text-accent-text'
+                  : 'border border-app-border text-app-text-secondary hover:bg-app-hover',
               )}
             >
               {st.icon}
@@ -146,6 +143,16 @@ export default function POSCart({
             </button>
           ))}
         </div>
+
+        {serviceType === 'dine_in' && (
+          <Link
+            href={`${basePath}/service`}
+            className="flex items-center gap-2 h-9 px-3 rounded-lg border border-app-border bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text transition-colors animate-in fade-in slide-in-from-top-1"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" />
+            <span>{selectedTable || t('selectTable')}</span>
+          </Link>
+        )}
 
         {serviceType === 'room_service' && (
           <Input
@@ -161,54 +168,47 @@ export default function POSCart({
             placeholder={t('deliveryAddressPlaceholder')}
             value={deliveryAddress}
             onChange={(e) => setDeliveryAddress(e.target.value)}
-            className="w-full h-16 p-2 text-sm border border-neutral-200 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none resize-none bg-white animate-in fade-in slide-in-from-top-1"
+            className="w-full h-16 p-2 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
           />
         )}
-
-        <Input
-          placeholder={t('tableClientPlaceholder')}
-          value={selectedTable}
-          onChange={(e) => setSelectedTable(e.target.value)}
-          className="h-9"
-        />
       </div>
 
       {/* ━━━ CART ITEMS — Receipt style ━━━ */}
       <div className="flex-1 overflow-y-auto">
         {cart.length > 0 ? (
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-app-border">
             {cart.map((item) => {
               const itemKey = item.cartKey || item.id;
               const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
               const unitTotal = item.price + modCost;
               return (
-                <div key={itemKey} className="px-4 py-3">
+                <div key={itemKey} className="px-3 py-2">
                   {/* Line 1: Name + line total */}
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-neutral-900 leading-tight line-clamp-1">
+                      <p className="text-sm font-medium text-app-text leading-tight line-clamp-1">
                         {item.name}
                       </p>
                       {/* Modifiers + Notes inline */}
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                          <span className="text-[10px] text-neutral-500 font-medium">
+                          <span className="text-[10px] text-app-text-muted font-medium">
                             +{item.selectedModifiers.map((m) => m.name).join(', ')}
                           </span>
                         )}
                         {item.notes && (
-                          <span className="text-[10px] bg-amber-50 text-amber-600 px-1.5 py-0.5 rounded border border-amber-100">
+                          <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
                             {item.notes}
                           </span>
                         )}
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-neutral-900 tabular-nums font-mono">
+                      <p className="text-sm font-bold text-app-text tabular-nums font-mono">
                         {formatCurrency(unitTotal * item.quantity, currency)}
                       </p>
                       {item.quantity > 1 && (
-                        <p className="text-[10px] text-neutral-400 tabular-nums font-mono">
+                        <p className="text-[10px] text-app-text-muted tabular-nums font-mono">
                           {item.quantity} &times; {formatCurrency(unitTotal, currency)}
                         </p>
                       )}
@@ -216,64 +216,37 @@ export default function POSCart({
                   </div>
 
                   {/* Line 2: Quantity controls + Note button */}
-                  <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-0.5 bg-neutral-50 rounded-lg border border-neutral-100">
+                  <div className="flex items-center justify-between mt-1.5">
+                    <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
                       <button
                         onClick={() => onUpdateQuantity(itemKey, -1)}
-                        className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-l-lg text-neutral-500 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-l-md text-app-text-muted transition-colors touch-manipulation"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="w-3 h-3" />
                       </button>
-                      <span className="w-8 text-center text-xs font-bold tabular-nums text-neutral-700">
+                      <span className="w-7 text-center text-xs font-bold tabular-nums text-app-text">
                         {item.quantity}
                       </span>
                       <button
                         onClick={() => onUpdateQuantity(itemKey, 1)}
-                        className="w-10 h-10 flex items-center justify-center hover:bg-white rounded-r-lg text-neutral-500 transition-colors"
+                        className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-r-md text-app-text-muted transition-colors touch-manipulation"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3 h-3" />
                       </button>
                     </div>
                     <button
                       onClick={() => onEditNotes(itemKey, item.notes || '')}
-                      className="text-xs text-neutral-400 hover:text-neutral-600 font-medium min-h-[44px] px-2 flex items-center transition-colors"
+                      className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 flex items-center transition-colors touch-manipulation"
                     >
                       {item.notes ? tc('edit') : t('kitchenNote')}
                     </button>
                   </div>
-
-                  {/* Suggestion */}
-                  {suggestions
-                    .filter((s) => s.menu_item_id === item.id)
-                    .slice(0, 1)
-                    .map((s) => (
-                      <button
-                        key={s.suggested_item_id}
-                        onClick={() => {
-                          const suggestedItem = menuItems.find(
-                            (mi) => mi.id === s.suggested_item_id,
-                          );
-                          if (suggestedItem) onAddToCart(suggestedItem);
-                        }}
-                        className="mt-2 flex items-center gap-1.5 px-2.5 py-2 min-h-[44px] bg-neutral-50 border border-neutral-100 rounded-lg text-[10px] text-neutral-500 font-medium hover:bg-neutral-100 transition-colors w-full"
-                      >
-                        <Lightbulb className="w-3 h-3 shrink-0" />
-                        <span className="truncate">
-                          {s.suggestion_type === 'pairing'
-                            ? t('suggestionPairing')
-                            : s.suggestion_type === 'upsell'
-                              ? t('suggestionUpsell')
-                              : t('suggestionAlternative')}{' '}
-                          : {s.suggested_item_name}
-                        </span>
-                      </button>
-                    ))}
                 </div>
               );
             })}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-neutral-300">
+          <div className="flex flex-col items-center justify-center py-16 text-app-text-muted">
             <ShoppingBag className="w-10 h-10 mb-2 opacity-30" />
             <p className="text-sm">{t('emptyCart')}</p>
           </div>
@@ -281,20 +254,20 @@ export default function POSCart({
       </div>
 
       {/* ━━━ FOOTER ━━━ */}
-      <div className="border-t border-neutral-200 bg-neutral-900 p-4 space-y-3">
+      <div className="border-t border-app-border px-4 py-3 space-y-2">
         {/* Total */}
         <div className="flex justify-between items-baseline">
           <div className="flex items-baseline gap-2">
-            <span className="text-xs text-neutral-400 font-medium uppercase tracking-wide">
+            <span className="text-xs text-app-text-muted font-medium uppercase tracking-wide">
               {tc('total')}
             </span>
             {totalItems > 0 && (
-              <span className="text-xs text-neutral-500">
+              <span className="text-[10px] text-app-text-muted">
                 ({totalItems} {t('itemsCount')})
               </span>
             )}
           </div>
-          <span className="text-3xl font-bold text-white tabular-nums tracking-tight">
+          <span className="text-2xl font-bold text-app-text tabular-nums tracking-tight">
             {formatCurrency(total, currency)}
           </span>
         </div>
@@ -303,21 +276,21 @@ export default function POSCart({
         <div className="grid grid-cols-7 gap-2">
           <Button
             variant="outline"
-            className="col-span-2 h-12 bg-white/10 text-white hover:bg-white/20 border-white/10 rounded-xl gap-2"
+            className="col-span-2 h-10 rounded-xl gap-1.5"
             disabled={cart.length === 0}
             onClick={onPrintOrder}
             title={t('sentToKitchen')}
           >
-            <Printer className="w-5 h-5" />
+            <Printer className="w-4 h-4" />
             <span className="hidden lg:inline text-xs">{t('printShort')}</span>
           </Button>
           <Button
-            variant="lime"
-            className="col-span-5 h-12 text-base font-bold"
+            variant="default"
+            className="col-span-5 h-10 text-sm font-bold"
             disabled={cart.length === 0}
             onClick={onCheckout}
           >
-            {t('checkout')} <ArrowRight className="ml-2 w-4 h-4" />
+            {t('checkout')} <ArrowRight className="ml-1.5 w-4 h-4" />
           </Button>
         </div>
       </div>

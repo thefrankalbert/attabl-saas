@@ -8,6 +8,16 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 export async function POST() {
   try {
     const supabase = await createClient();
+
+    // Auth check: only authenticated admin users can trigger stock alerts
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     const headersList = await headers();
     const tenantSlug = headersList.get('x-tenant-slug');
 

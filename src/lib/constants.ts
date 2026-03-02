@@ -127,7 +127,21 @@ export const APP_CONFIG = {
   maxFileUploadSize: 5 * 1024 * 1024, // 5MB
 } as const;
 
-// Admin Navigation Groups (used by AdminSidebar)
+// Admin Layout — shared navigation helpers
+/** Pages that hide top-bar, bottom-nav, and chrome (POS, KDS) */
+export const IMMERSIVE_SEGMENTS = ['/kitchen', '/pos'] as const;
+
+/** Check if a pathname is an immersive admin page */
+export function isImmersivePage(pathname: string | null): boolean {
+  return IMMERSIVE_SEGMENTS.some((seg) => pathname?.includes(`/admin${seg}`));
+}
+
+/** Check if a pathname is the admin home page */
+export function isAdminHome(pathname: string | null, basePath: string): boolean {
+  return pathname === basePath || pathname === `${basePath}/`;
+}
+
+// Admin Navigation Groups
 // Group titles come from next-intl: sidebar.groupMain, sidebar.groupOrganization, etc.
 export const ADMIN_NAV_GROUPS = [
   {

@@ -192,6 +192,8 @@
     "revenueDay": "Daily Revenue",
     "ordersCount": "Orders",
     "activeItems": "Active Dishes",
+    "ordersToday": "Orders Today",
+    "revenueToday": "Revenue Today",
     "satisfaction": "Satisfaction",
     "topPerformers": "Top Performers",
     "profitAnalysis": "Profitability Analysis",
@@ -1257,7 +1259,8 @@
     "amountDue": "Amount Due",
     "received": "Received",
     "customTip": "Custom",
-    "numpadClear": "Clear"
+    "numpadClear": "Clear",
+    "numpadBackspace": "Backspace"
   },
   "qrCodes": {
     "title": "QR Codes",

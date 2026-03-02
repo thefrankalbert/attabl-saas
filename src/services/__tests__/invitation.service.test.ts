@@ -110,6 +110,16 @@ function createMockSupabase(
 
     if (table === 'admin_users') {
       return {
+        select: vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: options.existingAuthUser
+                ? { user_id: options.existingAuthUser.id, email: options.existingAuthUser.email }
+                : null,
+              error: null,
+            }),
+          }),
+        }),
         insert: vi
           .fn()
           .mockResolvedValue(

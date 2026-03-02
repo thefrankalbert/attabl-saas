@@ -282,28 +282,28 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
-      <div className="h-dvh bg-white flex items-center justify-center">
+      <div className="h-dvh bg-app-bg flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="h-12 w-12 bg-[#CCFF00] rounded-xl" />
-          <p className="text-zinc-500">...</p>
+          <div className="h-12 w-12 bg-accent rounded-xl" />
+          <p className="text-app-text-secondary">...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="h-dvh bg-white flex overflow-hidden">
+    <div className="h-dvh bg-app-bg flex overflow-hidden">
       {/* Sidebar — Desktop (lg+): w-72, icons + titles + descriptions */}
       {/* Sidebar — Tablet (md): w-56, icons + titles only */}
       {currentStep > 0 && (
-        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-zinc-50 border-r border-zinc-100">
+        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-app-elevated border-r border-app-border">
           {/* Logo */}
           <div className="p-6 lg:p-8">
             <Link href="/" className="flex items-center gap-3">
-              <div className="bg-[#CCFF00] rounded-xl p-2">
-                <Layout className="h-5 w-5 text-black" />
+              <div className="bg-accent rounded-xl p-2">
+                <Layout className="h-5 w-5 text-accent-text" />
               </div>
-              <span className="text-xl font-bold text-zinc-900">ATTABL</span>
+              <span className="text-xl font-bold text-app-text">ATTABL</span>
             </Link>
           </div>
 
@@ -322,7 +322,7 @@ export default function OnboardingPage() {
                     {index < STEP_KEYS.length - 1 && (
                       <div
                         className={`absolute left-[26px] top-[42px] h-[24px] w-[2px] -translate-x-1/2 ${
-                          isCompleted ? 'bg-[#CCFF00]' : 'bg-zinc-200'
+                          isCompleted ? 'bg-accent' : 'bg-app-elevated'
                         }`}
                       />
                     )}
@@ -338,19 +338,19 @@ export default function OnboardingPage() {
                       }}
                       className={`relative z-10 w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
                         isCurrent
-                          ? 'bg-white border border-zinc-200'
+                          ? 'bg-app-card border border-app-border'
                           : isCompleted
-                            ? 'hover:bg-white/60 cursor-pointer'
+                            ? 'hover:bg-app-card/60 cursor-pointer'
                             : 'opacity-50 cursor-default'
                       }`}
                     >
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                           isCompleted
-                            ? 'bg-[#CCFF00] text-black'
+                            ? 'bg-accent text-accent-text'
                             : isCurrent
-                              ? 'bg-zinc-900 text-white'
-                              : 'bg-zinc-200 text-zinc-400'
+                              ? 'bg-app-text text-app-bg'
+                              : 'bg-app-elevated text-app-text-muted'
                         }`}
                       >
                         {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
@@ -358,13 +358,13 @@ export default function OnboardingPage() {
                       <div className="min-w-0">
                         <p
                           className={`text-sm font-medium truncate ${
-                            isCurrent ? 'text-zinc-900' : 'text-zinc-600'
+                            isCurrent ? 'text-app-text' : 'text-app-text-secondary'
                           }`}
                         >
                           {t(stepKey.name)}
                         </p>
                         {/* Description: visible on lg+ only */}
-                        <p className="hidden lg:block text-xs text-zinc-400 truncate">
+                        <p className="hidden lg:block text-xs text-app-text-muted truncate">
                           {t(stepKey.desc)}
                         </p>
                       </div>
@@ -376,11 +376,11 @@ export default function OnboardingPage() {
           </nav>
 
           {/* Footer */}
-          <div className="p-4 lg:p-6 border-t border-zinc-100">
+          <div className="p-4 lg:p-6 border-t border-app-border">
             {data.tenantName && (
-              <p className="text-sm font-medium text-zinc-900 truncate">{data.tenantName}</p>
+              <p className="text-sm font-medium text-app-text truncate">{data.tenantName}</p>
             )}
-            <p className="text-xs text-zinc-400">{t('trialReminder')}</p>
+            <p className="text-xs text-app-text-muted">{t('trialReminder')}</p>
           </div>
         </aside>
       )}
@@ -391,14 +391,14 @@ export default function OnboardingPage() {
         {currentStep > 0 && (
           <div className="md:hidden shrink-0">
             {/* Logo row */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-zinc-100">
+            <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
               <Link href="/" className="flex items-center gap-2">
-                <div className="bg-[#CCFF00] rounded-lg p-1.5">
-                  <Layout className="h-4 w-4 text-black" />
+                <div className="bg-accent rounded-lg p-1.5">
+                  <Layout className="h-4 w-4 text-accent-text" />
                 </div>
-                <span className="font-bold text-zinc-900">ATTABL</span>
+                <span className="font-bold text-app-text">ATTABL</span>
               </Link>
-              <span className="text-xs text-zinc-400 uppercase tracking-wide font-medium">
+              <span className="text-xs text-app-text-muted uppercase tracking-wide font-medium">
                 {t('step')} {currentStep} {t('stepOf')} 5
               </span>
             </div>
@@ -423,10 +423,10 @@ export default function OnboardingPage() {
                       }}
                       className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
                         isCompleted
-                          ? 'bg-[#CCFF00] text-black cursor-pointer'
+                          ? 'bg-accent text-accent-text cursor-pointer'
                           : isCurrent
-                            ? 'bg-zinc-900 text-white'
-                            : 'bg-zinc-200 text-zinc-400'
+                            ? 'bg-app-text text-app-bg'
+                            : 'bg-app-elevated text-app-text-muted'
                       }`}
                     >
                       {isCompleted ? (
@@ -439,7 +439,7 @@ export default function OnboardingPage() {
                     {index < STEP_ICONS.length - 1 && (
                       <div
                         className={`w-4 sm:w-10 h-0.5 ${
-                          currentStep > stepId ? 'bg-[#CCFF00]' : 'bg-zinc-200'
+                          currentStep > stepId ? 'bg-accent' : 'bg-app-elevated'
                         }`}
                       />
                     )}
@@ -497,11 +497,11 @@ export default function OnboardingPage() {
         {/* Error Banner */}
         {error && (
           <div className="mx-4 md:mx-6 lg:mx-12 mb-2 shrink-0">
-            <div className="w-full max-w-5xl mx-auto p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-center justify-between">
+            <div className="w-full max-w-5xl mx-auto p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
               <span>{error}</span>
               <button
                 onClick={() => setError(null)}
-                className="text-red-400 hover:text-red-600 ml-3 shrink-0"
+                className="text-red-500/60 hover:text-red-500 ml-3 shrink-0"
               >
                 <span className="sr-only">Close</span>
                 &times;
@@ -512,11 +512,11 @@ export default function OnboardingPage() {
 
         {/* Footer Navigation — hidden on step 0 (welcome screen) */}
         {currentStep > 0 && (
-          <div className="border-t border-zinc-100 p-4 md:p-6 shrink-0 pb-[env(safe-area-inset-bottom)]">
+          <div className="border-t border-app-border p-4 md:p-6 shrink-0 pb-[env(safe-area-inset-bottom)]">
             <div className="w-full max-w-5xl mx-auto flex items-center justify-between">
               {/* Back button or auto-save status on step 1 */}
               {currentStep === 1 ? (
-                <span className="text-xs text-zinc-400 min-w-[80px]">
+                <span className="text-xs text-app-text-muted min-w-[80px]">
                   {autoSaveStatus === 'saving' && t('autoSaving')}
                   {autoSaveStatus === 'saved' && `✓ ${t('autoSaved')}`}
                 </span>
@@ -524,7 +524,7 @@ export default function OnboardingPage() {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="flex items-center gap-1.5 text-sm text-zinc-500 hover:text-zinc-900 transition-colors"
+                  className="flex items-center gap-1.5 text-sm text-app-text-secondary hover:text-app-text transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
@@ -543,7 +543,7 @@ export default function OnboardingPage() {
                       }
                     }}
                     disabled={saving}
-                    className="text-zinc-400 hover:text-zinc-600"
+                    className="text-app-text-muted hover:text-app-text-secondary"
                   >
                     {t('skip')}
                   </Button>
@@ -552,7 +552,7 @@ export default function OnboardingPage() {
                 {/* Continue / Launch — with validation opacity (Task 8) */}
                 {currentStep < 5 ? (
                   <Button
-                    variant="lime"
+                    variant="default"
                     onClick={nextStep}
                     disabled={saving}
                     className={!stepIsComplete(currentStep) ? 'opacity-60' : ''}
@@ -561,7 +561,7 @@ export default function OnboardingPage() {
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 ) : (
-                  <Button variant="lime" onClick={completeOnboarding} disabled={saving}>
+                  <Button variant="default" onClick={completeOnboarding} disabled={saving}>
                     {saving ? '...' : t('launchCTA')}
                     <Rocket className="h-4 w-4" />
                   </Button>

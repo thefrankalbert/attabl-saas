@@ -34,9 +34,9 @@ function EmptyColumn({
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
       <div className="w-12 h-12 rounded-xl bg-neutral-800/30 flex items-center justify-center mb-3">
-        <Icon className="w-6 h-6 text-neutral-700" />
+        <Icon className="w-6 h-6 text-app-text-secondary" />
       </div>
-      <p className="text-xs font-medium text-neutral-600">{label}</p>
+      <p className="text-xs font-medium text-app-text-secondary">{label}</p>
     </div>
   );
 }
@@ -87,7 +87,7 @@ export default function KitchenBoard({
               )}
             >
               <div className={cn('w-2 h-2 rounded-full', col.dot)} />
-              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-neutral-600">
+              <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-app-text-secondary">
                 {col.label}
               </span>
               <span

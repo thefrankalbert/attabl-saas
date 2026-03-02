@@ -112,13 +112,13 @@ export default function CartPage() {
   // Affichage succès
   if (orderSuccess) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-app-bg flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold mb-2">{t('orderSent')}</h2>
-          <p className="text-neutral-600 mb-2">
+          <p className="text-app-text-secondary mb-2">
             {t('orderSentDesc', { number: orderSuccess.orderNumber })}
           </p>
           <p className="text-2xl font-bold mb-6" style={{ color: 'var(--tenant-primary)' }}>
@@ -134,7 +134,7 @@ export default function CartPage() {
               </button>
             </Link>
             <Link href={menuPath}>
-              <button className="w-full h-12 rounded-xl border border-neutral-200 font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors">
+              <button className="w-full h-12 rounded-xl border border-app-border font-semibold text-app-text hover:bg-app-hover transition-colors">
                 {t('backToMenu')}
               </button>
             </Link>
@@ -147,13 +147,13 @@ export default function CartPage() {
   // Panier vide
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-app-bg flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <Utensils className="w-10 h-10 text-neutral-400" />
+          <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mx-auto mb-6">
+            <Utensils className="w-10 h-10 text-app-text-muted" />
           </div>
           <h2 className="text-2xl font-bold mb-4">{t('emptyCart')}</h2>
-          <p className="text-neutral-600 mb-6">{t('emptyCartDesc')}</p>
+          <p className="text-app-text-secondary mb-6">{t('emptyCartDesc')}</p>
           <Link href={menuPath}>
             <button
               className="h-12 px-6 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
@@ -169,17 +169,17 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA]">
+    <div className="min-h-screen bg-app-bg">
       {/* Header — frosted glass */}
       <header className="sticky top-0 z-40">
-        <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-b border-neutral-100" />
+        <div className="absolute inset-0 bg-app-card/80 backdrop-blur-xl border-b border-app-border" />
         <div className="relative flex items-center gap-3 px-4 py-3 max-w-4xl mx-auto">
-          <Link href={menuPath} className="p-2 rounded-full hover:bg-neutral-100 transition-colors">
+          <Link href={menuPath} className="p-2 rounded-full hover:bg-app-hover transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-lg font-bold text-neutral-900">
+          <h1 className="text-lg font-bold text-app-text">
             {t('yourCart')}{' '}
-            <span className="text-sm font-normal text-neutral-500">
+            <span className="text-sm font-normal text-app-text-secondary">
               ({t('itemCount', { count: totalItems })})
             </span>
           </h1>
@@ -189,7 +189,7 @@ export default function CartPage() {
       <main className="max-w-lg mx-auto px-4 py-6 pb-32 space-y-4">
         {/* Erreurs de validation */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
@@ -207,27 +207,27 @@ export default function CartPage() {
         )}
 
         {/* Cart items card */}
-        <div className="bg-white rounded-2xl border border-neutral-100 divide-y divide-neutral-50">
+        <div className="bg-app-card rounded-2xl border border-app-border divide-y divide-app-border">
           {items.map((item) => {
             const itemKey = getItemKey(item);
             return (
               <div key={itemKey} className="flex items-center gap-3 p-4">
                 {/* Thumbnail 48×48 */}
-                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100 relative">
+                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-app-elevated relative">
                   {item.image_url ? (
                     <Image src={item.image_url} alt={item.name} fill className="object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Utensils className="w-5 h-5 text-neutral-300" />
+                      <Utensils className="w-5 h-5 text-app-text-muted" />
                     </div>
                   )}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-neutral-900 truncate">{item.name}</h3>
+                  <h3 className="text-sm font-semibold text-app-text truncate">{item.name}</h3>
                   {(item.selectedOption || item.selectedVariant) && (
-                    <p className="text-xs text-neutral-400 truncate">
+                    <p className="text-xs text-app-text-muted truncate">
                       {item.selectedOption && item.selectedOption.name_fr}
                       {item.selectedOption && item.selectedVariant && ' · '}
                       {item.selectedVariant && item.selectedVariant.name_fr}
@@ -240,7 +240,7 @@ export default function CartPage() {
                   <div className="flex items-center gap-1.5">
                     <button
                       onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                      className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                      className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center hover:bg-app-hover transition-colors"
                       aria-label="Decrease quantity"
                     >
                       <Minus className="w-3.5 h-3.5" />
@@ -250,7 +250,7 @@ export default function CartPage() {
                     </span>
                     <button
                       onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                      className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center hover:bg-neutral-50 transition-colors"
+                      className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center hover:bg-app-hover transition-colors"
                       aria-label="Increase quantity"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -269,8 +269,8 @@ export default function CartPage() {
         </div>
 
         {/* Notes card */}
-        <div className="bg-white rounded-2xl border border-neutral-100 p-4">
-          <label htmlFor="notes" className="block text-sm font-semibold text-neutral-900 mb-2">
+        <div className="bg-app-card rounded-2xl border border-app-border p-4">
+          <label htmlFor="notes" className="block text-sm font-semibold text-app-text mb-2">
             {t('specialInstructions')}
           </label>
           <textarea
@@ -278,21 +278,21 @@ export default function CartPage() {
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder={t('specialInstructionsPlaceholder')}
-            className="w-full px-3 py-2 border border-neutral-100 rounded-xl text-sm resize-none h-20 focus:outline-none focus:border-neutral-300"
+            className="w-full px-3 py-2 border border-app-border rounded-xl text-sm resize-none h-20 focus:outline-none focus:border-app-border"
           />
         </div>
 
         {/* Summary card */}
-        <div className="bg-white rounded-2xl border border-neutral-100 p-5">
+        <div className="bg-app-card rounded-2xl border border-app-border p-5">
           <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-neutral-600">
+            <div className="flex justify-between text-app-text-secondary">
               <span>{t('subtotal')}</span>
               <span>
                 {subtotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
               </span>
             </div>
             {enableTax && taxAmount > 0 && (
-              <div className="flex justify-between text-neutral-600">
+              <div className="flex justify-between text-app-text-secondary">
                 <span>
                   {t('tax')} ({taxRate}%)
                 </span>
@@ -302,7 +302,7 @@ export default function CartPage() {
               </div>
             )}
             {enableServiceCharge && serviceChargeAmount > 0 && (
-              <div className="flex justify-between text-neutral-600">
+              <div className="flex justify-between text-app-text-secondary">
                 <span>
                   {t('serviceCharge')} ({serviceChargeRate}%)
                 </span>
@@ -321,9 +321,9 @@ export default function CartPage() {
                 </span>
               </div>
             )}
-            <div className="border-t border-neutral-100 pt-2 mt-2">
+            <div className="border-t border-app-border pt-2 mt-2">
               <div className="flex justify-between items-baseline">
-                <span className="font-bold text-neutral-900">{t('total')}</span>
+                <span className="font-bold text-app-text">{t('total')}</span>
                 <span className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
                   {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
                 </span>
@@ -346,7 +346,7 @@ export default function CartPage() {
 
           <button
             onClick={clearCart}
-            className="w-full text-sm text-neutral-400 mt-3 hover:text-neutral-600 transition-colors"
+            className="w-full text-sm text-app-text-muted mt-3 hover:text-app-text-secondary transition-colors"
           >
             {t('clearCart')}
           </button>
@@ -355,11 +355,11 @@ export default function CartPage() {
 
       {/* Mobile Sticky Bottom Bar — visible only on phones */}
       <div
-        className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-xl border-t border-neutral-100 px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+        className="fixed bottom-0 left-0 right-0 bg-app-card/80 backdrop-blur-xl border-t border-app-border px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
         style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
       >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-neutral-500">{t('total')}</span>
+          <span className="text-sm font-medium text-app-text-secondary">{t('total')}</span>
           <span className="text-lg font-bold" style={{ color: 'var(--tenant-primary)' }}>
             {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
           </span>

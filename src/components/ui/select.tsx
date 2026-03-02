@@ -18,13 +18,12 @@ const SelectTrigger = React.forwardRef<
   <SelectPrimitive.Trigger
     ref={ref}
     className={cn(
-      // Nova style: subtle, clean, small radius
       'flex h-9 w-full items-center justify-between gap-2',
-      'rounded-lg border border-neutral-200 bg-white px-3 py-2',
-      'text-sm font-medium text-foreground',
-      'ring-offset-background',
-      'placeholder:text-muted-foreground',
-      'focus:outline-none focus:ring-1 focus:ring-ring',
+      'rounded-lg border border-app-border bg-app-elevated px-3 py-2',
+      'text-sm font-medium text-app-text',
+      'ring-offset-app-bg',
+      'placeholder:text-app-text-muted',
+      'focus:outline-none focus:ring-1 focus:ring-accent/30 focus:border-accent',
       'disabled:cursor-not-allowed disabled:opacity-50',
       'transition-colors duration-150',
       '[&>span]:line-clamp-1',
@@ -76,9 +75,8 @@ const SelectContent = React.forwardRef<
     <SelectPrimitive.Content
       ref={ref}
       className={cn(
-        // Nova style: clean dropdown with subtle animation
         'relative z-50 max-h-96 min-w-[8rem] overflow-hidden',
-        'rounded-xl border border-neutral-200 bg-white text-neutral-900 shadow-none',
+        'rounded-xl border border-app-border bg-app-card text-app-text shadow-none',
         // Animation: clean fade + slide
         'data-[state=open]:animate-in data-[state=closed]:animate-out',
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
@@ -113,7 +111,7 @@ const SelectLabel = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <SelectPrimitive.Label
     ref={ref}
-    className={cn('px-2 py-1.5 text-xs font-semibold text-muted-foreground', className)}
+    className={cn('px-2 py-1.5 text-xs font-semibold text-app-text-muted', className)}
     {...props}
   />
 ));
@@ -126,11 +124,10 @@ const SelectItem = React.forwardRef<
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
-      // Nova style: subtle menu accent
       'relative flex w-full cursor-default select-none items-center',
       'rounded-lg py-1.5 pl-2 pr-8 text-sm font-medium',
       'outline-none',
-      'focus:bg-accent focus:text-accent-foreground',
+      'focus:bg-app-hover focus:text-app-text',
       'data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       'transition-colors duration-100',
       className,

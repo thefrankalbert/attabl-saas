@@ -40,14 +40,14 @@ export default function SettingsIdentity({
   return (
     <TabsContent value="identity" className="mt-0">
       <div className="space-y-4 sm:space-y-6">
-        <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+        <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="p-2 bg-blue-50 rounded-lg">
               <Store className="h-5 w-5 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-neutral-900">{t('restaurantIdentity')}</h2>
-              <p className="text-sm text-neutral-500">{t('clientVisibleInfo')}</p>
+              <h2 className="text-lg font-semibold text-app-text">{t('restaurantIdentity')}</h2>
+              <p className="text-sm text-app-text-secondary">{t('clientVisibleInfo')}</p>
             </div>
           </div>
 
@@ -73,7 +73,7 @@ export default function SettingsIdentity({
             <div className="space-y-4">
               <Label>{t('logo')}</Label>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                <div className="relative w-32 h-32 rounded-xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center overflow-hidden group hover:border-neutral-300 transition-colors">
+                <div className="relative w-32 h-32 rounded-xl bg-app-elevated border-2 border-dashed border-app-border flex items-center justify-center overflow-hidden group hover:border-app-text-muted transition-colors">
                   {logoPreview ? (
                     <Image
                       src={logoPreview}
@@ -82,7 +82,7 @@ export default function SettingsIdentity({
                       className="object-contain p-2"
                     />
                   ) : (
-                    <Upload className="h-8 w-8 text-neutral-300" />
+                    <Upload className="h-8 w-8 text-app-text-muted" />
                   )}
                   <input
                     type="file"
@@ -102,7 +102,7 @@ export default function SettingsIdentity({
                     </div>
                   )}
                 </div>
-                <div className="text-sm text-neutral-500">
+                <div className="text-sm text-app-text-secondary">
                   <p>{t('recommendedFormat')}</p>
                   <p>{t('maxSize')}</p>
                   <p>{t('ratio')}</p>
@@ -113,20 +113,20 @@ export default function SettingsIdentity({
         </div>
 
         {/* Slug (read-only display) */}
-        <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+        <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
           <div className="space-y-2">
             <Label htmlFor="slug">{t('slug') ?? 'Slug'}</Label>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span className="text-sm text-neutral-400">https://</span>
+              <span className="text-sm text-app-text-muted">https://</span>
               <Input
                 id="slug"
                 value={tenant.slug}
                 disabled
-                className="max-w-xs font-mono text-neutral-500 min-h-[44px]"
+                className="max-w-xs font-mono text-app-text-secondary min-h-[44px]"
               />
-              <span className="text-sm text-neutral-400">.attabl.com</span>
+              <span className="text-sm text-app-text-muted">.attabl.com</span>
             </div>
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-app-text-secondary">
               {t('slugDescription') ?? 'Your unique subdomain. Contact support to change it.'}
             </p>
           </div>

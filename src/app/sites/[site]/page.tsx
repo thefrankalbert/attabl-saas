@@ -86,22 +86,22 @@ export default async function MenuPage({
   if (!tenant) {
     // En mode dev, afficher un placeholder si pas de tenant
     return (
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white shadow-sm sticky top-0 z-10">
+      <div className="min-h-screen bg-app-bg">
+        <header className="bg-white dark:bg-app-elevated shadow-sm sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
-            <h1 className="text-2xl font-bold text-gray-900 capitalize">{tenantSlug}</h1>
+            <h1 className="text-2xl font-bold text-app-text capitalize">{tenantSlug}</h1>
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12 bg-white rounded-lg shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-700 mb-2">
+          <div className="text-center py-12 bg-white dark:bg-app-elevated rounded-lg shadow-sm">
+            <h2 className="text-xl font-semibold text-app-text-secondary mb-2">
               Restaurant non configur&eacute;
             </h2>
-            <p className="text-gray-500">
+            <p className="text-app-text-secondary">
               Le tenant &quot;{tenantSlug}&quot; n&apos;existe pas encore dans la base de
               donn&eacute;es.
             </p>
-            <p className="text-sm text-gray-400 mt-4">
+            <p className="text-sm text-app-text-muted mt-4">
               Configurez Supabase et cr&eacute;ez le tenant pour voir le menu.
             </p>
           </div>

@@ -26,7 +26,7 @@ export default async function SiteLayout({
         }}
       >
         <CartProvider>
-          <div className="min-h-screen bg-[#FAFAFA]">{children}</div>
+          <div className="min-h-screen bg-app-bg">{children}</div>
         </CartProvider>
       </ThemeProvider>
     </TenantProvider>

@@ -28,14 +28,14 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
 
   return (
     <TabsContent value="branding" className="mt-0">
-      <div className="bg-white rounded-xl border border-neutral-100 p-4 sm:p-6">
+      <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
           <div className="p-2 bg-purple-50 rounded-lg">
             <Palette className="h-5 w-5 text-purple-600" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-neutral-900">{t('customization')}</h2>
-            <p className="text-sm text-neutral-500">{t('digitalMenuColors')}</p>
+            <h2 className="text-lg font-semibold text-app-text">{t('customization')}</h2>
+            <p className="text-sm text-app-text-secondary">{t('digitalMenuColors')}</p>
           </div>
         </div>
 
@@ -48,7 +48,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
                   type="color"
                   value={watchedPrimaryColor}
                   onChange={(e) => setValue('primaryColor', e.target.value)}
-                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-neutral-200"
+                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-app-border"
                 />
                 <Input
                   id="primaryColor"
@@ -59,7 +59,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
               {errors.primaryColor && (
                 <p className="text-xs text-red-500">{errors.primaryColor.message}</p>
               )}
-              <p className="text-xs text-neutral-500">{t('usedForButtonsAndTitles')}</p>
+              <p className="text-xs text-app-text-secondary">{t('usedForButtonsAndTitles')}</p>
             </div>
 
             <div className="space-y-2">
@@ -69,7 +69,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
                   type="color"
                   value={watchedSecondaryColor}
                   onChange={(e) => setValue('secondaryColor', e.target.value)}
-                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-neutral-200"
+                  className="w-10 h-10 min-h-[44px] p-1 rounded-lg cursor-pointer flex-shrink-0 border border-app-border"
                 />
                 <Input
                   id="secondaryColor"
@@ -80,16 +80,16 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
               {errors.secondaryColor && (
                 <p className="text-xs text-red-500">{errors.secondaryColor.message}</p>
               )}
-              <p className="text-xs text-neutral-500">{t('usedForTextOnColoredBg')}</p>
+              <p className="text-xs text-app-text-secondary">{t('usedForTextOnColoredBg')}</p>
             </div>
           </div>
 
           {/* Preview Card */}
-          <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50">
-            <h3 className="text-xs font-semibold text-neutral-500 mb-3 uppercase tracking-wider">
+          <div className="p-4 rounded-xl border border-app-border bg-app-elevated">
+            <h3 className="text-xs font-semibold text-app-text-secondary mb-3 uppercase tracking-wider">
               {t('buttonPreview')}
             </h3>
-            <div className="flex items-center justify-center h-24 bg-white rounded-lg border border-neutral-200">
+            <div className="flex items-center justify-center h-24 bg-app-card rounded-lg border border-app-border">
               <button
                 type="button"
                 className="px-6 py-2.5 rounded-lg font-medium transition-transform active:scale-95"

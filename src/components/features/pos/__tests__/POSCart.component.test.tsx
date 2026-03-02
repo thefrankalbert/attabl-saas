@@ -1,15 +1,32 @@
 // @vitest-environment happy-dom
+import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import POSCart from '../POSCart';
-import type { CartItem, POSSuggestion } from '@/hooks/usePOSData';
+import type { CartItem } from '@/hooks/usePOSData';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
 // ─── Mocks ──────────────────────────────────────────────
 
 vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
+}));
+
+vi.mock('next/link', () => ({
+  default: ({
+    children,
+    href,
+    ...rest
+  }: {
+    children: React.ReactNode;
+    href: string;
+    [key: string]: unknown;
+  }) => (
+    <a href={href} {...rest}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('@/lib/utils/currency', () => ({
@@ -66,11 +83,10 @@ const mockCallbacks = {
 function renderCart(overrides: Record<string, unknown> = {}) {
   const defaultProps = {
     cart: [] as CartItem[],
-    menuItems: [menuItem1, menuItem2],
     currency: 'XAF' as CurrencyCode,
-    suggestions: [] as POSSuggestion[],
     total: 0,
     orderNumber: 42,
+    basePath: '/sites/test/admin',
     serviceType: 'dine_in' as ServiceType,
     selectedTable: '',
     roomNumber: '',

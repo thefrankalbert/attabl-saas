@@ -89,12 +89,12 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2 bg-neutral-100 rounded-xl">
-            <QrCode className="h-5 w-5 text-neutral-600" />
+          <div className="p-2 bg-app-elevated rounded-xl">
+            <QrCode className="h-5 w-5 text-app-text-secondary" />
           </div>
-          <h1 className="text-xl font-bold text-neutral-900">{t('title')}</h1>
+          <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
         </div>
-        <p className="text-sm text-neutral-500">{t('subtitle')}</p>
+        <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
       </div>
 
       {/* ─── Tabs Navigation ─── */}
@@ -109,7 +109,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsContent value="choose" className="flex-1 overflow-auto">
           <div>
             {/* Info Banner */}
-            <div className="mb-6 p-4 rounded-xl bg-blue-50 border border-blue-100 flex items-start gap-3">
+            <div className="mb-6 p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
               <Info className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm text-blue-800">
@@ -129,9 +129,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Table & Menu Selectors */}
             {(tables.length > 0 || menus.length > 0) && (
-              <div className="bg-white rounded-xl border border-neutral-100 p-5">
-                <h3 className="text-sm font-semibold text-neutral-700 mb-4 flex items-center gap-2">
-                  <Layers className="w-4 h-4 text-neutral-400" />
+              <div className="bg-app-card rounded-xl border border-app-border p-5">
+                <h3 className="text-sm font-semibold text-app-text-secondary mb-4 flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-app-text-muted" />
                   {t('selectTableMenu')}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -140,7 +140,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                     <div>
                       <label
                         htmlFor="qr-table-select"
-                        className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
+                        className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
                       >
                         <Table2 className="w-3.5 h-3.5" />
                         {t('table')}
@@ -149,7 +149,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                         id="qr-table-select"
                         value={selectedTableId}
                         onChange={(e) => setSelectedTableId(e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
+                        className="w-full px-3 py-2 border border-app-border rounded-xl text-sm focus:ring-2 focus:ring-accent/10 focus:border-app-border-hover transition-all"
                       >
                         <option value="">{t('noTable')}</option>
                         {tablesByZone.map(({ zone, tables: zoneTables }) => (
@@ -173,7 +173,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                     <div>
                       <label
                         htmlFor="qr-menu-select"
-                        className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 mb-1.5"
+                        className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                         {t('menuLabel')}
@@ -182,7 +182,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                         id="qr-menu-select"
                         value={selectedMenuId}
                         onChange={(e) => setSelectedMenuId(e.target.value)}
-                        className="w-full px-3 py-2 border border-neutral-200 rounded-xl text-sm focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-300 transition-all"
+                        className="w-full px-3 py-2 border border-app-border rounded-xl text-sm focus:ring-2 focus:ring-accent/10 focus:border-app-border-hover transition-all"
                       >
                         <option value="">{t('allMenus')}</option>
                         {menus.map((menu) => (
@@ -197,25 +197,25 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
                 {/* Dynamic URL Preview */}
                 {(selectedTable || selectedMenu) && (
-                  <div className="mt-3 p-2.5 bg-neutral-50 rounded-xl">
-                    <p className="text-xs text-neutral-500 font-mono break-all">{qrUrl}</p>
+                  <div className="mt-3 p-2.5 bg-app-bg rounded-xl">
+                    <p className="text-xs text-app-text-secondary font-mono break-all">{qrUrl}</p>
                   </div>
                 )}
               </div>
             )}
 
             {/* Selection Summary */}
-            <div className="mt-4 p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-              <h4 className="text-xs font-semibold text-neutral-500 uppercase tracking-wide mb-2">
+            <div className="mt-4 p-4 rounded-xl bg-app-bg border border-app-border">
+              <h4 className="text-xs font-semibold text-app-text-secondary uppercase tracking-wide mb-2">
                 {t('selectionSummary')}
               </h4>
               <div className="flex flex-wrap gap-3">
-                <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                  <Table2 className="w-3.5 h-3.5 text-neutral-400" />
+                <div className="flex items-center gap-1.5 text-sm text-app-text-secondary">
+                  <Table2 className="w-3.5 h-3.5 text-app-text-muted" />
                   <span>{selectedTable ? selectedTable.display_name : t('noTableSelected')}</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-sm text-neutral-700">
-                  <BookOpen className="w-3.5 h-3.5 text-neutral-400" />
+                <div className="flex items-center gap-1.5 text-sm text-app-text-secondary">
+                  <BookOpen className="w-3.5 h-3.5 text-app-text-muted" />
                   <span>{selectedMenu ? selectedMenu.name : t('allMenus')}</span>
                 </div>
               </div>
@@ -225,7 +225,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
         {/* ─── Tab: Customize ─── */}
         <TabsContent value="customize" className="flex-1 overflow-auto">
-          <div className="bg-white rounded-xl border border-neutral-100 p-6">
+          <div className="bg-app-card rounded-xl border border-app-border p-6">
             <QRCustomizerLayout
               config={config}
               updateField={updateField}
@@ -243,9 +243,9 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
         <TabsContent value="download" className="flex-1 overflow-auto">
           <div>
             {/* Single QR Preview + Download */}
-            <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
-              <h3 className="text-base font-bold text-neutral-900 mb-4 flex items-center gap-2">
-                <QrCode className="w-4 h-4 text-neutral-400" />
+            <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
+              <h3 className="text-base font-bold text-app-text mb-4 flex items-center gap-2">
+                <QrCode className="w-4 h-4 text-app-text-muted" />
                 {t('yourQRCode')}
               </h3>
               <div className="flex justify-center mb-6">
@@ -269,17 +269,17 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Batch Generation Section (A4 format) */}
             {tables.length > 0 && (
-              <div className="bg-white rounded-xl border border-neutral-100 p-6 mb-6">
+              <div className="bg-app-card rounded-xl border border-app-border p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                      <Download className="w-4 h-4 text-neutral-400" />
+                    <h3 className="text-base font-bold text-app-text flex items-center gap-2">
+                      <Download className="w-4 h-4 text-app-text-muted" />
                       {t('batchGeneration')}
                     </h3>
-                    <p className="text-sm text-neutral-500 mt-1">
+                    <p className="text-sm text-app-text-secondary mt-1">
                       {t('batchGenerationDesc', { count: tables.length })}
                     </p>
-                    <p className="text-xs text-neutral-400 mt-1">{t('formatA4')}</p>
+                    <p className="text-xs text-app-text-muted mt-1">{t('formatA4')}</p>
                   </div>
                 </div>
 
@@ -298,47 +298,47 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
 
             {/* Tips */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipStandard')}</h3>
-                <p className="text-sm text-neutral-500">{t('tipStandardDesc')}</p>
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1">{t('tipStandard')}</h3>
+                <p className="text-sm text-app-text-secondary">{t('tipStandardDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipEasel')}</h3>
-                <p className="text-sm text-neutral-500">{t('tipEaselDesc')}</p>
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1">{t('tipEasel')}</h3>
+                <p className="text-sm text-app-text-secondary">{t('tipEaselDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1">{t('tipCard')}</h3>
-                <p className="text-sm text-neutral-500">{t('tipCardDesc')}</p>
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1">{t('tipCard')}</h3>
+                <p className="text-sm text-app-text-secondary">{t('tipCardDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
                   {t('tipMinimal')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
                     Premium
                   </span>
                 </h3>
-                <p className="text-sm text-neutral-500">{t('tipMinimalDesc')}</p>
+                <p className="text-sm text-app-text-secondary">{t('tipMinimalDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
                   {t('tipElegant')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
                     Premium
                   </span>
                 </h3>
-                <p className="text-sm text-neutral-500">{t('tipElegantDesc')}</p>
+                <p className="text-sm text-app-text-secondary">{t('tipElegantDesc')}</p>
               </div>
-              <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
-                <h3 className="font-semibold text-neutral-900 mb-1 flex items-center gap-2">
+              <div className="p-4 rounded-xl bg-app-bg border border-app-border">
+                <h3 className="font-semibold text-app-text mb-1 flex items-center gap-2">
                   {t('tipNeon')}
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#CCFF00] text-black text-[10px] font-bold uppercase tracking-wide">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent text-accent-text text-[10px] font-bold uppercase tracking-wide">
                     <Sparkles className="w-3 h-3" />
                     Premium
                   </span>
                 </h3>
-                <p className="text-sm text-neutral-500">{t('tipNeonDesc')}</p>
+                <p className="text-sm text-app-text-secondary">{t('tipNeonDesc')}</p>
               </div>
             </div>
           </div>
@@ -504,10 +504,12 @@ function BatchQRPreview({
             {zoneTables.map((table) => (
               <div
                 key={table.id}
-                className="flex items-center gap-2 p-2 bg-neutral-50 rounded-xl text-xs"
+                className="flex items-center gap-2 p-2 bg-app-bg rounded-xl text-xs"
               >
-                <Table2 className="w-3 h-3 text-neutral-400 shrink-0" />
-                <span className="text-neutral-700 font-medium truncate">{table.display_name}</span>
+                <Table2 className="w-3 h-3 text-app-text-muted shrink-0" />
+                <span className="text-app-text-secondary font-medium truncate">
+                  {table.display_name}
+                </span>
               </div>
             ))}
           </div>
@@ -518,7 +520,7 @@ function BatchQRPreview({
       <Button
         onClick={handleBatchDownload}
         disabled={generating}
-        variant="lime"
+        variant="default"
         size="lg"
         className="w-full gap-2"
       >
@@ -528,7 +530,7 @@ function BatchQRPreview({
           : t('batchDownload', { count: tables.length })}
       </Button>
       {selectedMenu && (
-        <p className="text-xs text-neutral-400 mt-2 text-center">
+        <p className="text-xs text-app-text-muted mt-2 text-center">
           {t('batchMenuRedirect', { menu: selectedMenu.name })}
         </p>
       )}

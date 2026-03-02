@@ -13,13 +13,13 @@ export default function AdminNotFound() {
   return (
     <div className="flex min-h-[60vh] items-center justify-center px-4">
       <div className="text-center max-w-md">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-neutral-100">
-          <LayoutDashboard className="h-7 w-7 text-neutral-400" />
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-app-elevated">
+          <LayoutDashboard className="h-7 w-7 text-app-text-muted" />
         </div>
 
-        <p className="text-6xl font-black text-neutral-100">404</p>
-        <h1 className="mt-4 text-lg font-semibold text-neutral-900">Page admin introuvable</h1>
-        <p className="mt-2 text-sm text-neutral-500 leading-relaxed">
+        <p className="text-6xl font-black text-app-text-muted">404</p>
+        <h1 className="mt-4 text-lg font-semibold text-app-text">Page admin introuvable</h1>
+        <p className="mt-2 text-sm text-app-text-secondary leading-relaxed">
           Cette section n&apos;existe pas ou vous n&apos;y avez pas acc&egrave;s.
         </p>
 

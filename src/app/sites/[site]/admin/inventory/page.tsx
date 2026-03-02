@@ -20,9 +20,9 @@ export default async function InventoryPage({ params }: { params: Promise<{ site
   if (!tenant) {
     return (
       <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
+        <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
           <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-yellow-700">Tenant non trouvé</p>
+          <p className="text-sm text-yellow-600">Tenant non trouvé</p>
         </div>
       </div>
     );

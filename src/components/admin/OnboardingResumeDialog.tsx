@@ -38,7 +38,7 @@ export function OnboardingResumeDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Rocket className="h-6 w-6 text-neutral-700" />
+            <Rocket className="h-6 w-6 text-app-text" />
           </div>
           <DialogTitle className="text-center">{t('onboardingResumeTitle')}</DialogTitle>
           <DialogDescription className="text-center">{t('onboardingResumeDesc')}</DialogDescription>
@@ -47,7 +47,7 @@ export function OnboardingResumeDialog() {
           <Button onClick={handleResume} className="w-full">
             {t('onboardingResumeCta')}
           </Button>
-          <Button variant="ghost" onClick={handleSkip} className="w-full text-neutral-500">
+          <Button variant="ghost" onClick={handleSkip} className="w-full text-app-text-secondary">
             {t('onboardingResumeSkip')}
           </Button>
         </DialogFooter>

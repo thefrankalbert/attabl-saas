@@ -61,6 +61,21 @@ export async function POST(request: Request) {
         const subscriptionId = session.subscription as string;
 
         if (tenantId) {
+          // Idempotency: skip if tenant already has this subscription ID
+          const { data: existingTenant } = await supabase
+            .from('tenants')
+            .select('stripe_subscription_id')
+            .eq('id', tenantId)
+            .single();
+
+          if (existingTenant?.stripe_subscription_id === subscriptionId) {
+            logger.info('checkout.session.completed already processed, skipping', {
+              tenantId,
+              subscriptionId,
+            });
+            break;
+          }
+
           // Récupérer le vrai statut de l'abonnement Stripe
           let mappedStatus: 'trial' | 'active' | 'past_due' | 'cancelled' = 'active';
           if (subscriptionId) {
@@ -95,7 +110,18 @@ export async function POST(request: Request) {
             updateData.billing_interval = billingInterval;
           }
 
-          await supabase.from('tenants').update(updateData).eq('id', tenantId);
+          const { error: updateError } = await supabase
+            .from('tenants')
+            .update(updateData)
+            .eq('id', tenantId);
+
+          if (updateError) {
+            logger.error('DB update failed for checkout.session.completed', updateError, {
+              tenantId,
+              subscriptionId,
+            });
+            return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+          }
 
           logger.info('Tenant activated via checkout', {
             tenantId,
@@ -114,7 +140,7 @@ export async function POST(request: Request) {
         // Récupérer le tenant
         const { data: tenant, error: tenantError } = await supabase
           .from('tenants')
-          .select('id')
+          .select('id, subscription_status')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -123,37 +149,55 @@ export async function POST(request: Request) {
           break;
         }
 
-        if (tenant) {
-          // Accéder aux périodes via les items
-          const currentPeriodStart = subscription.items?.data?.[0]?.current_period_start;
-          const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
+        // Accéder aux périodes via les items
+        const currentPeriodStart = subscription.items?.data?.[0]?.current_period_start;
+        const currentPeriodEnd = subscription.items?.data?.[0]?.current_period_end;
 
-          // Mapper le statut Stripe vers le statut interne
-          const mappedStatus = mapStripeStatus(subscription.status);
+        // Mapper le statut Stripe vers le statut interne
+        const mappedStatus = mapStripeStatus(subscription.status);
 
-          const updateData: Record<string, unknown> = {
-            subscription_status: mappedStatus,
-          };
-
-          if (currentPeriodStart) {
-            updateData.subscription_current_period_start = new Date(
-              currentPeriodStart * 1000,
-            ).toISOString();
-          }
-          if (currentPeriodEnd) {
-            updateData.subscription_current_period_end = new Date(
-              currentPeriodEnd * 1000,
-            ).toISOString();
-          }
-
-          await supabase.from('tenants').update(updateData).eq('id', tenant.id);
-
-          logger.info('Subscription updated', {
+        // Idempotency: skip if tenant already has the expected status
+        if (tenant.subscription_status === mappedStatus) {
+          logger.info('customer.subscription.updated already reflects current state, skipping', {
             tenantId: tenant.id,
-            stripeStatus: subscription.status,
             mappedStatus,
           });
+          break;
         }
+
+        const updateData: Record<string, unknown> = {
+          subscription_status: mappedStatus,
+        };
+
+        if (currentPeriodStart) {
+          updateData.subscription_current_period_start = new Date(
+            currentPeriodStart * 1000,
+          ).toISOString();
+        }
+        if (currentPeriodEnd) {
+          updateData.subscription_current_period_end = new Date(
+            currentPeriodEnd * 1000,
+          ).toISOString();
+        }
+
+        const { error: updateError } = await supabase
+          .from('tenants')
+          .update(updateData)
+          .eq('id', tenant.id);
+
+        if (updateError) {
+          logger.error('DB update failed for customer.subscription.updated', updateError, {
+            tenantId: tenant.id,
+            stripeStatus: subscription.status,
+          });
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
+
+        logger.info('Subscription updated', {
+          tenantId: tenant.id,
+          stripeStatus: subscription.status,
+          mappedStatus,
+        });
         break;
       }
 
@@ -164,7 +208,7 @@ export async function POST(request: Request) {
         // Suspendre le tenant
         const { data: tenant, error: tenantDeleteError } = await supabase
           .from('tenants')
-          .select('id')
+          .select('id, subscription_status')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -173,13 +217,28 @@ export async function POST(request: Request) {
           break;
         }
 
-        await supabase
+        // Idempotency: skip if tenant is already cancelled
+        if (tenant.subscription_status === 'cancelled') {
+          logger.info('customer.subscription.deleted already processed, skipping', {
+            tenantId: tenant.id,
+          });
+          break;
+        }
+
+        const { error: updateError } = await supabase
           .from('tenants')
           .update({
             subscription_status: 'cancelled',
             is_active: false,
           })
           .eq('id', tenant.id);
+
+        if (updateError) {
+          logger.error('DB update failed for customer.subscription.deleted', updateError, {
+            tenantId: tenant.id,
+          });
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
 
         logger.warn('Tenant suspended — subscription cancelled', { tenantId: tenant.id });
         break;
@@ -192,7 +251,7 @@ export async function POST(request: Request) {
         // Marquer comme "past_due"
         const { data: tenant, error: tenantPaymentError } = await supabase
           .from('tenants')
-          .select('id')
+          .select('id, subscription_status')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -201,12 +260,27 @@ export async function POST(request: Request) {
           break;
         }
 
-        await supabase
+        // Idempotency: skip if tenant is already past_due
+        if (tenant.subscription_status === 'past_due') {
+          logger.info('invoice.payment_failed already reflects current state, skipping', {
+            tenantId: tenant.id,
+          });
+          break;
+        }
+
+        const { error: updateError } = await supabase
           .from('tenants')
           .update({
             subscription_status: 'past_due',
           })
           .eq('id', tenant.id);
+
+        if (updateError) {
+          logger.error('DB update failed for invoice.payment_failed', updateError, {
+            tenantId: tenant.id,
+          });
+          return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
+        }
 
         logger.warn('Payment failed for tenant', { tenantId: tenant.id });
         break;

@@ -192,6 +192,8 @@
     "revenueDay": "Ingresos del Día",
     "ordersCount": "Pedidos",
     "activeItems": "Platos Activos",
+    "ordersToday": "Pedidos del día",
+    "revenueToday": "Ingresos del día",
     "satisfaction": "Satisfacción",
     "topPerformers": "Mejores Resultados",
     "profitAnalysis": "Análisis de Rentabilidad",
@@ -1256,7 +1258,8 @@
     "amountDue": "Monto a pagar",
     "received": "Recibido",
     "customTip": "Personalizado",
-    "numpadClear": "Borrar"
+    "numpadClear": "Borrar",
+    "numpadBackspace": "Retroceso"
   },
   "qrCodes": {
     "title": "QR Codes",

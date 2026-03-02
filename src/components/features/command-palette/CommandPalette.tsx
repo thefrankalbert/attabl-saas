@@ -141,9 +141,9 @@ export function CommandPalette() {
           <CommandGroup heading={tc('quickActions')}>
             {quickActions.map((action) => (
               <CommandItem key={action.path} onSelect={() => runCommand(action.path)}>
-                <action.icon className="mr-2 h-4 w-4 text-neutral-500" />
+                <action.icon className="mr-2 h-4 w-4 text-app-text-secondary" />
                 <span>{action.label}</span>
-                <ArrowRight className="ml-auto h-3 w-3 text-neutral-400" />
+                <ArrowRight className="ml-auto h-3 w-3 text-app-text-muted" />
               </CommandItem>
             ))}
           </CommandGroup>
@@ -161,7 +161,7 @@ export function CommandPalette() {
           <CommandGroup key={group} heading={group}>
             {items.map((item) => (
               <CommandItem key={item.path} onSelect={() => runCommand(item.path)}>
-                <item.icon className="mr-2 h-4 w-4 text-neutral-500" />
+                <item.icon className="mr-2 h-4 w-4 text-app-text-secondary" />
                 <span>{item.label}</span>
               </CommandItem>
             ))}

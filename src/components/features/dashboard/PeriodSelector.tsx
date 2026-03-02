@@ -19,16 +19,16 @@ const PERIOD_KEYS: Record<Period, string> = {
 
 export default function PeriodSelector({ value, onChange, t }: PeriodSelectorProps) {
   return (
-    <div className="flex items-center gap-1 rounded-xl bg-zinc-100 p-1">
+    <div className="flex items-center gap-1 rounded-xl bg-app-bg p-1">
       {PERIODS.map((period) => (
         <button
           key={period}
           onClick={() => onChange(period)}
           className={cn(
-            'px-3 py-1.5 rounded-lg text-xs font-semibold transition-all',
+            'px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-150 min-w-[60px]',
             value === period
-              ? 'bg-white text-zinc-900 shadow-sm'
-              : 'text-zinc-500 hover:text-zinc-700',
+              ? 'bg-accent text-accent-text'
+              : 'text-app-text-secondary hover:text-app-text hover:bg-app-card',
           )}
         >
           {t(PERIOD_KEYS[period])}

@@ -200,14 +200,14 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
         <>
           {/* Target menu selector */}
           <div className="space-y-1.5">
-            <Label htmlFor="pdf-import-menu" className="text-neutral-900">
+            <Label htmlFor="pdf-import-menu" className="text-app-text">
               {t('targetMenu')}
             </Label>
             <select
               id="pdf-import-menu"
               value={menuId}
               onChange={(e) => setMenuId(e.target.value)}
-              className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-lime-400"
+              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
               required
               disabled={step === 'extracting'}
             >
@@ -231,7 +231,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               step === 'extracting' ? 'cursor-default' : 'cursor-pointer',
               isDragOver
                 ? 'border-lime-400 bg-lime-50'
-                : 'border-neutral-200 bg-neutral-50 hover:border-neutral-300 hover:bg-neutral-100',
+                : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
             )}
           >
             <input
@@ -249,24 +249,26 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                   <Loader2 className="w-5 h-5 text-lime-600 animate-spin" />
                 </div>
                 <div className="text-center">
-                  <p className="text-sm font-medium text-neutral-700">{t('pdfImporting')}</p>
-                  <p className="text-xs text-neutral-400 mt-1">{file?.name}</p>
+                  <p className="text-sm font-medium text-app-text">{t('pdfImporting')}</p>
+                  <p className="text-xs text-app-text-muted mt-1">{file?.name}</p>
                 </div>
               </div>
             ) : (
               <>
-                <div className="w-12 h-12 bg-white rounded-xl border border-neutral-100 flex items-center justify-center">
-                  <Upload className="w-5 h-5 text-neutral-400" />
+                <div className="w-12 h-12 bg-app-card rounded-xl border border-app-border flex items-center justify-center">
+                  <Upload className="w-5 h-5 text-app-text-muted" />
                 </div>
                 {file ? (
                   <div className="text-center">
-                    <p className="text-sm font-semibold text-neutral-900">{file.name}</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">{formatFileSize(file.size)}</p>
+                    <p className="text-sm font-semibold text-app-text">{file.name}</p>
+                    <p className="text-xs text-app-text-secondary mt-0.5">
+                      {formatFileSize(file.size)}
+                    </p>
                   </div>
                 ) : (
                   <div className="text-center">
-                    <p className="text-sm text-neutral-600">{t('pdfDragAndDrop')}</p>
-                    <p className="text-xs text-neutral-400 mt-1">{t('pdfMaxFileSize')}</p>
+                    <p className="text-sm text-app-text-secondary">{t('pdfDragAndDrop')}</p>
+                    <p className="text-xs text-app-text-muted mt-1">{t('pdfMaxFileSize')}</p>
                   </div>
                 )}
               </>
@@ -274,7 +276,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
           </div>
 
           {/* Action buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <Button
               type="button"
               variant="ghost"
@@ -284,7 +286,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               {t('cancel')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               disabled={!file || !menuId || step === 'extracting'}
               onClick={handleExtract}
               className="gap-2 rounded-xl"
@@ -304,41 +306,41 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {step === 'preview' && (
         <>
           <div className="space-y-2">
-            <p className="text-sm font-medium text-neutral-900">{t('pdfPreview')}</p>
-            <p className="text-xs text-neutral-500">{t('pdfPreviewDesc')}</p>
-            <p className="text-xs text-lime-700 font-medium">
+            <p className="text-sm font-medium text-app-text">{t('pdfPreview')}</p>
+            <p className="text-xs text-app-text-secondary">{t('pdfPreviewDesc')}</p>
+            <p className="text-xs text-accent font-medium">
               {t('pdfExtracted', { count: extractedItems.length })}
             </p>
           </div>
 
           {/* Scrollable item list */}
-          <div className="max-h-80 overflow-y-auto rounded-xl border border-neutral-100 divide-y divide-neutral-100">
+          <div className="max-h-80 overflow-y-auto rounded-xl border border-app-border divide-y divide-app-border">
             {extractedItems.map((item, index) => (
               <div
                 key={`${item.category}-${item.name}-${index}`}
-                className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-neutral-50 transition-colors"
+                className="flex items-start justify-between gap-3 px-4 py-3 hover:bg-app-hover transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-medium uppercase tracking-wider text-lime-700 bg-lime-50 px-1.5 py-0.5 rounded">
+                    <span className="text-[10px] font-medium uppercase tracking-wider text-accent bg-accent/5 px-1.5 py-0.5 rounded">
                       {item.category}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-neutral-900 mt-1 truncate">{item.name}</p>
+                  <p className="text-sm font-medium text-app-text mt-1 truncate">{item.name}</p>
                   {item.description && (
-                    <p className="text-xs text-neutral-500 mt-0.5 line-clamp-2">
+                    <p className="text-xs text-app-text-secondary mt-0.5 line-clamp-2">
                       {item.description}
                     </p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className="text-sm font-semibold text-neutral-700 tabular-nums">
+                  <span className="text-sm font-semibold text-app-text tabular-nums">
                     {formatPrice(item.price)}
                   </span>
                   <button
                     type="button"
                     onClick={() => removeItem(index)}
-                    className="p-1 rounded-md text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    className="p-1 rounded-md text-app-text-muted hover:text-red-500 hover:bg-status-error/10 transition-colors"
                     aria-label="Remove"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -349,11 +351,11 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
           </div>
 
           {extractedItems.length === 0 && (
-            <p className="text-sm text-neutral-500 text-center py-4">{t('pdfNoData')}</p>
+            <p className="text-sm text-app-text-secondary text-center py-4">{t('pdfNoData')}</p>
           )}
 
           {/* Action buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-neutral-100">
+          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <Button
               type="button"
               variant="ghost"
@@ -365,7 +367,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               {t('cancel')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               disabled={extractedItems.length === 0}
               onClick={handleImport}
               className="gap-2 rounded-xl"
@@ -381,14 +383,14 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {step === 'importing' && (
         <div className="flex flex-col items-center gap-4 py-8">
           <Loader2 className="w-8 h-8 text-lime-600 animate-spin" />
-          <p className="text-sm text-neutral-600">{t('importing')}</p>
+          <p className="text-sm text-app-text-secondary">{t('importing')}</p>
         </div>
       )}
 
       {/* Step: Done */}
       {step === 'done' && importResult && (
         <>
-          <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-4 space-y-2">
+          <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
             {importResult.categoriesCreated > 0 && (
               <div className="flex items-center gap-2 text-sm text-emerald-700">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
@@ -425,8 +427,8 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
           </div>
 
           {/* Close button */}
-          <div className="flex justify-end pt-4 border-t border-neutral-100">
-            <Button variant="lime" onClick={onCancel} className="rounded-xl">
+          <div className="flex justify-end pt-4 border-t border-app-border">
+            <Button variant="default" onClick={onCancel} className="rounded-xl">
               {t('cancel')}
             </Button>
           </div>

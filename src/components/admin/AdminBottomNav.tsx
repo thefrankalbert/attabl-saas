@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { NAV_GROUPS, BOTTOM_NAV_ITEMS } from '@/lib/layout/navigation-config';
+import { isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
@@ -12,19 +13,16 @@ import type { AdminRole } from '@/types/admin.types';
 interface AdminBottomNavProps {
   basePath: string;
   role: AdminRole;
-  primaryColor?: string;
 }
 
 // ─── Component ──────────────────────────────────────────
 
-const IMMERSIVE_SEGMENTS = ['/kitchen', '/pos'];
-
-export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavProps) {
+export function AdminBottomNav({ basePath, role }: AdminBottomNavProps) {
   const pathname = usePathname();
   const t = useTranslations('sidebar');
 
   // Hide bottom nav on immersive pages (KDS, POS) — they need full screen
-  if (IMMERSIVE_SEGMENTS.some((seg) => pathname?.includes(`/admin${seg}`))) return null;
+  if (isImmersivePage(pathname)) return null;
 
   // Get the 5 bottom nav item IDs for this role
   const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;
@@ -36,7 +34,7 @@ export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavP
 
   return (
     <nav
-      className="shrink-0 bg-white border-t border-neutral-200"
+      className="shrink-0 bg-app-card border-t border-app-border transition-colors duration-200"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       <div className="flex items-center justify-around h-14">
@@ -65,10 +63,9 @@ export function AdminBottomNav({ basePath, role, primaryColor }: AdminBottomNavP
               href={href}
               className={cn(
                 'flex flex-col items-center justify-center gap-0.5 flex-1 h-full',
-                'text-neutral-400 transition-colors duration-150',
-                isActive && 'text-neutral-900',
+                'text-app-text-muted transition-colors duration-150',
+                isActive && 'text-accent',
               )}
-              style={isActive && primaryColor ? { color: primaryColor } : undefined}
             >
               <Icon
                 className={cn('h-5 w-5 shrink-0', isActive ? 'stroke-[2.5]' : 'stroke-[1.5]')}

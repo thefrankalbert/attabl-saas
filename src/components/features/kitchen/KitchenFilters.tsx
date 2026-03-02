@@ -57,8 +57,8 @@ export default function KitchenFilters({
       <header className="h-11 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/80 shrink-0">
         {/* Left: Logo + counters */}
         <div className="flex items-center gap-1.5 sm:gap-2">
-          <ChefHat className="w-4 h-4 text-neutral-500" />
-          <span className="font-bold text-xs tracking-tight text-neutral-400 hidden sm:inline">
+          <ChefHat className="w-4 h-4 text-app-text-secondary" />
+          <span className="font-bold text-xs tracking-tight text-app-text-muted hidden sm:inline">
             {isChefView ? 'KDS' : t('readyForService')}
           </span>
 
@@ -94,7 +94,7 @@ export default function KitchenFilters({
 
         {/* Right: Controls */}
         <div className="flex items-center gap-0.5">
-          <span className="text-[10px] text-neutral-600 font-mono mr-1 hidden sm:inline tabular-nums">
+          <span className="text-[10px] text-app-text-muted font-mono mr-1 hidden sm:inline tabular-nums">
             {lastUpdate.toLocaleTimeString('fr-FR', {
               hour: '2-digit',
               minute: '2-digit',
@@ -105,7 +105,9 @@ export default function KitchenFilters({
               onClick={() => setShowMockData(!showMockData)}
               className={cn(
                 'px-2 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
-                showMockData ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
+                showMockData
+                  ? 'bg-white/10 text-white'
+                  : 'text-app-text-muted hover:text-app-text-muted',
               )}
             >
               Demo
@@ -115,20 +117,22 @@ export default function KitchenFilters({
             onClick={toggleSound}
             className={cn(
               'p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
-              soundEnabled ? 'bg-white/10 text-white' : 'text-neutral-600 hover:text-neutral-400',
+              soundEnabled
+                ? 'bg-white/10 text-white'
+                : 'text-app-text-muted hover:text-app-text-muted',
             )}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </button>
           <button
             onClick={goBack}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-neutral-600 hover:text-neutral-400 transition-colors"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
             title={isFullscreen ? t('exitFullscreen') : t('backToDashboard')}
           >
             {isFullscreen ? <X className="w-4 h-4" /> : <ArrowLeft className="w-4 h-4" />}
@@ -149,7 +153,7 @@ export default function KitchenFilters({
                 onClick={() => setActiveTab(key)}
                 className={cn(
                   'flex-1 flex items-center justify-center gap-1.5 py-2.5 min-h-[44px] text-xs font-bold uppercase tracking-wide transition-colors',
-                  isActive ? 'border-b-2 border-white/40 text-white' : 'text-neutral-600',
+                  isActive ? 'border-b-2 border-white/40 text-white' : 'text-app-text-muted',
                 )}
               >
                 <div className={cn('w-2 h-2 rounded-full', col.dot)} />

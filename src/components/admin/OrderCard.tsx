@@ -65,8 +65,8 @@ export default function OrderCard({
     > => ({
       pending: {
         color: '#F59E0B',
-        bg: 'bg-amber-50',
-        text: 'text-amber-700',
+        bg: 'bg-amber-500/10',
+        text: 'text-amber-500',
         label: t('statusPending'),
         border: 'border-l-amber-500',
         nextStatus: 'preparing',
@@ -74,8 +74,8 @@ export default function OrderCard({
       },
       preparing: {
         color: '#3B82F6',
-        bg: 'bg-blue-50',
-        text: 'text-blue-700',
+        bg: 'bg-blue-500/10',
+        text: 'text-blue-500',
         label: t('statusPreparing'),
         border: 'border-l-blue-500',
         nextStatus: 'ready',
@@ -83,8 +83,8 @@ export default function OrderCard({
       },
       ready: {
         color: '#22C55E',
-        bg: 'bg-emerald-50',
-        text: 'text-emerald-700',
+        bg: 'bg-emerald-500/10',
+        text: 'text-emerald-500',
         label: t('statusReady'),
         border: 'border-l-emerald-500',
         nextStatus: 'delivered',
@@ -92,7 +92,7 @@ export default function OrderCard({
       },
       delivered: {
         color: '#6B7280',
-        bg: 'bg-slate-50',
+        bg: 'bg-slate-500/10',
         text: 'text-slate-500',
         label: t('statusDelivered'),
         border: 'border-l-slate-500',
@@ -101,7 +101,7 @@ export default function OrderCard({
       },
       cancelled: {
         color: '#EF4444',
-        bg: 'bg-red-50',
+        bg: 'bg-red-500/10',
         text: 'text-red-500',
         label: t('statusCancelled'),
         border: 'border-l-red-500',
@@ -121,7 +121,7 @@ export default function OrderCard({
       layoutId={order.id}
       onClick={onClick}
       className={cn(
-        'bg-white rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
+        'bg-app-card rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
         config.border,
         isUrgent && 'ring-2 ring-red-500 ring-offset-2',
       )}
@@ -130,14 +130,14 @@ export default function OrderCard({
         {/* Header */}
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-neutral-100 rounded-lg flex items-center justify-center font-bold text-neutral-900">
+            <div className="w-10 h-10 bg-app-elevated rounded-lg flex items-center justify-center font-bold text-app-text">
               {order.table_number}
             </div>
             <div>
-              <p className="font-bold text-neutral-900">
+              <p className="font-bold text-app-text">
                 {t('tablePrefix')} {order.table_number}
               </p>
-              <div className="flex items-center gap-1 text-xs text-neutral-500">
+              <div className="flex items-center gap-1 text-xs text-app-text-secondary">
                 <Clock className="w-3 h-3" />
                 {new Date(order.created_at).toLocaleTimeString([], {
                   hour: '2-digit',
@@ -172,17 +172,17 @@ export default function OrderCard({
 
         {/* Items Preview */}
         {!compact && (
-          <div className="space-y-1 pt-2 border-t border-neutral-50">
+          <div className="space-y-1 pt-2 border-t border-app-border">
             {(order.items || []).slice(0, 3).map((item, i) => (
               <div key={i} className="flex justify-between text-sm">
                 <span className="flex gap-2">
-                  <span className="font-bold w-5 text-neutral-500">{item.quantity}x</span>
-                  <span className="text-neutral-700 truncate max-w-[140px]">{item.name}</span>
+                  <span className="font-bold w-5 text-app-text-secondary">{item.quantity}x</span>
+                  <span className="text-app-text truncate max-w-[140px]">{item.name}</span>
                 </span>
               </div>
             ))}
             {(order.items?.length || 0) > 3 && (
-              <p className="text-xs text-neutral-400 italic">
+              <p className="text-xs text-app-text-muted italic">
                 {t('moreItems', { count: order.items!.length - 3 })}
               </p>
             )}

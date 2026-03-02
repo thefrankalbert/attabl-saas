@@ -48,7 +48,7 @@ interface DailyStats {
 }
 
 const CHART_COLORS = [
-  '#CCFF00',
+  'var(--accent)',
   '#22c55e',
   '#3b82f6',
   '#f59e0b',
@@ -236,15 +236,15 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
-        <BarChart3 className="w-12 h-12 text-neutral-300 mb-4" />
-        <h2 className="text-lg font-semibold text-neutral-700">{t('noDataTitle')}</h2>
-        <p className="text-sm text-neutral-500 mt-1">{t('noDataDescription')}</p>
+        <BarChart3 className="w-12 h-12 text-app-text-muted mb-4" />
+        <h2 className="text-lg font-semibold text-app-text">{t('noDataTitle')}</h2>
+        <p className="text-sm text-app-text-secondary mt-1">{t('noDataDescription')}</p>
       </div>
     );
   }
 
   if (loading)
-    return <div className="p-12 text-center text-neutral-500">{t('loadingReports')}</div>;
+    return <div className="p-12 text-center text-app-text-secondary">{t('loadingReports')}</div>;
 
   return (
     <div className="space-y-6">
@@ -253,12 +253,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{t('titleClient')}</h1>
-            <p className="text-sm text-neutral-500">{t('subtitleClient')}</p>
+            <p className="text-sm text-app-text-secondary">{t('subtitleClient')}</p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <Button
               variant="outline"
-              className="rounded-xl border-neutral-100"
+              className="rounded-xl border-app-border"
               onClick={handleExportCSV}
               disabled={exportingCsv}
             >
@@ -270,7 +270,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
               {t('exportCsv')}
             </Button>
             <Button
-              variant="lime"
+              variant="default"
               className="rounded-xl"
               onClick={handleExportPDF}
               disabled={exporting}
@@ -286,7 +286,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* Pill-style period selector */}
-        <div className="flex items-center gap-1 bg-neutral-50 p-1 rounded-xl w-fit border border-neutral-100">
+        <div className="flex items-center gap-1 bg-app-bg p-1 rounded-xl w-fit border border-app-border">
           {PERIOD_PILLS.map((pill) => (
             <button
               key={pill.value}
@@ -294,8 +294,8 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
               onClick={() => setPeriod(pill.value)}
               className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
                 period === pill.value
-                  ? 'bg-[#CCFF00] text-black'
-                  : 'text-neutral-500 hover:text-neutral-700 hover:bg-white'
+                  ? 'bg-accent text-accent-text'
+                  : 'text-app-text-secondary hover:text-app-text hover:bg-app-card'
               }`}
             >
               {t(pill.labelKey)}
@@ -307,17 +307,17 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       {/* KPI Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
         {/* Revenue -- primary metric with lime accent */}
-        <div className="p-6 bg-white border border-neutral-100 rounded-xl">
+        <div className="p-6 bg-app-card border border-app-border rounded-xl">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-[#CCFF00]/20 text-black rounded-xl">
+            <div className="p-3 bg-accent/20 text-accent-text rounded-xl">
               <DollarSign className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
                 {t('revenueLabel')}
               </p>
               <div className="flex items-end gap-2">
-                <p className="text-3xl font-bold text-neutral-900">{fmt(summary.revenue)}</p>
+                <p className="text-3xl font-bold text-app-text">{fmt(summary.revenue)}</p>
                 {revenueTrend !== 0 && (
                   <span
                     className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
@@ -333,22 +333,22 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-neutral-400 mt-0.5">{t('vsLastPeriod')}</p>
+              <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
             </div>
           </div>
         </div>
         {/* Orders */}
-        <div className="p-6 bg-white border border-neutral-100 rounded-xl">
+        <div className="p-6 bg-app-card border border-app-border rounded-xl">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-neutral-100 text-neutral-600 rounded-xl">
+            <div className="p-3 bg-app-bg text-app-text-secondary rounded-xl">
               <ShoppingBag className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
                 {t('orders')}
               </p>
               <div className="flex items-end gap-2">
-                <p className="text-3xl font-bold text-neutral-900">{summary.orders}</p>
+                <p className="text-3xl font-bold text-app-text">{summary.orders}</p>
                 {ordersTrend !== 0 && (
                   <span
                     className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
@@ -364,22 +364,22 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-neutral-400 mt-0.5">{t('vsLastPeriod')}</p>
+              <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
             </div>
           </div>
         </div>
         {/* Average Basket */}
-        <div className="p-6 bg-white border border-neutral-100 rounded-xl">
+        <div className="p-6 bg-app-card border border-app-border rounded-xl">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-neutral-100 text-neutral-600 rounded-xl">
+            <div className="p-3 bg-app-bg text-app-text-secondary rounded-xl">
               <CreditCard className="w-6 h-6" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium uppercase tracking-wide text-neutral-400">
+              <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
                 {t('averageBasket')}
               </p>
               <div className="flex items-end gap-2">
-                <p className="text-3xl font-bold text-neutral-900">{fmt(summary.avgBasket)}</p>
+                <p className="text-3xl font-bold text-app-text">{fmt(summary.avgBasket)}</p>
                 {basketTrend !== 0 && (
                   <span
                     className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
@@ -395,7 +395,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-neutral-400 mt-0.5">{t('vsLastPeriod')}</p>
+              <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
             </div>
           </div>
         </div>
@@ -404,14 +404,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       {/* Chart & Top Items */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
         {/* Chart Section */}
-        <div className="lg:col-span-2 bg-white border border-neutral-100 rounded-xl p-6">
+        <div className="lg:col-span-2 bg-app-card border border-app-border rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-bold">{t('revenueEvolution')}</h3>
-            <span className="text-xs text-neutral-400">{periodDisplayLabel}</span>
+            <span className="text-xs text-app-text-muted">{periodDisplayLabel}</span>
           </div>
           {dailyStats.length === 0 ? (
             <div className="h-64 flex items-center justify-center">
-              <p className="text-sm text-neutral-400">{t('noData')}</p>
+              <p className="text-sm text-app-text-muted">{t('noData')}</p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={300}>
@@ -453,38 +453,38 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   ]}
                   cursor={{ fill: 'rgba(204, 255, 0, 0.08)' }}
                 />
-                <Bar dataKey="revenue" fill="#CCFF00" radius={[4, 4, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="revenue" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={48} />
               </BarChart>
             </ResponsiveContainer>
           )}
         </div>
 
         {/* Top Items Section */}
-        <div className="bg-white border border-neutral-100 rounded-xl p-6">
+        <div className="bg-app-card border border-app-border rounded-xl p-6">
           <h3 className="text-lg font-bold mb-6">{t('top5Products')}</h3>
           <div className="space-y-4">
             {topItems.map((item, index) => (
               <div key={item.id} className="flex items-center justify-between group">
                 <div className="flex items-center gap-3 overflow-hidden">
-                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-neutral-100 rounded-full text-xs font-bold text-neutral-500">
+                  <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-app-bg rounded-full text-xs font-bold text-app-text-secondary">
                     {index + 1}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 truncate group-hover:text-neutral-600 transition-colors">
+                    <p className="text-sm font-medium text-app-text truncate group-hover:text-app-text-secondary transition-colors">
                       {item.name}
                     </p>
-                    <p className="text-xs text-neutral-400">
+                    <p className="text-xs text-app-text-muted">
                       {t('salesCount', { count: item.quantity })}
                     </p>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-neutral-900 tabular-nums">
+                <span className="text-sm font-bold text-app-text tabular-nums">
                   {fmt(item.revenue)}
                 </span>
               </div>
             ))}
             {topItems.length === 0 && (
-              <p className="text-sm text-neutral-400 text-center py-8">{t('noData')}</p>
+              <p className="text-sm text-app-text-muted text-center py-8">{t('noData')}</p>
             )}
           </div>
 
@@ -500,22 +500,22 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
       {/* Product Ranking Table */}
       {topItems.length > 0 && (
-        <div className="bg-white border border-neutral-100 rounded-xl p-6">
+        <div className="bg-app-card border border-app-border rounded-xl p-6">
           <h3 className="text-lg font-bold mb-6">{t('productRanking')}</h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-neutral-100">
-                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                <tr className="border-b border-app-border">
+                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                     #
                   </th>
-                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                     {t('productName')}
                   </th>
-                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                     {t('ordersCount')}
                   </th>
-                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                     {t('revenueLabel')}
                   </th>
                 </tr>
@@ -524,16 +524,16 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                 {topItems.map((item, index) => (
                   <tr
                     key={item.id}
-                    className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors"
+                    className="border-b border-app-border hover:bg-app-bg transition-colors"
                   >
-                    <td className="py-3 px-2 tabular-nums text-neutral-500 font-bold">
+                    <td className="py-3 px-2 tabular-nums text-app-text-secondary font-bold">
                       {index + 1}
                     </td>
-                    <td className="py-3 px-2 font-medium text-neutral-900">{item.name}</td>
-                    <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                    <td className="py-3 px-2 font-medium text-app-text">{item.name}</td>
+                    <td className="py-3 px-2 text-right tabular-nums text-app-text">
                       {item.quantity}
                     </td>
-                    <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                    <td className="py-3 px-2 text-right tabular-nums text-app-text">
                       {fmt(item.revenue)}
                     </td>
                   </tr>
@@ -545,10 +545,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       )}
 
       {/* Category Breakdown */}
-      <div className="bg-white border border-neutral-100 rounded-xl p-6">
+      <div className="bg-app-card border border-app-border rounded-xl p-6">
         <h3 className="text-lg font-bold mb-6">{t('categoryBreakdown')}</h3>
         {categories.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center py-8">{t('noCategories')}</p>
+          <p className="text-sm text-app-text-muted text-center py-8">{t('noCategories')}</p>
         ) : (
           <div className="flex flex-col lg:flex-row items-center gap-6">
             <ResponsiveContainer width="100%" height={260}>
@@ -589,7 +589,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   iconType="circle"
                   iconSize={8}
                   formatter={(value: string) => (
-                    <span className="text-xs text-neutral-600">{value}</span>
+                    <span className="text-xs text-app-text-secondary">{value}</span>
                   )}
                 />
               </PieChart>
@@ -599,10 +599,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       </div>
 
       {/* Server Performance */}
-      <div className="bg-white border border-neutral-100 rounded-xl p-6">
+      <div className="bg-app-card border border-app-border rounded-xl p-6">
         <h3 className="text-lg font-bold mb-6">{t('serverPerformance')}</h3>
         {serverStats.length === 0 ? (
-          <p className="text-sm text-neutral-400 text-center py-8">{t('noServerData')}</p>
+          <p className="text-sm text-app-text-muted text-center py-8">{t('noServerData')}</p>
         ) : (
           <div className="space-y-6">
             {/* Horizontal bar chart -- orders per server */}
@@ -636,7 +636,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   labelStyle={{ color: '#a3a3a3', fontSize: 11 }}
                   formatter={(value: number | undefined) => [`${value ?? 0}`, t('ordersCount')]}
                 />
-                <Bar dataKey="orders" fill="#CCFF00" radius={[0, 4, 4, 0]} maxBarSize={32} />
+                <Bar dataKey="orders" fill="var(--accent)" radius={[0, 4, 4, 0]} maxBarSize={32} />
               </BarChart>
             </ResponsiveContainer>
 
@@ -644,17 +644,17 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-neutral-100">
-                    <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                  <tr className="border-b border-app-border">
+                    <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                       {t('serverName')}
                     </th>
-                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                       {t('ordersCount')}
                     </th>
-                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                       {t('revenueLabel')}
                     </th>
-                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-neutral-400">
+                    <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
                       {t('avgOrderValue')}
                     </th>
                   </tr>
@@ -663,16 +663,16 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   {serverStats.map((s) => (
                     <tr
                       key={s.serverName}
-                      className="border-b border-neutral-50 hover:bg-neutral-50 transition-colors"
+                      className="border-b border-app-border hover:bg-app-bg transition-colors"
                     >
-                      <td className="py-3 px-2 font-medium text-neutral-900">{s.serverName}</td>
-                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                      <td className="py-3 px-2 font-medium text-app-text">{s.serverName}</td>
+                      <td className="py-3 px-2 text-right tabular-nums text-app-text">
                         {s.orders}
                       </td>
-                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                      <td className="py-3 px-2 text-right tabular-nums text-app-text">
                         {fmt(s.revenue)}
                       </td>
-                      <td className="py-3 px-2 text-right tabular-nums text-neutral-700">
+                      <td className="py-3 px-2 text-right tabular-nums text-app-text">
                         {fmt(s.avgOrder)}
                       </td>
                     </tr>

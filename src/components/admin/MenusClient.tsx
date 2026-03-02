@@ -91,10 +91,10 @@ export default function MenusClient({
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl xl:text-2xl font-bold text-neutral-900 tracking-tight">
+            <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
               {t('title')}
             </h1>
-            <p className="text-sm text-neutral-500 mt-1">{t('subtitle')}</p>
+            <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -115,7 +115,7 @@ export default function MenusClient({
             </Button>
             <Button
               onClick={() => openNewMenuModal()}
-              variant="lime"
+              variant="default"
               disabled={isLimitReached}
               className="gap-2"
             >
@@ -127,7 +127,7 @@ export default function MenusClient({
 
         {/* Limit warning */}
         {isLimitReached && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
             <p className="text-sm text-amber-800 font-medium">
               {t('limitReached', { max: maxMenus })}{' '}
               <Link
@@ -142,7 +142,7 @@ export default function MenusClient({
 
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
           <Input
             data-search-input
             placeholder={t('searchPlaceholder')}
