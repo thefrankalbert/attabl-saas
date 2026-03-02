@@ -25,8 +25,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
           <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
           <div>
-            <p className="font-medium text-yellow-800">Configuration requise</p>
-            <p className="text-sm text-yellow-700 mt-1">
+            <p className="font-medium text-yellow-600">Configuration requise</p>
+            <p className="text-sm text-yellow-600 mt-1">
               Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré.
             </p>
           </div>

@@ -33,15 +33,16 @@ export function createInvitationService(supabase: SupabaseClient) {
   return {
     async createInvitation(input: CreateInvitationInput): Promise<Invitation> {
       // Check if email already has an ATTABL account
-      const { data: existingUsers } = await supabase.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(
-        (u: { email?: string }) => u.email === input.email,
-      );
+      const { data: existingAdminUser } = await supabase
+        .from('admin_users')
+        .select('user_id, email')
+        .eq('email', input.email)
+        .maybeSingle();
 
-      if (existingUser) {
+      if (existingAdminUser) {
         // User already exists — add directly to admin_users
         const { error: adminError } = await supabase.from('admin_users').insert({
-          user_id: existingUser.id,
+          user_id: existingAdminUser.user_id,
           tenant_id: input.tenantId,
           email: input.email,
           role: input.role,
@@ -130,13 +131,14 @@ export function createInvitationService(supabase: SupabaseClient) {
 
       let userId: string;
 
-      const { data: existingUsers } = await supabase.auth.admin.listUsers();
-      const existingUser = existingUsers?.users?.find(
-        (u: { email?: string }) => u.email === invitation.email,
-      );
+      const { data: existingAdminUser } = await supabase
+        .from('admin_users')
+        .select('user_id, email')
+        .eq('email', invitation.email)
+        .maybeSingle();
 
-      if (existingUser) {
-        userId = existingUser.id;
+      if (existingAdminUser) {
+        userId = existingAdminUser.user_id;
       } else {
         if (!input.password || !input.fullName) {
           throw new ServiceError('Nom et mot de passe requis pour un nouveau compte', 'VALIDATION');

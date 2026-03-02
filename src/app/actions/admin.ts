@@ -1,5 +1,6 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
@@ -9,6 +10,12 @@ import { createPlanEnforcementService } from '@/services/plan-enforcement.servic
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
+
+const updateAdminUserSchema = z.object({
+  role: z.enum(['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter']).optional(),
+  full_name: z.string().min(2).max(100).optional(),
+  is_active: z.boolean().optional(),
+});
 
 type ActionResponse = {
   success?: boolean;
@@ -233,14 +240,20 @@ export async function updateAdminUserAction(
   } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
+  // Validate input with Zod before DB write
+  const parsed = updateAdminUserSchema.safeParse(data);
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message || 'Données invalides' };
+  }
+
   const adminClient = createAdminClient();
 
   const { error } = await adminClient
     .from('admin_users')
     .update({
-      role: data.role,
-      full_name: data.full_name,
-      is_active: data.is_active,
+      role: parsed.data.role,
+      full_name: parsed.data.full_name,
+      is_active: parsed.data.is_active,
     })
     .eq('id', userId)
     .eq('tenant_id', tenantId); // Safety check
@@ -279,8 +292,8 @@ export async function resetUserPasswordAction(
   } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
-  if (!newPassword || newPassword.length < 6) {
-    return { error: 'Le mot de passe doit contenir au moins 6 caractères' };
+  if (!newPassword || newPassword.length < 8) {
+    return { error: 'Le mot de passe doit contenir au moins 8 caractères' };
   }
 
   const adminClient = createAdminClient();

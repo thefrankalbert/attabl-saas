@@ -27,7 +27,30 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     const { id } = await params;
 
+    // Fetch the invitation to get its tenant_id
     const adminClient = createAdminClient();
+    const { data: invitation } = await adminClient
+      .from('invitations')
+      .select('tenant_id')
+      .eq('id', id)
+      .single();
+
+    if (!invitation) {
+      return NextResponse.json({ error: 'Invitation introuvable' }, { status: 404 });
+    }
+
+    // Verify caller is owner or admin of this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', invitation.tenant_id)
+      .single();
+
+    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+    }
+
     const service = createInvitationService(adminClient);
     await service.cancelInvitation(id);
 

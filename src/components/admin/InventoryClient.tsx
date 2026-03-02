@@ -97,10 +97,10 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
   });
 
   const getStockBadge = (ing: Ingredient) => {
-    if (ing.current_stock <= 0) return { label: t('outOfStock'), bg: 'bg-red-100 text-red-700' };
+    if (ing.current_stock <= 0) return { label: t('outOfStock'), bg: 'bg-red-500/10 text-red-500' };
     if (ing.current_stock <= ing.min_stock_alert)
-      return { label: t('lowStock'), bg: 'bg-amber-100 text-amber-700' };
-    return { label: t('stockOk'), bg: 'bg-green-100 text-green-700' };
+      return { label: t('lowStock'), bg: 'bg-amber-500/10 text-amber-500' };
+    return { label: t('stockOk'), bg: 'bg-green-500/10 text-green-500' };
   };
 
   // TanStack Table column definitions

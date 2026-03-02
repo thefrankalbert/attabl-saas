@@ -105,7 +105,7 @@ export async function actionCreateMenu(
       newData: parsed.data,
     });
 
-    revalidateTag('menus', { expire: 0 });
+    revalidateTag('menus', 'max');
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -159,7 +159,7 @@ export async function actionUpdateMenu(
       newData: parsed.data,
     });
 
-    revalidateTag('menus', { expire: 0 });
+    revalidateTag('menus', 'max');
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -194,7 +194,7 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
     });
     audit.log({ action: 'delete', entityType: 'menu', entityId: menuId });
 
-    revalidateTag('menus', { expire: 0 });
+    revalidateTag('menus', 'max');
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -218,7 +218,7 @@ export async function actionReorderMenus(
     const menuService = createMenuService(supabase);
     await menuService.reorderMenus(tenantId, orderedIds);
 
-    revalidateTag('menus', { expire: 0 });
+    revalidateTag('menus', 'max');
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {

@@ -109,8 +109,7 @@ export async function proxy(request: NextRequest) {
   const { response: sessionResponse, supabase } = await createMiddlewareClient(request);
 
   // 5. Vérifier l'authentification pour les routes protégées
-  //    createMiddlewareClient a déjà validé/rafraîchi le token via getUser().
-  //    On utilise getSession() pour lire le résultat sans re-appeler le serveur auth.
+  //    On utilise getUser() pour valider cryptographiquement le JWT côté serveur.
   // Check top-level protected paths (/admin, /onboarding, /dashboard)
   // AND /sites/{slug}/admin/* paths (admin dashboard accessed via main domain)
   const isProtectedPath =
@@ -123,10 +122,10 @@ export async function proxy(request: NextRequest) {
       process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true';
 
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    if (!session?.user && !devBypass) {
+    if (!user && !devBypass) {
       // Rediriger vers login avec URL de retour
       // Pour les subdomains, rediriger vers le domaine principal pour éviter les 404
       const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;

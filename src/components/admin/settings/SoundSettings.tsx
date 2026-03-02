@@ -303,7 +303,7 @@ export function SoundSettings({
                   </span>
                   {sound.isPremium && !isPremium && <PremiumBadge />}
                   {isCustom && (
-                    <span className="text-[9px] uppercase tracking-wide bg-purple-100 text-purple-600 px-1 py-0.5 rounded-full flex-shrink-0">
+                    <span className="text-[9px] uppercase tracking-wide bg-purple-500/10 text-purple-500 px-1 py-0.5 rounded-full flex-shrink-0">
                       {t('customBadge')}
                     </span>
                   )}

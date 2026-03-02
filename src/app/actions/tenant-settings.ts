@@ -71,7 +71,7 @@ export async function updateTenantSettings(formData: FormData) {
     });
 
     // 4. Revalidate cached tenant config (used by site + admin layouts)
-    revalidateTag('tenant-config', { expire: 0 });
+    revalidateTag('tenant-config', 'max');
 
     return { success: true };
   } catch (error) {

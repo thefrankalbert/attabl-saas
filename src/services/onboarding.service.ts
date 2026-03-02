@@ -102,7 +102,8 @@ export function createOnboardingService(supabase: SupabaseClient) {
       // Step 5 uses completeOnboarding()
 
       if (Object.keys(tenantUpdate).length > 0) {
-        await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
+        const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
+        if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
       }
 
       // Update or insert onboarding progress
@@ -129,7 +130,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       data: OnboardingCompleteData,
     ): Promise<{ slug?: string }> {
       // 1. Final tenant update
-      await supabase
+      const { error } = await supabase
         .from('tenants')
         .update({
           establishment_type: data.establishmentType,
@@ -146,6 +147,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
           onboarding_completed_at: new Date().toISOString(),
         })
         .eq('id', tenantId);
+      if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
 
       // 2. Mark progress as completed
       await supabase.from('onboarding_progress').upsert(
