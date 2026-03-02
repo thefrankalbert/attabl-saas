@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
@@ -32,6 +32,30 @@ interface NotificationCenterProps {
 }
 
 export function NotificationCenter({ tenantId, userId }: NotificationCenterProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  // Render a placeholder bell icon during SSR / before hydration
+  // to avoid NextIntlClientProvider context errors during SSR→client fallback
+  if (!mounted) {
+    return (
+      <button
+        type="button"
+        className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted"
+        aria-label="Notifications"
+      >
+        <Bell className="w-4 h-4" />
+      </button>
+    );
+  }
+
+  return <NotificationCenterInner tenantId={tenantId} userId={userId} />;
+}
+
+function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
   const params = useParams();

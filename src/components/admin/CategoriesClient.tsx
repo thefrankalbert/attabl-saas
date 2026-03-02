@@ -264,102 +264,106 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
 
   return (
     <RoleGuard permission="canManageMenus">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-            <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
-          </div>
-          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
-            <Plus className="w-4 h-4" /> {t('newCategory')}
-          </Button>
-        </div>
-
-        {/* Counter */}
-        <div className="flex items-center gap-2 px-4 py-3 bg-app-card rounded-xl border border-app-border">
-          <Folder className="w-4 h-4 text-app-text-muted" />
-          <span className="text-xs text-app-text-secondary font-medium">
-            {t('categoryCount', { count: categories.length })}
-          </span>
-        </div>
-
-        {/* List */}
-        {loading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
-              />
-            ))}
-          </div>
-        ) : categories.length > 0 ? (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={handleDragStart}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={categories.map((cat) => cat.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {categories.map((cat) => (
-                  <SortableRow
-                    key={cat.id}
-                    cat={cat}
-                    onEdit={openEditModal}
-                    onDelete={handleDelete}
-                    editLabel={tc('edit')}
-                    deleteLabel={tc('delete')}
-                    dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-            <DragOverlay>
-              {activeDragId
-                ? (() => {
-                    const cat = categories.find((c) => c.id === activeDragId);
-                    if (!cat) return null;
-                    return (
-                      <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border-2 border-accent shadow-none">
-                        <GripVertical className="w-4 h-4 text-app-text-secondary" />
-                        <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-                          <Folder className="w-4 h-4 text-app-text-secondary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-app-text text-sm">{cat.name}</p>
-                          {cat.name_en && (
-                            <p className="text-xs text-app-text-muted">{cat.name_en}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-                          <Utensils className="w-3.5 h-3.5" />
-                          <span className="font-medium">
-                            {t('dishCount', { count: cat.items_count || 0 })}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })()
-                : null}
-            </DragOverlay>
-          </DndContext>
-        ) : (
-          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-              <Folder className="w-8 h-8 text-app-text-muted" />
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4 sm:space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
+              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
             </div>
-            <h3 className="text-lg font-bold text-app-text">{t('noCategories')}</h3>
-            <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesDesc')}</p>
-            <Button onClick={openNewModal} variant="default" className="mt-6">
-              {t('createCategory')}
+            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
+              <Plus className="w-4 h-4" /> {t('newCategory')}
             </Button>
           </div>
-        )}
+
+          {/* Counter */}
+          <div className="flex items-center gap-2 px-4 py-3 bg-app-card rounded-xl border border-app-border">
+            <Folder className="w-4 h-4 text-app-text-muted" />
+            <span className="text-xs text-app-text-secondary font-medium">
+              {t('categoryCount', { count: categories.length })}
+            </span>
+          </div>
+        </div>
+
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {/* List */}
+          {loading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
+                />
+              ))}
+            </div>
+          ) : categories.length > 0 ? (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={categories.map((cat) => cat.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="space-y-2">
+                  {categories.map((cat) => (
+                    <SortableRow
+                      key={cat.id}
+                      cat={cat}
+                      onEdit={openEditModal}
+                      onDelete={handleDelete}
+                      editLabel={tc('edit')}
+                      deleteLabel={tc('delete')}
+                      dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+              <DragOverlay>
+                {activeDragId
+                  ? (() => {
+                      const cat = categories.find((c) => c.id === activeDragId);
+                      if (!cat) return null;
+                      return (
+                        <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border-2 border-accent shadow-none">
+                          <GripVertical className="w-4 h-4 text-app-text-secondary" />
+                          <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
+                            <Folder className="w-4 h-4 text-app-text-secondary" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-app-text text-sm">{cat.name}</p>
+                            {cat.name_en && (
+                              <p className="text-xs text-app-text-muted">{cat.name_en}</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
+                            <Utensils className="w-3.5 h-3.5" />
+                            <span className="font-medium">
+                              {t('dishCount', { count: cat.items_count || 0 })}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })()
+                  : null}
+              </DragOverlay>
+            </DndContext>
+          ) : (
+            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+              <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+                <Folder className="w-8 h-8 text-app-text-muted" />
+              </div>
+              <h3 className="text-lg font-bold text-app-text">{t('noCategories')}</h3>
+              <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesDesc')}</p>
+              <Button onClick={openNewModal} variant="default" className="mt-6">
+                {t('createCategory')}
+              </Button>
+            </div>
+          )}
+        </div>
 
         {/* Modal */}
         <AdminModal

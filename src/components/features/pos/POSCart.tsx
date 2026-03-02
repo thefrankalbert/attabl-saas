@@ -61,6 +61,7 @@ export default function POSCart({
   serviceType,
   setServiceType,
   selectedTable,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   setSelectedTable,
   roomNumber,
   setRoomNumber,

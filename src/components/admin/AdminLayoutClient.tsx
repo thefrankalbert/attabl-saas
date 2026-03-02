@@ -49,11 +49,7 @@ function AdminLayoutInner({
 
         <main
           id="main-content"
-          className={cn(
-            'flex-1 min-h-0',
-            isHome ? 'overflow-hidden' : 'overflow-y-auto',
-            isDevMode && 'pt-6',
-          )}
+          className={cn('flex-1 min-h-0', 'overflow-hidden', isDevMode && 'pt-6')}
         >
           {children}
         </main>

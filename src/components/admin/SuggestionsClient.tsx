@@ -230,237 +230,253 @@ export default function SuggestionsClient({
     );
   });
 
-  if (loading) {
-    return <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>;
-  }
-
   return (
-    <div className="p-4 sm:p-6 space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
-            <Lightbulb className="w-6 h-6" />
-            {t('suggestions')}
-          </h1>
-          <p className="text-sm text-app-text-secondary mt-1">
-            {t('activeSuggestions', { count: suggestions.length })}
-          </p>
+    <div className="h-full flex flex-col overflow-hidden">
+      {loading ? (
+        <div className="flex-1 flex items-center justify-center text-app-text-secondary">
+          {tc('loading')}
         </div>
-        <div className="flex items-center gap-2">
-          {canAutoGenerate && (
-            <Button
-              onClick={handleAutoGenerate}
-              variant="outline"
-              className="gap-2"
-              disabled={generating || menuItems.length === 0}
-            >
-              <Wand2 className="w-4 h-4" />
-              {generating ? tc('loading') : t('autoGenerate')}
-            </Button>
-          )}
-          <Button onClick={() => setShowAdd(true)} variant="default" className="gap-2">
-            <Plus className="w-4 h-4" />
-            {t('addSuggestion')}
-          </Button>
-        </div>
-      </div>
-
-      {/* Search */}
-      <div className="relative max-w-md">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-        <Input
-          placeholder={t('searchDish')}
-          className="pl-9 rounded-lg focus-visible:ring-accent"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-      </div>
-
-      {/* Bulk actions */}
-      {suggestions.length > 0 && (
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
-            {selectedIds.size === filtered.length && filtered.length > 0 ? (
-              <CheckSquare className="w-4 h-4" />
-            ) : (
-              <Square className="w-4 h-4" />
-            )}
-            {selectedIds.size === filtered.length && filtered.length > 0
-              ? t('deselectAll')
-              : t('selectAll')}
-          </Button>
-          {selectedIds.size > 0 && (
-            <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleBulkDelete}>
-              <XCircle className="w-4 h-4" />
-              {t('deleteSelected', { count: selectedIds.size })}
-            </Button>
-          )}
-        </div>
-      )}
-
-      {/* Suggestions Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((suggestion) => {
-          const typeConfig = SUGGESTION_TYPES.find((st) => st.value === suggestion.suggestion_type);
-          return (
-            <div
-              key={suggestion.id}
-              className={cn(
-                'bg-app-card rounded-xl border p-4 transition-colors',
-                selectedIds.has(suggestion.id)
-                  ? 'border-accent bg-accent-muted'
-                  : 'border-app-border',
-              )}
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleSelect(suggestion.id)}
-                    className="text-app-text-muted hover:text-app-text-secondary transition-colors"
-                  >
-                    {selectedIds.has(suggestion.id) ? (
-                      <CheckSquare className="w-4 h-4 text-lime-600" />
-                    ) : (
-                      <Square className="w-4 h-4" />
-                    )}
-                  </button>
-                  <span
-                    className={cn(
-                      'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-                      typeConfig?.color || 'bg-app-bg text-app-text-secondary',
-                    )}
-                  >
-                    {typeConfig?.emoji} {typeConfig?.label}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDelete(suggestion.id)}
-                  className="p-1 text-app-text-muted hover:text-red-500 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-
-              <div className="mt-3 space-y-1">
-                <p className="text-sm font-semibold text-app-text">
-                  {suggestion.menu_item?.name || tc('unknown')}
-                </p>
-                <p className="text-xs text-app-text-muted">{tc('suggests')}</p>
-                <p className="text-sm font-semibold text-primary">
-                  {suggestion.suggested_item?.name || tc('unknown')}
+      ) : (
+        <>
+          {/* Header + Search + Bulk actions */}
+          <div className="shrink-0 space-y-4 sm:space-y-6">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
+                  <Lightbulb className="w-6 h-6" />
+                  {t('suggestions')}
+                </h1>
+                <p className="text-sm text-app-text-secondary mt-1">
+                  {t('activeSuggestions', { count: suggestions.length })}
                 </p>
               </div>
-
-              {suggestion.description && (
-                <p className="mt-2 text-xs text-app-text-secondary italic">
-                  &ldquo;{suggestion.description}&rdquo;
-                </p>
-              )}
+              <div className="flex items-center gap-2">
+                {canAutoGenerate && (
+                  <Button
+                    onClick={handleAutoGenerate}
+                    variant="outline"
+                    className="gap-2"
+                    disabled={generating || menuItems.length === 0}
+                  >
+                    <Wand2 className="w-4 h-4" />
+                    {generating ? tc('loading') : t('autoGenerate')}
+                  </Button>
+                )}
+                <Button onClick={() => setShowAdd(true)} variant="default" className="gap-2">
+                  <Plus className="w-4 h-4" />
+                  {t('addSuggestion')}
+                </Button>
+              </div>
             </div>
-          );
-        })}
-        {filtered.length === 0 && (
-          <div className="col-span-full text-center py-12 text-app-text-muted">
-            <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="font-medium">{t('noSuggestions')}</p>
-            <p className="text-xs mt-1">{t('addServerAdvice')}</p>
-          </div>
-        )}
-      </div>
 
-      {/* Add Modal */}
-      <AdminModal
-        isOpen={showAdd}
-        onClose={() => setShowAdd(false)}
-        title={t('newSuggestion')}
-        size="lg"
-      >
-        <div className="space-y-4 pt-4">
-          <div>
-            <Label className="text-sm font-medium text-app-text mb-1.5 block">
-              {t('sourceDish')}
-            </Label>
-            <select
-              value={sourceItemId}
-              onChange={(e) => setSourceItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-            >
-              <option value="">{tc('selectPlaceholder')}</option>
-              {menuItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            {/* Search */}
+            <div className="relative max-w-md">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+              <Input
+                placeholder={t('searchDish')}
+                className="pl-9 rounded-lg focus-visible:ring-accent"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-          <div>
-            <Label className="text-sm font-medium text-app-text mb-1.5 block">
-              {t('suggestionType')}
-            </Label>
-            <div className="grid grid-cols-3 gap-2">
-              {SUGGESTION_TYPES.map((st) => (
-                <button
-                  key={st.value}
-                  type="button"
-                  onClick={() => setSuggestionType(st.value)}
-                  className={cn(
-                    'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
-                    suggestionType === st.value
-                      ? 'border-accent bg-accent-muted text-app-text'
-                      : 'border-app-border text-app-text-secondary hover:bg-app-bg',
+            {/* Bulk actions */}
+            {suggestions.length > 0 && (
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
+                  {selectedIds.size === filtered.length && filtered.length > 0 ? (
+                    <CheckSquare className="w-4 h-4" />
+                  ) : (
+                    <Square className="w-4 h-4" />
                   )}
-                >
-                  <span>{st.emoji}</span>
-                  <span>{st.label}</span>
-                </button>
-              ))}
+                  {selectedIds.size === filtered.length && filtered.length > 0
+                    ? t('deselectAll')
+                    : t('selectAll')}
+                </Button>
+                {selectedIds.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={handleBulkDelete}
+                  >
+                    <XCircle className="w-4 h-4" />
+                    {t('deleteSelected', { count: selectedIds.size })}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Suggestions Grid */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filtered.map((suggestion) => {
+                const typeConfig = SUGGESTION_TYPES.find(
+                  (st) => st.value === suggestion.suggestion_type,
+                );
+                return (
+                  <div
+                    key={suggestion.id}
+                    className={cn(
+                      'bg-app-card rounded-xl border p-4 transition-colors',
+                      selectedIds.has(suggestion.id)
+                        ? 'border-accent bg-accent-muted'
+                        : 'border-app-border',
+                    )}
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleSelect(suggestion.id)}
+                          className="text-app-text-muted hover:text-app-text-secondary transition-colors"
+                        >
+                          {selectedIds.has(suggestion.id) ? (
+                            <CheckSquare className="w-4 h-4 text-lime-600" />
+                          ) : (
+                            <Square className="w-4 h-4" />
+                          )}
+                        </button>
+                        <span
+                          className={cn(
+                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
+                            typeConfig?.color || 'bg-app-bg text-app-text-secondary',
+                          )}
+                        >
+                          {typeConfig?.emoji} {typeConfig?.label}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => handleDelete(suggestion.id)}
+                        className="p-1 text-app-text-muted hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+
+                    <div className="mt-3 space-y-1">
+                      <p className="text-sm font-semibold text-app-text">
+                        {suggestion.menu_item?.name || tc('unknown')}
+                      </p>
+                      <p className="text-xs text-app-text-muted">{tc('suggests')}</p>
+                      <p className="text-sm font-semibold text-primary">
+                        {suggestion.suggested_item?.name || tc('unknown')}
+                      </p>
+                    </div>
+
+                    {suggestion.description && (
+                      <p className="mt-2 text-xs text-app-text-secondary italic">
+                        &ldquo;{suggestion.description}&rdquo;
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+              {filtered.length === 0 && (
+                <div className="col-span-full text-center py-12 text-app-text-muted">
+                  <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p className="font-medium">{t('noSuggestions')}</p>
+                  <p className="text-xs mt-1">{t('addServerAdvice')}</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <div>
-            <Label className="text-sm font-medium text-app-text mb-1.5 block">
-              {t('suggestedDish')}
-            </Label>
-            <select
-              value={targetItemId}
-              onChange={(e) => setTargetItemId(e.target.value)}
-              className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
-            >
-              <option value="">{tc('selectPlaceholder')}</option>
-              {menuItems.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          {/* Add Modal */}
+          <AdminModal
+            isOpen={showAdd}
+            onClose={() => setShowAdd(false)}
+            title={t('newSuggestion')}
+            size="lg"
+          >
+            <div className="space-y-4 pt-4">
+              <div>
+                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                  {t('sourceDish')}
+                </Label>
+                <select
+                  value={sourceItemId}
+                  onChange={(e) => setSourceItemId(e.target.value)}
+                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                >
+                  <option value="">{tc('selectPlaceholder')}</option>
+                  {menuItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-          <div>
-            <Label className="text-sm font-medium text-app-text mb-1.5 block">
-              {t('serverAdvice')}
-            </Label>
-            <Input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder={t('serverAdvicePlaceholder')}
-              className="rounded-lg focus-visible:ring-accent"
-            />
-            <p className="mt-1 text-xs text-app-text-secondary">{t('addServerAdvice')}</p>
-          </div>
-        </div>
+              <div>
+                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                  {t('suggestionType')}
+                </Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {SUGGESTION_TYPES.map((st) => (
+                    <button
+                      key={st.value}
+                      type="button"
+                      onClick={() => setSuggestionType(st.value)}
+                      className={cn(
+                        'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
+                        suggestionType === st.value
+                          ? 'border-accent bg-accent-muted text-app-text'
+                          : 'border-app-border text-app-text-secondary hover:bg-app-bg',
+                      )}
+                    >
+                      <span>{st.emoji}</span>
+                      <span>{st.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-        <div className="flex justify-end gap-2 mt-6">
-          <Button variant="ghost" onClick={() => setShowAdd(false)}>
-            {tc('cancel')}
-          </Button>
-          <Button onClick={handleAdd} variant="default">
-            {tc('add')}
-          </Button>
-        </div>
-      </AdminModal>
+              <div>
+                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                  {t('suggestedDish')}
+                </Label>
+                <select
+                  value={targetItemId}
+                  onChange={(e) => setTargetItemId(e.target.value)}
+                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                >
+                  <option value="">{tc('selectPlaceholder')}</option>
+                  {menuItems.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <Label className="text-sm font-medium text-app-text mb-1.5 block">
+                  {t('serverAdvice')}
+                </Label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder={t('serverAdvicePlaceholder')}
+                  className="rounded-lg focus-visible:ring-accent"
+                />
+                <p className="mt-1 text-xs text-app-text-secondary">{t('addServerAdvice')}</p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 mt-6">
+              <Button variant="ghost" onClick={() => setShowAdd(false)}>
+                {tc('cancel')}
+              </Button>
+              <Button onClick={handleAdd} variant="default">
+                {tc('add')}
+              </Button>
+            </div>
+          </AdminModal>
+        </>
+      )}
     </div>
   );
 }

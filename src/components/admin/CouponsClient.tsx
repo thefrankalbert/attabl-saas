@@ -87,161 +87,170 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   };
 
   return (
-    <div className="space-y-6 h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
-          <p className="text-xs text-app-text-secondary mt-1">{t('subtitleClient')}</p>
-        </div>
-
-        <Button
-          onClick={() => {
-            setEditingCoupon(null);
-            setShowForm(true);
-          }}
-          variant="default"
-          className="gap-2"
-        >
-          <Plus className="h-4 w-4" />
-          {t('newCoupon')}
-        </Button>
-      </div>
-
-      {/* Coupons List */}
-      {coupons.length > 0 ? (
-        <div className="grid gap-3">
-          {/* Table Header (desktop) */}
-          <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
-            <span>{t('codeField')}</span>
-            <span>{t('type')}</span>
-            <span>{t('valueColumn')}</span>
-            <span>{t('usagesColumn')}</span>
-            <span>{t('statusColumn')}</span>
-            <span className="text-right">{t('actionsColumn')}</span>
+      <div className="shrink-0 space-y-4 sm:space-y-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
+            <p className="text-xs text-app-text-secondary mt-1">{t('subtitleClient')}</p>
           </div>
 
-          {coupons.map((coupon) => (
-            <div
-              key={coupon.id}
-              className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
-              onClick={() => openEdit(coupon)}
-            >
-              <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
-                {/* Code */}
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />
-                  <span className="font-bold font-mono text-sm tracking-wider">{coupon.code}</span>
-                </div>
-
-                {/* Type */}
-                <div>
-                  <span
-                    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                      coupon.discount_type === 'percentage'
-                        ? 'bg-blue-500/10 text-blue-500'
-                        : 'bg-purple-500/10 text-purple-500'
-                    }`}
-                  >
-                    {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
-                  </span>
-                </div>
-
-                {/* Value */}
-                <div className="text-sm font-semibold text-app-text">{formatDiscount(coupon)}</div>
-
-                {/* Usage */}
-                <div className="text-sm text-app-text-secondary">
-                  {coupon.current_uses}
-                  {coupon.max_uses ? ` / ${coupon.max_uses}` : ' / ∞'}
-                </div>
-
-                {/* Status Toggle */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleActive(coupon);
-                  }}
-                  className="flex items-center gap-1.5 group"
-                  title={coupon.is_active ? t('deactivate') : t('activate')}
-                >
-                  {coupon.is_active ? (
-                    <>
-                      <ToggleRight className="h-5 w-5 text-green-600" />
-                      <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
-                        {t('active')}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <ToggleLeft className="h-5 w-5 text-app-text-muted" />
-                      <span className="text-xs font-semibold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
-                        {t('inactive')}
-                      </span>
-                    </>
-                  )}
-                </button>
-
-                {/* Delete */}
-                <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleDelete(coupon.id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
-                    title={t('deleteAction')}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Extra info row */}
-              {(coupon.valid_from || coupon.valid_until || coupon.min_order_amount) && (
-                <div className="mt-3 pt-3 border-t border-app-border flex flex-wrap gap-3 text-xs text-app-text-secondary">
-                  {coupon.valid_from && (
-                    <span>
-                      {t('startLabel')} {new Date(coupon.valid_from).toLocaleDateString(locale)}
-                    </span>
-                  )}
-                  {coupon.valid_until && (
-                    <span>
-                      {t('endLabel')} {new Date(coupon.valid_until).toLocaleDateString(locale)}
-                    </span>
-                  )}
-                  {coupon.min_order_amount && (
-                    <span>
-                      {t('minOrderLabel')} {formatCurrency(coupon.min_order_amount, currency)}
-                    </span>
-                  )}
-                  {coupon.max_discount_amount && coupon.discount_type === 'percentage' && (
-                    <span>
-                      {t('maxDiscountLabel')} {formatCurrency(coupon.max_discount_amount, currency)}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="py-12 text-center bg-app-bg rounded-xl border border-dashed border-app-border">
-          <ListFilter className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
-          <h3 className="text-sm font-semibold text-app-text">{t('noCoupons')}</h3>
-          <p className="text-xs text-app-text-secondary mt-1">{t('noCouponsDesc')}</p>
           <Button
             onClick={() => {
               setEditingCoupon(null);
               setShowForm(true);
             }}
-            variant="outline"
-            className="mt-4 gap-2"
+            variant="default"
+            className="gap-2"
           >
             <Plus className="h-4 w-4" />
             {t('newCoupon')}
           </Button>
         </div>
-      )}
+      </div>
+
+      {/* Coupons List */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        {coupons.length > 0 ? (
+          <div className="grid gap-3">
+            {/* Table Header (desktop) */}
+            <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
+              <span>{t('codeField')}</span>
+              <span>{t('type')}</span>
+              <span>{t('valueColumn')}</span>
+              <span>{t('usagesColumn')}</span>
+              <span>{t('statusColumn')}</span>
+              <span className="text-right">{t('actionsColumn')}</span>
+            </div>
+
+            {coupons.map((coupon) => (
+              <div
+                key={coupon.id}
+                className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
+                onClick={() => openEdit(coupon)}
+              >
+                <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
+                  {/* Code */}
+                  <div className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />
+                    <span className="font-bold font-mono text-sm tracking-wider">
+                      {coupon.code}
+                    </span>
+                  </div>
+
+                  {/* Type */}
+                  <div>
+                    <span
+                      className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        coupon.discount_type === 'percentage'
+                          ? 'bg-blue-500/10 text-blue-500'
+                          : 'bg-purple-500/10 text-purple-500'
+                      }`}
+                    >
+                      {coupon.discount_type === 'percentage' ? '%' : t('fixedLabel')}
+                    </span>
+                  </div>
+
+                  {/* Value */}
+                  <div className="text-sm font-semibold text-app-text">
+                    {formatDiscount(coupon)}
+                  </div>
+
+                  {/* Usage */}
+                  <div className="text-sm text-app-text-secondary">
+                    {coupon.current_uses}
+                    {coupon.max_uses ? ` / ${coupon.max_uses}` : ' / ∞'}
+                  </div>
+
+                  {/* Status Toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleActive(coupon);
+                    }}
+                    className="flex items-center gap-1.5 group"
+                    title={coupon.is_active ? t('deactivate') : t('activate')}
+                  >
+                    {coupon.is_active ? (
+                      <>
+                        <ToggleRight className="h-5 w-5 text-green-600" />
+                        <span className="text-xs font-semibold text-green-500 bg-green-500/10 px-2 py-0.5 rounded-full">
+                          {t('active')}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="h-5 w-5 text-app-text-muted" />
+                        <span className="text-xs font-semibold text-app-text-secondary bg-app-bg px-2 py-0.5 rounded-full">
+                          {t('inactive')}
+                        </span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Delete */}
+                  <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(coupon.id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
+                      title={t('deleteAction')}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Extra info row */}
+                {(coupon.valid_from || coupon.valid_until || coupon.min_order_amount) && (
+                  <div className="mt-3 pt-3 border-t border-app-border flex flex-wrap gap-3 text-xs text-app-text-secondary">
+                    {coupon.valid_from && (
+                      <span>
+                        {t('startLabel')} {new Date(coupon.valid_from).toLocaleDateString(locale)}
+                      </span>
+                    )}
+                    {coupon.valid_until && (
+                      <span>
+                        {t('endLabel')} {new Date(coupon.valid_until).toLocaleDateString(locale)}
+                      </span>
+                    )}
+                    {coupon.min_order_amount && (
+                      <span>
+                        {t('minOrderLabel')} {formatCurrency(coupon.min_order_amount, currency)}
+                      </span>
+                    )}
+                    {coupon.max_discount_amount && coupon.discount_type === 'percentage' && (
+                      <span>
+                        {t('maxDiscountLabel')}{' '}
+                        {formatCurrency(coupon.max_discount_amount, currency)}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="py-12 text-center bg-app-bg rounded-xl border border-dashed border-app-border">
+            <ListFilter className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
+            <h3 className="text-sm font-semibold text-app-text">{t('noCoupons')}</h3>
+            <p className="text-xs text-app-text-secondary mt-1">{t('noCouponsDesc')}</p>
+            <Button
+              onClick={() => {
+                setEditingCoupon(null);
+                setShowForm(true);
+              }}
+              variant="outline"
+              className="mt-4 gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              {t('newCoupon')}
+            </Button>
+          </div>
+        )}
+      </div>
 
       {/* Coupon Form Modal */}
       <CouponForm

@@ -88,13 +88,17 @@ export function DataTable<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="border border-app-border rounded-xl overflow-hidden">
-      <div className="overflow-x-auto">
+    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full">
+      {/* Scrollable table area — thead sticks at top */}
+      <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
         <table className="w-full text-sm min-w-[500px] sm:min-w-[600px]">
-          {/* Header */}
-          <thead className="bg-app-bg">
+          {/* Sticky Header */}
+          <thead className="bg-app-bg sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-app-border">
+              <tr
+                key={headerGroup.id}
+                className="border-b border-app-border shadow-[0_1px_0_0_var(--app-border)]"
+              >
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
@@ -152,9 +156,9 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      {/* Pagination footer — only show if more than one page */}
+      {/* Pagination footer — fixed at bottom, outside scroll */}
       {pageCount > 1 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
+        <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
           <p className="text-xs text-app-text-secondary">
             Page {currentPage} / {pageCount}
           </p>

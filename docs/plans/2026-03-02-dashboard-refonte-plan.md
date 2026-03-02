@@ -13,6 +13,7 @@
 ### Task 1: Add missing i18n keys
 
 **Files:**
+
 - Modify: `src/messages/fr-FR.json:190-250` (admin section)
 - Modify: `src/messages/en-US.json:190-250` (admin section)
 
@@ -85,6 +86,7 @@ git commit -m "feat(dashboard): add i18n keys for dashboard refonte"
 ### Task 2: Rewrite DashboardClient — KPI bar (Section 1)
 
 **Files:**
+
 - Modify: `src/components/admin/DashboardClient.tsx` (full rewrite)
 
 **Step 1: Replace the entire DashboardClient component**
@@ -111,9 +113,7 @@ interface KPICardProps {
 function KPICard({ icon, label, value, trend, subtitle, colorClass }: KPICardProps) {
   return (
     <div className="flex-1 min-w-[140px] rounded-xl border border-app-border bg-app-card p-4 flex items-start gap-3">
-      <div className={cn('rounded-lg p-2', colorClass)}>
-        {icon}
-      </div>
+      <div className={cn('rounded-lg p-2', colorClass)}>{icon}</div>
       <div className="flex-1 min-w-0">
         <p className="text-[10px] uppercase tracking-widest text-app-text-muted font-semibold truncate">
           {label}
@@ -123,18 +123,23 @@ function KPICard({ icon, label, value, trend, subtitle, colorClass }: KPICardPro
             {value}
           </span>
           {trend !== undefined && trend !== 0 && (
-            <span className={cn(
-              'inline-flex items-center gap-0.5 text-[10px] font-bold',
-              trend > 0 ? 'text-emerald-500' : 'text-red-500',
-            )}>
-              {trend > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-              {trend > 0 ? '+' : ''}{trend}%
+            <span
+              className={cn(
+                'inline-flex items-center gap-0.5 text-[10px] font-bold',
+                trend > 0 ? 'text-emerald-500' : 'text-red-500',
+              )}
+            >
+              {trend > 0 ? (
+                <TrendingUp className="w-3 h-3" />
+              ) : (
+                <TrendingDown className="w-3 h-3" />
+              )}
+              {trend > 0 ? '+' : ''}
+              {trend}%
             </span>
           )}
         </div>
-        {subtitle && (
-          <p className="text-[10px] text-app-text-muted mt-0.5">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-[10px] text-app-text-muted mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
@@ -144,7 +149,9 @@ function KPICard({ icon, label, value, trend, subtitle, colorClass }: KPICardPro
 The KPI bar renders inside the main component as:
 
 ```tsx
-{/* Section 1: KPI Bar */}
+{
+  /* Section 1: KPI Bar */
+}
 <div className="shrink-0 flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
   <KPICard
     icon={<DollarSign className="w-4 h-4" />}
@@ -177,11 +184,13 @@ The KPI bar renders inside the main component as:
   <KPICard
     icon={<TrendingUp className="w-4 h-4" />}
     label={t('avgBasket')}
-    value={stats.ordersToday > 0 ? fmtCompact(Math.round(stats.revenueToday / stats.ordersToday)) : '-'}
+    value={
+      stats.ordersToday > 0 ? fmtCompact(Math.round(stats.revenueToday / stats.ordersToday)) : '-'
+    }
     subtitle={t('perOrder')}
     colorClass="bg-purple-500/10 text-purple-500"
   />
-</div>
+</div>;
 ```
 
 **Step 2: Verify it compiles**
@@ -201,6 +210,7 @@ git commit -m "feat(dashboard): rewrite KPI bar section"
 ### Task 3: Add Section 2 — Overview + Recent Orders (2 columns)
 
 **Files:**
+
 - Modify: `src/components/admin/DashboardClient.tsx`
 
 **Step 1: Add the overview and recent orders sections**
@@ -208,7 +218,9 @@ git commit -m "feat(dashboard): rewrite KPI bar section"
 Below the KPI bar in DashboardClient, add the 2-column layout:
 
 ```tsx
-{/* Section 2: Overview + Recent Orders */}
+{
+  /* Section 2: Overview + Recent Orders */
+}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   {/* Left: Overview */}
   <div className="rounded-xl border border-app-border bg-app-card p-5">
@@ -226,11 +238,14 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
           {fmtCompact(stats.revenueToday)}
         </span>
         {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
-          <span className={cn(
-            'text-xs font-bold',
-            stats.revenueTrend > 0 ? 'text-emerald-500' : 'text-red-500',
-          )}>
-            {stats.revenueTrend > 0 ? '+' : ''}{stats.revenueTrend}%
+          <span
+            className={cn(
+              'text-xs font-bold',
+              stats.revenueTrend > 0 ? 'text-emerald-500' : 'text-red-500',
+            )}
+          >
+            {stats.revenueTrend > 0 ? '+' : ''}
+            {stats.revenueTrend}%
           </span>
         )}
       </div>
@@ -238,7 +253,7 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
 
     {/* Pending orders count */}
     {(() => {
-      const pendingCount = recentOrders.filter(o => o.status === 'pending').length;
+      const pendingCount = recentOrders.filter((o) => o.status === 'pending').length;
       return pendingCount > 0 ? (
         <div className="mb-4 px-3 py-2 rounded-lg bg-amber-500/10 border border-amber-500/20">
           <p className="text-sm font-semibold text-amber-600">
@@ -259,7 +274,15 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
                 <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <Area type="monotone" dataKey="value" stroke="var(--accent)" fill="url(#overview-spark)" strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="var(--accent)"
+              fill="url(#overview-spark)"
+              strokeWidth={2}
+              dot={false}
+              isAnimationActive={false}
+            />
           </AreaChart>
         </ResponsiveContainer>
       </div>
@@ -267,10 +290,16 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
 
     {/* CTA buttons */}
     <div className="flex gap-2 mt-4">
-      <Link href={`${adminBase}/orders`} className="flex-1 text-center px-3 py-2 rounded-lg bg-accent text-accent-text text-sm font-semibold hover:bg-accent/90 transition-colors">
+      <Link
+        href={`${adminBase}/orders`}
+        className="flex-1 text-center px-3 py-2 rounded-lg bg-accent text-accent-text text-sm font-semibold hover:bg-accent/90 transition-colors"
+      >
         {t('viewOrders')}
       </Link>
-      <Link href={`${adminBase}/pos`} className="flex-1 text-center px-3 py-2 rounded-lg border border-app-border bg-app-elevated text-app-text text-sm font-semibold hover:bg-app-hover transition-colors">
+      <Link
+        href={`${adminBase}/pos`}
+        className="flex-1 text-center px-3 py-2 rounded-lg border border-app-border bg-app-elevated text-app-text text-sm font-semibold hover:bg-app-hover transition-colors"
+      >
         {t('openPOS')}
       </Link>
     </div>
@@ -282,7 +311,10 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
       <h2 className="text-sm font-bold text-app-text uppercase tracking-wide">
         {t('dashboardRecentOrders')}
       </h2>
-      <Link href={`${adminBase}/orders`} className="text-xs text-accent font-semibold hover:underline">
+      <Link
+        href={`${adminBase}/orders`}
+        className="text-xs text-accent font-semibold hover:underline"
+      >
         {t('viewAll')}
       </Link>
     </div>
@@ -298,14 +330,16 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
               <span className="font-mono font-bold text-sm text-app-text">
                 {order.table_number}
               </span>
-              <span className={cn(
-                'text-[10px] font-bold px-2 py-0.5 rounded-full',
-                order.status === 'pending' && 'bg-amber-500/10 text-amber-500',
-                order.status === 'preparing' && 'bg-purple-500/10 text-purple-500',
-                order.status === 'ready' && 'bg-emerald-500/10 text-emerald-500',
-                order.status === 'delivered' && 'bg-app-bg text-app-text-muted',
-                order.status === 'cancelled' && 'bg-red-500/10 text-red-500',
-              )}>
+              <span
+                className={cn(
+                  'text-[10px] font-bold px-2 py-0.5 rounded-full',
+                  order.status === 'pending' && 'bg-amber-500/10 text-amber-500',
+                  order.status === 'preparing' && 'bg-purple-500/10 text-purple-500',
+                  order.status === 'ready' && 'bg-emerald-500/10 text-emerald-500',
+                  order.status === 'delivered' && 'bg-app-bg text-app-text-muted',
+                  order.status === 'cancelled' && 'bg-red-500/10 text-red-500',
+                )}
+              >
                 {order.status}
               </span>
             </div>
@@ -326,7 +360,7 @@ Below the KPI bar in DashboardClient, add the 2-column layout:
       )}
     </div>
   </div>
-</div>
+</div>;
 ```
 
 Note: Import `ChevronRight` from lucide-react, `formatCurrency` from `@/lib/utils/currency`, and `timeAgo` from `@/hooks/useDashboardData`. Also destructure `recentOrders` from `useDashboardData` return.
@@ -348,6 +382,7 @@ git commit -m "feat(dashboard): add overview + recent orders section"
 ### Task 4: Add Section 3 — Popular Categories + Top Items (2 columns)
 
 **Files:**
+
 - Modify: `src/components/admin/DashboardClient.tsx`
 
 **Step 1: Add categories grid and top items table**
@@ -355,7 +390,9 @@ git commit -m "feat(dashboard): add overview + recent orders section"
 Below Section 2 in DashboardClient:
 
 ```tsx
-{/* Section 3: Categories + Top Items */}
+{
+  /* Section 3: Categories + Top Items */
+}
 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
   {/* Left: Popular Categories (Budget Tracking style grid) */}
   <div className="rounded-xl border border-app-border bg-app-card p-5">
@@ -363,40 +400,39 @@ Below Section 2 in DashboardClient:
       {t('popularCategories')}
     </h2>
     <div className="grid grid-cols-2 gap-2">
-      {categoryBreakdown.length > 0 ? categoryBreakdown.map((cat, i) => {
-        const bgColors = [
-          'bg-emerald-500/10 border-emerald-500/20',
-          'bg-amber-500/10 border-amber-500/20',
-          'bg-blue-500/10 border-blue-500/20',
-          'bg-purple-500/10 border-purple-500/20',
-          'bg-rose-500/10 border-rose-500/20',
-          'bg-cyan-500/10 border-cyan-500/20',
-        ];
-        const textColors = [
-          'text-emerald-600',
-          'text-amber-600',
-          'text-blue-600',
-          'text-purple-600',
-          'text-rose-600',
-          'text-cyan-600',
-        ];
-        return (
-          <div
-            key={cat.name}
-            className={cn(
-              'rounded-lg border p-3',
-              bgColors[i % bgColors.length],
-            )}
-          >
-            <p className={cn('text-xs font-bold', textColors[i % textColors.length])}>
-              {cat.name}
-            </p>
-            <p className="text-lg font-black text-app-text mt-1 tabular-nums">
-              {fmtCompact(cat.value)}
-            </p>
-          </div>
-        );
-      }) : (
+      {categoryBreakdown.length > 0 ? (
+        categoryBreakdown.map((cat, i) => {
+          const bgColors = [
+            'bg-emerald-500/10 border-emerald-500/20',
+            'bg-amber-500/10 border-amber-500/20',
+            'bg-blue-500/10 border-blue-500/20',
+            'bg-purple-500/10 border-purple-500/20',
+            'bg-rose-500/10 border-rose-500/20',
+            'bg-cyan-500/10 border-cyan-500/20',
+          ];
+          const textColors = [
+            'text-emerald-600',
+            'text-amber-600',
+            'text-blue-600',
+            'text-purple-600',
+            'text-rose-600',
+            'text-cyan-600',
+          ];
+          return (
+            <div
+              key={cat.name}
+              className={cn('rounded-lg border p-3', bgColors[i % bgColors.length])}
+            >
+              <p className={cn('text-xs font-bold', textColors[i % textColors.length])}>
+                {cat.name}
+              </p>
+              <p className="text-lg font-black text-app-text mt-1 tabular-nums">
+                {fmtCompact(cat.value)}
+              </p>
+            </div>
+          );
+        })
+      ) : (
         <p className="col-span-2 text-sm text-app-text-muted text-center py-6">
           {t('noDataAvailable')}
         </p>
@@ -446,7 +482,7 @@ Below Section 2 in DashboardClient:
       </table>
     </div>
   </div>
-</div>
+</div>;
 ```
 
 Note: `categoryBreakdown` comes from `useDashboardData` return. For `initialPopularItems`, we need to pass it through props — it's already fetched in the server page.tsx but not currently forwarded to the hook. We'll use it directly from props. Add `initialPopularItems` to the destructured props of DashboardClient.
@@ -490,6 +526,7 @@ git commit -m "feat(dashboard): add categories grid + top items table"
 ### Task 5: Add Section 4 — Quick Access grid + wire up full layout
 
 **Files:**
+
 - Modify: `src/components/admin/DashboardClient.tsx`
 - Modify: `src/components/admin/AdminHomeGrid.tsx` (add title prop)
 
@@ -529,12 +566,14 @@ export default function AdminHomeGrid({ basePath, establishmentType, title }: Ad
 In the Section 4 area of DashboardClient:
 
 ```tsx
-{/* Section 4: Quick Access */}
+{
+  /* Section 4: Quick Access */
+}
 <AdminHomeGrid
   basePath={adminBase}
   establishmentType={establishmentType}
   title={t('quickAccessTitle')}
-/>
+/>;
 ```
 
 **Step 3: Wire up the full layout wrapper**
@@ -551,7 +590,10 @@ return (
       </h1>
       <p className="text-xs text-app-text-muted mt-0.5 capitalize">
         {new Date().toLocaleDateString(locale, {
-          weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
         })}
       </p>
     </div>
@@ -566,7 +608,11 @@ return (
     {/* ... 2-column grid ... */}
 
     {/* Section 4: Quick Access */}
-    <AdminHomeGrid basePath={adminBase} establishmentType={establishmentType} title={t('quickAccessTitle')} />
+    <AdminHomeGrid
+      basePath={adminBase}
+      establishmentType={establishmentType}
+      title={t('quickAccessTitle')}
+    />
   </div>
 );
 ```
@@ -598,6 +644,7 @@ git commit -m "feat(dashboard): add quick access section + wire full layout"
 ### Task 6: Pass initialPopularItems from server page
 
 **Files:**
+
 - Modify: `src/app/sites/[site]/admin/page.tsx`
 
 **Step 1: Verify props are passed**
@@ -649,6 +696,7 @@ git commit -m "feat(dashboard): pass initialPopularItems from server to client"
 ### Task 7: Update loading skeleton
 
 **Files:**
+
 - Modify: `src/components/admin/DashboardClient.tsx` (loading state)
 
 **Step 1: Replace the loading skeleton**
@@ -667,7 +715,10 @@ if (loading) {
       {/* KPI bar skeleton */}
       <div className="shrink-0 flex gap-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex-1 min-w-[140px] h-[80px] rounded-xl bg-app-elevated animate-pulse" />
+          <div
+            key={i}
+            className="flex-1 min-w-[140px] h-[80px] rounded-xl bg-app-elevated animate-pulse"
+          />
         ))}
       </div>
       {/* 2-column skeleton */}
@@ -712,6 +763,7 @@ Expected: All 3 PASS
 **Step 2: Visual verification**
 
 Open `http://localhost:3000/sites/lepicurien/admin` in a browser and verify:
+
 - KPI bar shows 5 cards horizontally
 - Overview section shows revenue + sparkline + CTA buttons
 - Recent orders show last 3 orders with status badges

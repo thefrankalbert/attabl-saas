@@ -104,38 +104,42 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
 
   return (
     <RoleGuard permission="canManageUsers">
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('teamTitle')}</h1>
-            <p className="text-sm text-app-text-secondary">{t('teamSubtitle')}</p>
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">{t('teamTitle')}</h1>
+              <p className="text-sm text-app-text-secondary">{t('teamSubtitle')}</p>
+            </div>
+            {data.canManageUsers && (
+              <Button variant="default" onClick={() => data.setIsModalOpen(true)} className="gap-2">
+                <UserPlus className="w-4 h-4" /> {t('newMember')}
+              </Button>
+            )}
           </div>
-          {data.canManageUsers && (
-            <Button variant="default" onClick={() => data.setIsModalOpen(true)} className="gap-2">
-              <UserPlus className="w-4 h-4" /> {t('newMember')}
-            </Button>
-          )}
         </div>
 
-        <UsersTable
-          users={data.users}
-          canManageUsers={data.canManageUsers}
-          onToggleStatus={data.handleToggleStatus}
-          onDeleteUser={data.handleDeleteUser}
-          onEditUser={data.canManageUsers ? openEditModal : undefined}
-        />
-
-        {/* Pending Invitations Section */}
-        {data.canManageUsers && (
-          <PendingInvitations
-            pendingOnly={data.pendingOnly}
-            loadingInvitations={data.loadingInvitations}
-            resendingId={data.resendingId}
-            cancellingId={data.cancellingId}
-            onResend={data.handleResendInvitation}
-            onCancel={data.handleCancelInvitation}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">
+          <UsersTable
+            users={data.users}
+            canManageUsers={data.canManageUsers}
+            onToggleStatus={data.handleToggleStatus}
+            onDeleteUser={data.handleDeleteUser}
+            onEditUser={data.canManageUsers ? openEditModal : undefined}
           />
-        )}
+
+          {/* Pending Invitations Section */}
+          {data.canManageUsers && (
+            <PendingInvitations
+              pendingOnly={data.pendingOnly}
+              loadingInvitations={data.loadingInvitations}
+              resendingId={data.resendingId}
+              cancellingId={data.cancellingId}
+              onResend={data.handleResendInvitation}
+              onCancel={data.handleCancelInvitation}
+            />
+          )}
+        </div>
 
         {/* Add Member Modal */}
         <AdminModal

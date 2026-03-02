@@ -95,7 +95,6 @@ export default async function AdminLayout({
 
   return (
     <div>
-      <OfflineIndicator />
       {showOnboardingResume && <OnboardingResumeDialog />}
       {/* Dev Mode Banner */}
       {isDevMode && (
@@ -118,6 +117,7 @@ export default async function AdminLayout({
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
           >
             <PermissionsProvider role={userRole}>
+              <OfflineIndicator />
               <CommandPalette />
               <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
                 <AdminIdleWrapper

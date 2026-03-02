@@ -155,114 +155,118 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
   return (
     <RoleGuard permission="canViewStocks">
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-app-bg rounded-lg">
-              <History className="h-5 w-5 text-app-text-secondary" />
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0 space-y-4 sm:space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-app-bg rounded-lg">
+                <History className="h-5 w-5 text-app-text-secondary" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+                <p className="text-sm text-app-text-secondary">
+                  {t('movementsCount', { count: filtered.length })}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
-              <p className="text-sm text-app-text-secondary">
-                {t('movementsCount', { count: filtered.length })}
-              </p>
+          </div>
+
+          {/* Filters */}
+          <div className="border border-app-border rounded-xl p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" />
+                <Input
+                  placeholder={t('searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 rounded-lg focus:ring-accent/30"
+                />
+              </div>
+              <div className="flex items-center gap-2 overflow-x-auto">
+                <Filter className="h-4 w-4 text-app-text-muted flex-shrink-0" />
+                {movementFilters.map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setFilterType(f.value)}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
+                      filterType === f.value
+                        ? 'bg-app-text text-accent-text'
+                        : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="border border-app-border rounded-xl p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" />
-              <Input
-                placeholder={t('searchPlaceholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 rounded-lg focus:ring-accent/30"
-              />
-            </div>
-            <div className="flex items-center gap-2 overflow-x-auto">
-              <Filter className="h-4 w-4 text-app-text-muted flex-shrink-0" />
-              {movementFilters.map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => setFilterType(f.value)}
-                  className={cn(
-                    'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                    filterType === f.value
-                      ? 'bg-app-text text-accent-text'
-                      : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        {/* Table / Cards */}
-        <ResponsiveDataTable
-          columns={columns}
-          data={filtered}
-          emptyMessage={t('noMovements')}
-          mobileConfig={{
-            renderCard: (movement) => {
-              const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
-              const isPositive = movement.quantity > 0;
-              return (
-                <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
-                  {/* Row 1: Ingredient + Date */}
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="font-medium text-app-text truncate">
-                      {movement.ingredient?.name || '\u2014'}
-                      {movement.ingredient?.unit && (
-                        <span className="text-app-text-muted ml-1 text-xs">
-                          ({movement.ingredient.unit})
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-xs text-app-text-muted whitespace-nowrap shrink-0">
-                      {formatDate(movement.created_at)}
-                    </span>
-                  </div>
-
-                  {/* Row 2: Type + Quantity */}
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        'text-xs font-medium',
-                        typeInfo?.color || 'text-app-text-secondary',
-                      )}
-                    >
-                      {typeInfo?.label || movement.movement_type}
-                    </span>
-                    <span
-                      className={cn(
-                        'font-mono font-bold',
-                        isPositive ? 'text-green-600' : 'text-red-600',
-                      )}
-                    >
-                      {isPositive ? '+' : ''}
-                      {movement.quantity}
-                    </span>
-                  </div>
-
-                  {/* Row 3: Supplier + Notes */}
-                  {(movement.supplier?.name || movement.notes) && (
-                    <div className="text-xs text-app-text-secondary truncate">
-                      {movement.supplier?.name && <span>{movement.supplier.name}</span>}
-                      {movement.supplier?.name && movement.notes && <span> — </span>}
-                      {movement.notes && <span>{movement.notes}</span>}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {/* Table / Cards */}
+          <ResponsiveDataTable
+            columns={columns}
+            data={filtered}
+            emptyMessage={t('noMovements')}
+            mobileConfig={{
+              renderCard: (movement) => {
+                const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
+                const isPositive = movement.quantity > 0;
+                return (
+                  <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
+                    {/* Row 1: Ingredient + Date */}
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="font-medium text-app-text truncate">
+                        {movement.ingredient?.name || '\u2014'}
+                        {movement.ingredient?.unit && (
+                          <span className="text-app-text-muted ml-1 text-xs">
+                            ({movement.ingredient.unit})
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-xs text-app-text-muted whitespace-nowrap shrink-0">
+                        {formatDate(movement.created_at)}
+                      </span>
                     </div>
-                  )}
-                </div>
-              );
-            },
-          }}
-        />
+
+                    {/* Row 2: Type + Quantity */}
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          'text-xs font-medium',
+                          typeInfo?.color || 'text-app-text-secondary',
+                        )}
+                      >
+                        {typeInfo?.label || movement.movement_type}
+                      </span>
+                      <span
+                        className={cn(
+                          'font-mono font-bold',
+                          isPositive ? 'text-green-600' : 'text-red-600',
+                        )}
+                      >
+                        {isPositive ? '+' : ''}
+                        {movement.quantity}
+                      </span>
+                    </div>
+
+                    {/* Row 3: Supplier + Notes */}
+                    {(movement.supplier?.name || movement.notes) && (
+                      <div className="text-xs text-app-text-secondary truncate">
+                        {movement.supplier?.name && <span>{movement.supplier.name}</span>}
+                        {movement.supplier?.name && movement.notes && <span> — </span>}
+                        {movement.notes && <span>{movement.notes}</span>}
+                      </div>
+                    )}
+                  </div>
+                );
+              },
+            }}
+          />
+        </div>
       </div>
     </RoleGuard>
   );

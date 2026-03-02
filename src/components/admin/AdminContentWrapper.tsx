@@ -35,7 +35,7 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
       <AnimatePresence mode="wait">
         <motion.div
           key={pathname}
-          className="flex-1 min-h-0"
+          className="flex-1 min-h-0 flex flex-col"
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0 }}
