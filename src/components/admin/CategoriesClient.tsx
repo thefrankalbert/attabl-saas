@@ -265,14 +265,22 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
-            </div>
-            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
+        <div className="shrink-0 space-y-3">
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <Folder className="w-6 h-6" />
+              {t('title')}
+              <span className="text-base font-normal text-app-text-secondary">
+                ({categories.length})
+              </span>
+            </h1>
+            <Button
+              onClick={openNewModal}
+              variant="default"
+              size="sm"
+              className="gap-2 lg:ml-auto shrink-0"
+            >
               <Plus className="w-4 h-4" /> {t('newCategory')}
             </Button>
           </div>

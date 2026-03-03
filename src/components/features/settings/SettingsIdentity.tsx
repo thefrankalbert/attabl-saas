@@ -42,7 +42,7 @@ export default function SettingsIdentity({
       <div className="space-y-4 sm:space-y-6">
         <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-50 rounded-lg">
+            <div className="p-2 bg-blue-500/10 rounded-lg">
               <Store className="h-5 w-5 text-blue-600" />
             </div>
             <div>

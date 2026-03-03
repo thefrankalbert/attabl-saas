@@ -11,6 +11,7 @@ import {
   Globe,
   Shield,
   Link2,
+  Settings,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -79,23 +80,32 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     <RoleGuard permission="canManageSettings">
       <form
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
-        className="max-w-4xl xl:max-w-5xl flex flex-col h-full min-h-0"
+        className="flex flex-col h-full min-h-0"
       >
+        {/* Compact header */}
+        <div className="shrink-0 mb-4">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
+            <Settings className="w-6 h-6" />
+            {t('pageTitle')}
+          </h1>
+          <p className="text-sm text-app-text-secondary mt-1">{t('pageDescription')}</p>
+        </div>
+
         <Tabs defaultValue="identity" className="flex flex-col flex-1 min-h-0">
-          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
+          <TabsList className="shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
             {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
               <TabsTrigger
                 key={key}
                 value={key}
                 className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-2.5 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
               >
-                <Icon className="h-4 w-4 flex-shrink-0" />
+                <Icon className="h-4 w-4 shrink-0" />
                 <span className="hidden sm:inline">{t(labelKey)}</span>
               </TabsTrigger>
             ))}
           </TabsList>
 
-          <div className="flex-1 min-h-0 overflow-y-auto mt-4 sm:mt-6">
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
             {/* Identity tab */}
             <SettingsIdentity
               form={form}
@@ -180,7 +190,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         </Tabs>
 
         {/* Actions - always visible */}
-        <div className="flex-shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4 px-0 sm:px-0">
+        <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
           <Button
             type="submit"
             variant="default"

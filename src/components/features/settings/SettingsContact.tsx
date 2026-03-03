@@ -26,7 +26,7 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
     <TabsContent value="contact" className="mt-0">
       <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-green-50 rounded-lg">
+          <div className="p-2 bg-green-500/10 rounded-lg">
             <MapPin className="h-5 w-5 text-green-600" />
           </div>
           <div>

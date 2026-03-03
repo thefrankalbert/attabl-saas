@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { History, Search, Filter } from 'lucide-react';
+import { History, Search } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
@@ -156,51 +156,42 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   return (
     <RoleGuard permission="canViewStocks">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-app-bg rounded-lg">
-                <History className="h-5 w-5 text-app-text-secondary" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
-                <p className="text-sm text-app-text-secondary">
-                  {t('movementsCount', { count: filtered.length })}
-                </p>
-              </div>
-            </div>
-          </div>
+        <div className="shrink-0 space-y-3">
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <History className="w-6 h-6" />
+              {t('title')}
+              <span className="text-base font-normal text-app-text-secondary">
+                ({filtered.length})
+              </span>
+            </h1>
 
-          {/* Filters */}
-          <div className="border border-app-border rounded-xl p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-app-text-muted" />
-                <Input
-                  placeholder={t('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 rounded-lg focus:ring-accent/30"
-                />
-              </div>
-              <div className="flex items-center gap-2 overflow-x-auto">
-                <Filter className="h-4 w-4 text-app-text-muted flex-shrink-0" />
-                {movementFilters.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setFilterType(f.value)}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                      filterType === f.value
-                        ? 'bg-app-text text-accent-text'
-                        : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
-                    )}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 overflow-x-auto shrink-0">
+              {movementFilters.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilterType(f.value)}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
+                    filterType === f.value
+                      ? 'bg-app-text text-accent-text'
+                      : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

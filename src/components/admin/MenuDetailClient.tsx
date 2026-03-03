@@ -208,7 +208,7 @@ export default function MenuDetailClient({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 sm:space-y-6">
+      <div className="shrink-0 space-y-3">
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 text-sm text-app-text-secondary">
           <Link

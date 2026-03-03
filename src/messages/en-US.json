@@ -719,6 +719,9 @@
     "roleOwner": "Owner",
     "roleAdmin": "Admin",
     "roleManager": "Manager",
+    "roleCashier": "Cashier",
+    "roleChef": "Chef",
+    "roleWaiter": "Waiter",
     "roleStaff": "Staff",
     "roleKitchen": "Kitchen",
     "roleServer": "Server",
@@ -741,6 +744,7 @@
     "roleDefaultLabel": "User",
     "inactive": "Inactive",
     "neverConnected": "Never connected",
+    "neverLoggedIn": "Never logged in",
     "actions": "Actions",
     "deactivate": "Deactivate",
     "activate": "Activate",
@@ -1330,7 +1334,14 @@
     "allOrdersAssigned": "All orders are assigned.",
     "items": "{count} item(s)",
     "claimOrder": "Claim",
-    "assignServer": "Assign a server..."
+    "assignServer": "Assign a server...",
+    "occupied": "Occupied",
+    "vacant": "Vacant",
+    "onDuty": "On Duty",
+    "availableServers": "Available",
+    "searchPlaceholder": "Search...",
+    "avgDuration": "Avg. Duration",
+    "fullCapacity": "Full"
   },
   "stockHistory": {
     "title": "Movement history",
@@ -1484,7 +1495,18 @@
     "servedStep": "Served",
     "previousOrders": "Previous orders",
     "activeOrder": "Active order",
-    "removeItem": "Remove"
+    "removeItem": "Remove",
+    "tip": "Tip",
+    "clearCartConfirm": "Clear cart?",
+    "connectionError": "Connection error. Please try again.",
+    "orderNotFound": "Order not found",
+    "orderReadyTitle": "Order Ready",
+    "orderError": "Error placing order",
+    "cartAllergyNote": "For any food allergies, please contact the restaurant",
+    "cartSection": "Cart",
+    "upsellDrinks": "A fresh drink?",
+    "upsellDesserts": "Something sweet?",
+    "upsellLastDrink": "One last drink?"
   },
   "shared": {
     "fileMustBeImage": "File must be an image",

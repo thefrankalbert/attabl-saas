@@ -3,8 +3,9 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientOrders from '@/components/tenant/ClientOrders';
 import BottomNav from '@/components/tenant/BottomNav';
-import { ArrowLeft } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
 export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
@@ -22,22 +23,23 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
 
   if (!tenant) return notFound();
 
+  const t = await getTranslations('tenant');
+
   return (
-    <div className="min-h-screen bg-app-bg">
-      <header className="sticky top-0 z-40">
-        <div className="absolute inset-0 bg-app-card/80 backdrop-blur-xl border-b border-app-border" />
-        <div className="relative container mx-auto px-4 py-3 flex items-center gap-3">
+    <div className="min-h-screen bg-neutral-50">
+      <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <Link
             href={`/sites/${tenantSlug}`}
-            className="p-2 -ml-2 hover:bg-app-hover rounded-full transition-colors"
+            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
           >
-            <ArrowLeft className="w-5 h-5 text-app-text-secondary" />
+            <ChevronLeft className="w-6 h-6" />
           </Link>
-          <h1 className="text-lg font-bold text-app-text">Mes Commandes</h1>
+          <h1 className="text-base font-bold text-neutral-900">{t('navOrders')}</h1>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 pb-28">
+      <main className="max-w-lg mx-auto px-4 py-6 pb-28">
         <ClientOrders
           tenantSlug={tenantSlug}
           tenantId={tenant.id}

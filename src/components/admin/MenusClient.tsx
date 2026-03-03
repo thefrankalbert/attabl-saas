@@ -88,31 +88,45 @@ export default function MenusClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
-                {t('title')}
-              </h1>
-              <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
+        <div className="shrink-0 space-y-3">
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
+              {t('title')}
+              <span className="text-base font-normal text-app-text-secondary ml-2">
+                ({menus.length})
+              </span>
+            </h1>
+
+            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+              <Search className="absolute left-3 top-2.5 w-4 h-4 text-app-text-muted" />
+              <Input
+                data-search-input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
-            <div className="flex items-center gap-2">
+
+            <div className="flex items-center gap-2 lg:ml-auto shrink-0">
               <Button
                 onClick={() => setShowImportModal(true)}
                 variant="outline"
-                className="gap-2 rounded-xl"
+                size="sm"
+                className="gap-2"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                {t('importExcel')}
+                <span className="hidden xl:inline">{t('importExcel')}</span>
               </Button>
               <Button
                 onClick={() => setShowPdfImportModal(true)}
                 variant="outline"
-                className="gap-2 rounded-xl"
+                size="sm"
+                className="gap-2"
               >
                 <FileText className="w-4 h-4" />
-                {t('importPdf')}
+                <span className="hidden xl:inline">{t('importPdf')}</span>
               </Button>
               <Button
                 onClick={() => openNewMenuModal()}
@@ -129,7 +143,7 @@ export default function MenusClient({
           {/* Limit warning */}
           {isLimitReached && (
             <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <p className="text-sm text-amber-800 font-medium">
+              <p className="text-sm text-amber-500 font-medium">
                 {t('limitReached', { max: maxMenus })}{' '}
                 <Link
                   href={`/sites/${tenantSlug}/admin/subscription`}
@@ -140,18 +154,6 @@ export default function MenusClient({
               </p>
             </div>
           )}
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-            <Input
-              data-search-input
-              placeholder={t('searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">

@@ -215,46 +215,50 @@ export default function ItemsClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
+        <div className="shrink-0 space-y-3">
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
+              {t('title')}
+              <span className="text-base font-normal text-app-text-secondary ml-2">
+                ({items.length})
+              </span>
+            </h1>
+
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectValue placeholder={t('allCategories')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('allCategories')}</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterAvailable} onValueChange={setFilterAvailable}>
+                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectValue placeholder={t('all')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  <SelectItem value="available">{t('inStock')}</SelectItem>
+                  <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
+
+            <Button
+              onClick={openNewModal}
+              variant="default"
+              size="sm"
+              className="gap-2 lg:ml-auto shrink-0"
+            >
               <Plus className="w-4 h-4" /> {t('newItem')}
             </Button>
-          </div>
-
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-app-card rounded-xl border border-app-border">
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-                <SelectValue placeholder={t('allCategories')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allCategories')}</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-              <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-                <SelectValue placeholder={t('all')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all')}</SelectItem>
-                <SelectItem value="available">{t('inStock')}</SelectItem>
-                <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="ml-auto text-xs text-app-text-muted font-medium">
-              {t('itemCount', { count: items.length })}
-            </span>
           </div>
         </div>
 
