@@ -118,9 +118,6 @@ export default function ItemModifierEditor({
               <GripVertical className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
               <div className="flex-1 min-w-0">
                 <span className="text-sm font-medium text-app-text">{mod.name}</span>
-                {mod.name_en && (
-                  <span className="text-xs text-app-text-muted ml-1.5">({mod.name_en})</span>
-                )}
               </div>
               <span className="text-sm font-bold text-app-text tabular-nums shrink-0">
                 +{mod.price} FCFA

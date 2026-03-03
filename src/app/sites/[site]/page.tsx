@@ -140,7 +140,7 @@ export default async function MenuPage({
         )
         .eq('tenant_id', tenant.id)
         .eq('is_available', true)
-        .order('display_order', { ascending: true }),
+        .order('created_at', { ascending: true }),
 
       // Ads / Banners
       supabase

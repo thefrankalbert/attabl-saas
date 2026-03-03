@@ -300,7 +300,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .select('*, category:categories(id, name, name_en)')
         .in('category_id', categoryIds)
         .eq('is_available', true)
-        .order('display_order', { ascending: true });
+        .order('created_at', { ascending: true });
 
       if (itemsError) {
         throw new ServiceError('Erreur lors du chargement des articles', 'INTERNAL');

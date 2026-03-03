@@ -44,18 +44,12 @@ interface SortableRowProps {
   cat: CategoryWithCount;
   onEdit: (cat: CategoryWithCount) => void;
   onDelete: (cat: CategoryWithCount) => void;
-  editLabel: string;
-  deleteLabel: string;
-  dishCountLabel: string;
 }
 
 function SortableRow({
   cat,
   onEdit,
   onDelete,
-  editLabel,
-  deleteLabel,
-  dishCountLabel,
 }: SortableRowProps) {
   const {
     attributes,
@@ -96,9 +90,9 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
-        <Utensils className="w-3.5 h-3.5" />
-        <span className="font-medium">{dishCountLabel}</span>
+      <div className="flex items-center gap-1.5 text-xs text-app-text-muted" title={`${cat.items_count || 0} plats`}>
+        <Utensils className="w-3 h-3" />
+        <span className="font-medium tabular-nums">{cat.items_count || 0}</span>
       </div>
       <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
         <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0">
@@ -311,9 +305,6 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                       cat={cat}
                       onEdit={openEditModal}
                       onDelete={handleDelete}
-                      editLabel={tc('edit')}
-                      deleteLabel={tc('delete')}
-                      dishCountLabel={t('dishCount', { count: cat.items_count || 0 })}
                     />
                   ))}
                 </div>
