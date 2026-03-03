@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
-import { UserCheck, X, Users } from 'lucide-react';
+import { Users, UserCheck, X, LayoutGrid, Activity, Clock, Search, User } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -13,33 +13,218 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
-import type { Table, Zone, AdminUser } from '@/types/admin.types';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import type { Table, Zone, AdminUser, TableAssignment } from '@/types/admin.types';
+
+// ─── Types ──────────────────────────────────────────────────
 
 interface Props {
   tenantId: string;
 }
 
+type ZoneWithTables = Zone & { tables: Table[] };
+
+// ─── Helpers ────────────────────────────────────────────────
+
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
+function getElapsedMinutes(startedAt: string): number {
+  return Math.floor((Date.now() - new Date(startedAt).getTime()) / 60000);
+}
+
+function getChairLayout(capacity: number): {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+} {
+  const c = Math.min(capacity, 12);
+  if (c <= 1) return { top: 1, right: 0, bottom: 0, left: 0 };
+  if (c === 2) return { top: 1, right: 0, bottom: 1, left: 0 };
+  if (c === 3) return { top: 1, right: 1, bottom: 1, left: 0 };
+  if (c === 4) return { top: 1, right: 1, bottom: 1, left: 1 };
+  if (c === 5) return { top: 2, right: 1, bottom: 1, left: 1 };
+  if (c === 6) return { top: 2, right: 1, bottom: 2, left: 1 };
+  if (c === 7) return { top: 2, right: 2, bottom: 2, left: 1 };
+  if (c === 8) return { top: 2, right: 2, bottom: 2, left: 2 };
+  if (c === 9) return { top: 3, right: 2, bottom: 2, left: 2 };
+  if (c === 10) return { top: 3, right: 2, bottom: 3, left: 2 };
+  if (c === 11) return { top: 3, right: 3, bottom: 3, left: 2 };
+  return { top: 3, right: 3, bottom: 3, left: 3 };
+}
+
+// ─── Chair Row (renders N small chair shapes) ───────────────
+
+function ChairRow({
+  count,
+  direction,
+  color,
+}: {
+  count: number;
+  direction: 'horizontal' | 'vertical';
+  color: string;
+}) {
+  if (count === 0) return null;
+  const isH = direction === 'horizontal';
+  return (
+    <div
+      className={cn(
+        'flex items-center justify-center',
+        isH ? 'flex-row gap-1.5' : 'flex-col gap-1.5',
+      )}
+    >
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            'rounded-full transition-colors',
+            isH ? 'w-5 h-[5px]' : 'w-[5px] h-5',
+            color,
+          )}
+        />
+      ))}
+    </div>
+  );
+}
+
+// ─── Visual Table Card ──────────────────────────────────────
+
+interface VisualTableProps {
+  table: Table;
+  assignment: TableAssignment | undefined;
+  servers: AdminUser[];
+  onAssign: (tableId: string, serverId: string) => void;
+  onRelease: (assignmentId: string) => void;
+  assignLabel: string;
+  releaseLabel: string;
+  occupiedLabel: string;
+  vacantLabel: string;
+}
+
+function VisualTable({
+  table,
+  assignment,
+  servers,
+  onAssign,
+  onRelease,
+  assignLabel,
+  releaseLabel,
+  occupiedLabel,
+  vacantLabel,
+}: VisualTableProps) {
+  const chairs = getChairLayout(table.capacity);
+  const isAssigned = !!assignment;
+
+  const chairColor = isAssigned ? 'bg-emerald-500/50' : 'bg-app-text/10';
+
+  return (
+    <div className="group relative" style={{ padding: '10px' }}>
+      {/* ── Chairs: top ─── */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2">
+        <ChairRow count={chairs.top} direction="horizontal" color={chairColor} />
+      </div>
+      {/* ── Chairs: bottom ─ */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2">
+        <ChairRow count={chairs.bottom} direction="horizontal" color={chairColor} />
+      </div>
+      {/* ── Chairs: left ── */}
+      <div className="absolute left-0 top-1/2 -translate-y-1/2">
+        <ChairRow count={chairs.left} direction="vertical" color={chairColor} />
+      </div>
+      {/* ── Chairs: right ─ */}
+      <div className="absolute right-0 top-1/2 -translate-y-1/2">
+        <ChairRow count={chairs.right} direction="vertical" color={chairColor} />
+      </div>
+
+      {/* ── Table surface ── */}
+      <div
+        className={cn(
+          'relative rounded-lg border-l-[3px] px-3 py-3 flex flex-col transition-all',
+          'bg-app-elevated/80 hover:bg-app-elevated min-h-[100px]',
+          isAssigned ? 'border-l-emerald-500' : 'border-l-transparent',
+        )}
+      >
+        {/* Table number + release */}
+        <div className="flex items-start justify-between">
+          <span className="text-sm font-bold text-app-text">
+            {table.display_name || table.table_number}
+          </span>
+          {isAssigned && (
+            <button
+              onClick={() => onRelease(assignment.id)}
+              className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-red-500/10 text-app-text-muted hover:text-red-500 transition-all"
+              title={releaseLabel}
+            >
+              <X className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+
+        {/* Bottom content */}
+        <div className="mt-auto pt-2">
+          {isAssigned ? (
+            <>
+              <p className="text-xs text-app-text truncate font-medium">
+                {assignment.server?.full_name}
+              </p>
+              <p className="text-[10px] text-emerald-500 font-semibold mt-0.5">{occupiedLabel}</p>
+            </>
+          ) : (
+            <>
+              <p className="text-[10px] text-app-text-muted font-medium mb-1">{vacantLabel}</p>
+              <Select onValueChange={(val) => onAssign(table.id, val)}>
+                <SelectTrigger className="h-7 text-[10px] bg-app-card/60 border-app-border/50">
+                  <SelectValue placeholder={assignLabel} />
+                </SelectTrigger>
+                <SelectContent>
+                  {servers.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.full_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ─────────────────────────────────────────
+
 export default function ServiceManager({ tenantId }: Props) {
   const t = useTranslations('service');
-  const [zones, setZones] = useState<(Zone & { tables: Table[] })[]>([]);
+  const tc = useTranslations('common');
+  const [zones, setZones] = useState<ZoneWithTables[]>([]);
   const [servers, setServers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
+  const [sidebarSearch, setSidebarSearch] = useState('');
 
   const { data: assignments = [] } = useAssignments(tenantId);
   const assignServer = useAssignServer(tenantId);
   const releaseAssignment = useReleaseAssignment(tenantId);
 
+  // ── Data fetching (preserved) ─────────────────────────────
+
   useEffect(() => {
     async function fetchData() {
       const supabase = createClient();
-      // Fetch zones with tables (zones belong to venues which belong to tenants)
       const { data: zonesData } = await supabase
         .from('zones')
         .select('*, tables(*), venues!inner(tenant_id)')
         .eq('venues.tenant_id', tenantId)
         .order('display_order');
 
-      // Fetch servers (waiters + managers)
       const { data: serversData } = await supabase
         .from('admin_users')
         .select('id, full_name, role, is_active')
@@ -48,14 +233,15 @@ export default function ServiceManager({ tenantId }: Props) {
         .eq('is_active', true)
         .order('full_name');
 
-      if (zonesData) setZones(zonesData as (Zone & { tables: Table[] })[]);
+      if (zonesData) setZones(zonesData as ZoneWithTables[]);
       if (serversData) setServers(serversData as AdminUser[]);
       setLoading(false);
     }
     fetchData();
   }, [tenantId]);
 
-  // Realtime subscription for assignments
+  // ── Realtime subscription (preserved) ─────────────────────
+
   useEffect(() => {
     const supabase = createClient();
     const channel = supabase
@@ -68,9 +254,7 @@ export default function ServiceManager({ tenantId }: Props) {
           table: 'table_assignments',
           filter: `tenant_id=eq.${tenantId}`,
         },
-        () => {
-          // TanStack Query will auto-refetch via invalidation
-        },
+        () => {},
       )
       .subscribe();
 
@@ -79,8 +263,12 @@ export default function ServiceManager({ tenantId }: Props) {
     };
   }, [tenantId]);
 
-  const getAssignmentForTable = (tableId: string) =>
-    assignments.find((a) => a.table_id === tableId);
+  // ── Handlers (preserved) ──────────────────────────────────
+
+  const getAssignmentForTable = useCallback(
+    (tableId: string) => assignments.find((a) => a.table_id === tableId),
+    [assignments],
+  );
 
   const handleAssign = (tableId: string, serverId: string) => {
     assignServer.mutate({ tableId, serverId });
@@ -90,106 +278,370 @@ export default function ServiceManager({ tenantId }: Props) {
     releaseAssignment.mutate(assignmentId);
   };
 
+  // ── Computed data ─────────────────────────────────────────
+
+  const stats = useMemo(() => {
+    const all = zones.flatMap((z) => z.tables.filter((tbl) => tbl.is_active));
+    const total = all.length;
+    const occupied = all.filter((tbl) => getAssignmentForTable(tbl.id)).length;
+    const pct = total > 0 ? Math.round((occupied / total) * 100) : 0;
+    return { total, occupied, pct };
+  }, [zones, getAssignmentForTable]);
+
+  const zoneStats = useMemo(() => {
+    const map: Record<string, { occupied: number; total: number }> = {};
+    for (const zone of zones) {
+      const active = zone.tables.filter((tbl) => tbl.is_active);
+      const occupied = active.filter((tbl) => getAssignmentForTable(tbl.id)).length;
+      map[zone.id] = { occupied, total: active.length };
+    }
+    return map;
+  }, [zones, getAssignmentForTable]);
+
+  const filteredZones = useMemo(() => {
+    if (!activeZoneId) return zones;
+    return zones.filter((z) => z.id === activeZoneId);
+  }, [zones, activeZoneId]);
+
+  const assignedServerIds = useMemo(
+    () => new Set(assignments.map((a) => a.server_id)),
+    [assignments],
+  );
+
+  const availableServers = useMemo(
+    () => servers.filter((s) => !assignedServerIds.has(s.id)),
+    [servers, assignedServerIds],
+  );
+
+  const avgDuration = useMemo(() => {
+    if (assignments.length === 0) return 0;
+    return Math.round(
+      assignments.reduce((sum, a) => sum + getElapsedMinutes(a.started_at), 0) / assignments.length,
+    );
+  }, [assignments]);
+
+  // Sidebar search filter
+  const filteredAssignments = useMemo(() => {
+    if (!sidebarSearch.trim()) return assignments;
+    const q = sidebarSearch.toLowerCase();
+    return assignments.filter(
+      (a) =>
+        a.server?.full_name?.toLowerCase().includes(q) ||
+        a.table?.display_name?.toLowerCase().includes(q) ||
+        a.table?.table_number?.toLowerCase().includes(q),
+    );
+  }, [assignments, sidebarSearch]);
+
+  const getZoneName = useCallback(
+    (zoneId: string | undefined) => {
+      if (!zoneId) return '';
+      return zones.find((z) => z.id === zoneId)?.name ?? '';
+    },
+    [zones],
+  );
+
+  // ── Loading skeleton ──────────────────────────────────────
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <div
-              key={i}
-              className="h-24 bg-app-bg rounded-lg border border-app-border animate-pulse"
-            />
-          ))}
+      <div className="h-full flex flex-col overflow-hidden">
+        <div className="shrink-0">
+          <div className="h-8 w-40 bg-app-bg rounded-lg animate-pulse" />
+        </div>
+        <div className="flex-1 min-h-0 flex gap-4 mt-4">
+          <div className="hidden lg:block w-[280px] shrink-0">
+            <div className="h-full bg-app-card rounded-xl border border-app-border animate-pulse" />
+          </div>
+          <div className="flex-1 space-y-4">
+            <div className="flex gap-2">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-9 w-28 bg-app-bg rounded-lg animate-pulse" />
+              ))}
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div
+                  key={i}
+                  className="h-[140px] bg-app-card rounded-xl border border-app-border animate-pulse"
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  // ── Render ────────────────────────────────────────────────
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-app-text flex items-center gap-2">
-          <Users className="w-5 h-5 text-app-text-secondary" />
-          {t('title')}
-        </h1>
-        <div className="text-sm text-app-text-secondary">
-          {t('activeAssignments', { count: assignments.length })}
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* ═══ Header ═══════════════════════════════════════════ */}
+      <div className="shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <Users className="w-6 h-6" />
+            {t('title')}
+          </h1>
+
+          {/* Stats pills (like reference: Avg Wait + Capacity) */}
+          <div className="flex items-center gap-2 lg:ml-auto">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
+              <Clock className="w-3.5 h-3.5 text-app-text-muted" />
+              <span className="text-app-text-secondary font-medium">
+                {t('avgDuration')} {avgDuration} min
+              </span>
+            </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
+              <Activity className="w-3.5 h-3.5 text-emerald-500" />
+              <span className="text-app-text-secondary font-medium">
+                {stats.pct}% {t('fullCapacity')}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {zones.length === 0 ? (
-        <div className="text-center py-12 text-app-text-secondary bg-app-card rounded-lg border border-app-border p-6">
-          {t('noZones')}
-        </div>
-      ) : (
-        zones.map((zone) => (
-          <div key={zone.id} className="space-y-3">
-            <h2 className="text-lg font-semibold text-app-text">{zone.name}</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {zone.tables
-                .filter((tbl: Table) => tbl.is_active)
-                .map((table: Table) => {
-                  const assignment = getAssignmentForTable(table.id);
-                  return (
-                    <div
-                      key={table.id}
-                      className={`rounded-lg border p-4 transition-colors ${
-                        assignment
-                          ? 'border-emerald-500/20 bg-emerald-500/10'
-                          : 'border-app-border bg-app-card'
-                      }`}
-                    >
-                      <div className="flex items-center justify-between mb-3">
-                        <span className="font-mono font-bold text-app-text">
-                          {table.display_name || table.table_number}
-                        </span>
-                        <span className="text-xs text-app-text-secondary">
-                          {t('seats', { count: table.capacity })}
-                        </span>
-                      </div>
-
-                      {assignment ? (
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="w-4 h-4 text-emerald-600" />
-                            <span className="text-sm font-medium text-app-text">
-                              {assignment.server?.full_name ?? t('server')}
-                            </span>
-                          </div>
-                          <button
-                            onClick={() => handleRelease(assignment.id)}
-                            className="p-1 rounded-lg hover:bg-app-elevated text-app-text-muted hover:text-red-500 transition-colors"
-                            title={t('release')}
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <Select
-                          onValueChange={(value) => {
-                            if (value) handleAssign(table.id, value);
-                          }}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder={t('assignServer')} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {servers.map((s) => (
-                              <SelectItem key={s.id} value={s.id}>
-                                {s.full_name} ({s.role})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  );
-                })}
+      {/* ═══ Content: Sidebar + Grid ═════════════════════════ */}
+      <div className="flex-1 min-h-0 flex gap-4 mt-4 sm:mt-5">
+        {/* ─── Left sidebar (desktop) ─────────────────────── */}
+        <aside className="hidden lg:flex w-[280px] shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
+          {/* Search */}
+          <div className="p-3 border-b border-app-border">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-app-text-muted" />
+              <Input
+                value={sidebarSearch}
+                onChange={(e) => setSidebarSearch(e.target.value)}
+                placeholder={t('searchPlaceholder')}
+                className="pl-8 h-9 text-sm bg-app-bg border-app-border"
+              />
             </div>
           </div>
-        ))
-      )}
+
+          {/* Scrollable assignments list */}
+          <div className="flex-1 overflow-y-auto scrollbar-hide p-3 space-y-4">
+            {/* ── EN SERVICE (active assignments) ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                  {t('onDuty')}
+                </span>
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-emerald-500/10 text-emerald-500 text-[9px] font-bold px-1">
+                  {filteredAssignments.length}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {filteredAssignments.length === 0 ? (
+                  <p className="text-xs text-app-text-muted py-2">{t('noTablesAssigned')}</p>
+                ) : (
+                  filteredAssignments.map((a) => (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-app-bg/50 hover:bg-app-bg transition-colors"
+                    >
+                      {/* Time */}
+                      <div className="shrink-0 text-center min-w-[36px]">
+                        <p className="text-[10px] font-bold text-app-text-secondary tabular-nums leading-tight">
+                          {formatTime(a.started_at)}
+                        </p>
+                      </div>
+                      {/* Server info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-app-text truncate">
+                          {a.server?.full_name ?? '—'}
+                        </p>
+                        <p className="text-[10px] text-app-text-muted truncate">
+                          {a.server?.role ?? ''} · {getZoneName(a.table?.zone_id)}
+                        </p>
+                      </div>
+                      {/* Table badge */}
+                      <div className="shrink-0">
+                        <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-emerald-500/10 text-emerald-500 text-[10px] font-bold px-1.5">
+                          {a.table?.display_name || a.table?.table_number || '—'}
+                        </span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* ── DISPONIBLES (available servers) ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-500">
+                  {t('availableServers')}
+                </span>
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-blue-500/10 text-blue-500 text-[9px] font-bold px-1">
+                  {availableServers.length}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {availableServers.length === 0 ? (
+                  <p className="text-xs text-app-text-muted py-2">—</p>
+                ) : (
+                  availableServers.map((server) => (
+                    <div
+                      key={server.id}
+                      className="flex items-center gap-2.5 p-2.5 rounded-lg bg-app-bg/50 hover:bg-app-bg transition-colors"
+                    >
+                      <div className="w-7 h-7 rounded-full bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <User className="w-3.5 h-3.5 text-blue-500" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold text-app-text truncate">
+                          {server.full_name ?? '—'}
+                        </p>
+                        <p className="text-[10px] text-app-text-muted">{server.role}</p>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* ─── Main content (zone tabs + table grid) ─────── */}
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          {/* Zone tabs row */}
+          <div className="shrink-0 flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+            <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
+              <button
+                onClick={() => setActiveZoneId(null)}
+                className={cn(
+                  'shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all border',
+                  !activeZoneId
+                    ? 'bg-accent text-white border-accent'
+                    : 'bg-app-card text-app-text-secondary border-app-border hover:text-app-text',
+                )}
+              >
+                {tc('all')}
+                <span
+                  className={cn(
+                    'ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md font-bold',
+                    !activeZoneId ? 'bg-white/20' : 'bg-app-bg',
+                  )}
+                >
+                  {stats.occupied}/{stats.total}
+                </span>
+              </button>
+              {zones.map((zone) => {
+                const zs = zoneStats[zone.id];
+                const isActive = activeZoneId === zone.id;
+                return (
+                  <button
+                    key={zone.id}
+                    onClick={() => setActiveZoneId(zone.id)}
+                    className={cn(
+                      'shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all border',
+                      isActive
+                        ? 'bg-accent text-white border-accent'
+                        : 'bg-app-card text-app-text-secondary border-app-border hover:text-app-text',
+                    )}
+                  >
+                    {zone.name}
+                    {zs && (
+                      <span
+                        className={cn(
+                          'ml-1.5 text-[10px] px-1.5 py-0.5 rounded-md font-bold',
+                          isActive ? 'bg-white/20' : 'bg-app-bg',
+                        )}
+                      >
+                        {zs.occupied}/{zs.total}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Scrollable table grid */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide space-y-6">
+            {zones.length === 0 ? (
+              <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <LayoutGrid className="w-8 h-8 text-app-text-muted" />
+                </div>
+                <h3 className="text-lg font-bold text-app-text">{t('noZones')}</h3>
+              </div>
+            ) : (
+              filteredZones.map((zone) => {
+                const activeTables = zone.tables.filter((tbl) => tbl.is_active);
+                if (activeTables.length === 0) return null;
+
+                return (
+                  <div key={zone.id}>
+                    {/* Zone divider (only when All is selected) */}
+                    {!activeZoneId && (
+                      <div className="flex items-center gap-3 mb-3">
+                        <h2 className="text-sm font-semibold text-app-text whitespace-nowrap">
+                          {zone.name}
+                        </h2>
+                        <div className="h-px flex-1 bg-app-border" />
+                        <span className="text-[10px] text-app-text-muted font-medium whitespace-nowrap">
+                          {activeTables.length} tables
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Visual table grid with chairs */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+                      {activeTables.map((table) => (
+                        <VisualTable
+                          key={table.id}
+                          table={table}
+                          assignment={getAssignmentForTable(table.id)}
+                          servers={servers}
+                          onAssign={handleAssign}
+                          onRelease={handleRelease}
+                          assignLabel={t('assignServer')}
+                          releaseLabel={t('release')}
+                          occupiedLabel={t('occupied')}
+                          vacantLabel={t('vacant')}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+
+            {/* Mobile-only: inline assignment summary */}
+            <div className="lg:hidden">
+              {assignments.length > 0 && (
+                <div className="bg-app-card rounded-xl border border-app-border p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <UserCheck className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-semibold text-app-text">
+                      {t('activeAssignments', { count: assignments.length })}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {assignments.map((a) => (
+                      <div
+                        key={a.id}
+                        className="flex items-center justify-between py-1.5 border-b border-app-border/50 last:border-0"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xs font-medium text-app-text truncate">
+                            {a.server?.full_name ?? '—'}
+                          </span>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-500 shrink-0 ml-2">
+                          {a.table?.display_name || a.table?.table_number || '—'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

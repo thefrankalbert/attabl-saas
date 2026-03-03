@@ -211,22 +211,18 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         </div>
       ) : (
         <>
-          {/* Header + Filters */}
-          <div className="shrink-0 space-y-4 sm:space-y-6">
-            {/* Header */}
-            <div>
-              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
+          {/* Header + Filters — single line on desktop */}
+          <div className="shrink-0 space-y-3">
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
                 <BookOpenCheck className="w-6 h-6" />
                 {t('recipesTech')}
+                <span className="text-base font-normal text-app-text-secondary">
+                  ({itemsWithRecipes.size}/{menuItems.length})
+                </span>
               </h1>
-              <p className="text-sm text-app-text-secondary mt-1">
-                {itemsWithRecipes.size} / {menuItems.length} {t('withRecipe')}
-              </p>
-            </div>
 
-            {/* Filters */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+              <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                 <Input
                   data-search-input
@@ -236,7 +232,8 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
+
+              <div className="flex gap-2 shrink-0">
                 {(['all', 'with', 'without'] as const).map((f) => (
                   <Button
                     key={f}

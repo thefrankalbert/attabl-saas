@@ -3,7 +3,6 @@ import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { PushOptIn } from '@/components/admin/PushOptIn';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
 
 export const revalidate = 300;
 
@@ -26,15 +25,8 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
 
   if (!tenant) notFound();
 
-  const t = await getTranslations('settings');
-
   return (
-    <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)]">
-      <div className="mb-8 flex-shrink-0">
-        <h1 className="text-2xl font-bold text-app-text">{t('pageTitle')}</h1>
-        <p className="text-app-text-secondary">{t('pageDescription')}</p>
-      </div>
-
+    <div className="h-full flex flex-col overflow-hidden">
       <SettingsForm
         tenant={{
           id: tenant.id,
@@ -57,7 +49,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
         }}
       />
 
-      <div className="mt-6 flex-shrink-0">
+      <div className="mt-4 shrink-0">
         <PushOptIn tenantId={tenant.id} />
       </div>
     </div>

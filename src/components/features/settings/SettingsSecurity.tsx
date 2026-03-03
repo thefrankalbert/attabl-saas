@@ -31,7 +31,7 @@ export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
     <TabsContent value="security" className="mt-0">
       <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-indigo-50 rounded-lg">
+          <div className="p-2 bg-indigo-500/10 rounded-lg">
             <Shield className="h-5 w-5 text-indigo-600" />
           </div>
           <div>
@@ -100,7 +100,7 @@ export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
                     onClick={() => setValue('screenLockMode', 'overlay')}
                     className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
                       watchScreenLockMode === 'overlay'
-                        ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
+                        ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20'
                         : 'border-app-border hover:border-app-text-muted'
                     }`}
                   >
@@ -114,7 +114,7 @@ export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
                     onClick={() => setValue('screenLockMode', 'password')}
                     className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
                       watchScreenLockMode === 'password'
-                        ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500/20'
+                        ? 'border-indigo-500 bg-indigo-500/10 ring-1 ring-indigo-500/20'
                         : 'border-app-border hover:border-app-text-muted'
                     }`}
                   >

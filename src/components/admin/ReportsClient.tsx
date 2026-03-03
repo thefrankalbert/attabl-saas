@@ -249,61 +249,58 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 sm:space-y-6">
-        {/* Header with title, pill tabs, and export buttons */}
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{t('titleClient')}</h1>
-              <p className="text-sm text-app-text-secondary">{t('subtitleClient')}</p>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Button
-                variant="outline"
-                className="rounded-xl border-app-border"
-                onClick={handleExportCSV}
-                disabled={exportingCsv}
-              >
-                {exportingCsv ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <FileSpreadsheet className="w-4 h-4 mr-2" />
-                )}
-                {t('exportCsv')}
-              </Button>
-              <Button
-                variant="default"
-                className="rounded-xl"
-                onClick={handleExportPDF}
-                disabled={exporting}
-              >
-                {exporting ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="w-4 h-4 mr-2" />
-                )}
-                {t('exportPdf')}
-              </Button>
-            </div>
+      <div className="shrink-0 space-y-3">
+        {/* Header — single line on desktop */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
+            {t('titleClient')}
+          </h1>
+          <div className="flex items-center gap-2 lg:ml-auto shrink-0">
+            <Button
+              variant="outline"
+              className="rounded-xl border-app-border"
+              onClick={handleExportCSV}
+              disabled={exportingCsv}
+            >
+              {exportingCsv ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4 mr-2" />
+              )}
+              {t('exportCsv')}
+            </Button>
+            <Button
+              variant="default"
+              className="rounded-xl"
+              onClick={handleExportPDF}
+              disabled={exporting}
+            >
+              {exporting ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Download className="w-4 h-4 mr-2" />
+              )}
+              {t('exportPdf')}
+            </Button>
           </div>
+        </div>
 
-          {/* Pill-style period selector */}
-          <div className="flex items-center gap-1 bg-app-bg p-1 rounded-xl w-fit border border-app-border">
-            {PERIOD_PILLS.map((pill) => (
-              <button
-                key={pill.value}
-                type="button"
-                onClick={() => setPeriod(pill.value)}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
-                  period === pill.value
-                    ? 'bg-accent text-accent-text'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-card'
-                }`}
-              >
-                {t(pill.labelKey)}
-              </button>
-            ))}
-          </div>
+        {/* Pill-style period selector */}
+        <div className="flex items-center gap-1 bg-app-bg p-1 rounded-xl w-fit border border-app-border">
+          {PERIOD_PILLS.map((pill) => (
+            <button
+              key={pill.value}
+              type="button"
+              onClick={() => setPeriod(pill.value)}
+              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                period === pill.value
+                  ? 'bg-accent text-accent-text'
+                  : 'text-app-text-secondary hover:text-app-text hover:bg-app-card'
+              }`}
+            >
+              {t(pill.labelKey)}
+            </button>
+          ))}
         </div>
 
         {/* KPI Summary Cards */}

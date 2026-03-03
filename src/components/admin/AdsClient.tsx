@@ -145,18 +145,19 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t('title')}</h1>
-            <p className="text-sm text-app-text-secondary">{t('subtitle')}</p>
-          </div>
+      <div className="shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <ImageIcon className="w-6 h-6" />
+            {t('title')}
+            <span className="text-base font-normal text-app-text-secondary">({ads.length})</span>
+          </h1>
           <Button
             onClick={() => {
               resetForm();
               setIsModalOpen(true);
             }}
-            className="gap-2"
+            className="gap-2 lg:ml-auto shrink-0"
           >
             <Plus className="w-4 h-4" /> {t('newAd')}
           </Button>

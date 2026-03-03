@@ -263,7 +263,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
           {/* Header — single row like inventory */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               <Folder className="w-5 h-5" />
               {t('title')}
@@ -271,11 +271,14 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 ({categories.length})
               </span>
             </h1>
-            <div className="ml-auto shrink-0">
-              <Button onClick={openNewModal} variant="default" size="sm" className="gap-2 h-9">
-                <Plus className="w-4 h-4" /> {t('newCategory')}
-              </Button>
-            </div>
+            <Button
+              onClick={openNewModal}
+              variant="default"
+              size="sm"
+              className="gap-2 h-9 lg:ml-auto shrink-0"
+            >
+              <Plus className="w-4 h-4" /> {t('newCategory')}
+            </Button>
           </div>
         </div>
 
