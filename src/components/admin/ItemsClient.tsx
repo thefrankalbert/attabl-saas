@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Loader2, Star, Check, X, Image as ImageIcon, AlertTriangle } from 'lucide-react';
+import { Plus, Loader2, Star, Check, X, Image as ImageIcon, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
@@ -46,8 +47,8 @@ export default function ItemsClient({
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [saving, setSaving] = useState(false);
-  const [filterCategory, setFilterCategory] = useState('all');
-  const [filterAvailable, setFilterAvailable] = useState('all');
+  const [filterCategory, setFilterCategory] = useSessionState('items:filterCategory', 'all');
+  const [filterAvailable, setFilterAvailable] = useSessionState('items:filterAvailable', 'all');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
 
   // Form state
@@ -215,22 +216,19 @@ export default function ItemsClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
-            </div>
-            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> {t('newItem')}
-            </Button>
-          </div>
+        <div className="shrink-0">
+          {/* Header — single row like inventory */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              {t('title')}
+              <span className="text-sm font-normal text-app-text-muted">
+                ({items.length})
+              </span>
+            </h1>
 
-          {/* Filters */}
-          <div className="flex flex-wrap items-center gap-3 p-4 bg-app-card rounded-xl border border-app-border">
+            {/* Filters inline */}
             <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-9 w-full sm:w-[200px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+              <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
                 <SelectValue placeholder={t('allCategories')} />
               </SelectTrigger>
               <SelectContent>
@@ -243,7 +241,7 @@ export default function ItemsClient({
               </SelectContent>
             </Select>
             <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-              <SelectTrigger className="h-9 w-full sm:w-[150px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+              <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
                 <SelectValue placeholder={t('all')} />
               </SelectTrigger>
               <SelectContent>
@@ -252,9 +250,12 @@ export default function ItemsClient({
                 <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
               </SelectContent>
             </Select>
-            <span className="ml-auto text-xs text-app-text-muted font-medium">
-              {t('itemCount', { count: items.length })}
-            </span>
+
+            <div className="lg:ml-auto shrink-0">
+              <Button onClick={openNewModal} variant="default" className="gap-2 h-9">
+                <Plus className="w-4 h-4" /> {t('newItem')}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -270,12 +271,12 @@ export default function ItemsClient({
               ))}
             </div>
           ) : items.length > 0 ? (
-            <div className="space-y-2">
+            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
               {items.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
+                  className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
                   {item.image_url ? (
                     <Image
@@ -339,28 +340,28 @@ export default function ItemsClient({
                   >
                     <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
                   </button>
-                  <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         openEditModal(item);
                       }}
-                      className="text-xs h-10 min-h-[44px]"
+                      className="h-8 w-8 p-0"
                     >
-                      {t('edit')}
+                      <Edit2 className="w-3.5 h-3.5" />
                     </Button>
                     <Button
-                      variant="outline"
+                      variant="ghost"
                       size="sm"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(item);
                       }}
-                      className="text-xs h-10 min-h-[44px] text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                     >
-                      {t('delete')}
+                      <Trash2 className="w-3.5 h-3.5" />
                     </Button>
                   </div>
                 </div>
@@ -428,24 +429,12 @@ export default function ItemsClient({
                   <p className="text-sm font-semibold text-app-text">{selectedItem.name}</p>
                 </div>
 
-                {/* Name EN */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('nameEn')}</p>
-                  <p className="text-sm text-app-text">{selectedItem.name_en || '—'}</p>
-                </div>
-
-                {/* Description FR */}
+                {/* Description */}
                 <div className="space-y-1">
                   <p className="text-xs text-app-text-muted font-medium">{t('descriptionFr')}</p>
                   <p className="text-sm text-app-text">
                     {selectedItem.description || t('noDescription')}
                   </p>
-                </div>
-
-                {/* Description EN */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('descriptionEn')}</p>
-                  <p className="text-sm text-app-text">{selectedItem.description_en || '—'}</p>
                 </div>
 
                 {/* Price */}

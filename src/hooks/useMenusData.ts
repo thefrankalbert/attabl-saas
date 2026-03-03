@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenus } from '@/hooks/queries';
@@ -44,6 +44,7 @@ export interface UseMenusDataReturn {
   createMenu: (data: MenuFormData) => Promise<void>;
   updateMenu: (menuId: string, data: MenuFormData) => Promise<void>;
   deleteMenu: (menu: Menu) => Promise<void>;
+  deleteMultiple: (menuIds: string[]) => Promise<void>;
   toggleActive: (menu: Menu) => Promise<void>;
   reorder: (dragIndex: number, dropIndex: number) => Promise<void>;
   loadMenus: () => void;
@@ -56,7 +57,7 @@ export function useMenusData({
   initialMenus,
   venues,
 }: UseMenusDataParams): UseMenusDataReturn {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useSessionState('menus:searchQuery', '');
 
   const { toast } = useToast();
   const { isLimitReached: checkLimit, limits } = useSubscription();
@@ -127,6 +128,27 @@ export function useMenusData({
     }
   };
 
+  const deleteMultiple = async (menuIds: string[]) => {
+    if (menuIds.length === 0) return;
+    if (!confirm(t('deleteMultipleConfirm', { count: menuIds.length }))) return;
+
+    let errors = 0;
+    for (const id of menuIds) {
+      try {
+        const result = await actionDeleteMenu(tenantId, id);
+        if (result.error) errors++;
+      } catch {
+        errors++;
+      }
+    }
+    if (errors > 0) {
+      toast({ title: t('deleteError'), variant: 'destructive' });
+    } else {
+      toast({ title: t('menuDeleted') });
+    }
+    loadMenus();
+  };
+
   const toggleActive = async (menu: Menu) => {
     try {
       const result = await actionUpdateMenu(tenantId, {
@@ -181,6 +203,7 @@ export function useMenusData({
     createMenu,
     updateMenu,
     deleteMenu,
+    deleteMultiple,
     toggleActive,
     reorder,
     loadMenus,

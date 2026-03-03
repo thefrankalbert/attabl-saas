@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { Truck, Plus, Search, Pencil, Trash2 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
@@ -25,8 +26,8 @@ interface SuppliersClientProps {
 type ModalMode = 'add' | 'edit' | null;
 
 export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterActive, setFilterActive] = useState<'all' | 'active' | 'inactive'>('all');
+  const [searchQuery, setSearchQuery] = useSessionState('suppliers:searchQuery', '');
+  const [filterActive, setFilterActive] = useSessionState<'all' | 'active' | 'inactive'>('suppliers:filterActive', 'all');
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);
@@ -344,6 +345,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                 columns={columns}
                 data={filtered}
                 emptyMessage={t('noSuppliersFound')}
+                storageKey="suppliers"
                 mobileConfig={{
                   renderCard: (supplier) => (
                     <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">

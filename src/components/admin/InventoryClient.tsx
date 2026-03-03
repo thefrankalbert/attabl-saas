@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { Package, Plus, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
@@ -35,8 +36,8 @@ interface InventoryClientProps {
 type ModalMode = 'add' | 'edit' | 'adjust' | null;
 
 export default function InventoryClient({ tenantId, currency }: InventoryClientProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'low' | 'out'>('all');
+  const [searchQuery, setSearchQuery] = useSessionState('inventory:searchQuery', '');
+  const [filterStatus, setFilterStatus] = useSessionState<'all' | 'low' | 'out'>('inventory:filterStatus', 'all');
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);
@@ -408,6 +409,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 columns={columns}
                 data={filtered}
                 emptyMessage={t('noProductFound')}
+                storageKey="inventory"
                 mobileConfig={{
                   renderCard: (ing) => {
                     const badge = getStockBadge(ing);

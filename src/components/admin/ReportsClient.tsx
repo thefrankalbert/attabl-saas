@@ -27,6 +27,7 @@ import {
   Legend,
 } from 'recharts';
 import { useReportData } from '@/hooks/queries';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
@@ -69,7 +70,7 @@ const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
   const t = useTranslations('reports');
   const fmt = (amount: number) => formatCurrency(amount, currency);
-  const [period, setPeriod] = useState<Period>('7d');
+  const [period, setPeriod] = useSessionState<Period>('reports:period', '7d');
   const [exporting, setExporting] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
 

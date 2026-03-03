@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Loader2, Folder, GripVertical, Utensils } from 'lucide-react';
+import { Plus, Loader2, Folder, GripVertical, Utensils, Edit2, Trash2 } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -79,42 +79,38 @@ function SortableRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group',
-        isDragging && 'shadow-none border-accent bg-accent-muted',
+        'flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
+        isDragging && 'bg-app-bg shadow-sm',
       )}
     >
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 rounded hover:bg-app-bg transition-colors"
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none shrink-0"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
       >
-        <GripVertical className="w-4 h-4 text-app-text-muted group-hover:text-app-text-secondary transition-colors" />
+        <GripVertical className="w-4 h-4 text-app-text-muted" />
       </button>
-      <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-        <Folder className="w-4 h-4 text-app-text-secondary" />
-      </div>
       <div className="flex-1 min-w-0">
-        <p className="font-semibold text-app-text text-sm">{cat.name}</p>
-        {cat.name_en && <p className="text-xs text-app-text-muted">{cat.name_en}</p>}
+        <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
       <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
         <Utensils className="w-3.5 h-3.5" />
         <span className="font-medium">{dishCountLabel}</span>
       </div>
-      <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
-        <Button variant="outline" size="sm" onClick={() => onEdit(cat)} className="text-xs h-8">
-          {editLabel}
+      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
+        <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0">
+          <Edit2 className="w-3.5 h-3.5" />
         </Button>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
           onClick={() => onDelete(cat)}
-          className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
-          {deleteLabel}
+          <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
     </div>
@@ -265,24 +261,21 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-bold text-app-text tracking-tight">{t('title')}</h1>
-              <p className="text-xs text-app-text-secondary mt-1">{t('subtitle')}</p>
+        <div className="shrink-0">
+          {/* Header — single row like inventory */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <Folder className="w-5 h-5" />
+              {t('title')}
+              <span className="text-sm font-normal text-app-text-muted">
+                ({categories.length})
+              </span>
+            </h1>
+            <div className="ml-auto shrink-0">
+              <Button onClick={openNewModal} variant="default" size="sm" className="gap-2 h-9">
+                <Plus className="w-4 h-4" /> {t('newCategory')}
+              </Button>
             </div>
-            <Button onClick={openNewModal} variant="default" size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> {t('newCategory')}
-            </Button>
-          </div>
-
-          {/* Counter */}
-          <div className="flex items-center gap-2 px-4 py-3 bg-app-card rounded-xl border border-app-border">
-            <Folder className="w-4 h-4 text-app-text-muted" />
-            <span className="text-xs text-app-text-secondary font-medium">
-              {t('categoryCount', { count: categories.length })}
-            </span>
           </div>
         </div>
 
@@ -308,7 +301,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 items={categories.map((cat) => cat.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="space-y-2">
+                <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
                   {categories.map((cat) => (
                     <SortableRow
                       key={cat.id}
@@ -328,16 +321,10 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                       const cat = categories.find((c) => c.id === activeDragId);
                       if (!cat) return null;
                       return (
-                        <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border-2 border-accent shadow-none">
+                        <div className="flex items-center gap-4 px-4 py-3 bg-app-card rounded-xl border-2 border-accent shadow-sm">
                           <GripVertical className="w-4 h-4 text-app-text-secondary" />
-                          <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-                            <Folder className="w-4 h-4 text-app-text-secondary" />
-                          </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-semibold text-app-text text-sm">{cat.name}</p>
-                            {cat.name_en && (
-                              <p className="text-xs text-app-text-muted">{cat.name_en}</p>
-                            )}
+                            <p className="font-medium text-app-text text-sm">{cat.name}</p>
                           </div>
                           <div className="flex items-center gap-1.5 text-xs text-app-text-secondary">
                             <Utensils className="w-3.5 h-3.5" />
