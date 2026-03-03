@@ -50,7 +50,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
       .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
       .eq('tenant_id', tenant.id)
       .in('category_id', categoryIds)
-      .order('display_order', { ascending: true });
+      .order('created_at', { ascending: true });
     items = (itemsData || []) as MenuItem[];
   }
 

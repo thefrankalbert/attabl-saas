@@ -328,17 +328,14 @@ ${pdfText.substring(0, 15000)}
           result.categoriesCreated += 1;
         }
 
-        // Get max display_order for items in this category
-        const { data: maxItemOrder } = await supabase
+        // Count existing items in this category to determine insertion order
+        const { count: existingCount } = await supabase
           .from('menu_items')
-          .select('display_order')
+          .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenantId)
-          .eq('category_id', categoryId)
-          .order('display_order', { ascending: false })
-          .limit(1)
-          .single();
+          .eq('category_id', categoryId);
 
-        let nextItemOrder = (maxItemOrder?.display_order ?? -1) + 1;
+        let nextItemOrder = (existingCount ?? 0);
 
         for (const item of categoryItems) {
           const { error: itemError } = await supabase.from('menu_items').insert({
@@ -349,7 +346,6 @@ ${pdfText.substring(0, 15000)}
             price: item.price,
             is_available: true,
             is_featured: false,
-            display_order: nextItemOrder,
             slug: slugify(item.name),
           });
 

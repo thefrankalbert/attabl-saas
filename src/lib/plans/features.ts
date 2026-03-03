@@ -172,7 +172,8 @@ export function getEffectivePlan(
 
   // Cancelled/paused → still use their last plan (grace period)
   // past_due → still use their plan (Stripe handles retries)
-  return plan || 'essentiel';
+  // Fallback to 'essentiel' if plan is missing or not recognized (e.g. DB default 'starter')
+  return plan && plan in PLAN_LIMITS ? plan : 'essentiel';
 }
 
 /**

@@ -450,17 +450,14 @@ export function createExcelImportService(supabase: SupabaseClient) {
           result.categoriesCreated += 1;
         }
 
-        // Get max display_order for items in this category
-        const { data: maxItemOrder } = await supabase
+        // Count existing items in this category to determine insertion order
+        const { count: existingCount } = await supabase
           .from('menu_items')
-          .select('display_order')
+          .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenantId)
-          .eq('category_id', categoryId)
-          .order('display_order', { ascending: false })
-          .limit(1)
-          .single();
+          .eq('category_id', categoryId);
 
-        let nextItemOrder = (maxItemOrder?.display_order ?? -1) + 1;
+        let nextItemOrder = (existingCount ?? 0);
 
         // Insert menu items for this category
         for (const item of group.items) {
@@ -474,7 +471,6 @@ export function createExcelImportService(supabase: SupabaseClient) {
             price: item.price,
             is_available: item.isAvailable,
             is_featured: item.isFeatured,
-            display_order: nextItemOrder,
             slug: slugify(item.name),
           });
 

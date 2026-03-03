@@ -56,6 +56,8 @@ interface MenuRowProps {
   tenantSlug: string;
   venues: Venue[];
   isSelected: boolean;
+  /** Hide venue badge when row is already under a venue section header */
+  showVenueBadge?: boolean;
   onToggleSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -70,6 +72,7 @@ function MenuRow({
   tenantSlug,
   venues,
   isSelected,
+  showVenueBadge = true,
   onToggleSelect,
   onEdit,
   onDelete,
@@ -133,7 +136,7 @@ function MenuRow({
         <span className="font-medium text-sm text-app-text truncate hover:underline">
           {menu.name}
         </span>
-        {menu.venue && (
+        {showVenueBadge && menu.venue && (
           <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
             <Building2 className="w-2.5 h-2.5" />
             {menu.venue.name}
@@ -326,6 +329,7 @@ export default function MenusTable({
                     tenantSlug={tenantSlug}
                     venues={venues}
                     isSelected={selectedIds.has(menu.id)}
+                    showVenueBadge={false}
                     onToggleSelect={() => onToggleSelect(menu.id)}
                     onEdit={() => onEdit(menu)}
                     onDelete={() => onDelete(menu)}
