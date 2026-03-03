@@ -289,27 +289,18 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           </div>
         ) : (
           <>
-            <div className="shrink-0 space-y-4 sm:space-y-6">
-              {/* Header */}
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                  <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
-                    <Truck className="w-6 h-6" />
-                    {t('title')}
-                  </h1>
-                  <p className="text-sm text-app-text-secondary mt-1">
-                    {t('supplierCount', { count: suppliers.length })}
-                  </p>
-                </div>
-                <Button onClick={openAdd} variant="default" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  {t('addSupplier')}
-                </Button>
-              </div>
+            <div className="shrink-0 space-y-3">
+              {/* Header — single line on desktop */}
+              <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+                <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                  <Truck className="w-6 h-6" />
+                  {t('title')}
+                  <span className="text-base font-normal text-app-text-secondary">
+                    ({suppliers.length})
+                  </span>
+                </h1>
 
-              {/* Filters */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="relative flex-1">
+                <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input
@@ -319,7 +310,8 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                <div className="flex gap-2">
+
+                <div className="flex gap-2 shrink-0">
                   {(['all', 'active', 'inactive'] as const).map((status) => (
                     <Button
                       key={status}
@@ -336,6 +328,11 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                     </Button>
                   ))}
                 </div>
+
+                <Button onClick={openAdd} variant="default" className="gap-2 lg:ml-auto shrink-0">
+                  <Plus className="w-4 h-4" />
+                  {t('addSupplier')}
+                </Button>
               </div>
             </div>
 

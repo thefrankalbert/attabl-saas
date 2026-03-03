@@ -88,13 +88,16 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="shrink-0 space-y-4 sm:space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-xl font-bold tracking-tight text-app-text">{t('title')}</h1>
-            <p className="text-xs text-app-text-secondary mt-1">{t('subtitleClient')}</p>
-          </div>
+      {/* Header — single line on desktop */}
+      <div className="shrink-0">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <Tag className="w-6 h-6" />
+            {t('title')}
+            <span className="text-base font-normal text-app-text-secondary">
+              ({coupons.length})
+            </span>
+          </h1>
 
           <Button
             onClick={() => {
@@ -102,7 +105,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
               setShowForm(true);
             }}
             variant="default"
-            className="gap-2"
+            className="gap-2 lg:ml-auto shrink-0"
           >
             <Plus className="h-4 w-4" />
             {t('newCoupon')}

@@ -239,19 +239,55 @@ export default function SuggestionsClient({
       ) : (
         <>
           {/* Header + Search + Bulk actions */}
-          <div className="shrink-0 space-y-4 sm:space-y-6">
-            {/* Header */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
-                  <Lightbulb className="w-6 h-6" />
-                  {t('suggestions')}
-                </h1>
-                <p className="text-sm text-app-text-secondary mt-1">
-                  {t('activeSuggestions', { count: suggestions.length })}
-                </p>
+          <div className="shrink-0 space-y-3">
+            {/* Header — single line on desktop */}
+            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <Lightbulb className="w-6 h-6" />
+                {t('suggestions')}
+                <span className="text-base font-normal text-app-text-secondary">
+                  ({suggestions.length})
+                </span>
+              </h1>
+
+              <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                <Input
+                  placeholder={t('searchDish')}
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <div className="flex items-center gap-2">
+
+              {/* Bulk actions */}
+              {suggestions.length > 0 && (
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
+                    {selectedIds.size === filtered.length && filtered.length > 0 ? (
+                      <CheckSquare className="w-4 h-4" />
+                    ) : (
+                      <Square className="w-4 h-4" />
+                    )}
+                    {selectedIds.size === filtered.length && filtered.length > 0
+                      ? t('deselectAll')
+                      : t('selectAll')}
+                  </Button>
+                  {selectedIds.size > 0 && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={handleBulkDelete}
+                    >
+                      <XCircle className="w-4 h-4" />
+                      {t('deleteSelected', { count: selectedIds.size })}
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2 lg:ml-auto shrink-0">
                 {canAutoGenerate && (
                   <Button
                     onClick={handleAutoGenerate}
@@ -269,44 +305,6 @@ export default function SuggestionsClient({
                 </Button>
               </div>
             </div>
-
-            {/* Search */}
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-              <Input
-                placeholder={t('searchDish')}
-                className="pl-9 rounded-lg focus-visible:ring-accent"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-
-            {/* Bulk actions */}
-            {suggestions.length > 0 && (
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
-                  {selectedIds.size === filtered.length && filtered.length > 0 ? (
-                    <CheckSquare className="w-4 h-4" />
-                  ) : (
-                    <Square className="w-4 h-4" />
-                  )}
-                  {selectedIds.size === filtered.length && filtered.length > 0
-                    ? t('deselectAll')
-                    : t('selectAll')}
-                </Button>
-                {selectedIds.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="gap-1.5"
-                    onClick={handleBulkDelete}
-                  >
-                    <XCircle className="w-4 h-4" />
-                    {t('deleteSelected', { count: selectedIds.size })}
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
 
           {/* Suggestions Grid */}

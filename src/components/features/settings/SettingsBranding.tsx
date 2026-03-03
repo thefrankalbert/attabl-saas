@@ -30,7 +30,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
     <TabsContent value="branding" className="mt-0">
       <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-purple-50 rounded-lg">
+          <div className="p-2 bg-purple-500/10 rounded-lg">
             <Palette className="h-5 w-5 text-purple-600" />
           </div>
           <div>

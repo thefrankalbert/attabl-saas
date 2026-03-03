@@ -718,6 +718,9 @@
     "roleOwner": "Propriétaire",
     "roleAdmin": "Administrateur",
     "roleManager": "Gérant",
+    "roleCashier": "Caissier",
+    "roleChef": "Chef cuisinier",
+    "roleWaiter": "Serveur",
     "roleStaff": "Personnel",
     "roleKitchen": "Cuisine",
     "roleServer": "Serveur",
@@ -740,6 +743,7 @@
     "roleDefaultLabel": "Utilisateur",
     "inactive": "Inactif",
     "neverConnected": "Jamais connecté",
+    "neverLoggedIn": "Jamais connecté",
     "actions": "Actions",
     "deactivate": "Désactiver",
     "activate": "Activer",
@@ -1329,7 +1333,14 @@
     "allOrdersAssigned": "Toutes les commandes sont assignées.",
     "items": "{count} article(s)",
     "claimOrder": "Prendre en charge",
-    "assignServer": "Assigner un serveur..."
+    "assignServer": "Assigner un serveur...",
+    "occupied": "Occupée",
+    "vacant": "Vacante",
+    "onDuty": "En service",
+    "availableServers": "Disponibles",
+    "searchPlaceholder": "Rechercher...",
+    "avgDuration": "Durée moy.",
+    "fullCapacity": "Complet"
   },
   "stockHistory": {
     "title": "Historique des mouvements",
@@ -1483,7 +1494,18 @@
     "servedStep": "Servie",
     "previousOrders": "Commandes précédentes",
     "activeOrder": "Commande en cours",
-    "removeItem": "Retirer"
+    "removeItem": "Retirer",
+    "tip": "Pourboire",
+    "clearCartConfirm": "Vider le panier ?",
+    "connectionError": "Erreur de connexion. Veuillez réessayer.",
+    "orderNotFound": "Commande introuvable",
+    "orderReadyTitle": "Commande Prête",
+    "orderError": "Erreur lors de la commande",
+    "cartAllergyNote": "Pour toute allergie alimentaire, veuillez contacter le restaurant",
+    "cartSection": "Panier",
+    "upsellDrinks": "Une boisson fraîche ?",
+    "upsellDesserts": "Une petite douceur ?",
+    "upsellLastDrink": "Un dernier verre ?"
   },
   "shared": {
     "fileMustBeImage": "Le fichier doit être une image",

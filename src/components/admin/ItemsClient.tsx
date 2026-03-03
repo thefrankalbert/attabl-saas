@@ -227,35 +227,39 @@ export default function ItemsClient({
             </h1>
 
             {/* Filters inline */}
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-                <SelectValue placeholder={t('allCategories')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('allCategories')}</SelectItem>
-                {categories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-              <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
-                <SelectValue placeholder={t('all')} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t('all')}</SelectItem>
-                <SelectItem value="available">{t('inStock')}</SelectItem>
-                <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <div className="lg:ml-auto shrink-0">
-              <Button onClick={openNewModal} variant="default" className="gap-2 h-9">
-                <Plus className="w-4 h-4" /> {t('newItem')}
-              </Button>
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <Select value={filterCategory} onValueChange={setFilterCategory}>
+                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectValue placeholder={t('allCategories')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('allCategories')}</SelectItem>
+                  {categories.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterAvailable} onValueChange={setFilterAvailable}>
+                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectValue placeholder={t('all')} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t('all')}</SelectItem>
+                  <SelectItem value="available">{t('inStock')}</SelectItem>
+                  <SelectItem value="unavailable">{t('outOfStock')}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+
+            <Button
+              onClick={openNewModal}
+              variant="default"
+              className="gap-2 h-9 lg:ml-auto shrink-0"
+            >
+              <Plus className="w-4 h-4" /> {t('newItem')}
+            </Button>
           </div>
         </div>
 

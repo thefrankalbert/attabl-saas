@@ -1,8 +1,8 @@
 'use client';
 
-import { Plus, Minus, Leaf, Flame, Utensils } from 'lucide-react';
-import { useCart } from '@/contexts/CartContext';
-import { useState, useEffect, useCallback } from 'react';
+import { Plus, Minus, Leaf, Flame, Utensils, Martini, ChevronDown } from 'lucide-react';
+import { useCartActions, useCartData } from '@/contexts/CartContext';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
@@ -19,9 +19,8 @@ interface MenuItemCardProps {
   onOpenDetail?: () => void;
 }
 
-// Simple price formatter - locale injected at call site
 const formatPrice = (price: number, currency: string = 'XOF', locale: string = 'fr-FR') => {
-  if (currency === 'XOF') {
+  if (currency === 'XOF' || currency === 'XAF') {
     return `${price.toLocaleString(locale)} F`;
   }
   return new Intl.NumberFormat(locale, {
@@ -30,7 +29,6 @@ const formatPrice = (price: number, currency: string = 'XOF', locale: string = '
   }).format(price);
 };
 
-// Simple translation helper
 const getTranslatedContent = (language: string, fr: string, en?: string | null) => {
   return language === 'en' && en ? en : fr;
 };
@@ -44,18 +42,26 @@ export default function MenuItemCard({
   currency = 'XOF',
   onOpenDetail,
 }: MenuItemCardProps) {
-  const { addToCart, updateQuantity, items } = useCart();
+  const { addToCart, updateQuantity } = useCartActions();
+  const { items } = useCartData();
   const locale = useLocale();
   const tt = useTranslations('tenant');
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
 
-  // State for default selections (used for quick-add pricing)
+  // Variant dropdown
   const [selectedOption, setSelectedOption] = useState<ItemOption | null>(null);
   const [selectedVariant, setSelectedVariant] = useState<ItemPriceVariant | null>(null);
-  const [selectedModifiers] = useState<never[]>([]);
+  const [showVariantDropdown, setShowVariantDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Initialize default selections
+  // Detect drink category for icon fallback
+  const isDrinkCategory =
+    /boisson|cocktail|vin|bière|beer|soda|jus|spirit|drink|beverage|wine|eau|water|soft|alcool|apéritif|champagne/i.test(
+      category,
+    );
+
+  // Initialize defaults
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (item.options?.length) {
@@ -70,24 +76,26 @@ export default function MenuItemCard({
   }, [item.options, item.price_variants]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
-  // Current price (with variant if applicable)
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowVariantDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const currentPrice = selectedVariant ? selectedVariant.price : item.price;
 
-  // Unique cart key (includes option/variant)
   const getCartKey = useCallback(() => {
     let key = item.id;
     if (selectedOption) key += `-opt-${selectedOption.name_fr}`;
     if (selectedVariant) key += `-var-${selectedVariant.variant_name_fr}`;
-    if (selectedModifiers.length > 0) {
-      key += `-mod-${selectedModifiers
-        .map((m: never) => (m as unknown as { id: string }).id)
-        .sort()
-        .join(',')}`;
-    }
     return key;
-  }, [item.id, selectedOption, selectedVariant, selectedModifiers]);
+  }, [item.id, selectedOption, selectedVariant]);
 
-  // Find item in cart
   const cartItem = items.find((i) => {
     let itemKey = i.id;
     if (i.selectedOption) itemKey += `-opt-${i.selectedOption.name_fr}`;
@@ -110,10 +118,7 @@ export default function MenuItemCard({
       category_id: item.category_id,
       category_name: category,
       selectedOption: selectedOption
-        ? {
-            name_fr: selectedOption.name_fr,
-            name_en: selectedOption.name_en,
-          }
+        ? { name_fr: selectedOption.name_fr, name_en: selectedOption.name_en }
         : undefined,
       selectedVariant: selectedVariant
         ? {
@@ -128,41 +133,14 @@ export default function MenuItemCard({
     setTimeout(() => setIsAnimating(false), 300);
   }, [item, currentPrice, category, selectedOption, selectedVariant, addToCart, restaurantId]);
 
-  // Helper for translated variant name
   const getVariantName = (variant: ItemPriceVariant) => {
     return language === 'en' && variant.variant_name_en
       ? variant.variant_name_en
       : variant.variant_name_fr;
   };
 
-  // Keep getVariantName referenced to avoid lint warning
-  void getVariantName;
-
-  const handleDecrement = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      updateQuantity(getCartKey(), cartItem ? cartItem.quantity - 1 : 0);
-    },
-    [updateQuantity, getCartKey, cartItem],
-  );
-
-  const handleIncrement = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      updateQuantity(getCartKey(), cartItem ? cartItem.quantity + 1 : 1);
-    },
-    [updateQuantity, getCartKey, cartItem],
-  );
-
-  const handleAddClick = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      handleAdd();
-    },
-    [handleAdd],
-  );
-
   const isUnavailable = item.is_available === false;
+  const hasVariants = item.price_variants && item.price_variants.length > 0;
   const hasValidImage =
     item.image_url &&
     !item.image_url.includes('placeholder') &&
@@ -173,96 +151,155 @@ export default function MenuItemCard({
     <div
       onClick={onOpenDetail}
       className={cn(
-        'relative bg-white rounded-2xl border shadow-sm transition-all active:scale-[0.98] cursor-pointer select-none',
-        cartItem ? 'border-l-[3px] border-neutral-100' : 'border-neutral-100 hover:shadow-md',
-        isUnavailable && 'opacity-50 pointer-events-none',
+        'group py-4 px-4 flex items-start gap-4 relative transition-all duration-150 active:scale-[0.99] select-none cursor-pointer hover:bg-neutral-50/30',
+        isUnavailable && 'opacity-50',
         isAnimating && 'scale-[0.97]',
       )}
-      style={cartItem ? { borderLeftColor: 'var(--tenant-primary)' } : undefined}
     >
-      <div className="flex items-start gap-3 p-3">
-        {/* Image - LEFT (96×96) */}
-        <div className="w-24 h-24 rounded-xl overflow-hidden flex-shrink-0 bg-neutral-100">
+      {/* TEXT CONTENT — Left */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-start gap-1.5 mb-1">
+          <h3 className="text-[15px] font-semibold text-neutral-900 leading-tight line-clamp-2">
+            {getTranslatedContent(language, item.name, item.name_en)}
+          </h3>
+          <div className="flex gap-1 flex-shrink-0 mt-0.5">
+            {item.is_vegetarian && <Leaf className="w-3 h-3 text-green-500" />}
+            {item.is_spicy && <Flame className="w-3 h-3 text-red-500" />}
+          </div>
+        </div>
+
+        <p className="text-[13px] text-neutral-500 leading-snug line-clamp-2 mb-2">
+          {getTranslatedContent(language, item.description || '', item.description_en)}
+        </p>
+
+        <div className="flex items-center gap-2 mt-auto">
+          <span className="text-base font-bold" style={{ color: 'var(--tenant-primary)' }}>
+            {currentPrice > 0 ? formatPrice(currentPrice, currency, locale) : tt('included')}
+          </span>
+        </div>
+
+        {/* Variant dropdown */}
+        {hasVariants && (
+          <div className="mt-2 relative" ref={dropdownRef}>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowVariantDropdown(!showVariantDropdown);
+              }}
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors"
+              style={{
+                color: 'var(--tenant-primary)',
+                backgroundColor: 'var(--tenant-primary-10)',
+              }}
+            >
+              {getVariantName(selectedVariant!)}
+              <ChevronDown
+                className={cn('w-3 h-3 transition-transform', showVariantDropdown && 'rotate-180')}
+              />
+            </button>
+            {showVariantDropdown && (
+              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-neutral-200 py-1 z-20 shadow-lg min-w-[140px]">
+                {item.price_variants?.map((variant) => (
+                  <button
+                    key={variant.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedVariant(variant);
+                      setShowVariantDropdown(false);
+                    }}
+                    className={cn(
+                      'w-full px-3 py-2 text-left text-xs hover:bg-neutral-50',
+                      selectedVariant?.id === variant.id ? 'font-bold' : 'text-neutral-700',
+                    )}
+                    style={
+                      selectedVariant?.id === variant.id
+                        ? {
+                            color: 'var(--tenant-primary)',
+                            backgroundColor: 'var(--tenant-primary-10)',
+                          }
+                        : undefined
+                    }
+                  >
+                    {getVariantName(variant)} — {formatPrice(variant.price, currency, locale)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* IMAGE SECTION — Right (with floating +/- on corner) */}
+      <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24">
+        <div className="w-full h-full rounded-lg overflow-hidden bg-neutral-50 border border-neutral-100 flex items-center justify-center">
           {hasValidImage ? (
             <Image
               src={item.image_url!}
               alt={item.name}
               fill
-              sizes="96px"
+              sizes="(max-width: 640px) 80px, 96px"
               className="object-cover !relative"
               onError={() => setImageError(true)}
               priority={priority}
             />
+          ) : isDrinkCategory ? (
+            <Martini className="w-6 h-6 text-neutral-300" />
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Utensils className="w-6 h-6 text-neutral-300" />
-            </div>
+            <Utensils className="w-6 h-6 text-neutral-300" />
           )}
         </div>
 
-        {/* Content - RIGHT */}
-        <div className="flex-1 min-w-0 flex flex-col justify-between h-24">
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-semibold text-sm text-neutral-900 line-clamp-1">
-                {getTranslatedContent(language, item.name, item.name_en)}
-              </h3>
-              {item.is_vegetarian && <Leaf className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />}
-              {item.is_spicy && <Flame className="w-3.5 h-3.5 text-red-500 flex-shrink-0" />}
+        {/* Floating add/counter on bottom-right of image */}
+        <div className="absolute -bottom-1 -right-1" onClick={(e) => e.stopPropagation()}>
+          {cartItem ? (
+            <div className="flex items-center bg-white rounded-full shadow-md border border-neutral-200 p-0.5">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(getCartKey(), cartItem.quantity - 1);
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-50 active:scale-90 transition-all"
+                style={{ color: 'var(--tenant-primary)' }}
+              >
+                <Minus className="w-4 h-4" strokeWidth={2.5} />
+              </button>
+              <span className="text-[13px] font-bold text-neutral-900 w-6 text-center">
+                {cartItem.quantity}
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  updateQuantity(getCartKey(), cartItem.quantity + 1);
+                }}
+                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-50 active:scale-90 transition-all"
+                style={{ color: 'var(--tenant-primary)' }}
+              >
+                <Plus className="w-4 h-4" strokeWidth={2.5} />
+              </button>
             </div>
-            <p className="text-xs text-neutral-500 line-clamp-2 mt-0.5">
-              {getTranslatedContent(language, item.description || '', item.description_en)}
-            </p>
-          </div>
-
-          <div className="flex items-center justify-between mt-auto">
-            <span className="font-bold text-sm" style={{ color: 'var(--tenant-primary)' }}>
-              {currentPrice > 0 ? formatPrice(currentPrice, currency, locale) : tt('included')}
-            </span>
-
-            {/* Add / Quantity controls */}
-            <div onClick={(e) => e.stopPropagation()}>
-              {cartItem ? (
-                <div
-                  className="flex items-center gap-2 rounded-full px-1 py-0.5"
-                  style={{ backgroundColor: 'var(--tenant-primary-10)' }}
-                >
-                  <button
-                    onClick={handleDecrement}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white"
-                    style={{ backgroundColor: 'var(--tenant-primary)' }}
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="text-sm font-bold min-w-[20px] text-center">
-                    {cartItem.quantity}
-                  </span>
-                  <button
-                    onClick={handleIncrement}
-                    className="w-7 h-7 rounded-full flex items-center justify-center text-white"
-                    style={{ backgroundColor: 'var(--tenant-primary)' }}
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={handleAddClick}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white transition-transform active:scale-90"
-                  style={{ backgroundColor: 'var(--tenant-primary)' }}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+          ) : (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAdd();
+              }}
+              disabled={isUnavailable}
+              className={cn(
+                'w-10 h-10 rounded-full bg-white border-2 border-neutral-100 flex items-center justify-center shadow-md active:scale-90 transition-all',
+                isAnimating && 'scale-110',
               )}
-            </div>
-          </div>
+              style={{ color: 'var(--tenant-primary)' }}
+            >
+              <Plus className="w-5 h-5" strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       </div>
 
       {/* Unavailable overlay */}
       {isUnavailable && (
-        <div className="absolute inset-0 bg-white/60 rounded-2xl flex items-center justify-center">
-          <span className="text-xs font-semibold text-red-500 bg-red-50 px-2.5 py-1 rounded-full">
+        <div className="absolute inset-0 bg-white/40 flex items-center justify-center pointer-events-none">
+          <span className="bg-neutral-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
             {tt('unavailable')}
           </span>
         </div>

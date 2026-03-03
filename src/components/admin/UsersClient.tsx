@@ -106,13 +106,17 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
     <RoleGuard permission="canManageUsers">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">{t('teamTitle')}</h1>
-              <p className="text-sm text-app-text-secondary">{t('teamSubtitle')}</p>
-            </div>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <UserPlus className="w-6 h-6" />
+              {t('teamTitle')}
+            </h1>
             {data.canManageUsers && (
-              <Button variant="default" onClick={() => data.setIsModalOpen(true)} className="gap-2">
+              <Button
+                variant="default"
+                onClick={() => data.setIsModalOpen(true)}
+                className="gap-2 lg:ml-auto shrink-0"
+              >
                 <UserPlus className="w-4 h-4" /> {t('newMember')}
               </Button>
             )}

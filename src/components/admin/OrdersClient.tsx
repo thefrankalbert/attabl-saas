@@ -304,42 +304,43 @@ export default function OrdersClient({
   return (
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
+        <div className="shrink-0 space-y-3">
           {/* Hidden Audio */}
           <audio ref={audioRef} preload="auto" />
 
-          {/* Header & Controls */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl xl:text-2xl font-bold tracking-tight">{ta('ordersCount')}</h1>
-              <p className="text-xs text-app-text-secondary mt-1">{t('manageRealTime')}</p>
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
+              {ta('ordersCount')}
+              <span className="text-base font-normal text-app-text-secondary ml-2">
+                ({orders.length})
+              </span>
+            </h1>
+
+            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
+              <Input
+                data-search-input
+                placeholder={t('searchTable')}
+                className="pl-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={toggleSound}
-                className={soundEnabled ? 'text-primary border-primary bg-primary/5' : ''}
-                title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-              >
-                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-              </Button>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
-                <Input
-                  data-search-input
-                  placeholder={t('searchTable')}
-                  className="pl-9 w-full sm:w-[200px] xl:w-[280px]"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleSound}
+              className={cn('shrink-0', soundEnabled && 'text-primary border-primary bg-primary/5')}
+              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
           </div>
 
-          {/* Tabs / Filters */}
-          <div className="flex items-center justify-between overflow-x-auto scrollbar-hide pb-2">
+          {/* Status filter tabs */}
+          <div className="overflow-x-auto scrollbar-hide">
             <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
               <TabsList>
                 <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>

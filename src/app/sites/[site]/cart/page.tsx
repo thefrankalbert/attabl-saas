@@ -2,21 +2,82 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
-import { Plus, Minus, ArrowLeft, Utensils, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
+import {
+  Plus,
+  Minus,
+  ArrowLeft,
+  Utensils,
+  Loader2,
+  Trash2,
+  ShoppingBag,
+  Coffee,
+  IceCreamCone,
+  ChevronLeft,
+  AlertCircle,
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
+import { cn } from '@/lib/utils';
+import { createClient } from '@/lib/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
 
+// ─── Types ───────────────────────────────────────────────────
+interface UpsellItem {
+  id: string;
+  name: string;
+  name_en?: string;
+  price: number;
+  image_url?: string;
+  category_name?: string;
+}
+
+interface CartRecommendation {
+  type: 'drinks' | 'desserts' | 'mains';
+  title: { fr: string; en: string };
+  searchQuery: string;
+}
+
+// ─── Helpers ─────────────────────────────────────────────────
+const TIP_STEP = 500;
+
+const formatPrice = (price: number, currency: string = 'XAF', locale: string = 'fr-FR') => {
+  if (currency === 'XOF' || currency === 'XAF') {
+    return `${price.toLocaleString(locale)} F`;
+  }
+  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(price);
+};
+
+const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
+  return lang === 'en' && en ? en : fr;
+};
+
+const getCartItemKey = (item: {
+  id: string;
+  selectedOption?: { name_fr: string } | null;
+  selectedVariant?: { name_fr: string } | null;
+}): string => {
+  let key = item.id;
+  if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
+  if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
+  return key;
+};
+
+// ─── Component ───────────────────────────────────────────────
 export default function CartPage() {
   const {
     items,
     updateQuantity,
-    totalItems,
+    removeFromCart,
+    addToCart,
     clearCart,
+    totalItems,
     notes,
     setNotes,
+    currentRestaurantId,
     subtotal,
     taxAmount,
     serviceChargeAmount,
@@ -30,39 +91,210 @@ export default function CartPage() {
   } = useCart();
   const { slug: tenantSlug, tenantId } = useTenant();
   const t = useTranslations('tenant');
+  const locale = useLocale();
+  const router = useRouter();
+  const language = locale.startsWith('en') ? 'en' : 'fr';
   const menuPath = `/sites/${tenantSlug}`;
 
-  // États pour la soumission
+  // States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [orderSuccess, setOrderSuccess] = useState<{ orderNumber: string; total: number } | null>(
-    null,
+  const [tipAmount, setTipAmount] = useState(0);
+
+  // Upsell
+  const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
+  const [activeRecommendation, setActiveRecommendation] = useState<CartRecommendation | null>(null);
+  const [isLoadingUpsell, setIsLoadingUpsell] = useState(false);
+
+  // Image errors for upsell items
+  const [upsellImageErrors, setUpsellImageErrors] = useState<Set<string>>(new Set());
+
+  // ─── Cart analysis ─────────────────────────────────────────
+  const cartAnalysis = useMemo(() => {
+    const hasMain = items.some(
+      (item) =>
+        item.category_name
+          ?.toLowerCase()
+          .match(/plat|main|spécialité|grillade|burgers|entrée|starter/) ||
+        item.name
+          .toLowerCase()
+          .match(
+            /riz|brochette|burger|filet|entrecôte|poulet|poisson|braisé|pâtes|pasta|steak|grillé/,
+          ),
+    );
+    const hasDrinks = items.some(
+      (item) =>
+        item.category_name
+          ?.toLowerCase()
+          .match(
+            /boisson|drink|cocktail|wine|vin|coffee|cafe|thé|tea|soft|soda|bière|beer|jus|eau/,
+          ) ||
+        item.name
+          .toLowerCase()
+          .match(
+            /coca|fanta|sprite|eau|water|jus|juice|bière|beer|vin|wine|cocktail|soda|café|coffee|thé|tea/,
+          ),
+    );
+    const hasDesserts = items.some(
+      (item) =>
+        item.category_name?.toLowerCase().match(/dessert|glace|sucre|sweet|fruit|pâtisserie/) ||
+        item.name
+          .toLowerCase()
+          .match(
+            /dessert|glace|ice cream|gâteau|cake|crème|cream|fruit|tarte|mousse|fondant|tiramisu/,
+          ),
+    );
+
+    return { hasMain, hasDrinks, hasDesserts };
+  }, [items]);
+
+  // ─── Upsell suggestions ───────────────────────────────────
+  useEffect(() => {
+    const fetchUpsellItems = async () => {
+      if (!currentRestaurantId || items.length === 0) {
+        setActiveRecommendation(null);
+        setUpsellItems([]);
+        return;
+      }
+
+      setIsLoadingUpsell(true);
+      try {
+        let recommendation: CartRecommendation | null = null;
+
+        if (cartAnalysis.hasMain && !cartAnalysis.hasDrinks) {
+          recommendation = {
+            type: 'drinks',
+            title: { fr: t('upsellDrinks'), en: t('upsellDrinks') },
+            searchQuery: 'boisson',
+          };
+        } else if (cartAnalysis.hasMain && cartAnalysis.hasDrinks && !cartAnalysis.hasDesserts) {
+          recommendation = {
+            type: 'desserts',
+            title: { fr: t('upsellDesserts'), en: t('upsellDesserts') },
+            searchQuery: 'dessert',
+          };
+        } else if (cartAnalysis.hasMain && cartAnalysis.hasDrinks && cartAnalysis.hasDesserts) {
+          recommendation = {
+            type: 'drinks',
+            title: { fr: t('upsellLastDrink'), en: t('upsellLastDrink') },
+            searchQuery: 'boisson',
+          };
+        }
+
+        if (!recommendation) {
+          setActiveRecommendation(null);
+          setUpsellItems([]);
+          setIsLoadingUpsell(false);
+          return;
+        }
+
+        setActiveRecommendation(recommendation);
+
+        const supabase = createClient();
+
+        // Build category filter based on recommendation type
+        let categoryFilter: string;
+        if (recommendation.type === 'drinks') {
+          categoryFilter =
+            'name.ilike.%boisson%,name.ilike.%soda%,name.ilike.%jus%,name.ilike.%bière%,name.ilike.%vin%,name.ilike.%cocktail%,name.ilike.%drink%,name.ilike.%eau%';
+        } else if (recommendation.type === 'desserts') {
+          categoryFilter =
+            'name.ilike.%dessert%,name.ilike.%douceur%,name.ilike.%glace%,name.ilike.%fruit%,name.ilike.%sucre%';
+        } else {
+          categoryFilter = `name.ilike.%${recommendation.searchQuery}%`;
+        }
+
+        // Fetch categories for the restaurant
+        const { data: categories } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('restaurant_id', currentRestaurantId)
+          .or(categoryFilter);
+
+        if (!categories || categories.length === 0) {
+          setIsLoadingUpsell(false);
+          return;
+        }
+
+        const categoryIds = categories.map((c) => c.id);
+
+        // Fetch items from matching categories
+        const { data: menuItems } = await supabase
+          .from('menu_items')
+          .select('id, name, name_en, price, image_url, category_id')
+          .in('category_id', categoryIds)
+          .eq('is_available', true)
+          .limit(6);
+
+        if (menuItems) {
+          // Exclude items already in cart
+          const cartItemIds = new Set(items.map((i) => i.id));
+          const filtered = menuItems
+            .filter((mi) => !cartItemIds.has(mi.id))
+            .map((mi) => ({
+              id: mi.id,
+              name: mi.name,
+              name_en: mi.name_en ?? undefined,
+              price: mi.price,
+              image_url: mi.image_url ?? undefined,
+              category_name: categories.find((c) => c.id === mi.category_id)?.name,
+            }));
+          setUpsellItems(filtered);
+        }
+      } catch (err) {
+        logger.error('Error fetching upsell items:', err);
+      } finally {
+        setIsLoadingUpsell(false);
+      }
+    };
+
+    fetchUpsellItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    currentRestaurantId,
+    items.length,
+    cartAnalysis.hasMain,
+    cartAnalysis.hasDrinks,
+    cartAnalysis.hasDesserts,
+  ]);
+
+  // ─── Handlers ──────────────────────────────────────────────
+  const handleAddUpsellItem = useCallback(
+    (item: UpsellItem) => {
+      if (!currentRestaurantId) return;
+      addToCart(
+        {
+          id: item.id,
+          name: item.name,
+          name_en: item.name_en,
+          price: item.price,
+          image_url: item.image_url,
+          quantity: 1,
+          category_name: item.category_name,
+        },
+        currentRestaurantId,
+      );
+    },
+    [addToCart, currentRestaurantId],
   );
 
-  // Générer une clé unique pour chaque item (avec options/variantes)
-  const getItemKey = (item: (typeof items)[0]) => {
-    let key = item.id;
-    if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
-    if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
-    return key;
-  };
+  const finalTotal = grandTotal + tipAmount;
 
-  // Soumettre la commande
   const handleSubmitOrder = async () => {
     setIsSubmitting(true);
     setError(null);
     setValidationErrors([]);
 
     try {
+      const tableNumber = localStorage.getItem('attabl_table') || undefined;
+
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           tenant_id: tenantId,
-          table_number: localStorage.getItem('attabl_table') || undefined,
+          table_number: tableNumber,
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
@@ -74,6 +306,7 @@ export default function CartPage() {
             selectedVariant: item.selectedVariant,
           })),
           notes,
+          tip_amount: tipAmount > 0 ? tipAmount : undefined,
         }),
       });
 
@@ -83,80 +316,53 @@ export default function CartPage() {
         if (data.details && Array.isArray(data.details)) {
           setValidationErrors(data.details);
         }
-        setError(data.error || 'Erreur lors de la commande');
+        setError(data.error || t('orderError'));
         return;
       }
 
-      // Succès — sauvegarder l'ID de commande en localStorage pour le suivi
+      // Store order ID for tracking
       const storedIds: string[] = JSON.parse(localStorage.getItem('attabl_order_ids') || '[]');
       if (data.orderId && !storedIds.includes(data.orderId)) {
         storedIds.push(data.orderId);
         localStorage.setItem('attabl_order_ids', JSON.stringify(storedIds));
       }
 
-      setOrderSuccess({
-        orderNumber: data.orderNumber,
-        total: data.total,
-      });
-
-      // Vider le panier après succès
       clearCart();
+      setTipAmount(0);
+      router.push(`/sites/${tenantSlug}/order-confirmed?orderId=${data.orderId}`);
     } catch (err) {
       logger.error('Order submission error:', err);
-      setError('Erreur de connexion. Veuillez réessayer.');
+      setError(t('connectionError'));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Affichage succès
-  if (orderSuccess) {
-    return (
-      <div className="min-h-screen bg-app-bg flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
-          </div>
-          <h2 className="text-2xl font-bold mb-2">{t('orderSent')}</h2>
-          <p className="text-app-text-secondary mb-2">
-            {t('orderSentDesc', { number: orderSuccess.orderNumber })}
-          </p>
-          <p className="text-2xl font-bold mb-6" style={{ color: 'var(--tenant-primary)' }}>
-            {orderSuccess.total.toLocaleString('fr-FR')} F
-          </p>
-          <div className="flex flex-col gap-3">
-            <Link href={`/sites/${tenantSlug}/orders`}>
-              <button
-                className="w-full h-12 rounded-xl text-white font-semibold transition-transform active:scale-[0.98]"
-                style={{ backgroundColor: 'var(--tenant-primary)' }}
-              >
-                {t('trackOrder')}
-              </button>
-            </Link>
-            <Link href={menuPath}>
-              <button className="w-full h-12 rounded-xl border border-app-border font-semibold text-app-text hover:bg-app-hover transition-colors">
-                {t('backToMenu')}
-              </button>
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Panier vide
+  // ─── Empty cart ────────────────────────────────────────────
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-app-bg flex items-center justify-center p-4">
-        <div className="text-center">
-          <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mx-auto mb-6">
-            <Utensils className="w-10 h-10 text-app-text-muted" />
+      <main className="min-h-screen bg-neutral-50 pb-20">
+        <div className="max-w-lg mx-auto px-4 pt-10 pb-2 relative flex items-center justify-center">
+          <button
+            onClick={() => router.back()}
+            className="absolute left-4 p-2 text-neutral-400 hover:text-neutral-900 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <h1 className="text-lg font-bold text-neutral-800 uppercase tracking-widest">
+            {t('yourCart')}
+          </h1>
+        </div>
+
+        <div className="flex flex-col items-center justify-center px-4 pt-20">
+          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-10 h-10 text-neutral-300" />
           </div>
-          <h2 className="text-2xl font-bold mb-4">{t('emptyCart')}</h2>
-          <p className="text-app-text-secondary mb-6">{t('emptyCartDesc')}</p>
+          <h2 className="text-xl font-bold text-neutral-800 mb-2">{t('emptyCart')}</h2>
+          <p className="text-sm text-neutral-500 text-center mb-8">{t('emptyCartDesc')}</p>
           <Link href={menuPath}>
             <button
-              className="h-12 px-6 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
+              className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
               style={{ backgroundColor: 'var(--tenant-primary)' }}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -164,36 +370,45 @@ export default function CartPage() {
             </button>
           </Link>
         </div>
-      </div>
+      </main>
     );
   }
 
+  // ─── Main cart ─────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-app-bg">
-      {/* Header — frosted glass */}
-      <header className="sticky top-0 z-40">
-        <div className="absolute inset-0 bg-app-card/80 backdrop-blur-xl border-b border-app-border" />
-        <div className="relative flex items-center gap-3 px-4 py-3 max-w-4xl mx-auto">
-          <Link href={menuPath} className="p-2 rounded-full hover:bg-app-hover transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-lg font-bold text-app-text">
-            {t('yourCart')}{' '}
-            <span className="text-sm font-normal text-app-text-secondary">
-              ({t('itemCount', { count: totalItems })})
-            </span>
-          </h1>
+    <main className="min-h-screen bg-neutral-50 pb-44">
+      {/* HEADER */}
+      <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+          <button
+            onClick={() => router.back()}
+            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
+          <div className="flex-1 text-center">
+            <h1 className="text-base font-bold text-neutral-900">{t('yourCart')}</h1>
+            <p className="text-xs text-neutral-400">{t('itemCount', { count: totalItems })}</p>
+          </div>
+          <button
+            onClick={() => {
+              if (confirm(t('clearCartConfirm'))) clearCart();
+            }}
+            className="p-2 -mr-2 text-neutral-400 hover:text-red-500 transition-colors"
+          >
+            <Trash2 className="w-5 h-5" />
+          </button>
         </div>
-      </header>
+      </div>
 
-      <main className="max-w-lg mx-auto px-4 py-6 pb-32 space-y-4">
-        {/* Erreurs de validation */}
+      <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+        {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-medium text-red-800">{error}</p>}
+                {error && <p className="font-medium text-red-800 text-sm">{error}</p>}
                 {validationErrors.length > 0 && (
                   <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
                     {validationErrors.map((err, i) => (
@@ -206,173 +421,321 @@ export default function CartPage() {
           </div>
         )}
 
-        {/* Cart items card */}
-        <div className="bg-app-card rounded-2xl border border-app-border divide-y divide-app-border">
-          {items.map((item) => {
-            const itemKey = getItemKey(item);
-            return (
-              <div key={itemKey} className="flex items-center gap-3 p-4">
-                {/* Thumbnail 48×48 */}
-                <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-app-elevated relative">
-                  {item.image_url ? (
-                    <Image src={item.image_url} alt={item.name} fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Utensils className="w-5 h-5 text-app-text-muted" />
-                    </div>
-                  )}
-                </div>
+        {/* CART ITEMS */}
+        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="px-4 py-3 border-b border-neutral-100">
+            <h2 className="text-sm font-bold text-neutral-900">{t('cartSection')}</h2>
+            <p className="text-xs text-neutral-400 mt-0.5">{t('cartAllergyNote')}</p>
+          </div>
 
-                {/* Info */}
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-sm font-semibold text-app-text truncate">{item.name}</h3>
-                  {(item.selectedOption || item.selectedVariant) && (
-                    <p className="text-xs text-app-text-muted truncate">
-                      {item.selectedOption && item.selectedOption.name_fr}
-                      {item.selectedOption && item.selectedVariant && ' · '}
-                      {item.selectedVariant && item.selectedVariant.name_fr}
-                    </p>
-                  )}
-                </div>
+          <div className="divide-y divide-neutral-100">
+            <AnimatePresence mode="popLayout">
+              {items.map((item) => {
+                const itemKey = getCartItemKey(item);
+                const optionLabel = item.selectedOption
+                  ? language === 'en' && item.selectedOption.name_en
+                    ? item.selectedOption.name_en
+                    : item.selectedOption.name_fr
+                  : null;
+                const variantLabel = item.selectedVariant
+                  ? language === 'en' && item.selectedVariant.name_en
+                    ? item.selectedVariant.name_en
+                    : item.selectedVariant.name_fr
+                  : null;
 
-                {/* Quantity + Price */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                      className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center hover:bg-app-hover transition-colors"
-                      aria-label="Decrease quantity"
-                    >
-                      <Minus className="w-3.5 h-3.5" />
-                    </button>
-                    <span className="text-sm font-bold min-w-[20px] text-center">
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                      className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center hover:bg-app-hover transition-colors"
-                      aria-label="Increase quantity"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                  <span
-                    className="text-sm font-bold min-w-[60px] text-right"
-                    style={{ color: 'var(--tenant-primary)' }}
+                return (
+                  <motion.div
+                    key={itemKey}
+                    layout
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    className="px-4 py-3 flex items-start gap-3"
                   >
-                    {(item.price * item.quantity).toLocaleString('fr-FR')} F
-                  </span>
+                    {/* Quantity badge */}
+                    <span
+                      className="text-sm font-bold min-w-[28px]"
+                      style={{ color: 'var(--tenant-primary)' }}
+                    >
+                      {item.quantity}x
+                    </span>
+
+                    {/* Name & controls */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-bold text-neutral-900 leading-tight">
+                        {getTranslatedContent(language, item.name, item.name_en)}
+                      </h3>
+                      {(optionLabel || variantLabel) && (
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          onClick={() => updateQuantity(itemKey, item.quantity - 1)}
+                          className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-sm font-medium text-neutral-700 w-6 text-center">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => updateQuantity(itemKey, item.quantity + 1)}
+                          className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => removeFromCart(itemKey)}
+                          className="ml-2 text-neutral-300 hover:text-red-500 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Price */}
+                    <span className="text-sm font-bold text-neutral-900 text-right min-w-[70px]">
+                      {formatPrice(item.price * item.quantity, currencyCode, locale)}
+                    </span>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </div>
+
+          {/* Notes input — inside cart section */}
+          <div className="px-4 py-3 border-t border-neutral-100">
+            <input
+              type="text"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder={t('specialInstructionsPlaceholder')}
+              className="w-full text-sm bg-transparent text-neutral-500 placeholder:text-neutral-400 focus:outline-none focus:text-neutral-700 transition-colors"
+            />
+          </div>
+        </section>
+
+        {/* UPSELL SUGGESTIONS */}
+        <AnimatePresence>
+          {(isLoadingUpsell || (activeRecommendation && upsellItems.length > 0)) && (
+            <motion.section
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="bg-white rounded-xl border border-neutral-200 overflow-hidden"
+            >
+              <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-2">
+                {activeRecommendation?.type === 'drinks' ? (
+                  <Coffee className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+                ) : activeRecommendation?.type === 'desserts' ? (
+                  <IceCreamCone className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+                ) : (
+                  <Utensils className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+                )}
+                <h2 className="text-sm font-bold text-neutral-900">
+                  {isLoadingUpsell ? (
+                    <div className="h-4 w-32 bg-neutral-200 rounded animate-pulse" />
+                  ) : (
+                    activeRecommendation?.title.fr
+                  )}
+                </h2>
+              </div>
+
+              <div className="p-3 overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 min-w-max px-1">
+                  {isLoadingUpsell
+                    ? [1, 2, 3].map((i) => (
+                        <div
+                          key={i}
+                          className="w-[130px] flex-shrink-0 bg-neutral-50 rounded-xl p-2.5 border border-neutral-100 animate-pulse"
+                        >
+                          <div className="w-full h-20 bg-neutral-100 rounded-lg mb-2" />
+                          <div className="h-3 w-3/4 bg-neutral-100 rounded mb-1" />
+                          <div className="h-3 w-1/2 bg-neutral-100 rounded" />
+                        </div>
+                      ))
+                    : upsellItems.map((item) => {
+                        const hasImage =
+                          item.image_url &&
+                          !item.image_url.includes('placeholder') &&
+                          !upsellImageErrors.has(item.id);
+
+                        return (
+                          <div
+                            key={item.id}
+                            className="w-[130px] flex-shrink-0 bg-white rounded-xl p-2.5 border border-neutral-100 shadow-sm"
+                          >
+                            <div className="w-full h-20 rounded-lg mb-2.5 overflow-hidden relative bg-neutral-50 flex items-center justify-center">
+                              {hasImage ? (
+                                <Image
+                                  src={item.image_url!}
+                                  alt={item.name}
+                                  fill
+                                  sizes="130px"
+                                  className="object-cover"
+                                  onError={() =>
+                                    setUpsellImageErrors((prev) => new Set(prev).add(item.id))
+                                  }
+                                />
+                              ) : (
+                                <Utensils className="w-5 h-5 text-neutral-300" />
+                              )}
+                              <div className="absolute top-1 right-1 z-10">
+                                <button
+                                  onClick={() => handleAddUpsellItem(item)}
+                                  className="w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center active:scale-90 transition-all"
+                                  style={{ color: 'var(--tenant-primary)' }}
+                                >
+                                  <Plus className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                            <h3 className="text-[11px] font-bold text-neutral-800 line-clamp-2 leading-tight mb-2 h-7">
+                              {getTranslatedContent(language, item.name, item.name_en)}
+                            </h3>
+                            <span
+                              className="text-xs font-black"
+                              style={{ color: 'var(--tenant-primary)' }}
+                            >
+                              {formatPrice(item.price, currencyCode, locale)}
+                            </span>
+                          </div>
+                        );
+                      })}
                 </div>
               </div>
-            );
-          })}
-        </div>
+            </motion.section>
+          )}
+        </AnimatePresence>
 
-        {/* Notes card */}
-        <div className="bg-app-card rounded-2xl border border-app-border p-4">
-          <label htmlFor="notes" className="block text-sm font-semibold text-app-text mb-2">
-            {t('specialInstructions')}
-          </label>
-          <textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder={t('specialInstructionsPlaceholder')}
-            className="w-full px-3 py-2 border border-app-border rounded-xl text-sm resize-none h-20 focus:outline-none focus:border-app-border"
-          />
-        </div>
+        {/* TIP SELECTOR */}
+        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-bold text-neutral-900">{t('tip')}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setTipAmount((prev) =>
+                      prev === TIP_STEP * 2 ? 0 : Math.max(0, prev - TIP_STEP),
+                    )
+                  }
+                  disabled={tipAmount === 0}
+                  className={cn(
+                    'w-8 h-8 rounded-full border flex items-center justify-center transition-all',
+                    tipAmount === 0
+                      ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
+                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 active:scale-95',
+                  )}
+                >
+                  <Minus className="w-4 h-4" />
+                </button>
+                <span className="text-sm font-bold text-neutral-900 min-w-[80px] text-center">
+                  {formatPrice(tipAmount, currencyCode, locale)}
+                </span>
+                <button
+                  onClick={() =>
+                    setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
+                  }
+                  className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95"
+                  style={{
+                    borderColor: 'var(--tenant-primary)',
+                    color: 'var(--tenant-primary)',
+                  }}
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
 
-        {/* Summary card */}
-        <div className="bg-app-card rounded-2xl border border-app-border p-5">
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between text-app-text-secondary">
-              <span>{t('subtotal')}</span>
-              <span>
-                {subtotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
+        {/* ORDER SUMMARY */}
+        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+          <div className="px-4 py-3 space-y-3">
+            {/* Subtotal */}
+            <div className="flex justify-between text-sm">
+              <span className="text-neutral-500">{t('subtotal')}</span>
+              <span className="text-neutral-900 font-medium">
+                {formatPrice(subtotal, currencyCode, locale)}
               </span>
             </div>
+
+            {/* Tax */}
             {enableTax && taxAmount > 0 && (
-              <div className="flex justify-between text-app-text-secondary">
-                <span>
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-500">
                   {t('tax')} ({taxRate}%)
                 </span>
-                <span>
-                  {taxAmount.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
+                <span className="text-neutral-900 font-medium">
+                  {formatPrice(taxAmount, currencyCode, locale)}
                 </span>
               </div>
             )}
+
+            {/* Service charge */}
             {enableServiceCharge && serviceChargeAmount > 0 && (
-              <div className="flex justify-between text-app-text-secondary">
-                <span>
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-500">
                   {t('serviceCharge')} ({serviceChargeRate}%)
                 </span>
-                <span>
-                  {serviceChargeAmount.toLocaleString('fr-FR')}{' '}
-                  {currencyCode === 'XAF' ? 'F' : currencyCode}
+                <span className="text-neutral-900 font-medium">
+                  {formatPrice(serviceChargeAmount, currencyCode, locale)}
                 </span>
               </div>
             )}
+
+            {/* Discount */}
             {discountAmount > 0 && (
-              <div className="flex justify-between text-green-600">
+              <div className="flex justify-between text-sm text-green-600">
                 <span>{t('discount')}</span>
-                <span>
-                  -{discountAmount.toLocaleString('fr-FR')}{' '}
-                  {currencyCode === 'XAF' ? 'F' : currencyCode}
+                <span>-{formatPrice(discountAmount, currencyCode, locale)}</span>
+              </div>
+            )}
+
+            {/* Tip (if set) */}
+            {tipAmount > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-neutral-500">{t('tip')}</span>
+                <span className="text-neutral-900 font-medium">
+                  {formatPrice(tipAmount, currencyCode, locale)}
                 </span>
               </div>
             )}
-            <div className="border-t border-app-border pt-2 mt-2">
-              <div className="flex justify-between items-baseline">
-                <span className="font-bold text-app-text">{t('total')}</span>
-                <span className="text-xl font-bold" style={{ color: 'var(--tenant-primary)' }}>
-                  {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
+
+            {/* Total */}
+            <div className="border-t border-neutral-200 pt-3">
+              <div className="flex justify-between items-center">
+                <span className="text-base font-bold text-neutral-900">Total</span>
+                <span className="text-xl font-black text-neutral-900">
+                  {formatPrice(finalTotal, currencyCode, locale)}
                 </span>
               </div>
             </div>
           </div>
+        </section>
+      </div>
 
+      {/* STICKY CTA — above bottom nav */}
+      <div className="fixed bottom-[64px] left-0 right-0 z-[60] bg-white border-t border-neutral-200 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+        <div className="max-w-lg mx-auto">
           <button
             onClick={handleSubmitOrder}
             disabled={isSubmitting}
-            className="w-full h-12 rounded-xl text-white font-semibold mt-4 transition-transform active:scale-[0.98] disabled:opacity-50"
+            className="w-full h-14 rounded-xl text-white font-bold text-lg transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
             style={{ backgroundColor: 'var(--tenant-primary)' }}
           >
             {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+              <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
-              t('confirmOrder')
+              <span>{t('confirmOrder')}</span>
             )}
           </button>
-
-          <button
-            onClick={clearCart}
-            className="w-full text-sm text-app-text-muted mt-3 hover:text-app-text-secondary transition-colors"
-          >
-            {t('clearCart')}
-          </button>
         </div>
-      </main>
-
-      {/* Mobile Sticky Bottom Bar — visible only on phones */}
-      <div
-        className="fixed bottom-0 left-0 right-0 bg-app-card/80 backdrop-blur-xl border-t border-app-border px-4 pt-3 z-50 lg:hidden shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
-        style={{ paddingBottom: `max(env(safe-area-inset-bottom, 12px), 12px)` }}
-      >
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-app-text-secondary">{t('total')}</span>
-          <span className="text-lg font-bold" style={{ color: 'var(--tenant-primary)' }}>
-            {grandTotal.toLocaleString('fr-FR')} {currencyCode === 'XAF' ? 'F' : currencyCode}
-          </span>
-        </div>
-        <button
-          className="w-full h-12 rounded-xl text-white text-base font-semibold transition-transform active:scale-[0.98] disabled:opacity-50"
-          onClick={handleSubmitOrder}
-          disabled={isSubmitting}
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
-        >
-          {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : t('confirmOrder')}
-        </button>
       </div>
-    </div>
+    </main>
   );
 }

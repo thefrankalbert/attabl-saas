@@ -124,14 +124,12 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 sm:space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-3">
-            <Receipt className="w-6 h-6 text-app-text-secondary" />
-            {t('title')}
-          </h1>
-          <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
-        </div>
+      <div className="shrink-0">
+        <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
+          <Receipt className="w-6 h-6" />
+          {t('title')}
+          <span className="text-base font-normal text-app-text-secondary">({invoices.length})</span>
+        </h1>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">

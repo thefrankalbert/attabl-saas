@@ -109,11 +109,14 @@ export default function MenusClient({
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-3">
           {/* Header + Search + Actions — single row */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
               {t('title')}
+              <span className="text-sm font-normal text-app-text-muted ml-2">
+                ({menus.length})
+              </span>
             </h1>
-            <div className="relative flex-1 max-w-xs">
+            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -123,7 +126,7 @@ export default function MenusClient({
                 className="pl-10 h-9"
               />
             </div>
-            <div className="flex items-center gap-2 ml-auto">
+            <div className="flex items-center gap-2 lg:ml-auto shrink-0">
               {selectedIds.size > 0 && (
                 <Button
                   onClick={handleDeleteSelected}
