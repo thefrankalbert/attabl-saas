@@ -7,7 +7,7 @@ import { ShoppingBag, XCircle, Loader2, AlertTriangle, ChevronDown } from 'lucid
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { formatCurrency } from '@/lib/utils/currency';
 import { cn } from '@/lib/utils';
 import OrderProgressBar from './OrderProgressBar';
@@ -37,13 +37,12 @@ interface ClientOrdersProps {
   currency?: string;
 }
 
-// ─── Statuts annulables (seul "pending" permet l'annulation) ───
+// ─── Constants ──────────────────────────────────────────
 
 const CANCELLABLE_STATUSES = ['pending'];
 
-// ─── Composant principal ────────────────────────────────
+// ─── Helpers ────────────────────────────────────────────
 
-// Lire les IDs stockés côté client (hors du composant pour le SSR)
 function getStoredOrderIds(): string[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -52,6 +51,8 @@ function getStoredOrderIds(): string[] {
     return [];
   }
 }
+
+// ─── Component ──────────────────────────────────────────
 
 export default function ClientOrders({
   tenantSlug,
@@ -65,8 +66,10 @@ export default function ClientOrders({
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const supabaseRef = useRef(createClient());
   const t = useTranslations('tenant');
+  const locale = useLocale();
+  const dateLocale = locale.startsWith('fr') ? fr : undefined;
 
-  // ─── Initialisation : charger les commandes + Supabase Realtime ─────
+  // ─── Load orders + Supabase Realtime ─────────────────
 
   useEffect(() => {
     let cancelled = false;
@@ -74,8 +77,6 @@ export default function ClientOrders({
     const storedIds = getStoredOrderIds();
 
     if (storedIds.length === 0) {
-      // Pas d'IDs → on reste sur l'état initial (orders=[], loading via .then)
-      // On utilise .then pour éviter setState synchrone dans l'effet
       Promise.resolve().then(() => {
         if (!cancelled) setLoading(false);
       });
@@ -84,7 +85,6 @@ export default function ClientOrders({
       };
     }
 
-    // Charger les commandes depuis Supabase
     supabase
       .from('orders')
       .select('id, order_number, status, total, table_number, items, created_at, service_type')
@@ -101,7 +101,7 @@ export default function ClientOrders({
         setLoading(false);
       });
 
-    // Écouter les changements de statut en temps réel
+    // Real-time status updates
     const channel = supabase
       .channel(`client_orders_realtime_${tenantId}`)
       .on(
@@ -114,7 +114,6 @@ export default function ClientOrders({
         },
         (payload) => {
           const updated = payload.new as OrderRecord;
-          // Ne mettre à jour que les commandes du client
           if (storedIds.includes(updated.id)) {
             setOrders((prev) =>
               prev.map((o) =>
@@ -133,7 +132,7 @@ export default function ClientOrders({
     };
   }, [tenantId]);
 
-  // ─── Annuler une commande ───────────────────────────
+  // ─── Cancel order ─────────────────────────────────────
 
   const handleCancel = async (orderId: string) => {
     setCancellingId(orderId);
@@ -150,19 +149,18 @@ export default function ClientOrders({
     if (error) {
       console.error('Failed to cancel order:', error);
     } else {
-      // Mise à jour optimiste
       setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: 'cancelled' } : o)));
     }
 
     setCancellingId(null);
   };
 
-  // ─── Dérivation : commandes actives vs passées ────────
+  // ─── Derived ──────────────────────────────────────────
 
   const activeOrders = orders.filter((o) => !['served', 'cancelled'].includes(o.status));
   const pastOrders = orders.filter((o) => ['served', 'cancelled'].includes(o.status));
 
-  // ─── États de chargement et vide ────────────────────
+  // ─── Loading state ────────────────────────────────────
 
   if (loading) {
     return (
@@ -172,35 +170,35 @@ export default function ClientOrders({
     );
   }
 
+  // ─── Empty state ──────────────────────────────────────
+
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
         <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4 text-neutral-400">
-          <ShoppingBag size={32} />
+          <ShoppingBag className="w-8 h-8" />
         </div>
-        <h2 className="text-xl font-bold text-neutral-900 mb-2">Aucune commande</h2>
-        <p className="text-neutral-500 mb-8 max-w-xs">
-          Vous n&apos;avez pas encore passé de commande. Découvrez notre menu !
-        </p>
+        <h2 className="text-xl font-bold text-neutral-900 mb-2">{t('noOrders')}</h2>
+        <p className="text-neutral-500 mb-8 max-w-xs">{t('noOrdersDesc')}</p>
         <Link
           href={`/sites/${tenantSlug}`}
           className="text-white px-6 py-3 rounded-xl font-medium active:scale-95 transition-all"
           style={{ backgroundColor: 'var(--tenant-primary)' }}
         >
-          {t('browseMenu')}
+          {t('viewMenu')}
         </Link>
       </div>
     );
   }
 
-  // ─── Rendu des commandes ────────────────────────────
+  // ─── Orders list ──────────────────────────────────────
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Indicateur temps réel */}
+      {/* Live tracking indicator */}
       <div className="flex items-center gap-2 text-xs text-neutral-400 px-1">
         <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-        Suivi en direct
+        {t('liveTracking')}
       </div>
 
       {/* Active Orders */}
@@ -217,10 +215,10 @@ export default function ClientOrders({
             >
               <div className="flex items-center justify-between">
                 <h3 className="font-bold text-sm text-neutral-900">
-                  #{order.order_number || order.id.slice(0, 5)}
+                  {t('orderNumber', { number: order.order_number || order.id.slice(0, 5) })}
                 </h3>
                 <span className="text-xs text-neutral-400">
-                  {format(new Date(order.created_at), 'dd MMM HH:mm', { locale: fr })}
+                  {format(new Date(order.created_at), 'dd MMM HH:mm', { locale: dateLocale })}
                 </span>
               </div>
 
@@ -246,13 +244,13 @@ export default function ClientOrders({
                 </span>
               </div>
 
-              {/* Bouton annulation (uniquement pending) */}
+              {/* Cancel button (pending only) */}
               {CANCELLABLE_STATUSES.includes(order.status) && (
                 <div className="pt-1">
                   {confirmCancelId === order.id ? (
                     <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-100">
                       <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
-                      <p className="text-sm text-red-700 flex-1">Annuler cette commande ?</p>
+                      <p className="text-sm text-red-700 flex-1">{t('cancelOrderConfirm')}</p>
                       <button
                         onClick={() => handleCancel(order.id)}
                         disabled={cancellingId === order.id}
@@ -261,14 +259,14 @@ export default function ClientOrders({
                         {cancellingId === order.id ? (
                           <Loader2 className="w-3 h-3 animate-spin" />
                         ) : (
-                          'Confirmer'
+                          t('confirm')
                         )}
                       </button>
                       <button
                         onClick={() => setConfirmCancelId(null)}
                         className="px-3 py-1.5 bg-neutral-100 text-neutral-600 text-xs font-medium rounded-lg hover:bg-neutral-200 transition-colors"
                       >
-                        Non
+                        {t('no')}
                       </button>
                     </div>
                   ) : (
@@ -277,7 +275,7 @@ export default function ClientOrders({
                       className="flex items-center gap-1.5 text-sm text-red-500 hover:text-red-700 transition-colors"
                     >
                       <XCircle className="w-4 h-4" />
-                      Annuler la commande
+                      {t('cancelOrder')}
                     </button>
                   )}
                 </div>
@@ -299,7 +297,7 @@ export default function ClientOrders({
               layout
               className="bg-white rounded-2xl border border-neutral-100 overflow-hidden"
             >
-              {/* Collapsed header — always visible */}
+              {/* Collapsed header */}
               <button
                 onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
                 className="w-full flex items-center justify-between p-4"
@@ -345,7 +343,9 @@ export default function ClientOrders({
                         ))}
                       </div>
                       <div className="text-xs text-neutral-400 pt-1">
-                        {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', { locale: fr })}
+                        {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
+                          locale: dateLocale,
+                        })}
                       </div>
                     </div>
                   </motion.div>
@@ -359,9 +359,11 @@ export default function ClientOrders({
   );
 }
 
-// ─── Sous-composants ──────────────────────────────────
+// ─── Sub-components ──────────────────────────────────────
 
 function BadgeStatus({ status }: { status: string }) {
+  const t = useTranslations('tenant');
+
   const styles: Record<string, string> = {
     pending: 'bg-yellow-50 text-yellow-700 border-yellow-100',
     confirmed: 'bg-blue-50 text-blue-700 border-blue-100',
@@ -371,20 +373,22 @@ function BadgeStatus({ status }: { status: string }) {
     cancelled: 'bg-red-50 text-red-700 border-red-100',
   };
 
-  const labels: Record<string, string> = {
-    pending: 'En attente',
-    confirmed: 'Confirmée',
-    preparing: 'En cuisine',
-    ready: 'Prête',
-    served: 'Servie',
-    cancelled: 'Annulée',
+  const labelKeys: Record<string, string> = {
+    pending: 'statusPending',
+    confirmed: 'statusConfirmed',
+    preparing: 'statusInKitchen',
+    ready: 'statusReady',
+    served: 'statusServed',
+    cancelled: 'statusCancelled',
   };
+
+  const labelKey = labelKeys[status] || 'statusPending';
 
   return (
     <span
       className={`px-2.5 py-1 rounded-md text-xs font-medium border ${styles[status] || styles.pending}`}
     >
-      {labels[status] || status}
+      {t(labelKey)}
     </span>
   );
 }

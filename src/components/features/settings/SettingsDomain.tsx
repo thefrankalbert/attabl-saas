@@ -74,7 +74,7 @@ export default function SettingsDomain({ currentDomain, tenantSlug, onSave }: Se
     <TabsContent value="domain" className="mt-0">
       <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-6">
-          <div className="p-2 bg-indigo-50 rounded-lg">
+          <div className="p-2 bg-indigo-500/10 rounded-lg">
             <Globe className="h-5 w-5 text-indigo-600" />
           </div>
           <div>

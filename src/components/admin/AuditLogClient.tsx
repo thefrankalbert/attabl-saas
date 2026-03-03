@@ -173,20 +173,18 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-4 sm:space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-app-text flex items-center gap-3">
-              <ScrollText className="w-6 h-6 text-app-text-secondary" />
-              {t('title')}
-            </h1>
-            <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
-          </div>
+      <div className="shrink-0 space-y-3">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <ScrollText className="w-6 h-6" />
+            {t('title')}
+            <span className="text-base font-normal text-app-text-secondary">({totalCount})</span>
+          </h1>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={cn(showFilters && 'bg-app-bg')}
+            className={cn('lg:ml-auto shrink-0', showFilters && 'bg-app-bg')}
           >
             <Filter className="w-4 h-4 mr-1.5" />
             {t('filters')}
@@ -207,7 +205,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                     setFilterAction(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-card"
+                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text"
                 >
                   <option value="">{tc('all')}</option>
                   {ACTIONS.map((a) => (
@@ -227,7 +225,7 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
                     setFilterEntity(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-card"
+                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text"
                 >
                   <option value="">{tc('all')}</option>
                   {ENTITY_TYPES.map((e) => (
