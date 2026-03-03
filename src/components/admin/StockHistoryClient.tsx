@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations, useLocale } from 'next-intl';
 import { History, Search, Filter } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
@@ -30,8 +31,8 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     { value: 'opening', label: t('filterOpening') },
   ];
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<MovementType | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useSessionState('stockHistory:searchQuery', '');
+  const [filterType, setFilterType] = useSessionState<MovementType | 'all'>('stockHistory:filterType', 'all');
 
   // TanStack Query for stock movements
   const { data: movements = [], isLoading: loading } = useStockMovements(tenantId);
@@ -211,6 +212,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             columns={columns}
             data={filtered}
             emptyMessage={t('noMovements')}
+            storageKey="stockHistory"
             mobileConfig={{
               renderCard: (movement) => {
                 const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];

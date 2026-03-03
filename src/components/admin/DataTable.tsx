@@ -11,6 +11,7 @@ import {
   type Column,
 } from '@tanstack/react-table';
 import { useState } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -60,6 +61,8 @@ interface DataTableProps<TData> {
   isLoading?: boolean;
   emptyMessage?: string;
   onRowClick?: (row: TData) => void;
+  /** When provided, sorting state is persisted to sessionStorage under this key */
+  storageKey?: string;
 }
 
 export function DataTable<TData>({
@@ -69,8 +72,15 @@ export function DataTable<TData>({
   isLoading = false,
   emptyMessage = 'Aucune donnée',
   onRowClick,
+  storageKey,
 }: DataTableProps<TData>) {
-  const [sorting, setSorting] = useState<SortingState>([]);
+  const [sortingLocal, setSortingLocal] = useState<SortingState>([]);
+  const [sortingSession, setSortingSession] = useSessionState<SortingState>(
+    `table:${storageKey ?? 'default'}:sorting`,
+    [],
+  );
+  const sorting = storageKey ? sortingSession : sortingLocal;
+  const setSorting = storageKey ? setSortingSession : setSortingLocal;
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table v8 known React Compiler limitation
   const table = useReactTable({

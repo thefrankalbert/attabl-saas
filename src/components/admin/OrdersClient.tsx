@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrders } from '@/hooks/queries';
@@ -40,8 +41,8 @@ export default function OrdersClient({
   const ts = useTranslations('shortcuts');
 
   // filteredOrders is derived via useMemo below
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
+  const [search, setSearch] = useSessionState('orders:search', '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   const {
@@ -359,6 +360,7 @@ export default function OrdersClient({
             data={filteredOrders}
             emptyMessage={t('noOrdersMatch')}
             onRowClick={(order) => setSelectedOrder(order)}
+            storageKey="orders"
             mobileConfig={{
               renderCard: (order) => {
                 const config = statusConfig[order.status];

@@ -20,6 +20,8 @@ interface ResponsiveDataTableProps<TData> {
   onRowClick?: (row: TData) => void;
   /** When provided, renders cards on mobile instead of the table */
   mobileConfig?: MobileCardConfig<TData>;
+  /** When provided, sorting state is persisted to sessionStorage */
+  storageKey?: string;
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -32,6 +34,7 @@ export function ResponsiveDataTable<TData>({
   emptyMessage,
   onRowClick,
   mobileConfig,
+  storageKey,
 }: ResponsiveDataTableProps<TData>) {
   const { isMobile } = useDevice();
 
@@ -75,6 +78,7 @@ export function ResponsiveDataTable<TData>({
       isLoading={isLoading}
       emptyMessage={emptyMessage}
       onRowClick={onRowClick}
+      storageKey={storageKey}
     />
   );
 }

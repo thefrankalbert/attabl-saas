@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { ScrollText, Loader2, ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -45,14 +46,14 @@ export default function AuditLogClient({ tenantId }: { tenantId: string }) {
 
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useSessionState('auditLog:page', 0);
   const [totalCount, setTotalCount] = useState(0);
   const [showFilters, setShowFilters] = useState(false);
 
   // Filters
-  const [filterAction, setFilterAction] = useState<string>('');
-  const [filterEntity, setFilterEntity] = useState<string>('');
-  const [searchEmail, setSearchEmail] = useState('');
+  const [filterAction, setFilterAction] = useSessionState<string>('auditLog:filterAction', '');
+  const [filterEntity, setFilterEntity] = useSessionState<string>('auditLog:filterEntity', '');
+  const [searchEmail, setSearchEmail] = useSessionState('auditLog:searchEmail', '');
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);

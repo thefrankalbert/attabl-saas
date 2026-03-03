@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useSessionState } from '@/hooks/useSessionState';
 import { Bell, Utensils, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
@@ -105,7 +106,7 @@ export function useKitchenData({
   const [showMockData, setShowMockData] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const { isFullscreen, toggleFullscreen } = useFullscreen();
-  const [activeTab, setActiveTab] = useState<ColumnKey>('pending');
+  const [activeTab, setActiveTab] = useSessionState<ColumnKey>('kitchen:activeTab', 'pending');
 
   const {
     soundEnabled,

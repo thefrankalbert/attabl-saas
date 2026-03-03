@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Plus, FileSpreadsheet, FileText, Search } from 'lucide-react';
+import { Plus, FileSpreadsheet, FileText, Search, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
@@ -37,6 +37,7 @@ export default function MenusClient({
   const [showPdfImportModal, setShowPdfImportModal] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
   const [parentMenuId, setParentMenuId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Data hook
   const {
@@ -51,10 +52,28 @@ export default function MenusClient({
     createMenu,
     updateMenu,
     deleteMenu,
+    deleteMultiple,
     toggleActive,
     reorder,
     loadMenus,
   } = useMenusData({ tenantId, initialMenus, venues });
+
+  // ─── Selection ────────────────────────────────────────
+
+  const toggleSelect = useCallback((menuId: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(menuId)) next.delete(menuId);
+      else next.add(menuId);
+      return next;
+    });
+  }, []);
+
+  const handleDeleteSelected = async () => {
+    const ids = Array.from(selectedIds);
+    await deleteMultiple(ids);
+    setSelectedIds(new Set());
+  };
 
   // ─── Modal openers ─────────────────────────────────────
 
@@ -88,48 +107,69 @@ export default function MenusClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-4 sm:space-y-6">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-xl xl:text-2xl font-bold text-app-text tracking-tight">
-                {t('title')}
-              </h1>
-              <p className="text-sm text-app-text-secondary mt-1">{t('subtitle')}</p>
+        <div className="shrink-0 space-y-3">
+          {/* Header + Search + Actions — single row */}
+          <div className="flex items-center gap-3">
+            <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
+              {t('title')}
+            </h1>
+            <div className="relative flex-1 max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
+              <Input
+                data-search-input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-9"
+              />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 ml-auto">
+              {selectedIds.size > 0 && (
+                <Button
+                  onClick={handleDeleteSelected}
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="hidden sm:inline">{t('deleteSelected', { count: selectedIds.size })}</span>
+                </Button>
+              )}
               <Button
                 onClick={() => setShowImportModal(true)}
                 variant="outline"
-                className="gap-2 rounded-xl"
+                size="sm"
+                className="gap-1.5 shrink-0"
               >
                 <FileSpreadsheet className="w-4 h-4" />
-                {t('importExcel')}
+                <span className="hidden sm:inline">{t('importExcel')}</span>
               </Button>
               <Button
                 onClick={() => setShowPdfImportModal(true)}
                 variant="outline"
-                className="gap-2 rounded-xl"
+                size="sm"
+                className="gap-1.5 shrink-0"
               >
                 <FileText className="w-4 h-4" />
-                {t('importPdf')}
+                <span className="hidden sm:inline">{t('importPdf')}</span>
               </Button>
               <Button
                 onClick={() => openNewMenuModal()}
                 variant="default"
+                size="sm"
                 disabled={isLimitReached}
-                className="gap-2"
+                className="gap-1.5 shrink-0"
               >
                 <Plus className="w-4 h-4" />
-                {t('newMenu')}
+                <span className="hidden sm:inline">{t('newMenu')}</span>
               </Button>
             </div>
           </div>
 
           {/* Limit warning */}
           {isLimitReached && (
-            <div className="rounded-xl border border-amber-500/20 bg-amber-500/10 p-4">
-              <p className="text-sm text-amber-800 font-medium">
+            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-2">
+              <p className="text-xs text-amber-800 font-medium">
                 {t('limitReached', { max: maxMenus })}{' '}
                 <Link
                   href={`/sites/${tenantSlug}/admin/subscription`}
@@ -140,18 +180,6 @@ export default function MenusClient({
               </p>
             </div>
           )}
-
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
-            <Input
-              data-search-input
-              placeholder={t('searchPlaceholder')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
@@ -164,6 +192,8 @@ export default function MenusClient({
             menusByVenue={menusByVenue}
             searchQuery={searchQuery}
             loading={loading}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
             onEdit={openEditMenuModal}
             onDelete={deleteMenu}
             onToggle={toggleActive}

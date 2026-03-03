@@ -8,6 +8,7 @@ import { useMenuItems, useCategories } from '@/hooks/queries';
 import { useCreateOrder } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
+import { useSessionState } from '@/hooks/useSessionState';
 import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
 
 export type CartItem = MenuItem & {
@@ -36,20 +37,20 @@ export function usePOSData(tenantId: string) {
   const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
 
   // ─── Cart state ─────────────────────────────────────────
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [cart, setCart] = useSessionState<CartItem[]>('pos:cart', []);
 
   // ─── Currency ───────────────────────────────────────────
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
   // ─── Filters ────────────────────────────────────────────
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useSessionState('pos:searchQuery', '');
+  const [selectedCategory, setSelectedCategory] = useSessionState<string>('pos:selectedCategory', 'all');
 
   // ─── Service type state ─────────────────────────────────
-  const [serviceType, setServiceType] = useState<ServiceType>('dine_in');
-  const [selectedTable, setSelectedTable] = useState<string>('');
-  const [roomNumber, setRoomNumber] = useState<string>('');
-  const [deliveryAddress, setDeliveryAddress] = useState<string>('');
+  const [serviceType, setServiceType] = useSessionState<ServiceType>('pos:serviceType', 'dine_in');
+  const [selectedTable, setSelectedTable] = useSessionState<string>('pos:selectedTable', '');
+  const [roomNumber, setRoomNumber] = useSessionState<string>('pos:roomNumber', '');
+  const [deliveryAddress, setDeliveryAddress] = useSessionState<string>('pos:deliveryAddress', '');
 
   // ─── Suggestions ────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<POSSuggestion[]>([]);
