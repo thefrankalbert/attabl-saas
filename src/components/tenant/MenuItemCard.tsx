@@ -3,7 +3,7 @@
 import { Plus, Minus, Leaf, Flame, Utensils, Martini, ChevronDown } from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
@@ -35,10 +35,9 @@ export default function MenuItemCard({
 }: MenuItemCardProps) {
   const { addToCart, updateQuantity } = useCartActions();
   const { items } = useCartData();
-  const locale = useLocale();
   const tt = useTranslations('tenant');
   const { resolveAndFormatPrice } = useDisplayCurrency();
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
 
   // Variant dropdown

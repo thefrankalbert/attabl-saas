@@ -433,7 +433,7 @@ export default function ClientMenuDetailPage({
           <ChevronLeft style={{ width: '20px', height: '20px', color: '#374151' }} />
         </button>
         <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', flex: 1 }}>
-          {lang === 'fr' ? 'Notre carte' : 'Our menu'}
+          {t('ourMenu')}
         </h1>
         <Link
           href={`/sites/${tenant.slug}/cart`}
@@ -517,7 +517,7 @@ export default function ClientMenuDetailPage({
           <div className="mt-2 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden z-50 relative">
             <div className="p-2">
               <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">
-                {lang === 'fr' ? 'Plats trouv\u00e9s' : 'Dishes found'}
+                {t('dishesFound')}
               </h3>
               {searchResults.map((item) => (
                 <button
@@ -571,7 +571,7 @@ export default function ClientMenuDetailPage({
               color: !activeVenueId ? '#ffffff' : '#4b5563',
             }}
           >
-            {lang === 'fr' ? 'Tout' : 'All'}
+            {t('allFilter')}
           </button>
           {venues.map((venue) => (
             <button
@@ -783,7 +783,7 @@ export default function ClientMenuDetailPage({
                 <ShoppingCart style={{ width: '16px', height: '16px' }} />
               </div>
               <span style={{ fontWeight: 600, fontSize: '14px' }}>
-                {totalCartItems} {totalCartItems > 1 ? 'articles' : 'article'}
+                {t('cartItemCount', { count: totalCartItems })}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

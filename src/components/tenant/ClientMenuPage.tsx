@@ -531,16 +531,14 @@ export default function ClientMenuPage({
                   lineHeight: 1.2,
                 }}
               >
-                {lang === 'fr' ? 'Découvrez nos délicieux plats' : 'Discover our delicious dishes'}
+                {t('heroSubtitle')}
               </h1>
               {tableNumber && (
                 <p
                   className="text-white/80 text-sm sm:text-base font-normal"
                   style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}
                 >
-                  {lang === 'fr'
-                    ? `Vous êtes à la table ${tableNumber}`
-                    : `You are at table ${tableNumber}`}
+                  {t('seatedAtTable', { table: tableNumber })}
                 </p>
               )}
             </div>
@@ -550,13 +548,13 @@ export default function ClientMenuPage({
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-3">
                   <h2 className="text-lg font-semibold text-white tracking-tight">
-                    {lang === 'fr' ? 'Votre panier' : 'Your cart'}
+                    {t('yourCart')}
                   </h2>
                   <Link
                     href={`/sites/${tenant.slug}/cart`}
                     className="text-[10px] font-bold uppercase tracking-widest text-white/70 hover:text-white transition-colors"
                   >
-                    {lang === 'fr' ? 'Voir tout' : 'View all'} →
+                    {t('viewAll')} →
                   </Link>
                 </div>
                 <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -608,7 +606,7 @@ export default function ClientMenuPage({
                 letterSpacing: '-0.01em',
               }}
             >
-              {lang === 'fr' ? 'Explorez nos saveurs' : 'Explore our flavors'}
+              {t('exploreFlavors')}
             </h2>
           </div>
           <div
@@ -683,7 +681,7 @@ export default function ClientMenuPage({
       {venues && venues.length > 1 && (
         <div style={{ padding: '0 16px', marginBottom: '40px' }}>
           <p style={{ fontSize: '18px', fontWeight: 600, color: '#1f2937', marginBottom: '16px' }}>
-            {lang === 'fr' ? 'Nos Univers' : 'Our Universes'}
+            {t('ourUniverses')}
           </p>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {/* All button — navigate to full menu */}
@@ -703,7 +701,7 @@ export default function ClientMenuPage({
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <Utensils style={{ width: '24px', height: '24px', color: '#9ca3af' }} />
                 <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
-                  {lang === 'fr' ? 'Toutes les cartes' : 'All menus'}
+                  {t('allMenus')}
                 </span>
               </div>
             </button>
@@ -785,7 +783,7 @@ export default function ClientMenuPage({
                 letterSpacing: '-0.01em',
               }}
             >
-              {lang === 'fr' ? 'À ne pas manquer' : "Don't miss"}
+              {t('dontMiss')}
             </h2>
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
@@ -800,7 +798,7 @@ export default function ClientMenuPage({
                 cursor: 'pointer',
               }}
             >
-              {lang === 'fr' ? 'Voir tout' : 'View all'} →
+              {t('viewAll')} →
             </button>
           </div>
           <div
@@ -907,7 +905,7 @@ export default function ClientMenuPage({
           }}
         >
           <Utensils style={{ width: '18px', height: '18px' }} />
-          {lang === 'fr' ? 'Voir toute la carte' : 'See full menu'}
+          {t('seeFullMenu')}
         </button>
       </div>
 
@@ -954,7 +952,7 @@ export default function ClientMenuPage({
                 <ShoppingCart style={{ width: '16px', height: '16px' }} />
               </div>
               <span style={{ fontWeight: 600, fontSize: '14px' }}>
-                {totalCartItems} {totalCartItems > 1 ? 'articles' : 'article'}
+                {t('cartItemCount', { count: totalCartItems })}
               </span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import { contactSchema } from '@/lib/validations/contact.schema';
+import { getTranslations } from 'next-intl/server';
 
 export type ContactState = {
   errors?: {
@@ -18,12 +19,14 @@ export type ContactState = {
 };
 
 export async function actionSubmitContactForm(prevState: ContactState, formData: FormData) {
+  const t = await getTranslations('errors');
+
   // Rate limiting
   const headersList = await headers();
   const ip = getClientIpFromHeaders(headersList);
   const { success: allowed } = await contactLimiter.check(ip);
   if (!allowed) {
-    return { success: false, message: 'Trop de requêtes. Réessayez plus tard.' };
+    return { success: false, message: t('rateLimited') };
   }
 
   // Honeypot check — bots fill this hidden field, humans don't
@@ -33,7 +36,7 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
     logger.info('Honeypot triggered — bot submission blocked');
     return {
       success: true,
-      message: 'Votre demande de rendez-vous a été envoyée !',
+      message: t('contactSuccessHoneypot'),
     };
   }
 
@@ -48,7 +51,7 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
   if (!validatedFields.success) {
     return {
       errors: validatedFields.error.flatten().fieldErrors,
-      message: 'Erreur de validation. Vérifiez les champs.',
+      message: t('validationError'),
       success: false,
     };
   }
@@ -72,6 +75,6 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
 
   return {
     success: true,
-    message: 'Votre demande a été enregistrée. Notre équipe vous contactera bientôt.',
+    message: t('contactSuccess'),
   };
 }

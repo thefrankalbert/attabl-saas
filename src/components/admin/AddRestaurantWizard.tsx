@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Loader2, ArrowLeft, ArrowRight, Check, X, Building2, Sparkles } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import {
   createRestaurantStep1Schema,
@@ -34,33 +35,33 @@ function nameToSlug(name: string): string {
     .replace(/^-|-$/g, '');
 }
 
-// ─── Type labels ────────────────────────────────────────────
-const TYPE_LABELS: Record<string, string> = {
-  restaurant: 'Restaurant',
-  hotel: 'Hotel',
-  'bar-cafe': 'Bar / Cafe',
-  boulangerie: 'Boulangerie / Patisserie',
-  'dark-kitchen': 'Dark Kitchen',
-  'food-truck': 'Food Truck',
-  'quick-service': 'Restauration rapide',
+// ─── Type keys (mapped to translation keys) ────────────────
+const TYPE_KEYS: Record<string, string> = {
+  restaurant: 'addRestaurant.typeRestaurant',
+  hotel: 'addRestaurant.typeHotel',
+  'bar-cafe': 'addRestaurant.typeBarCafe',
+  boulangerie: 'addRestaurant.typeBoulangerie',
+  'dark-kitchen': 'addRestaurant.typeDarkKitchen',
+  'food-truck': 'addRestaurant.typeFoodTruck',
+  'quick-service': 'addRestaurant.typeQuickService',
 };
 
-// ─── Plan info ──────────────────────────────────────────────
-const PLAN_INFO: Record<string, { label: string; price: string; description: string }> = {
+// ─── Plan keys (mapped to translation keys) ─────────────────
+const PLAN_KEYS: Record<string, { label: string; price: string; description: string }> = {
   trial: {
-    label: 'Essai gratuit',
-    price: '0 F / 14 jours',
-    description: 'Testez toutes les fonctionnalites sans engagement',
+    label: 'addRestaurant.planTrialLabel',
+    price: 'addRestaurant.planTrialPrice',
+    description: 'addRestaurant.planTrialDesc',
   },
   essentiel: {
-    label: 'Essentiel',
-    price: '39 800 F / mois',
-    description: 'Menu digital, commandes, QR codes',
+    label: 'addRestaurant.planEssentielLabel',
+    price: 'addRestaurant.planEssentielPrice',
+    description: 'addRestaurant.planEssentielDesc',
   },
   premium: {
-    label: 'Premium',
-    price: '79 800 F / mois',
-    description: 'Tout Essentiel + rapports avances, POS, support prioritaire',
+    label: 'addRestaurant.planPremiumLabel',
+    price: 'addRestaurant.planPremiumPrice',
+    description: 'addRestaurant.planPremiumDesc',
   },
 };
 
@@ -70,6 +71,7 @@ interface AddRestaurantWizardProps {
 }
 
 export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardProps) {
+  const t = useTranslations('admin');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -124,13 +126,13 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Erreur lors de la creation');
+        throw new Error(data.error || t('addRestaurant.creationError'));
       }
 
       onSuccess(data.slug);
     } catch (err) {
       logger.error('Restaurant creation failed', err);
-      setError(err instanceof Error ? err.message : 'Erreur inconnue');
+      setError(err instanceof Error ? err.message : t('addRestaurant.unknownError'));
       setLoading(false);
     }
   };
@@ -153,8 +155,10 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <Building2 className="h-5 w-5 text-accent-text" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-app-text">Nouvel établissement</h2>
-              <p className="text-xs text-app-text-muted">Étape {step} sur 3</p>
+              <h2 className="text-lg font-bold text-app-text">{t('addRestaurant.title')}</h2>
+              <p className="text-xs text-app-text-muted">
+                {t('addRestaurant.stepOf', { step, total: 3 })}
+              </p>
             </div>
           </div>
 
@@ -178,29 +182,29 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <Label htmlFor="name" className="text-sm font-medium text-app-text">
-                  Nom de l&apos;établissement
+                  {t('addRestaurant.nameLabel')}
                 </Label>
                 <Input
                   id="name"
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
-                  placeholder="Ex: Le Petit Bistrot"
+                  placeholder={t('addRestaurant.namePlaceholder')}
                   className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
                 />
               </div>
 
               <div className="space-y-1.5">
                 <Label htmlFor="type" className="text-sm font-medium text-app-text">
-                  Type d&apos;établissement
+                  {t('addRestaurant.typeLabel')}
                 </Label>
                 <Select value={type} onValueChange={setType}>
                   <SelectTrigger className="h-11 rounded-lg border-app-border">
-                    <SelectValue placeholder="Selectionnez un type" />
+                    <SelectValue placeholder={t('addRestaurant.typePlaceholder')} />
                   </SelectTrigger>
                   <SelectContent>
-                    {ESTABLISHMENT_TYPES.map((t) => (
-                      <SelectItem key={t} value={t}>
-                        {TYPE_LABELS[t] || t}
+                    {ESTABLISHMENT_TYPES.map((estType) => (
+                      <SelectItem key={estType} value={estType}>
+                        {TYPE_KEYS[estType] ? t(TYPE_KEYS[estType]) : estType}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -209,14 +213,14 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
 
               <div className="space-y-1.5">
                 <Label htmlFor="slug" className="text-sm font-medium text-app-text">
-                  Adresse web (slug)
+                  {t('addRestaurant.slugLabel')}
                 </Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="slug"
                     value={slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
-                    placeholder="le-petit-bistrot"
+                    placeholder={t('addRestaurant.slugPlaceholder')}
                     className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
                   />
                   <span className="shrink-0 text-xs text-app-text-muted">.attabl.com</span>
@@ -228,9 +232,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
           {/* ─── STEP 2: Plan ───────────────────────────── */}
           {step === 2 && (
             <div className="space-y-3">
-              <p className="mb-2 text-sm font-medium text-app-text">Choisissez votre formule</p>
+              <p className="mb-2 text-sm font-medium text-app-text">
+                {t('addRestaurant.choosePlan')}
+              </p>
               {PLAN_OPTIONS.map((p) => {
-                const info = PLAN_INFO[p];
+                const keys = PLAN_KEYS[p];
                 return (
                   <button
                     key={p}
@@ -243,11 +249,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-bold text-app-text">{info.label}</p>
-                        <p className="text-xs text-app-text-secondary">{info.description}</p>
+                        <p className="font-bold text-app-text">{t(keys.label)}</p>
+                        <p className="text-xs text-app-text-secondary">{t(keys.description)}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-sm font-bold text-app-text">{info.price}</p>
+                        <p className="text-sm font-bold text-app-text">{t(keys.price)}</p>
                         {plan === p && (
                           <div className="mt-1 flex items-center justify-end">
                             <Check className="h-4 w-4 text-accent" />
@@ -267,34 +273,44 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               <div className="rounded-xl bg-app-bg p-4">
                 <div className="mb-4 flex items-center gap-3">
                   <Sparkles className="h-5 w-5 text-accent" />
-                  <p className="text-sm font-bold text-app-text">Recapitulatif</p>
+                  <p className="text-sm font-bold text-app-text">{t('addRestaurant.summary')}</p>
                 </div>
 
                 <div className="space-y-3">
                   <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">Nom</span>
+                    <span className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryName')}
+                    </span>
                     <span className="text-sm font-medium text-app-text">{name}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">Type</span>
+                    <span className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryType')}
+                    </span>
                     <span className="text-sm font-medium text-app-text">
-                      {TYPE_LABELS[type] || type}
+                      {TYPE_KEYS[type] ? t(TYPE_KEYS[type]) : type}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">Adresse</span>
+                    <span className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryAddress')}
+                    </span>
                     <span className="text-sm font-medium text-app-text">{slug}.attabl.com</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">Formule</span>
+                    <span className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryPlan')}
+                    </span>
                     <span className="text-sm font-medium text-app-text">
-                      {PLAN_INFO[plan]?.label || plan}
+                      {PLAN_KEYS[plan] ? t(PLAN_KEYS[plan].label) : plan}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-xs text-app-text-secondary">Prix</span>
+                    <span className="text-xs text-app-text-secondary">
+                      {t('addRestaurant.summaryPrice')}
+                    </span>
                     <span className="text-sm font-bold text-app-text">
-                      {PLAN_INFO[plan]?.price || '-'}
+                      {PLAN_KEYS[plan] ? t(PLAN_KEYS[plan].price) : '-'}
                     </span>
                   </div>
                 </div>
@@ -318,11 +334,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
             disabled={loading}
           >
             {step === 1 ? (
-              'Annuler'
+              t('addRestaurant.cancel')
             ) : (
               <>
                 <ArrowLeft className="h-4 w-4" />
-                Retour
+                {t('addRestaurant.back')}
               </>
             )}
           </Button>
@@ -333,7 +349,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               disabled={step === 1 ? !step1Valid : !step2Valid}
               className="gap-2 rounded-lg bg-accent text-sm font-semibold text-accent-text hover:bg-accent-hover disabled:opacity-50"
             >
-              Suivant
+              {t('addRestaurant.next')}
               <ArrowRight className="h-4 w-4" />
             </Button>
           ) : (
@@ -345,12 +361,12 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               {loading ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Creation...
+                  {t('addRestaurant.creating')}
                 </>
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  Créer l&apos;établissement
+                  {t('addRestaurant.create')}
                 </>
               )}
             </Button>

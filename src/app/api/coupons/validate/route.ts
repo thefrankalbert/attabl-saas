@@ -4,15 +4,17 @@ import { createClient } from '@/lib/supabase/server';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { validateCouponSchema } from '@/lib/validations/coupon.schema';
+import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
+  const t = await getTranslations('errors');
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
-        { valid: false, error: 'Trop de requêtes. Réessayez plus tard.' },
+        { valid: false, error: t('rateLimited') },
         { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
@@ -22,7 +24,7 @@ export async function POST(request: Request) {
     const tenantSlug = headersList.get('x-tenant-slug');
 
     if (!tenantSlug) {
-      return NextResponse.json({ valid: false, error: 'Tenant non identifié' }, { status: 400 });
+      return NextResponse.json({ valid: false, error: t('tenantNotIdentified') }, { status: 400 });
     }
 
     const supabase = await createClient();
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
       .single();
 
     if (tenantError || !tenant) {
-      return NextResponse.json({ valid: false, error: 'Tenant non trouvé' }, { status: 404 });
+      return NextResponse.json({ valid: false, error: t('tenantNotFound') }, { status: 404 });
     }
 
     // 3. Parse and validate input
@@ -42,15 +44,12 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { valid: false, error: 'Corps de requête invalide' },
-        { status: 400 },
-      );
+      return NextResponse.json({ valid: false, error: t('invalidRequestBody') }, { status: 400 });
     }
 
     const parseResult = validateCouponSchema.safeParse(body);
     if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      const firstError = parseResult.error.issues[0]?.message ?? t('invalidData');
       return NextResponse.json({ valid: false, error: firstError }, { status: 400 });
     }
 
@@ -62,7 +61,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Erreur de validation';
+    const message = error instanceof Error ? error.message : t('validationError');
     const statusCode =
       error instanceof Error && 'statusCode' in error
         ? (error as { statusCode: number }).statusCode

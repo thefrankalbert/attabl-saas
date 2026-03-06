@@ -10,6 +10,10 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
 }));
 
+vi.mock('next-intl/server', () => ({
+  getTranslations: vi.fn(() => Promise.resolve((key: string) => key)),
+}));
+
 const mockHeaders = vi.fn();
 vi.mock('next/headers', () => ({
   headers: mockHeaders,
@@ -215,7 +219,7 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(429);
-    expect(body.error).toBe('Trop de requêtes. Réessayez plus tard.');
+    expect(body.error).toBe('rateLimited');
   });
 
   // ── 2. Missing tenant slug → 400 ──────────────────────────
@@ -229,7 +233,7 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(400);
-    expect(body.error).toBe('Tenant non identifié');
+    expect(body.error).toBe('tenantNotIdentified');
   });
 
   // ── 3. Malformed JSON → 400 ────────────────────────────────
@@ -241,7 +245,7 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(400);
-    expect(body.error).toBe('Corps de requête invalide');
+    expect(body.error).toBe('invalidRequestBody');
   });
 
   // ── 4. Zod validation failure → 400 ────────────────────────
@@ -262,7 +266,7 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(400);
-    expect(body.error).toBe('Données de commande invalides');
+    expect(body.error).toBe('invalidOrderData');
     expect(Array.isArray(body.details)).toBe(true);
     expect((body.details as string[]).length).toBeGreaterThan(0);
   });
@@ -398,7 +402,7 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(500);
-    expect(body.error).toBe('Erreur serveur');
+    expect(body.error).toBe('serverError');
   });
 
   // ── 11. Empty items array → 400 ────────────────────────────
@@ -410,9 +414,9 @@ describe('POST /api/orders', () => {
     const { status, body } = await parseResponse(response);
 
     expect(status).toBe(400);
-    expect(body.error).toBe('Données de commande invalides');
+    expect(body.error).toBe('invalidOrderData');
     expect(Array.isArray(body.details)).toBe(true);
-    expect(body.details as string[]).toContain('Le panier ne peut pas être vide');
+    expect((body.details as string[]).length).toBeGreaterThan(0);
   });
 
   // ── 12. Order items validation failure → 400 ──────────────

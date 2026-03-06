@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, LogOut, Sun, Moon, Maximize, Minimize, LayoutGrid } from 'lucide-react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 import { isImmersivePage, isAdminHome } from '@/lib/constants';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -25,6 +26,7 @@ interface AdminTopBarProps {
 export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProps) {
   const pathname = usePathname();
   const { resolved, setTheme } = useTheme();
+  const t = useTranslations('admin');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Track fullscreen state
@@ -60,7 +62,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
           <Link
             href="/admin/tenants"
             className="w-9 h-9 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
-            title="Mes espaces"
+            title={t('topbar.mySpaces')}
           >
             <LayoutGrid className="w-4 h-4 text-app-text-secondary" />
           </Link>
@@ -91,7 +93,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
           type="button"
           onClick={toggleFullscreen}
           className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation"
-          title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+          title={isFullscreen ? t('topbar.exitFullscreen') : t('topbar.fullscreen')}
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>
@@ -99,7 +101,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
           type="button"
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
           className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation"
-          title="Toggle theme"
+          title={t('topbar.toggleTheme')}
         >
           {resolved === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
         </button>
@@ -107,7 +109,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
           <button
             type="submit"
             className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-status-error-bg hover:text-status-error transition-colors touch-manipulation"
-            title="Logout"
+            title={t('topbar.logout')}
           >
             <LogOut className="w-4 h-4" />
           </button>

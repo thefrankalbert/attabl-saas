@@ -6,9 +6,11 @@ import { useFormStatus } from 'react-dom';
 import { actionSubmitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
+  const t = useTranslations('contact');
   return (
     <button
       type="submit"
@@ -18,11 +20,11 @@ function SubmitButton() {
       {pending ? (
         <span className="flex items-center justify-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Envoi en cours...
+          {t('submitting')}
         </span>
       ) : (
         <span className="flex items-center justify-center gap-2">
-          Envoyer la demande
+          {t('submitButton')}
           <ArrowRight className="h-4 w-4" />
         </span>
       )}
@@ -31,6 +33,7 @@ function SubmitButton() {
 }
 
 export default function ContactPage() {
+  const t = useTranslations('contact');
   const [formState, formAction] = useActionState(actionSubmitContactForm, {
     success: false,
     message: '',
@@ -52,16 +55,14 @@ export default function ContactPage() {
               className="mb-8 inline-flex items-center text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
             >
               <span className="mr-2">&larr;</span>
-              Retour
+              {t('back')}
             </Link>
 
             <h1 className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-tight text-neutral-900 sm:text-4xl">
-              Prenons rendez-vous
+              {t('title')}
             </h1>
 
-            <p className="mt-3 text-sm leading-relaxed text-neutral-500">
-              Remplissez le formulaire et notre &eacute;quipe vous recontactera sous 24h.
-            </p>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-500">{t('subtitle')}</p>
 
             {formState.success ? (
               <motion.div
@@ -72,14 +73,14 @@ export default function ContactPage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold text-neutral-900">Demande envoy&eacute;e</h3>
+                <h3 className="text-xl font-bold text-neutral-900">{t('successTitle')}</h3>
                 <p className="mt-2 text-sm text-neutral-600">{formState.message}</p>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
                   className="mt-6 rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
                 >
-                  Nouveau message
+                  {t('newMessage')}
                 </button>
               </motion.div>
             ) : (
@@ -92,14 +93,14 @@ export default function ContactPage() {
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <label htmlFor="name" className="text-xs font-semibold text-neutral-700">
-                      Nom complet
+                      {t('labelName')}
                     </label>
                     <input
                       type="text"
                       name="name"
                       id="name"
                       required
-                      placeholder="Jean Dupont"
+                      placeholder={t('placeholderName')}
                       className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
                     />
                     {formState.errors?.name && (
@@ -108,13 +109,13 @@ export default function ContactPage() {
                   </div>
                   <div className="space-y-1.5">
                     <label htmlFor="company" className="text-xs font-semibold text-neutral-700">
-                      &Eacute;tablissement
+                      {t('labelCompany')}
                     </label>
                     <input
                       type="text"
                       name="company"
                       id="company"
-                      placeholder="H&ocirc;tel Le Plaza"
+                      placeholder={t('placeholderCompany')}
                       className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
                     />
                   </div>
@@ -122,14 +123,14 @@ export default function ContactPage() {
 
                 <div className="space-y-1.5">
                   <label htmlFor="email" className="text-xs font-semibold text-neutral-700">
-                    Email professionnel
+                    {t('labelEmail')}
                   </label>
                   <input
                     type="email"
                     name="email"
                     id="email"
                     required
-                    placeholder="jean@hotel-plaza.com"
+                    placeholder={t('placeholderEmail')}
                     className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   />
                   {formState.errors?.email && (
@@ -139,14 +140,14 @@ export default function ContactPage() {
 
                 <div className="space-y-1.5">
                   <label htmlFor="message" className="text-xs font-semibold text-neutral-700">
-                    Votre message
+                    {t('labelMessage')}
                   </label>
                   <textarea
                     name="message"
                     id="message"
                     rows={3}
                     required
-                    placeholder="Parlez-nous de votre &eacute;tablissement et de vos besoins..."
+                    placeholder={t('placeholderMessage')}
                     className="w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   />
                   {formState.errors?.message && (
@@ -156,10 +157,7 @@ export default function ContactPage() {
 
                 <SubmitButton />
 
-                <p className="text-center text-[11px] text-neutral-400">
-                  En envoyant, vous acceptez d&apos;&ecirc;tre contact&eacute; par notre
-                  &eacute;quipe.
-                </p>
+                <p className="text-center text-[11px] text-neutral-400">{t('disclaimer')}</p>
               </form>
             )}
           </motion.div>
@@ -181,13 +179,10 @@ export default function ContactPage() {
             >
               <div className="mb-6 text-6xl">&#x1F37D;</div>
               <h2 className="text-3xl font-bold leading-tight tracking-tight text-white lg:text-4xl">
-                Une d&eacute;mo vaut
-                <br />
-                mille mots
+                {t('demoTitle')}
               </h2>
               <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-white/60">
-                D&eacute;couvrez comment Attabl peut transformer la gestion de votre
-                &eacute;tablissement en 20 minutes.
+                {t('demoSubtitle')}
               </p>
             </motion.div>
 
@@ -198,9 +193,9 @@ export default function ContactPage() {
               className="mt-10 flex flex-col gap-4 w-full max-w-xs"
             >
               {[
-                { stat: '20 min', label: 'D\u00e9mo personnalis\u00e9e' },
-                { stat: '24h', label: 'D\u00e9lai de r\u00e9ponse' },
-                { stat: '14 jours', label: 'Essai gratuit inclus' },
+                { stat: t('statDemoTime'), label: t('statDemoLabel') },
+                { stat: t('statResponseTime'), label: t('statResponseLabel') },
+                { stat: t('statTrialTime'), label: t('statTrialLabel') },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-4 text-left">
                   <span className="min-w-[72px] text-2xl font-bold text-[#CCFF00]">
