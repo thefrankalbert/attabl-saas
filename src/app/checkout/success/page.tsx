@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 function CheckoutSuccessContent() {
@@ -13,9 +14,9 @@ function CheckoutSuccessContent() {
   const sessionId = searchParams.get('session_id');
   const [loading, setLoading] = useState(true);
   const [tenantSlug, setTenantSlug] = useState<string | null>(null);
+  const t = useTranslations('checkout');
 
   useEffect(() => {
-    // Vérifier le statut de la session
     async function verifySession() {
       if (!sessionId) {
         setLoading(false);
@@ -39,7 +40,6 @@ function CheckoutSuccessContent() {
     verifySession();
   }, [sessionId]);
 
-  // Déterminer l'URL du dashboard — use /sites/ path which works everywhere
   const getDashboardUrl = (slug: string) => `/sites/${slug}/admin`;
 
   if (loading) {
@@ -57,22 +57,20 @@ function CheckoutSuccessContent() {
           <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
-          <h2 className="text-2xl font-bold mb-2">Paiement réussi !</h2>
-          <p className="text-zinc-600 mb-6">
-            Votre abonnement est maintenant actif. Vous bénéficiez de 14 jours d&apos;essai gratuit.
-          </p>
+          <h2 className="text-2xl font-bold mb-2">{t('successTitle')}</h2>
+          <p className="text-zinc-600 mb-6">{t('successDescription')}</p>
           <div className="space-y-3">
             {tenantSlug ? (
               <Button asChild size="lg" className="w-full">
-                <Link href={getDashboardUrl(tenantSlug)}>Accéder à mon dashboard</Link>
+                <Link href={getDashboardUrl(tenantSlug)}>{t('goToDashboard')}</Link>
               </Button>
             ) : (
               <Button asChild size="lg" className="w-full">
-                <Link href="/login">Se connecter</Link>
+                <Link href="/login">{t('login')}</Link>
               </Button>
             )}
             <Button asChild variant="outline" className="w-full">
-              <Link href="/">Retour à l&apos;accueil</Link>
+              <Link href="/">{t('backToHome')}</Link>
             </Button>
           </div>
         </CardContent>

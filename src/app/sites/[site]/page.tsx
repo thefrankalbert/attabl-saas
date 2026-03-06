@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
 import type { Announcement, MenuItem } from '@/types/admin.types';
@@ -59,6 +60,7 @@ export default async function MenuPage({
 
   if (!tenant) {
     // En mode dev, afficher un placeholder si pas de tenant
+    const t = await getTranslations('tenant');
     return (
       <div className="min-h-screen bg-app-bg">
         <header className="bg-white dark:bg-app-elevated shadow-sm sticky top-0 z-10">
@@ -69,15 +71,12 @@ export default async function MenuPage({
         <main className="container mx-auto px-4 py-8">
           <div className="text-center py-12 bg-white dark:bg-app-elevated rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold text-app-text-secondary mb-2">
-              Restaurant non configur&eacute;
+              {t('notConfiguredTitle')}
             </h2>
             <p className="text-app-text-secondary">
-              Le tenant &quot;{tenantSlug}&quot; n&apos;existe pas encore dans la base de
-              donn&eacute;es.
+              {t('notConfiguredDesc', { slug: tenantSlug })}
             </p>
-            <p className="text-sm text-app-text-muted mt-4">
-              Configurez Supabase et cr&eacute;ez le tenant pour voir le menu.
-            </p>
+            <p className="text-sm text-app-text-muted mt-4">{t('notConfiguredHint')}</p>
           </div>
         </main>
       </div>

@@ -5,17 +5,20 @@ import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { newsletterLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import { newsletterSchema } from '@/lib/validations/newsletter.schema';
+import { getTranslations } from 'next-intl/server';
 
 export async function actionSubscribeToNewsletter(
   prevState: { success: boolean; message: string } | null,
   formData: FormData,
 ) {
+  const t = await getTranslations('errors');
+
   // Rate limiting
   const headersList = await headers();
   const ip = getClientIpFromHeaders(headersList);
   const { success: allowed } = await newsletterLimiter.check(ip);
   if (!allowed) {
-    return { success: false, message: 'Too many requests. Please try again later.' };
+    return { success: false, message: t('rateLimited') };
   }
 
   const email = formData.get('email');
@@ -26,7 +29,7 @@ export async function actionSubscribeToNewsletter(
   if (!validatedFields.success) {
     return {
       success: false,
-      message: validatedFields.error.flatten().fieldErrors.email?.[0] || 'Invalid email',
+      message: validatedFields.error.flatten().fieldErrors.email?.[0] || t('invalidEmail'),
     };
   }
 
@@ -43,25 +46,25 @@ export async function actionSubscribeToNewsletter(
         // Prevents email enumeration attacks
         return {
           success: true,
-          message: 'Thank you for subscribing!',
+          message: t('newsletterSuccess'),
         };
       }
       logger.error('Newsletter subscription error', error);
       return {
         success: false,
-        message: 'Something went wrong. Please try again.',
+        message: t('newsletterError'),
       };
     }
 
     return {
       success: true,
-      message: 'Thank you for subscribing!',
+      message: t('newsletterSuccess'),
     };
   } catch (error) {
     logger.error('Newsletter subscription error', error);
     return {
       success: false,
-      message: 'Something went wrong. Please try again.',
+      message: t('newsletterError'),
     };
   }
 }

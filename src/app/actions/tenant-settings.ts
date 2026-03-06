@@ -6,6 +6,7 @@ import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-sessio
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
 import { createTenantService } from '@/services/tenant.service';
 import { createAuditService } from '@/services/audit.service';
+import { getTranslations } from 'next-intl/server';
 
 /**
  * Update tenant settings.
@@ -14,6 +15,7 @@ import { createAuditService } from '@/services/audit.service';
  * to prevent unauthorized cross-tenant modifications (IDOR prevention).
  */
 export async function actionUpdateTenantSettings(formData: FormData) {
+  const t = await getTranslations('errors');
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
     const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
@@ -52,7 +54,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
 
     const parseResult = updateTenantSettingsSchema.safeParse(rawData);
     if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      const firstError = parseResult.error.issues[0]?.message ?? t('invalidData');
       return { success: false, error: firstError };
     }
 
@@ -83,6 +85,6 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     }
 
     logger.error('Error updating tenant settings', error);
-    return { success: false, error: 'Une erreur est survenue lors de la mise à jour.' };
+    return { success: false, error: t('settingsUpdateError') };
   }
 }

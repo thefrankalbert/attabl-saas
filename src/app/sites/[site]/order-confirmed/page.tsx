@@ -170,7 +170,7 @@ function OrderConfirmedContent() {
           {order.table_number && (
             <div className="px-5 py-3 border-b border-neutral-100 flex items-center gap-2">
               <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">
-                Table
+                {t('tableLabel')}
               </span>
               <span className="text-sm font-black text-neutral-900 font-mono">
                 {order.table_number}
@@ -201,7 +201,7 @@ function OrderConfirmedContent() {
           <div className="px-5 py-4 bg-neutral-50/50 border-t border-neutral-100">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                Total
+                {t('total')}
               </span>
               <span className="text-xl font-black text-neutral-900">
                 {formatDisplayPrice(order.total)}

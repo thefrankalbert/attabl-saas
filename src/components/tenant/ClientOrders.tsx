@@ -81,7 +81,7 @@ export default function ClientOrders({
   const t = useTranslations('tenant');
   const locale = useLocale();
   const dateLocale = locale.startsWith('fr') ? fr : undefined;
-  const lang = locale.startsWith('en') ? 'en' : 'fr';
+
   const router = useRouter();
   const { addToCart, clearCart } = useCart();
   const { formatDisplayPrice } = useDisplayCurrency();
@@ -372,7 +372,7 @@ export default function ClientOrders({
                           ) : (
                             <>
                               <Pencil className="w-4 h-4" />
-                              {lang === 'fr' ? 'Modifier la commande' : 'Edit order'}
+                              {t('editOrder')}
                               <span className="ml-1 text-xs opacity-75 font-mono">
                                 {remainingMin}:{remainingSec.toString().padStart(2, '0')}
                               </span>

@@ -85,25 +85,19 @@ afterEach(() => {
 describe('ClientSettings', () => {
   // ─── Rendering ──────────────────────────────────────
 
-  it('renders the header with title in French', () => {
+  it('renders the header with settings title', () => {
     renderSettings();
-    expect(screen.getByText('Paramètres')).toBeInTheDocument();
+    expect(screen.getByText('settingsTitle')).toBeInTheDocument();
   });
 
-  it('renders the header with title in English', () => {
-    mockLocale = 'en-US';
+  it('renders the Preferences section label', () => {
     renderSettings();
-    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('preferencesSection')).toBeInTheDocument();
   });
 
-  it('renders the Préférences section label', () => {
+  it('renders the Support section label', () => {
     renderSettings();
-    expect(screen.getByText('Préférences')).toBeInTheDocument();
-  });
-
-  it('renders the Support & Infos section label', () => {
-    renderSettings();
-    expect(screen.getByText('Support & Infos')).toBeInTheDocument();
+    expect(screen.getByText('supportSection')).toBeInTheDocument();
   });
 
   it('renders version footer', () => {
@@ -119,15 +113,14 @@ describe('ClientSettings', () => {
     expect(screen.getByText('EN')).toBeInTheDocument();
   });
 
-  it('shows "Français" subtitle when locale is fr', () => {
+  it('shows language label', () => {
     renderSettings();
-    expect(screen.getByText('Français')).toBeInTheDocument();
+    expect(screen.getByText('languageLabel')).toBeInTheDocument();
   });
 
-  it('shows "English" subtitle when locale is en', () => {
-    mockLocale = 'en-US';
+  it('shows current language subtitle', () => {
     renderSettings();
-    expect(screen.getByText('English')).toBeInTheDocument();
+    expect(screen.getByText('currentLanguage')).toBeInTheDocument();
   });
 
   it('sets cookie and reloads when clicking EN', () => {
@@ -189,51 +182,43 @@ describe('ClientSettings', () => {
 
   it('renders notifications row', () => {
     renderSettings();
-    expect(screen.getByText('Notifications')).toBeInTheDocument();
+    expect(screen.getByText('notificationsLabel')).toBeInTheDocument();
   });
 
-  it('shows notification status text in French by default', () => {
+  it('shows notification status text', () => {
     renderSettings();
-    // In happy-dom, Notification API may not exist → "Non supportées"
-    // In a real browser with Notification API → "Désactivées"
-    const statusEl = screen.getByText(/Désactivées|Non supportées/);
-    expect(statusEl).toBeInTheDocument();
-  });
-
-  it('shows notification status text in English by default', () => {
-    mockLocale = 'en-US';
-    renderSettings();
-    const statusEl = screen.getByText(/Disabled|Not supported/);
+    // Mock returns translation keys — happy-dom may not have Notification API
+    const statusEl = screen.getByText(/notificationsDisabled|notificationsNotSupported/);
     expect(statusEl).toBeInTheDocument();
   });
 
   // ─── Privacy Modal ──────────────────────────────────
 
-  it('renders Confidentialité button in French', () => {
+  it('renders privacy policy button', () => {
     renderSettings();
-    expect(screen.getByText('Confidentialité')).toBeInTheDocument();
+    expect(screen.getByText('privacyPolicy')).toBeInTheDocument();
   });
 
   it('opens privacy modal on click', () => {
     renderSettings();
-    const privacyButton = screen.getByText('Confidentialité').closest('button');
+    const privacyButton = screen.getByText('privacyPolicy').closest('button');
     fireEvent.click(privacyButton!);
 
-    expect(screen.getByText('Collecte des données')).toBeInTheDocument();
-    expect(screen.getByText('Utilisation')).toBeInTheDocument();
-    expect(screen.getByText('Stockage')).toBeInTheDocument();
+    expect(screen.getByText('dataCollectionTitle')).toBeInTheDocument();
+    expect(screen.getByText('usageTitle')).toBeInTheDocument();
+    expect(screen.getByText('storageTitle')).toBeInTheDocument();
   });
 
   it('shows tenant name in privacy modal footer', () => {
     renderSettings();
-    fireEvent.click(screen.getByText('Confidentialité').closest('button')!);
+    fireEvent.click(screen.getByText('privacyPolicy').closest('button')!);
     expect(screen.getByText('Le Gourmet • privacy@attabl.com')).toBeInTheDocument();
   });
 
   it('closes privacy modal with X button', () => {
     renderSettings();
-    fireEvent.click(screen.getByText('Confidentialité').closest('button')!);
-    expect(screen.getByText('Collecte des données')).toBeInTheDocument();
+    fireEvent.click(screen.getByText('privacyPolicy').closest('button')!);
+    expect(screen.getByText('dataCollectionTitle')).toBeInTheDocument();
 
     // Find X close buttons — privacy modal has one
     const closeButtons = screen.getAllByRole('button');
@@ -245,28 +230,26 @@ describe('ClientSettings', () => {
 
   // ─── About Modal ────────────────────────────────────
 
-  it('renders À propos button with tenant name', () => {
+  it('renders about button with tenant name', () => {
     renderSettings();
-    expect(screen.getByText('À propos')).toBeInTheDocument();
-    // Tenant name appears as subtitle under "À propos"
+    expect(screen.getByText('aboutLabel')).toBeInTheDocument();
+    // Tenant name appears as subtitle under "aboutLabel"
     const aboutItems = screen.getAllByText('Le Gourmet');
     expect(aboutItems.length).toBeGreaterThanOrEqual(1);
   });
 
   it('opens about modal on click', () => {
     renderSettings();
-    const aboutButton = screen.getByText('À propos').closest('button');
+    const aboutButton = screen.getByText('aboutLabel').closest('button');
     fireEvent.click(aboutButton!);
 
-    // Modal shows tenant description
-    expect(
-      screen.getByText(/ATTABL est l'application de menu digital de Le Gourmet/),
-    ).toBeInTheDocument();
+    // Modal shows about title
+    expect(screen.getByText('aboutTitle')).toBeInTheDocument();
   });
 
   it('shows tenant logo in about modal when provided', () => {
     renderSettings();
-    fireEvent.click(screen.getByText('À propos').closest('button')!);
+    fireEvent.click(screen.getByText('aboutLabel').closest('button')!);
 
     const logo = screen.getByAltText('Le Gourmet');
     expect(logo).toBeInTheDocument();
@@ -275,14 +258,14 @@ describe('ClientSettings', () => {
 
   it('does not render logo in about modal when null', () => {
     renderSettings({ tenantLogo: null });
-    fireEvent.click(screen.getByText('À propos').closest('button')!);
+    fireEvent.click(screen.getByText('aboutLabel').closest('button')!);
 
     expect(screen.queryByAltText('Le Gourmet')).not.toBeInTheDocument();
   });
 
   it('shows "Powered by ATTABL" in about modal', () => {
     renderSettings();
-    fireEvent.click(screen.getByText('À propos').closest('button')!);
+    fireEvent.click(screen.getByText('aboutLabel').closest('button')!);
     expect(screen.getByText(/Powered by ATTABL/)).toBeInTheDocument();
   });
 
@@ -306,38 +289,17 @@ describe('ClientSettings', () => {
     expect(main!.style.overflow).toBe('hidden');
   });
 
-  // ─── English locale ─────────────────────────────────
+  // ─── Translation keys used consistently ─────────────
 
-  it('renders all labels in English when locale is en', () => {
-    mockLocale = 'en-US';
+  it('renders all key labels via translation keys', () => {
     renderSettings();
 
-    expect(screen.getByText('Settings')).toBeInTheDocument();
-    expect(screen.getByText('Preferences')).toBeInTheDocument();
-    expect(screen.getByText('Support & Info')).toBeInTheDocument();
-    expect(screen.getByText('Language')).toBeInTheDocument();
-    expect(screen.getByText('Currency')).toBeInTheDocument();
-    expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
-    expect(screen.getByText('About')).toBeInTheDocument();
-  });
-
-  it('renders about modal text in English', () => {
-    mockLocale = 'en-US';
-    renderSettings();
-    fireEvent.click(screen.getByText('About').closest('button')!);
-
-    expect(
-      screen.getByText(/ATTABL is the digital menu application for Le Gourmet/),
-    ).toBeInTheDocument();
-  });
-
-  it('renders privacy modal text in English', () => {
-    mockLocale = 'en-US';
-    renderSettings();
-    fireEvent.click(screen.getByText('Privacy Policy').closest('button')!);
-
-    expect(screen.getByText('Data Collection')).toBeInTheDocument();
-    expect(screen.getByText('Usage')).toBeInTheDocument();
-    expect(screen.getByText('Storage')).toBeInTheDocument();
+    expect(screen.getByText('settingsTitle')).toBeInTheDocument();
+    expect(screen.getByText('preferencesSection')).toBeInTheDocument();
+    expect(screen.getByText('supportSection')).toBeInTheDocument();
+    expect(screen.getByText('languageLabel')).toBeInTheDocument();
+    expect(screen.getByText('currencyLabel')).toBeInTheDocument();
+    expect(screen.getByText('privacyPolicy')).toBeInTheDocument();
+    expect(screen.getByText('aboutLabel')).toBeInTheDocument();
   });
 });

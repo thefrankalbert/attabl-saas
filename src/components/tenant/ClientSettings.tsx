@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useSyncExternalStore } from 'react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Globe, ChevronRight, Bell, Shield, Info, X, DollarSign } from 'lucide-react';
 import { logger } from '@/lib/logger';
@@ -34,10 +34,10 @@ export default function ClientSettings({
   supportedCurrencies,
 }: ClientSettingsProps) {
   const locale = useLocale();
+  const t = useTranslations('tenant');
   const router = useRouter();
   const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
-  const isFr = locale.startsWith('fr');
-  const lang = isFr ? 'fr' : 'en';
+  const lang = locale.startsWith('fr') ? 'fr' : 'en';
 
   // Use useSyncExternalStore to read browser Notification API without hydration mismatch
   const noopSubscribe = useCallback(() => () => {}, []);
@@ -138,7 +138,7 @@ export default function ClientSettings({
             paddingRight: '24px',
           }}
         >
-          {isFr ? 'Paramètres' : 'Settings'}
+          {t('settingsTitle')}
         </h1>
       </div>
 
@@ -171,7 +171,7 @@ export default function ClientSettings({
                 marginBottom: '10px',
               }}
             >
-              {isFr ? 'Préférences' : 'Preferences'}
+              {t('preferencesSection')}
             </h2>
 
             <div
@@ -215,7 +215,7 @@ export default function ClientSettings({
                   </div>
                   <div>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {isFr ? 'Langue' : 'Language'}
+                      {t('languageLabel')}
                     </p>
                     <p
                       style={{
@@ -226,7 +226,7 @@ export default function ClientSettings({
                         letterSpacing: '0.05em',
                       }}
                     >
-                      {isFr ? 'Français' : 'English'}
+                      {t('currentLanguage')}
                     </p>
                   </div>
                 </div>
@@ -305,7 +305,7 @@ export default function ClientSettings({
                   </div>
                   <div>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {isFr ? 'Devise' : 'Currency'}
+                      {t('currencyLabel')}
                     </p>
                     <p
                       style={{
@@ -316,7 +316,7 @@ export default function ClientSettings({
                         letterSpacing: '0.05em',
                       }}
                     >
-                      {isFr ? 'Affichage des prix' : 'Price display'}
+                      {t('priceDisplay')}
                     </p>
                   </div>
                 </div>
@@ -372,7 +372,7 @@ export default function ClientSettings({
                 marginBottom: '10px',
               }}
             >
-              {isFr ? 'Support & Infos' : 'Support & Info'}
+              {t('supportSection')}
             </h2>
 
             <div
@@ -419,7 +419,7 @@ export default function ClientSettings({
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      Notifications
+                      {t('notificationsLabel')}
                     </p>
                     <p
                       style={{
@@ -431,16 +431,10 @@ export default function ClientSettings({
                       }}
                     >
                       {!notificationsSupported
-                        ? isFr
-                          ? 'Non supportées'
-                          : 'Not supported'
+                        ? t('notificationsNotSupported')
                         : notificationsEnabled
-                          ? isFr
-                            ? 'Activées'
-                            : 'Enabled'
-                          : isFr
-                            ? 'Désactivées'
-                            : 'Disabled'}
+                          ? t('notificationsEnabled')
+                          : t('notificationsDisabled')}
                     </p>
                   </div>
                 </div>
@@ -507,7 +501,7 @@ export default function ClientSettings({
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {isFr ? 'Confidentialité' : 'Privacy Policy'}
+                      {t('privacyPolicy')}
                     </p>
                     <p
                       style={{
@@ -518,7 +512,7 @@ export default function ClientSettings({
                         letterSpacing: '0.05em',
                       }}
                     >
-                      {isFr ? 'Vos données' : 'Your data'}
+                      {t('yourData')}
                     </p>
                   </div>
                 </div>
@@ -560,7 +554,7 @@ export default function ClientSettings({
                   </div>
                   <div style={{ textAlign: 'left' }}>
                     <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {isFr ? 'À propos' : 'About'}
+                      {t('aboutLabel')}
                     </p>
                     <p
                       style={{
@@ -655,7 +649,7 @@ export default function ClientSettings({
                   marginLeft: '32px',
                 }}
               >
-                {isFr ? 'Confidentialité' : 'Privacy'}
+                {t('privacyTitle')}
               </h2>
               <button
                 onClick={() => setShowPrivacyModal(false)}
@@ -690,12 +684,10 @@ export default function ClientSettings({
                       marginBottom: '6px',
                     }}
                   >
-                    {isFr ? 'Collecte des données' : 'Data Collection'}
+                    {t('dataCollectionTitle')}
                   </h3>
                   <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {isFr
-                      ? 'ATTABL collecte uniquement les informations nécessaires au traitement de vos commandes : numéro de table, articles commandés et préférences.'
-                      : 'ATTABL only collects information necessary for processing your orders: table number, ordered items, and preferences.'}
+                    {t('dataCollectionDesc')}
                   </p>
                 </section>
                 <section>
@@ -707,12 +699,10 @@ export default function ClientSettings({
                       marginBottom: '6px',
                     }}
                   >
-                    {isFr ? 'Utilisation' : 'Usage'}
+                    {t('usageTitle')}
                   </h3>
                   <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {isFr
-                      ? 'Vos données servent exclusivement à la commande. Nous ne partageons jamais vos informations avec des tiers.'
-                      : 'Your data is used exclusively for ordering. We never share your information with third parties.'}
+                    {t('usageDesc')}
                   </p>
                 </section>
                 <section>
@@ -724,12 +714,10 @@ export default function ClientSettings({
                       marginBottom: '6px',
                     }}
                   >
-                    {isFr ? 'Stockage' : 'Storage'}
+                    {t('storageTitle')}
                   </h3>
                   <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {isFr
-                      ? 'Les données sont conservées temporairement pour la durée de votre session.'
-                      : 'Data is kept temporarily for the duration of your session.'}
+                    {t('storageDesc')}
                   </p>
                 </section>
               </div>
@@ -811,7 +799,7 @@ export default function ClientSettings({
                   marginLeft: '32px',
                 }}
               >
-                {isFr ? 'À propos' : 'About'}
+                {t('aboutTitle')}
               </h2>
               <button
                 onClick={() => setShowAboutModal(false)}
@@ -876,14 +864,10 @@ export default function ClientSettings({
                     marginBottom: '16px',
                   }}
                 >
-                  {isFr
-                    ? `ATTABL est l'application de menu digital de ${tenantName}.`
-                    : `ATTABL is the digital menu application for ${tenantName}.`}
+                  {t('aboutAppDesc', { name: tenantName })}
                 </p>
                 <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                  {isFr
-                    ? 'Explorez notre carte et commandez directement depuis votre table.'
-                    : 'Explore our menu and order directly from your table.'}
+                  {t('aboutAppSubtext')}
                 </p>
               </div>
               <div style={{ marginTop: '48px', textAlign: 'center' }}>

@@ -9,6 +9,7 @@ import { createPlanEnforcementService } from '@/services/plan-enforcement.servic
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
+import { getTranslations } from 'next-intl/server';
 
 type ActionResponse = {
   success?: boolean;
@@ -19,6 +20,7 @@ type ActionResponse = {
  * Checks if the current user has permission to perform admin actions for a specific tenant.
  */
 async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['owner', 'admin']) {
+  const t = await getTranslations('errors');
   const supabase = await createClient();
   const {
     data: { user },
@@ -26,7 +28,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return { error: 'Non authentifié', user: null, role: null };
+    return { error: t('notAuthenticated'), user: null, role: null };
   }
 
   // Check if user belongs to the tenant and has the required role
@@ -38,7 +40,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
     .single();
 
   if (dbError || !adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
-    return { error: 'Permission refusée', user: null, role: null };
+    return { error: t('permissionDenied'), user: null, role: null };
   }
 
   return { error: null, user, role: adminUser.role as string };
@@ -65,8 +67,10 @@ export async function actionCreateAdminUser(
     full_name: formData.full_name,
     role: formData.role,
   });
+  const t = await getTranslations('errors');
+
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || 'Données invalides' };
+    return { error: parsed.error.issues[0]?.message || t('invalidData') };
   }
 
   const adminClient = createAdminClient();
@@ -85,7 +89,7 @@ export async function actionCreateAdminUser(
       .single();
 
     if (tenantError || !tenant) {
-      return { error: 'Tenant introuvable' };
+      return { error: t('tenantNotFound') };
     }
 
     await planService.canAddAdmin(tenant);
@@ -93,7 +97,7 @@ export async function actionCreateAdminUser(
     if (err instanceof ServiceError) {
       return { error: err.message };
     }
-    return { error: 'Erreur lors de la vérification des limites du plan' };
+    return { error: t('planLimitError') };
   }
 
   // 1. Create Auth User
@@ -109,7 +113,7 @@ export async function actionCreateAdminUser(
   }
 
   if (!authUser.user) {
-    return { error: "Erreur lors de la création de l'utilisateur" };
+    return { error: t('userCreationError') };
   }
 
   // 2. Insert into admin_users linked to tenant
@@ -128,7 +132,7 @@ export async function actionCreateAdminUser(
     // Rollback Auth User
     await adminClient.auth.admin.deleteUser(authUser.user.id);
     logger.error('DB Insert Error:', { error: dbError.message });
-    return { error: 'Erreur lors de la liaison au tenant: ' + dbError.message };
+    return { error: t('tenantLinkError') + dbError.message };
   }
 
   // Fire-and-forget audit log
@@ -175,7 +179,9 @@ export async function actionDeleteAdminUser(
     .eq('tenant_id', tenantId)
     .single();
 
-  if (!targetUser) return { error: 'Utilisateur introuvable' };
+  const t = await getTranslations('errors');
+
+  if (!targetUser) return { error: t('userNotFound') };
 
   // Vérifier si l'utilisateur appartient à d'autres tenants
   const { data: otherTenants } = await adminClient
@@ -235,8 +241,9 @@ export async function actionUpdateAdminUser(
 
   // Validate input with Zod before DB write
   const parsed = updateAdminUserSchema.safeParse(data);
+  const t = await getTranslations('errors');
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message || 'Données invalides' };
+    return { error: parsed.error.issues[0]?.message || t('invalidData') };
   }
 
   const adminClient = createAdminClient();
@@ -285,8 +292,10 @@ export async function actionResetUserPassword(
   } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
+  const t = await getTranslations('errors');
+
   if (!newPassword || newPassword.length < 8) {
-    return { error: 'Le mot de passe doit contenir au moins 8 caractères' };
+    return { error: t('passwordTooShort') };
   }
 
   const adminClient = createAdminClient();
@@ -299,7 +308,7 @@ export async function actionResetUserPassword(
     .eq('tenant_id', tenantId)
     .single();
 
-  if (!targetUser) return { error: 'Utilisateur introuvable' };
+  if (!targetUser) return { error: t('userNotFound') };
 
   const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {
     password: newPassword,
@@ -339,8 +348,10 @@ export async function actionUpdateUserEmail(
   } = await checkPermissions(tenantId, ['owner', 'admin']);
   if (permError) return { error: permError };
 
+  const t = await getTranslations('errors');
+
   if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-    return { error: 'Email invalide' };
+    return { error: t('invalidEmail') };
   }
 
   const adminClient = createAdminClient();
@@ -353,7 +364,7 @@ export async function actionUpdateUserEmail(
     .eq('tenant_id', tenantId)
     .single();
 
-  if (!targetUser) return { error: 'Utilisateur introuvable' };
+  if (!targetUser) return { error: t('userNotFound') };
 
   // Update auth email
   const { error: authError } = await adminClient.auth.admin.updateUserById(targetUser.user_id, {

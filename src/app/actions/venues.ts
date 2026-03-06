@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { ServiceError } from '@/services/errors';
+import { getTranslations } from 'next-intl/server';
 
 type ActionResponse = {
   canCreate?: boolean;
@@ -15,6 +16,7 @@ type ActionResponse = {
  * À appeler depuis le client avant la création d'un nouveau venue.
  */
 export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionResponse> {
+  const t = await getTranslations('errors');
   const supabase = await createClient();
   const {
     data: { user },
@@ -22,7 +24,7 @@ export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionRe
   } = await supabase.auth.getUser();
 
   if (authError || !user) {
-    return { error: 'Non authentifié' };
+    return { error: t('notAuthenticated') };
   }
 
   // Vérifier que l'utilisateur appartient au tenant
@@ -34,7 +36,7 @@ export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionRe
     .single();
 
   if (!adminUser) {
-    return { error: 'Permission refusée' };
+    return { error: t('permissionDenied') };
   }
 
   const adminClient = createAdminClient();
@@ -52,7 +54,7 @@ export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionRe
       .single();
 
     if (tenantError || !tenant) {
-      return { error: 'Tenant introuvable' };
+      return { error: t('tenantNotFound') };
     }
 
     await planService.canAddVenue(tenant);
@@ -61,6 +63,6 @@ export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionRe
     if (err instanceof ServiceError) {
       return { error: err.message };
     }
-    return { error: 'Erreur lors de la vérification des limites du plan' };
+    return { error: t('planLimitError') };
   }
 }

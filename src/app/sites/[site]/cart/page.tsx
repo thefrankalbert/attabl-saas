@@ -422,11 +422,6 @@ export default function CartPage() {
 
         {/* CART ITEMS */}
         <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-neutral-100">
-            <h2 className="text-sm font-bold text-neutral-900">{t('cartSection')}</h2>
-            <p className="text-xs text-neutral-400 mt-0.5">{t('cartAllergyNote')}</p>
-          </div>
-
           <div className="divide-y divide-neutral-100">
             <AnimatePresence mode="popLayout">
               {items.map((item) => {
@@ -449,69 +444,71 @@ export default function CartPage() {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -100 }}
-                    className="px-4 py-3 flex items-start gap-3"
+                    className="px-4 py-3 flex items-center gap-3"
                   >
-                    {/* Quantity badge */}
-                    <span
-                      className="text-sm font-bold min-w-[28px]"
-                      style={{ color: 'var(--tenant-primary)' }}
-                    >
-                      {item.quantity}x
-                    </span>
+                    {/* Quantity controls */}
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => updateQuantity(itemKey, item.quantity - 1)}
+                        className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                      >
+                        <Minus className="w-3.5 h-3.5" />
+                      </button>
+                      <span
+                        className="text-sm font-bold w-6 text-center"
+                        style={{ color: 'var(--tenant-primary)' }}
+                      >
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(itemKey, item.quantity + 1)}
+                        className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
 
-                    {/* Name & controls */}
+                    {/* Name & variant */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-bold text-neutral-900 leading-tight">
+                      <h3 className="text-sm font-medium text-neutral-900 leading-tight truncate">
                         {getTranslatedContent(language, item.name, item.name_en)}
                       </h3>
                       {(optionLabel || variantLabel) && (
-                        <p className="text-xs text-neutral-400 mt-0.5">
+                        <p className="text-xs text-neutral-400 mt-0.5 truncate">
                           {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
                         </p>
                       )}
-
-                      <div className="flex items-center gap-2 mt-2">
-                        <button
-                          onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                          className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-sm font-medium text-neutral-700 w-6 text-center">
-                          {item.quantity}
-                        </span>
-                        <button
-                          onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                          className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={() => removeFromCart(itemKey)}
-                          className="ml-2 text-neutral-300 hover:text-red-500 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
                     </div>
 
-                    {/* Price */}
-                    <span className="text-sm font-bold text-neutral-900 text-right min-w-[70px]">
-                      {resolveAndFormatPrice(item.price * item.quantity, item.prices, currencyCode)}
-                    </span>
+                    {/* Price + delete */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-neutral-900 text-right whitespace-nowrap">
+                        {resolveAndFormatPrice(
+                          item.price * item.quantity,
+                          item.prices,
+                          currencyCode,
+                        )}
+                      </span>
+                      <button
+                        onClick={() => removeFromCart(itemKey)}
+                        className="p-1 text-neutral-300 hover:text-red-500 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </motion.div>
                 );
               })}
             </AnimatePresence>
           </div>
 
-          {/* Notes input — inside cart section */}
+          {/* Notes input */}
           <div className="px-4 py-3 border-t border-neutral-100">
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('specialInstructionsPlaceholder')}
+              placeholder={t('cartNotesPlaceholder')}
               className="w-full text-sm bg-transparent text-neutral-500 placeholder:text-neutral-400 focus:outline-none focus:text-neutral-700 transition-colors"
             />
           </div>
@@ -610,48 +607,6 @@ export default function CartPage() {
           )}
         </AnimatePresence>
 
-        {/* TIP SELECTOR */}
-        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-neutral-900">{t('tip')}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    setTipAmount((prev) =>
-                      prev === TIP_STEP * 2 ? 0 : Math.max(0, prev - TIP_STEP),
-                    )
-                  }
-                  disabled={tipAmount === 0}
-                  className={cn(
-                    'w-8 h-8 rounded-full border flex items-center justify-center transition-all',
-                    tipAmount === 0
-                      ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
-                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 active:scale-95',
-                  )}
-                >
-                  <Minus className="w-4 h-4" />
-                </button>
-                <span className="text-sm font-bold text-neutral-900 min-w-[80px] text-center">
-                  {formatDisplayPrice(tipAmount, currencyCode)}
-                </span>
-                <button
-                  onClick={() =>
-                    setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
-                  }
-                  className="w-8 h-8 rounded-full border flex items-center justify-center transition-all active:scale-95"
-                  style={{
-                    borderColor: 'var(--tenant-primary)',
-                    color: 'var(--tenant-primary)',
-                  }}
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </section>
-
         {/* ORDER SUMMARY */}
         <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
           <div className="px-4 py-3 space-y-3">
@@ -695,20 +650,48 @@ export default function CartPage() {
               </div>
             )}
 
-            {/* Tip (if set) */}
-            {tipAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-neutral-500">{t('tip')}</span>
-                <span className="text-neutral-900 font-medium">
+            {/* Tip */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-neutral-500">{t('tip')}</span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() =>
+                    setTipAmount((prev) =>
+                      prev === TIP_STEP * 2 ? 0 : Math.max(0, prev - TIP_STEP),
+                    )
+                  }
+                  disabled={tipAmount === 0}
+                  className={cn(
+                    'w-7 h-7 rounded-full border flex items-center justify-center transition-all',
+                    tipAmount === 0
+                      ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
+                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 active:scale-95',
+                  )}
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-sm font-bold text-neutral-900 min-w-[60px] text-center">
                   {formatDisplayPrice(tipAmount, currencyCode)}
                 </span>
+                <button
+                  onClick={() =>
+                    setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
+                  }
+                  className="w-7 h-7 rounded-full border flex items-center justify-center transition-all active:scale-95"
+                  style={{
+                    borderColor: 'var(--tenant-primary)',
+                    color: 'var(--tenant-primary)',
+                  }}
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
               </div>
-            )}
+            </div>
 
             {/* Total */}
             <div className="border-t border-neutral-200 pt-3">
               <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-neutral-900">Total</span>
+                <span className="text-base font-bold text-neutral-900">{t('total')}</span>
                 <span className="text-xl font-black text-neutral-900">
                   {formatDisplayPrice(finalTotal, currencyCode)}
                 </span>

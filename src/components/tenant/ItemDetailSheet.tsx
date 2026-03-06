@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Minus, Plus, Utensils, Leaf, Flame, Check, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
@@ -37,7 +37,6 @@ export default function ItemDetailSheet({
   language = 'fr',
 }: ItemDetailSheetProps) {
   const { addToCart } = useCart();
-  const locale = useLocale();
   const t = useTranslations('tenant');
   const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
 

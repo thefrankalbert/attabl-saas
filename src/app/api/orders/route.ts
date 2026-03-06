@@ -11,15 +11,17 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
+  const t = await getTranslations('errors');
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { error: t('rateLimited') },
         { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
@@ -29,7 +31,7 @@ export async function POST(request: Request) {
     const tenantSlug = headersList.get('x-tenant-slug');
 
     if (!tenantSlug) {
-      return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
+      return NextResponse.json({ error: t('tenantNotIdentified') }, { status: 400 });
     }
 
     // 2. Parse and validate input with Zod
@@ -37,16 +39,13 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+      return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
     }
 
     const parseResult = createOrderSchema.safeParse(body);
     if (!parseResult.success) {
       const errors = parseResult.error.issues.map((issue) => issue.message);
-      return NextResponse.json(
-        { error: 'Données de commande invalides', details: errors },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t('invalidOrderData'), details: errors }, { status: 400 });
     }
 
     // 3. Execute order creation via service
@@ -78,7 +77,7 @@ export async function POST(request: Request) {
       const validation = await couponService.validateCoupon(coupon_code, tenantId, validatedTotal);
       if (!validation.valid) {
         return NextResponse.json(
-          { error: validation.error || 'Code promo invalide' },
+          { error: validation.error || t('invalidCoupon') },
           { status: 400 },
         );
       }
@@ -96,7 +95,7 @@ export async function POST(request: Request) {
       .single();
 
     if (tenantError || !tenant) {
-      return NextResponse.json({ error: 'Configuration du tenant non trouvée' }, { status: 404 });
+      return NextResponse.json({ error: t('tenantConfigNotFound') }, { status: 404 });
     }
 
     // 6. Calculate pricing breakdown
@@ -173,7 +172,7 @@ export async function POST(request: Request) {
       orderId: result.orderId,
       orderNumber: result.orderNumber,
       total: result.total,
-      message: 'Commande enregistrée avec succès !',
+      message: t('orderSuccess'),
     });
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -183,6 +182,6 @@ export async function POST(request: Request) {
       );
     }
     logger.error('Order creation error', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: t('serverError') }, { status: 500 });
   }
 }

@@ -39,7 +39,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
               >
                 <Image
                   src={ad.image_url}
-                  alt={`Banner ${index + 1}`}
+                  alt={t('bannerAlt', { index: index + 1 })}
                   fill
                   className="object-cover"
                   priority={index === 0}
@@ -69,7 +69,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
               index === selectedIndex ? 'bg-white w-5' : 'bg-white/50 hover:bg-white/80',
             )}
             onClick={() => emblaApi?.scrollTo(index)}
-            aria-label={`Go to slide ${index + 1}`}
+            aria-label={t('goToSlide', { index: index + 1 })}
           />
         ))}
       </div>

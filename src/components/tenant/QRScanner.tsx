@@ -231,7 +231,9 @@ export default function QRScanner({
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
                     <CheckCircle2 className="w-12 h-12 text-green-400" />
                     {matchedTable && (
-                      <p className="text-green-400 font-bold text-lg mt-2">Table {matchedTable}</p>
+                      <p className="text-green-400 font-bold text-lg mt-2">
+                        {t('tableMatched', { table: matchedTable })}
+                      </p>
                     )}
                   </div>
                 )}
