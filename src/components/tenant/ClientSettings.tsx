@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useSyncExternalStore } from 'react';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Globe, ChevronRight, Bell, Shield, Info, X, DollarSign } from 'lucide-react';
@@ -39,16 +39,20 @@ export default function ClientSettings({
   const isFr = locale.startsWith('fr');
   const lang = isFr ? 'fr' : 'en';
 
-  const [notificationsSupported] = useState(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) return true;
-    return false;
-  });
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      return Notification.permission === 'granted';
-    }
-    return false;
-  });
+  // Use useSyncExternalStore to read browser Notification API without hydration mismatch
+  const noopSubscribe = useCallback(() => () => {}, []);
+  const notificationsSupported = useSyncExternalStore(
+    noopSubscribe,
+    () => 'Notification' in window,
+    () => false,
+  );
+  const browserGranted = useSyncExternalStore(
+    noopSubscribe,
+    () => 'Notification' in window && Notification.permission === 'granted',
+    () => false,
+  );
+  const [userToggled, setUserToggled] = useState<boolean | null>(null);
+  const notificationsEnabled = userToggled ?? browserGranted;
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
 
@@ -73,12 +77,12 @@ export default function ClientSettings({
           window.location.hostname === 'localhost';
         if (!isSecure) return;
         const permission = await Notification.requestPermission();
-        if (permission === 'granted') setNotificationsEnabled(true);
+        if (permission === 'granted') setUserToggled(true);
       } catch (error) {
         logger.error('Notification permission error', error);
       }
     } else {
-      setNotificationsEnabled(false);
+      setUserToggled(false);
     }
   }, [notificationsEnabled, notificationsSupported]);
 
