@@ -470,11 +470,11 @@ export default function CartPage() {
 
                     {/* Name & variant */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-neutral-900 leading-tight truncate">
+                      <h3 className="text-sm font-medium text-neutral-900 leading-tight">
                         {getTranslatedContent(language, item.name, item.name_en)}
                       </h3>
                       {(optionLabel || variantLabel) && (
-                        <p className="text-xs text-neutral-400 mt-0.5 truncate">
+                        <p className="text-xs text-neutral-400 mt-0.5">
                           {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
                         </p>
                       )}
