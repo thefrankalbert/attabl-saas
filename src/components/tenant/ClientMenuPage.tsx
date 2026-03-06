@@ -156,8 +156,11 @@ export default function ClientMenuPage({
 
     const savedTable = localStorage.getItem('attabl_table');
     if (!initialTable && !savedTable) {
-      const timer = setTimeout(() => setIsQRScannerOpen(true), 600);
-      return () => clearTimeout(timer);
+      // Don't auto-open scanner in development — only in production
+      if (process.env.NODE_ENV === 'production') {
+        const timer = setTimeout(() => setIsQRScannerOpen(true), 600);
+        return () => clearTimeout(timer);
+      }
     }
   }, [initialTable]);
 
@@ -977,6 +980,7 @@ export default function ClientMenuPage({
         isOpen={isQRScannerOpen}
         onClose={() => setIsQRScannerOpen(false)}
         onScan={handleQRScan}
+        onManualEntry={() => setIsTablePickerOpen(true)}
         tables={tables}
       />
 

@@ -1870,6 +1870,16 @@
     "toggleFilters": "Alternar filtros / Enfocar búsqueda",
     "modifierNote": "Usa {modifier} como tecla modificadora en tu sistema"
   },
+  "qrScanner": {
+    "title": "Escáner QR",
+    "activating": "Activando cámara\u2026",
+    "placeQR": "Coloque el código QR en el marco",
+    "success": "\u00a1Código escaneado!",
+    "cameraUnavailable": "Cámara no disponible",
+    "cameraHint": "Verifique los permisos en la configuración",
+    "enterManually": "Ingresar mesa",
+    "close": "Cerrar"
+  },
   "installPrompt": {
     "installApp": "Instalar {name}",
     "subtitle": "Acceso rápido y pedidos simplificados",

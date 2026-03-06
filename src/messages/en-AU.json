@@ -1870,6 +1870,16 @@
     "toggleFilters": "Toggle filters / Focus search",
     "modifierNote": "Use {modifier} as the modifier key on your system"
   },
+  "qrScanner": {
+    "title": "QR Scanner",
+    "activating": "Activating camera\u2026",
+    "placeQR": "Place the QR code in the frame",
+    "success": "Code scanned!",
+    "cameraUnavailable": "Camera not available",
+    "cameraHint": "Check permissions in your settings",
+    "enterManually": "Enter table",
+    "close": "Close"
+  },
   "installPrompt": {
     "installApp": "Install {name}",
     "subtitle": "Quick access & easy ordering",
