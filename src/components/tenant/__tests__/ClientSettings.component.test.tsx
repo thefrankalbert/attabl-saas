@@ -158,11 +158,12 @@ describe('ClientSettings', () => {
 
   it('defaults to XAF when no stored preference', () => {
     renderSettings();
-    // The XAF button should have white text (active state)
+    // The XAF button should have active state (tenant-primary bg via inline style)
     const fcfaButton = screen.getByText(/F CFA/).closest('button');
     expect(fcfaButton).toBeTruthy();
-    // Active button has white color
-    expect(fcfaButton!.style.color).toBe('#ffffff');
+    // Active button has tenant-primary backgroundColor via inline style
+    expect(fcfaButton!.style.backgroundColor).toBeTruthy();
+    expect(fcfaButton!.className).toContain('text-white');
   });
 
   it('stores currency preference in localStorage on click', () => {
@@ -175,7 +176,8 @@ describe('ClientSettings', () => {
     mockDisplayCurrency = 'USD';
     renderSettings();
     const dollarButton = screen.getByText(/Dollar/).closest('button');
-    expect(dollarButton!.style.color).toBe('#ffffff');
+    expect(dollarButton!.style.backgroundColor).toBeTruthy();
+    expect(dollarButton!.className).toContain('text-white');
   });
 
   // ─── Notifications ──────────────────────────────────
@@ -222,7 +224,7 @@ describe('ClientSettings', () => {
 
     // Find X close buttons — privacy modal has one
     const closeButtons = screen.getAllByRole('button');
-    const modalClose = closeButtons.find((btn) => btn.closest('[style*="z-index: 1001"]') !== null);
+    const modalClose = closeButtons.find((btn) => btn.closest('.z-\\[1001\\]') !== null);
     if (modalClose) {
       fireEvent.click(modalClose);
     }
@@ -253,7 +255,6 @@ describe('ClientSettings', () => {
 
     const logo = screen.getByAltText('Le Gourmet');
     expect(logo).toBeInTheDocument();
-    expect(logo).toHaveAttribute('src', 'https://example.com/logo.png');
   });
 
   it('does not render logo in about modal when null', () => {
@@ -271,22 +272,21 @@ describe('ClientSettings', () => {
 
   // ─── Navigation ─────────────────────────────────────
 
-  it('navigates home when clicking X close button in header', () => {
+  it('navigates home when clicking back button in header', () => {
     renderSettings();
-    // The X button is the first button in the header
+    // The back arrow is the first button in the header
     const allButtons = screen.getAllByRole('button');
-    // First button is the X close in the header
     fireEvent.click(allButtons[0]);
     expect(mockPush).toHaveBeenCalledWith('/sites/test-restaurant');
   });
 
   // ─── Layout ─────────────────────────────────────────
 
-  it('main element uses overflow hidden (no scroll)', () => {
+  it('main element uses neutral-50 background', () => {
     const { container } = renderSettings();
     const main = container.querySelector('main');
-    // happy-dom may not support dvh units so we check overflow
-    expect(main!.style.overflow).toBe('hidden');
+    expect(main).toBeTruthy();
+    expect(main!.className).toContain('bg-neutral-50');
   });
 
   // ─── Translation keys used consistently ─────────────

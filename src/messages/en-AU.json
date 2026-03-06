@@ -1669,7 +1669,8 @@
     "storageDesc": "Data is kept temporarily for the duration of your session.",
     "aboutTitle": "About",
     "aboutAppDesc": "ATTABL is the digital menu application for {name}.",
-    "aboutAppSubtext": "Explore our menu and order directly from your table."
+    "aboutAppSubtext": "Explore our menu and order directly from your table.",
+    "orderBeingPrepared": "Your order is being prepared"
   },
   "shared": {
     "fileMustBeImage": "File must be an image",

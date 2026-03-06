@@ -3,9 +3,10 @@
 import { useState, useCallback, useSyncExternalStore } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Globe, ChevronRight, Bell, Shield, Info, X, DollarSign } from 'lucide-react';
+import { Globe, ChevronRight, Bell, Shield, Info, X, DollarSign, ArrowLeft } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyContext';
+import { cn } from '@/lib/utils';
 import BottomNav from './BottomNav';
 
 // ─── Types ──────────────────────────────────────────────
@@ -30,7 +31,6 @@ export default function ClientSettings({
   tenantSlug,
   tenantName,
   tenantLogo,
-  currency,
   supportedCurrencies,
 }: ClientSettingsProps) {
   const locale = useLocale();
@@ -89,503 +89,229 @@ export default function ClientSettings({
   // ─── Render ─────────────────────────────────────────────
 
   return (
-    <main
-      style={{
-        height: '100dvh',
-        backgroundColor: '#F7F7F7',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      {/* ─── HEADER ────────────────────────────────── */}
-      <div
-        style={{
-          flexShrink: 0,
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #f3f4f6',
-          padding: '14px 24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-        }}
-      >
-        <button
-          onClick={() => router.push(`/sites/${tenantSlug}`)}
-          style={{
-            padding: '8px',
-            marginLeft: '-8px',
-            color: '#9ca3af',
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <X size={24} strokeWidth={1.5} />
-        </button>
-        <h1
-          style={{
-            fontSize: '16px',
-            fontWeight: 700,
-            color: '#111827',
-            textTransform: 'uppercase',
-            letterSpacing: '0.15em',
-            textAlign: 'center',
-            flex: 1,
-            paddingRight: '24px',
-          }}
-        >
-          {t('settingsTitle')}
-        </h1>
+    <main className="min-h-screen bg-neutral-50 pb-24">
+      {/* ─── HEADER — matching cart page ─────────────── */}
+      <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+          <button
+            onClick={() => router.push(`/sites/${tenantSlug}`)}
+            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1 text-center">
+            <h1 className="text-base font-bold text-neutral-900">{t('settingsTitle')}</h1>
+          </div>
+          <div className="w-9" />
+        </div>
       </div>
 
-      {/* ─── CONTENT (no-scroll, flex distributed) ── */}
-      <div
-        style={{
-          flex: 1,
-          maxWidth: '448px',
-          width: '100%',
-          margin: '0 auto',
-          padding: '20px 24px 0',
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
-          overflow: 'hidden',
-        }}
-      >
-        {/* Top: two sections */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          {/* ── SECTION: PRÉFÉRENCES ──────────────── */}
-          <div>
-            <h2
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                color: '#9ca3af',
-                paddingLeft: '4px',
-                marginBottom: '10px',
-              }}
-            >
-              {t('preferencesSection')}
-            </h2>
+      <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+        {/* ── SECTION: PREFERENCES ──────────────────── */}
+        <div>
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 pl-1 mb-2.5">
+            {t('preferencesSection')}
+          </h2>
 
-            <div
-              style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '24px',
-                border: '1px solid #f3f4f6',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Langue */}
-              <div
-                style={{
-                  padding: '14px 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      backgroundColor: 'rgba(219,234,254,0.5)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Globe
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        color: 'var(--tenant-primary, #002C5F)',
-                      }}
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {t('languageLabel')}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        color: '#9ca3af',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {t('currentLanguage')}
-                    </p>
-                  </div>
-                </div>
-                {/* FR / EN pill */}
+          <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+            {/* Language */}
+            <div className="px-4 py-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
                 <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
                   style={{
-                    display: 'flex',
-                    backgroundColor: '#f3f4f6',
-                    padding: '3px',
-                    borderRadius: '10px',
-                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.06)',
+                    backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 10%, transparent)',
                   }}
                 >
-                  <button
-                    onClick={() => setLanguage('fr')}
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: '5px 11px',
-                      borderRadius: '7px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: lang === 'fr' ? '#ffffff' : 'transparent',
-                      color: lang === 'fr' ? 'var(--tenant-primary, #002C5F)' : '#9ca3af',
-                      boxShadow: lang === 'fr' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    FR
-                  </button>
-                  <button
-                    onClick={() => setLanguage('en')}
-                    style={{
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      padding: '5px 11px',
-                      borderRadius: '7px',
-                      border: 'none',
-                      cursor: 'pointer',
-                      backgroundColor: lang === 'en' ? '#ffffff' : 'transparent',
-                      color: lang === 'en' ? 'var(--tenant-primary, #002C5F)' : '#9ca3af',
-                      boxShadow: lang === 'en' ? '0 1px 2px rgba(0,0,0,0.08)' : 'none',
-                    }}
-                  >
-                    EN
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ height: '1px', backgroundColor: '#f9fafb', margin: '0 20px' }} />
-
-              {/* Devise / Currency */}
-              <div style={{ padding: '14px 20px' }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '14px',
-                    marginBottom: '12px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      backgroundColor: 'rgba(220,252,231,0.5)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <DollarSign
-                      style={{ width: '18px', height: '18px', color: '#16a34a' }}
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {t('currencyLabel')}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        color: '#9ca3af',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {t('priceDisplay')}
-                    </p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  {CURRENCY_OPTIONS.filter(
-                    (c) =>
-                      !supportedCurrencies ||
-                      supportedCurrencies.length <= 1 ||
-                      supportedCurrencies.includes(c.code),
-                  ).map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => handleCurrencyChange(c.code)}
-                      style={{
-                        flex: 1,
-                        padding: '10px 4px',
-                        borderRadius: '12px',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        border:
-                          displayCurrency === c.code
-                            ? '1px solid var(--tenant-primary, #002C5F)'
-                            : '1px solid #f3f4f6',
-                        backgroundColor:
-                          displayCurrency === c.code ? 'var(--tenant-primary, #002C5F)' : '#ffffff',
-                        color: displayCurrency === c.code ? '#ffffff' : '#6b7280',
-                        cursor: 'pointer',
-                        boxShadow:
-                          displayCurrency === c.code ? '0 2px 8px rgba(0,0,0,0.1)' : 'none',
-                      }}
-                    >
-                      <span style={{ marginRight: '4px', opacity: 0.7 }}>{c.flag}</span>
-                      {c.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ── SECTION: SUPPORT & INFOS ─────────── */}
-          <div>
-            <h2
-              style={{
-                fontSize: '11px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.15em',
-                color: '#9ca3af',
-                paddingLeft: '4px',
-                marginBottom: '10px',
-              }}
-            >
-              {t('supportSection')}
-            </h2>
-
-            <div
-              style={{
-                backgroundColor: '#ffffff',
-                borderRadius: '24px',
-                border: '1px solid #f3f4f6',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.04)',
-                overflow: 'hidden',
-              }}
-            >
-              {/* Notifications */}
-              <button
-                onClick={toggleNotifications}
-                disabled={!notificationsSupported}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 20px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: notificationsSupported ? 'pointer' : 'not-allowed',
-                  opacity: notificationsSupported ? 1 : 0.5,
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      backgroundColor: 'rgba(255,237,213,0.5)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Bell
-                      style={{ width: '18px', height: '18px', color: '#f97316' }}
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {t('notificationsLabel')}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        color: '#9ca3af',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {!notificationsSupported
-                        ? t('notificationsNotSupported')
-                        : notificationsEnabled
-                          ? t('notificationsEnabled')
-                          : t('notificationsDisabled')}
-                    </p>
-                  </div>
-                </div>
-                {/* Toggle switch */}
-                <div
-                  style={{
-                    width: '44px',
-                    height: '24px',
-                    borderRadius: '9999px',
-                    padding: '4px',
-                    transition: 'all 0.3s',
-                    backgroundColor: notificationsEnabled
-                      ? 'var(--tenant-primary, #002C5F)'
-                      : '#e5e7eb',
-                    flexShrink: 0,
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '16px',
-                      height: '16px',
-                      backgroundColor: '#ffffff',
-                      borderRadius: '9999px',
-                      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-                      transition: 'transform 0.3s',
-                      transform: notificationsEnabled ? 'translateX(20px)' : 'translateX(0)',
-                    }}
+                  <Globe
+                    className="w-[18px] h-[18px]"
+                    style={{ color: 'var(--tenant-primary)' }}
+                    strokeWidth={1.5}
                   />
                 </div>
-              </button>
-
-              <div style={{ height: '1px', backgroundColor: '#f9fafb', margin: '0 20px' }} />
-
-              {/* Confidentialité */}
-              <button
-                onClick={() => setShowPrivacyModal(true)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 20px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      backgroundColor: 'rgba(243,232,255,0.5)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Shield
-                      style={{ width: '18px', height: '18px', color: '#9333ea' }}
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {t('privacyPolicy')}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        color: '#9ca3af',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {t('yourData')}
-                    </p>
-                  </div>
+                <div>
+                  <p className="text-[13px] font-bold text-neutral-900">{t('languageLabel')}</p>
+                  <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                    {t('currentLanguage')}
+                  </p>
                 </div>
-                <ChevronRight style={{ width: '18px', height: '18px', color: '#d1d5db' }} />
-              </button>
-
-              <div style={{ height: '1px', backgroundColor: '#f9fafb', margin: '0 20px' }} />
-
-              {/* À propos */}
-              <button
-                onClick={() => setShowAboutModal(true)}
-                style={{
-                  width: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  padding: '14px 20px',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div
-                    style={{
-                      width: '36px',
-                      height: '36px',
-                      backgroundColor: 'rgba(219,234,254,0.5)',
-                      borderRadius: '12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Info
-                      style={{ width: '18px', height: '18px', color: '#2563eb' }}
-                      strokeWidth={1.5}
-                    />
-                  </div>
-                  <div style={{ textAlign: 'left' }}>
-                    <p style={{ fontSize: '13px', fontWeight: 700, color: '#111827' }}>
-                      {t('aboutLabel')}
-                    </p>
-                    <p
-                      style={{
-                        fontSize: '10px',
-                        fontWeight: 500,
-                        color: '#9ca3af',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      {tenantName}
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight style={{ width: '18px', height: '18px', color: '#d1d5db' }} />
-              </button>
+              </div>
+              {/* FR / EN pill */}
+              <div className="flex bg-neutral-100 p-0.5 rounded-lg">
+                <button
+                  onClick={() => setLanguage('fr')}
+                  className={cn(
+                    'text-[10px] font-bold px-3 py-1.5 rounded-md transition-all',
+                    lang === 'fr' ? 'bg-white shadow-sm' : 'text-neutral-400',
+                  )}
+                  style={lang === 'fr' ? { color: 'var(--tenant-primary)' } : undefined}
+                >
+                  FR
+                </button>
+                <button
+                  onClick={() => setLanguage('en')}
+                  className={cn(
+                    'text-[10px] font-bold px-3 py-1.5 rounded-md transition-all',
+                    lang === 'en' ? 'bg-white shadow-sm' : 'text-neutral-400',
+                  )}
+                  style={lang === 'en' ? { color: 'var(--tenant-primary)' } : undefined}
+                >
+                  EN
+                </button>
+              </div>
             </div>
-          </div>
+
+            <div className="h-px bg-neutral-100 mx-4" />
+
+            {/* Currency */}
+            <div className="px-4 py-3.5">
+              <div className="flex items-center gap-3.5 mb-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
+                  <DollarSign className="w-[18px] h-[18px] text-emerald-600" strokeWidth={1.5} />
+                </div>
+                <div>
+                  <p className="text-[13px] font-bold text-neutral-900">{t('currencyLabel')}</p>
+                  <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                    {t('priceDisplay')}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {CURRENCY_OPTIONS.filter(
+                  (c) =>
+                    !supportedCurrencies ||
+                    supportedCurrencies.length <= 1 ||
+                    supportedCurrencies.includes(c.code),
+                ).map((c) => (
+                  <button
+                    key={c.code}
+                    onClick={() => handleCurrencyChange(c.code)}
+                    className={cn(
+                      'flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wide transition-all',
+                      displayCurrency === c.code
+                        ? 'text-white shadow-sm'
+                        : 'bg-white border border-neutral-200 text-neutral-500',
+                    )}
+                    style={
+                      displayCurrency === c.code
+                        ? { backgroundColor: 'var(--tenant-primary)' }
+                        : undefined
+                    }
+                  >
+                    <span className="mr-1 opacity-70">{c.flag}</span>
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
         </div>
 
-        {/* Bottom: version */}
-        <div style={{ textAlign: 'center', padding: '12px 0 8px' }}>
-          <p
-            style={{
-              fontSize: '10px',
-              fontWeight: 700,
-              color: '#d1d5db',
-              textTransform: 'uppercase',
-              letterSpacing: '0.25em',
-            }}
-          >
+        {/* ── SECTION: SUPPORT & INFOS ─────────────── */}
+        <div>
+          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400 pl-1 mb-2.5">
+            {t('supportSection')}
+          </h2>
+
+          <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+            {/* Notifications */}
+            <button
+              onClick={toggleNotifications}
+              disabled={!notificationsSupported}
+              className={cn(
+                'w-full px-4 py-3.5 flex items-center justify-between',
+                !notificationsSupported && 'opacity-50 cursor-not-allowed',
+              )}
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
+                  <Bell className="w-[18px] h-[18px] text-orange-500" strokeWidth={1.5} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-neutral-900">
+                    {t('notificationsLabel')}
+                  </p>
+                  <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                    {!notificationsSupported
+                      ? t('notificationsNotSupported')
+                      : notificationsEnabled
+                        ? t('notificationsEnabled')
+                        : t('notificationsDisabled')}
+                  </p>
+                </div>
+              </div>
+              {/* Toggle switch */}
+              <div
+                className="w-11 h-6 rounded-full p-1 transition-colors flex-shrink-0"
+                style={{
+                  backgroundColor: notificationsEnabled ? 'var(--tenant-primary)' : '#e5e7eb',
+                }}
+              >
+                <div
+                  className="w-4 h-4 bg-white rounded-full shadow-sm transition-transform"
+                  style={{
+                    transform: notificationsEnabled ? 'translateX(20px)' : 'translateX(0)',
+                  }}
+                />
+              </div>
+            </button>
+
+            <div className="h-px bg-neutral-100 mx-4" />
+
+            {/* Privacy */}
+            <button
+              onClick={() => setShowPrivacyModal(true)}
+              className="w-full px-4 py-3.5 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
+                  <Shield className="w-[18px] h-[18px] text-purple-600" strokeWidth={1.5} />
+                </div>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-neutral-900">{t('privacyPolicy')}</p>
+                  <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                    {t('yourData')}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-[18px] h-[18px] text-neutral-300" />
+            </button>
+
+            <div className="h-px bg-neutral-100 mx-4" />
+
+            {/* About */}
+            <button
+              onClick={() => setShowAboutModal(true)}
+              className="w-full px-4 py-3.5 flex items-center justify-between"
+            >
+              <div className="flex items-center gap-3.5">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{
+                    backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 10%, transparent)',
+                  }}
+                >
+                  <Info
+                    className="w-[18px] h-[18px]"
+                    style={{ color: 'var(--tenant-primary)' }}
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <div className="text-left">
+                  <p className="text-[13px] font-bold text-neutral-900">{t('aboutLabel')}</p>
+                  <p className="text-[10px] font-medium text-neutral-400 uppercase tracking-wide">
+                    {tenantName}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="w-[18px] h-[18px] text-neutral-300" />
+            </button>
+          </section>
+        </div>
+
+        {/* Version */}
+        <div className="text-center pt-2 pb-4">
+          <p className="text-[10px] font-bold text-neutral-300 uppercase tracking-[0.25em]">
             ATTABL v1.0
           </p>
         </div>
@@ -596,147 +322,43 @@ export default function ClientSettings({
 
       {/* ─── PRIVACY MODAL ───────────────────────── */}
       {showPrivacyModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1001,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="fixed inset-0 z-[1001] flex items-end justify-center">
           <div
             onClick={() => setShowPrivacyModal(false)}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-            }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          <div
-            style={{
-              position: 'relative',
-              backgroundColor: '#ffffff',
-              width: '100%',
-              maxWidth: '512px',
-              maxHeight: '85vh',
-              borderRadius: '32px 32px 0 0',
-              overflow: 'hidden',
-              boxShadow: '0 -4px 24px rgba(0,0,0,0.1)',
-            }}
-          >
-            <div
-              style={{
-                padding: '20px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: '1px solid #f3f4f6',
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  color: '#111827',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.2em',
-                  textAlign: 'center',
-                  flex: 1,
-                  marginLeft: '32px',
-                }}
-              >
+          <div className="relative bg-white w-full max-w-lg max-h-[85vh] rounded-t-2xl overflow-hidden shadow-xl">
+            <div className="px-4 py-4 flex items-center justify-between border-b border-neutral-100">
+              <div className="w-8" />
+              <h2 className="text-sm font-black text-neutral-900 uppercase tracking-widest">
                 {t('privacyTitle')}
               </h2>
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                style={{
-                  padding: '8px',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '9999px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                className="p-2 bg-neutral-50 rounded-full"
               >
-                <X size={18} style={{ color: '#9ca3af' }} />
+                <X className="w-4 h-4 text-neutral-400" />
               </button>
             </div>
-            <div
-              style={{
-                padding: '32px',
-                paddingBottom: '100px',
-                overflowY: 'auto',
-                maxHeight: '75vh',
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <section>
-                  <h3
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#111827',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    {t('dataCollectionTitle')}
-                  </h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {t('dataCollectionDesc')}
-                  </p>
-                </section>
-                <section>
-                  <h3
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#111827',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    {t('usageTitle')}
-                  </h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {t('usageDesc')}
-                  </p>
-                </section>
-                <section>
-                  <h3
-                    style={{
-                      fontSize: '14px',
-                      fontWeight: 700,
-                      color: '#111827',
-                      marginBottom: '6px',
-                    }}
-                  >
-                    {t('storageTitle')}
-                  </h3>
-                  <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
-                    {t('storageDesc')}
-                  </p>
-                </section>
-              </div>
-              <div
-                style={{
-                  paddingTop: '24px',
-                  marginTop: '24px',
-                  borderTop: '1px solid #f9fafb',
-                }}
-              >
-                <p
-                  style={{
-                    fontSize: '10px',
-                    color: '#9ca3af',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.15em',
-                  }}
-                >
+            <div className="p-6 pb-24 overflow-y-auto max-h-[75vh] space-y-5">
+              <section>
+                <h3 className="text-sm font-bold text-neutral-900 mb-1.5">
+                  {t('dataCollectionTitle')}
+                </h3>
+                <p className="text-[13px] text-neutral-500 leading-relaxed">
+                  {t('dataCollectionDesc')}
+                </p>
+              </section>
+              <section>
+                <h3 className="text-sm font-bold text-neutral-900 mb-1.5">{t('usageTitle')}</h3>
+                <p className="text-[13px] text-neutral-500 leading-relaxed">{t('usageDesc')}</p>
+              </section>
+              <section>
+                <h3 className="text-sm font-bold text-neutral-900 mb-1.5">{t('storageTitle')}</h3>
+                <p className="text-[13px] text-neutral-500 leading-relaxed">{t('storageDesc')}</p>
+              </section>
+              <div className="pt-6 mt-6 border-t border-neutral-100">
+                <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-widest">
                   {tenantName} • privacy@attabl.com
                 </p>
               </div>
@@ -747,147 +369,54 @@ export default function ClientSettings({
 
       {/* ─── ABOUT MODAL ─────────────────────────── */}
       {showAboutModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 1001,
-            display: 'flex',
-            alignItems: 'flex-end',
-            justifyContent: 'center',
-          }}
-        >
+        <div className="fixed inset-0 z-[1001] flex items-end justify-center">
           <div
             onClick={() => setShowAboutModal(false)}
-            style={{
-              position: 'absolute',
-              inset: 0,
-              backgroundColor: 'rgba(0,0,0,0.6)',
-              backdropFilter: 'blur(4px)',
-              WebkitBackdropFilter: 'blur(4px)',
-            }}
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          <div
-            style={{
-              position: 'relative',
-              backgroundColor: '#ffffff',
-              width: '100%',
-              maxWidth: '512px',
-              borderRadius: '32px 32px 0 0',
-              overflow: 'hidden',
-              boxShadow: '0 -4px 24px rgba(0,0,0,0.1)',
-            }}
-          >
-            <div
-              style={{
-                padding: '20px 24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                borderBottom: '1px solid #f9fafb',
-              }}
-            >
-              <h2
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 900,
-                  color: '#111827',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.2em',
-                  textAlign: 'center',
-                  flex: 1,
-                  marginLeft: '32px',
-                }}
-              >
+          <div className="relative bg-white w-full max-w-lg rounded-t-2xl overflow-hidden shadow-xl">
+            <div className="px-4 py-4 flex items-center justify-between border-b border-neutral-100">
+              <div className="w-8" />
+              <h2 className="text-sm font-black text-neutral-900 uppercase tracking-widest">
                 {t('aboutTitle')}
               </h2>
               <button
                 onClick={() => setShowAboutModal(false)}
-                style={{
-                  padding: '8px',
-                  backgroundColor: '#f9fafb',
-                  borderRadius: '9999px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
+                className="p-2 bg-neutral-50 rounded-full"
               >
-                <X size={18} style={{ color: '#9ca3af' }} />
+                <X className="w-4 h-4 text-neutral-400" />
               </button>
             </div>
-            <div
-              style={{
-                padding: '40px',
-                paddingBottom: '80px',
-                overflowY: 'auto',
-                maxHeight: '85vh',
-              }}
-            >
-              <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <div className="px-10 py-10 pb-20 overflow-y-auto max-h-[85vh]">
+              <div className="text-center mb-10">
                 {tenantLogo && (
-                  <div
-                    style={{
-                      marginBottom: '24px',
-                      height: '64px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
+                  <div className="mb-6 h-16 flex items-center justify-center">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={tenantLogo}
                       alt={tenantName}
-                      style={{ height: '100%', width: 'auto', objectFit: 'contain' }}
+                      className="h-full w-auto object-contain"
                     />
                   </div>
                 )}
                 <h3
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 900,
-                    color: 'var(--tenant-primary, #002C5F)',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.3em',
-                  }}
+                  className="text-[11px] font-black uppercase tracking-[0.3em]"
+                  style={{ color: 'var(--tenant-primary)' }}
                 >
                   {tenantName}
                 </h3>
               </div>
-              <div style={{ textAlign: 'center', maxWidth: '320px', margin: '0 auto' }}>
-                <p
-                  style={{
-                    fontSize: '15px',
-                    color: '#111827',
-                    fontWeight: 700,
-                    lineHeight: 1.6,
-                    marginBottom: '16px',
-                  }}
-                >
+              <div className="text-center max-w-xs mx-auto">
+                <p className="text-[15px] text-neutral-900 font-bold leading-relaxed mb-4">
                   {t('aboutAppDesc', { name: tenantName })}
                 </p>
-                <p style={{ fontSize: '13px', color: '#6b7280', lineHeight: 1.7 }}>
+                <p className="text-[13px] text-neutral-500 leading-relaxed">
                   {t('aboutAppSubtext')}
                 </p>
               </div>
-              <div style={{ marginTop: '48px', textAlign: 'center' }}>
-                <div
-                  style={{
-                    height: '1px',
-                    background: 'linear-gradient(to right, transparent, #f3f4f6, transparent)',
-                    width: '100%',
-                    marginBottom: '24px',
-                  }}
-                />
-                <p
-                  style={{
-                    fontSize: '9px',
-                    color: '#d1d5db',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.15em',
-                  }}
-                >
+              <div className="mt-12 text-center">
+                <div className="h-px bg-gradient-to-r from-transparent via-neutral-200 to-transparent mb-6" />
+                <p className="text-[9px] text-neutral-300 font-bold uppercase tracking-widest">
                   Powered by ATTABL • v1.0
                 </p>
               </div>
