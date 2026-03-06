@@ -252,44 +252,7 @@ export default function ClientMenuPage({
                     {tenant.name}
                   </h2>
                 </div>
-                <Link
-                  href={`/sites/${tenant.slug}/cart`}
-                  style={{
-                    position: 'relative',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                  }}
-                >
-                  <ShoppingCart style={{ width: '20px', height: '20px' }} />
-                  {totalCartItems > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-4px',
-                        right: '-4px',
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        backgroundColor: '#ef4444',
-                        color: '#fff',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid #fff',
-                      }}
-                    >
-                      {totalCartItems}
-                    </span>
-                  )}
-                </Link>
+                <div style={{ width: '40px' }} />
               </div>
             </div>
           </div>
@@ -344,43 +307,7 @@ export default function ClientMenuPage({
                   {tenant.name}
                 </h1>
               )}
-              <Link
-                href={`/sites/${tenant.slug}/cart`}
-                className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                style={{
-                  width: '40px',
-                  height: '40px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'rgba(255,255,255,0.7)',
-                  textDecoration: 'none',
-                }}
-              >
-                <ShoppingCart className="w-5 h-5" style={{ width: '20px', height: '20px' }} />
-                {totalCartItems > 0 && (
-                  <span
-                    className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center"
-                    style={{
-                      position: 'absolute',
-                      top: '-2px',
-                      right: '-2px',
-                      width: '16px',
-                      height: '16px',
-                      borderRadius: '50%',
-                      backgroundColor: '#ef4444',
-                      color: '#fff',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {totalCartItems}
-                  </span>
-                )}
-              </Link>
+              <div style={{ width: '40px' }} />
             </div>
           </div>
 
