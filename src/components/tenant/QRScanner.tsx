@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Camera, CameraOff, CheckCircle2, Hash } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
 import { Table } from '@/types/admin.types';
 
@@ -19,6 +20,7 @@ interface QRScannerProps {
   isOpen: boolean;
   onClose: () => void;
   onScan: (result: QRScanResult) => void;
+  onManualEntry?: () => void;
   tables?: Table[];
 }
 
@@ -64,7 +66,14 @@ function parseQRData(decodedText: string): QRScanResult {
 }
 
 // ─── Component ──────────────────────────────────────────
-export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScannerProps) {
+export default function QRScanner({
+  isOpen,
+  onClose,
+  onScan,
+  onManualEntry,
+  tables,
+}: QRScannerProps) {
+  const t = useTranslations('qrScanner');
   const scannerRef = useRef<HTMLDivElement>(null);
   const html5QrCodeRef = useRef<InstanceType<typeof import('html5-qrcode').Html5Qrcode> | null>(
     null,
@@ -72,7 +81,6 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
   const hasScannedRef = useRef(false);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Process the decoded QR text
   const processQRCode = useCallback(
@@ -108,13 +116,12 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         try {
           html5QrCodeRef.current.stop().catch(() => {});
         } catch {
-          // stop() throws synchronously if scanner was never started (e.g. camera permission denied)
+          // stop() throws synchronously if scanner was never started
         }
         html5QrCodeRef.current = null;
       }
       setScanStatus('loading');
       setMatchedTable(null);
-      setErrorMessage(null);
       return;
     }
 
@@ -135,7 +142,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
           { facingMode: 'environment' },
           {
             fps: 15,
-            qrbox: { width: 250, height: 250 },
+            qrbox: { width: 220, height: 220 },
             aspectRatio: 1,
           },
           (decodedText: string) => {
@@ -157,10 +164,8 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         setScanStatus('scanning');
       } catch (err) {
         logger.error('Camera error', err);
-        // Null out the ref since the scanner never successfully started
         html5QrCodeRef.current = null;
         setScanStatus('error');
-        setErrorMessage("Impossible d'accéder à la caméra. Vérifiez les permissions.");
       }
     };
 
@@ -184,7 +189,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
     <div className="fixed inset-0 z-50 bg-black">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
-        <h2 className="text-white font-semibold text-lg">Scanner QR</h2>
+        <h2 className="text-white font-semibold text-lg">{t('title')}</h2>
         <button
           onClick={onClose}
           className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
@@ -206,32 +211,34 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         />
 
         {/* Scanner Frame Overlay */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="relative w-72 h-72">
-              {/* Animated corner frames */}
-              <div className="absolute -top-1 -left-1 w-12 h-12 border-t-4 border-l-4 border-amber-500 rounded-tl-xl" />
-              <div className="absolute -top-1 -right-1 w-12 h-12 border-t-4 border-r-4 border-amber-500 rounded-tr-xl" />
-              <div className="absolute -bottom-1 -left-1 w-12 h-12 border-b-4 border-l-4 border-amber-500 rounded-bl-xl" />
-              <div className="absolute -bottom-1 -right-1 w-12 h-12 border-b-4 border-r-4 border-amber-500 rounded-br-xl" />
+        {scanStatus !== 'error' && (
+          <div className="absolute inset-0 pointer-events-none">
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="relative w-56 h-56">
+                {/* Corner frames */}
+                <div className="absolute -top-1 -left-1 w-8 h-8 border-t-3 border-l-3 border-amber-500 rounded-tl-lg" />
+                <div className="absolute -top-1 -right-1 w-8 h-8 border-t-3 border-r-3 border-amber-500 rounded-tr-lg" />
+                <div className="absolute -bottom-1 -left-1 w-8 h-8 border-b-3 border-l-3 border-amber-500 rounded-bl-lg" />
+                <div className="absolute -bottom-1 -right-1 w-8 h-8 border-b-3 border-r-3 border-amber-500 rounded-br-lg" />
 
-              {/* Scanning line animation */}
-              {scanStatus === 'scanning' && (
-                <div className="absolute top-0 left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent animate-[scan_2s_ease-in-out_infinite]" />
-              )}
+                {/* Scanning line animation */}
+                {scanStatus === 'scanning' && (
+                  <div className="absolute top-0 left-2 right-2 h-0.5 bg-gradient-to-r from-transparent via-amber-500 to-transparent animate-[scan_2s_ease-in-out_infinite]" />
+                )}
 
-              {/* Success indicator */}
-              {scanStatus === 'success' && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
-                  <CheckCircle2 className="w-16 h-16 text-green-400" />
-                  {matchedTable && (
-                    <p className="text-green-400 font-bold text-lg mt-2">Table {matchedTable}</p>
-                  )}
-                </div>
-              )}
+                {/* Success indicator */}
+                {scanStatus === 'success' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center bg-green-500/20 rounded-xl animate-[fadeIn_0.3s_ease-out]">
+                    <CheckCircle2 className="w-12 h-12 text-green-400" />
+                    {matchedTable && (
+                      <p className="text-green-400 font-bold text-lg mt-2">Table {matchedTable}</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Bottom Info */}
@@ -239,31 +246,46 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
         <div className="text-center">
           {scanStatus === 'loading' && (
             <div className="flex flex-col items-center gap-3">
-              <Camera className="w-8 h-8 text-white/60 animate-pulse" />
-              <p className="text-white/80 text-sm">Activation de la caméra...</p>
+              <Camera className="w-6 h-6 text-white/60 animate-pulse" />
+              <p className="text-white/70 text-sm">{t('activating')}</p>
             </div>
           )}
 
-          {scanStatus === 'scanning' && (
-            <p className="text-white/80 text-sm">Placez le QR code de votre table dans le cadre</p>
-          )}
+          {scanStatus === 'scanning' && <p className="text-white/70 text-sm">{t('placeQR')}</p>}
 
           {scanStatus === 'success' && (
-            <p className="text-green-400 text-sm font-semibold">✓ Code scanné avec succès !</p>
+            <p className="text-green-400 text-sm font-semibold">{t('success')}</p>
           )}
 
           {scanStatus === 'error' && (
-            <div className="text-center">
-              <div className="flex flex-col items-center gap-3">
-                <AlertCircle className="w-8 h-8 text-red-400" />
-                <p className="text-red-400 text-sm">{errorMessage || 'Erreur lors du scan'}</p>
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center">
+                <CameraOff className="w-7 h-7 text-white/40" />
               </div>
-              <button
-                onClick={onClose}
-                className="mt-4 px-6 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
-              >
-                Fermer
-              </button>
+              <div>
+                <p className="text-white/80 text-sm font-medium">{t('cameraUnavailable')}</p>
+                <p className="text-white/40 text-xs mt-1">{t('cameraHint')}</p>
+              </div>
+              <div className="flex gap-3 mt-1">
+                {onManualEntry && (
+                  <button
+                    onClick={() => {
+                      onClose();
+                      onManualEntry();
+                    }}
+                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2"
+                  >
+                    <Hash className="w-4 h-4" />
+                    {t('enterManually')}
+                  </button>
+                )}
+                <button
+                  onClick={onClose}
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
+                >
+                  {t('close')}
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -278,7 +300,7 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
             opacity: 0.5;
           }
           50% {
-            transform: translateY(280px);
+            transform: translateY(210px);
             opacity: 1;
           }
         }

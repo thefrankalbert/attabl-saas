@@ -1870,6 +1870,16 @@
     "toggleFilters": "Basculer les filtres / Focus recherche",
     "modifierNote": "Utilisez {modifier} comme touche modificateur sur votre système"
   },
+  "qrScanner": {
+    "title": "Scanner QR",
+    "activating": "Activation de la caméra\u2026",
+    "placeQR": "Placez le QR code dans le cadre",
+    "success": "Code scanné !",
+    "cameraUnavailable": "Caméra non disponible",
+    "cameraHint": "Vérifiez les permissions dans les réglages",
+    "enterManually": "Entrer la table",
+    "close": "Fermer"
+  },
   "installPrompt": {
     "installApp": "Installer {name}",
     "subtitle": "Accès rapide & commande simplifiée",
