@@ -13,6 +13,7 @@ interface BeforeInstallPromptEvent extends Event {
 interface InstallPromptProps {
   appName?: string;
   logoUrl?: string;
+  hasFloatingCart?: boolean;
 }
 
 // ─── Storage keys ────────────────────────────────────────
@@ -45,7 +46,11 @@ function useIsIOS(): boolean {
 }
 
 // ─── Component ───────────────────────────────────────────
-export default function InstallPrompt({ appName = 'Attabl', logoUrl }: InstallPromptProps) {
+export default function InstallPrompt({
+  appName = 'Attabl',
+  logoUrl,
+  hasFloatingCart = false,
+}: InstallPromptProps) {
   const t = useTranslations('installPrompt');
   const isStandalone = useIsStandalone();
   const isIOS = useIsIOS();
@@ -131,7 +136,9 @@ export default function InstallPrompt({ appName = 'Attabl', logoUrl }: InstallPr
   if (!show || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div
+      className={`fixed left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom] ${hasFloatingCart ? 'bottom-[140px]' : 'bottom-24'}`}
+    >
       <div className="flex items-center gap-3 p-3">
         {logoUrl ? (
           <Image
