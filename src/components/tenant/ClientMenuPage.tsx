@@ -909,7 +909,11 @@ export default function ClientMenuPage({
         tables={tables}
       />
 
-      <InstallPrompt appName={tenant.name} logoUrl={tenant.logo_url} />
+      <InstallPrompt
+        appName={tenant.name}
+        logoUrl={tenant.logo_url}
+        hasFloatingCart={totalCartItems > 0}
+      />
 
       {/* ═══ ITEM DETAIL SHEET (for featured items) ═══ */}
       <ItemDetailSheet
