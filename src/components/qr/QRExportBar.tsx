@@ -3,6 +3,7 @@
 import { useState, useCallback, type RefObject } from 'react';
 import { Download, Printer, FileImage, FileCode, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/logger';
 import { FeatureGate } from '@/components/qr/FeatureGate';
 import type { QRDesignConfig } from '@/types/qr-design.types';
 
@@ -68,7 +69,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
       pdf.save(buildFilename(tenantSlug, 'pdf'));
     } catch (err) {
-      console.error('[QRExportBar] PDF export failed:', err);
+      logger.error('[QRExportBar] PDF export failed', err);
     } finally {
       setLoading(null);
     }
@@ -96,7 +97,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
       link.href = dataUrl;
       link.click();
     } catch (err) {
-      console.error('[QRExportBar] PNG export failed:', err);
+      logger.error('[QRExportBar] PNG export failed', err);
     } finally {
       setLoading(null);
     }
@@ -112,7 +113,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
     try {
       const svgElement = el.querySelector('svg');
       if (!svgElement) {
-        console.warn('[QRExportBar] No SVG found inside preview');
+        logger.warn('[QRExportBar] No SVG found inside preview');
         return;
       }
 
@@ -128,7 +129,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
 
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('[QRExportBar] SVG export failed:', err);
+      logger.error('[QRExportBar] SVG export failed', err);
     } finally {
       setLoading(null);
     }

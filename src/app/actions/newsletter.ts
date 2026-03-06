@@ -1,16 +1,12 @@
 'use server';
 
 import { createClient } from '@/lib/supabase/server';
-import { z } from 'zod';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { newsletterLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
+import { newsletterSchema } from '@/lib/validations/newsletter.schema';
 
-const schema = z.object({
-  email: z.string().email({ message: 'Invalid email address' }),
-});
-
-export async function subscribeToNewsletter(
+export async function actionSubscribeToNewsletter(
   prevState: { success: boolean; message: string } | null,
   formData: FormData,
 ) {
@@ -25,7 +21,7 @@ export async function subscribeToNewsletter(
   const email = formData.get('email');
 
   // Validate email
-  const validatedFields = schema.safeParse({ email });
+  const validatedFields = newsletterSchema.safeParse({ email });
 
   if (!validatedFields.success) {
     return {

@@ -4,7 +4,7 @@ import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
-import type { Menu } from '@/types/admin.types';
+import type { Announcement, MenuItem } from '@/types/admin.types';
 
 // ─── SEO Metadata ─────────────────────────────────────────
 export async function generateMetadata({
@@ -33,42 +33,16 @@ export async function generateMetadata({
 }
 
 // Types pour les donnees
-interface Category {
-  id: string;
-  name: string;
-  name_en?: string;
-  display_order: number;
-  menu_id?: string;
-}
-
-interface MenuItem {
-  id: string;
-  name: string;
-  name_en?: string;
-  description: string;
-  description_en?: string;
-  price: number;
-  image_url?: string;
-  is_vegetarian?: boolean;
-  is_spicy?: boolean;
-  is_available?: boolean;
-  is_drink?: boolean;
-  category_id: string;
-  category?: Category;
-}
-
 export default async function MenuPage({
   params,
   searchParams,
 }: {
   params: Promise<{ site: string }>;
-  searchParams: Promise<{ table?: string; menu?: string; t?: string; v?: string }>;
+  searchParams: Promise<{ table?: string; t?: string }>;
 }) {
   const { site } = await params;
   const resolvedSearchParams = await searchParams;
   const initialTable = resolvedSearchParams.table || resolvedSearchParams.t || undefined;
-  const initialMenuSlug = resolvedSearchParams.menu || undefined;
-  const initialVenueSlug = resolvedSearchParams.v || undefined;
 
   const headersList = await headers();
   // Use header if available (from middleware), otherwise use route params
@@ -110,8 +84,10 @@ export default async function MenuPage({
     );
   }
 
-  // OPTIMISATION: Requetes paralleles avec Promise.all (~3x plus rapide)
-  const [venuesResult, categoriesResult, menuItemsResult, adsResult, menusResult] =
+  const now = new Date().toISOString();
+
+  // OPTIMISATION: Requetes paralleles avec Promise.all
+  const [venuesResult, categoriesResult, adsResult, announcementResult, featuredResult] =
     await Promise.all([
       // Venues (optionnel)
       supabase
@@ -121,26 +97,13 @@ export default async function MenuPage({
         .eq('is_active', true)
         .order('created_at', { ascending: true }),
 
-      // Categories
+      // Categories (for category grid on home)
       supabase
         .from('categories')
         .select('*')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .order('display_order', { ascending: true }),
-
-      // Menu items avec categorie
-      supabase
-        .from('menu_items')
-        .select(
-          `
-        *,
-        category:categories(id, name, name_en)
-      `,
-        )
-        .eq('tenant_id', tenant.id)
-        .eq('is_available', true)
-        .order('created_at', { ascending: true }),
 
       // Ads / Banners
       supabase
@@ -150,27 +113,33 @@ export default async function MenuPage({
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
 
-      // Menus (cartes) - top-level with children
+      // Active announcement
       supabase
-        .from('menus')
-        .select('*, children:menus!parent_menu_id(*)')
+        .from('announcements')
+        .select('*')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
-        .is('parent_menu_id', null)
-        .order('display_order', { ascending: true }),
+        .lte('start_date', now)
+        .or(`end_date.is.null,end_date.gte.${now}`)
+        .order('created_at', { ascending: false })
+        .limit(1),
+
+      // Featured menu items
+      supabase
+        .from('menu_items')
+        .select('*, category:categories(id, name, name_en), modifiers:item_modifiers(*)')
+        .eq('tenant_id', tenant.id)
+        .eq('is_featured', true)
+        .eq('is_available', true)
+        .order('display_order', { ascending: true })
+        .limit(10),
     ]);
 
   const venues = venuesResult.data;
   const categories = categoriesResult.data;
-  const menuItems = menuItemsResult.data;
   const ads = adsResult.data;
-  const menus = (menusResult.data || []) as Menu[];
-
-  // Grouper les items par categorie
-  const itemsByCategory = (categories || []).map((category: Category) => ({
-    ...category,
-    items: (menuItems || []).filter((item: MenuItem) => item.category_id === category.id),
-  }));
+  const announcement = (announcementResult.data?.[0] as Announcement) || null;
+  const featuredItems = featuredResult.data || [];
 
   // Fetch zones and tables (for TablePicker)
   const [zonesResult, tablesResult] = await Promise.all([
@@ -185,15 +154,13 @@ export default async function MenuPage({
     <ClientMenuPage
       tenant={tenant}
       venues={venues || []}
-      menus={menus}
-      initialMenuSlug={initialMenuSlug}
       initialTable={initialTable}
-      initialVenueSlug={initialVenueSlug}
       categories={categories || []}
-      itemsByCategory={itemsByCategory}
       ads={ads || []}
       zones={zones}
       tables={tables}
+      announcement={announcement}
+      featuredItems={(featuredItems as MenuItem[]) || []}
     />
   );
 }

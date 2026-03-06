@@ -1,20 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { z } from 'zod';
-
-const subscribeSchema = z.object({
-  tenantId: z.string().uuid(),
-  endpoint: z.string().url(),
-  p256dh: z.string().min(1),
-  auth: z.string().min(1),
-});
+import { subscribeSchema } from '@/lib/validations/push-subscription.schema';
+import { pushSubscriptionLimiter, getClientIp } from '@/lib/rate-limit';
 
 /**
  * POST /api/push-subscriptions — Subscribe to push notifications
  */
 export async function POST(request: NextRequest) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await pushSubscriptionLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },
@@ -59,6 +63,16 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    // Rate limiting
+    const deleteIp = getClientIp(request);
+    const { success: deleteAllowed } = await pushSubscriptionLimiter.check(deleteIp);
+    if (!deleteAllowed) {
+      return NextResponse.json(
+        { error: 'Too many requests' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     const supabase = await createClient();
     const {
       data: { user },

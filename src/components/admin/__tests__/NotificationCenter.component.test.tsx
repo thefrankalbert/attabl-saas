@@ -41,6 +41,15 @@ vi.mock('next-intl', () => ({
   },
 }));
 
+// ─── requestAnimationFrame mock (happy-dom doesn't fire callbacks) ───
+
+beforeEach(() => {
+  vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+    cb(0);
+    return 0;
+  });
+});
+
 // ─── Helpers ────────────────────────────────────────────
 
 function makeNotification(overrides: Partial<Notification> = {}): Notification {

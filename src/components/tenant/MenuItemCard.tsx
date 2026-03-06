@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
+import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -18,16 +19,6 @@ interface MenuItemCardProps {
   currency?: string;
   onOpenDetail?: () => void;
 }
-
-const formatPrice = (price: number, currency: string = 'XOF', locale: string = 'fr-FR') => {
-  if (currency === 'XOF' || currency === 'XAF') {
-    return `${price.toLocaleString(locale)} F`;
-  }
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currency,
-  }).format(price);
-};
 
 const getTranslatedContent = (language: string, fr: string, en?: string | null) => {
   return language === 'en' && en ? en : fr;
@@ -46,6 +37,7 @@ export default function MenuItemCard({
   const { items } = useCartData();
   const locale = useLocale();
   const tt = useTranslations('tenant');
+  const { resolveAndFormatPrice } = useDisplayCurrency();
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -113,6 +105,7 @@ export default function MenuItemCard({
       name: item.name,
       name_en: item.name_en ?? undefined,
       price: currentPrice,
+      prices: item.prices,
       image_url: item.image_url,
       quantity: 1,
       category_id: item.category_id,
@@ -125,6 +118,7 @@ export default function MenuItemCard({
             name_fr: selectedVariant.variant_name_fr,
             name_en: selectedVariant.variant_name_en,
             price: selectedVariant.price,
+            prices: selectedVariant.prices,
           }
         : undefined,
     };
@@ -150,31 +144,66 @@ export default function MenuItemCard({
   return (
     <div
       onClick={onOpenDetail}
-      className={cn(
-        'group py-4 px-4 flex items-start gap-4 relative transition-all duration-150 active:scale-[0.99] select-none cursor-pointer hover:bg-neutral-50/30',
-        isUnavailable && 'opacity-50',
-        isAnimating && 'scale-[0.97]',
-      )}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '16px',
+        position: 'relative',
+        padding: '16px',
+        cursor: 'pointer',
+        borderBottom: '1px solid #f5f5f5',
+        opacity: isUnavailable ? 0.5 : 1,
+      }}
     >
       {/* TEXT CONTENT — Left */}
-      <div className="flex-1 min-w-0">
-        <div className="flex items-start gap-1.5 mb-1">
-          <h3 className="text-[15px] font-semibold text-neutral-900 leading-tight line-clamp-2">
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px' }}>
+          <h3
+            style={{
+              fontSize: '15px',
+              fontWeight: 600,
+              color: '#171717',
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+            }}
+          >
             {getTranslatedContent(language, item.name, item.name_en)}
           </h3>
-          <div className="flex gap-1 flex-shrink-0 mt-0.5">
-            {item.is_vegetarian && <Leaf className="w-3 h-3 text-green-500" />}
-            {item.is_spicy && <Flame className="w-3 h-3 text-red-500" />}
+          <div style={{ display: 'flex', gap: '4px', flexShrink: 0, marginTop: '2px' }}>
+            {item.is_vegetarian && (
+              <Leaf style={{ width: '12px', height: '12px', color: '#22c55e' }} />
+            )}
+            {item.is_spicy && <Flame style={{ width: '12px', height: '12px', color: '#ef4444' }} />}
           </div>
         </div>
 
-        <p className="text-[13px] text-neutral-500 leading-snug line-clamp-2 mb-2">
+        <p
+          style={{
+            fontSize: '13px',
+            color: '#737373',
+            lineHeight: 1.4,
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 2,
+            WebkitBoxOrient: 'vertical',
+            marginBottom: '8px',
+          }}
+        >
           {getTranslatedContent(language, item.description || '', item.description_en)}
         </p>
 
-        <div className="flex items-center gap-2 mt-auto">
-          <span className="text-base font-bold" style={{ color: 'var(--tenant-primary)' }}>
-            {currentPrice > 0 ? formatPrice(currentPrice, currency, locale) : tt('included')}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: '#C5A065' }}>
+            {currentPrice > 0
+              ? resolveAndFormatPrice(
+                  currentPrice,
+                  selectedVariant?.prices || item.prices,
+                  currency,
+                )
+              : tt('included')}
           </span>
         </div>
 
@@ -220,7 +249,8 @@ export default function MenuItemCard({
                         : undefined
                     }
                   >
-                    {getVariantName(variant)} — {formatPrice(variant.price, currency, locale)}
+                    {getVariantName(variant)} —{' '}
+                    {resolveAndFormatPrice(variant.price, variant.prices, currency)}
                   </button>
                 ))}
               </div>
@@ -230,40 +260,84 @@ export default function MenuItemCard({
       </div>
 
       {/* IMAGE SECTION — Right (with floating +/- on corner) */}
-      <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24">
-        <div className="w-full h-full rounded-lg overflow-hidden bg-neutral-50 border border-neutral-100 flex items-center justify-center">
+      <div style={{ position: 'relative', flexShrink: 0, width: '80px', height: '80px' }}>
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            backgroundColor: '#fafafa',
+            border: '1px solid #f5f5f5',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
           {hasValidImage ? (
             <Image
               src={item.image_url!}
               alt={item.name}
               fill
-              sizes="(max-width: 640px) 80px, 96px"
+              sizes="80px"
               className="object-cover !relative"
+              style={{ objectFit: 'cover' }}
               onError={() => setImageError(true)}
               priority={priority}
             />
           ) : isDrinkCategory ? (
-            <Martini className="w-6 h-6 text-neutral-300" />
+            <Martini style={{ width: '24px', height: '24px', color: '#d4d4d4' }} />
           ) : (
-            <Utensils className="w-6 h-6 text-neutral-300" />
+            <Utensils style={{ width: '24px', height: '24px', color: '#d4d4d4' }} />
           )}
         </div>
 
         {/* Floating add/counter on bottom-right of image */}
-        <div className="absolute -bottom-1 -right-1" onClick={(e) => e.stopPropagation()}>
+        <div
+          style={{ position: 'absolute', bottom: '-4px', right: '-4px' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {cartItem ? (
-            <div className="flex items-center bg-white rounded-full shadow-md border border-neutral-200 p-0.5">
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                backgroundColor: '#fff',
+                borderRadius: '9999px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                border: '1px solid #e5e5e5',
+                padding: '2px',
+              }}
+            >
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-50 active:scale-90 transition-all"
-                style={{ color: 'var(--tenant-primary)' }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--tenant-primary)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
-                <Minus className="w-4 h-4" strokeWidth={2.5} />
+                <Minus style={{ width: '16px', height: '16px' }} strokeWidth={2.5} />
               </button>
-              <span className="text-[13px] font-bold text-neutral-900 w-6 text-center">
+              <span
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  color: '#171717',
+                  width: '24px',
+                  textAlign: 'center',
+                }}
+              >
                 {cartItem.quantity}
               </span>
               <button
@@ -271,10 +345,20 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-neutral-50 active:scale-90 transition-all"
-                style={{ color: 'var(--tenant-primary)' }}
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--tenant-primary)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                }}
               >
-                <Plus className="w-4 h-4" strokeWidth={2.5} />
+                <Plus style={{ width: '16px', height: '16px' }} strokeWidth={2.5} />
               </button>
             </div>
           ) : (
@@ -284,13 +368,21 @@ export default function MenuItemCard({
                 handleAdd();
               }}
               disabled={isUnavailable}
-              className={cn(
-                'w-10 h-10 rounded-full bg-white border-2 border-neutral-100 flex items-center justify-center shadow-md active:scale-90 transition-all',
-                isAnimating && 'scale-110',
-              )}
-              style={{ color: 'var(--tenant-primary)' }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                backgroundColor: '#fff',
+                border: '2px solid #f5f5f5',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                cursor: 'pointer',
+                color: 'var(--tenant-primary)',
+              }}
             >
-              <Plus className="w-5 h-5" strokeWidth={2.5} />
+              <Plus style={{ width: '20px', height: '20px' }} strokeWidth={2.5} />
             </button>
           )}
         </div>
@@ -298,8 +390,29 @@ export default function MenuItemCard({
 
       {/* Unavailable overlay */}
       {isUnavailable && (
-        <div className="absolute inset-0 bg-white/40 flex items-center justify-center pointer-events-none">
-          <span className="bg-neutral-900/80 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded">
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundColor: 'rgba(255,255,255,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'none',
+          }}
+        >
+          <span
+            style={{
+              backgroundColor: 'rgba(23,23,23,0.8)',
+              color: '#fff',
+              fontSize: '10px',
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              padding: '4px 8px',
+              borderRadius: '4px',
+            }}
+          >
             {tt('unavailable')}
           </span>
         </div>

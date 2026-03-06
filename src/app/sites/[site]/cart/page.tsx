@@ -2,6 +2,7 @@
 
 import { useCart } from '@/contexts/CartContext';
 import { useTenant } from '@/contexts/TenantContext';
+import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import {
   Plus,
   Minus,
@@ -24,6 +25,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import BottomNav from '@/components/tenant/BottomNav';
 
 // ─── Types ───────────────────────────────────────────────────
 interface UpsellItem {
@@ -31,6 +33,7 @@ interface UpsellItem {
   name: string;
   name_en?: string;
   price: number;
+  prices?: Record<string, number> | null;
   image_url?: string;
   category_name?: string;
 }
@@ -44,12 +47,7 @@ interface CartRecommendation {
 // ─── Helpers ─────────────────────────────────────────────────
 const TIP_STEP = 500;
 
-const formatPrice = (price: number, currency: string = 'XAF', locale: string = 'fr-FR') => {
-  if (currency === 'XOF' || currency === 'XAF') {
-    return `${price.toLocaleString(locale)} F`;
-  }
-  return new Intl.NumberFormat(locale, { style: 'currency', currency }).format(price);
-};
+// formatPrice is now handled by useDisplayCurrency().formatDisplayPrice
 
 const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
   return lang === 'en' && en ? en : fr;
@@ -90,11 +88,12 @@ export default function CartPage() {
     currencyCode,
   } = useCart();
   const { slug: tenantSlug, tenantId } = useTenant();
+  const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
   const t = useTranslations('tenant');
   const locale = useLocale();
   const router = useRouter();
   const language = locale.startsWith('en') ? 'en' : 'fr';
-  const menuPath = `/sites/${tenantSlug}`;
+  const menuPath = `/sites/${tenantSlug}/menu`;
 
   // States
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -209,7 +208,7 @@ export default function CartPage() {
         const { data: categories } = await supabase
           .from('categories')
           .select('id, name')
-          .eq('restaurant_id', currentRestaurantId)
+          .eq('tenant_id', currentRestaurantId)
           .or(categoryFilter);
 
         if (!categories || categories.length === 0) {
@@ -291,22 +290,21 @@ export default function CartPage() {
 
       const response = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-tenant-slug': tenantSlug || '' },
         body: JSON.stringify({
-          tenant_id: tenantId,
-          table_number: tableNumber,
+          tableNumber,
           items: items.map((item) => ({
             id: item.id,
             name: item.name,
-            name_en: item.name_en,
+            name_en: item.name_en ?? undefined,
             price: item.price,
             quantity: item.quantity,
-            category_name: item.category_name,
-            selectedOption: item.selectedOption,
-            selectedVariant: item.selectedVariant,
+            category_name: item.category_name ?? undefined,
+            selectedOption: item.selectedOption ?? undefined,
+            selectedVariant: item.selectedVariant ?? undefined,
           })),
-          notes,
-          tip_amount: tipAmount > 0 ? tipAmount : undefined,
+          notes: notes || undefined,
+          display_currency: displayCurrency,
         }),
       });
 
@@ -370,6 +368,7 @@ export default function CartPage() {
             </button>
           </Link>
         </div>
+        {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
       </main>
     );
   }
@@ -498,7 +497,7 @@ export default function CartPage() {
 
                     {/* Price */}
                     <span className="text-sm font-bold text-neutral-900 text-right min-w-[70px]">
-                      {formatPrice(item.price * item.quantity, currencyCode, locale)}
+                      {resolveAndFormatPrice(item.price * item.quantity, item.prices, currencyCode)}
                     </span>
                   </motion.div>
                 );
@@ -600,7 +599,7 @@ export default function CartPage() {
                               className="text-xs font-black"
                               style={{ color: 'var(--tenant-primary)' }}
                             >
-                              {formatPrice(item.price, currencyCode, locale)}
+                              {resolveAndFormatPrice(item.price, item.prices, currencyCode)}
                             </span>
                           </div>
                         );
@@ -634,7 +633,7 @@ export default function CartPage() {
                   <Minus className="w-4 h-4" />
                 </button>
                 <span className="text-sm font-bold text-neutral-900 min-w-[80px] text-center">
-                  {formatPrice(tipAmount, currencyCode, locale)}
+                  {formatDisplayPrice(tipAmount, currencyCode)}
                 </span>
                 <button
                   onClick={() =>
@@ -660,7 +659,7 @@ export default function CartPage() {
             <div className="flex justify-between text-sm">
               <span className="text-neutral-500">{t('subtotal')}</span>
               <span className="text-neutral-900 font-medium">
-                {formatPrice(subtotal, currencyCode, locale)}
+                {formatDisplayPrice(subtotal, currencyCode)}
               </span>
             </div>
 
@@ -671,7 +670,7 @@ export default function CartPage() {
                   {t('tax')} ({taxRate}%)
                 </span>
                 <span className="text-neutral-900 font-medium">
-                  {formatPrice(taxAmount, currencyCode, locale)}
+                  {formatDisplayPrice(taxAmount, currencyCode)}
                 </span>
               </div>
             )}
@@ -683,7 +682,7 @@ export default function CartPage() {
                   {t('serviceCharge')} ({serviceChargeRate}%)
                 </span>
                 <span className="text-neutral-900 font-medium">
-                  {formatPrice(serviceChargeAmount, currencyCode, locale)}
+                  {formatDisplayPrice(serviceChargeAmount, currencyCode)}
                 </span>
               </div>
             )}
@@ -692,7 +691,7 @@ export default function CartPage() {
             {discountAmount > 0 && (
               <div className="flex justify-between text-sm text-green-600">
                 <span>{t('discount')}</span>
-                <span>-{formatPrice(discountAmount, currencyCode, locale)}</span>
+                <span>-{formatDisplayPrice(discountAmount, currencyCode)}</span>
               </div>
             )}
 
@@ -701,7 +700,7 @@ export default function CartPage() {
               <div className="flex justify-between text-sm">
                 <span className="text-neutral-500">{t('tip')}</span>
                 <span className="text-neutral-900 font-medium">
-                  {formatPrice(tipAmount, currencyCode, locale)}
+                  {formatDisplayPrice(tipAmount, currencyCode)}
                 </span>
               </div>
             )}
@@ -711,7 +710,7 @@ export default function CartPage() {
               <div className="flex justify-between items-center">
                 <span className="text-base font-bold text-neutral-900">Total</span>
                 <span className="text-xl font-black text-neutral-900">
-                  {formatPrice(finalTotal, currencyCode, locale)}
+                  {formatDisplayPrice(finalTotal, currencyCode)}
                 </span>
               </div>
             </div>
@@ -736,6 +735,7 @@ export default function CartPage() {
           </button>
         </div>
       </div>
+      {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
     </main>
   );
 }

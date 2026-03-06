@@ -24,20 +24,20 @@ const orderItemModifierSchema = z.object({
 export const orderItemSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1, 'Le nom est requis').max(200),
-  name_en: z.string().max(200).optional(),
+  name_en: z.string().max(200).nullish(),
   price: z.number().min(0, 'Le prix doit être positif'),
   quantity: z
     .number()
     .int('La quantité doit être un entier')
     .min(1, 'La quantité minimum est 1')
     .max(100, 'La quantité maximum est 100'),
-  category_name: z.string().max(200).optional(),
-  selectedOption: orderItemOptionSchema.optional(),
-  selectedVariant: orderItemVariantSchema.optional(),
+  category_name: z.string().max(200).nullish(),
+  selectedOption: orderItemOptionSchema.nullish(),
+  selectedVariant: orderItemVariantSchema.nullish(),
   // ─── Production upgrade ──────────────────────────────
-  modifiers: z.array(orderItemModifierSchema).max(20).optional(),
-  customerNotes: z.string().max(500).optional(),
-  course: z.enum(['appetizer', 'main', 'dessert', 'drink']).optional(),
+  modifiers: z.array(orderItemModifierSchema).max(20).nullish(),
+  customerNotes: z.string().max(500).nullish(),
+  course: z.enum(['appetizer', 'main', 'dessert', 'drink']).nullish(),
 });
 
 export const createOrderSchema = z.object({
@@ -55,6 +55,7 @@ export const createOrderSchema = z.object({
   delivery_address: z.string().max(500).optional(),
   coupon_code: z.string().max(50).optional(),
   server_id: z.string().uuid().optional(),
+  display_currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
 });
 
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;

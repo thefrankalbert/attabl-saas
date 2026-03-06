@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import ItemsClient from '@/components/admin/ItemsClient';
 import { AlertCircle } from 'lucide-react';
-import type { MenuItem, Category } from '@/types/admin.types';
+import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 export const revalidate = 60;
 
@@ -14,7 +14,7 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
 
   const { data: tenant } = await supabase
     .from('tenants')
-    .select('id')
+    .select('id, currency, supported_currencies')
     .eq('slug', tenantSlug)
     .single();
 
@@ -48,6 +48,12 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
       tenantId={tenant.id}
       initialItems={items}
       initialCategories={(categoriesRes.data || []) as Category[]}
+      currency={(tenant.currency as CurrencyCode) || 'XAF'}
+      supportedCurrencies={
+        (tenant.supported_currencies as CurrencyCode[]) || [
+          (tenant.currency as CurrencyCode) || 'XAF',
+        ]
+      }
     />
   );
 }

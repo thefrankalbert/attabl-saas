@@ -1,17 +1,9 @@
 'use server';
 
-import { z } from 'zod';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
-
-const contactSchema = z.object({
-  name: z.string().min(2, 'Le nom doit contenir au moins 2 caractères'),
-  email: z.string().email('Email invalide'),
-  company: z.string().optional(),
-  date: z.string().optional(),
-  message: z.string().min(10, 'Le message doit contenir au moins 10 caractères'),
-});
+import { contactSchema } from '@/lib/validations/contact.schema';
 
 export type ContactState = {
   errors?: {
@@ -25,7 +17,7 @@ export type ContactState = {
   success?: boolean;
 };
 
-export async function submitContactForm(prevState: ContactState, formData: FormData) {
+export async function actionSubmitContactForm(prevState: ContactState, formData: FormData) {
   // Rate limiting
   const headersList = await headers();
   const ip = getClientIpFromHeaders(headersList);

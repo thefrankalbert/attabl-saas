@@ -3,7 +3,7 @@
 import { ArrowRight, Loader2, CheckCircle2 } from 'lucide-react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { submitContactForm } from '@/app/actions/contact';
+import { actionSubmitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
@@ -31,7 +31,7 @@ function SubmitButton() {
 }
 
 export default function ContactPage() {
-  const [formState, formAction] = useActionState(submitContactForm, {
+  const [formState, formAction] = useActionState(actionSubmitContactForm, {
     success: false,
     message: '',
   });

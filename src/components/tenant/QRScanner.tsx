@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Camera, CheckCircle2, AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { Table } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
@@ -104,7 +105,11 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
   useEffect(() => {
     if (!isOpen) {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
+        try {
+          html5QrCodeRef.current.stop().catch(() => {});
+        } catch {
+          // stop() throws synchronously if scanner was never started (e.g. camera permission denied)
+        }
         html5QrCodeRef.current = null;
       }
       setScanStatus('loading');
@@ -151,7 +156,9 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
 
         setScanStatus('scanning');
       } catch (err) {
-        console.error('Camera error:', err);
+        logger.error('Camera error', err);
+        // Null out the ref since the scanner never successfully started
+        html5QrCodeRef.current = null;
         setScanStatus('error');
         setErrorMessage("Impossible d'accéder à la caméra. Vérifiez les permissions.");
       }
@@ -161,7 +168,11 @@ export default function QRScanner({ isOpen, onClose, onScan, tables }: QRScanner
 
     return () => {
       if (html5QrCodeRef.current) {
-        html5QrCodeRef.current.stop().catch(() => {});
+        try {
+          html5QrCodeRef.current.stop().catch(() => {});
+        } catch {
+          // stop() throws synchronously if scanner was never started
+        }
         html5QrCodeRef.current = null;
       }
     };

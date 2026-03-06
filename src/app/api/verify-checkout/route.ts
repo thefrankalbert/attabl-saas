@@ -2,15 +2,11 @@ import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { z } from 'zod';
+import { verifyCheckoutQuerySchema } from '@/lib/validations/checkout.schema';
 import { verifyCheckoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-
-const querySchema = z.object({
-  session_id: z.string().min(1, 'Session ID requis'),
-});
 
 export async function GET(request: Request) {
   try {
@@ -26,7 +22,7 @@ export async function GET(request: Request) {
 
     // 1. Validate query params
     const { searchParams } = new URL(request.url);
-    const parseResult = querySchema.safeParse({
+    const parseResult = verifyCheckoutQuerySchema.safeParse({
       session_id: searchParams.get('session_id'),
     });
 

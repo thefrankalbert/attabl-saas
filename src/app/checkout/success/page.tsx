@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
+import { logger } from '@/lib/logger';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { CheckCircle, Loader2 } from 'lucide-react';
@@ -30,7 +31,7 @@ function CheckoutSuccessContent() {
         }
         setLoading(false);
       } catch (error) {
-        console.error('Error:', error);
+        logger.error('Checkout verification error', error);
         setLoading(false);
       }
     }

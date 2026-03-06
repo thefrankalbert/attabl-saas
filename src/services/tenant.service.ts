@@ -13,6 +13,7 @@ interface TenantSettings {
   notificationSoundId?: string;
   // Facturation fields
   currency?: CurrencyCode;
+  supportedCurrencies?: CurrencyCode[];
   enableTax?: boolean;
   taxRate?: number;
   enableServiceCharge?: boolean;
@@ -49,6 +50,7 @@ export function createTenantService(supabase: SupabaseClient) {
           notification_sound_id: settings.notificationSoundId ?? null,
           // Facturation fields
           currency: settings.currency ?? 'XAF',
+          supported_currencies: settings.supportedCurrencies ?? [settings.currency ?? 'XAF'],
           enable_tax: settings.enableTax ?? false,
           tax_rate: settings.taxRate ?? 0,
           enable_service_charge: settings.enableServiceCharge ?? false,

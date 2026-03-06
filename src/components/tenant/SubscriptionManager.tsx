@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Check } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { loadStripe } from '@stripe/stripe-js';
@@ -85,7 +86,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
         window.location.href = url;
       }
     } catch (error) {
-      console.error('Erreur lors de la création de la session:', error);
+      logger.error('Erreur lors de la création de la session', error);
       alert("Une erreur est survenue lors de l'initialisation du paiement.");
     } finally {
       setIsLoading(null);

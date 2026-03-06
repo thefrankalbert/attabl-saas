@@ -30,7 +30,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
       <header className="sticky top-0 z-40 bg-white border-b border-neutral-200">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
           <Link
-            href={`/sites/${tenantSlug}`}
+            href={`/sites/${tenantSlug}/menu`}
             className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -47,7 +47,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
         />
       </main>
 
-      <BottomNav tenantSlug={tenantSlug} primaryColor={tenant.primary_color || '#000000'} />
+      <BottomNav tenantSlug={tenantSlug} />
     </div>
   );
 }

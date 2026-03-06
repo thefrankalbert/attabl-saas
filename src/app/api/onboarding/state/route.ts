@@ -4,9 +4,19 @@ import { logger } from '@/lib/logger';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { jsonWithCache } from '@/lib/cache-headers';
+import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await onboardingLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
     const supabase = await createClient();
 
     // 1. Authenticate

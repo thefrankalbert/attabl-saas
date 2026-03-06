@@ -70,6 +70,7 @@ export interface Tenant {
   billing_interval?: 'monthly' | 'yearly';
   // ─── Business config ──────────────────────────────────
   currency?: CurrencyCode;
+  supported_currencies?: CurrencyCode[];
   tax_rate?: number;
   service_charge_rate?: number;
   enable_tax?: boolean;
@@ -141,6 +142,8 @@ export interface Order {
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;
   paid_at?: string;
+  // ─── Currency ─────────────────────────────────────────
+  display_currency?: CurrencyCode;
   // ─── Coupon ────────────────────────────────────────────
   coupon_id?: string;
   // Waiter assignment
@@ -186,6 +189,8 @@ export interface Category {
   created_at: string;
 }
 
+export type MultiCurrencyPrices = Partial<Record<CurrencyCode, number>> | null;
+
 export interface MenuItem {
   id: string;
   tenant_id: string;
@@ -194,6 +199,7 @@ export interface MenuItem {
   description?: string;
   description_en?: string;
   price: number;
+  prices?: MultiCurrencyPrices;
   image_url?: string;
   image_back_url?: string;
   is_available: boolean;
@@ -230,6 +236,7 @@ export interface ItemPriceVariant {
   variant_name_fr: string;
   variant_name_en?: string;
   price: number;
+  prices?: MultiCurrencyPrices;
   display_order: number;
   is_default: boolean;
   created_at: string;
@@ -243,6 +250,7 @@ export interface ItemModifier {
   name: string;
   name_en?: string;
   price: number;
+  prices?: MultiCurrencyPrices;
   is_available: boolean;
   display_order: number;
   created_at: string;

@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { z } from 'zod';
-
-const domainVerifySchema = z.object({
-  domain: z
-    .string()
-    .min(1, 'Domain required')
-    .max(253, 'Domain too long')
-    .regex(
-      /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,
-      'Invalid domain format',
-    ),
-});
+import { domainVerifySchema } from '@/lib/validations/domain.schema';
+import { domainVerifyLimiter, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // 0. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await domainVerifyLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     // 1. Auth check: only authenticated users can verify domains
     const supabase = await createClient();
     const {

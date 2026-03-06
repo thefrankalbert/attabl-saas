@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import {
-  createAdminUserAction,
-  deleteAdminUserAction,
-  updateAdminUserAction,
+  actionCreateAdminUser,
+  actionDeleteAdminUser,
+  actionUpdateAdminUser,
 } from '@/app/actions/admin';
 import { useToast } from '@/components/ui/use-toast';
 import { useTranslations } from 'next-intl';
@@ -254,7 +254,7 @@ export function useUsersData({
 
     setLoading(true);
     try {
-      const result = await createAdminUserAction(tenantId, formData);
+      const result = await actionCreateAdminUser(tenantId, formData);
       if (result.error) throw new Error(result.error);
 
       toast({ title: t('userCreated') });
@@ -275,7 +275,7 @@ export function useUsersData({
     if (!confirm(t('confirmDeleteUser'))) return;
 
     try {
-      const result = await deleteAdminUserAction(tenantId, userId);
+      const result = await actionDeleteAdminUser(tenantId, userId);
       if (result.error) throw new Error(result.error);
 
       setUsers((prev) => prev.filter((u) => u.id !== userId));
@@ -292,7 +292,7 @@ export function useUsersData({
   const handleToggleStatus = async (user: AdminUser) => {
     try {
       const newStatus = !user.is_active;
-      const result = await updateAdminUserAction(tenantId, user.id, { is_active: newStatus });
+      const result = await actionUpdateAdminUser(tenantId, user.id, { is_active: newStatus });
       if (result.error) throw new Error(result.error);
 
       setUsers((prev) => prev.map((u) => (u.id === user.id ? { ...u, is_active: newStatus } : u)));

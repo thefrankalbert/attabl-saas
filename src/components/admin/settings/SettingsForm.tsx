@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
-import { updateTenantSettings } from '@/app/actions/tenant-settings';
+import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
 import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 import { useTranslations } from 'next-intl';
@@ -85,7 +85,11 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
         onSubmit={form.handleSubmit(onSubmit, onValidationError)}
         className="flex flex-col h-full min-h-0"
       >
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as SettingsTab)} className="flex flex-col flex-1 min-h-0">
+        <Tabs
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as SettingsTab)}
+          className="flex flex-col flex-1 min-h-0"
+        >
           <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
             {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
               <TabsTrigger
@@ -159,7 +163,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
                 formData.append('primaryColor', form.getValues('primaryColor'));
                 formData.append('secondaryColor', form.getValues('secondaryColor'));
                 formData.append('customDomain', domain || '');
-                const result = await updateTenantSettings(formData);
+                const result = await actionUpdateTenantSettings(formData);
                 if (!result.success) throw new Error(result.error);
               }}
             />
