@@ -37,7 +37,10 @@ type ModalMode = 'add' | 'edit' | 'adjust' | null;
 
 export default function InventoryClient({ tenantId, currency }: InventoryClientProps) {
   const [searchQuery, setSearchQuery] = useSessionState('inventory:searchQuery', '');
-  const [filterStatus, setFilterStatus] = useSessionState<'all' | 'low' | 'out'>('inventory:filterStatus', 'all');
+  const [filterStatus, setFilterStatus] = useSessionState<'all' | 'low' | 'out'>(
+    'inventory:filterStatus',
+    'all',
+  );
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);

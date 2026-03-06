@@ -32,7 +32,10 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   ];
 
   const [searchQuery, setSearchQuery] = useSessionState('stockHistory:searchQuery', '');
-  const [filterType, setFilterType] = useSessionState<MovementType | 'all'>('stockHistory:filterType', 'all');
+  const [filterType, setFilterType] = useSessionState<MovementType | 'all'>(
+    'stockHistory:filterType',
+    'all',
+  );
 
   // TanStack Query for stock movements
   const { data: movements = [], isLoading: loading } = useStockMovements(tenantId);

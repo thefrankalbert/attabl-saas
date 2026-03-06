@@ -46,11 +46,7 @@ interface SortableRowProps {
   onDelete: (cat: CategoryWithCount) => void;
 }
 
-function SortableRow({
-  cat,
-  onEdit,
-  onDelete,
-}: SortableRowProps) {
+function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
   const {
     attributes,
     listeners,
@@ -90,7 +86,10 @@ function SortableRow({
       <div className="flex-1 min-w-0">
         <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
-      <div className="flex items-center gap-1.5 text-xs text-app-text-muted" title={`${cat.items_count || 0} plats`}>
+      <div
+        className="flex items-center gap-1.5 text-xs text-app-text-muted"
+        title={`${cat.items_count || 0} plats`}
+      >
         <Utensils className="w-3 h-3" />
         <span className="font-medium tabular-nums">{cat.items_count || 0}</span>
       </div>
@@ -261,9 +260,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               <Folder className="w-5 h-5" />
               {t('title')}
-              <span className="text-sm font-normal text-app-text-muted">
-                ({categories.length})
-              </span>
+              <span className="text-sm font-normal text-app-text-muted">({categories.length})</span>
             </h1>
             <Button
               onClick={openNewModal}

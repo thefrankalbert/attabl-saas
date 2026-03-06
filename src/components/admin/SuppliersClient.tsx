@@ -27,7 +27,10 @@ type ModalMode = 'add' | 'edit' | null;
 
 export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
   const [searchQuery, setSearchQuery] = useSessionState('suppliers:searchQuery', '');
-  const [filterActive, setFilterActive] = useSessionState<'all' | 'active' | 'inactive'>('suppliers:filterActive', 'all');
+  const [filterActive, setFilterActive] = useSessionState<'all' | 'active' | 'inactive'>(
+    'suppliers:filterActive',
+    'all',
+  );
 
   // Modal state
   const [modalMode, setModalMode] = useState<ModalMode>(null);

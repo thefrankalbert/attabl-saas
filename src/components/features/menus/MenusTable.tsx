@@ -181,7 +181,13 @@ function MenuRow({
 
       {/* Actions */}
       <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
-        <Button variant="ghost" size="sm" onClick={onAddChild} title={t('addSubMenu')} className="h-8 w-8 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onAddChild}
+          title={t('addSubMenu')}
+          className="h-8 w-8 p-0"
+        >
           <Plus className="w-3.5 h-3.5" />
         </Button>
         <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 w-8 p-0">
@@ -261,10 +267,7 @@ export default function MenusTable({
       {loading && (
         <div className="space-y-1">
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-12 bg-app-card border-b border-app-border animate-pulse"
-            />
+            <div key={i} className="h-12 bg-app-card border-b border-app-border animate-pulse" />
           ))}
         </div>
       )}

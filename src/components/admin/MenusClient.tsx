@@ -112,9 +112,7 @@ export default function MenusClient({
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
               {t('title')}
-              <span className="text-sm font-normal text-app-text-muted ml-2">
-                ({menus.length})
-              </span>
+              <span className="text-sm font-normal text-app-text-muted ml-2">({menus.length})</span>
             </h1>
             <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
@@ -135,7 +133,9 @@ export default function MenusClient({
                   className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t('deleteSelected', { count: selectedIds.size })}</span>
+                  <span className="hidden sm:inline">
+                    {t('deleteSelected', { count: selectedIds.size })}
+                  </span>
                 </Button>
               )}
               <Button
