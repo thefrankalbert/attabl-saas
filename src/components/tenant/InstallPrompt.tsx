@@ -131,7 +131,7 @@ export default function InstallPrompt({ appName = 'Attabl', logoUrl }: InstallPr
   if (!show || isStandalone) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 max-w-sm z-50 bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed bottom-24 left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center gap-3 p-3">
         {logoUrl ? (
           <Image
@@ -147,8 +147,8 @@ export default function InstallPrompt({ appName = 'Attabl', logoUrl }: InstallPr
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-sm truncate">{t('installApp', { name: appName })}</h3>
-          <p className="text-[10px] text-gray-400">{t('subtitle')}</p>
+          <h3 className="font-bold text-sm leading-tight">{t('installApp', { name: appName })}</h3>
+          <p className="text-[10px] text-gray-400 mt-0.5">{t('subtitle')}</p>
         </div>
 
         {isIOS ? (
