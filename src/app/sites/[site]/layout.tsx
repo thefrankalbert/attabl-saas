@@ -43,7 +43,11 @@ export default async function SiteLayout({
         <CartProvider>
           <CurrencyProvider
             tenantCurrency={tenant?.currency || 'XAF'}
-            supportedCurrencies={tenant?.supported_currencies || [tenant?.currency || 'XAF']}
+            supportedCurrencies={
+              ((tenant as Record<string, unknown>)?.supported_currencies as string[]) || [
+                tenant?.currency || 'XAF',
+              ]
+            }
           >
             {/* Synchronous script to switch theme before paint */}
             <script dangerouslySetInnerHTML={{ __html: LIGHT_MODE_SCRIPT }} />
