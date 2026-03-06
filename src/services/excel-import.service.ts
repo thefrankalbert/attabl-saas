@@ -457,7 +457,7 @@ export function createExcelImportService(supabase: SupabaseClient) {
           .eq('tenant_id', tenantId)
           .eq('category_id', categoryId);
 
-        let nextItemOrder = (existingCount ?? 0);
+        let nextItemOrder = existingCount ?? 0;
 
         // Insert menu items for this category
         for (const item of group.items) {

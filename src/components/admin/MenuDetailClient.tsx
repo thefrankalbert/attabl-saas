@@ -54,7 +54,10 @@ export default function MenuDetailClient({
   const [categories, setCategories] = useState<Category[]>(initialCategories);
   const [items, setItems] = useState<MenuItem[]>(initialItems);
   const [loading, setLoading] = useState(false);
-  const [expandedCategories, setExpandedCategories] = useSessionState<Set<string>>('menuDetail:expandedCategories', new Set());
+  const [expandedCategories, setExpandedCategories] = useSessionState<Set<string>>(
+    'menuDetail:expandedCategories',
+    new Set(),
+  );
 
   // Category modal state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -216,9 +219,7 @@ export default function MenuDetailClient({
   const toggleCategoryActive = async (cat: Category) => {
     const newValue = !(cat.is_active ?? true);
     // Optimistic update
-    setCategories((prev) =>
-      prev.map((c) => (c.id === cat.id ? { ...c, is_active: newValue } : c)),
-    );
+    setCategories((prev) => prev.map((c) => (c.id === cat.id ? { ...c, is_active: newValue } : c)));
     const result = await actionToggleCategoryActive(tenantId, cat.id, newValue);
     if (result.error) {
       // Rollback
@@ -238,9 +239,7 @@ export default function MenuDetailClient({
   const toggleItemAvailable = async (item: MenuItem) => {
     const newValue = !item.is_available;
     // Optimistic update
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, is_available: newValue } : i)),
-    );
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_available: newValue } : i)));
     try {
       const { error } = await supabase
         .from('menu_items')
@@ -270,9 +269,7 @@ export default function MenuDetailClient({
     if (isNaN(newPrice) || newPrice < 0 || newPrice === item.price) return;
 
     // Optimistic update
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)),
-    );
+    setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)));
     try {
       const { error } = await supabase
         .from('menu_items')
@@ -282,9 +279,7 @@ export default function MenuDetailClient({
       toast({ title: t('itemSaved') });
     } catch {
       // Rollback
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, price: item.price } : i)),
-      );
+      setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: item.price } : i)));
       toast({ title: t('itemSaveError'), variant: 'destructive' });
     }
   };
@@ -312,17 +307,21 @@ export default function MenuDetailClient({
         is_available: itemFormAvailable,
         image_url: itemFormImageUrl || null,
       };
-      const { error } = await supabase
-        .from('menu_items')
-        .update(payload)
-        .eq('id', editingItem.id);
+      const { error } = await supabase.from('menu_items').update(payload).eq('id', editingItem.id);
       if (error) throw error;
 
       // Optimistic update
       setItems((prev) =>
         prev.map((i) =>
           i.id === editingItem.id
-            ? { ...i, name: payload.name, description: payload.description, price: payload.price, is_available: payload.is_available, image_url: payload.image_url ?? undefined }
+            ? {
+                ...i,
+                name: payload.name,
+                description: payload.description,
+                price: payload.price,
+                is_available: payload.is_available,
+                image_url: payload.image_url ?? undefined,
+              }
             : i,
         ),
       );
@@ -404,24 +403,26 @@ export default function MenuDetailClient({
                 const catItems = getItemsForCategory(cat.id);
                 const isCatActive = cat.is_active ?? true;
                 return (
-                  <div
-                    key={cat.id}
-                    className={cn('space-y-2', !isCatActive && 'opacity-50')}
-                  >
+                  <div key={cat.id} className={cn('space-y-2', !isCatActive && 'opacity-50')}>
                     {/* Category header — click to expand/collapse */}
-                    <div className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
-                      onClick={() => setExpandedCategories((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(cat.id)) next.delete(cat.id);
-                        else next.add(cat.id);
-                        return next;
-                      })}
+                    <div
+                      className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
+                      onClick={() =>
+                        setExpandedCategories((prev) => {
+                          const next = new Set(prev);
+                          if (next.has(cat.id)) next.delete(cat.id);
+                          else next.add(cat.id);
+                          return next;
+                        })
+                      }
                     >
                       <div className="w-9 h-9 bg-app-bg rounded-lg flex items-center justify-center">
-                        <ChevronDown className={cn(
-                          'w-4 h-4 text-app-text-secondary transition-transform duration-200',
-                          !expandedCategories.has(cat.id) && '-rotate-90',
-                        )} />
+                        <ChevronDown
+                          className={cn(
+                            'w-4 h-4 text-app-text-secondary transition-transform duration-200',
+                            !expandedCategories.has(cat.id) && '-rotate-90',
+                          )}
+                        />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-app-text text-sm">{cat.name}</p>
@@ -432,7 +433,10 @@ export default function MenuDetailClient({
                           {t('dishCount', { count: catItems.length })}
                         </span>
                       </div>
-                      <div className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           variant="outline"
                           size="sm"
@@ -571,9 +575,7 @@ export default function MenuDetailClient({
                 <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
               <h3 className="text-base font-bold text-app-text">{t('noCategoriesInMenu')}</h3>
-              <p className="text-sm text-app-text-secondary mt-2">
-                {t('noCategoriesInMenuDesc')}
-              </p>
+              <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesInMenuDesc')}</p>
               <Button onClick={openNewCategoryModal} className="mt-4">
                 {t('createCategory')}
               </Button>

@@ -44,7 +44,10 @@ export function usePOSData(tenantId: string) {
 
   // ─── Filters ────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useSessionState('pos:searchQuery', '');
-  const [selectedCategory, setSelectedCategory] = useSessionState<string>('pos:selectedCategory', 'all');
+  const [selectedCategory, setSelectedCategory] = useSessionState<string>(
+    'pos:selectedCategory',
+    'all',
+  );
 
   // ─── Service type state ─────────────────────────────────
   const [serviceType, setServiceType] = useSessionState<ServiceType>('pos:serviceType', 'dine_in');

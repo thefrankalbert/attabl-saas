@@ -47,16 +47,11 @@ function readStorage<T>(key: string, defaultValue: T): T {
  * @param key - Unique key for this state (namespaced automatically as `attabl:admin:{key}`)
  * @param defaultValue - Default value when no stored value exists
  */
-export function useSessionState<T>(
-  key: string,
-  defaultValue: T
-): [T, Dispatch<SetStateAction<T>>] {
+export function useSessionState<T>(key: string, defaultValue: T): [T, Dispatch<SetStateAction<T>>] {
   const storageKey = `attabl:admin:${key}`;
   const defaultRef = useRef(defaultValue);
 
-  const [state, setStateInternal] = useState<T>(() =>
-    readStorage(storageKey, defaultValue)
-  );
+  const [state, setStateInternal] = useState<T>(() => readStorage(storageKey, defaultValue));
 
   const setState: Dispatch<SetStateAction<T>> = useCallback(
     (action: SetStateAction<T>) => {
@@ -70,7 +65,7 @@ export function useSessionState<T>(
         return next;
       });
     },
-    [storageKey]
+    [storageKey],
   );
 
   // Sync if key changes

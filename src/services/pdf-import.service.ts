@@ -335,7 +335,7 @@ ${pdfText.substring(0, 15000)}
           .eq('tenant_id', tenantId)
           .eq('category_id', categoryId);
 
-        let nextItemOrder = (existingCount ?? 0);
+        let nextItemOrder = existingCount ?? 0;
 
         for (const item of categoryItems) {
           const { error: itemError } = await supabase.from('menu_items').insert({
