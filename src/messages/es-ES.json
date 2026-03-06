@@ -1869,5 +1869,14 @@
     "openPayment": "Abrir pago",
     "toggleFilters": "Alternar filtros / Enfocar búsqueda",
     "modifierNote": "Usa {modifier} como tecla modificadora en tu sistema"
+  },
+  "installPrompt": {
+    "installApp": "Instalar {name}",
+    "subtitle": "Acceso rápido y pedidos simplificados",
+    "install": "Instalar",
+    "howTo": "¿Cómo?",
+    "close": "Cerrar",
+    "iosStep1": "1. Toque Compartir",
+    "iosStep2": "2. Seleccione Añadir a pantalla de inicio"
   }
 }

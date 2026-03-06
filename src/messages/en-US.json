@@ -1870,5 +1870,14 @@
     "openPayment": "Open payment",
     "toggleFilters": "Toggle filters / Focus search",
     "modifierNote": "Use {modifier} as the modifier key on your system"
+  },
+  "installPrompt": {
+    "installApp": "Install {name}",
+    "subtitle": "Quick access & easy ordering",
+    "install": "Install",
+    "howTo": "How?",
+    "close": "Close",
+    "iosStep1": "1. Tap Share",
+    "iosStep2": "2. Select Add to Home Screen"
   }
 }

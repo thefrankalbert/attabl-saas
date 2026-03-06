@@ -1870,5 +1870,14 @@
     "openPayment": "Ouvrir le paiement",
     "toggleFilters": "Basculer les filtres / Focus recherche",
     "modifierNote": "Utilisez {modifier} comme touche modificateur sur votre syst\u00e8me"
+  },
+  "installPrompt": {
+    "installApp": "Installer {name}",
+    "subtitle": "Acc\u00e8s rapide & commande simplifi\u00e9e",
+    "install": "Installer",
+    "howTo": "Comment ?",
+    "close": "Fermer",
+    "iosStep1": "1. Appuyez sur Partager",
+    "iosStep2": "2. S\u00e9lectionnez Sur l'\u00e9cran d'accueil"
   }
 }
