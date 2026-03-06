@@ -63,16 +63,23 @@ function convert(amount: number, from: string, to: string): number {
   return (amount * fromRate) / toRate;
 }
 
+/** Format number with visible thin-space (U+2009) thousands separator */
+function formatWithThinSpace(n: number, decimals = 0): string {
+  const [int, dec] = n.toFixed(decimals).split('.');
+  const withSep = int.replace(/\B(?=(\d{3})+(?!\d))/g, '\u2009');
+  return dec !== undefined ? `${withSep},${dec}` : withSep;
+}
+
 function formatConverted(amount: number, currency: DisplayCurrency): string {
   switch (currency) {
     case 'XAF':
-      return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`;
+      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
     case 'EUR':
-      return `${amount.toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+      return `${formatWithThinSpace(amount, 2)} €`;
     case 'USD':
-      return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+      return `$${formatWithThinSpace(amount, 2)}`;
     default:
-      return `${Math.round(amount).toLocaleString('fr-FR')} FCFA`;
+      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
   }
 }
 

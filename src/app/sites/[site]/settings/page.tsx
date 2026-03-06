@@ -17,7 +17,11 @@ export default async function SettingsPage({ params }: { params: Promise<{ site:
       tenantName={tenant.name}
       tenantLogo={tenant.logo_url || null}
       currency={tenant.currency || 'XAF'}
-      supportedCurrencies={tenant.supported_currencies || [tenant.currency || 'XAF']}
+      supportedCurrencies={
+        ((tenant as Record<string, unknown>).supported_currencies as string[]) || [
+          tenant.currency || 'XAF',
+        ]
+      }
     />
   );
 }
