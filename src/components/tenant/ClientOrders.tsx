@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Loader2, ChevronDown, Pencil } from 'lucide-react';
+import { ShoppingBag, Loader2, ChevronDown, Pencil, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
@@ -259,17 +259,19 @@ export default function ClientOrders({
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mb-4 text-neutral-400">
-          <ShoppingBag className="w-8 h-8" />
+        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="w-10 h-10 text-neutral-300" />
         </div>
-        <h2 className="text-xl font-bold text-neutral-900 mb-2">{t('noOrders')}</h2>
-        <p className="text-neutral-500 mb-8 max-w-xs">{t('noOrdersDesc')}</p>
-        <Link
-          href={`/sites/${tenantSlug}/menu`}
-          className="text-white px-6 py-3 rounded-xl font-medium active:scale-95 transition-all"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
-        >
-          {t('viewMenu')}
+        <h2 className="text-xl font-bold text-neutral-800 mb-2">{t('noOrders')}</h2>
+        <p className="text-sm text-neutral-500 text-center mb-8 max-w-xs">{t('noOrdersDesc')}</p>
+        <Link href={`/sites/${tenantSlug}/menu`}>
+          <button
+            className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
+            style={{ backgroundColor: 'var(--tenant-primary)' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            {t('viewMenu')}
+          </button>
         </Link>
       </div>
     );
@@ -278,7 +280,7 @@ export default function ClientOrders({
   // ─── Orders history list ──────────────────────────────
 
   return (
-    <div className="space-y-3 pb-24">
+    <div className="space-y-3 pb-24 px-4">
       {orders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
         const remainingMs = canEdit ? getRemainingMs(order.created_at) : 0;
@@ -290,7 +292,7 @@ export default function ClientOrders({
           <motion.div
             key={order.id}
             layout
-            className="bg-white rounded-2xl border border-neutral-100 overflow-hidden"
+            className="bg-white rounded-xl border border-neutral-200 overflow-hidden"
           >
             {/* Collapsed header */}
             <button
@@ -326,27 +328,37 @@ export default function ClientOrders({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="px-4 pb-4 space-y-2 border-t border-neutral-50">
-                    <div className="pt-3 space-y-1">
+                  <div className="border-t border-neutral-100">
+                    {/* Items — matching cart item layout */}
+                    <div className="divide-y divide-neutral-100">
                       {(order.items || []).map((item: OrderItem, idx: number) => (
-                        <div key={idx} className="flex justify-between text-sm text-neutral-600">
-                          <span>
-                            {item.quantity}x {item.name}
+                        <div key={idx} className="px-4 py-3 flex items-center gap-3">
+                          <span
+                            className="text-sm font-bold w-6 text-center"
+                            style={{ color: 'var(--tenant-primary)' }}
+                          >
+                            {item.quantity}
                           </span>
-                          <span>{formatDisplayPrice(item.price * item.quantity, currency)}</span>
+                          <span className="flex-1 text-sm text-neutral-900">{item.name}</span>
+                          <span className="text-sm font-bold text-neutral-900 whitespace-nowrap">
+                            {formatDisplayPrice(item.price * item.quantity, currency)}
+                          </span>
                         </div>
                       ))}
                     </div>
-                    <div className="flex justify-between items-center pt-2 border-t border-neutral-50">
-                      <span className="text-neutral-500 text-sm">{t('total')}</span>
-                      <span
-                        className="font-bold text-base"
-                        style={{ color: 'var(--tenant-primary)' }}
-                      >
-                        {formatDisplayPrice(order.total, currency)}
-                      </span>
+
+                    {/* Total — matching cart style */}
+                    <div className="px-4 py-3 border-t border-neutral-200">
+                      <div className="flex items-center justify-between">
+                        <span className="text-base font-bold text-neutral-900">{t('total')}</span>
+                        <span className="text-xl font-black text-neutral-900">
+                          {formatDisplayPrice(order.total, currency)}
+                        </span>
+                      </div>
                     </div>
-                    <div className="text-xs text-neutral-400 pt-1">
+
+                    {/* Date */}
+                    <div className="px-4 pb-3 text-xs text-neutral-400">
                       {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
                         locale: dateLocale,
                       })}
@@ -354,18 +366,15 @@ export default function ClientOrders({
 
                     {/* Edit button — visible only for pending orders within 5 min */}
                     {canEdit && (
-                      <div className="pt-3 border-t border-neutral-100">
+                      <div className="px-4 pb-4">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-[0.98] disabled:opacity-50"
-                          style={{
-                            backgroundColor: 'var(--tenant-primary)',
-                            color: '#ffffff',
-                          }}
+                          className="w-full h-12 rounded-xl text-white font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                          style={{ backgroundColor: 'var(--tenant-primary)' }}
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -398,12 +407,12 @@ function BadgeStatus({ status }: { status: string }) {
   const t = useTranslations('tenant');
 
   const styles: Record<string, string> = {
-    pending: 'bg-yellow-50 text-yellow-700 border-yellow-100',
-    confirmed: 'bg-blue-50 text-blue-700 border-blue-100',
-    preparing: 'bg-purple-50 text-purple-700 border-purple-100',
-    ready: 'bg-green-50 text-green-700 border-green-100',
-    served: 'bg-neutral-50 text-neutral-700 border-neutral-100',
-    cancelled: 'bg-red-50 text-red-700 border-red-100',
+    pending: 'bg-amber-50 text-amber-700',
+    confirmed: 'bg-blue-50 text-blue-700',
+    preparing: 'bg-purple-50 text-purple-700',
+    ready: 'bg-emerald-50 text-emerald-700',
+    served: 'bg-neutral-100 text-neutral-600',
+    cancelled: 'bg-red-50 text-red-600',
   };
 
   const labelKeys: Record<string, string> = {
@@ -419,7 +428,7 @@ function BadgeStatus({ status }: { status: string }) {
 
   return (
     <span
-      className={`px-2.5 py-1 rounded-md text-xs font-medium border ${styles[status] || styles.pending}`}
+      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${styles[status] || styles.pending}`}
     >
       {t(labelKey)}
     </span>

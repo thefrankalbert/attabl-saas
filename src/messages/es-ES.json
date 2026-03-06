@@ -1669,7 +1669,8 @@
     "storageDesc": "Los datos se conservan temporalmente durante la duración de su sesión.",
     "aboutTitle": "Acerca de",
     "aboutAppDesc": "ATTABL es la aplicación de menú digital de {name}.",
-    "aboutAppSubtext": "Explore nuestra carta y pida directamente desde su mesa."
+    "aboutAppSubtext": "Explore nuestra carta y pida directamente desde su mesa.",
+    "orderBeingPrepared": "Su pedido se está preparando"
   },
   "shared": {
     "fileMustBeImage": "El archivo debe ser una imagen",

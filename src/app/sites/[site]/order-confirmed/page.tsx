@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
-import { CheckCircle, Loader2, Utensils } from 'lucide-react';
+import { Check, Loader2, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
 
@@ -83,39 +83,37 @@ function OrderConfirmedContent() {
   // ─── Success animation overlay ─────────────────────────
   if (showSuccess) {
     return (
-      <main className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center px-4">
-        <div className="flex flex-col items-center">
-          <div className="relative">
-            <div
-              className="w-20 h-20 rounded-full flex items-center justify-center animate-bounce-in"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
-            >
-              <CheckCircle className="w-12 h-12 text-white" strokeWidth={2.5} />
-            </div>
-            <div
-              className="absolute inset-0 w-20 h-20 rounded-full animate-ping opacity-30"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
+      <main className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+        <div className="flex flex-col items-center animate-fade-up">
+          <div
+            className="w-16 h-16 rounded-full flex items-center justify-center"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 12%, transparent)',
+            }}
+          >
+            <Check
+              className="w-7 h-7"
+              style={{ color: 'var(--tenant-primary)' }}
+              strokeWidth={2.5}
             />
           </div>
-          <p className="mt-6 text-lg font-bold text-neutral-900">{t('orderSent')}</p>
+          <p className="mt-5 text-lg font-bold text-neutral-900">{t('orderSent')}</p>
+          <p className="mt-1 text-sm text-neutral-400">{t('orderBeingPrepared')}</p>
         </div>
 
         <style jsx>{`
-          @keyframes bounce-in {
-            0% {
-              transform: scale(0);
+          @keyframes fade-up {
+            from {
               opacity: 0;
+              transform: translateY(8px);
             }
-            60% {
-              transform: scale(1.15);
-            }
-            100% {
-              transform: scale(1);
+            to {
               opacity: 1;
+              transform: translateY(0);
             }
           }
-          .animate-bounce-in {
-            animation: bounce-in 0.5s ease-out;
+          .animate-fade-up {
+            animation: fade-up 0.4s ease-out;
           }
         `}</style>
       </main>
@@ -150,65 +148,84 @@ function OrderConfirmedContent() {
   // ─── Order confirmed view ─────────────────────────────
   return (
     <main className="min-h-screen bg-neutral-50 pb-24">
-      <div className="max-w-lg mx-auto px-4 pt-10 space-y-6">
-        {/* Success header */}
-        <div className="text-center">
-          <div
-            className="w-16 h-16 rounded-full flex items-center justify-center mx-auto"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+          <Link
+            href={menuPath}
+            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
           >
-            <CheckCircle className="w-9 h-9 text-white" strokeWidth={2.5} />
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div className="flex-1 text-center">
+            <h1 className="text-base font-bold text-neutral-900">{t('orderSent')}</h1>
+            <p className="text-xs text-neutral-400">
+              {t('orderNumber', { number: order.order_number || order.id.slice(0, 5) })}
+            </p>
           </div>
-          <h1 className="mt-4 text-xl font-bold text-neutral-900">{t('orderSent')}</h1>
-          <p className="mt-1 text-sm text-neutral-500">
-            {t('orderNumber', { number: order.order_number || order.id.slice(0, 5) })}
-          </p>
+          <div className="w-9" />
+        </div>
+      </div>
+
+      <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+        {/* Success indicator */}
+        <div className="text-center py-4">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
+            style={{
+              backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 12%, transparent)',
+            }}
+          >
+            <Check
+              className="w-6 h-6"
+              style={{ color: 'var(--tenant-primary)' }}
+              strokeWidth={2.5}
+            />
+          </div>
+          <p className="mt-3 text-sm text-neutral-500">{t('orderBeingPrepared')}</p>
         </div>
 
-        {/* Order summary card */}
-        <div className="bg-white rounded-2xl border border-neutral-100 overflow-hidden">
+        {/* Order summary card — same style as cart */}
+        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
           {order.table_number && (
-            <div className="px-5 py-3 border-b border-neutral-100 flex items-center gap-2">
-              <span className="text-[10px] text-neutral-400 uppercase tracking-widest font-bold">
+            <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
+              <span className="text-xs text-neutral-400 uppercase tracking-wider font-semibold">
                 {t('tableLabel')}
               </span>
-              <span className="text-sm font-black text-neutral-900 font-mono">
+              <span className="text-sm font-bold text-neutral-900 font-mono">
                 {order.table_number}
               </span>
             </div>
           )}
 
           {/* Items */}
-          <div className="px-5 py-4">
-            <div className="space-y-2">
-              {(order.items || []).map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm">
-                  <span className="text-neutral-600">
-                    <span className="font-bold" style={{ color: 'var(--tenant-primary)' }}>
-                      {item.quantity}x
-                    </span>{' '}
-                    {item.name}
-                  </span>
-                  <span className="font-semibold text-neutral-900">
-                    {formatDisplayPrice(item.price * item.quantity)}
-                  </span>
-                </div>
-              ))}
-            </div>
+          <div className="divide-y divide-neutral-100">
+            {(order.items || []).map((item, idx) => (
+              <div key={idx} className="px-4 py-3 flex items-center gap-3">
+                <span
+                  className="text-sm font-bold w-6 text-center"
+                  style={{ color: 'var(--tenant-primary)' }}
+                >
+                  {item.quantity}
+                </span>
+                <span className="flex-1 text-sm text-neutral-900">{item.name}</span>
+                <span className="text-sm font-bold text-neutral-900 whitespace-nowrap">
+                  {formatDisplayPrice(item.price * item.quantity)}
+                </span>
+              </div>
+            ))}
           </div>
 
           {/* Total */}
-          <div className="px-5 py-4 bg-neutral-50/50 border-t border-neutral-100">
+          <div className="px-4 py-3 border-t border-neutral-200">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-neutral-400 uppercase tracking-widest">
-                {t('total')}
-              </span>
+              <span className="text-base font-bold text-neutral-900">{t('total')}</span>
               <span className="text-xl font-black text-neutral-900">
                 {formatDisplayPrice(order.total)}
               </span>
             </div>
           </div>
-        </div>
+        </section>
 
         {/* Back to menu */}
         <Link href={menuPath} className="block">
@@ -216,7 +233,7 @@ function OrderConfirmedContent() {
             className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{ backgroundColor: 'var(--tenant-primary)' }}
           >
-            <Utensils className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
           </button>
         </Link>
