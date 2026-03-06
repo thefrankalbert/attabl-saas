@@ -64,6 +64,7 @@ export async function POST(request: Request) {
       room_number,
       delivery_address,
       coupon_code,
+      display_currency,
     } = parseResult.data;
 
     const { validatedTotal } = await orderService.validateOrderItems(tenantId, items);
@@ -127,6 +128,7 @@ export async function POST(request: Request) {
       service_charge_amount: pricing.serviceChargeAmount,
       discount_amount: pricing.discountAmount,
       coupon_id: couponResult?.couponId,
+      display_currency,
     });
 
     // 8. Increment coupon usage after successful order

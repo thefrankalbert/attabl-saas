@@ -3,12 +3,7 @@ import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
-import { z } from 'zod';
-
-const validateCouponSchema = z.object({
-  code: z.string().min(1, 'Code requis'),
-  subtotal: z.number().min(0, 'Le sous-total doit être positif').default(0),
-});
+import { validateCouponSchema } from '@/lib/validations/coupon.schema';
 
 export async function POST(request: Request) {
   try {

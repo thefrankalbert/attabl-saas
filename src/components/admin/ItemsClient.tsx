@@ -3,7 +3,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
-import { Plus, Loader2, Star, Check, X, Image as ImageIcon, AlertTriangle, Edit2, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  Loader2,
+  Star,
+  Check,
+  X,
+  Image as ImageIcon,
+  AlertTriangle,
+  Edit2,
+  Trash2,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
@@ -24,7 +34,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
-import { checkCanAddMenuItemAction } from '@/app/actions/menu-items';
+import { actionCheckCanAddMenuItem } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
 import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
@@ -35,6 +45,7 @@ interface ItemsClientProps {
   initialItems: MenuItem[];
   initialCategories: Category[];
   currency?: CurrencyCode;
+  supportedCurrencies?: CurrencyCode[];
 }
 
 export default function ItemsClient({
@@ -42,7 +53,10 @@ export default function ItemsClient({
   initialItems,
   initialCategories,
   currency = 'XAF',
+  supportedCurrencies = [],
 }: ItemsClientProps) {
+  // Secondary currencies = supported minus the base currency
+  const secondaryCurrencies = supportedCurrencies.filter((c) => c !== currency);
   const [categories] = useState<Category[]>(initialCategories);
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -63,6 +77,7 @@ export default function ItemsClient({
   const [isFeatured, setIsFeatured] = useState(false);
   const [allergens, setAllergens] = useState<string[]>([]);
   const [calories, setCalories] = useState<number | ''>('');
+  const [prices, setPrices] = useState<Record<string, number>>({});
 
   const { toast } = useToast();
   const t = useTranslations('items');
@@ -104,6 +119,7 @@ export default function ItemsClient({
     setIsFeatured(false);
     setAllergens([]);
     setCalories('');
+    setPrices({});
   };
 
   const openNewModal = () => {
@@ -125,6 +141,7 @@ export default function ItemsClient({
     setIsFeatured(item.is_featured);
     setAllergens(item.allergens || []);
     setCalories(item.calories ?? '');
+    setPrices((item.prices as Record<string, number>) || {});
     setShowModal(true);
   };
 
@@ -133,12 +150,14 @@ export default function ItemsClient({
     if (!name.trim() || !categoryId) return;
     setSaving(true);
     try {
+      const cleanPrices = Object.fromEntries(Object.entries(prices).filter(([, v]) => v > 0));
       const payload = {
         name: name.trim(),
         name_en: nameEn.trim() || null,
         description: description.trim() || null,
         description_en: descriptionEn.trim() || null,
         price,
+        prices: Object.keys(cleanPrices).length > 0 ? cleanPrices : null,
         category_id: categoryId,
         image_url: imageUrl.trim() || null,
         is_available: isAvailable,
@@ -156,7 +175,7 @@ export default function ItemsClient({
         toast({ title: t('itemUpdated') });
       } else {
         // Vérifier les limites du plan avant la création
-        const limitCheck = await checkCanAddMenuItemAction(tenantId);
+        const limitCheck = await actionCheckCanAddMenuItem(tenantId);
         if (limitCheck.error) {
           toast({ title: limitCheck.error, variant: 'destructive' });
           return;
@@ -221,9 +240,7 @@ export default function ItemsClient({
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {t('title')}
-              <span className="text-sm font-normal text-app-text-muted">
-                ({items.length})
-              </span>
+              <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
             </h1>
 
             {/* Filters inline */}
@@ -447,6 +464,20 @@ export default function ItemsClient({
                   <p className="text-lg font-bold text-app-text tabular-nums">
                     {formatCurrency(selectedItem.price, currency)}
                   </p>
+                  {selectedItem.prices && Object.keys(selectedItem.prices).length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {Object.entries(selectedItem.prices as Record<string, number>).map(
+                        ([cur, val]) => (
+                          <span
+                            key={cur}
+                            className="text-xs text-app-text-secondary bg-app-elevated px-2 py-0.5 rounded"
+                          >
+                            {formatCurrency(val, cur as CurrencyCode)}
+                          </span>
+                        ),
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Category */}
@@ -594,6 +625,39 @@ export default function ItemsClient({
                   required
                 />
               </div>
+              {secondaryCurrencies.length > 0 && (
+                <div className="space-y-1.5 sm:col-span-2">
+                  <p className="text-xs text-app-text-muted">{t('optionalPriceHint')}</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {secondaryCurrencies.map((cur) => (
+                      <div key={cur} className="space-y-1">
+                        <Label className="text-app-text text-xs">
+                          {t('priceInCurrency', { currency: cur })}
+                        </Label>
+                        <Input
+                          type="number"
+                          value={prices[cur] ?? ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setPrices((prev) => {
+                              if (val === '' || Number(val) === 0) {
+                                const next = { ...prev };
+                                delete next[cur];
+                                return next;
+                              }
+                              return { ...prev, [cur]: Number(val) };
+                            });
+                          }}
+                          min={0}
+                          step={cur === 'XAF' ? 1 : 0.01}
+                          placeholder="0"
+                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label className="text-app-text">{t('category')}</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>

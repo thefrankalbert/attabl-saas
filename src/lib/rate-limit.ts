@@ -119,6 +119,30 @@ export const invitationLimiter = createLimiter('invitation', Ratelimit.slidingWi
 /** Permissions: 20 requests / minute per IP */
 export const permissionLimiter = createLimiter('permission', Ratelimit.slidingWindow(20, '1 m'));
 
+/** Push subscriptions: 10 requests / minute per IP */
+export const pushSubscriptionLimiter = createLimiter(
+  'push-subscription',
+  Ratelimit.slidingWindow(10, '1 m'),
+);
+
+/** Domain verification: 5 requests / 10 minutes per IP */
+export const domainVerifyLimiter = createLimiter(
+  'domain-verify',
+  Ratelimit.slidingWindow(5, '10 m'),
+);
+
+/** Restaurant creation: 5 requests / 10 minutes per IP */
+export const restaurantCreateLimiter = createLimiter(
+  'restaurant-create',
+  Ratelimit.slidingWindow(5, '10 m'),
+);
+
+/** Stock alerts: 10 requests / minute per IP */
+export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingWindow(10, '1 m'));
+
+/** Auth signout: 10 requests / minute per IP */
+export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));
+
 // --- IP extraction helpers ---
 
 /**

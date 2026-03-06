@@ -32,3 +32,14 @@ export const updateCouponSchema = createCouponSchema.partial().extend({
 
 export type CreateCouponInput = z.infer<typeof createCouponSchema>;
 export type UpdateCouponInput = z.infer<typeof updateCouponSchema>;
+
+/**
+ * Schema for validating a coupon code (client-facing).
+ * Used in /api/coupons/validate route.
+ */
+export const validateCouponSchema = z.object({
+  code: z.string().min(1, 'Code requis'),
+  subtotal: z.number().min(0, 'Le sous-total doit être positif').default(0),
+});
+
+export type ValidateCouponInput = z.infer<typeof validateCouponSchema>;

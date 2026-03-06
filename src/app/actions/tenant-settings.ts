@@ -13,7 +13,7 @@ import { createAuditService } from '@/services/audit.service';
  * SECURITY: tenantId is derived from the authenticated user's session
  * to prevent unauthorized cross-tenant modifications (IDOR prevention).
  */
-export async function updateTenantSettings(formData: FormData) {
+export async function actionUpdateTenantSettings(formData: FormData) {
   try {
     // 1. Authenticate + get tenant from session (NOT from client)
     const { tenantId, supabase, user, role } = await getAuthenticatedUserWithTenant();
@@ -30,6 +30,9 @@ export async function updateTenantSettings(formData: FormData) {
       notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
       // Billing fields
       currency: (formData.get('currency') as string) || 'XAF',
+      supportedCurrencies: formData.get('supportedCurrencies')
+        ? JSON.parse(formData.get('supportedCurrencies') as string)
+        : undefined,
       enableTax: formData.get('enableTax') === 'true',
       taxRate: formData.get('taxRate') ? Number(formData.get('taxRate')) : 0,
       enableServiceCharge: formData.get('enableServiceCharge') === 'true',

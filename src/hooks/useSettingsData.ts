@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useToast } from '@/components/ui/use-toast';
-import { updateTenantSettings } from '@/app/actions/tenant-settings';
+import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { createClient } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
 import { logger } from '@/lib/logger';
@@ -25,6 +25,10 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     logo_url: z.string().optional(),
     // Billing fields
     currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+    supportedCurrencies: z
+      .array(z.enum(['XAF', 'EUR', 'USD']))
+      .min(1)
+      .optional(),
     enableTax: z.boolean().optional(),
     taxRate: z.number().min(0).max(100).optional(),
     enableServiceCharge: z.boolean().optional(),
@@ -51,6 +55,7 @@ export interface SettingsTenant {
   phone?: string;
   notification_sound_id?: string;
   currency?: CurrencyCode;
+  supported_currencies?: CurrencyCode[];
   enable_tax?: boolean;
   tax_rate?: number;
   enable_service_charge?: boolean;
@@ -102,6 +107,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       phone: tenant.phone || '',
       logo_url: tenant.logo_url || '',
       currency: tenant.currency || 'XAF',
+      supportedCurrencies: tenant.supported_currencies || [tenant.currency || 'XAF'],
       enableTax: tenant.enable_tax ?? false,
       taxRate: tenant.tax_rate ?? 0,
       enableServiceCharge: tenant.enable_service_charge ?? false,
@@ -207,6 +213,9 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('notificationSoundId', selectedSoundId);
       // Billing fields — reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
+      if (data.supportedCurrencies) {
+        formData.append('supportedCurrencies', JSON.stringify(data.supportedCurrencies));
+      }
       formData.append('enableTax', data.enableTax ? 'true' : 'false');
       formData.append('taxRate', String(data.enableTax ? (data.taxRate ?? 0) : 0));
       formData.append('enableServiceCharge', data.enableServiceCharge ? 'true' : 'false');
@@ -220,7 +229,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       }
       formData.append('screenLockMode', data.screenLockMode || 'overlay');
 
-      const result = await updateTenantSettings(formData);
+      const result = await actionUpdateTenantSettings(formData);
 
       if (result.success) {
         toast({

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 export default function TenantNotFound() {
   const params = useParams();
   const site = params?.site as string | undefined;
-  const menuHref = site ? `/sites/${site}` : '/';
+  const menuHref = site ? `/sites/${site}/menu` : '/';
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">

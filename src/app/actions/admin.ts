@@ -1,21 +1,14 @@
 'use server';
 
-import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { AdminRole, AdminUser } from '@/types/admin.types';
-import { createAdminUserSchema } from '@/lib/validations/admin-user.schema';
+import { createAdminUserSchema, updateAdminUserSchema } from '@/lib/validations/admin-user.schema';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
-
-const updateAdminUserSchema = z.object({
-  role: z.enum(['owner', 'admin', 'manager', 'cashier', 'chef', 'waiter']).optional(),
-  full_name: z.string().min(2).max(100).optional(),
-  is_active: z.boolean().optional(),
-});
 
 type ActionResponse = {
   success?: boolean;
@@ -54,7 +47,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
 /**
  * Creates a new admin user for a tenant.
  */
-export async function createAdminUserAction(
+export async function actionCreateAdminUser(
   tenantId: string,
   formData: { email: string; password: string; full_name: string; role: string },
 ): Promise<ActionResponse> {
@@ -161,7 +154,7 @@ export async function createAdminUserAction(
  * Deletes an admin user.
  * Vérifie si l'utilisateur appartient à d'autres tenants avant de supprimer le compte auth.
  */
-export async function deleteAdminUserAction(
+export async function actionDeleteAdminUser(
   tenantId: string,
   userId: string,
 ): Promise<ActionResponse> {
@@ -228,7 +221,7 @@ export async function deleteAdminUserAction(
 /**
  * Updates a user's role or details.
  */
-export async function updateAdminUserAction(
+export async function actionUpdateAdminUser(
   tenantId: string,
   userId: string,
   data: Partial<AdminUser>,
@@ -280,7 +273,7 @@ export async function updateAdminUserAction(
 /**
  * Resets a collaborator's password (admin-only).
  */
-export async function resetUserPasswordAction(
+export async function actionResetUserPassword(
   tenantId: string,
   userId: string,
   newPassword: string,
@@ -334,7 +327,7 @@ export async function resetUserPasswordAction(
 /**
  * Updates a collaborator's email (admin-only).
  */
-export async function updateUserEmailAction(
+export async function actionUpdateUserEmail(
   tenantId: string,
   userId: string,
   newEmail: string,

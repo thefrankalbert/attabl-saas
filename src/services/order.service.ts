@@ -22,6 +22,7 @@ interface CreateOrderInput {
   discount_amount?: number;
   coupon_id?: string;
   server_id?: string;
+  display_currency?: string;
 }
 
 interface CreateOrderResult {
@@ -75,7 +76,7 @@ export function createOrderService(supabase: SupabaseClient) {
       const itemIds = items.map((item) => item.id);
       const { data: menuItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('id, name, price, is_available')
+        .select('id, name, price, prices, is_available')
         .eq('tenant_id', tenantId)
         .in('id', itemIds);
 
@@ -185,8 +186,9 @@ export function createOrderService(supabase: SupabaseClient) {
           payment_status: 'pending',
           coupon_id: input.coupon_id || null,
           server_id: input.server_id ?? null,
+          display_currency: input.display_currency || null,
         })
-        .select('id, order_number, table_id')
+        .select('id, order_number')
         .single();
 
       if (orderError) {
@@ -194,18 +196,16 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la création de la commande', 'INTERNAL', orderError);
       }
 
-      // Create order items — with proper notes separation
+      // Create order items
+      // DB columns: order_id, menu_item_id, item_name, item_name_en, quantity,
+      //   price_at_order, customer_notes, modifiers, course, item_status, created_at
       const orderItems = input.items.map((item) => {
-        // Build variant/option info (stored in `notes` column)
-        let variantInfo: string | null = null;
-        if (item.selectedOption) {
-          variantInfo = item.selectedOption.name_fr;
-          if (item.selectedVariant) {
-            variantInfo += ' - ' + item.selectedVariant.name_fr;
-          }
-        } else if (item.selectedVariant) {
-          variantInfo = item.selectedVariant.name_fr;
-        }
+        // Build variant/option label to prepend to customer notes
+        const parts: string[] = [];
+        if (item.selectedVariant) parts.push(item.selectedVariant.name_fr);
+        if (item.selectedOption) parts.push(item.selectedOption.name_fr);
+        if (item.customerNotes) parts.push(item.customerNotes);
+        const combinedNotes = parts.length > 0 ? parts.join(' · ') : null;
 
         return {
           order_id: order.id,
@@ -214,9 +214,7 @@ export function createOrderService(supabase: SupabaseClient) {
           item_name_en: item.name_en || null,
           quantity: item.quantity,
           price_at_order: item.price,
-          notes: variantInfo,
-          // ─── Production upgrade: separate customer notes ────
-          customer_notes: item.customerNotes || null,
+          customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,
           item_status: 'pending',
@@ -237,26 +235,6 @@ export function createOrderService(supabase: SupabaseClient) {
           'INTERNAL',
           itemsError,
         );
-      }
-
-      // Auto-assign server from active table assignment
-      if (!input.server_id && order.table_id) {
-        const { data: assignment } = await supabase
-          .from('table_assignments')
-          .select('server_id')
-          .eq('tenant_id', input.tenantId)
-          .eq('table_id', order.table_id)
-          .is('ended_at', null)
-          .order('started_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (assignment?.server_id) {
-          await supabase
-            .from('orders')
-            .update({ server_id: assignment.server_id })
-            .eq('id', order.id);
-        }
       }
 
       return {

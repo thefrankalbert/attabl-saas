@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { Send } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 const footerColumns = [
   {
@@ -46,7 +47,7 @@ export default function Footer() {
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    console.log('Newsletter subscription:', email);
+    logger.info('Newsletter subscription', { email });
     setSubmitted(true);
     setEmail('');
     setTimeout(() => setSubmitted(false), 3000);

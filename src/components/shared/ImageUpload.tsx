@@ -2,6 +2,7 @@
 
 import { useState, useRef, ChangeEvent, DragEvent } from 'react';
 import { Trash, UploadCloud, Loader2 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
 
@@ -67,7 +68,7 @@ export default function ImageUpload({
 
       onChange(publicUrl);
     } catch (err: unknown) {
-      console.error('Upload error:', err);
+      logger.error('Upload error', err);
       setError("Erreur lors du téléchargement de l'image");
     } finally {
       setIsLoading(false);

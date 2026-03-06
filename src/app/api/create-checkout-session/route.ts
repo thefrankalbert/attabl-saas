@@ -2,19 +2,8 @@ import { NextResponse } from 'next/server';
 import { stripe, getStripePriceId } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
-import { z } from 'zod';
+import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
-
-/**
- * Checkout schema — simplified since tenantId and email are derived from session.
- * We only need plan and billingInterval from the client.
- */
-const checkoutBodySchema = z.object({
-  plan: z.enum(['essentiel', 'premium'], {
-    error: 'Plan invalide. Choisissez essentiel ou premium.',
-  }),
-  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
-});
 
 export async function POST(request: Request) {
   try {

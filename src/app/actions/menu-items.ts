@@ -14,7 +14,7 @@ type ActionResponse = {
  * Vérifie si le tenant peut ajouter un nouvel article au menu (limites du plan).
  * Appelé depuis le client avant l'insertion directe via Supabase.
  */
-export async function checkCanAddMenuItemAction(tenantId: string): Promise<ActionResponse> {
+export async function actionCheckCanAddMenuItem(tenantId: string): Promise<ActionResponse> {
   const supabase = await createClient();
   const {
     data: { user },

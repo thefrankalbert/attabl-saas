@@ -25,6 +25,10 @@ export const updateTenantSettingsSchema = z.object({
   notificationSoundId: z.string().max(500).optional(),
   // ─── Production upgrade: business config ─────────────────
   currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+  supportedCurrencies: z
+    .array(z.enum(['XAF', 'EUR', 'USD']))
+    .min(1)
+    .optional(),
   taxRate: z
     .number()
     .min(0, 'Le taux ne peut pas être négatif')

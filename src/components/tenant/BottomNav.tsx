@@ -1,19 +1,15 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, ShoppingBag, ScrollText } from 'lucide-react';
+import { Home, ShoppingBag, Clock, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useCart } from '@/contexts/CartContext';
-import { cn } from '@/lib/utils';
 
 interface BottomNavProps {
   tenantSlug: string;
-  primaryColor?: string;
-  onSearchClick?: () => void;
 }
 
-export default function BottomNav({ tenantSlug, primaryColor, onSearchClick }: BottomNavProps) {
+export default function BottomNav({ tenantSlug }: BottomNavProps) {
   const pathname = usePathname();
   const { totalItems } = useCart();
   const router = useRouter();
@@ -26,13 +22,11 @@ export default function BottomNav({ tenantSlug, primaryColor, onSearchClick }: B
       label: t('navMenu'),
       icon: Home,
       onClick: () => router.push(basePath),
-      isActive: pathname === basePath || pathname === `${basePath}/`,
-    },
-    {
-      label: t('navSearch'),
-      icon: Search,
-      onClick: onSearchClick || (() => {}),
-      isActive: false,
+      isActive:
+        pathname === basePath ||
+        pathname === `${basePath}/` ||
+        pathname === `${basePath}/menu` ||
+        pathname === `${basePath}/menu/`,
     },
     {
       label: t('navCart'),
@@ -43,53 +37,117 @@ export default function BottomNav({ tenantSlug, primaryColor, onSearchClick }: B
     },
     {
       label: t('navOrders'),
-      icon: ScrollText,
+      icon: Clock,
       onClick: () => router.push(`${basePath}/orders`),
       isActive: pathname?.includes('/orders'),
+    },
+    {
+      label: t('navProfile'),
+      icon: User,
+      onClick: () => router.push(`${basePath}/settings`),
+      isActive: pathname?.includes('/settings'),
     },
   ];
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 lg:hidden"
-      style={{ paddingBottom: `max(env(safe-area-inset-bottom, 8px), 8px)` }}
+      style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 50,
+        backgroundColor: '#ffffff',
+        borderTop: '1px solid #e5e7eb',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
     >
-      {/* Frosted glass background */}
-      <div className="absolute inset-0 bg-white/80 backdrop-blur-xl border-t border-neutral-100 shadow-[0_-1px_3px_rgba(0,0,0,0.05)]" />
-
-      <div className="relative flex items-center justify-around px-4 pt-2">
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          height: '64px',
+          maxWidth: '512px',
+          margin: '0 auto',
+          padding: '0 8px',
+        }}
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
             <button
               key={item.label}
               onClick={item.onClick}
-              className={cn(
-                'flex flex-col items-center gap-0.5 p-2.5 rounded-xl min-w-[48px] min-h-[44px] transition-colors',
-                item.isActive ? 'font-semibold' : 'text-neutral-400',
-              )}
-              style={item.isActive ? { color: primaryColor || '#000' } : undefined}
+              style={{
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '4px',
+                padding: '8px 12px',
+                minWidth: '72px',
+                color: item.isActive ? '#000000' : '#9ca3af',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
-              <div className="relative">
-                <Icon className="w-6 h-6" strokeWidth={item.isActive ? 2.5 : 1.8} />
-                {/* Animated cart badge */}
-                <AnimatePresence>
-                  {'badge' in item && item.badge && (
-                    <motion.div
-                      key={item.badge}
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.5, opacity: 0 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                      className="absolute -top-1.5 -right-2.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center border-2 border-white text-white text-[10px] font-bold px-1"
-                      style={{ backgroundColor: primaryColor || '#000' }}
-                    >
-                      {item.badge}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
+              {/* Active indicator top bar */}
+              {item.isActive && (
+                <span
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: '32px',
+                    height: '2px',
+                    backgroundColor: '#000000',
+                    borderRadius: '0 0 2px 2px',
+                  }}
+                />
+              )}
+
+              <div style={{ position: 'relative' }}>
+                <Icon
+                  style={{ width: '24px', height: '24px', position: 'relative', zIndex: 10 }}
+                  strokeWidth={item.isActive ? 2.5 : 2}
+                />
+                {/* Badge for cart */}
+                {'badge' in item && item.badge && (
+                  <span
+                    style={{
+                      position: 'absolute',
+                      top: '-8px',
+                      right: '-8px',
+                      zIndex: 20,
+                      backgroundColor: '#ef4444',
+                      color: '#ffffff',
+                      fontSize: '9px',
+                      fontWeight: 700,
+                      height: '16px',
+                      minWidth: '16px',
+                      padding: '0 4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderRadius: '9999px',
+                      border: '2px solid #ffffff',
+                    }}
+                  >
+                    {item.badge > 9 ? '9+' : item.badge}
+                  </span>
+                )}
               </div>
-              <span className={cn('text-[10px]', item.isActive ? 'font-semibold' : 'font-medium')}>
+              <span
+                style={{
+                  fontSize: '10px',
+                  fontWeight: item.isActive ? 600 : 500,
+                  letterSpacing: '0.02em',
+                }}
+              >
                 {item.label}
               </span>
             </button>

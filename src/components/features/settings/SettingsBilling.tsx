@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
+import type { CurrencyCode } from '@/types/admin.types';
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -14,17 +15,33 @@ interface SettingsBillingProps {
   t: (key: string) => string;
 }
 
+const ALL_CURRENCIES: { code: CurrencyCode; labelKey: string }[] = [
+  { code: 'XAF', labelKey: 'currencyXAF' },
+  { code: 'EUR', labelKey: 'currencyEUR' },
+  { code: 'USD', labelKey: 'currencyUSD' },
+];
+
 // ─── Component ─────────────────────────────────────────────
 
 export default function SettingsBilling({ form, t }: SettingsBillingProps) {
   const {
     register,
     watch,
+    setValue,
     formState: { errors },
   } = form;
 
   const watchEnableTax = watch('enableTax');
   const watchEnableServiceCharge = watch('enableServiceCharge');
+  const watchCurrency = watch('currency') || 'XAF';
+  const watchSupportedCurrencies = watch('supportedCurrencies') || [watchCurrency];
+
+  const handleSupportedCurrencyToggle = (code: CurrencyCode) => {
+    if (code === watchCurrency) return; // Base currency cannot be removed
+    const current = watchSupportedCurrencies as CurrencyCode[];
+    const next = current.includes(code) ? current.filter((c) => c !== code) : [...current, code];
+    setValue('supportedCurrencies', next, { shouldDirty: true });
+  };
 
   return (
     <TabsContent value="billing" className="mt-0">
@@ -53,6 +70,59 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               <option value="USD">{t('currencyUSD')}</option>
             </select>
             <p className="text-xs text-app-text-secondary">{t('currencyUsedForPriceDisplay')}</p>
+          </div>
+
+          {/* Supported Currencies */}
+          <div className="space-y-2">
+            <Label>{t('supportedCurrencies')}</Label>
+            <p className="text-xs text-app-text-secondary">{t('supportedCurrenciesDesc')}</p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              {ALL_CURRENCIES.map(({ code, labelKey }) => {
+                const isBase = code === watchCurrency;
+                const isChecked = (watchSupportedCurrencies as string[]).includes(code);
+                return (
+                  <label
+                    key={code}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
+                      isChecked
+                        ? 'border-emerald-500 bg-emerald-500/10 text-emerald-700'
+                        : 'border-app-border bg-app-elevated text-app-text-secondary'
+                    } ${isBase ? 'opacity-80 cursor-default' : ''}`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      disabled={isBase}
+                      onChange={() => handleSupportedCurrencyToggle(code)}
+                      className="sr-only"
+                    />
+                    <span
+                      className={`flex h-4 w-4 items-center justify-center rounded border ${
+                        isChecked ? 'bg-emerald-500 border-emerald-500' : 'border-app-border'
+                      }`}
+                    >
+                      {isChecked && (
+                        <svg
+                          className="h-3 w-3 text-white"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={3}
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </span>
+                    {t(labelKey)}
+                    {isBase && (
+                      <span className="text-xs text-app-text-muted">
+                        ({t('baseCurrencyAlwaysIncluded')})
+                      </span>
+                    )}
+                  </label>
+                );
+              })}
+            </div>
           </div>
 
           {/* Tax Toggle + Rate */}

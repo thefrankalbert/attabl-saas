@@ -6,19 +6,8 @@ import { X, Minus, Plus, Utensils, Leaf, Flame, Check, AlertTriangle } from 'luc
 import Image from 'next/image';
 import { useLocale, useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
+import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
-
-// ─── Helpers ────────────────────────────────────────────────────
-
-const formatPrice = (price: number, currency: string = 'XOF', locale: string = 'fr-FR') => {
-  if (currency === 'XOF') {
-    return `${price.toLocaleString(locale)} F`;
-  }
-  return new Intl.NumberFormat(locale, {
-    style: 'currency',
-    currency: currency,
-  }).format(price);
-};
 
 const getTranslatedContent = (language: string, fr: string, en?: string | null) => {
   return language === 'en' && en ? en : fr;
@@ -50,6 +39,7 @@ export default function ItemDetailSheet({
   const { addToCart } = useCart();
   const locale = useLocale();
   const t = useTranslations('tenant');
+  const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
 
   // ─── Local state ────────────────────────────────────────────
   const [selectedVariant, setSelectedVariant] = useState<ItemPriceVariant | null>(null);
@@ -136,6 +126,7 @@ export default function ItemDetailSheet({
       name: item.name,
       name_en: item.name_en ?? undefined,
       price: selectedVariant?.price ?? item.price,
+      prices: item.prices,
       image_url: item.image_url,
       quantity,
       category_id: item.category_id,
@@ -146,11 +137,12 @@ export default function ItemDetailSheet({
             name_fr: selectedVariant.variant_name_fr,
             name_en: selectedVariant.variant_name_en,
             price: selectedVariant.price,
+            prices: selectedVariant.prices,
           }
         : undefined,
       modifiers:
         selectedModifiers.length > 0
-          ? selectedModifiers.map((m) => ({ name: m.name, price: m.price }))
+          ? selectedModifiers.map((m) => ({ name: m.name, price: m.price, prices: m.prices }))
           : undefined,
       customerNotes: customerNotes.trim() || undefined,
     };
@@ -298,7 +290,7 @@ export default function ItemDetailSheet({
                 {/* Price (when no variants) */}
                 {!hasVariants && (
                   <p className="mt-3 text-lg font-bold" style={{ color: 'var(--tenant-primary)' }}>
-                    {formatPrice(item.price, currency, locale)}
+                    {resolveAndFormatPrice(item.price, item.prices, currency)}
                   </p>
                 )}
 
@@ -353,7 +345,7 @@ export default function ItemDetailSheet({
                                 className="text-sm font-bold"
                                 style={{ color: 'var(--tenant-primary)' }}
                               >
-                                {formatPrice(variant.price, currency, locale)}
+                                {resolveAndFormatPrice(variant.price, variant.prices, currency)}
                               </span>
                             </button>
                           );
@@ -404,7 +396,8 @@ export default function ItemDetailSheet({
                               </div>
                               {modifier.price > 0 && (
                                 <span className="text-sm font-medium text-neutral-500">
-                                  +{formatPrice(modifier.price, currency, locale)}
+                                  +
+                                  {resolveAndFormatPrice(modifier.price, modifier.prices, currency)}
                                 </span>
                               )}
                             </button>
@@ -479,7 +472,7 @@ export default function ItemDetailSheet({
                     <>
                       <span>{t('addToCart')}</span>
                       <span className="opacity-90">
-                        {formatPrice(currentPrice, currency, locale)}
+                        {formatDisplayPrice(currentPrice, currency)}
                       </span>
                     </>
                   )}

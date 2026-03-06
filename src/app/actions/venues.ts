@@ -14,7 +14,7 @@ type ActionResponse = {
  * Vérifie si le tenant peut ajouter un nouvel établissement (limites du plan).
  * À appeler depuis le client avant la création d'un nouveau venue.
  */
-export async function checkCanAddVenueAction(tenantId: string): Promise<ActionResponse> {
+export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionResponse> {
   const supabase = await createClient();
   const {
     data: { user },

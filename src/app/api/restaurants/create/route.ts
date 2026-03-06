@@ -6,9 +6,20 @@ import { createRestaurantSchema } from '@/lib/validations/restaurant.schema';
 import { createRestaurantGroupService } from '@/services/restaurant-group.service';
 import { createSlugService } from '@/services/slug.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { restaurantCreateLimiter, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
   try {
+    // 0. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await restaurantCreateLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     // 1. Auth check
     const supabase = await createClient();
     const {

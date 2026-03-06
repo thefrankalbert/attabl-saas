@@ -21,9 +21,9 @@ import UserForm from '@/components/features/users/UserForm';
 import PendingInvitations from '@/components/features/users/PendingInvitations';
 import RoleGuard from '@/components/admin/RoleGuard';
 import {
-  updateAdminUserAction,
-  resetUserPasswordAction,
-  updateUserEmailAction,
+  actionUpdateAdminUser,
+  actionResetUserPassword,
+  actionUpdateUserEmail,
 } from '@/app/actions/admin';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
@@ -66,7 +66,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
     try {
       // Update name/role if changed
       if (editName !== editingUser.full_name || editRole !== editingUser.role) {
-        const res = await updateAdminUserAction(tenantId, editingUser.id, {
+        const res = await actionUpdateAdminUser(tenantId, editingUser.id, {
           full_name: editName,
           role: editRole as AdminRole,
           is_active: editingUser.is_active,
@@ -78,7 +78,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       }
       // Update email if changed
       if (editEmail !== editingUser.email) {
-        const res = await updateUserEmailAction(tenantId, editingUser.id, editEmail);
+        const res = await actionUpdateUserEmail(tenantId, editingUser.id, editEmail);
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return;
@@ -86,7 +86,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       }
       // Reset password if provided
       if (editPassword.trim()) {
-        const res = await resetUserPasswordAction(tenantId, editingUser.id, editPassword);
+        const res = await actionResetUserPassword(tenantId, editingUser.id, editPassword);
         if (res.error) {
           toast({ title: res.error, variant: 'destructive' });
           return;

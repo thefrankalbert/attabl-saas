@@ -4,23 +4,34 @@ import React, { createContext, useContext, useState, useEffect, useCallback, use
 import { useTenant } from './TenantContext';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { logger } from '@/lib/logger';
-import type { ServiceType, PricingBreakdown, CurrencyCode } from '@/types/admin.types';
+import type {
+  ServiceType,
+  PricingBreakdown,
+  CurrencyCode,
+  MultiCurrencyPrices,
+} from '@/types/admin.types';
 
 // Définition des types
 export type CartItem = {
   id: string;
   name: string;
   price: number;
+  prices?: MultiCurrencyPrices;
   quantity: number;
   image_url?: string;
   restaurant_id?: string;
   name_en?: string;
   selectedOption?: { name_fr: string; name_en?: string };
-  selectedVariant?: { name_fr: string; name_en?: string; price: number };
+  selectedVariant?: {
+    name_fr: string;
+    name_en?: string;
+    price: number;
+    prices?: MultiCurrencyPrices;
+  };
   category_id?: string;
   category_name?: string;
   // ─── Phase 3: modifiers, notes, course ────────────────
-  modifiers?: { name: string; price: number }[];
+  modifiers?: { name: string; price: number; prices?: MultiCurrencyPrices }[];
   customerNotes?: string;
   course?: string;
 };

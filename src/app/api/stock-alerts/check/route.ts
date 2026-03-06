@@ -4,9 +4,19 @@ import { headers } from 'next/headers';
 import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
+import { stockAlertLimiter, getClientIp } from '@/lib/rate-limit';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await stockAlertLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
     const supabase = await createClient();
 
     // Auth check: only authenticated admin users can trigger stock alerts
