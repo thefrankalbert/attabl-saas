@@ -45,6 +45,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 
+    // Verify user belongs to this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    }
+
     // Feature gate
     const hasAlerts = canAccessFeature(
       'stockAlerts',

@@ -32,9 +32,15 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
       // Billing fields
       currency: (formData.get('currency') as string) || 'XAF',
-      supportedCurrencies: formData.get('supportedCurrencies')
-        ? JSON.parse(formData.get('supportedCurrencies') as string)
-        : undefined,
+      supportedCurrencies: (() => {
+        const raw = formData.get('supportedCurrencies') as string | null;
+        if (!raw) return undefined;
+        try {
+          return JSON.parse(raw) as unknown;
+        } catch {
+          return undefined;
+        }
+      })(),
       enableTax: formData.get('enableTax') === 'true',
       taxRate: formData.get('taxRate') ? Number(formData.get('taxRate')) : 0,
       enableServiceCharge: formData.get('enableServiceCharge') === 'true',

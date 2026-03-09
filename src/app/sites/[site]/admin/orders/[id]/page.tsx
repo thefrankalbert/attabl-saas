@@ -10,13 +10,21 @@ interface PageProps {
 }
 
 export default async function SingleOrderPage({ params }: PageProps) {
-  const { id } = await params;
+  const { site, id } = await params;
   const supabase = await createClient();
+
+  // Resolve tenant from site slug to scope the query
+  const { data: tenant } = await supabase.from('tenants').select('id').eq('slug', site).single();
+
+  if (!tenant) {
+    notFound();
+  }
 
   const { data: order } = await supabase
     .from('orders')
     .select('*, order_items(*)')
     .eq('id', id)
+    .eq('tenant_id', tenant.id)
     .single();
 
   if (!order) {

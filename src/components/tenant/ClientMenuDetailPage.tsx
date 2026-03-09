@@ -130,7 +130,7 @@ export default function ClientMenuDetailPage({
   // ─── Table from localStorage ────────────────────────────
   useEffect(() => {
     if (!initialTable && typeof window !== 'undefined') {
-      const saved = localStorage.getItem('attabl_table');
+      const saved = localStorage.getItem(`attabl_${tenant.slug}_table`);
       if (saved) setTableNumber(saved);
     }
   }, [initialTable]);
@@ -271,7 +271,7 @@ export default function ClientMenuDetailPage({
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
-    localStorage.setItem('attabl_table', table.table_number);
+    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),
@@ -291,7 +291,7 @@ export default function ClientMenuDetailPage({
         handleTableSelect(matchedTable);
       } else {
         setTableNumber(result.tableNumber);
-        localStorage.setItem('attabl_table', result.tableNumber);
+        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
           title: t('tableIdentified'),
           description: t('seatedAtTable', { table: result.tableNumber }),

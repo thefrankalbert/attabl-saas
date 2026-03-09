@@ -34,6 +34,19 @@ export async function POST(request: Request) {
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 
+    // Verify user has manager/admin/owner role
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+
+    if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Permissions insuffisantes' }, { status: 403 });
+    }
+
     const body = await request.json();
     const parsed = claimOrderSchema.safeParse(body);
     if (!parsed.success) return NextResponse.json({ error: 'Données invalides' }, { status: 400 });

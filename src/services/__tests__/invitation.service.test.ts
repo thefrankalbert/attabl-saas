@@ -83,12 +83,19 @@ function createMockSupabase(
           eq: vi.fn().mockReturnValue({
             eq: vi.fn().mockReturnValue({
               // For cancelInvitation which chains .eq().eq()
+              // For resendInvitation which chains .eq().eq('status','pending').select()
+              select: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({
+                  data: { ...invitationRow, token: 'mock-token-abc123def456' },
+                  error: null,
+                }),
+              }),
               then: undefined,
               ...(options.invitationUpdateError
                 ? { error: { message: 'Update failed' } }
                 : { error: null }),
             }),
-            // For resendInvitation + validateToken which chain .eq() then .select()
+            // For validateToken which chains .eq() then .select()
             select: vi.fn().mockReturnValue({
               single: vi.fn().mockResolvedValue({
                 data: { ...invitationRow, token: 'mock-token-abc123def456' },

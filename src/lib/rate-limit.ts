@@ -60,6 +60,7 @@ function createLimiter(
       if (!rl) {
         if (process.env.NODE_ENV === 'production') {
           logger.error('Rate limiting is DISABLED in production — UPSTASH_REDIS not configured');
+          return { success: false, limit: 0, remaining: 0, reset: 0 };
         }
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }

@@ -56,7 +56,7 @@ export function createMenuService(supabase: SupabaseClient) {
      * Get a single menu with its children, categories, and items.
      * Used for the menu detail admin page and client display.
      */
-    async getMenuWithChildren(menuId: string) {
+    async getMenuWithChildren(tenantId: string, menuId: string) {
       const { data, error } = await supabase
         .from('menus')
         .select(
@@ -69,6 +69,7 @@ export function createMenuService(supabase: SupabaseClient) {
         `,
         )
         .eq('id', menuId)
+        .eq('tenant_id', tenantId)
         .single();
 
       if (error) {
@@ -177,27 +178,18 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Update an existing menu.
      */
-    async updateMenu(input: UpdateMenuInput) {
+    async updateMenu(tenantId: string, input: UpdateMenuInput) {
       const { id, ...updates } = input;
 
       // If name changed, regenerate slug
       let slug: string | undefined;
       if (updates.name) {
-        // Get tenant_id from existing menu
-        const { data: existing } = await supabase
-          .from('menus')
-          .select('tenant_id')
-          .eq('id', id)
-          .single();
-
-        if (existing) {
-          const { data: slugData } = await supabase.rpc('generate_menu_slug', {
-            p_tenant_id: existing.tenant_id,
-            p_name: updates.name,
-          });
-          if (slugData) {
-            slug = slugData as string;
-          }
+        const { data: slugData } = await supabase.rpc('generate_menu_slug', {
+          p_tenant_id: tenantId,
+          p_name: updates.name,
+        });
+        if (slugData) {
+          slug = slugData as string;
         }
       }
 
@@ -218,6 +210,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .from('menus')
         .update(payload)
         .eq('id', id)
+        .eq('tenant_id', tenantId)
         .select(
           'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
         )
@@ -234,8 +227,12 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Delete a menu. Categories cascade-delete via FK.
      */
-    async deleteMenu(menuId: string) {
-      const { error } = await supabase.from('menus').delete().eq('id', menuId);
+    async deleteMenu(menuId: string, tenantId: string) {
+      const { error } = await supabase
+        .from('menus')
+        .delete()
+        .eq('id', menuId)
+        .eq('tenant_id', tenantId);
 
       if (error) {
         logger.error('Failed to delete menu', { error: error.message });
@@ -265,11 +262,12 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Get categories for a specific menu (scoped).
      */
-    async getCategoriesForMenu(menuId: string) {
+    async getCategoriesForMenu(tenantId: string, menuId: string) {
       const { data, error } = await supabase
         .from('categories')
         .select('*, menu_items:menu_items(id)')
         .eq('menu_id', menuId)
+        .eq('tenant_id', tenantId)
         .order('display_order', { ascending: true });
 
       if (error) {
@@ -282,12 +280,13 @@ export function createMenuService(supabase: SupabaseClient) {
     /**
      * Get items for a specific menu (through its categories).
      */
-    async getItemsForMenu(menuId: string) {
+    async getItemsForMenu(tenantId: string, menuId: string) {
       // First get category IDs for this menu
       const { data: categories, error: catError } = await supabase
         .from('categories')
         .select('id')
-        .eq('menu_id', menuId);
+        .eq('menu_id', menuId)
+        .eq('tenant_id', tenantId);
 
       if (catError || !categories?.length) {
         return [];

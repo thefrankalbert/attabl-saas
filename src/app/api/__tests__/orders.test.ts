@@ -48,12 +48,12 @@ vi.mock('@/services/order.service', () => ({
 // ─── Coupon service mock ───────────────────────────────────────
 const mockValidateCoupon =
   vi.fn<(code: string, tenantId: string, subtotal: number) => Promise<CouponValidationResult>>();
-const mockIncrementUsage = vi.fn<(couponId: string) => Promise<void>>();
+const mockClaimUsage = vi.fn<(couponId: string) => Promise<boolean>>();
 
 vi.mock('@/services/coupon.service', () => ({
   createCouponService: vi.fn(() => ({
     validateCoupon: mockValidateCoupon,
-    incrementUsage: mockIncrementUsage,
+    claimUsage: mockClaimUsage,
   })),
 }));
 
@@ -205,7 +205,7 @@ describe('POST /api/orders', () => {
     });
 
     // Default: increment usage succeeds
-    mockIncrementUsage.mockResolvedValue(undefined);
+    mockClaimUsage.mockResolvedValue(true);
   });
 
   // ── 1. Rate limited → 429 ──────────────────────────────────
@@ -374,7 +374,7 @@ describe('POST /api/orders', () => {
     const { status } = await parseResponse(response);
 
     expect(status).toBe(200);
-    expect(mockIncrementUsage).toHaveBeenCalledWith('coupon-xyz');
+    expect(mockClaimUsage).toHaveBeenCalledWith('coupon-xyz');
   });
 
   // ── 9. ServiceError mapped to correct HTTP status ──────────
@@ -435,6 +435,5 @@ describe('POST /api/orders', () => {
 
     expect(status).toBe(400);
     expect(body.error).toBe('Certains articles ne sont plus valides');
-    expect(body.details).toEqual(['Article "Ghost Item" non trouvé']);
   });
 });

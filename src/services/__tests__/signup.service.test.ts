@@ -42,6 +42,10 @@ function createMockSupabase(
   const from = vi.fn((table: string) => {
     return {
       select: vi.fn().mockReturnValue({
+        like: vi.fn().mockResolvedValue({
+          data: options.slugExists ? [{ slug: 'mon-restaurant' }] : [],
+          error: null,
+        }),
         eq: vi.fn().mockReturnValue({
           single: vi.fn().mockResolvedValue({
             data: options.slugExists ? { slug: 'mon-restaurant' } : null,

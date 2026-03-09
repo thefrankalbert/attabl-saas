@@ -114,7 +114,8 @@ export default function PaymentModal({
             paid_at: new Date().toISOString(),
             status: 'delivered',
           })
-          .eq('id', order.id);
+          .eq('id', order.id)
+          .eq('tenant_id', order.tenant_id);
 
         if (error) {
           toast({ title: t('paymentError'), description: error.message, variant: 'destructive' });

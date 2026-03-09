@@ -5,18 +5,17 @@ import { createSlugService } from '../slug.service';
  * Creates a mock Supabase client with configurable responses.
  */
 function createMockSupabase(slugExists: boolean = false) {
-  const mockSingle = vi.fn().mockResolvedValue({
-    data: slugExists ? { slug: 'test-slug' } : null,
-    error: slugExists ? null : { code: 'PGRST116' },
+  const mockLike = vi.fn().mockResolvedValue({
+    data: slugExists ? [{ slug: 'mon-restaurant' }] : [],
+    error: null,
   });
 
-  const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+  const mockSelect = vi.fn().mockReturnValue({ like: mockLike });
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
 
   return {
     from: mockFrom,
-    _mocks: { mockFrom, mockSelect, mockEq, mockSingle },
+    _mocks: { mockFrom, mockSelect, mockLike },
   } as unknown as Parameters<typeof createSlugService>[0];
 }
 
@@ -81,7 +80,7 @@ describe('SlugService', () => {
       const service = createSlugService(supabase);
 
       const slug = await service.generateUniqueSlug('Mon Restaurant');
-      expect(slug).toMatch(/^mon-restaurant-\d+$/);
+      expect(slug).toBe('mon-restaurant-2');
     });
 
     it('should query the tenants table for slug uniqueness', async () => {

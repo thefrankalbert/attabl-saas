@@ -42,7 +42,11 @@ export default function OrderDetails({
   const handleStatusUpdate = async (status: OrderStatus) => {
     setLoading(true);
     try {
-      const { error } = await supabase.from('orders').update({ status }).eq('id', order.id);
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', order.id)
+        .eq('tenant_id', order.tenant_id);
       if (error) throw error;
       toast({ title: t('statusUpdated') });
       onUpdate();

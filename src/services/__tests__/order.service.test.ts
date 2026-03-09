@@ -37,12 +37,19 @@ function createMockSupabase() {
   const mockFrom = vi.fn((table: string) => {
     const chain = getChain(table);
 
+    const eqMock = vi.fn().mockReturnValue({
+      single: chain.single,
+      in: chain.in,
+      eq: vi.fn().mockReturnValue({
+        single: chain.single,
+        in: chain.in,
+      }),
+    });
+
     return {
       select: vi.fn().mockReturnValue({
-        eq: vi.fn().mockReturnValue({
-          single: chain.single,
-          in: chain.in,
-        }),
+        eq: eqMock,
+        in: chain.in,
       }),
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
@@ -77,6 +84,18 @@ function makeItem(
   },
 ): OrderItemInput[] {
   return [{ ...overrides }] as OrderItemInput[];
+}
+
+/** Set up item_modifiers and item_price_variants mocks to return empty */
+function mockNoModifiers(supabase: ReturnType<typeof createMockSupabase>) {
+  supabase._getChain('item_modifiers').in.mockResolvedValue({
+    data: [],
+    error: null,
+  });
+  supabase._getChain('item_price_variants').in.mockResolvedValue({
+    data: [],
+    error: null,
+  });
 }
 
 describe('OrderService', () => {
@@ -134,6 +153,7 @@ describe('OrderService', () => {
         ],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
 
@@ -152,6 +172,7 @@ describe('OrderService', () => {
         data: [],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
       const items = makeItem({ id: 'item-999', name: 'Ghost Item', price: 10, quantity: 1 });
@@ -167,6 +188,7 @@ describe('OrderService', () => {
         data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: false }],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
       const items = makeItem({ id: 'item-1', name: 'Pizza', price: 10, quantity: 1 });
@@ -182,6 +204,7 @@ describe('OrderService', () => {
         data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
 
@@ -199,6 +222,7 @@ describe('OrderService', () => {
         data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
 
@@ -206,19 +230,28 @@ describe('OrderService', () => {
       const items = makeItem({ id: 'item-1', name: 'Pizza', price: 10.05, quantity: 1 });
 
       const result = await service.validateOrderItems('tenant-123', items);
-      expect(result.validatedTotal).toBeCloseTo(10.05);
+      // Now uses server price (10), not client price (10.05)
+      expect(result.validatedTotal).toBe(10);
     });
 
-    it('should use variant price when selectedVariant is present', async () => {
+    it('should use variant price from DB when selectedVariant is present', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('menu_items').in.mockResolvedValue({
         data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
         error: null,
       });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [{ id: 'var-1', menu_item_id: 'item-1', variant_name_fr: 'Grande', price: 15 }],
+        error: null,
+      });
 
       const service = createOrderService(asSupabase(supabase));
 
-      // Item with variant at a different price
+      // Item with variant — server DB price is 15
       const items = [
         {
           id: 'item-1',
@@ -233,15 +266,110 @@ describe('OrderService', () => {
       expect(result.validatedTotal).toBe(15);
     });
 
+    it('should reject unknown variant', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 1,
+          quantity: 1,
+          selectedVariant: { name_fr: 'FakeVariant', price: 1 },
+        },
+      ] as OrderItemInput[];
+
+      await expect(service.validateOrderItems('tenant-123', items)).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
+    });
+
     it('should throw VALIDATION when total is zero', async () => {
       const supabase = createMockSupabase();
       supabase._getChain('menu_items').in.mockResolvedValue({
         data: [{ id: 'item-1', name: 'Free Item', price: 0, is_available: true }],
         error: null,
       });
+      mockNoModifiers(supabase);
 
       const service = createOrderService(asSupabase(supabase));
       const items = makeItem({ id: 'item-1', name: 'Free Item', price: 0, quantity: 1 });
+
+      await expect(service.validateOrderItems('tenant-123', items)).rejects.toMatchObject({
+        code: 'VALIDATION',
+      });
+    });
+
+    it('should verify modifier prices from server and use them in total', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [{ id: 'mod-1', menu_item_id: 'item-1', name: 'Extra Cheese', price: 3 }],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+          modifiers: [{ name: 'Extra Cheese', price: 0 }], // Client sends 0, server has 3
+        },
+      ] as OrderItemInput[];
+
+      const result = await service.validateOrderItems('tenant-123', items);
+      // Uses server price: 10 (item) + 3 (modifier) = 13
+      expect(result.validatedTotal).toBe(13);
+    });
+
+    it('should reject unknown modifiers', async () => {
+      const supabase = createMockSupabase();
+      supabase._getChain('menu_items').in.mockResolvedValue({
+        data: [{ id: 'item-1', name: 'Pizza', price: 10, is_available: true }],
+        error: null,
+      });
+      supabase._getChain('item_modifiers').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+      supabase._getChain('item_price_variants').in.mockResolvedValue({
+        data: [],
+        error: null,
+      });
+
+      const service = createOrderService(asSupabase(supabase));
+      const items = [
+        {
+          id: 'item-1',
+          name: 'Pizza',
+          price: 10,
+          quantity: 1,
+          modifiers: [{ name: 'Fake Modifier', price: -500 }],
+        },
+      ] as OrderItemInput[];
 
       await expect(service.validateOrderItems('tenant-123', items)).rejects.toMatchObject({
         code: 'VALIDATION',

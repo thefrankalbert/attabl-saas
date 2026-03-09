@@ -66,12 +66,15 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
 
   const userIds = adminUsers.map((au) => au.user_id);
 
-  // Fetch emails from auth.users via admin API (batch instead of N+1)
-  const { data: usersData } = await supabase.auth.admin.listUsers();
-  const userIdSet = new Set(userIds);
-  const emails = (usersData?.users || [])
-    .filter((u) => userIdSet.has(u.id) && u.email)
-    .map((u) => u.email!);
+  // Fetch emails directly from admin_users table (avoids auth API pagination issues)
+  const { data: emailData } = await supabase
+    .from('admin_users')
+    .select('email')
+    .eq('tenant_id', tenantId)
+    .in('user_id', userIds)
+    .not('email', 'is', null);
+
+  const emails = (emailData || []).map((u) => u.email).filter(Boolean) as string[];
 
   if (emails.length === 0) return;
 

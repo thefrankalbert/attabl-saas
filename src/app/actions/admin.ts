@@ -37,6 +37,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
     .select('role')
     .eq('user_id', user.id)
     .eq('tenant_id', tenantId)
+    .eq('is_active', true)
     .single();
 
   if (dbError || !adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {

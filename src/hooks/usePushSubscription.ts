@@ -73,7 +73,6 @@ export function usePushSubscription({ tenantId, enabled = true }: UsePushSubscri
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          tenantId,
           endpoint: json.endpoint,
           p256dh: json.keys.p256dh,
           auth: json.keys.auth,

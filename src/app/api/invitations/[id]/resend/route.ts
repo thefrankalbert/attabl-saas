@@ -46,6 +46,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .select('role')
       .eq('user_id', user.id)
       .eq('tenant_id', existingInvitation.tenant_id)
+      .eq('is_active', true)
       .single();
 
     if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
@@ -71,11 +72,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       inviteUrl,
     });
 
-    return NextResponse.json({ success: true, invitation });
+    // Strip sensitive token field before returning
+    const { token: _token, ...sanitizedInvitation } = invitation;
+    return NextResponse.json({ success: true, invitation: sanitizedInvitation });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Invitation resend ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

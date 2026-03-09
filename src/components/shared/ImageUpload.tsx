@@ -49,7 +49,7 @@ export default function ImageUpload({
 
       // Nom unique pour le fichier pour éviter les conflits
       const fileExt = file.name.split('.').pop();
-      const fileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+      const fileName = `${crypto.randomUUID()}_${Date.now()}.${fileExt}`;
       const filePath = `${fileName}`;
 
       // Upload vers Supabase Storage

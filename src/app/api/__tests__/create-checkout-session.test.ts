@@ -240,7 +240,7 @@ describe('POST /api/create-checkout-session', () => {
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(500);
-    expect(json.error).toBe('Stripe connection failed');
+    expect(json.error).toBe('Erreur serveur');
     expect(logger.error).toHaveBeenCalledWith(
       'Stripe checkout error',
       expect.objectContaining({ message: 'Stripe connection failed' }),

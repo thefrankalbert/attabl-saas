@@ -76,7 +76,7 @@ export async function uploadToStorage(
   },
 ): Promise<string> {
   const ext = blob.type === 'image/png' ? 'png' : 'jpg';
-  const fileName = `${Math.random().toString(36).substring(2, 12)}_${Date.now()}.${ext}`;
+  const fileName = `${crypto.randomUUID()}_${Date.now()}.${ext}`;
 
   const { error } = await supabase.storage.from(bucket).upload(fileName, blob, { upsert: false });
   if (error) throw new Error(error.message);

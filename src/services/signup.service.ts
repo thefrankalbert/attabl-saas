@@ -85,7 +85,7 @@ export function createSignupService(supabase: SupabaseClient) {
         email: input.email,
         full_name: input.fullName,
         phone: input.phone || null,
-        role: 'superadmin',
+        role: 'owner',
         is_active: true,
       });
 
@@ -166,7 +166,7 @@ export function createSignupService(supabase: SupabaseClient) {
         await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
       }
 
-      // 4. Create admin user (rollback: delete tenant + auth user if fails)
+      // 4. Create admin user (rollback: delete group + tenant + auth user if fails)
       try {
         await this.createAdminUser({
           tenantId: tenant.id,
@@ -176,6 +176,9 @@ export function createSignupService(supabase: SupabaseClient) {
           phone: input.phone,
         });
       } catch (err) {
+        if (group) {
+          await supabase.from('restaurant_groups').delete().eq('id', group.id);
+        }
         await supabase.from('tenants').delete().eq('id', tenant.id);
         await supabase.auth.admin.deleteUser(userId);
         throw err;
@@ -218,7 +221,7 @@ export function createSignupService(supabase: SupabaseClient) {
         await supabase.from('tenants').update({ group_id: group.id }).eq('id', tenant.id);
       }
 
-      // 3. Create admin user (rollback: delete tenant if fails)
+      // 3. Create admin user (rollback: delete group + tenant if fails)
       try {
         await this.createAdminUser({
           tenantId: tenant.id,
@@ -228,6 +231,9 @@ export function createSignupService(supabase: SupabaseClient) {
           phone: input.phone,
         });
       } catch (err) {
+        if (group) {
+          await supabase.from('restaurant_groups').delete().eq('id', group.id);
+        }
         await supabase.from('tenants').delete().eq('id', tenant.id);
         throw err;
       }

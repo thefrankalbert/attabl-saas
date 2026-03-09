@@ -33,6 +33,16 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 
+    // Verify user belongs to this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+
     const { id } = await params;
     const service = createAssignmentService(supabase);
     await service.releaseAssignment(id, tenant.id);
