@@ -48,7 +48,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
       {/* ── Right — Showcase panel ────────────────────────── */}
       <div className="hidden md:flex md:w-[45%] items-center py-6 pr-3 md:pr-6 pl-1.5 md:pl-3">
-        <div className="relative flex flex-col w-full h-full overflow-hidden rounded-[2rem] bg-[#0C0C0C]">
+        <div className="relative flex flex-col w-full h-full overflow-hidden rounded-[2rem] bg-app-bg">
           {/* Decorative dot grid */}
           <div
             className="absolute inset-0 opacity-[0.035]"
@@ -68,12 +68,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               transition={{ duration: 0.7, ease: 'easeOut' }}
             >
               {/* Live badge */}
-              <div className="inline-flex items-center gap-2 bg-[#CCFF00]/10 border border-[#CCFF00]/20 rounded-full px-3 py-1 mb-6">
+              <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-6">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#CCFF00] opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-[#CCFF00]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
                 </span>
-                <span className="text-[#CCFF00] text-xs font-medium tracking-wide">
+                <span className="text-accent text-xs font-medium tracking-wide">
                   Commandes en direct
                 </span>
               </div>
@@ -84,7 +84,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               >
                 La plateforme préférée
                 <br />
-                <span className="text-[#CCFF00]">des restaurateurs.</span>
+                <span className="text-accent">des restaurateurs.</span>
               </h2>
               <p className="text-white/40 text-sm leading-relaxed max-w-xs">
                 Menu QR, commandes en temps réel, analytics — tout depuis un seul tableau de bord.
@@ -125,7 +125,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                     <div className="text-white/40 text-xs mb-1 uppercase tracking-wider">
                       Chiffre du jour
                     </div>
-                    <div className="text-[#CCFF00] text-3xl font-bold tracking-tight">€ 2 847</div>
+                    <div className="text-accent text-3xl font-bold tracking-tight">€ 2 847</div>
                   </div>
                   <div className="flex items-center gap-1 text-emerald-400 text-xs bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1.5 rounded-full mt-1">
                     <TrendingUp className="w-3 h-3" />
@@ -146,7 +146,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                         originY: 1,
                         opacity: i === 11 ? 1 : 0.25 + (i / 11) * 0.4,
                       }}
-                      className="flex-1 bg-[#CCFF00] rounded-sm min-w-0"
+                      className="flex-1 bg-accent rounded-sm min-w-0"
                     />
                   ))}
                 </div>
@@ -193,7 +193,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <div className="flex items-center gap-4 border-t border-white/[0.08] pt-6">
                 {stats.map((stat, i) => (
                   <div key={stat.label} className="flex-1 text-center">
-                    <div className="text-lg font-bold text-[#CCFF00]">{stat.value}</div>
+                    <div className="text-lg font-bold text-accent">{stat.value}</div>
                     <div className="text-[11px] text-white/30 mt-0.5 leading-tight">
                       {stat.label}
                     </div>

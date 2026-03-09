@@ -3,9 +3,10 @@
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { AdminTopBar } from './AdminTopBar';
 import { AdminBottomNav } from './AdminBottomNav';
+import { AdminSidebar } from './AdminSidebar';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
-import { isAdminHome } from '@/lib/constants';
+import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
 
 // ─── Inner Layout ───────────────────────────────────────
@@ -34,27 +35,35 @@ function AdminLayoutInner({
   const { isMobile } = useDeviceContext();
   const pathname = usePathname();
   const isHome = isAdminHome(pathname, basePath);
+  const immersive = isImmersivePage(pathname);
 
   return (
     <div className="h-dvh overflow-hidden flex flex-col bg-app-bg transition-colors duration-200">
       <AdminTopBar tenant={tenant} basePath={basePath} notifications={notifications} />
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-app-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
-        >
-          Skip to content
-        </a>
+      <div className="flex-1 flex min-h-0">
+        {/* Sidebar — desktop only, hidden on immersive pages */}
+        {!immersive && (
+          <AdminSidebar basePath={basePath} tenant={tenant} className="hidden md:flex" />
+        )}
 
-        <main
-          id="main-content"
-          className={cn('flex-1 min-h-0', 'overflow-hidden', isDevMode && 'pt-6')}
-        >
-          {children}
-        </main>
+        <div className="flex-1 flex flex-col min-w-0 min-h-0">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-app-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
+          >
+            Skip to content
+          </a>
 
-        {isMobile && !isHome && <AdminBottomNav basePath={basePath} role={role} />}
+          <main
+            id="main-content"
+            className={cn('flex-1 min-h-0', 'overflow-hidden', isDevMode && 'pt-6')}
+          >
+            {children}
+          </main>
+
+          {isMobile && !isHome && <AdminBottomNav basePath={basePath} role={role} />}
+        </div>
       </div>
     </div>
   );

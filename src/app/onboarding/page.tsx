@@ -104,7 +104,7 @@ export default function OnboardingPage() {
     tableConfigMode: 'skip',
     tableZones: [],
     logoUrl: '',
-    primaryColor: '#CCFF00',
+    primaryColor: '#4d7c0f',
     secondaryColor: '#000000',
     description: '',
     menuOption: 'skip',
@@ -349,7 +349,7 @@ export default function OnboardingPage() {
                           isCompleted
                             ? 'bg-accent text-accent-text'
                             : isCurrent
-                              ? 'bg-app-text text-app-bg'
+                              ? 'bg-accent text-accent-text'
                               : 'bg-app-elevated text-app-text-muted'
                         }`}
                       >
@@ -425,7 +425,7 @@ export default function OnboardingPage() {
                         isCompleted
                           ? 'bg-accent text-accent-text cursor-pointer'
                           : isCurrent
-                            ? 'bg-app-text text-app-bg'
+                            ? 'bg-accent text-accent-text'
                             : 'bg-app-elevated text-app-text-muted'
                       }`}
                     >
