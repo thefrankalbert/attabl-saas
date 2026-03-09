@@ -50,7 +50,7 @@ describe('createInvitationSchema', () => {
 describe('acceptInvitationSchema', () => {
   it('accepts valid accept input with password', () => {
     const result = acceptInvitationSchema.safeParse({
-      token: 'abc123def456',
+      token: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
       full_name: 'Jean Dupont',
       password: 'SecurePass123!',
     });
@@ -68,7 +68,7 @@ describe('acceptInvitationSchema', () => {
 
   it('accepts without password (existing user)', () => {
     const result = acceptInvitationSchema.safeParse({
-      token: 'abc123def456',
+      token: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2',
     });
     expect(result.success).toBe(true);
   });

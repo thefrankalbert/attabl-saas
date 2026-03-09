@@ -286,7 +286,7 @@ export default function CartPage() {
     setValidationErrors([]);
 
     try {
-      const tableNumber = localStorage.getItem('attabl_table') || undefined;
+      const tableNumber = localStorage.getItem(`attabl_${tenantSlug}_table`) || undefined;
 
       const response = await fetch('/api/orders', {
         method: 'POST',

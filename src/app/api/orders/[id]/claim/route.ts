@@ -5,8 +5,6 @@ import { logger } from '@/lib/logger';
 import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
-import { claimOrderSchema } from '@/lib/validations/assignment.schema';
-
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const ip = getClientIp(request);
@@ -34,13 +32,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 
-    const { id } = await params;
-    const body = await request.json();
-    const parsed = claimOrderSchema.safeParse(body);
-    if (!parsed.success) return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
+    // Verify user belongs to this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
+    const { id } = await params;
+
+    // Use authenticated user's ID as server_id (servers can only claim for themselves)
     const service = createAssignmentService(supabase);
-    await service.claimOrder(id, parsed.data.server_id, tenant.id);
+    await service.claimOrder(id, user.id, tenant.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof ServiceError)

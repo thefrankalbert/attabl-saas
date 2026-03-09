@@ -140,7 +140,7 @@ export default function ClientMenuPage({
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('attabl_table');
+      return localStorage.getItem(`attabl_${tenant.slug}_table`);
     }
     return null;
   });
@@ -154,7 +154,7 @@ export default function ClientMenuPage({
     if (typeof window === 'undefined' || scannerCheckRef.current) return;
     scannerCheckRef.current = true;
 
-    const savedTable = localStorage.getItem('attabl_table');
+    const savedTable = localStorage.getItem(`attabl_${tenant.slug}_table`);
     if (!initialTable && !savedTable) {
       // Don't auto-open scanner in development — only in production
       if (process.env.NODE_ENV === 'production') {
@@ -167,7 +167,7 @@ export default function ClientMenuPage({
   // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {
     if (initialTable && typeof window !== 'undefined') {
-      localStorage.setItem('attabl_table', initialTable);
+      localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
       queueMicrotask(() => {
         toast({
           title: t('tableIdentified'),
@@ -197,7 +197,7 @@ export default function ClientMenuPage({
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
-    localStorage.setItem('attabl_table', table.table_number);
+    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),
@@ -217,7 +217,7 @@ export default function ClientMenuPage({
         handleTableSelect(matchedTable);
       } else {
         setTableNumber(result.tableNumber);
-        localStorage.setItem('attabl_table', result.tableNumber);
+        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
           title: t('tableIdentified'),
           description: t('seatedAtTable', { table: result.tableNumber }),

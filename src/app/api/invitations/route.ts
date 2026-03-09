@@ -28,33 +28,39 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const tenantId = searchParams.get('tenant_id');
-    if (!tenantId) {
-      return NextResponse.json({ error: 'tenant_id requis' }, { status: 400 });
-    }
-
-    // Verify caller is owner or admin of this tenant
+    // Derive tenant_id from the authenticated user's session
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('role')
+      .select('tenant_id, role')
       .eq('user_id', user.id)
-      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .in('role', ['owner', 'admin'])
       .single();
 
-    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
+
+    const tenantId = adminUser.tenant_id;
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);
     const invitations = await service.getPendingInvitations(tenantId);
 
-    return jsonWithCache({ invitations }, 'dynamic');
+    // Strip sensitive token field before returning
+    const sanitized = invitations.map(({ token: _token, ...rest }) => rest);
+
+    return jsonWithCache({ invitations: sanitized }, 'dynamic');
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Invitations GET ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }
@@ -91,23 +97,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // Extract tenant_id from body (not part of Zod schema)
-    const tenantId = (body as Record<string, unknown>).tenant_id;
-    if (!tenantId || typeof tenantId !== 'string') {
-      return NextResponse.json({ error: 'tenant_id requis' }, { status: 400 });
-    }
-
-    // Verify caller is owner or admin of this tenant
+    // Derive tenant_id from the authenticated user's session — never from client input
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('role')
+      .select('tenant_id, role')
       .eq('user_id', user.id)
-      .eq('tenant_id', tenantId)
+      .eq('is_active', true)
+      .in('role', ['owner', 'admin'])
       .single();
 
-    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
     }
+
+    const tenantId = adminUser.tenant_id;
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);
@@ -137,11 +140,19 @@ export async function POST(request: Request) {
       });
     }
 
-    return NextResponse.json({ success: true, invitation }, { status: 201 });
+    // Strip sensitive token field before returning
+    const { token: _token, ...sanitizedInvitation } = invitation;
+    return NextResponse.json({ success: true, invitation: sanitizedInvitation }, { status: 201 });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Invitations POST ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

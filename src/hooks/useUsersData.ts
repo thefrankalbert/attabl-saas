@@ -135,7 +135,7 @@ export function useUsersData({
   const fetchInvitations = useCallback(async () => {
     setLoadingInvitations(true);
     try {
-      const response = await fetch(`/api/invitations?tenant_id=${tenantId}`);
+      const response = await fetch(`/api/invitations`);
       if (!response.ok) {
         throw new Error('Erreur lors du chargement des invitations');
       }
@@ -168,7 +168,7 @@ export function useUsersData({
       const response = await fetch('/api/invitations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: inviteEmail, role: inviteRole, tenant_id: tenantId }),
+        body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
       });
 
       if (!response.ok) {

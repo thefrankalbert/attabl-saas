@@ -1,5 +1,15 @@
 import type { Order } from '@/types/admin.types';
 
+/** Escape user-controlled strings before interpolating into HTML. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Génère le HTML d'un ticket cuisine pour impression.
  * Gros caractères, items groupés par course, notes mises en évidence.
@@ -56,7 +66,7 @@ export function generateKitchenTicketHTML(order: Order): string {
       itemsHTML += `
         <tr>
           <td style="font-size:20px;font-weight:bold;padding:6px 0;">
-            ${item.quantity}x ${item.name.toUpperCase()}
+            ${item.quantity}x ${escapeHtml(item.name.toUpperCase())}
           </td>
         </tr>
       `;
@@ -66,7 +76,7 @@ export function generateKitchenTicketHTML(order: Order): string {
         itemsHTML += `
           <tr>
             <td style="background:#fff3cd;padding:4px 8px;font-size:16px;font-weight:bold;color:#856404;border-radius:4px;">
-              ⚠️ ${item.customer_notes}
+              ⚠️ ${escapeHtml(item.customer_notes)}
             </td>
           </tr>
         `;
@@ -77,7 +87,7 @@ export function generateKitchenTicketHTML(order: Order): string {
         itemsHTML += `
           <tr>
             <td style="padding-left:20px;font-size:14px;color:#444;">
-              ↳ ${item.notes}
+              ↳ ${escapeHtml(item.notes)}
             </td>
           </tr>
         `;
@@ -89,7 +99,7 @@ export function generateKitchenTicketHTML(order: Order): string {
           itemsHTML += `
             <tr>
               <td style="padding-left:20px;font-size:14px;color:#0066cc;font-weight:bold;">
-                + ${mod.name.toUpperCase()}
+                + ${escapeHtml(mod.name.toUpperCase())}
               </td>
             </tr>
           `;
@@ -102,7 +112,7 @@ export function generateKitchenTicketHTML(order: Order): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>CUISINE - ${order.order_number || `Table ${order.table_number}`}</title>
+  <title>CUISINE - ${escapeHtml(order.order_number || `Table ${order.table_number}`)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -154,11 +164,11 @@ export function generateKitchenTicketHTML(order: Order): string {
 
   <!-- Order info — BIG -->
   <div class="center">
-    <p style="font-size:32px;font-weight:bold;">TABLE ${order.table_number || '—'}</p>
-    ${order.order_number ? `<p style="font-size:16px;color:#666;">${order.order_number}</p>` : ''}
+    <p style="font-size:32px;font-weight:bold;">TABLE ${escapeHtml(String(order.table_number || '—'))}</p>
+    ${order.order_number ? `<p style="font-size:16px;color:#666;">${escapeHtml(order.order_number)}</p>` : ''}
     <div class="service-badge">${serviceLabel}</div>
-    ${order.room_number ? `<p style="font-size:18px;font-weight:bold;margin-top:6px;">Chambre ${order.room_number}</p>` : ''}
-    ${order.delivery_address ? `<p style="font-size:14px;margin-top:4px;">📍 ${order.delivery_address}</p>` : ''}
+    ${order.room_number ? `<p style="font-size:18px;font-weight:bold;margin-top:6px;">Chambre ${escapeHtml(String(order.room_number))}</p>` : ''}
+    ${order.delivery_address ? `<p style="font-size:14px;margin-top:4px;">📍 ${escapeHtml(order.delivery_address)}</p>` : ''}
   </div>
 
   <div class="separator"></div>

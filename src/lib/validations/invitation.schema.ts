@@ -14,7 +14,7 @@ export const createInvitationSchema = z.object({
 });
 
 export const acceptInvitationSchema = z.object({
-  token: z.string().min(1, 'Token requis'),
+  token: z.string().regex(/^[a-f0-9]{64}$/, 'Token invalide'),
   full_name: z.string().min(2, 'Le nom doit contenir au moins 2 caracteres').max(100).optional(),
   password: z
     .string()
