@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Volume2, VolumeX, ChevronRight, Eye } from 'lucide-react';
+import { Search, Volume2, VolumeX, ChevronRight, Eye, ShoppingBag } from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
@@ -20,7 +20,9 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Order, OrderStatus } from '@/types/admin.types';
+import type { Order } from '@/types/admin.types';
+import { STATUS_STYLES } from '@/lib/design-tokens';
+import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
 interface OrdersClientProps {
@@ -44,6 +46,7 @@ export default function OrdersClient({
   const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
   const [search, setSearch] = useSessionState('orders:search', '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
     soundEnabled,
@@ -122,52 +125,58 @@ export default function OrdersClient({
     return result;
   }, [orders, statusFilter, search]);
 
-  // Status badge config
+  // Status badge config — uses semantic design tokens for colors
   const statusConfig: Record<
-    OrderStatus,
+    string,
     {
       label: string;
       bg: string;
+      text: string;
       nextStatus: OrderStatus | null;
       nextLabel: string | null;
-      actionBg: string;
+      actionDot: string;
     }
   > = useMemo(
     () => ({
       pending: {
         label: t('statusPendingCard'),
-        bg: 'bg-amber-500/10 text-amber-500',
+        bg: STATUS_STYLES.pending.bg,
+        text: STATUS_STYLES.pending.text,
         nextStatus: 'preparing',
         nextLabel: t('actionPrepare'),
-        actionBg: 'bg-amber-500',
+        actionDot: STATUS_STYLES.pending.dot,
       },
       preparing: {
         label: t('statusPreparingCard'),
-        bg: 'bg-blue-500/10 text-blue-500',
+        bg: STATUS_STYLES.preparing.bg,
+        text: STATUS_STYLES.preparing.text,
         nextStatus: 'ready',
         nextLabel: t('actionReady'),
-        actionBg: 'bg-blue-500',
+        actionDot: STATUS_STYLES.preparing.dot,
       },
       ready: {
         label: t('statusReadyCard'),
-        bg: 'bg-emerald-500/10 text-emerald-500',
+        bg: STATUS_STYLES.ready.bg,
+        text: STATUS_STYLES.ready.text,
         nextStatus: 'delivered',
         nextLabel: t('actionDeliver'),
-        actionBg: 'bg-emerald-500',
+        actionDot: STATUS_STYLES.ready.dot,
       },
       delivered: {
         label: t('statusDeliveredCard'),
-        bg: 'bg-slate-500/10 text-slate-500',
+        bg: STATUS_STYLES.delivered.bg,
+        text: STATUS_STYLES.delivered.text,
         nextStatus: null,
         nextLabel: null,
-        actionBg: '',
+        actionDot: '',
       },
       cancelled: {
         label: t('statusCancelledCard'),
-        bg: 'bg-red-500/10 text-red-500',
+        bg: STATUS_STYLES.cancelled.bg,
+        text: STATUS_STYLES.cancelled.text,
         nextStatus: null,
         nextLabel: null,
-        actionBg: '',
+        actionDot: '',
       },
     }),
     [t],
@@ -176,6 +185,43 @@ export default function OrdersClient({
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<Order, unknown>[]>(
     () => [
+      {
+        id: 'select',
+        header: () => (
+          <input
+            type="checkbox"
+            checked={
+              filteredOrders.length > 0 && filteredOrders.every((o) => selectedIds.has(o.id))
+            }
+            onChange={(e) => {
+              const next = new Set(selectedIds);
+              if (e.target.checked) {
+                filteredOrders.forEach((o) => next.add(o.id));
+              } else {
+                filteredOrders.forEach((o) => next.delete(o.id));
+              }
+              setSelectedIds(next);
+            }}
+            className="rounded border-app-border text-accent focus:ring-accent"
+          />
+        ),
+        cell: ({ row }: { row: { original: Order } }) => (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.original.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              const next = new Set(selectedIds);
+              if (e.target.checked) next.add(row.original.id);
+              else next.delete(row.original.id);
+              setSelectedIds(next);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded border-app-border text-accent focus:ring-accent"
+          />
+        ),
+        enableSorting: false,
+      },
       {
         accessorKey: 'table_number',
         header: ({ column }) => (
@@ -216,7 +262,9 @@ export default function OrdersClient({
         cell: ({ row }) => {
           const config = statusConfig[row.original.status];
           return (
-            <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
+            <span
+              className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg, config.text)}
+            >
               {config.label}
             </span>
           );
@@ -280,8 +328,8 @@ export default function OrdersClient({
                   }}
                   className={cn(
                     'text-xs text-white gap-1 min-h-[44px]',
-                    config.actionBg,
-                    `hover:${config.actionBg}/90`,
+                    config.actionDot,
+                    `hover:opacity-90`,
                   )}
                 >
                   {config.nextLabel} <ChevronRight className="w-4 h-4" />
@@ -294,7 +342,7 @@ export default function OrdersClient({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, tc, statusConfig],
+    [t, tc, statusConfig, selectedIds, filteredOrders],
   );
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
@@ -354,81 +402,115 @@ export default function OrdersClient({
           </div>
         </div>
 
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 mt-3 rounded-xl bg-accent-muted border border-accent/20">
+            <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
+            <div className="flex-1" />
+            <button
+              onClick={() => {
+                setSelectedIds(new Set());
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
+            >
+              Clear selection
+            </button>
+          </div>
+        )}
+
         {/* Orders Table / Cards */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-          <ResponsiveDataTable
-            columns={columns}
-            data={filteredOrders}
-            emptyMessage={t('noOrdersMatch')}
-            onRowClick={(order) => setSelectedOrder(order)}
-            storageKey="orders"
-            mobileConfig={{
-              renderCard: (order) => {
-                const config = statusConfig[order.status];
-                const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
-                const items = order.items || [];
-                return (
-                  <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3 active:bg-app-bg transition-colors">
-                    {/* Row 1: Table + Status + Time */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
-                          {order.table_number}
+          {orders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />
+              <p className="text-sm font-medium text-app-text-secondary mb-1">
+                {t('noOrdersTitle') || 'No orders yet'}
+              </p>
+              <p className="text-xs text-app-text-muted">
+                {t('noOrdersDesc') || 'Orders will appear here as they come in'}
+              </p>
+            </div>
+          ) : (
+            <ResponsiveDataTable
+              columns={columns}
+              data={filteredOrders}
+              emptyMessage={t('noOrdersMatch')}
+              onRowClick={(order) => setSelectedOrder(order)}
+              storageKey="orders"
+              mobileConfig={{
+                renderCard: (order) => {
+                  const config = statusConfig[order.status];
+                  const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
+                  const items = order.items || [];
+                  return (
+                    <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3 active:bg-app-bg transition-colors">
+                      {/* Row 1: Table + Status + Time */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
+                            {order.table_number}
+                          </div>
+                          <span className="font-semibold text-app-text">{order.table_number}</span>
                         </div>
-                        <span className="font-semibold text-app-text">{order.table_number}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-app-text-muted">
+                            {new Date(order.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <span
+                            className={cn(
+                              'px-2 py-1 rounded-full text-xs font-bold',
+                              config.bg,
+                              config.text,
+                            )}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-app-text-muted">
-                          {new Date(order.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                        <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
-                          {config.label}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Row 2: Server + Items + Total */}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-app-text-muted truncate">
-                        {order.server?.full_name ?? '—'}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-app-text-secondary">
-                          {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                      {/* Row 2: Server + Items + Total */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-app-text-muted truncate">
+                          {order.server?.full_name ?? '—'}
                         </span>
-                        <span className="font-mono font-bold text-app-text">
-                          {total.toLocaleString()}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-app-text-secondary">
+                            {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                          </span>
+                          <span className="font-mono font-bold text-app-text">
+                            {total.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Row 3: Actions */}
-                    {config.nextStatus && (
-                      <div className="flex justify-end pt-1">
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStatusChange(order.id, config.nextStatus!);
-                          }}
-                          className={cn(
-                            'text-xs text-white gap-1 min-h-[44px]',
-                            config.actionBg,
-                            `hover:${config.actionBg}/90`,
-                          )}
-                        >
-                          {config.nextLabel} <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              },
-            }}
-          />
+                      {/* Row 3: Actions */}
+                      {config.nextStatus && (
+                        <div className="flex justify-end pt-1">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(order.id, config.nextStatus!);
+                            }}
+                            className={cn(
+                              'text-xs text-white gap-1 min-h-[44px]',
+                              config.actionDot,
+                              `hover:opacity-90`,
+                            )}
+                          >
+                            {config.nextLabel} <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                },
+              }}
+            />
+          )}
         </div>
 
         {/* Detail Modal */}

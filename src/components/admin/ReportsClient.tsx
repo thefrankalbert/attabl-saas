@@ -48,16 +48,7 @@ interface DailyStats {
   orders: number;
 }
 
-const CHART_COLORS = [
-  'var(--accent)',
-  '#22c55e',
-  '#3b82f6',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-];
+import { CHART_PALETTE } from '@/lib/design-tokens';
 
 /** Pill-style period options for the tab selector */
 const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
@@ -332,7 +323,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
+                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
               </div>
             </div>
           </div>
@@ -363,7 +354,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
+                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
               </div>
             </div>
           </div>
@@ -394,7 +385,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
+                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
               </div>
             </div>
           </div>
@@ -576,7 +567,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                       strokeWidth={0}
                     >
                       {categories.map((_cat, idx) => (
-                        <Cell key={`cell-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                        <Cell
+                          key={`cell-${idx}`}
+                          fill={CHART_PALETTE[idx % CHART_PALETTE.length]}
+                        />
                       ))}
                     </Pie>
                     <Tooltip

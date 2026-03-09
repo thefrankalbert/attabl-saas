@@ -29,11 +29,27 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
   const t = useTranslations('admin');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Track fullscreen state
+  // Track fullscreen state + persist preference in sessionStorage
   useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    const handler = () => {
+      const fs = !!document.fullscreenElement;
+      setIsFullscreen(fs);
+      try {
+        if (fs) sessionStorage.setItem('attabl-fs', '1');
+        else sessionStorage.removeItem('attabl-fs');
+      } catch {}
+    };
     document.addEventListener('fullscreenchange', handler);
     return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
+
+  // Restore fullscreen on mount if it was active (survives client-side navigation)
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem('attabl-fs') === '1' && !document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    } catch {}
   }, []);
 
   const toggleFullscreen = useCallback(async () => {
@@ -49,19 +65,19 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
   const isHome = isAdminHome(pathname, basePath);
 
   return (
-    <header className="shrink-0 h-14 bg-app-card border-b border-app-border flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+    <header className="shrink-0 h-12 bg-app-bg flex items-center justify-between px-4 sm:px-6 lg:px-8 transition-colors duration-200">
       <div className="flex items-center gap-3">
         {!isHome ? (
           <Link
             href={basePath}
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
           >
             <ArrowLeft className="w-4 h-4 text-app-text-secondary" />
           </Link>
         ) : (
           <Link
             href="/admin/tenants"
-            className="w-9 h-9 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
+            className="w-8 h-8 flex items-center justify-center rounded-lg bg-app-elevated hover:bg-app-hover transition-colors touch-manipulation"
             title={t('topbar.mySpaces')}
           >
             <LayoutGrid className="w-4 h-4 text-app-text-secondary" />
@@ -77,7 +93,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
             className="w-7 h-7 rounded-lg object-cover"
           />
         ) : (
-          <div className="w-7 h-7 rounded-lg bg-accent flex items-center justify-center font-bold text-xs text-accent-text">
+          <div className="w-7 h-7 rounded-lg bg-app-elevated flex items-center justify-center font-bold text-xs text-app-text-secondary">
             {tenant.name.charAt(0).toUpperCase()}
           </div>
         )}
@@ -92,7 +108,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary transition-colors touch-manipulation"
           title={isFullscreen ? t('topbar.exitFullscreen') : t('topbar.fullscreen')}
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
@@ -100,7 +116,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
         <button
           type="button"
           onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation"
+          className="w-8 h-8 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary transition-colors touch-manipulation"
           title={t('topbar.toggleTheme')}
         >
           {resolved === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -108,7 +124,7 @@ export function AdminTopBar({ tenant, basePath, notifications }: AdminTopBarProp
         <form action="/api/auth/signout" method="post">
           <button
             type="submit"
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-status-error-bg hover:text-status-error transition-colors touch-manipulation"
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-status-error-bg hover:text-status-error transition-colors touch-manipulation"
             title={t('topbar.logout')}
           >
             <LogOut className="w-4 h-4" />
