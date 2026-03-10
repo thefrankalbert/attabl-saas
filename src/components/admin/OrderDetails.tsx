@@ -100,17 +100,20 @@ export default function OrderDetails({
   const statusStyle =
     STATUS_STYLES[order.status as keyof typeof STATUS_STYLES] || STATUS_STYLES.pending;
 
+  const itemCount = (order.items || []).reduce((sum, i) => sum + i.quantity, 0);
+
   return (
     <>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ── Left column: order info ─────────────────────── */}
-        <div className="lg:col-span-2 space-y-4">
-          {/* Status + time + total bar */}
-          <div className="flex items-center justify-between gap-4 rounded-xl border border-app-border p-4">
-            <div className="flex items-center gap-3">
-              <Badge className={`${statusStyle.bg} ${statusStyle.text} border-0`}>
+      <div className="flex flex-col lg:flex-row gap-4 flex-1 min-h-0">
+        {/* ── Left: order info + scrollable items ─────────── */}
+        <div className="flex-1 flex flex-col min-h-0 min-w-0">
+          {/* Static: status bar + info — compact */}
+          <div className="shrink-0 space-y-3 mb-3">
+            {/* Status + total + time — single compact row */}
+            <div className="flex items-center gap-3 flex-wrap">
+              <Badge className={`${statusStyle.bg} ${statusStyle.text} border-0 text-xs`}>
                 <span
-                  className={`inline-block w-2 h-2 rounded-full mr-1.5 ${statusStyle.dot} ${statusStyle.pulse ? 'animate-pulse' : ''}`}
+                  className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${statusStyle.dot} ${statusStyle.pulse ? 'animate-pulse' : ''}`}
                 />
                 {t(
                   `status${order.status.charAt(0).toUpperCase()}${order.status.slice(1)}Card` as Parameters<
@@ -119,99 +122,84 @@ export default function OrderDetails({
                 )}
               </Badge>
               {order.service_type && order.service_type !== 'dine_in' && (
-                <Badge variant="outline" className="text-xs">
+                <Badge variant="outline" className="text-[10px]">
                   {serviceLabels[order.service_type] || order.service_type}
                 </Badge>
               )}
-            </div>
-            <div className="text-right">
-              <p className="text-2xl font-bold text-app-text">{fmt(displayTotal)}</p>
-              <div className="flex items-center gap-1 text-xs text-app-text-muted justify-end mt-0.5">
+              <span className="text-lg font-bold text-app-text ml-auto">{fmt(displayTotal)}</span>
+              <span className="flex items-center gap-1 text-[10px] text-app-text-muted">
                 <Clock className="w-3 h-3" />
                 {new Date(order.created_at).toLocaleString(locale)}
+              </span>
+            </div>
+
+            {/* Info row — inline chips */}
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <InfoChip icon={<Hash className="w-3 h-3" />} value={order.table_number} />
+              <InfoChip
+                icon={<User className="w-3 h-3" />}
+                label={t('serverLabel')}
+                value={order.server?.full_name ?? ta('unassigned')}
+              />
+              {(order.customer_name || order.customer_phone) && (
+                <InfoChip
+                  icon={
+                    order.customer_phone ? (
+                      <Phone className="w-3 h-3" />
+                    ) : (
+                      <User className="w-3 h-3" />
+                    )
+                  }
+                  value={[order.customer_name, order.customer_phone].filter(Boolean).join(' · ')}
+                />
+              )}
+              {order.room_number && (
+                <InfoChip icon={<MapPin className="w-3 h-3" />} value={order.room_number} />
+              )}
+            </div>
+
+            {/* Notes */}
+            {order.notes && (
+              <div className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 dark:text-amber-400">{order.notes}</p>
               </div>
-            </div>
-          </div>
-
-          {/* Info grid: server, customer, table, notes */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* Server */}
-            <InfoCell
-              icon={<User className="w-4 h-4" />}
-              label={t('serverLabel')}
-              value={order.server?.full_name ?? ta('unassigned')}
-            />
-            {/* Table */}
-            <InfoCell
-              icon={<Hash className="w-4 h-4" />}
-              label={tc('table')}
-              value={order.table_number}
-            />
-            {/* Customer */}
-            {(order.customer_name || order.customer_phone) && (
-              <InfoCell
-                icon={
-                  order.customer_phone ? (
-                    <Phone className="w-4 h-4" />
-                  ) : (
-                    <User className="w-4 h-4" />
-                  )
-                }
-                label={t('customerLabel')}
-                value={[order.customer_name, order.customer_phone].filter(Boolean).join(' · ')}
-              />
-            )}
-            {/* Room / delivery */}
-            {order.room_number && (
-              <InfoCell
-                icon={<MapPin className="w-4 h-4" />}
-                label={t('serviceRoom')}
-                value={order.room_number}
-              />
             )}
           </div>
 
-          {/* Order-level notes */}
-          {order.notes && (
-            <div className="flex items-start gap-2 rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
-              <MessageSquare className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-              <p className="text-sm text-amber-700 dark:text-amber-400">{order.notes}</p>
-            </div>
-          )}
-
-          {/* Items list */}
-          <div className="rounded-xl border border-app-border overflow-hidden">
-            <div className="px-4 py-2.5 bg-app-bg border-b border-app-border flex items-center justify-between">
-              <p className="text-xs font-medium text-app-text-secondary uppercase tracking-wider">
+          {/* Scrollable: items list only */}
+          <div className="rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0 flex-1">
+            <div className="px-3 py-2 bg-app-bg border-b border-app-border flex items-center justify-between shrink-0">
+              <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
                 {t('orderDetails')}
               </p>
-              <p className="text-xs text-app-text-muted">
-                {(order.items || []).reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
+              <p className="text-[10px] text-app-text-muted">
+                {itemCount} {tc('items')}
               </p>
             </div>
-            <div className="max-h-[360px] overflow-y-auto divide-y divide-app-border">
+            <div className="overflow-y-auto flex-1 divide-y divide-app-border">
               {(order.items || []).map((item, i) => (
-                <div key={i} className="flex justify-between items-start px-4 py-3">
-                  <div className="flex gap-3 min-w-0 flex-1">
-                    <div className="w-7 h-7 bg-app-elevated rounded-lg flex items-center justify-center text-xs font-bold text-app-text shrink-0">
+                <div key={i} className="flex justify-between items-start px-3 py-2">
+                  <div className="flex gap-2 min-w-0 flex-1">
+                    <div className="w-5 h-5 bg-app-elevated rounded flex items-center justify-center text-[10px] font-bold text-app-text shrink-0 mt-0.5">
                       {item.quantity}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-sm text-app-text">{item.name}</p>
+                      <p className="font-medium text-xs text-app-text">{item.name}</p>
                       {item.customer_notes && (
-                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 bg-amber-500/10 px-2 py-0.5 rounded inline-block">
+                        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded inline-block">
                           {item.customer_notes}
                         </p>
                       )}
                       {item.notes && !item.customer_notes && (
-                        <p className="text-xs text-app-text-muted mt-0.5">{item.notes}</p>
+                        <p className="text-[10px] text-app-text-muted mt-0.5">{item.notes}</p>
                       )}
                       {item.modifiers &&
                         Array.isArray(item.modifiers) &&
                         item.modifiers.length > 0 && (
-                          <div className="mt-1 space-y-0.5">
+                          <div className="mt-0.5">
                             {item.modifiers.map((m, mi) => (
-                              <p key={mi} className="text-xs text-blue-600 dark:text-blue-400">
+                              <p key={mi} className="text-[10px] text-blue-600 dark:text-blue-400">
                                 + {m.name} ({fmt(m.price)})
                               </p>
                             ))}
@@ -219,64 +207,64 @@ export default function OrderDetails({
                         )}
                     </div>
                   </div>
-                  <p className="font-medium text-sm text-app-text shrink-0 ml-3">
+                  <p className="font-medium text-xs text-app-text shrink-0 ml-2">
                     {fmt(item.price * item.quantity)}
                   </p>
                 </div>
               ))}
             </div>
-          </div>
 
-          {/* Price Breakdown */}
-          {hasBreakdown && (
-            <div className="rounded-xl border border-app-border p-4 space-y-1.5">
-              <div className="flex justify-between text-sm text-app-text-secondary">
-                <span>{t('subtotal')}</span>
-                <span>{fmt(order.subtotal || 0)}</span>
+            {/* Price breakdown inside the items card */}
+            {hasBreakdown && (
+              <div className="border-t border-app-border px-3 py-2 space-y-1 shrink-0 bg-app-bg">
+                <div className="flex justify-between text-[11px] text-app-text-secondary">
+                  <span>{t('subtotal')}</span>
+                  <span>{fmt(order.subtotal || 0)}</span>
+                </div>
+                {(order.tax_amount ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-app-text-secondary">
+                    <span>{t('vat')}</span>
+                    <span>{fmt(order.tax_amount!)}</span>
+                  </div>
+                )}
+                {(order.service_charge_amount ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-app-text-secondary">
+                    <span>{t('serviceCharge')}</span>
+                    <span>{fmt(order.service_charge_amount!)}</span>
+                  </div>
+                )}
+                {(order.discount_amount ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-red-500">
+                    <span>{t('discountLabel')}</span>
+                    <span>-{fmt(order.discount_amount!)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between font-bold text-xs text-app-text border-t border-app-border pt-1.5 mt-1">
+                  <span>{tc('total')}</span>
+                  <span>{fmt(displayTotal)}</span>
+                </div>
               </div>
-              {(order.tax_amount ?? 0) > 0 && (
-                <div className="flex justify-between text-sm text-app-text-secondary">
-                  <span>{t('vat')}</span>
-                  <span>{fmt(order.tax_amount!)}</span>
-                </div>
-              )}
-              {(order.service_charge_amount ?? 0) > 0 && (
-                <div className="flex justify-between text-sm text-app-text-secondary">
-                  <span>{t('serviceCharge')}</span>
-                  <span>{fmt(order.service_charge_amount!)}</span>
-                </div>
-              )}
-              {(order.discount_amount ?? 0) > 0 && (
-                <div className="flex justify-between text-sm text-red-500">
-                  <span>{t('discountLabel')}</span>
-                  <span>-{fmt(order.discount_amount!)}</span>
-                </div>
-              )}
-              <div className="flex justify-between font-bold text-base text-app-text border-t border-app-border pt-2 mt-2">
-                <span>{tc('total')}</span>
-                <span>{fmt(displayTotal)}</span>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* ── Right column: actions ───────────────────────── */}
-        <div className="space-y-4">
+        {/* ── Right: static actions panel ─────────────────── */}
+        <div className="lg:w-56 shrink-0 space-y-3">
           {/* Status Actions */}
           {order.status !== 'delivered' && order.status !== 'cancelled' && (
-            <div className="rounded-xl border border-app-border p-4 space-y-3">
-              <p className="text-xs font-medium text-app-text-secondary uppercase tracking-wider">
+            <div className="rounded-xl border border-app-border p-3 space-y-2">
+              <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
                 {t('statusLabel')}
               </p>
-              <div className="grid grid-cols-1 gap-2">
+              <div className="grid grid-cols-1 gap-1.5">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => handleStatusUpdate('pending')}
                   disabled={loading || order.status === 'pending'}
-                  className="justify-start"
+                  className="justify-start h-8 text-xs"
                 >
-                  <span className="w-2 h-2 rounded-full bg-status-warning mr-2" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
                   {t('statusButtonPending')}
                 </Button>
                 <Button
@@ -284,9 +272,9 @@ export default function OrderDetails({
                   size="sm"
                   onClick={() => handleStatusUpdate('preparing')}
                   disabled={loading || order.status === 'preparing'}
-                  className="justify-start"
+                  className="justify-start h-8 text-xs"
                 >
-                  <span className="w-2 h-2 rounded-full bg-status-warning mr-2" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-warning mr-1.5" />
                   {t('statusButtonPreparing')}
                 </Button>
                 <Button
@@ -294,46 +282,52 @@ export default function OrderDetails({
                   size="sm"
                   onClick={() => handleStatusUpdate('ready')}
                   disabled={loading || order.status === 'ready'}
-                  className="justify-start"
+                  className="justify-start h-8 text-xs"
                 >
-                  <span className="w-2 h-2 rounded-full bg-status-success mr-2" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-status-success mr-1.5" />
                   {t('statusButtonReady')}
                 </Button>
                 <Button
                   size="sm"
                   onClick={() => setShowPayment(true)}
                   disabled={loading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs"
                 >
-                  <CreditCard className="w-4 h-4 mr-2" /> {t('statusButtonCheckout')}
+                  <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonCheckout')}
                 </Button>
               </div>
 
               {order.status !== 'ready' && (
-                <div className="flex items-start gap-2 p-2.5 border border-amber-500/20 bg-amber-500/5 text-amber-600 dark:text-amber-400 rounded-lg text-xs">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  <span>{t('warningReadyBeforeCheckout')}</span>
-                </div>
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-1">
+                  <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+                  {t('warningReadyBeforeCheckout')}
+                </p>
               )}
             </div>
           )}
 
-          {/* Print Actions */}
-          <div className="rounded-xl border border-app-border p-4 space-y-3">
-            <p className="text-xs font-medium text-app-text-secondary uppercase tracking-wider">
+          {/* Print */}
+          <div className="rounded-xl border border-app-border p-3 space-y-2">
+            <p className="text-[10px] font-medium text-app-text-secondary uppercase tracking-wider">
               {t('printLabel')}
             </p>
-            <div className="grid grid-cols-1 gap-2">
-              <Button variant="secondary" size="sm" onClick={handlePrintKitchen}>
-                <Printer className="w-4 h-4 mr-2" /> {t('printKitchenTicket')}
+            <div className="grid grid-cols-1 gap-1.5">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={handlePrintKitchen}
+                className="h-8 text-xs"
+              >
+                <Printer className="w-3.5 h-3.5 mr-1.5" /> {t('printKitchenTicket')}
               </Button>
               <Button
                 variant="secondary"
                 size="sm"
                 onClick={handlePrintReceipt}
                 disabled={order.status !== 'ready' && order.status !== 'delivered'}
+                className="h-8 text-xs"
               >
-                <Receipt className="w-4 h-4 mr-2" /> {t('printClientReceipt')}
+                <Receipt className="w-3.5 h-3.5 mr-1.5" /> {t('printClientReceipt')}
               </Button>
             </div>
           </div>
@@ -355,15 +349,21 @@ export default function OrderDetails({
   );
 }
 
-/* ── Small info cell component ────────────────────────── */
-function InfoCell({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+/* ── Compact info chip ────────────────────────────────── */
+function InfoChip({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label?: string;
+  value: string;
+}) {
   return (
-    <div className="rounded-xl border border-app-border p-3">
-      <div className="flex items-center gap-1.5 text-xs text-app-text-muted mb-1">
-        {icon}
-        {label}
-      </div>
-      <p className="text-sm font-medium text-app-text truncate">{value}</p>
-    </div>
+    <span className="inline-flex items-center gap-1 rounded-full border border-app-border bg-app-bg px-2 py-0.5 text-app-text">
+      {icon}
+      {label && <span className="text-app-text-muted">{label}:</span>}
+      <span className="font-medium">{value}</span>
+    </span>
   );
 }
