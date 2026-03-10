@@ -5,7 +5,7 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
-import { Users, UserCheck, X, LayoutGrid, Activity, Clock, Search, User } from 'lucide-react';
+import { UserCheck, X, LayoutGrid, Activity, Clock, Search, User } from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -378,29 +378,19 @@ export default function ServiceManager({ tenantId }: Props) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* ═══ Header ═══════════════════════════════════════════ */}
-      <div className="shrink-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <Users className="w-6 h-6" />
-            {t('title')}
-          </h1>
-
-          {/* Stats pills (like reference: Avg Wait + Capacity) */}
-          <div className="flex items-center gap-2 lg:ml-auto">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
-              <Clock className="w-3.5 h-3.5 text-app-text-muted" />
-              <span className="text-app-text-secondary font-medium">
-                {t('avgDuration')} {avgDuration} min
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
-              <Activity className="w-3.5 h-3.5 text-status-success" />
-              <span className="text-app-text-secondary font-medium">
-                {stats.pct}% {t('fullCapacity')}
-              </span>
-            </div>
-          </div>
+      {/* ═══ Header stats ═══════════════════════════════════════ */}
+      <div className="shrink-0 flex items-center gap-2">
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
+          <Clock className="w-3.5 h-3.5 text-app-text-muted" />
+          <span className="text-app-text-secondary font-medium">
+            {t('avgDuration')} {avgDuration} min
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
+          <Activity className="w-3.5 h-3.5 text-status-success" />
+          <span className="text-app-text-secondary font-medium">
+            {stats.pct}% {t('fullCapacity')}
+          </span>
         </div>
       </div>
 

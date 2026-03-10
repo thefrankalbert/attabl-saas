@@ -233,7 +233,7 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-10 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent transition-all rounded-md"
+            className="h-10 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 transition-all rounded-md"
           />
         </div>
 
@@ -264,7 +264,7 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-10 pr-12 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent transition-all rounded-md"
+              className="h-10 pr-12 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 transition-all rounded-md"
             />
             <button
               type="button"

@@ -45,8 +45,6 @@ export default function MenusClient({
     loading,
     searchQuery,
     setSearchQuery,
-    filteredStandalone,
-    menusByVenue,
     isLimitReached,
     maxMenus,
     createMenu,
@@ -56,7 +54,7 @@ export default function MenusClient({
     toggleActive,
     reorder,
     loadMenus,
-  } = useMenusData({ tenantId, initialMenus, venues });
+  } = useMenusData({ tenantId, initialMenus });
 
   // ─── Selection ────────────────────────────────────────
 
@@ -189,9 +187,6 @@ export default function MenusClient({
           <MenusTable
             tenantSlug={tenantSlug}
             menus={menus}
-            venues={venues}
-            filteredStandalone={filteredStandalone}
-            menusByVenue={menusByVenue}
             searchQuery={searchQuery}
             loading={loading}
             selectedIds={selectedIds}

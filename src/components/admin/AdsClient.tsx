@@ -137,19 +137,23 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 flex items-center justify-end gap-2">
-        <span className="text-sm text-app-text-muted tabular-nums">({ads.length})</span>
-        <Button
-          onClick={() => {
-            resetForm();
-            setIsModalOpen(true);
-          }}
-          variant="default"
-          size="sm"
-          className="gap-2 h-9 shrink-0"
-        >
-          <Plus className="w-4 h-4" /> {t('newAd')}
-        </Button>
+      <div className="shrink-0 flex items-center">
+        <div className="inline-flex items-center gap-2 border border-app-border rounded-lg px-1.5 py-1">
+          <span className="text-xs font-bold text-app-text-secondary tabular-nums px-1.5 shrink-0">
+            {ads.length}
+          </span>
+          <Button
+            onClick={() => {
+              resetForm();
+              setIsModalOpen(true);
+            }}
+            variant="default"
+            size="sm"
+            className="gap-1.5 h-7 rounded-md shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" /> {t('newAd')}
+          </Button>
+        </div>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">

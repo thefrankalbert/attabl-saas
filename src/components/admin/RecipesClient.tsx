@@ -324,7 +324,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                               <select
                                 value={line.ingredient_id}
                                 onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-2 focus:ring-accent"
+                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-1 focus:ring-accent/30"
                               >
                                 {ingredients.map((ing) => (
                                   <option key={ing.id} value={ing.id}>

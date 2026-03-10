@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, lazy, Suspense } from 'react';
+import { useState, useMemo, lazy, Suspense } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData, timeAgo } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
@@ -24,90 +24,65 @@ import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
 // Lazy-load recharts for faster initial paint
-const RevenueChart = lazy(() =>
+const DashboardChart = lazy(() =>
   import('recharts').then((mod) => ({
-    default: function RevenueChartInner({
-      data,
+    default: function DashboardChartInner({
+      revenueData,
+      ordersData,
       fmtF,
+      mode,
       revenueLabel,
+      ordersLabel,
     }: {
-      data: Array<{ label: string; value: number }>;
+      revenueData: Array<{ label: string; value: number }>;
+      ordersData: Array<{ label: string; value: number }>;
       fmtF: (n: number) => string;
+      mode: 'revenue' | 'orders';
       revenueLabel: string;
+      ordersLabel: string;
     }) {
-      const { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } = mod;
-      return (
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
-            <defs>
-              <linearGradient id="rev-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--app-accent)" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="var(--app-accent)" stopOpacity={0} />
-              </linearGradient>
-            </defs>
-            <XAxis
-              dataKey="label"
-              axisLine={false}
-              tickLine={false}
-              tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
-            />
-            <YAxis hide />
-            <Tooltip
-              contentStyle={
-                {
-                  backgroundColor: 'var(--app-card)',
-                  border: '1px solid var(--app-border)',
-                  borderRadius: '0.5rem',
-                  fontSize: '0.75rem',
-                  padding: '6px 10px',
-                } as CSSProperties
-              }
-              formatter={(value) => [fmtF(Number(value ?? 0)), revenueLabel]}
-            />
-            <Area
-              type="monotone"
-              dataKey="value"
-              stroke="var(--app-accent)"
-              fill="url(#rev-grad)"
-              strokeWidth={2}
-              dot={false}
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      );
-    },
-  })),
-);
+      const { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } = mod;
+      const data = mode === 'revenue' ? revenueData : ordersData;
+      const color = mode === 'revenue' ? 'var(--app-accent)' : 'var(--color-status-info)';
+      const gradId = mode === 'revenue' ? 'rev-grad' : 'ord-grad';
+      const label = mode === 'revenue' ? revenueLabel : ordersLabel;
+      const fmt = mode === 'revenue' ? fmtF : (n: number) => String(n);
 
-// Avg basket mini chart
-const AvgBasketChart = lazy(() =>
-  import('recharts').then((mod) => ({
-    default: function AvgBasketChartInner({
-      data,
-      fmtF,
-      label,
-    }: {
-      data: Array<{ label: string; value: number }>;
-      fmtF: (n: number) => string;
-      label: string;
-    }) {
-      const { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } = mod;
       return (
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+          <AreaChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <defs>
-              <linearGradient id="basket-grad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="var(--color-status-info)" stopOpacity={0.25} />
-                <stop offset="100%" stopColor="var(--color-status-info)" stopOpacity={0} />
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color} stopOpacity={0.2} />
+                <stop offset="100%" stopColor={color} stopOpacity={0} />
               </linearGradient>
             </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              stroke="var(--app-border)"
+              strokeOpacity={0.5}
+              vertical={false}
+            />
             <XAxis
               dataKey="label"
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+              dy={4}
             />
-            <YAxis hide />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 9, fill: 'var(--app-text-muted)' }}
+              width={40}
+              tickFormatter={(v) =>
+                mode === 'revenue'
+                  ? v >= 1000
+                    ? `${Math.round(v / 1000)}k`
+                    : String(v)
+                  : String(v)
+              }
+            />
             <Tooltip
               contentStyle={
                 {
@@ -116,17 +91,19 @@ const AvgBasketChart = lazy(() =>
                   borderRadius: '0.5rem',
                   fontSize: '0.75rem',
                   padding: '6px 10px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
                 } as CSSProperties
               }
-              formatter={(value) => [fmtF(Number(value ?? 0)), label]}
+              formatter={(value) => [fmt(Number(value ?? 0)), label]}
             />
             <Area
               type="monotone"
               dataKey="value"
-              stroke="var(--color-status-info)"
-              fill="url(#basket-grad)"
-              strokeWidth={2}
-              dot={false}
+              stroke={color}
+              fill={`url(#${gradId})`}
+              strokeWidth={2.5}
+              dot={{ r: 3, fill: color, stroke: 'var(--app-card)', strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: color, stroke: 'var(--app-card)', strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>
@@ -155,12 +132,26 @@ export default function DashboardClient(props: DashboardClientProps) {
   const { can } = usePermissions();
   const showFin = can('canViewAllFinances');
 
+  const [chartMode, setChartMode] = useState<'revenue' | 'orders'>('revenue');
+
   const hour = new Date().getHours();
   const greetKey = hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
   // Stable timestamp for "new order" detection — refreshes when orders change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => Date.now(), [recentOrders]);
+
+  // Total revenue over the 7-day period
+  const totalRevenue7d = useMemo(
+    () => revenueSparkline.reduce((sum, p) => sum + p.value, 0),
+    [revenueSparkline],
+  );
+
+  // Total orders over the 7-day period
+  const totalOrders7d = useMemo(
+    () => ordersSparkline.reduce((sum, p) => sum + p.value, 0),
+    [ordersSparkline],
+  );
 
   if (loading) {
     return (
@@ -189,16 +180,15 @@ export default function DashboardClient(props: DashboardClientProps) {
         })
       : [];
 
-  // Build avg basket sparkline from revenue / orders per day
-  const avgBasketChartData =
-    revenueSparkline.length > 1 && ordersSparkline.length > 1
-      ? revenueSparkline.map((p, i) => {
+  // Build orders sparkline data with labels
+  const ordersChartData =
+    ordersSparkline.length > 1
+      ? ordersSparkline.map((p, i) => {
           const d = new Date();
-          d.setDate(d.getDate() - (revenueSparkline.length - 1 - i));
-          const orders = ordersSparkline[i]?.value || 0;
+          d.setDate(d.getDate() - (ordersSparkline.length - 1 - i));
           return {
             label: d.toLocaleDateString(locale, { weekday: 'short' }),
-            value: orders > 0 ? Math.round(p.value / orders) : 0,
+            value: p.value,
           };
         })
       : [];
@@ -294,51 +284,72 @@ export default function DashboardClient(props: DashboardClientProps) {
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
-          {/* Revenue chart */}
+          {/* Main chart — Revenue / Orders toggle */}
           {chartData.length > 1 && (
-            <div className="border border-app-border rounded-xl p-4">
-              <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest mb-2">
-                {t('dashboardOverview')}
-              </p>
-              <div className="h-[140px]">
+            <div className="border border-app-border rounded-xl p-4 flex-1 min-h-0 flex flex-col">
+              {/* Chart header: total value + segmented control */}
+              <div className="flex items-start justify-between mb-1 shrink-0">
+                <div>
+                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
+                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-2xl font-black text-app-text tabular-nums">
+                      {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+                    </span>
+                    <span className="text-[10px] text-app-text-muted">{t('last7days')}</span>
+                  </div>
+                  {showFin && chartMode === 'revenue' && todayAvgBasket > 0 && (
+                    <p className="text-[10px] text-app-text-muted mt-0.5">
+                      {t('avgBasket')}: {fmtF(todayAvgBasket)}
+                    </p>
+                  )}
+                </div>
+
+                {/* Segmented control */}
+                <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border">
+                  <button
+                    onClick={() => setChartMode('revenue')}
+                    className={cn(
+                      'px-3 py-1 rounded-md text-[10px] font-semibold transition-all',
+                      chartMode === 'revenue'
+                        ? 'bg-accent text-accent-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary',
+                    )}
+                  >
+                    {t('revenueLabel')}
+                  </button>
+                  <button
+                    onClick={() => setChartMode('orders')}
+                    className={cn(
+                      'px-3 py-1 rounded-md text-[10px] font-semibold transition-all',
+                      chartMode === 'orders'
+                        ? 'bg-accent text-accent-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary',
+                    )}
+                  >
+                    {t('ordersLabel')}
+                  </button>
+                </div>
+              </div>
+
+              {/* Chart area */}
+              <div className="flex-1 min-h-[180px]">
                 <Suspense
                   fallback={
                     <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
                   }
                 >
-                  <RevenueChart data={chartData} fmtF={fmtF} revenueLabel={t('revenueToday')} />
+                  <DashboardChart
+                    revenueData={chartData}
+                    ordersData={ordersChartData}
+                    fmtF={fmtF}
+                    mode={chartMode}
+                    revenueLabel={t('revenueToday')}
+                    ordersLabel={t('ordersToday')}
+                  />
                 </Suspense>
               </div>
-            </div>
-          )}
-
-          {/* Avg basket with chart — always visible when finance perms */}
-          {showFin && (
-            <div className="border border-app-border rounded-xl p-4">
-              <div className="flex items-center justify-between mb-2">
-                <div>
-                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
-                    {t('avgBasket')}
-                  </p>
-                  <p className="text-[10px] text-app-text-muted mt-0.5">{t('perOrder')}</p>
-                </div>
-                <span className="text-xl font-black text-app-text tabular-nums">
-                  {fmtF(todayAvgBasket)}
-                </span>
-              </div>
-              {avgBasketChartData.length > 1 ? (
-                <div className="h-[80px]">
-                  <Suspense
-                    fallback={
-                      <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
-                    }
-                  >
-                    <AvgBasketChart data={avgBasketChartData} fmtF={fmtF} label={t('avgBasket')} />
-                  </Suspense>
-                </div>
-              ) : (
-                <p className="text-xs text-app-text-muted italic">—</p>
-              )}
             </div>
           )}
 

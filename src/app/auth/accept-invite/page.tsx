@@ -156,7 +156,7 @@ function AcceptInviteForm() {
               required
               minLength={2}
               maxLength={100}
-              className="h-10 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+              className="h-10 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
             />
           </div>
 
@@ -174,7 +174,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
               />
               <button
                 type="button"
@@ -203,7 +203,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
               />
               <button
                 type="button"

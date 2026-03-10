@@ -511,7 +511,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     <select
                       value={formUnit}
                       onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                     >
                       {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
                         <option key={u} value={u}>
@@ -619,7 +619,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                       <select
                         value={adjustType}
                         onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                       >
                         {(
                           ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
@@ -653,7 +653,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         <select
                           value={adjustSupplierId}
                           onChange={(e) => setAdjustSupplierId(e.target.value)}
-                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                         >
                           <option value="">— {tc('none')} —</option>
                           {activeSuppliers.map((s) => (

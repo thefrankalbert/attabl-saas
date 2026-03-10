@@ -36,6 +36,7 @@
     "none": "None",
     "select": "Select",
     "selectPlaceholder": "Select...",
+    "selectAll": "Select all",
     "product": "Product",
     "products": "Products",
     "suggests": "suggests",
@@ -63,6 +64,7 @@
     "connectionRestored": "Connection restored — Syncing...",
     "errorTitle": "Oops, something went wrong",
     "errorDescription": "We apologize for the inconvenience. Please try again or return to the home page.",
+    "errorHint": "Don't panic, these things happen.",
     "retry": "Try again",
     "backToHome": "Back to home",
     "notFoundTitle": "Page not found",
@@ -178,7 +180,8 @@
     "checkoutWarning": "Warning: Order must be 'Ready' before checkout.",
     "roomNumber": "Rm.{number}",
     "noOrdersTitle": "No orders yet",
-    "noOrdersDesc": "Orders will appear here as they come in"
+    "noOrdersDesc": "Orders will appear here as they come in",
+    "soundPicker": "Notification ringtone"
   },
   "delivery": {
     "deliveryInfo": "Delivery Info",
@@ -272,6 +275,7 @@
     "viewDetails": "View details",
     "unknownItem": "Unknown item",
     "dashboardOverview": "Overview",
+    "last7days": "Last 7 days",
     "popularCategories": "Popular categories",
     "topItemsTitle": "Top items",
     "quickAccessTitle": "Quick access",
