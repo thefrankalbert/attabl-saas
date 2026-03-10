@@ -110,8 +110,8 @@ export default function MenusClient({
         <div className="shrink-0 space-y-3">
           {/* Search + Actions — single row */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <span className="text-sm text-app-text-muted tabular-nums shrink-0">
-              ({menus.length})
+            <span className="text-xs font-medium text-app-text-secondary bg-app-elevated px-2 py-0.5 rounded-full tabular-nums shrink-0">
+              {menus.length} {t('title').toLowerCase()}
             </span>
             <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
