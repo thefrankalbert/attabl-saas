@@ -239,9 +239,15 @@ export default function OrderDetails({
                     <span>-{fmt(order.discount_amount!)}</span>
                   </div>
                 )}
+                {(order.tip_amount ?? 0) > 0 && (
+                  <div className="flex justify-between text-[11px] text-emerald-500">
+                    <span>{ta('tipLabel')}</span>
+                    <span>+{fmt(order.tip_amount!)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-xs text-app-text border-t border-app-border pt-1.5 mt-1">
                   <span>{tc('total')}</span>
-                  <span>{fmt(displayTotal)}</span>
+                  <span>{fmt(displayTotal + (order.tip_amount || 0))}</span>
                 </div>
               </div>
             )}

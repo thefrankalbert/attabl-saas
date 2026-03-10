@@ -65,6 +65,7 @@ export async function POST(request: Request) {
       delivery_address,
       coupon_code,
       display_currency,
+      tip_amount,
     } = parseResult.data;
 
     const { validatedTotal, verifiedPrices } = await orderService.validateOrderItems(
@@ -141,6 +142,7 @@ export async function POST(request: Request) {
         tax_amount: pricing.taxAmount,
         service_charge_amount: pricing.serviceChargeAmount,
         discount_amount: pricing.discountAmount,
+        tip_amount: tip_amount ?? 0,
         coupon_id: couponResult?.couponId,
         display_currency,
         verifiedPrices,

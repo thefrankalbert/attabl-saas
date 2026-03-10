@@ -428,6 +428,7 @@ export default function CartPage() {
           })),
           notes: notes || undefined,
           display_currency: displayCurrency,
+          tip_amount: tipAmount > 0 ? tipAmount : undefined,
         }),
       });
 

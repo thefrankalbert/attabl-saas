@@ -2,179 +2,177 @@
 
 import { motion } from 'framer-motion';
 import { TestimonialCarousel } from './TestimonialCarousel';
-import { TrendingUp } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
-const stats = [
-  { value: '+500', label: 'Restaurants' },
-  { value: '99.9%', label: 'Disponibilité' },
-  { value: '< 2 min', label: 'Mise en route' },
-];
-
-const mockOrders = [
-  {
-    table: 'Table 4',
-    item: 'Entrecôte + 2 vins',
-    status: 'En cours',
-    time: '2m',
-    statusClass: 'bg-amber-400/20 text-amber-300',
-  },
-  {
-    table: 'Table 7',
-    item: 'Menu du jour ×3',
-    status: 'Servi',
-    time: '8m',
-    statusClass: 'bg-emerald-400/20 text-emerald-300',
-  },
-  {
-    table: 'Bar',
-    item: 'Cocktail Maison ×2',
-    status: 'Préparation',
-    time: '1m',
-    statusClass: 'bg-blue-400/20 text-blue-300',
-  },
-];
-
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-dvh md:h-dvh w-full flex bg-app-card">
+    <div className="min-h-dvh md:h-dvh w-full flex bg-app-bg">
       {/* ── Left — Form panel ─────────────────────────────── */}
-      <div className="w-full md:w-[55%] flex flex-col bg-app-card px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
+      <div className="w-full md:w-[55%] flex flex-col px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
         <div className="w-full max-w-[420px] m-auto">{children}</div>
       </div>
 
       {/* ── Right — Showcase panel ────────────────────────── */}
-      <div className="hidden md:flex md:w-[45%] items-center py-6 pr-3 md:pr-6 pl-1.5 md:pl-3">
-        <div className="relative flex flex-col w-full h-full overflow-hidden rounded-[2rem] bg-app-bg">
-          {/* Decorative dot grid */}
-          <div
-            className="absolute inset-0 opacity-[0.035]"
-            style={{
-              backgroundImage:
-                'radial-gradient(circle, rgba(255,255,255,0.8) 1px, transparent 1px)',
-              backgroundSize: '28px 28px',
-            }}
-          />
+      <div className="hidden md:flex md:w-[45%] items-center py-4 pr-4 md:pr-5 pl-0">
+        <div className="relative flex flex-col w-full h-full overflow-hidden rounded-[1.5rem] bg-app-card border border-app-border">
+          {/* Subtle accent glow top */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
 
           {/* Content */}
-          <div className="relative z-10 flex flex-col h-full px-4 sm:px-8 lg:px-12 py-10 justify-between">
-            {/* ── Top: Headline block ────────────────────── */}
+          <div className="relative z-10 flex flex-col h-full px-6 lg:px-8 py-6 lg:py-8 justify-between overflow-y-auto scrollbar-hide">
+            {/* ── Top: Impact headline ────────────────────── */}
             <motion.div
-              initial={{ opacity: 0, y: 24 }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: 'easeOut' }}
+              transition={{ duration: 0.6, ease: 'easeOut' }}
+              className="shrink-0 text-center mb-6"
             >
-              {/* Live badge */}
-              <div className="inline-flex items-center gap-2 bg-accent/10 border border-accent/20 rounded-full px-3 py-1 mb-6">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-accent" />
-                </span>
-                <span className="text-accent text-xs font-medium tracking-wide">
-                  Commandes en direct
-                </span>
-              </div>
-
               <h2
-                className="text-2xl sm:text-3xl lg:text-[2.2rem] text-white leading-[1.18] mb-3 font-normal"
+                className="text-[1.5rem] lg:text-[1.75rem] text-app-text leading-[1.2] mb-3"
                 style={{ fontFamily: 'var(--font-dm-serif-display)' }}
               >
-                La plateforme préférée
+                Vos clients vivent une
                 <br />
-                <span className="text-accent">des restaurateurs.</span>
+                <span className="text-accent">expérience 5 étoiles.</span>
+                <br />
+                <span className="text-app-text-secondary">Votre gestion aussi.</span>
               </h2>
-              <p className="text-white/40 text-sm leading-relaxed max-w-xs">
-                Menu QR, commandes en temps réel, analytics — tout depuis un seul tableau de bord.
-              </p>
             </motion.div>
 
-            {/* ── Middle: Dashboard mockup ───────────────── */}
+            {/* ── Impact numbers ──────────────────────────── */}
             <motion.div
-              initial={{ opacity: 0, y: 28, scale: 0.97 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.25, ease: 'easeOut' }}
-              className="my-6"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
+              className="shrink-0 mb-6"
             >
-              <div className="bg-white/[0.04] backdrop-blur-sm border border-white/[0.08] rounded-2xl overflow-hidden shadow-2xl">
-                {/* Browser chrome bar */}
-                <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.07] bg-white/[0.03]">
-                  <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500/50" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/50" />
-                    <div className="w-2.5 h-2.5 rounded-full bg-green-500/50" />
-                  </div>
-                  <div className="flex items-center gap-1.5 bg-white/5 rounded-md px-2.5 py-1">
-                    <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
-                    <span className="text-white/30 text-[11px] font-mono">attabl.io/admin</span>
-                  </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-                    </span>
-                    <span className="text-emerald-400 text-[11px] font-medium">Live</span>
-                  </div>
-                </div>
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { value: '+35%', label: 'de commandes', sub: 'en moyenne' },
+                  { value: '-50%', label: 'd\u2019erreurs', sub: 'en salle' },
+                  { value: '10 min', label: 'pour lancer', sub: 'votre menu' },
+                ].map((stat, i) => (
+                  <motion.div
+                    key={stat.value}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+                    className="text-center p-3 rounded-xl bg-app-elevated/50 border border-app-border"
+                  >
+                    <div className="text-lg lg:text-xl font-black text-accent tabular-nums leading-none mb-1">
+                      {stat.value}
+                    </div>
+                    <div className="text-[10px] font-medium text-app-text-secondary leading-tight">
+                      {stat.label}
+                    </div>
+                    <div className="text-[9px] text-app-text-muted leading-tight">{stat.sub}</div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
 
-                {/* Revenue stat header */}
-                <div className="px-5 pt-5 pb-4 flex items-start justify-between">
+            {/* ── Dashboard preview (compact, contextual) ─── */}
+            <motion.div
+              initial={{ opacity: 0, y: 16, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' }}
+              className="shrink-0 mb-6"
+            >
+              <div className="bg-app-elevated/40 border border-app-border rounded-xl overflow-hidden">
+                {/* Revenue header */}
+                <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                   <div>
-                    <div className="text-white/40 text-xs mb-1 uppercase tracking-wider">
+                    <div className="text-[8px] text-app-text-muted uppercase tracking-widest font-medium mb-0.5">
                       Chiffre du jour
                     </div>
-                    <div className="text-accent text-3xl font-bold tracking-tight">€ 2 847</div>
+                    <div className="text-base font-black text-app-text tabular-nums">
+                      1 847 000{' '}
+                      <span className="text-[10px] font-semibold text-app-text-muted">FCFA</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1 text-emerald-400 text-xs bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1.5 rounded-full mt-1">
-                    <TrendingUp className="w-3 h-3" />
-                    <span className="font-medium">+18% vs hier</span>
+                  <div className="flex items-center gap-1 text-status-success text-[9px] bg-app-status-success-bg border border-status-success/20 px-1.5 py-0.5 rounded-full">
+                    <span className="font-bold">+18%</span>
                   </div>
                 </div>
 
-                {/* Thin chart bars (decorative) */}
-                <div className="px-5 pb-4 flex items-end gap-1 h-10">
-                  {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 100].map((h, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ scaleY: 0 }}
-                      animate={{ scaleY: 1 }}
-                      transition={{ delay: 0.6 + i * 0.04, duration: 0.4, ease: 'easeOut' }}
-                      style={{
-                        height: `${h}%`,
-                        originY: 1,
-                        opacity: i === 11 ? 1 : 0.25 + (i / 11) * 0.4,
-                      }}
-                      className="flex-1 bg-accent rounded-sm min-w-0"
+                {/* Sparkline */}
+                <div className="px-4 pb-2">
+                  <svg viewBox="0 0 280 32" className="w-full h-6" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="login-grad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="#4ade80" stopOpacity="0.12" />
+                        <stop offset="100%" stopColor="#4ade80" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    <motion.path
+                      d="M 0 26 L 40 22 L 80 18 L 120 24 L 160 14 L 200 10 L 240 12 L 280 4"
+                      fill="none"
+                      stroke="#4ade80"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      initial={{ pathLength: 0 }}
+                      animate={{ pathLength: 1 }}
+                      transition={{ delay: 0.6, duration: 1, ease: 'easeOut' }}
                     />
-                  ))}
+                    <path
+                      d="M 0 26 L 40 22 L 80 18 L 120 24 L 160 14 L 200 10 L 240 12 L 280 4 L 280 32 L 0 32 Z"
+                      fill="url(#login-grad)"
+                    />
+                  </svg>
                 </div>
 
                 {/* Divider */}
-                <div className="mx-5 border-t border-white/[0.07]" />
+                <div className="mx-4 border-t border-app-border" />
 
-                {/* Order rows */}
-                <div className="px-4 py-3 space-y-1.5">
-                  {mockOrders.map((order, i) => (
+                {/* Live orders */}
+                <div className="px-3 py-2 space-y-1">
+                  <div className="flex items-center justify-between px-1 mb-0.5">
+                    <span className="text-[8px] font-semibold text-app-text-muted uppercase tracking-widest">
+                      Commandes récentes
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-status-success" />
+                      </span>
+                      <span className="text-[8px] text-status-success font-medium">Live</span>
+                    </div>
+                  </div>
+                  {[
+                    {
+                      table: 'Table 4',
+                      total: '32 500 FCFA',
+                      status: 'En cours',
+                      cls: 'bg-amber-400/20 text-amber-300',
+                    },
+                    {
+                      table: 'Table 7',
+                      total: '78 000 FCFA',
+                      status: 'Servi',
+                      cls: 'bg-emerald-400/20 text-emerald-300',
+                    },
+                  ].map((order, i) => (
                     <motion.div
                       key={i}
-                      initial={{ opacity: 0, x: -12 }}
+                      initial={{ opacity: 0, x: -8 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.55 + i * 0.13, duration: 0.4, ease: 'easeOut' }}
-                      className="flex items-center gap-3 bg-white/[0.03] hover:bg-white/[0.05] rounded-xl px-3 py-2.5 transition-colors"
+                      transition={{ delay: 0.9 + i * 0.1, duration: 0.3 }}
+                      className="flex items-center gap-2 bg-app-hover/40 rounded-lg px-2.5 py-1.5"
                     >
-                      <div className="text-white/60 text-xs font-semibold w-14 shrink-0">
+                      <span className="text-[10px] font-semibold text-app-text-secondary w-12 shrink-0">
                         {order.table}
-                      </div>
-                      <div className="text-white/35 text-xs flex-1 truncate">{order.item}</div>
+                      </span>
+                      <span className="text-[9px] text-app-text-muted tabular-nums flex-1">
+                        {order.total}
+                      </span>
                       <span
-                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${order.statusClass}`}
+                        className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${order.cls}`}
                       >
                         {order.status}
-                      </span>
-                      <span className="text-white/20 text-[10px] shrink-0 w-6 text-right">
-                        {order.time}
                       </span>
                     </motion.div>
                   ))}
@@ -182,29 +180,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               </div>
             </motion.div>
 
-            {/* ── Bottom: Stats + Testimonial ───────────── */}
+            {/* ── Bottom: Testimonials ───────────────────── */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ delay: 0.55, duration: 0.8 }}
-              className="space-y-6"
+              transition={{ delay: 0.5, duration: 0.7 }}
+              className="shrink-0"
             >
-              {/* Stats row */}
-              <div className="flex items-center gap-4 border-t border-white/[0.08] pt-6">
-                {stats.map((stat, i) => (
-                  <div key={stat.label} className="flex-1 text-center">
-                    <div className="text-lg font-bold text-accent">{stat.value}</div>
-                    <div className="text-[11px] text-white/30 mt-0.5 leading-tight">
-                      {stat.label}
-                    </div>
-                    {i < stats.length - 1 && (
-                      <div className="absolute hidden" /> /* spacer handled by flex gap */
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              {/* Testimonial carousel */}
               <TestimonialCarousel />
             </motion.div>
           </div>

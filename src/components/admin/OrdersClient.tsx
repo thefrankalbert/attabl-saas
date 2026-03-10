@@ -339,8 +339,18 @@ export default function OrdersClient({
         cell: ({ row }) => {
           const total =
             row.original.total_price ?? row.original.total ?? row.original.total_amount ?? 0;
+          const tip = row.original.tip_amount ?? 0;
           return (
-            <span className="font-mono font-bold text-app-text">{total.toLocaleString()}</span>
+            <div className="text-right">
+              <span className="font-mono font-bold text-app-text">
+                {(total + tip).toLocaleString()}
+              </span>
+              {tip > 0 && (
+                <span className="block text-[10px] text-emerald-500 font-medium">
+                  +{tip.toLocaleString()} tip
+                </span>
+              )}
+            </div>
           );
         },
         meta: { className: 'text-right' },
@@ -553,7 +563,9 @@ export default function OrdersClient({
               mobileConfig={{
                 renderCard: (order) => {
                   const config = statusConfig[order.status];
-                  const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
+                  const total =
+                    (order.total_price ?? order.total ?? order.total_amount ?? 0) +
+                    (order.tip_amount ?? 0);
                   const items = order.items || [];
                   return (
                     <div className="border-b border-app-border py-4 space-y-3 active:bg-app-hover transition-colors">

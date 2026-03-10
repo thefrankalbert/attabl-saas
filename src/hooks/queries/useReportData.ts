@@ -157,7 +157,7 @@ export function useReportData(tenantId: string, period: Period) {
       // Fetch server performance stats (separate query, non-blocking)
       const serverRes = await supabase
         .from('orders')
-        .select('server_id, total, server:admin_users!orders_server_id_fkey(full_name)')
+        .select('server_id, total, tip_amount, server:admin_users!orders_server_id_fkey(full_name)')
         .eq('tenant_id', tenantId)
         .gte('created_at', startDate)
         .lte('created_at', endDate + 'T23:59:59')
@@ -244,19 +244,21 @@ export function useReportData(tenantId: string, period: Period) {
         for (const row of serverRes.data as unknown as {
           server_id: string;
           total: number;
+          tip_amount: number;
           server: { full_name: string }[] | { full_name: string } | null;
         }[]) {
           const serverObj = Array.isArray(row.server) ? row.server[0] : row.server;
           const name = serverObj?.full_name || row.server_id;
+          const orderRevenue = (Number(row.total) || 0) + (Number(row.tip_amount) || 0);
           const existing = serverMap.get(row.server_id);
           if (existing) {
             existing.orders += 1;
-            existing.revenue += Number(row.total) || 0;
+            existing.revenue += orderRevenue;
           } else {
             serverMap.set(row.server_id, {
               serverName: name,
               orders: 1,
-              revenue: Number(row.total) || 0,
+              revenue: orderRevenue,
             });
           }
         }

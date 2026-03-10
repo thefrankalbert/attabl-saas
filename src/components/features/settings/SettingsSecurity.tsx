@@ -5,17 +5,19 @@ import { Label } from '@/components/ui/label';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
+import SettingsDataReset from './SettingsDataReset';
 
 // ─── Types ─────────────────────────────────────────────────
 
 interface SettingsSecurityProps {
   form: UseFormReturn<SettingsFormValues>;
   t: (key: string) => string;
+  tenantSlug: string;
 }
 
 // ─── Component ─────────────────────────────────────────────
 
-export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
+export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecurityProps) {
   const {
     register,
     watch,
@@ -113,6 +115,9 @@ export default function SettingsSecurity({ form, t }: SettingsSecurityProps) {
             </div>
           </div>
         )}
+
+        {/* Data Reset — Danger Zone (owner/admin only) */}
+        <SettingsDataReset tenantSlug={tenantSlug} />
       </div>
     </TabsContent>
   );

@@ -113,6 +113,7 @@ export default function PaymentModal({
             payment_status: 'paid',
             paid_at: new Date().toISOString(),
             status: 'delivered',
+            ...(tipAmount > 0 ? { tip_amount: tipAmount } : {}),
           })
           .eq('id', order.id)
           .eq('tenant_id', order.tenant_id);

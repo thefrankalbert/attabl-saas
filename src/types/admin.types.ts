@@ -138,6 +138,7 @@ export interface Order {
   tax_amount?: number;
   service_charge_amount?: number;
   discount_amount?: number;
+  tip_amount?: number;
   // ─── Payment tracking ─────────────────────────────────
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;
