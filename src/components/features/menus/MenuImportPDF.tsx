@@ -326,7 +326,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                       {item.category}
                     </span>
                   </div>
-                  <p className="text-sm font-medium text-app-text mt-1 truncate">{item.name}</p>
+                  <p className="text-sm font-medium text-app-text mt-1 break-words">{item.name}</p>
                   {item.description && (
                     <p className="text-xs text-app-text-secondary mt-0.5 line-clamp-2">
                       {item.description}

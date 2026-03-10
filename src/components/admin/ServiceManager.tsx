@@ -171,7 +171,7 @@ function VisualTable({
         <div className="mt-auto pt-2">
           {isAssigned ? (
             <>
-              <p className="text-xs text-app-text truncate font-medium">
+              <p className="text-xs text-app-text break-words font-medium">
                 {assignment.server?.full_name}
               </p>
               <p className="text-[10px] text-emerald-500 font-semibold mt-0.5">{occupiedLabel}</p>
@@ -349,7 +349,7 @@ export default function ServiceManager({ tenantId }: Props) {
           <div className="h-8 w-40 bg-app-bg rounded-lg animate-pulse" />
         </div>
         <div className="flex-1 min-h-0 flex gap-4 mt-4">
-          <div className="hidden lg:block w-[280px] shrink-0">
+          <div className="hidden md:block md:w-[220px] lg:w-[280px] shrink-0">
             <div className="h-full bg-app-card rounded-xl border border-app-border animate-pulse" />
           </div>
           <div className="flex-1 space-y-4">
@@ -405,7 +405,7 @@ export default function ServiceManager({ tenantId }: Props) {
       {/* ═══ Content: Sidebar + Grid ═════════════════════════ */}
       <div className="flex-1 min-h-0 flex gap-4 mt-4 sm:mt-5">
         {/* ─── Left sidebar (desktop) ─────────────────────── */}
-        <aside className="hidden lg:flex w-[280px] shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
+        <aside className="hidden md:flex md:w-[220px] lg:w-[280px] shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
           {/* Search */}
           <div className="p-3 border-b border-app-border">
             <div className="relative">
@@ -448,10 +448,10 @@ export default function ServiceManager({ tenantId }: Props) {
                       </div>
                       {/* Server info */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-app-text truncate">
+                        <p className="text-xs font-semibold text-app-text break-words">
                           {a.server?.full_name ?? '—'}
                         </p>
-                        <p className="text-[10px] text-app-text-muted truncate">
+                        <p className="text-[10px] text-app-text-muted break-words">
                           {a.server?.role ?? ''} · {getZoneName(a.table?.zone_id)}
                         </p>
                       </div>
@@ -490,7 +490,7 @@ export default function ServiceManager({ tenantId }: Props) {
                         <User className="w-3.5 h-3.5 text-blue-500" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-app-text truncate">
+                        <p className="text-xs font-semibold text-app-text break-words">
                           {server.full_name ?? '—'}
                         </p>
                         <p className="text-[10px] text-app-text-muted">{server.role}</p>
@@ -610,7 +610,7 @@ export default function ServiceManager({ tenantId }: Props) {
             )}
 
             {/* Mobile-only: inline assignment summary */}
-            <div className="lg:hidden">
+            <div className="md:hidden">
               {assignments.length > 0 && (
                 <div className="bg-app-card rounded-xl border border-app-border p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -626,7 +626,7 @@ export default function ServiceManager({ tenantId }: Props) {
                         className="flex items-center justify-between py-1.5 border-b border-app-border/50 last:border-0"
                       >
                         <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-xs font-medium text-app-text truncate">
+                          <span className="text-xs font-medium text-app-text break-words">
                             {a.server?.full_name ?? '—'}
                           </span>
                         </div>

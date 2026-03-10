@@ -47,5 +47,6 @@ export function useOrders(tenantId: string, statusFilter?: string) {
     },
     enabled: !!tenantId,
     staleTime: 0,
+    refetchInterval: 15_000,
   });
 }

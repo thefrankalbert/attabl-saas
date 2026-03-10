@@ -109,7 +109,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'address',
         header: () => t('address'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] break-words block">
             {row.original.address || '\u2014'}
           </span>
         ),
@@ -352,7 +352,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       {/* Row 1: Name + Status */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-medium text-app-text truncate">{supplier.name}</p>
+                          <p className="font-medium text-app-text break-words">{supplier.name}</p>
                           {supplier.contact_name && (
                             <p className="text-xs text-app-text-secondary">
                               {supplier.contact_name}
@@ -374,7 +374,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       {/* Row 2: Contact info */}
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-text-secondary">
                         {supplier.phone && <span>{supplier.phone}</span>}
-                        {supplier.email && <span className="truncate">{supplier.email}</span>}
+                        {supplier.email && <span className="break-all">{supplier.email}</span>}
                       </div>
 
                       {/* Row 3: Actions */}

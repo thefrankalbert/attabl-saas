@@ -145,7 +145,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
                     <div className="flex items-start justify-between gap-2">
                       <p
                         className={cn(
-                          'text-sm truncate',
+                          'text-sm break-words',
                           !notification.read
                             ? 'font-medium text-app-text'
                             : 'text-app-text-secondary',

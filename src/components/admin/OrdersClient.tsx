@@ -62,9 +62,9 @@ export default function OrdersClient({
   const queryClient = useQueryClient();
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
-  // TanStack Query for orders
+  // TanStack Query for orders — use || to handle empty arrays from persistent cache
   const { data: queryOrders } = useOrders(tenantId);
-  const orders = queryOrders ?? initialOrders;
+  const orders = queryOrders?.length ? queryOrders : initialOrders;
 
   // Realtime subscription via shared hook
   useRealtimeSubscription<Record<string, unknown>>({
@@ -352,20 +352,13 @@ export default function OrdersClient({
   return (
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-3">
+        <div className="shrink-0">
           {/* Hidden Audio */}
           <audio ref={audioRef} preload="auto" />
 
-          {/* Header — single line on desktop */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
-              {ta('ordersCount')}
-              <span className="text-base font-normal text-app-text-secondary ml-2">
-                ({orders.length})
-              </span>
-            </h1>
-
-            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+          {/* Search + Tabs + Sound — single row */}
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+            <div className="relative w-auto min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -376,20 +369,7 @@ export default function OrdersClient({
               />
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSound}
-              className={cn('shrink-0', soundEnabled && 'text-primary border-primary bg-primary/5')}
-              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          {/* Status filter tabs */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="shrink-0">
               <TabsList>
                 <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
                 <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
@@ -399,21 +379,54 @@ export default function OrdersClient({
                 <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
               </TabsList>
             </Tabs>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleSound}
+              className={cn(
+                'shrink-0 ml-auto',
+                soundEnabled && 'text-primary border-primary bg-primary/5',
+              )}
+              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
+            >
+              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
           <div className="flex items-center gap-3 px-4 py-2 mt-3 rounded-xl bg-accent-muted border border-accent/20">
-            <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
+            <span className="text-sm font-medium text-app-text">
+              {selectedIds.size} {t('selected') || 'selected'}
+            </span>
             <div className="flex-1" />
+            <button
+              onClick={() => {
+                const ids = Array.from(selectedIds);
+                ids.forEach((id) => {
+                  const order = orders.find((o) => o.id === id);
+                  if (order) {
+                    const config = statusConfig[order.status];
+                    if (config.nextStatus) {
+                      handleStatusChange(id, config.nextStatus);
+                    }
+                  }
+                });
+                setSelectedIds(new Set());
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
+            >
+              {t('advanceStatus') || 'Advance status'}
+            </button>
             <button
               onClick={() => {
                 setSelectedIds(new Set());
               }}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
             >
-              Clear selection
+              {tc('cancel')}
             </button>
           </div>
         )}
@@ -473,7 +486,7 @@ export default function OrdersClient({
 
                       {/* Row 2: Server + Items + Total */}
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-app-text-muted truncate">
+                        <span className="text-app-text-muted break-words">
                           {order.server?.full_name ?? '—'}
                         </span>
                         <div className="flex items-center gap-3">

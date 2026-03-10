@@ -2,15 +2,7 @@
 
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import {
-  Plus,
-  Loader2,
-  Trash2,
-  Image as ImageIcon,
-  Link as LinkIcon,
-  Eye,
-  EyeOff,
-} from 'lucide-react';
+import { Plus, Loader2, Trash2, Image as ImageIcon, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
@@ -145,91 +137,96 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <ImageIcon className="w-6 h-6" />
-            {t('title')}
-            <span className="text-base font-normal text-app-text-secondary">({ads.length})</span>
-          </h1>
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            className="gap-2 lg:ml-auto shrink-0"
-          >
-            <Plus className="w-4 h-4" /> {t('newAd')}
-          </Button>
-        </div>
+      <div className="shrink-0 flex items-center justify-end gap-2">
+        <span className="text-sm text-app-text-muted tabular-nums">({ads.length})</span>
+        <Button
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
+          variant="default"
+          size="sm"
+          className="gap-2 h-9 shrink-0"
+        >
+          <Plus className="w-4 h-4" /> {t('newAd')}
+        </Button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ads.map((ad) => (
-            <div
-              key={ad.id}
-              className={cn(
-                'group relative bg-app-card border rounded-xl overflow-hidden transition-all',
-                !ad.is_active && 'opacity-60',
-              )}
-            >
-              <div className="aspect-video bg-app-bg relative">
-                <Image src={ad.image_url} alt="" fill className="object-cover" />
-                <div className="absolute top-2 right-2 bg-app-card/90 backdrop-blur px-2 py-0.5 rounded text-xs font-bold">
-                  {t('orderLabel', { order: ad.sort_order })}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
+        {ads.length > 0 ? (
+          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+            {ads.map((ad) => (
+              <div
+                key={ad.id}
+                className={cn(
+                  'flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
+                  !ad.is_active && 'opacity-60',
+                )}
+              >
+                <div className="w-16 h-10 rounded-lg bg-app-bg relative overflow-hidden shrink-0">
+                  <Image src={ad.image_url} alt="" fill className="object-cover" />
                 </div>
-              </div>
-
-              <div className="p-4">
-                {ad.link && (
-                  <div className="flex items-center gap-2 text-xs text-blue-600 mb-3 truncate">
-                    <LinkIcon className="w-3 h-3 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  {ad.link ? (
                     <a
                       href={ad.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="hover:underline truncate"
+                      className="text-sm text-blue-600 hover:underline break-all block"
                     >
                       {ad.link}
                     </a>
-                  </div>
-                )}
-
-                <div className="flex gap-2">
+                  ) : (
+                    <span className="text-sm text-app-text-muted">{t('noLink')}</span>
+                  )}
+                </div>
+                <span className="text-xs text-app-text-muted tabular-nums shrink-0">
+                  #{ad.sort_order}
+                </span>
+                <span
+                  className={cn(
+                    'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0',
+                    ad.is_active
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : 'bg-app-bg text-app-text-secondary',
+                  )}
+                >
+                  {ad.is_active ? t('enable') : t('disable')}
+                </span>
+                <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="flex-1"
+                    className="h-8 w-8 p-0"
                     onClick={() => toggleActive(ad)}
                   >
                     {ad.is_active ? (
-                      <EyeOff className="w-3 h-3 mr-2" />
+                      <EyeOff className="w-3.5 h-3.5" />
                     ) : (
-                      <Eye className="w-3 h-3 mr-2" />
+                      <Eye className="w-3.5 h-3.5" />
                     )}
-                    {ad.is_active ? t('disable') : t('enable')}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                     onClick={() => handleDelete(ad.id)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <ImageIcon className="w-8 h-8 text-app-text-muted" />
             </div>
-          ))}
-          {ads.length === 0 && (
-            <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
-              <ImageIcon className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-app-text">{t('noAds')}</h3>
-              <p className="text-xs text-app-text-secondary mt-1">{t('noAdsDesc')}</p>
-            </div>
-          )}
-        </div>
+            <h3 className="text-lg font-bold text-app-text">{t('noAds')}</h3>
+            <p className="text-sm text-app-text-secondary mt-2">{t('noAdsDesc')}</p>
+          </div>
+        )}
       </div>
 
       <AdminModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={t('newAd')}>

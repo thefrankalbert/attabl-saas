@@ -29,7 +29,7 @@ export default function SingleOrderClient({ order: initialOrder }: SingleOrderCl
         >
           <ChevronLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-sm font-semibold text-app-text truncate">
+        <h1 className="text-sm font-semibold text-app-text break-words">
           {t('orderDetails')} — {displayLabel}
         </h1>
       </div>

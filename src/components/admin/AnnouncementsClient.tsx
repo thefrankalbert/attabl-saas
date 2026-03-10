@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Plus, Loader2, Trash2, Megaphone, Calendar, Eye, EyeOff } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -160,103 +161,92 @@ export default function AnnouncementsClient({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <Megaphone className="w-6 h-6" />
-            {t('title')}
-            <span className="text-base font-normal text-app-text-secondary">
-              ({announcements.length})
-            </span>
-          </h1>
-          <Button
-            onClick={() => {
-              resetForm();
-              setIsModalOpen(true);
-            }}
-            variant="default"
-            className="gap-2 lg:ml-auto shrink-0"
-          >
-            <Plus className="w-4 h-4" /> {t('newAnnouncement')}
-          </Button>
-        </div>
+      <div className="shrink-0 flex items-center justify-end gap-2">
+        <span className="text-sm text-app-text-muted tabular-nums">({announcements.length})</span>
+        <Button
+          onClick={() => {
+            resetForm();
+            setIsModalOpen(true);
+          }}
+          variant="default"
+          size="sm"
+          className="gap-2 h-9 shrink-0"
+        >
+          <Plus className="w-4 h-4" /> {t('newAnnouncement')}
+        </Button>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {announcements.map((ann) => (
-            <div
-              key={ann.id}
-              className="group bg-app-card border border-app-border rounded-xl p-5 transition-all flex flex-col h-full cursor-pointer hover:border-app-border-hover"
-              onClick={() => openEdit(ann)}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${ann.is_active ? 'bg-blue-500/10 text-blue-500' : 'bg-app-bg text-app-text-muted'}`}
-                >
-                  <Megaphone className="w-5 h-5" />
-                </div>
-                <div
-                  className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${ann.is_active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-app-bg text-app-text-secondary'}`}
-                >
-                  {ann.is_active ? t('statusActive') : t('statusInactive')}
-                </div>
-              </div>
-
-              <h3 className="font-bold text-app-text mb-2">{ann.title}</h3>
-              {ann.description && (
-                <p className="text-sm text-app-text-secondary line-clamp-3 mb-4 flex-1">
-                  {ann.description}
-                </p>
-              )}
-
-              <div className="mt-auto space-y-4">
-                <div className="flex items-center gap-2 text-xs text-app-text-muted">
-                  <Calendar className="w-3 h-3" />
-                  <span>
-                    {t('fromDate', { date: new Date(ann.start_date).toLocaleDateString(locale) })}
-                  </span>
-                  {ann.end_date && (
-                    <span>
-                      {t('toDate', { date: new Date(ann.end_date).toLocaleDateString(locale) })}
-                    </span>
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
+        {announcements.length > 0 ? (
+          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+            {announcements.map((ann) => (
+              <div
+                key={ann.id}
+                className="flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                onClick={() => openEdit(ann)}
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-app-text text-sm break-words">{ann.title}</p>
+                  {ann.description && (
+                    <p className="text-xs text-app-text-muted break-words mt-0.5">
+                      {ann.description}
+                    </p>
                   )}
                 </div>
-
-                <div className="flex gap-2 border-t pt-4" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-1.5 text-xs text-app-text-muted shrink-0">
+                  <Calendar className="w-3 h-3" />
+                  <span>{new Date(ann.start_date).toLocaleDateString(locale)}</span>
+                  {ann.end_date && (
+                    <span>– {new Date(ann.end_date).toLocaleDateString(locale)}</span>
+                  )}
+                </div>
+                <span
+                  className={cn(
+                    'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0',
+                    ann.is_active
+                      ? 'bg-emerald-500/10 text-emerald-500'
+                      : 'bg-app-bg text-app-text-secondary',
+                  )}
+                >
+                  {ann.is_active ? t('statusActive') : t('statusInactive')}
+                </span>
+                <div
+                  className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
-                    className="flex-1"
+                    className="h-8 w-8 p-0"
                     onClick={() => toggleActive(ann)}
                   >
                     {ann.is_active ? (
-                      <EyeOff className="w-3 h-3 mr-2" />
+                      <EyeOff className="w-3.5 h-3.5" />
                     ) : (
-                      <Eye className="w-3 h-3 mr-2" />
+                      <Eye className="w-3.5 h-3.5" />
                     )}
-                    {ann.is_active ? t('hide') : t('show')}
                   </Button>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                     onClick={() => handleDelete(ann.id)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+            <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+              <Megaphone className="w-8 h-8 text-app-text-muted" />
             </div>
-          ))}
-          {announcements.length === 0 && (
-            <div className="col-span-full py-12 text-center bg-app-bg border border-dashed border-app-border rounded-xl">
-              <Megaphone className="w-10 h-10 text-app-text-muted mx-auto mb-3" />
-              <h3 className="text-sm font-semibold text-app-text">{t('noAnnouncements')}</h3>
-              <p className="text-xs text-app-text-secondary mt-1">{t('noAnnouncementsDesc')}</p>
-            </div>
-          )}
-        </div>
+            <h3 className="text-lg font-bold text-app-text">{t('noAnnouncements')}</h3>
+            <p className="text-sm text-app-text-secondary mt-2">{t('noAnnouncementsDesc')}</p>
+          </div>
+        )}
       </div>
 
       <AdminModal

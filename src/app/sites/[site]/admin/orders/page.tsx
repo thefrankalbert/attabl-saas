@@ -1,22 +1,20 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
 import { AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import type { Order, ItemStatus, Course } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -29,7 +27,9 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     );
   }
 
-  const { data: orders } = await supabase
+  const supabase = await createClient();
+
+  const { data: initialOrders, error: queryError } = await supabase
     .from('orders')
     .select(
       '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course)',
@@ -37,6 +37,26 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
     .limit(100);
+
+  let orders = initialOrders;
+
+  // Fallback to admin client if RLS blocks the query
+  if (queryError || !orders || orders.length === 0) {
+    if (queryError)
+      logger.warn('Orders page: RLS query failed, falling back to admin client', {
+        error: queryError.message,
+      });
+    const adminSupabase = createAdminClient();
+    const { data: adminOrders } = await adminSupabase
+      .from('orders')
+      .select(
+        '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course)',
+      )
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    orders = adminOrders;
+  }
 
   // Transform order_items → items to match Order type
   const transformedOrders: Order[] = ((orders || []) as Array<Record<string, unknown>>).map(

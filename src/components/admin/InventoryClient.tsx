@@ -325,7 +325,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {/* Row 1: Title + Search + Filters + Add — all on one line (desktop) */}
               <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 {/* Title */}
-                <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Package className="w-5 h-5" />
                   {t('inventory')}
                   <span className="text-sm font-normal text-app-text-muted">
@@ -422,7 +422,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         {/* Row 1: Name + Status */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-medium text-app-text truncate">{ing.name}</p>
+                            <p className="font-medium text-app-text break-words">{ing.name}</p>
                             {ing.category && (
                               <p className="text-xs text-app-text-secondary">{ing.category}</p>
                             )}

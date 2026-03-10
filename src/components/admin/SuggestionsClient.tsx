@@ -239,147 +239,145 @@ export default function SuggestionsClient({
       ) : (
         <>
           {/* Header + Search + Bulk actions */}
-          <div className="shrink-0 space-y-3">
-            {/* Header — single line on desktop */}
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                <Lightbulb className="w-6 h-6" />
-                {t('suggestions')}
-                <span className="text-base font-normal text-app-text-secondary">
-                  ({suggestions.length})
-                </span>
-              </h1>
+          <div className="shrink-0 flex flex-col lg:flex-row lg:items-center gap-3">
+            <span className="text-sm text-app-text-muted tabular-nums">({suggestions.length})</span>
 
-              <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                <Input
-                  placeholder={t('searchDish')}
-                  className="pl-9"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
+            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+              <Input
+                placeholder={t('searchDish')}
+                className="pl-9"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
 
-              {/* Bulk actions */}
-              {suggestions.length > 0 && (
-                <div className="flex items-center gap-2 shrink-0">
-                  <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
-                    {selectedIds.size === filtered.length && filtered.length > 0 ? (
-                      <CheckSquare className="w-4 h-4" />
-                    ) : (
-                      <Square className="w-4 h-4" />
-                    )}
-                    {selectedIds.size === filtered.length && filtered.length > 0
-                      ? t('deselectAll')
-                      : t('selectAll')}
-                  </Button>
-                  {selectedIds.size > 0 && (
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      className="gap-1.5"
-                      onClick={handleBulkDelete}
-                    >
-                      <XCircle className="w-4 h-4" />
-                      {t('deleteSelected', { count: selectedIds.size })}
-                    </Button>
+            {/* Bulk actions */}
+            {suggestions.length > 0 && (
+              <div className="flex items-center gap-2 shrink-0">
+                <Button variant="outline" size="sm" className="gap-1.5" onClick={toggleSelectAll}>
+                  {selectedIds.size === filtered.length && filtered.length > 0 ? (
+                    <CheckSquare className="w-4 h-4" />
+                  ) : (
+                    <Square className="w-4 h-4" />
                   )}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2 lg:ml-auto shrink-0">
-                {canAutoGenerate && (
+                  {selectedIds.size === filtered.length && filtered.length > 0
+                    ? t('deselectAll')
+                    : t('selectAll')}
+                </Button>
+                {selectedIds.size > 0 && (
                   <Button
-                    onClick={handleAutoGenerate}
-                    variant="outline"
-                    className="gap-2"
-                    disabled={generating || menuItems.length === 0}
+                    variant="destructive"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={handleBulkDelete}
                   >
-                    <Wand2 className="w-4 h-4" />
-                    {generating ? tc('loading') : t('autoGenerate')}
+                    <XCircle className="w-4 h-4" />
+                    {t('deleteSelected', { count: selectedIds.size })}
                   </Button>
                 )}
-                <Button onClick={() => setShowAdd(true)} variant="default" className="gap-2">
-                  <Plus className="w-4 h-4" />
-                  {t('addSuggestion')}
-                </Button>
               </div>
+            )}
+
+            <div className="flex items-center gap-2 lg:ml-auto shrink-0">
+              {canAutoGenerate && (
+                <Button
+                  onClick={handleAutoGenerate}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2 h-9"
+                  disabled={generating || menuItems.length === 0}
+                >
+                  <Wand2 className="w-4 h-4" />
+                  {generating ? tc('loading') : t('autoGenerate')}
+                </Button>
+              )}
+              <Button
+                onClick={() => setShowAdd(true)}
+                variant="default"
+                size="sm"
+                className="gap-2 h-9"
+              >
+                <Plus className="w-4 h-4" />
+                {t('addSuggestion')}
+              </Button>
             </div>
           </div>
 
-          {/* Suggestions Grid */}
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filtered.map((suggestion) => {
-                const typeConfig = SUGGESTION_TYPES.find(
-                  (st) => st.value === suggestion.suggestion_type,
-                );
-                return (
-                  <div
-                    key={suggestion.id}
-                    className={cn(
-                      'bg-app-card rounded-xl border p-4 transition-colors',
-                      selectedIds.has(suggestion.id)
-                        ? 'border-accent bg-accent-muted'
-                        : 'border-app-border',
-                    )}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => toggleSelect(suggestion.id)}
-                          className="text-app-text-muted hover:text-app-text-secondary transition-colors"
-                        >
-                          {selectedIds.has(suggestion.id) ? (
-                            <CheckSquare className="w-4 h-4 text-lime-600" />
-                          ) : (
-                            <Square className="w-4 h-4" />
-                          )}
-                        </button>
-                        <span
-                          className={cn(
-                            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold',
-                            typeConfig?.color || 'bg-app-bg text-app-text-secondary',
-                          )}
-                        >
-                          {typeConfig?.emoji} {typeConfig?.label}
-                        </span>
-                      </div>
+          {/* Suggestions List */}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
+            {filtered.length > 0 ? (
+              <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+                {filtered.map((suggestion) => {
+                  const typeConfig = SUGGESTION_TYPES.find(
+                    (st) => st.value === suggestion.suggestion_type,
+                  );
+                  return (
+                    <div
+                      key={suggestion.id}
+                      className={cn(
+                        'flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
+                        selectedIds.has(suggestion.id) && 'bg-accent/5',
+                      )}
+                    >
                       <button
-                        onClick={() => handleDelete(suggestion.id)}
-                        className="p-1 text-app-text-muted hover:text-red-500 transition-colors"
+                        type="button"
+                        onClick={() => toggleSelect(suggestion.id)}
+                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0"
                       >
-                        <Trash2 className="w-4 h-4" />
+                        {selectedIds.has(suggestion.id) ? (
+                          <CheckSquare className="w-4 h-4 text-lime-600" />
+                        ) : (
+                          <Square className="w-4 h-4" />
+                        )}
                       </button>
+                      <span
+                        className={cn(
+                          'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0',
+                          typeConfig?.color || 'bg-app-bg text-app-text-secondary',
+                        )}
+                      >
+                        {typeConfig?.emoji} {typeConfig?.label}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-app-text break-words">
+                          <span className="font-medium">
+                            {suggestion.menu_item?.name || tc('unknown')}
+                          </span>
+                          <span className="text-app-text-muted mx-2">→</span>
+                          <span className="font-medium text-primary">
+                            {suggestion.suggested_item?.name || tc('unknown')}
+                          </span>
+                        </p>
+                        {suggestion.description && (
+                          <p className="text-xs text-app-text-muted break-words mt-0.5 italic">
+                            {suggestion.description}
+                          </p>
+                        )}
+                      </div>
+                      <div className="lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                          onClick={() => handleDelete(suggestion.id)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
                     </div>
-
-                    <div className="mt-3 space-y-1">
-                      <p className="text-sm font-semibold text-app-text">
-                        {suggestion.menu_item?.name || tc('unknown')}
-                      </p>
-                      <p className="text-xs text-app-text-muted">{tc('suggests')}</p>
-                      <p className="text-sm font-semibold text-primary">
-                        {suggestion.suggested_item?.name || tc('unknown')}
-                      </p>
-                    </div>
-
-                    {suggestion.description && (
-                      <p className="mt-2 text-xs text-app-text-secondary italic">
-                        &ldquo;{suggestion.description}&rdquo;
-                      </p>
-                    )}
-                  </div>
-                );
-              })}
-              {filtered.length === 0 && (
-                <div className="col-span-full text-center py-12 text-app-text-muted">
-                  <Lightbulb className="w-12 h-12 mx-auto mb-3 opacity-30" />
-                  <p className="font-medium">{t('noSuggestions')}</p>
-                  <p className="text-xs mt-1">{t('addServerAdvice')}</p>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
+                <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
+                  <Lightbulb className="w-8 h-8 text-app-text-muted" />
                 </div>
-              )}
-            </div>
+                <p className="text-lg font-bold text-app-text">{t('noSuggestions')}</p>
+                <p className="text-sm text-app-text-secondary mt-2">{t('addServerAdvice')}</p>
+              </div>
+            )}
           </div>
 
           {/* Add Modal */}
