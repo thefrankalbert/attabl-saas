@@ -312,8 +312,8 @@ export default function DashboardClient(props: DashboardClientProps) {
             </div>
           )}
 
-          {/* Avg basket with chart */}
-          {showFin && todayAvgBasket > 0 && (
+          {/* Avg basket with chart — always visible when finance perms */}
+          {showFin && (
             <div className="border border-app-border rounded-xl p-4">
               <div className="flex items-center justify-between mb-2">
                 <div>
@@ -326,7 +326,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                   {fmtF(todayAvgBasket)}
                 </span>
               </div>
-              {avgBasketChartData.length > 1 && (
+              {avgBasketChartData.length > 1 ? (
                 <div className="h-[80px]">
                   <Suspense
                     fallback={
@@ -336,6 +336,8 @@ export default function DashboardClient(props: DashboardClientProps) {
                     <AvgBasketChart data={avgBasketChartData} fmtF={fmtF} label={t('avgBasket')} />
                   </Suspense>
                 </div>
+              ) : (
+                <p className="text-xs text-app-text-muted italic">—</p>
               )}
             </div>
           )}
