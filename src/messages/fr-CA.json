@@ -166,6 +166,8 @@
     "statusButtonPreparing": "En préparation",
     "statusButtonReady": "Prêt à servir",
     "statusButtonCheckout": "Encaisser",
+    "statusLabel": "Statut",
+    "printLabel": "Impression",
     "printKitchenTicket": "Billet Cuisine",
     "printClientReceipt": "Reçu Client",
     "kitchenTicketPrinted": "Impression billet cuisine lancée",
