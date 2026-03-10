@@ -177,39 +177,41 @@ const PRESENCE_COUNTRIES = [
   { name: 'Burkina Faso', cx: 72, cy: 86, color: '#f97316' },
 ] as const;
 
-function AfricaPresenceMap() {
+function AfricaPresenceMapBg() {
   return (
-    <div className="flex items-center gap-2.5">
-      {/* Small SVG Map — no card, directly on background */}
-      <svg viewBox="0 0 200 200" className="w-10 h-10 shrink-0" aria-label="Africa map">
+    <>
+      {/* Large faded Africa hex map — watermark on background */}
+      <svg
+        viewBox="0 0 200 200"
+        className="absolute top-4 right-4 w-[280px] h-[280px] pointer-events-none select-none"
+        aria-hidden="true"
+      >
         {AFRICA_HEX_GRID.map((hex, i) => (
           <polygon
             key={i}
             points={hexPoints(hex.x, hex.y, 5)}
             fill="var(--app-border)"
-            opacity={0.3}
+            opacity={0.15}
           />
         ))}
         {PRESENCE_COUNTRIES.map((c) => (
           <g key={c.name}>
-            <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.2} />
-            <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} />
+            <circle cx={c.cx} cy={c.cy} r={10} fill={c.color} opacity={0.12} />
+            <circle cx={c.cx} cy={c.cy} r={5} fill={c.color} opacity={0.25} />
+            <circle cx={c.cx} cy={c.cy} r={2.5} fill={c.color} opacity={0.6} />
           </g>
         ))}
       </svg>
-      {/* Compact legend */}
-      <div className="hidden lg:flex items-center gap-3">
+      {/* Legend — bottom-right corner over the map */}
+      <div className="absolute top-[240px] right-8 flex items-center gap-3 pointer-events-none select-none">
         {PRESENCE_COUNTRIES.map((c) => (
-          <div key={c.name} className="flex items-center gap-1">
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: c.color }}
-            />
-            <span className="text-[10px] text-app-text-muted">{c.name}</span>
+          <div key={c.name} className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
+            <span className="text-[10px] font-medium text-app-text-muted/60">{c.name}</span>
           </div>
         ))}
       </div>
-    </div>
+    </>
   );
 }
 
@@ -358,10 +360,13 @@ export default function DashboardClient(props: DashboardClientProps) {
     stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
-      {/* Greeting + date + presence map — top row */}
-      <div className="shrink-0 mb-2 flex items-center justify-between gap-4">
-        <div className="flex items-baseline gap-2 flex-wrap min-w-0">
+    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden relative">
+      {/* Africa hex map — faded background watermark */}
+      <AfricaPresenceMapBg />
+
+      {/* Greeting + date */}
+      <div className="shrink-0 mb-2 relative z-10">
+        <div className="flex items-baseline gap-2 flex-wrap">
           <h1 className="text-lg font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
           </h1>
@@ -373,11 +378,10 @@ export default function DashboardClient(props: DashboardClientProps) {
             })}
           </span>
         </div>
-        <AfricaPresenceMap />
       </div>
 
       {/* Stats row — plain numbers, no cards */}
-      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3">
+      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3 relative z-10">
         {showFin && (
           <div>
             <p className="text-xs text-app-text-muted">{t('revenueToday')}</p>
@@ -443,7 +447,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* ── Two-column: left (chart + shortcuts), right (orders) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 relative z-10">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
           {/* Main chart — Revenue / Orders toggle */}
