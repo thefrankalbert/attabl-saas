@@ -130,7 +130,7 @@ export function AdminSidebar({
         className,
       )}
     >
-      {/* ── Tenant switcher header (back arrow + name + address + switch) ── */}
+      {/* ── Tenant switcher header + collapse toggle ── */}
       <div className="shrink-0 border-b border-app-border">
         <div className={cn('flex items-center gap-2', collapsed ? 'px-2 py-3' : 'pl-3 pr-1 py-3')}>
           {/* Back arrow / spaces grid */}
@@ -209,6 +209,23 @@ export function AdminSidebar({
             </Popover>
           )}
         </div>
+
+        {/* Collapse toggle — directly under tenant info */}
+        <div className="px-3 pb-2">
+          <button
+            type="button"
+            onClick={() => setCollapsed((prev) => !prev)}
+            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden"
+            title={collapsed ? t('expand') : t('collapse')}
+          >
+            {collapsed ? (
+              <PanelLeftOpen className="w-4 h-4 shrink-0" />
+            ) : (
+              <PanelLeftClose className="w-4 h-4 shrink-0" />
+            )}
+            <span className="text-xs whitespace-nowrap">{t('collapse')}</span>
+          </button>
+        </div>
       </div>
 
       {/* ── Scrollable navigation ── */}
@@ -226,23 +243,6 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      {/* ── Collapse toggle ── */}
-      <div className="shrink-0 pb-1 px-3">
-        <button
-          type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
-          className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden"
-          title={collapsed ? t('expand') : t('collapse')}
-        >
-          {collapsed ? (
-            <PanelLeftOpen className="w-4 h-4 shrink-0" />
-          ) : (
-            <PanelLeftClose className="w-4 h-4 shrink-0" />
-          )}
-          <span className="text-xs whitespace-nowrap">{t('collapse')}</span>
-        </button>
-      </div>
-
       {/* ── Bottom card: QR + user + popover ── */}
       <div className="shrink-0">
         <Popover>
@@ -252,18 +252,24 @@ export function AdminSidebar({
                 <button
                   type="button"
                   suppressHydrationWarning
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-app-hover transition-colors text-left"
+                  className="w-full flex flex-col gap-2.5 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-left"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-accent-muted shrink-0 flex items-center justify-center">
-                    <QrCode className="w-5 h-5 text-accent" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-accent-muted shrink-0 flex items-center justify-center">
+                      <QrCode className="w-4.5 h-4.5 text-accent" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-app-text break-words leading-snug">
+                        {userName || 'Utilisateur'}
+                      </p>
+                    </div>
+                    <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-app-text truncate">
-                      {userName || 'Utilisateur'}
-                    </p>
-                    <p className="text-[10px] text-app-text-muted">{planLabel}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
+                      {planLabel}
+                    </span>
                   </div>
-                  <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                 </button>
               </PopoverTrigger>
               <div className="hidden qr-download-source">
