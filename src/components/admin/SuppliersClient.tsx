@@ -124,7 +124,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-medium',
                 row.original.is_active
-                  ? 'bg-green-500/10 text-green-500'
+                  ? 'bg-status-success-bg text-status-success'
                   : 'bg-app-bg text-app-text-secondary',
               )}
             >
@@ -182,7 +182,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(supplier.id)}
-                  className="text-xs text-red-600 hover:text-red-700"
+                  className="text-xs text-status-error hover:text-status-error"
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -363,7 +363,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                           className={cn(
                             'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
                             supplier.is_active
-                              ? 'bg-green-500/10 text-green-500'
+                              ? 'bg-status-success-bg text-status-success'
                               : 'bg-app-bg text-app-text-secondary',
                           )}
                         >

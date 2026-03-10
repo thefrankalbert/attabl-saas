@@ -14,7 +14,7 @@ export default function QuickServicePage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 mb-6"
+            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-neutral-900 mb-6"
           >
             Rapidité sans compromis
           </motion.h1>
@@ -38,7 +38,7 @@ export default function QuickServicePage() {
       {/* Features - 3 cards spacieuses */}
       <section className="py-20 bg-neutral-50">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {[
               {
                 icon: Zap,

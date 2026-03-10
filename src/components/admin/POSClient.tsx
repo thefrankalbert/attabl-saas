@@ -67,7 +67,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   return (
     <RoleGuard permission="canConfigurePOS">
-      <div className="h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden bg-app-bg">
+      <div className="h-[calc(100dvh-7rem)] sm:h-[calc(100dvh-7rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden bg-app-bg">
         {/* Back button + Mobile View Toggle */}
         <div className="flex items-center border-b border-app-border shrink-0">
           <button

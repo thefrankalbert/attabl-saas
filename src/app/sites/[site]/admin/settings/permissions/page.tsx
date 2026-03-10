@@ -1,10 +1,12 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { redirect } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
 import type { PermissionMap } from '@/types/permission.types';
 
-export default async function PermissionsPage() {
+export default async function PermissionsPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
 
   // ─── Auth check ──────────────────────────────────────
@@ -16,11 +18,19 @@ export default async function PermissionsPage() {
     redirect('/login');
   }
 
-  // Check role - must be owner
+  // Resolve tenant from URL slug
+  const tenant = await getCachedTenant(site);
+
+  if (!tenant) {
+    redirect('/login');
+  }
+
+  // Check role - must be owner for this specific tenant
   const { data: adminUser } = await supabase
     .from('admin_users')
     .select('tenant_id, role')
     .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
     .single();
 
   if (!adminUser || adminUser.role !== 'owner') {

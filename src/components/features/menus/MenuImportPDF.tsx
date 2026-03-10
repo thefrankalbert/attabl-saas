@@ -207,7 +207,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               id="pdf-import-menu"
               value={menuId}
               onChange={(e) => setMenuId(e.target.value)}
-              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
+              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
               required
               disabled={step === 'extracting'}
             >
@@ -230,7 +230,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               'relative flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 transition-all',
               step === 'extracting' ? 'cursor-default' : 'cursor-pointer',
               isDragOver
-                ? 'border-lime-400 bg-lime-50'
+                ? 'border-accent bg-accent/5'
                 : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
             )}
           >
@@ -245,8 +245,8 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
 
             {step === 'extracting' ? (
               <div className="flex flex-col items-center gap-3">
-                <div className="w-12 h-12 bg-lime-100 rounded-xl flex items-center justify-center">
-                  <Loader2 className="w-5 h-5 text-lime-600 animate-spin" />
+                <div className="w-12 h-12 bg-accent/10 rounded-xl flex items-center justify-center">
+                  <Loader2 className="w-5 h-5 text-accent animate-spin" />
                 </div>
                 <div className="text-center">
                   <p className="text-sm font-medium text-app-text">{t('pdfImporting')}</p>
@@ -382,7 +382,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
       {/* Step: Importing */}
       {step === 'importing' && (
         <div className="flex flex-col items-center gap-4 py-8">
-          <Loader2 className="w-8 h-8 text-lime-600 animate-spin" />
+          <Loader2 className="w-8 h-8 text-accent animate-spin" />
           <p className="text-sm text-app-text-secondary">{t('importing')}</p>
         </div>
       )}
@@ -392,32 +392,32 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
         <>
           <div className="rounded-xl border border-app-border bg-app-elevated p-4 space-y-2">
             {importResult.categoriesCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <div className="flex items-center gap-2 text-sm text-emerald-600">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('categoriesCreated', { count: importResult.categoriesCreated })}
               </div>
             )}
             {importResult.itemsCreated > 0 && (
-              <div className="flex items-center gap-2 text-sm text-emerald-700">
+              <div className="flex items-center gap-2 text-sm text-emerald-600">
                 <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
                 {t('itemsCreated', { count: importResult.itemsCreated })}
               </div>
             )}
             {importResult.itemsSkipped > 0 && (
-              <div className="flex items-center gap-2 text-sm text-amber-700">
+              <div className="flex items-center gap-2 text-sm text-amber-600">
                 <AlertCircle className="w-4 h-4 flex-shrink-0" />
                 {t('itemsSkipped', { count: importResult.itemsSkipped })}
               </div>
             )}
             {importResult.errors.length > 0 && (
               <div className="space-y-1">
-                <div className="flex items-center gap-2 text-sm font-medium text-red-700">
+                <div className="flex items-center gap-2 text-sm font-medium text-red-600">
                   <AlertCircle className="w-4 h-4 flex-shrink-0" />
                   {t('errorsFound', { count: importResult.errors.length })}
                 </div>
                 <ul className="ml-6 space-y-0.5">
                   {importResult.errors.map((err, i) => (
-                    <li key={i} className="text-xs text-red-600">
+                    <li key={i} className="text-xs text-red-500">
                       {err.message}
                     </li>
                   ))}

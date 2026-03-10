@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import POSClient from '@/components/admin/POSClient';
 import { AlertCircle } from 'lucide-react';
@@ -7,15 +7,10 @@ export const dynamic = 'force-dynamic';
 
 export default async function POSPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (

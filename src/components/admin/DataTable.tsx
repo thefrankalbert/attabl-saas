@@ -42,9 +42,9 @@ export function SortableHeader<TData, TValue>({
     >
       {children}
       {sorted === 'asc' ? (
-        <ArrowUp className="w-3 h-3 text-lime-500" />
+        <ArrowUp className="w-3 h-3 text-accent" />
       ) : sorted === 'desc' ? (
-        <ArrowDown className="w-3 h-3 text-lime-500" />
+        <ArrowDown className="w-3 h-3 text-accent" />
       ) : (
         <ArrowUpDown className="w-3 h-3 text-app-text-muted" />
       )}
@@ -101,7 +101,7 @@ export function DataTable<TData>({
     <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full">
       {/* Scrollable table area — thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
-        <table className="w-full text-sm min-w-[500px] sm:min-w-[600px]">
+        <table className="w-full text-sm">
           {/* Sticky Header */}
           <thead className="bg-app-bg sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (

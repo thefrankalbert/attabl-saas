@@ -347,6 +347,7 @@ ${pdfText.substring(0, 15000)}
             is_available: true,
             is_featured: false,
             slug: slugify(item.name),
+            display_order: nextItemOrder,
           });
 
           if (itemError) {

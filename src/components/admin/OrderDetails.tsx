@@ -160,9 +160,9 @@ export default function OrderDetails({
 
             {/* Notes */}
             {order.notes && (
-              <div className="flex items-start gap-1.5 rounded-lg border border-amber-500/20 bg-amber-500/5 px-2.5 py-1.5">
-                <MessageSquare className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700 dark:text-amber-400">{order.notes}</p>
+              <div className="flex items-start gap-1.5 rounded-lg border border-status-warning/20 bg-status-warning-bg px-2.5 py-1.5">
+                <MessageSquare className="w-3.5 h-3.5 text-status-warning shrink-0 mt-0.5" />
+                <p className="text-xs text-status-warning">{order.notes}</p>
               </div>
             )}
           </div>
@@ -187,7 +187,7 @@ export default function OrderDetails({
                     <div className="min-w-0">
                       <p className="font-medium text-xs text-app-text">{item.name}</p>
                       {item.customer_notes && (
-                        <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-0.5 bg-amber-500/10 px-1.5 py-0.5 rounded inline-block">
+                        <p className="text-[10px] text-status-warning mt-0.5 bg-status-warning-bg px-1.5 py-0.5 rounded inline-block">
                           {item.customer_notes}
                         </p>
                       )}
@@ -199,7 +199,7 @@ export default function OrderDetails({
                         item.modifiers.length > 0 && (
                           <div className="mt-0.5">
                             {item.modifiers.map((m, mi) => (
-                              <p key={mi} className="text-[10px] text-blue-600 dark:text-blue-400">
+                              <p key={mi} className="text-[10px] text-status-info">
                                 + {m.name} ({fmt(m.price)})
                               </p>
                             ))}
@@ -234,7 +234,7 @@ export default function OrderDetails({
                   </div>
                 )}
                 {(order.discount_amount ?? 0) > 0 && (
-                  <div className="flex justify-between text-[11px] text-red-500">
+                  <div className="flex justify-between text-[11px] text-status-error">
                     <span>{t('discountLabel')}</span>
                     <span>-{fmt(order.discount_amount!)}</span>
                   </div>
@@ -291,14 +291,14 @@ export default function OrderDetails({
                   size="sm"
                   onClick={() => setShowPayment(true)}
                   disabled={loading}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white h-8 text-xs"
+                  className="bg-status-success hover:bg-status-success/90 text-accent-text h-8 text-xs"
                 >
                   <CreditCard className="w-3.5 h-3.5 mr-1.5" /> {t('statusButtonCheckout')}
                 </Button>
               </div>
 
               {order.status !== 'ready' && (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-start gap-1">
+                <p className="text-[10px] text-status-warning flex items-start gap-1">
                   <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
                   {t('warningReadyBeforeCheckout')}
                 </p>

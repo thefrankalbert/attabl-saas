@@ -95,7 +95,7 @@ export default function PendingInvitations({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-600 hover:bg-red-500/10"
+                      className="h-8 gap-1.5 text-xs text-status-error hover:text-status-error hover:bg-status-error-bg"
                       onClick={() => onCancel(invitation.id)}
                       disabled={cancellingId === invitation.id}
                     >

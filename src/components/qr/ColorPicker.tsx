@@ -79,7 +79,7 @@ export function ColorPicker({
   return (
     <div className={disabled ? 'opacity-50 pointer-events-none' : undefined}>
       {/* Label */}
-      {label && <Label className="mb-2 block text-sm font-medium text-gray-700">{label}</Label>}
+      {label && <Label className="mb-2 block text-sm font-medium text-app-text">{label}</Label>}
 
       {/* Preset Swatches */}
       <div className="flex flex-wrap gap-2 mb-3">
@@ -89,11 +89,11 @@ export function ColorPicker({
             type="button"
             onClick={() => handlePresetClick(preset)}
             className={`
-              h-6 w-6 rounded-full border border-gray-300 cursor-pointer
+              h-6 w-6 rounded-full border border-app-border cursor-pointer
               transition-all duration-150
               ${
                 value.toLowerCase() === preset.toLowerCase()
-                  ? 'ring-2 ring-offset-2 ring-gray-900'
+                  ? 'ring-2 ring-offset-2 ring-app-text'
                   : 'hover:scale-110'
               }
             `}
@@ -110,7 +110,7 @@ export function ColorPicker({
           type="color"
           value={value}
           onChange={(e) => handleNativeChange(e.target.value)}
-          className="h-8 w-8 rounded-lg border border-gray-300 cursor-pointer p-0.5"
+          className="h-8 w-8 rounded-lg border border-app-border cursor-pointer p-0.5"
           aria-label="Sélecteur de couleur"
         />
         <Input

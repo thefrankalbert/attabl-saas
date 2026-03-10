@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
+import { getCachedTenant } from '@/lib/cache';
 import ItemsClient from '@/components/admin/ItemsClient';
 import { AlertCircle } from 'lucide-react';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
@@ -8,15 +9,10 @@ export const revalidate = 60;
 
 export default async function ItemsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id, currency, supported_currencies')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -29,6 +25,7 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
     );
   }
 
+  const supabase = await createClient();
   const [itemsRes, categoriesRes] = await Promise.all([
     supabase
       .from('menu_items')
@@ -43,17 +40,15 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
     category: item.categories as Category,
   })) as MenuItem[];
 
+  const currency = (tenant.currency as CurrencyCode) || 'XAF';
+
   return (
     <ItemsClient
       tenantId={tenant.id}
       initialItems={items}
       initialCategories={(categoriesRes.data || []) as Category[]}
-      currency={(tenant.currency as CurrencyCode) || 'XAF'}
-      supportedCurrencies={
-        (tenant.supported_currencies as CurrencyCode[]) || [
-          (tenant.currency as CurrencyCode) || 'XAF',
-        ]
-      }
+      currency={currency}
+      supportedCurrencies={[currency]}
     />
   );
 }

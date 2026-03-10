@@ -64,47 +64,47 @@ export default function OrderCard({
       }
     > => ({
       pending: {
-        color: '#F59E0B',
-        bg: 'bg-amber-500/10',
-        text: 'text-amber-500',
+        color: 'var(--color-status-warning)',
+        bg: 'bg-status-warning-bg',
+        text: 'text-status-warning',
         label: t('statusPending'),
-        border: 'border-l-amber-500',
+        border: 'border-l-status-warning',
         nextStatus: 'preparing',
         nextLabel: t('actionPrepare'),
       },
       preparing: {
-        color: '#3B82F6',
-        bg: 'bg-blue-500/10',
-        text: 'text-blue-500',
+        color: 'var(--color-status-info)',
+        bg: 'bg-status-info-bg',
+        text: 'text-status-info',
         label: t('statusPreparing'),
-        border: 'border-l-blue-500',
+        border: 'border-l-status-info',
         nextStatus: 'ready',
         nextLabel: t('actionReady'),
       },
       ready: {
-        color: '#22C55E',
-        bg: 'bg-emerald-500/10',
-        text: 'text-emerald-500',
+        color: 'var(--color-status-success)',
+        bg: 'bg-status-success-bg',
+        text: 'text-status-success',
         label: t('statusReady'),
-        border: 'border-l-emerald-500',
+        border: 'border-l-status-success',
         nextStatus: 'delivered',
         nextLabel: t('actionDeliver'),
       },
       delivered: {
-        color: '#6B7280',
-        bg: 'bg-slate-500/10',
-        text: 'text-slate-500',
+        color: 'var(--color-app-text-muted)',
+        bg: 'bg-app-elevated',
+        text: 'text-app-text-muted',
         label: t('statusDelivered'),
-        border: 'border-l-slate-500',
+        border: 'border-l-app-text-muted',
         nextStatus: null,
         nextLabel: null,
       },
       cancelled: {
-        color: '#EF4444',
-        bg: 'bg-red-500/10',
-        text: 'text-red-500',
+        color: 'var(--color-status-error)',
+        bg: 'bg-status-error-bg',
+        text: 'text-status-error',
         label: t('statusCancelled'),
-        border: 'border-l-red-500',
+        border: 'border-l-status-error',
         nextStatus: null,
         nextLabel: null,
       },
@@ -123,7 +123,7 @@ export default function OrderCard({
       className={cn(
         'bg-app-card rounded-xl border-l-[6px] transition-all cursor-pointer overflow-hidden',
         config.border,
-        isUrgent && 'ring-2 ring-red-500 ring-offset-2',
+        isUrgent && 'ring-2 ring-status-error ring-offset-2',
       )}
     >
       <div className="p-4 space-y-3">
@@ -159,10 +159,10 @@ export default function OrderCard({
           className={cn(
             'flex items-center gap-1.5 text-xs font-mono font-bold',
             isUrgent
-              ? 'text-red-500 animate-pulse'
+              ? 'text-status-error animate-pulse'
               : elapsed > 300
-                ? 'text-amber-500'
-                : 'text-emerald-500',
+                ? 'text-status-warning'
+                : 'text-status-success',
           )}
         >
           {isUrgent && <AlertTriangle className="w-3.5 h-3.5" />}
@@ -197,12 +197,12 @@ export default function OrderCard({
               onStatusChange(order.id, config.nextStatus!);
             }}
             className={cn(
-              'w-full mt-2 py-3 min-h-[44px] rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-white transition-opacity hover:opacity-90',
+              'w-full mt-2 py-3 min-h-[44px] rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-accent-text transition-opacity hover:opacity-90',
               order.status === 'pending'
-                ? 'bg-amber-500'
+                ? 'bg-status-warning'
                 : order.status === 'preparing'
-                  ? 'bg-blue-500'
-                  : 'bg-emerald-500',
+                  ? 'bg-status-info'
+                  : 'bg-status-success',
             )}
           >
             {config.nextLabel} <ChevronRight className="w-3.5 h-3.5" />

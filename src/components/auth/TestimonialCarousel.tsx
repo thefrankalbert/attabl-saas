@@ -89,7 +89,7 @@ export function TestimonialCarousel() {
             {/* Stars */}
             <div className="flex items-center gap-0.5 mb-3">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-3.5 h-3.5 fill-[#CCFF00] text-[#CCFF00]" />
+                <Star key={i} className="w-3.5 h-3.5 fill-accent text-accent" />
               ))}
             </div>
 
@@ -100,7 +100,7 @@ export function TestimonialCarousel() {
 
             {/* Author */}
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-zinc-800 border border-zinc-700 text-white text-xs font-medium shrink-0">
+              <div className="flex items-center justify-center w-9 h-9 rounded-full bg-white/10 border border-white/15 text-white text-xs font-medium shrink-0">
                 {t.initials}
               </div>
               <div className="text-left">
@@ -123,7 +123,7 @@ export function TestimonialCarousel() {
             onClick={() => setCurrent(i)}
             aria-label={`Témoignage ${i + 1}`}
             className={`h-1 rounded-full transition-all duration-300 ${
-              i === current ? 'bg-[#CCFF00] w-6' : 'bg-white/15 hover:bg-white/30 w-1'
+              i === current ? 'bg-accent w-6' : 'bg-white/15 hover:bg-white/30 w-1'
             }`}
           />
         ))}

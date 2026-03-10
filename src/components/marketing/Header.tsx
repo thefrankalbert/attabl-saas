@@ -265,7 +265,7 @@ export default function Header() {
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-40 bg-white lg:hidden"
           >
-            <div className="flex h-full flex-col overflow-y-auto px-4 py-20 sm:px-6">
+            <div className="flex h-full flex-col overflow-y-auto px-4 py-20 pb-[env(safe-area-inset-bottom,20px)] sm:px-6">
               <div className="space-y-1">
                 {segments.map((seg) => (
                   <Link

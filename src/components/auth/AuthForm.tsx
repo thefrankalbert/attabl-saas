@@ -190,9 +190,9 @@ function AuthForm({ mode }: AuthFormProps) {
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 mb-10 w-fit">
-        <div className="bg-black rounded-lg p-1.5">
+        <div className="bg-app-text rounded-lg p-1.5">
           <svg
-            className="h-5 w-5 text-[#CCFF00]"
+            className="h-5 w-5 text-accent"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -205,15 +205,15 @@ function AuthForm({ mode }: AuthFormProps) {
             <path d="M9 21V9" />
           </svg>
         </div>
-        <span className="text-xl font-semibold tracking-tight text-zinc-900">ATTABL</span>
+        <span className="text-xl font-semibold tracking-tight text-app-text">ATTABL</span>
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900 mb-2">
+        <h1 className="text-2xl font-semibold tracking-tight text-app-text mb-2">
           {isLogin ? 'Bon retour parmi nous' : 'Lancez votre menu digital'}
         </h1>
-        <p className="text-zinc-500 text-sm">
+        <p className="text-app-text-secondary text-sm">
           {isLogin
             ? 'Connectez-vous pour piloter votre \u00e9tablissement.'
             : 'Cr\u00e9ez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
@@ -223,7 +223,7 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-1.5">
-          <Label htmlFor="email" className="text-zinc-700 font-medium text-sm">
+          <Label htmlFor="email" className="text-app-text font-medium text-sm">
             Email
           </Label>
           <Input
@@ -233,19 +233,19 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-10 bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-1 focus:ring-zinc-900 transition-all rounded-md"
+            className="h-10 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent transition-all rounded-md"
           />
         </div>
 
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password" className="text-zinc-700 font-medium text-sm">
+            <Label htmlFor="password" className="text-app-text font-medium text-sm">
               Mot de passe
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-sm text-zinc-400 hover:text-zinc-900 transition-colors whitespace-nowrap"
+                className="text-sm text-app-text-muted hover:text-app-text transition-colors whitespace-nowrap"
               >
                 Mot de passe oubli&eacute; ?
               </Link>
@@ -264,12 +264,12 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-10 pr-12 bg-white border-zinc-200 text-zinc-900 placeholder:text-zinc-400 focus:ring-1 focus:ring-zinc-900 transition-all rounded-md"
+              className="h-10 pr-12 bg-app-card border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent transition-all rounded-md"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors"
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
@@ -282,7 +282,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
             <Alert
               variant="destructive"
-              className="bg-red-50 text-red-700 border-red-200 rounded-lg"
+              className="bg-red-500/10 text-red-600 border-red-500/20 rounded-lg"
             >
               <AlertDescription className="text-sm">{error}</AlertDescription>
             </Alert>
@@ -291,7 +291,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          className="w-full h-9 bg-[#CCFF00] hover:bg-[#b3e600] text-black text-sm font-medium rounded-md shadow-sm transition-colors"
+          className="w-full h-9 bg-accent hover:bg-accent-hover text-accent-text text-sm font-medium rounded-md shadow-sm transition-colors"
           disabled={loading}
         >
           {loading ? (
@@ -308,7 +308,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         {/* Trust signal for signup */}
         {!isLogin && (
-          <p className="text-center text-xs text-zinc-400">
+          <p className="text-center text-xs text-app-text-muted">
             14 jours gratuits &mdash; aucun engagement
           </p>
         )}
@@ -317,10 +317,10 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Divider */}
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-zinc-200" />
+          <div className="w-full border-t border-app-border" />
         </div>
         <div className="relative flex justify-center text-xs uppercase tracking-widest">
-          <span className="bg-white px-4 text-zinc-400">ou</span>
+          <span className="bg-app-card px-4 text-app-text-muted">ou</span>
         </div>
       </div>
 
@@ -331,7 +331,7 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="w-full h-10 rounded-md border-zinc-200 bg-white hover:bg-zinc-50 text-zinc-700 font-medium transition-colors"
+          className="w-full h-10 rounded-md border-app-border bg-app-card hover:bg-app-hover text-app-text font-medium transition-colors"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="mr-3 h-5 w-5 animate-spin" />
@@ -343,11 +343,11 @@ function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       {/* Footer Link */}
-      <p className="mt-8 text-center text-sm text-zinc-500">
+      <p className="mt-8 text-center text-sm text-app-text-secondary">
         {isLogin ? 'Pas encore de compte ?' : 'D\u00e9j\u00e0 un compte ?'}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}
-          className="font-semibold text-zinc-900 hover:underline"
+          className="font-semibold text-app-text hover:underline"
         >
           {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
         </Link>

@@ -118,7 +118,7 @@ export function ScreenLock({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center"
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4"
             onClick={mode === 'overlay' ? handleOverlayUnlock : undefined}
           >
             {/* Backdrop */}
@@ -129,7 +129,7 @@ export function ScreenLock({
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.1, duration: 0.4, type: 'spring', damping: 25 }}
-              className="relative z-10 flex flex-col items-center text-center px-8"
+              className="relative z-10 flex flex-col items-center text-center px-6 sm:px-8 w-full max-w-sm mx-auto"
               onClick={mode === 'password' ? (e) => e.stopPropagation() : undefined}
             >
               {/* Lock icon */}

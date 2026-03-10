@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils, Edit2, Trash2 } from 'lucide-react';
 import {
@@ -111,6 +111,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
 }
 
 export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
+  const dndId = useId();
   const t = useTranslations('categories');
   const tc = useTranslations('common');
   const [showModal, setShowModal] = useState(false);
@@ -135,8 +136,11 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   );
 
   // TanStack Query for categories with item count
-  const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
-    useCategories(tenantId, { withItemCount: true });
+  const { data: categories = initialCategories as CategoryWithCount[], isLoading } = useCategories(
+    tenantId,
+    { withItemCount: true },
+  );
+  const loading = isLoading && categories.length === 0;
 
   const loadCategories = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
@@ -164,15 +168,17 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
 
       const reordered = arrayMove(categories, oldIndex, newIndex);
 
-      // Update display_order in database
+      // Update display_order in database — use individual updates to avoid upsert nulling out columns
       try {
-        const updates = reordered.map((cat, i: number) => ({
-          id: cat.id,
-          display_order: i,
-          tenant_id: tenantId,
-          name: cat.name,
-        }));
-        const { error } = await supabase.from('categories').upsert(updates);
+        const updatePromises = reordered.map((cat, i: number) =>
+          supabase
+            .from('categories')
+            .update({ display_order: i })
+            .eq('id', cat.id)
+            .eq('tenant_id', tenantId),
+        );
+        const results = await Promise.all(updatePromises);
+        const error = results.find((r) => r.error)?.error;
         if (error) throw error;
         loadCategories();
       } catch (err: unknown) {
@@ -254,26 +260,14 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0">
-          {/* Header — single row like inventory */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-              <Folder className="w-5 h-5" />
-              {t('title')}
-              <span className="text-sm font-normal text-app-text-muted">({categories.length})</span>
-            </h1>
-            <Button
-              onClick={openNewModal}
-              variant="default"
-              size="sm"
-              className="gap-2 h-9 lg:ml-auto shrink-0"
-            >
-              <Plus className="w-4 h-4" /> {t('newCategory')}
-            </Button>
-          </div>
+        <div className="shrink-0 flex items-center justify-end gap-2">
+          <span className="text-sm text-app-text-muted tabular-nums">({categories.length})</span>
+          <Button onClick={openNewModal} variant="default" size="sm" className="gap-2 h-9 shrink-0">
+            <Plus className="w-4 h-4" /> {t('newCategory')}
+          </Button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
           {/* List */}
           {loading ? (
             <div className="space-y-3">
@@ -286,6 +280,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             </div>
           ) : categories.length > 0 ? (
             <DndContext
+              id={dndId}
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={handleDragStart}

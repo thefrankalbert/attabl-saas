@@ -1,18 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import AuditLogClient from '@/components/admin/AuditLogClient';
 
 export default async function AuditLogsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -22,5 +18,21 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
     );
   }
 
-  return <AuditLogClient tenantId={tenant.id} />;
+  const supabase = await createClient();
+
+  // Pre-fetch initial audit logs server-side (avoids RLS issues with anon client)
+  const { data: initialLogs, count } = await supabase
+    .from('audit_log')
+    .select('*', { count: 'exact' })
+    .eq('tenant_id', tenant.id)
+    .order('created_at', { ascending: false })
+    .range(0, 24);
+
+  return (
+    <AuditLogClient
+      tenantId={tenant.id}
+      initialLogs={(initialLogs as Record<string, unknown>[]) || []}
+      initialCount={count || 0}
+    />
+  );
 }

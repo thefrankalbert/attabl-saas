@@ -144,11 +144,15 @@ export function useReportData(tenantId: string, period: Period) {
         return emptyDefaults;
       }
 
-      // Category breakdown via direct query (no RPC needed)
+      // Category breakdown via direct query (join orders for tenant scoping + date filter)
       const categoryRes = await supabase
         .from('order_items')
-        .select('quantity, price_at_order, menu_items!inner(categories!inner(name))')
-        .eq('tenant_id', tenantId);
+        .select(
+          'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
+        )
+        .eq('orders.tenant_id', tenantId)
+        .gte('orders.created_at', startDate)
+        .lte('orders.created_at', endDate + 'T23:59:59');
 
       // Fetch server performance stats (separate query, non-blocking)
       const serverRes = await supabase

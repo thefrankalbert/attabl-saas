@@ -85,7 +85,7 @@ export function PricingCard({
         className={`relative flex flex-col h-full overflow-hidden transition-all duration-300 rounded-[22px] border ${
           details.highlight
             ? 'bg-white dark:bg-[#121212] border-transparent shadow-none'
-            : 'bg-white dark:bg-[#0A0A0A] border-gray-100 dark:border-white/10 shadow-none'
+            : 'bg-white dark:bg-[#0A0A0A] border-neutral-100 dark:border-white/10 shadow-none'
         } group-hover:border-[#CCFF00]/30`}
       >
         {/* Inner Gradient for "Pro" feel on Dark Mode */}
@@ -100,7 +100,7 @@ export function PricingCard({
               className={`text-xl font-medium mb-2 ${
                 details.highlight
                   ? 'text-black dark:text-white'
-                  : 'text-gray-900 dark:text-gray-300'
+                  : 'text-black dark:text-neutral-300'
               }`}
             >
               {details.name}
@@ -114,31 +114,31 @@ export function PricingCard({
               >
                 {displayPriceRounded.toLocaleString('fr-FR')}
               </span>
-              <span className="text-gray-500 font-medium">/mois</span>
+              <span className="text-neutral-500 font-medium">/mois</span>
             </div>
             {billingInterval === 'yearly' && (
               <div className="mt-2 text-xs font-bold">
                 <span className="text-green-600 dark:text-[#CCFF00] bg-green-50 dark:bg-[#CCFF00]/10 px-2 py-0.5 rounded">
                   -15% appliqué
                 </span>
-                <span className="text-gray-400 block mt-1">
+                <span className="text-neutral-400 block mt-1">
                   Facturé {yearlyTotalRounded.toLocaleString('fr-FR')} F/an
                 </span>
               </div>
             )}
-            <p className="text-sm text-gray-500 mt-4 h-10">{details.description}</p>
+            <p className="text-sm text-neutral-500 mt-4 h-10">{details.description}</p>
           </div>
 
           {/* Features */}
           <div className="space-y-4 flex-grow mb-8">
             {details.features.map((feature, i) => (
-              <div key={i} className="flex items-start gap-3 text-sm text-gray-400">
+              <div key={i} className="flex items-start gap-3 text-sm text-neutral-400">
                 <Check
                   className={`h-4 w-4 shrink-0 mt-0.5 ${
-                    details.highlight ? 'text-[#CCFF00]' : 'text-gray-600 dark:text-gray-600'
+                    details.highlight ? 'text-[#CCFF00]' : 'text-neutral-600 dark:text-neutral-600'
                   }`}
                 />
-                <span className="text-gray-600 dark:text-gray-400">{feature}</span>
+                <span className="text-neutral-600 dark:text-neutral-400">{feature}</span>
               </div>
             ))}
           </div>
@@ -150,7 +150,7 @@ export function PricingCard({
             className={`w-full h-12 rounded-xl font-bold text-sm transition-all duration-200 focus-visible:ring-0 ${
               details.highlight
                 ? 'bg-[#CCFF00] hover:bg-[#b3e600] text-black shadow-none'
-                : 'bg-black dark:bg-white/10 text-white hover:bg-gray-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5 shadow-none'
+                : 'bg-black dark:bg-white/10 text-white hover:bg-neutral-800 dark:hover:bg-white/20 border border-transparent dark:border-white/5 shadow-none'
             }`}
           >
             {isCurrentPlan

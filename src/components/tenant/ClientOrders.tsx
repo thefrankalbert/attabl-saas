@@ -280,7 +280,10 @@ export default function ClientOrders({
   // ─── Orders history list ──────────────────────────────
 
   return (
-    <div className="space-y-3 pb-24 px-4">
+    <div
+      className="space-y-3 px-4"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       {orders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
         const remainingMs = canEdit ? getRemainingMs(order.created_at) : 0;

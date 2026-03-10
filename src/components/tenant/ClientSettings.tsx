@@ -89,7 +89,10 @@ export default function ClientSettings({
   // ─── Render ─────────────────────────────────────────────
 
   return (
-    <main className="min-h-screen bg-neutral-50 pb-24">
+    <main
+      className="min-h-screen bg-neutral-50"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       {/* ─── HEADER — matching cart page ─────────────── */}
       <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
@@ -176,7 +179,7 @@ export default function ClientSettings({
                   </p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 {CURRENCY_OPTIONS.filter(
                   (c) =>
                     !supportedCurrencies ||

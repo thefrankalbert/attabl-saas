@@ -327,7 +327,7 @@ export default function OrdersClient({
                     handleStatusChange(order.id, config.nextStatus!);
                   }}
                   className={cn(
-                    'text-xs text-white gap-1 min-h-[44px]',
+                    'text-xs text-accent-text gap-1 min-h-[44px]',
                     config.actionDot,
                     `hover:opacity-90`,
                   )}
@@ -386,7 +386,7 @@ export default function OrdersClient({
               onClick={toggleSound}
               className={cn(
                 'shrink-0 ml-auto',
-                soundEnabled && 'text-primary border-primary bg-primary/5',
+                soundEnabled && 'text-accent border-accent bg-accent-muted',
               )}
               title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
             >
@@ -397,7 +397,7 @@ export default function OrdersClient({
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 px-4 py-2 mt-3 rounded-xl bg-accent-muted border border-accent/20">
+          <div className="flex items-center gap-3 px-4 py-2 mt-3 border-b border-app-border bg-accent-muted">
             <span className="text-sm font-medium text-app-text">
               {selectedIds.size} {t('selected') || 'selected'}
             </span>
@@ -456,7 +456,7 @@ export default function OrdersClient({
                   const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
                   const items = order.items || [];
                   return (
-                    <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3 active:bg-app-bg transition-colors">
+                    <div className="border-b border-app-border py-4 space-y-3 active:bg-app-hover transition-colors">
                       {/* Row 1: Table + Status + Time */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -509,7 +509,7 @@ export default function OrdersClient({
                               handleStatusChange(order.id, config.nextStatus!);
                             }}
                             className={cn(
-                              'text-xs text-white gap-1 min-h-[44px]',
+                              'text-xs text-accent-text gap-1 min-h-[44px]',
                               config.actionDot,
                               `hover:opacity-90`,
                             )}
