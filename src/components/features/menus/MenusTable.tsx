@@ -275,17 +275,41 @@ export default function MenusTable({
 
       {/* Standalone menus */}
       {filteredStandalone.length > 0 && (
-        <div>
-          {venues.length > 0 && (
-            <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest px-4 py-2">
-              {t('independentMenus')}
-            </p>
-          )}
+        <SortableContext
+          items={filteredStandalone.map((m) => m.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {filteredStandalone.map((menu) => (
+            <MenuRow
+              key={menu.id}
+              menu={menu}
+              tenantSlug={tenantSlug}
+              venues={venues}
+              isSelected={selectedIds.has(menu.id)}
+              onToggleSelect={() => onToggleSelect(menu.id)}
+              onEdit={() => onEdit(menu)}
+              onDelete={() => onDelete(menu)}
+              onToggle={() => onToggle(menu)}
+              onAddChild={() => onAddChild(menu.id)}
+            />
+          ))}
+        </SortableContext>
+      )}
+
+      {/* Menus by venue — flat list, no venue section headers */}
+      {Object.entries(menusByVenue).map(([venueId, venueMenus]) => {
+        const filtered = venueMenus.filter((m) =>
+          m.name.toLowerCase().includes(searchQuery.toLowerCase()),
+        );
+        if (filtered.length === 0) return null;
+
+        return (
           <SortableContext
-            items={filteredStandalone.map((m) => m.id)}
+            key={venueId}
+            items={filtered.map((m) => m.id)}
             strategy={verticalListSortingStrategy}
           >
-            {filteredStandalone.map((menu) => (
+            {filtered.map((menu) => (
               <MenuRow
                 key={menu.id}
                 menu={menu}
@@ -300,46 +324,6 @@ export default function MenusTable({
               />
             ))}
           </SortableContext>
-        </div>
-      )}
-
-      {/* Menus by venue */}
-      {Object.entries(menusByVenue).map(([venueId, venueMenus]) => {
-        const venue = venues.find((v) => v.id === venueId);
-        const filtered = venueMenus.filter((m) =>
-          m.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-        if (filtered.length === 0) return null;
-
-        return (
-          <div key={venueId} className="mt-4">
-            <div className="flex items-center gap-2 px-4 py-2">
-              <Building2 className="w-4 h-4 text-app-text-muted" />
-              <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest">
-                {venue?.name || t('space')}
-              </p>
-            </div>
-            <SortableContext
-              items={filtered.map((m) => m.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filtered.map((menu) => (
-                <MenuRow
-                  key={menu.id}
-                  menu={menu}
-                  tenantSlug={tenantSlug}
-                  venues={venues}
-                  isSelected={selectedIds.has(menu.id)}
-                  showVenueBadge={false}
-                  onToggleSelect={() => onToggleSelect(menu.id)}
-                  onEdit={() => onEdit(menu)}
-                  onDelete={() => onDelete(menu)}
-                  onToggle={() => onToggle(menu)}
-                  onAddChild={() => onAddChild(menu.id)}
-                />
-              ))}
-            </SortableContext>
-          </div>
         );
       })}
 
