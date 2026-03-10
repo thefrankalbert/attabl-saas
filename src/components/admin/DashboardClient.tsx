@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData, timeAgo } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
@@ -11,14 +11,14 @@ import { STATUS_STYLES } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
 import {
-  TrendingUp,
-  TrendingDown,
   ChevronRight,
   Clock,
   ShoppingBag,
   QrCode,
   UtensilsCrossed,
   BarChart3,
+  ClipboardList,
+  Settings,
 } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
@@ -116,20 +116,18 @@ const StatsGauge = lazy(() =>
       data: Array<{ name: string; value: number; displayValue: string; color: string }>;
     }) {
       const { PieChart, Pie, Cell, ResponsiveContainer } = mod;
-      // Total for center label
-      const total = data.reduce((s, d) => s + d.value, 0);
       return (
         <div className="relative">
-          <ResponsiveContainer width="100%" height={130}>
+          <ResponsiveContainer width="100%" height={70}>
             <PieChart>
               <Pie
                 data={data}
                 cx="50%"
-                cy="95%"
+                cy="100%"
                 startAngle={180}
                 endAngle={0}
-                innerRadius={70}
-                outerRadius={100}
+                innerRadius={38}
+                outerRadius={55}
                 paddingAngle={2}
                 dataKey="value"
                 stroke="none"
@@ -140,10 +138,6 @@ const StatsGauge = lazy(() =>
               </Pie>
             </PieChart>
           </ResponsiveContainer>
-          {/* Center value */}
-          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
-            <span className="text-2xl font-black text-app-text tabular-nums">{total}</span>
-          </div>
         </div>
       );
     },
@@ -234,7 +228,13 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   const [chartMode, setChartMode] = useState<'revenue' | 'orders'>('revenue');
 
-  const hour = new Date().getHours();
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const hour = currentTime.getHours();
   const greetKey = hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
   // Stable timestamp for "new order" detection — refreshes when orders change
@@ -312,123 +312,127 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   return (
     <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
-      {/* Greeting + date */}
-      <div className="shrink-0 mb-2">
+      {/* Greeting + date + time */}
+      <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-baseline gap-2 flex-wrap">
           <h1 className="text-lg font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
           </h1>
           <span className="text-xs text-app-text-muted capitalize">
-            {new Date().toLocaleDateString(locale, {
+            {currentTime.toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
             })}
           </span>
         </div>
+        <span
+          className="text-sm font-mono font-bold text-app-text tabular-nums flex items-center gap-1.5"
+          suppressHydrationWarning
+        >
+          <Clock className="w-3.5 h-3.5 text-app-text-muted" />
+          {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+        </span>
       </div>
 
-      {/* Stats gauge — semi-circular doughnut */}
-      <div className="shrink-0 mb-3 border border-app-border rounded-xl p-4 bg-app-card">
-        <Suspense
-          fallback={<div className="h-[130px] rounded-lg bg-app-elevated/20 animate-pulse" />}
-        >
-          <StatsGauge
-            data={[
-              ...(showFin
-                ? [
-                    {
-                      name: t('revenueToday'),
-                      value: Math.max(stats.revenueToday, 1),
-                      displayValue: fmtF(stats.revenueToday),
-                      color: '#4ade80',
-                    },
-                  ]
-                : []),
-              {
-                name: t('ordersToday'),
-                value: Math.max(stats.ordersToday, 1),
-                displayValue: String(stats.ordersToday),
-                color: '#60a5fa',
-              },
-              {
-                name: t('activeItems'),
-                value: Math.max(stats.activeItems, 1),
-                displayValue: String(stats.activeItems),
-                color: '#f97316',
-              },
-              {
-                name: t('activeTables'),
-                value: Math.max(stats.activeCards, 1),
-                displayValue: String(stats.activeCards),
-                color: '#a78bfa',
-              },
-            ]}
-          />
-        </Suspense>
-        {/* Legend table */}
-        <div className="flex flex-wrap justify-center gap-x-6 gap-y-1.5 mt-2">
-          {showFin && (
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0" />
-              <span className="text-[11px] text-app-text-muted">{t('revenueToday')}</span>
-              <span className="text-[11px] font-bold text-app-text tabular-nums">
-                {fmtF(stats.revenueToday)}
+      {/* Stats gauge — compact semi-circular doughnut */}
+      <div className="shrink-0 mb-2 border border-app-border rounded-xl px-4 py-2 bg-app-card">
+        <div className="flex items-center gap-4">
+          {/* Gauge chart — compact */}
+          <div className="shrink-0 w-[140px]">
+            <Suspense
+              fallback={<div className="h-[70px] rounded-lg bg-app-elevated/20 animate-pulse" />}
+            >
+              <StatsGauge
+                data={[
+                  ...(showFin
+                    ? [
+                        {
+                          name: t('revenueToday'),
+                          value: Math.max(stats.revenueToday, 1),
+                          displayValue: fmtF(stats.revenueToday),
+                          color: '#4ade80',
+                        },
+                      ]
+                    : []),
+                  {
+                    name: t('ordersToday'),
+                    value: Math.max(stats.ordersToday, 1),
+                    displayValue: String(stats.ordersToday),
+                    color: '#60a5fa',
+                  },
+                  {
+                    name: t('activeItems'),
+                    value: Math.max(stats.activeItems, 1),
+                    displayValue: String(stats.activeItems),
+                    color: '#f97316',
+                  },
+                  {
+                    name: t('activeTables'),
+                    value: Math.max(stats.activeCards, 1),
+                    displayValue: String(stats.activeCards),
+                    color: '#a78bfa',
+                  },
+                ]}
+              />
+            </Suspense>
+          </div>
+          {/* Legend — side-by-side with gauge */}
+          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1">
+            {showFin && (
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-[#4ade80] shrink-0" />
+                <span className="text-[10px] text-app-text-muted truncate">
+                  {t('revenueToday')}
+                </span>
+                <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
+                  {fmtF(stats.revenueToday)}
+                </span>
+                {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
+                  <span
+                    className={cn(
+                      'text-[9px] font-bold',
+                      stats.revenueTrend > 0 ? 'text-status-success' : 'text-status-error',
+                    )}
+                  >
+                    {stats.revenueTrend > 0 ? '+' : ''}
+                    {stats.revenueTrend}%
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#60a5fa] shrink-0" />
+              <span className="text-[10px] text-app-text-muted truncate">{t('ordersToday')}</span>
+              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
+                {stats.ordersToday}
               </span>
-              {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
+              {stats.ordersTrend !== undefined && stats.ordersTrend !== 0 && (
                 <span
                   className={cn(
-                    'text-[10px] font-bold flex items-center gap-0.5',
-                    stats.revenueTrend > 0 ? 'text-status-success' : 'text-status-error',
+                    'text-[9px] font-bold',
+                    stats.ordersTrend > 0 ? 'text-status-success' : 'text-status-error',
                   )}
                 >
-                  {stats.revenueTrend > 0 ? (
-                    <TrendingUp className="w-2.5 h-2.5" />
-                  ) : (
-                    <TrendingDown className="w-2.5 h-2.5" />
-                  )}
-                  {stats.revenueTrend > 0 ? '+' : ''}
-                  {stats.revenueTrend}%
+                  {stats.ordersTrend > 0 ? '+' : ''}
+                  {stats.ordersTrend}%
                 </span>
               )}
             </div>
-          )}
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa] shrink-0" />
-            <span className="text-[11px] text-app-text-muted">{t('ordersToday')}</span>
-            <span className="text-[11px] font-bold text-app-text tabular-nums">
-              {stats.ordersToday}
-            </span>
-            {stats.ordersTrend !== undefined && stats.ordersTrend !== 0 && (
-              <span
-                className={cn(
-                  'text-[10px] font-bold flex items-center gap-0.5',
-                  stats.ordersTrend > 0 ? 'text-status-success' : 'text-status-error',
-                )}
-              >
-                {stats.ordersTrend > 0 ? (
-                  <TrendingUp className="w-2.5 h-2.5" />
-                ) : (
-                  <TrendingDown className="w-2.5 h-2.5" />
-                )}
-                {stats.ordersTrend > 0 ? '+' : ''}
-                {stats.ordersTrend}%
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#f97316] shrink-0" />
+              <span className="text-[10px] text-app-text-muted truncate">{t('activeItems')}</span>
+              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
+                {stats.activeItems}
               </span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#f97316] shrink-0" />
-            <span className="text-[11px] text-app-text-muted">{t('activeItems')}</span>
-            <span className="text-[11px] font-bold text-app-text tabular-nums">
-              {stats.activeItems}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#a78bfa] shrink-0" />
-            <span className="text-[11px] text-app-text-muted">{t('activeTables')}</span>
-            <span className="text-[11px] font-bold text-app-text tabular-nums">
-              {stats.activeCards}
-            </span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#a78bfa] shrink-0" />
+              <span className="text-[10px] text-app-text-muted truncate">{t('activeTables')}</span>
+              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
+                {stats.activeCards}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -527,27 +531,41 @@ export default function DashboardClient(props: DashboardClientProps) {
           )}
 
           {/* Quick actions */}
-          <div className="flex gap-2 mt-auto">
+          <div className="flex flex-wrap gap-1.5 mt-auto">
             <Link
               href={`${adminBase}/menus`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
               {t('menusMgmt')}
             </Link>
             <Link
+              href={`${adminBase}/orders`}
+              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+            >
+              <ClipboardList className="w-3.5 h-3.5" />
+              {t('ordersLabel')}
+            </Link>
+            <Link
               href={`${adminBase}/qr-codes`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <QrCode className="w-3.5 h-3.5" />
               {t('qrGenerator')}
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {t('reportsLabel')}
+            </Link>
+            <Link
+              href={`${adminBase}/settings`}
+              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              {t('settingsLabel')}
             </Link>
           </div>
         </div>
