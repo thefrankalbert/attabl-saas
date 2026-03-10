@@ -252,23 +252,22 @@ export function AdminSidebar({
                 <button
                   type="button"
                   suppressHydrationWarning
-                  className="w-full flex flex-col gap-2.5 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-left"
+                  className="w-full flex flex-col items-center gap-2 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-center"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-accent-muted shrink-0 flex items-center justify-center">
-                      <QrCode className="w-4.5 h-4.5 text-accent" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-semibold text-app-text break-words leading-snug">
-                        {userName || 'Utilisateur'}
-                      </p>
-                    </div>
-                    <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
+                  {/* Large QR icon */}
+                  <div className="w-14 h-14 rounded-xl bg-accent-muted shrink-0 flex items-center justify-center">
+                    <QrCode className="w-7 h-7 text-accent" />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
-                      {planLabel}
-                    </span>
+                  {/* Plan badge — above name, smaller */}
+                  <span className="text-[9px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
+                    {planLabel}
+                  </span>
+                  {/* User name — single line */}
+                  <div className="flex items-center gap-1.5 w-full justify-center">
+                    <p className="text-xs font-semibold text-app-text truncate">
+                      {userName || 'Utilisateur'}
+                    </p>
+                    <ChevronUp className="w-3 h-3 text-app-text-muted shrink-0" />
                   </div>
                 </button>
               </PopoverTrigger>

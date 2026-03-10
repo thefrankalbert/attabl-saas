@@ -180,10 +180,10 @@ const PRESENCE_COUNTRIES = [
 function AfricaPresenceMapBg() {
   return (
     <>
-      {/* Large faded Africa hex map — watermark on background */}
+      {/* Large faded Africa hex map — centered background watermark */}
       <svg
         viewBox="0 0 200 200"
-        className="absolute top-4 right-4 w-[280px] h-[280px] pointer-events-none select-none"
+        className="absolute top-1/2 left-[25%] -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] pointer-events-none select-none opacity-60"
         aria-hidden="true"
       >
         {AFRICA_HEX_GRID.map((hex, i) => (
@@ -191,23 +191,23 @@ function AfricaPresenceMapBg() {
             key={i}
             points={hexPoints(hex.x, hex.y, 5)}
             fill="var(--app-border)"
-            opacity={0.15}
+            opacity={0.18}
           />
         ))}
         {PRESENCE_COUNTRIES.map((c) => (
           <g key={c.name}>
-            <circle cx={c.cx} cy={c.cy} r={10} fill={c.color} opacity={0.12} />
-            <circle cx={c.cx} cy={c.cy} r={5} fill={c.color} opacity={0.25} />
-            <circle cx={c.cx} cy={c.cy} r={2.5} fill={c.color} opacity={0.6} />
+            <circle cx={c.cx} cy={c.cy} r={12} fill={c.color} opacity={0.1} />
+            <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.2} />
+            <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} opacity={0.5} />
           </g>
         ))}
       </svg>
-      {/* Legend — bottom-right corner over the map */}
-      <div className="absolute top-[240px] right-8 flex items-center gap-3 pointer-events-none select-none">
+      {/* Legend — below the map, centered on left column */}
+      <div className="absolute bottom-4 left-[25%] -translate-x-1/2 flex items-center gap-3 pointer-events-none select-none">
         {PRESENCE_COUNTRIES.map((c) => (
           <div key={c.name} className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-            <span className="text-[10px] font-medium text-app-text-muted/60">{c.name}</span>
+            <span className="text-[10px] font-medium text-app-text-muted/40">{c.name}</span>
           </div>
         ))}
       </div>
