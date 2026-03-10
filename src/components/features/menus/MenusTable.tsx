@@ -3,17 +3,7 @@
 import { useCallback, useId } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import {
-  Plus,
-  Folder,
-  Edit2,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  Building2,
-  Globe,
-  GripVertical,
-} from 'lucide-react';
+import { Plus, Folder, Edit2, Trash2, ToggleLeft, ToggleRight, GripVertical } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -26,7 +16,7 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { cn } from '@/lib/utils';
 import type { Menu, Venue } from '@/types/admin.types';
 
@@ -53,10 +43,7 @@ interface MenusTableProps {
 interface MenuRowProps {
   menu: Menu;
   tenantSlug: string;
-  venues: Venue[];
   isSelected: boolean;
-  /** Hide venue badge when row is already under a venue section header */
-  showVenueBadge?: boolean;
   onToggleSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -69,9 +56,7 @@ interface MenuRowProps {
 function MenuRow({
   menu,
   tenantSlug,
-  venues,
   isSelected,
-  showVenueBadge = true,
   onToggleSelect,
   onEdit,
   onDelete,
@@ -127,7 +112,7 @@ function MenuRow({
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </button>
 
-      {/* Name + meta */}
+      {/* Name */}
       <Link
         href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
         className="flex-1 min-w-0 flex items-center gap-2"
@@ -135,21 +120,6 @@ function MenuRow({
         <span className="font-medium text-sm text-app-text hover:underline break-words">
           {menu.name}
         </span>
-        {showVenueBadge && menu.venue && (
-          <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
-            <Building2 className="w-2.5 h-2.5" />
-            {menu.venue.name}
-          </Badge>
-        )}
-        {!menu.venue_id && venues.length > 0 && (
-          <Badge
-            variant="outline"
-            className="text-[10px] gap-1 shrink-0 border-accent/15 text-accent bg-accent/5"
-          >
-            <Globe className="w-2.5 h-2.5" />
-            {t('sharedMenuBadge')}
-          </Badge>
-        )}
         {childCount > 0 && (
           <span className="text-xs text-app-text-muted shrink-0">
             {t('subMenuCount', { count: childCount })}
@@ -284,7 +254,6 @@ export default function MenusTable({
               key={menu.id}
               menu={menu}
               tenantSlug={tenantSlug}
-              venues={venues}
               isSelected={selectedIds.has(menu.id)}
               onToggleSelect={() => onToggleSelect(menu.id)}
               onEdit={() => onEdit(menu)}
@@ -314,7 +283,6 @@ export default function MenusTable({
                 key={menu.id}
                 menu={menu}
                 tenantSlug={tenantSlug}
-                venues={venues}
                 isSelected={selectedIds.has(menu.id)}
                 onToggleSelect={() => onToggleSelect(menu.id)}
                 onEdit={() => onEdit(menu)}
