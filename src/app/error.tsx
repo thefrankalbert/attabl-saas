@@ -63,11 +63,8 @@ export default function Error({
           </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-app-text mb-3">{t('errorTitle')}</h2>
-        <p className="text-app-text-secondary mb-2 text-sm leading-relaxed max-w-xs mx-auto">
-          {t('errorDescription')}
-        </p>
-        <p className="text-app-text-muted mb-8 text-xs">
+        <h2 className="text-xl font-bold text-app-text mb-2">{t('errorTitle')}</h2>
+        <p className="text-app-text-muted mb-8 text-sm">
           {t('errorHint') || 'Pas de panique, ce sont des choses qui arrivent.'}
         </p>
 
