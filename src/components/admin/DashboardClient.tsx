@@ -79,6 +79,62 @@ const RevenueChart = lazy(() =>
   })),
 );
 
+// Avg basket mini chart
+const AvgBasketChart = lazy(() =>
+  import('recharts').then((mod) => ({
+    default: function AvgBasketChartInner({
+      data,
+      fmtF,
+      label,
+    }: {
+      data: Array<{ label: string; value: number }>;
+      fmtF: (n: number) => string;
+      label: string;
+    }) {
+      const { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } = mod;
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id="basket-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--color-status-info)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="var(--color-status-info)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+            />
+            <YAxis hide />
+            <Tooltip
+              contentStyle={
+                {
+                  backgroundColor: 'var(--app-card)',
+                  border: '1px solid var(--app-border)',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.75rem',
+                  padding: '6px 10px',
+                } as CSSProperties
+              }
+              formatter={(value) => [fmtF(Number(value ?? 0)), label]}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="var(--color-status-info)"
+              fill="url(#basket-grad)"
+              strokeWidth={2}
+              dot={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      );
+    },
+  })),
+);
+
 type DashboardClientProps = UseDashboardDataParams & {
   establishmentType?: string;
 };
@@ -93,7 +149,8 @@ export default function DashboardClient(props: DashboardClientProps) {
   const adminBase = `/sites/${tenantSlug}/admin`;
   const fmtF = (n: number) => formatCurrency(n, currency as CurrencyCode);
 
-  const { stats, recentOrders, revenueSparkline, loading } = useDashboardData(props);
+  const { stats, recentOrders, revenueSparkline, ordersSparkline, loading } =
+    useDashboardData(props);
 
   const { can } = usePermissions();
   const showFin = can('canViewAllFinances');
@@ -128,6 +185,20 @@ export default function DashboardClient(props: DashboardClientProps) {
           return {
             label: d.toLocaleDateString(locale, { weekday: 'short' }),
             value: p.value,
+          };
+        })
+      : [];
+
+  // Build avg basket sparkline from revenue / orders per day
+  const avgBasketChartData =
+    revenueSparkline.length > 1 && ordersSparkline.length > 1
+      ? revenueSparkline.map((p, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (revenueSparkline.length - 1 - i));
+          const orders = ordersSparkline[i]?.value || 0;
+          return {
+            label: d.toLocaleDateString(locale, { weekday: 'short' }),
+            value: orders > 0 ? Math.round(p.value / orders) : 0,
           };
         })
       : [];
@@ -223,9 +294,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
-          {/* Revenue chart — always visible, lazy-loaded */}
+          {/* Revenue chart */}
           {chartData.length > 1 && (
-            <div className="border-b border-app-border pb-3">
+            <div className="border border-app-border rounded-xl p-4">
               <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest mb-2">
                 {t('dashboardOverview')}
               </p>
@@ -241,18 +312,31 @@ export default function DashboardClient(props: DashboardClientProps) {
             </div>
           )}
 
-          {/* Avg basket — compact stat card */}
+          {/* Avg basket with chart */}
           {showFin && todayAvgBasket > 0 && (
-            <div className="border-b border-app-border pb-2.5 px-1 flex items-center justify-between">
-              <div>
-                <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
-                  {t('avgBasket')}
-                </p>
-                <p className="text-[10px] text-app-text-muted mt-0.5">{t('perOrder')}</p>
+            <div className="border border-app-border rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
+                    {t('avgBasket')}
+                  </p>
+                  <p className="text-[10px] text-app-text-muted mt-0.5">{t('perOrder')}</p>
+                </div>
+                <span className="text-xl font-black text-app-text tabular-nums">
+                  {fmtF(todayAvgBasket)}
+                </span>
               </div>
-              <span className="text-xl font-black text-app-text tabular-nums">
-                {fmtF(todayAvgBasket)}
-              </span>
+              {avgBasketChartData.length > 1 && (
+                <div className="h-[80px]">
+                  <Suspense
+                    fallback={
+                      <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
+                    }
+                  >
+                    <AvgBasketChart data={avgBasketChartData} fmtF={fmtF} label={t('avgBasket')} />
+                  </Suspense>
+                </div>
+              )}
             </div>
           )}
 
@@ -260,21 +344,21 @@ export default function DashboardClient(props: DashboardClientProps) {
           <div className="flex gap-2 mt-auto">
             <Link
               href={`${adminBase}/menus`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
               {t('menusMgmt')}
             </Link>
             <Link
               href={`${adminBase}/qr-codes`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <QrCode className="w-3.5 h-3.5" />
               {t('qrGenerator')}
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 border border-app-border rounded-xl text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {t('reportsLabel')}
@@ -283,8 +367,8 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* ── Right column — orders (full height, scrollable) ── */}
-        <div className="flex-1 min-h-0 flex flex-col min-w-0">
-          <div className="flex items-center justify-between mb-1.5 shrink-0">
+        <div className="flex-1 min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-app-border shrink-0">
             <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
               {t('recentOrders')}
             </p>
