@@ -10,16 +10,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
-import {
-  ChevronRight,
-  Clock,
-  ShoppingBag,
-  QrCode,
-  UtensilsCrossed,
-  BarChart3,
-  ClipboardList,
-  Settings,
-} from 'lucide-react';
+import { ChevronRight, Clock, ShoppingBag, QrCode, BarChart3, Package } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -335,8 +326,8 @@ export default function DashboardClient(props: DashboardClientProps) {
         </span>
       </div>
 
-      {/* Stats gauge — compact semi-circular doughnut */}
-      <div className="shrink-0 mb-2 border border-app-border rounded-xl px-4 py-2 bg-app-card">
+      {/* Stats gauge — compact semi-circular doughnut, same width as chart below */}
+      <div className="shrink-0 mb-2 border border-app-border rounded-xl px-4 py-2 bg-app-card lg:w-[50%]">
         <div className="flex items-center gap-4">
           {/* Gauge chart — compact */}
           <div className="shrink-0 w-[140px]">
@@ -445,15 +436,12 @@ export default function DashboardClient(props: DashboardClientProps) {
           {chartData.length > 1 && (
             <div className="border border-app-border rounded-xl p-4 bg-app-card flex flex-col">
               {/* Chart header */}
-              <div className="flex flex-col gap-2 mb-3 shrink-0">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest truncate">
-                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
-                    <span className="font-normal normal-case tracking-normal ml-1">
-                      — {t('last7days')}
-                    </span>
+              <div className="mb-3 shrink-0">
+                {/* Segmented control row */}
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">
+                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
                   </p>
-                  {/* Segmented control */}
                   <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
                     <button
                       onClick={() => setChartMode('revenue')}
@@ -479,9 +467,13 @@ export default function DashboardClient(props: DashboardClientProps) {
                     </button>
                   </div>
                 </div>
-                <span className="text-xl font-black text-app-text tabular-nums">
-                  {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
-                </span>
+                {/* Value + period */}
+                <div className="flex items-baseline gap-2">
+                  <span className="text-xl font-black text-app-text tabular-nums">
+                    {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+                  </span>
+                  <span className="text-[10px] text-app-text-muted">{t('last7days')}</span>
+                </div>
               </div>
 
               {/* Chart area */}
@@ -530,42 +522,28 @@ export default function DashboardClient(props: DashboardClientProps) {
             </div>
           )}
 
-          {/* Quick actions */}
-          <div className="flex flex-wrap gap-1.5 mt-auto">
-            <Link
-              href={`${adminBase}/menus`}
-              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
-            >
-              <UtensilsCrossed className="w-3.5 h-3.5" />
-              {t('menusMgmt')}
-            </Link>
-            <Link
-              href={`${adminBase}/orders`}
-              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
-            >
-              <ClipboardList className="w-3.5 h-3.5" />
-              {t('ordersLabel')}
-            </Link>
+          {/* Quick actions — QR, Reports, Stock history */}
+          <div className="flex gap-1.5 mt-auto">
             <Link
               href={`${adminBase}/qr-codes`}
-              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <QrCode className="w-3.5 h-3.5" />
               {t('qrGenerator')}
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {t('reportsLabel')}
             </Link>
             <Link
-              href={`${adminBase}/settings`}
-              className="flex items-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              href={`${adminBase}/inventory/history`}
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
-              <Settings className="w-3.5 h-3.5" />
-              {t('settingsLabel')}
+              <Package className="w-3.5 h-3.5" />
+              {t('stockHistoryLabel')}
             </Link>
           </div>
         </div>
