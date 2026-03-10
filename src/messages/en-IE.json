@@ -166,6 +166,8 @@
     "statusButtonPreparing": "Preparing",
     "statusButtonReady": "Ready to serve",
     "statusButtonCheckout": "Checkout",
+    "statusLabel": "Status",
+    "printLabel": "Print",
     "printKitchenTicket": "Kitchen Ticket",
     "printClientReceipt": "Client Receipt",
     "kitchenTicketPrinted": "Kitchen ticket printing started",

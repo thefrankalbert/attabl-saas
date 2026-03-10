@@ -37,9 +37,11 @@ export default async function SingleOrderPage({ params }: PageProps) {
   const transformedOrder: Order = {
     id: order.id,
     tenant_id: order.tenant_id,
+    order_number: order.order_number || undefined,
     table_number: order.table_number || 'N/A',
     status: order.status || 'pending',
     total_price: Number(order.total || 0),
+    total: Number(order.total || 0),
     created_at: order.created_at,
     server_id: order.server_id,
     service_type: order.service_type,
@@ -48,6 +50,12 @@ export default async function SingleOrderPage({ params }: PageProps) {
     customer_name: order.customer_name,
     customer_phone: order.customer_phone,
     notes: order.notes,
+    subtotal: order.subtotal ? Number(order.subtotal) : undefined,
+    tax_amount: order.tax_amount ? Number(order.tax_amount) : undefined,
+    service_charge_amount: order.service_charge_amount
+      ? Number(order.service_charge_amount)
+      : undefined,
+    discount_amount: order.discount_amount ? Number(order.discount_amount) : undefined,
     items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
       (item: Record<string, unknown>) => ({
         id: (item.id as string) || '',
