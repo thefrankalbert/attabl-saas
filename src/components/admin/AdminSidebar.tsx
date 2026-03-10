@@ -184,7 +184,7 @@ export function AdminSidebar({
                           className={cn(
                             'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left',
                             isCurrent
-                              ? 'bg-accent/8 text-accent'
+                              ? 'bg-accent-muted text-accent'
                               : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                           )}
                         >
@@ -231,7 +231,7 @@ export function AdminSidebar({
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted/40 hover:text-app-text-muted hover:bg-app-hover transition-colors overflow-hidden"
+          className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden"
           title={collapsed ? t('expand') : t('collapse')}
         >
           {collapsed ? (
@@ -252,9 +252,9 @@ export function AdminSidebar({
                 <button
                   type="button"
                   suppressHydrationWarning
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-app-hover/50 transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-app-hover transition-colors text-left"
                 >
-                  <div className="w-10 h-10 rounded-lg bg-accent/10 shrink-0 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-lg bg-accent-muted shrink-0 flex items-center justify-center">
                     <QrCode className="w-5 h-5 text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -283,7 +283,7 @@ export function AdminSidebar({
                 suppressHydrationWarning
                 className="w-full px-2 py-3 flex justify-center hover:bg-app-hover transition-colors"
               >
-                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center">
                   <QrCode className="w-5 h-5 text-accent" />
                 </div>
               </button>
@@ -302,7 +302,7 @@ export function AdminSidebar({
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                   isPathActive(pathname, basePath, SETTINGS_ITEM.path)
-                    ? 'text-accent bg-accent/8'
+                    ? 'text-accent bg-accent-muted'
                     : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                 )}
               >
@@ -315,7 +315,7 @@ export function AdminSidebar({
             {popoverOrgItems.length > 0 && (
               <>
                 <div className="px-4 pt-2 pb-1">
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted/60">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted">
                     {t('groupOrganization')}
                   </p>
                 </div>
@@ -332,7 +332,7 @@ export function AdminSidebar({
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                           active
-                            ? 'text-accent bg-accent/8'
+                            ? 'text-accent bg-accent-muted'
                             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                         )}
                       >
@@ -349,7 +349,7 @@ export function AdminSidebar({
             {analyseGroup && analyseGroup.items.length > 0 && (
               <>
                 <div className="px-4 pt-2 pb-1">
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted/60">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted">
                     {t(analyseGroup.titleKey)}
                   </p>
                 </div>
@@ -366,7 +366,7 @@ export function AdminSidebar({
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                           active
-                            ? 'text-accent bg-accent/8'
+                            ? 'text-accent bg-accent-muted'
                             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                         )}
                       >
@@ -429,7 +429,7 @@ function SidebarGroup({
         className={cn(
           'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
           active
-            ? 'text-accent bg-accent/8'
+            ? 'text-accent bg-accent-muted'
             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
           collapsed && 'justify-center',
         )}
@@ -459,7 +459,7 @@ function SidebarGroup({
                 className={cn(
                   'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm transition-colors',
                   active
-                    ? 'text-accent bg-accent/8'
+                    ? 'text-accent bg-accent-muted'
                     : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                 )}
                 title={t(item.labelKey)}
@@ -491,7 +491,7 @@ function SidebarGroup({
               className={cn(
                 'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
                 active
-                  ? 'text-accent bg-accent/8'
+                  ? 'text-accent bg-accent-muted'
                   : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
               )}
             >

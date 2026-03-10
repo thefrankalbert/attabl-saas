@@ -172,7 +172,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                       href={ad.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 hover:underline break-all block"
+                      className="text-sm text-status-info hover:underline break-all block"
                     >
                       {ad.link}
                     </a>
@@ -187,7 +187,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                   className={cn(
                     'text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded shrink-0',
                     ad.is_active
-                      ? 'bg-emerald-500/10 text-emerald-500'
+                      ? 'bg-status-success-bg text-status-success'
                       : 'bg-app-bg text-app-text-secondary',
                   )}
                 >
@@ -209,7 +209,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                    className="h-8 w-8 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
                     onClick={() => handleDelete(ad.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

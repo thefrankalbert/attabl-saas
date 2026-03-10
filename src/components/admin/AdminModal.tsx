@@ -37,7 +37,7 @@ export default function AdminModal({
             {title}
           </DialogTitle>
         </DialogHeader>
-        <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {children}
         </div>
       </DialogContent>

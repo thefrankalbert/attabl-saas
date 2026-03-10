@@ -117,7 +117,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             <span
               className={cn(
                 'font-mono font-medium',
-                isPositive ? 'text-green-600' : 'text-red-600',
+                isPositive ? 'text-status-success' : 'text-status-error',
               )}
             >
               {isPositive ? '+' : ''}
@@ -241,7 +241,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                       <span
                         className={cn(
                           'font-mono font-bold',
-                          isPositive ? 'text-green-600' : 'text-red-600',
+                          isPositive ? 'text-status-success' : 'text-status-error',
                         )}
                       >
                         {isPositive ? '+' : ''}

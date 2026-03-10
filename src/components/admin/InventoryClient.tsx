@@ -382,7 +382,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                             className={cn(
                               'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
                               filterStatus === status
-                                ? 'bg-white/20'
+                                ? 'bg-app-bg/30'
                                 : status === 'out'
                                   ? 'bg-red-500/15'
                                   : 'bg-amber-500/15',
@@ -418,7 +418,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     const badge = getStockBadge(ing);
                     const unitLabel = INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit;
                     return (
-                      <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
+                      <div className="border-b border-app-border py-3 px-4">
                         {/* Row 1: Name + Status */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
@@ -438,7 +438,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         </div>
 
                         {/* Row 2: Stock + Cost */}
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-sm mt-2">
                           <span className="text-app-text-secondary">
                             {t('currentStock')}:{' '}
                             <span className="font-mono font-bold text-app-text">
@@ -455,7 +455,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         </div>
 
                         {/* Row 3: Actions */}
-                        <div className="flex justify-end gap-2 pt-1">
+                        <div className="flex justify-end gap-2 pt-2">
                           <Button
                             variant="outline"
                             size="sm"

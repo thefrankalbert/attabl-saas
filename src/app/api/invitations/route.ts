@@ -48,6 +48,7 @@ export async function GET(request: Request) {
     const invitations = await service.getPendingInvitations(tenantId);
 
     // Strip sensitive token field before returning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const sanitized = invitations.map(({ token: _token, ...rest }) => rest);
 
     return jsonWithCache({ invitations: sanitized }, 'dynamic');
@@ -141,6 +142,7 @@ export async function POST(request: Request) {
     }
 
     // Strip sensitive token field before returning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _token, ...sanitizedInvitation } = invitation;
     return NextResponse.json({ success: true, invitation: sanitizedInvitation }, { status: 201 });
   } catch (error) {

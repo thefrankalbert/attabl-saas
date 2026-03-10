@@ -113,7 +113,7 @@ function MenuRow({
         type="checkbox"
         checked={isSelected}
         onChange={onToggleSelect}
-        className="w-4 h-4 rounded border-app-border text-blue-600 focus:ring-blue-500 shrink-0 cursor-pointer"
+        className="w-4 h-4 rounded border-app-border accent-accent focus:ring-accent shrink-0 cursor-pointer"
       />
 
       {/* Drag handle */}

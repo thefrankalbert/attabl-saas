@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { redirect } from 'next/navigation';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
 
-export default async function TablesPage() {
+export default async function TablesPage({ params }: { params: Promise<{ site: string }> }) {
+  const { site } = await params;
   const supabase = await createClient();
 
   // ─── Auth check ──────────────────────────────────────
@@ -14,17 +16,26 @@ export default async function TablesPage() {
     redirect('/login');
   }
 
+  // Resolve tenant from URL slug
+  const tenant = await getCachedTenant(site);
+
+  if (!tenant) {
+    redirect('/login');
+  }
+
+  // Verify user belongs to this tenant
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('tenant_id, tenants!inner(id, slug)')
+    .select('tenant_id')
     .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
     .single();
 
   if (!adminUser) {
     redirect('/login');
   }
 
-  const tenantId = adminUser.tenant_id as string;
+  const tenantId = tenant.id;
 
   // ─── Fetch or create venue ───────────────────────────
   let { data: venues } = await supabase.from('venues').select('*').eq('tenant_id', tenantId);

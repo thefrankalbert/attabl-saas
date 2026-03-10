@@ -40,9 +40,9 @@ const mockOrders = [
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-dvh md:h-dvh w-full flex bg-white">
+    <div className="min-h-dvh md:h-dvh w-full flex bg-app-card">
       {/* ── Left — Form panel ─────────────────────────────── */}
-      <div className="w-full md:w-[55%] flex flex-col bg-white px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
+      <div className="w-full md:w-[55%] flex flex-col bg-app-card px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
         <div className="w-full max-w-[420px] m-auto">{children}</div>
       </div>
 
@@ -60,7 +60,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           />
 
           {/* Content */}
-          <div className="relative z-10 flex flex-col h-full px-8 lg:px-12 py-10 justify-between">
+          <div className="relative z-10 flex flex-col h-full px-4 sm:px-8 lg:px-12 py-10 justify-between">
             {/* ── Top: Headline block ────────────────────── */}
             <motion.div
               initial={{ opacity: 0, y: 24 }}
@@ -79,7 +79,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               </div>
 
               <h2
-                className="text-3xl lg:text-[2.2rem] text-white leading-[1.18] mb-3 font-normal"
+                className="text-2xl sm:text-3xl lg:text-[2.2rem] text-white leading-[1.18] mb-3 font-normal"
                 style={{ fontFamily: 'var(--font-dm-serif-display)' }}
               >
                 La plateforme préférée

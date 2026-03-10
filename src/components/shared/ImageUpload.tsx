@@ -103,7 +103,7 @@ export default function ImageUpload({
 
   if (value) {
     return (
-      <div className="relative w-full h-64 rounded-xl overflow-hidden border border-gray-200 group bg-gray-50">
+      <div className="relative w-full h-64 rounded-xl overflow-hidden border border-app-border group bg-app-bg">
         <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
           <Button
             type="button"
@@ -131,7 +131,7 @@ export default function ImageUpload({
         className={`
                 relative w-full h-64 rounded-xl border-2 border-dashed
                 flex flex-col items-center justify-center gap-4 cursor-pointer transition-colors
-                ${isDragging ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'}
+                ${isDragging ? 'border-accent bg-accent/5' : 'border-app-border hover:border-app-border hover:bg-app-hover'}
                 ${disabled || isLoading ? 'opacity-50 pointer-events-none' : ''}
             `}
         onClick={() => fileInputRef.current?.click()}
@@ -145,22 +145,22 @@ export default function ImageUpload({
           disabled={disabled || isLoading}
         />
 
-        <div className="p-4 bg-gray-100 rounded-full text-gray-500">
+        <div className="p-4 bg-app-elevated rounded-full text-app-text-muted">
           {isLoading ? (
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
           ) : (
             <UploadCloud className="h-8 w-8" />
           )}
         </div>
 
         <div className="text-center px-4">
-          <p className="text-sm font-semibold text-gray-700">
+          <p className="text-sm font-semibold text-app-text-secondary">
             {isLoading ? 'Envoi en cours...' : 'Cliquez ou glissez une image ici'}
           </p>
-          <p className="text-xs text-gray-500 mt-1">PNG, JPG supportés (Max 5Mo)</p>
+          <p className="text-xs text-app-text-muted mt-1">PNG, JPG supportés (Max 5Mo)</p>
         </div>
       </div>
-      {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
     </div>
   );
 }

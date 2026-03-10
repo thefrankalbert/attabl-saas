@@ -453,7 +453,7 @@ export default function OnboardingPage() {
         {/* Step Content */}
         <div
           id="onboarding-content"
-          className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 md:p-6 lg:p-8"
+          className="flex-1 flex flex-col overflow-hidden p-4 sm:p-5 md:p-6 lg:p-8"
           onTouchStart={(e) => {
             touchStartX.current = e.touches[0].clientX;
           }}

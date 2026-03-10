@@ -426,10 +426,13 @@ function BatchQRPreview({
           }),
         );
 
-        // Wait for render
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        const svg = container.querySelector('svg');
+        // Wait for React to render the SVG — poll until it appears (max 2s)
+        let svg: SVGElement | null = null;
+        for (let attempt = 0; attempt < 40; attempt++) {
+          svg = container.querySelector('svg');
+          if (svg) break;
+          await new Promise((resolve) => setTimeout(resolve, 50));
+        }
         if (svg) {
           const svgData = new XMLSerializer().serializeToString(svg);
           const canvas = document.createElement('canvas');

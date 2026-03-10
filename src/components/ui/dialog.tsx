@@ -44,7 +44,7 @@ const DialogContent = React.forwardRef<
         'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
         // Mobile: bottom-sheet drawer
         'bottom-0 left-0 right-0 max-w-full translate-x-0 translate-y-0',
-        'max-sm:rounded-t-2xl max-sm:rounded-b-none',
+        'max-sm:rounded-t-2xl max-sm:rounded-b-none max-sm:pb-[env(safe-area-inset-bottom)]',
         'max-sm:data-[state=closed]:slide-out-to-bottom max-sm:data-[state=open]:slide-in-from-bottom',
         // sm+: centered dialog
         'sm:bottom-auto sm:left-[50%] sm:right-auto sm:top-[50%] sm:max-w-lg sm:translate-x-[-50%] sm:translate-y-[-50%] sm:rounded-xl',

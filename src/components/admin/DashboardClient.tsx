@@ -225,7 +225,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
           {/* Revenue chart — always visible, lazy-loaded */}
           {chartData.length > 1 && (
-            <div className="rounded-xl border border-app-border bg-app-card p-3">
+            <div className="border-b border-app-border pb-3">
               <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest mb-2">
                 {t('dashboardOverview')}
               </p>
@@ -243,7 +243,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
           {/* Avg basket — compact stat card */}
           {showFin && todayAvgBasket > 0 && (
-            <div className="rounded-xl border border-app-border bg-app-card px-3 py-2.5 flex items-center justify-between">
+            <div className="border-b border-app-border pb-2.5 px-1 flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
                   {t('avgBasket')}
@@ -260,21 +260,21 @@ export default function DashboardClient(props: DashboardClientProps) {
           <div className="flex gap-2 mt-auto">
             <Link
               href={`${adminBase}/menus`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <UtensilsCrossed className="w-3.5 h-3.5" />
               {t('menusMgmt')}
             </Link>
             <Link
               href={`${adminBase}/qr-codes`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <QrCode className="w-3.5 h-3.5" />
               {t('qrGenerator')}
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 border-b border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
             >
               <BarChart3 className="w-3.5 h-3.5" />
               {t('reportsLabel')}
@@ -298,7 +298,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           </div>
 
           {recentOrders.length > 0 ? (
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex-1 min-h-0 flex flex-col">
+            <div className="overflow-hidden flex-1 min-h-0 flex flex-col">
               <div className="overflow-y-auto flex-1 scrollbar-hide">
                 {recentOrders.slice(0, 15).map((order) => {
                   const sc = STATUS_STYLES[order.status as OrderStatus] || STATUS_STYLES.pending;
@@ -352,7 +352,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                             {to(statusKey)}
                           </span>
                           {isNew && (
-                            <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
+                            <span className="text-[9px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
                               NEW
                             </span>
                           )}
@@ -389,8 +389,8 @@ export default function DashboardClient(props: DashboardClientProps) {
               </div>
             </div>
           ) : (
-            <div className="bg-app-card rounded-xl border border-app-border p-10 text-center flex-1 flex flex-col items-center justify-center">
-              <div className="w-10 h-10 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-2">
+            <div className="p-10 text-center flex-1 flex flex-col items-center justify-center">
+              <div className="w-10 h-10 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-2">
                 <ShoppingBag className="w-5 h-5 text-app-text-muted" />
               </div>
               <p className="text-sm font-bold text-app-text">{t('noOrdersDescAlt')}</p>

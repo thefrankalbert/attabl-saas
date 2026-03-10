@@ -73,6 +73,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     });
 
     // Strip sensitive token field before returning
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { token: _token, ...sanitizedInvitation } = invitation;
     return NextResponse.json({ success: true, invitation: sanitizedInvitation });
   } catch (error) {

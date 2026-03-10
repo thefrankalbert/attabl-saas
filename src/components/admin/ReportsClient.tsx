@@ -311,7 +311,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   {revenueTrend !== 0 && (
                     <span
                       className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        revenueTrend > 0 ? 'text-emerald-600' : 'text-red-500'
+                        revenueTrend > 0 ? 'text-status-success' : 'text-status-error'
                       }`}
                     >
                       {revenueTrend > 0 ? (
@@ -342,7 +342,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   {ordersTrend !== 0 && (
                     <span
                       className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        ordersTrend > 0 ? 'text-emerald-600' : 'text-red-500'
+                        ordersTrend > 0 ? 'text-status-success' : 'text-status-error'
                       }`}
                     >
                       {ordersTrend > 0 ? (
@@ -373,7 +373,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   {basketTrend !== 0 && (
                     <span
                       className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        basketTrend > 0 ? 'text-emerald-600' : 'text-red-500'
+                        basketTrend > 0 ? 'text-status-success' : 'text-status-error'
                       }`}
                     >
                       {basketTrend > 0 ? (
@@ -417,12 +417,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   >
                     <XAxis
                       dataKey="label"
-                      tick={{ fontSize: 10, fill: '#a3a3a3' }}
-                      axisLine={{ stroke: '#e5e5e5' }}
+                      tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+                      axisLine={{ stroke: 'var(--app-border)' }}
                       tickLine={false}
                     />
                     <YAxis
-                      tick={{ fontSize: 10, fill: '#a3a3a3' }}
+                      tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v: number) => fmt(v)}
@@ -430,12 +430,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     />
                     <Tooltip
                       contentStyle={{
-                        background: '#171717',
-                        border: '1px solid #262626',
+                        background: 'var(--app-elevated)',
+                        border: '1px solid var(--app-border)',
                         borderRadius: '8px',
-                        color: '#fff',
+                        color: 'var(--app-text)',
                       }}
-                      labelStyle={{ color: '#a3a3a3', fontSize: 11 }}
+                      labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
                       formatter={(
                         value: number | undefined,
                         _name: string | undefined,
@@ -444,7 +444,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         `${fmt(value ?? 0)} — ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
                         t('revenueLabel'),
                       ]}
-                      cursor={{ fill: 'rgba(204, 255, 0, 0.08)' }}
+                      cursor={{ fill: 'var(--app-accent-muted)' }}
                     />
                     <Bar
                       dataKey="revenue"
@@ -575,10 +575,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     </Pie>
                     <Tooltip
                       contentStyle={{
-                        background: '#171717',
-                        border: '1px solid #262626',
+                        background: 'var(--app-elevated)',
+                        border: '1px solid var(--app-border)',
                         borderRadius: '8px',
-                        color: '#fff',
+                        color: 'var(--app-text)',
                       }}
                       formatter={(value: number | undefined, name: string | undefined) => [
                         fmt(value ?? 0),
@@ -615,26 +615,26 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   >
                     <XAxis
                       type="number"
-                      tick={{ fontSize: 10, fill: '#a3a3a3' }}
-                      axisLine={{ stroke: '#e5e5e5' }}
+                      tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+                      axisLine={{ stroke: 'var(--app-border)' }}
                       tickLine={false}
                     />
                     <YAxis
                       type="category"
                       dataKey="serverName"
-                      tick={{ fontSize: 12, fill: '#525252' }}
+                      tick={{ fontSize: 12, fill: 'var(--app-text-secondary)' }}
                       axisLine={false}
                       tickLine={false}
                       width={120}
                     />
                     <Tooltip
                       contentStyle={{
-                        background: '#171717',
-                        border: '1px solid #262626',
+                        background: 'var(--app-elevated)',
+                        border: '1px solid var(--app-border)',
                         borderRadius: '8px',
-                        color: '#fff',
+                        color: 'var(--app-text)',
                       }}
-                      labelStyle={{ color: '#a3a3a3', fontSize: 11 }}
+                      labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
                       formatter={(value: number | undefined) => [`${value ?? 0}`, t('ordersCount')]}
                     />
                     <Bar

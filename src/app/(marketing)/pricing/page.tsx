@@ -63,7 +63,7 @@ export default function PricingPage() {
       {/* Pricing cards */}
       <section className="py-20 bg-neutral-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
             {plans.map((plan, idx) => (
               <motion.div
                 key={plan.name}
@@ -117,7 +117,7 @@ export default function PricingPage() {
       {/* FAQ */}
       <section className="py-20 bg-white">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-neutral-900 mb-12 text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-12 text-center">
             Questions fréquentes
           </h2>
           <div className="space-y-8">

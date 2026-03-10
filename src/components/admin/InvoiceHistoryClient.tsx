@@ -125,7 +125,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0">
-        <h1 className="text-2xl font-bold text-app-text flex items-center gap-2">
+        <h1 className="text-lg sm:text-2xl font-bold text-app-text flex items-center gap-2">
           <Receipt className="w-6 h-6" />
           {t('title')}
           <span className="text-base font-normal text-app-text-secondary">({invoices.length})</span>

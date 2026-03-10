@@ -37,7 +37,7 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
 
   return (
     <div
-      className="bg-gray-100 rounded-2xl p-8 flex items-center justify-center"
+      className="bg-app-elevated rounded-2xl p-8 flex items-center justify-center"
       style={{ minHeight: 400 }}
     >
       {/* Dot pattern background */}

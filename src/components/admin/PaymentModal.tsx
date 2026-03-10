@@ -182,7 +182,7 @@ export default function PaymentModal({
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-1">
               {t('amountToPay')}
             </p>
-            <p className="text-3xl lg:text-5xl font-bold text-white tabular-nums tracking-tight">
+            <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-white tabular-nums tracking-tight">
               {formatCurrency(totalWithTip, currency)}
             </p>
             {tipAmount > 0 && (
@@ -346,7 +346,7 @@ export default function PaymentModal({
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
               {t('amountToPay')}
             </p>
-            <p className="text-2xl font-bold text-white tabular-nums">
+            <p className="text-xl sm:text-2xl font-bold text-white tabular-nums">
               {formatCurrency(totalWithTip, currency)}
             </p>
           </div>

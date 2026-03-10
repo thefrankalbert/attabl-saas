@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/admin/MenuDetailClient';
@@ -15,15 +16,11 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const supabase = await createClient();
-
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) redirect('/login');
+
+  const supabase = await createClient();
 
   const { data: menu } = await supabase
     .from('menus')
@@ -50,7 +47,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
       .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
       .eq('tenant_id', tenant.id)
       .in('category_id', categoryIds)
-      .order('created_at', { ascending: true });
+      .order('display_order', { ascending: true });
     items = (itemsData || []) as MenuItem[];
   }
 

@@ -326,7 +326,7 @@ export default function SuggestionsClient({
                         className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0"
                       >
                         {selectedIds.has(suggestion.id) ? (
-                          <CheckSquare className="w-4 h-4 text-lime-600" />
+                          <CheckSquare className="w-4 h-4 text-accent" />
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
@@ -345,7 +345,7 @@ export default function SuggestionsClient({
                             {suggestion.menu_item?.name || tc('unknown')}
                           </span>
                           <span className="text-app-text-muted mx-2">→</span>
-                          <span className="font-medium text-primary">
+                          <span className="font-medium text-accent">
                             {suggestion.suggested_item?.name || tc('unknown')}
                           </span>
                         </p>

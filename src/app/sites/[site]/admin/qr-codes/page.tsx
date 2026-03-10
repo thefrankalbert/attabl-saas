@@ -1,19 +1,15 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 
 export default async function QRCodesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Get tenant data
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -23,6 +19,8 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
       </div>
     );
   }
+
+  const supabase = await createClient();
 
   // Fetch tables, zones, and menus in parallel
   const [{ data: zones }, { data: tables }, { data: menus }] = await Promise.all([
