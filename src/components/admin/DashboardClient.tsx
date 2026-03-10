@@ -177,46 +177,37 @@ const PRESENCE_COUNTRIES = [
   { name: 'Burkina Faso', cx: 72, cy: 86, color: '#f97316' },
 ] as const;
 
-function AfricaPresenceMap({ label }: { label: string }) {
+function AfricaPresenceMap() {
   return (
-    <div className="border border-app-border rounded-xl p-4 bg-app-card">
-      <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest mb-3">
-        {label}
-      </p>
-      <div className="flex items-center gap-4">
-        {/* SVG Map */}
-        <svg viewBox="0 0 200 200" className="w-[120px] h-[120px] shrink-0" aria-label="Africa map">
-          {/* Hex grid background — simplified Africa silhouette */}
-          {AFRICA_HEX_GRID.map((hex, i) => (
-            <polygon
-              key={i}
-              points={hexPoints(hex.x, hex.y, 5)}
-              fill="var(--app-border)"
-              opacity={0.35}
+    <div className="flex items-center gap-2.5">
+      {/* Small SVG Map — no card, directly on background */}
+      <svg viewBox="0 0 200 200" className="w-10 h-10 shrink-0" aria-label="Africa map">
+        {AFRICA_HEX_GRID.map((hex, i) => (
+          <polygon
+            key={i}
+            points={hexPoints(hex.x, hex.y, 5)}
+            fill="var(--app-border)"
+            opacity={0.3}
+          />
+        ))}
+        {PRESENCE_COUNTRIES.map((c) => (
+          <g key={c.name}>
+            <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.2} />
+            <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} />
+          </g>
+        ))}
+      </svg>
+      {/* Compact legend */}
+      <div className="hidden lg:flex items-center gap-3">
+        {PRESENCE_COUNTRIES.map((c) => (
+          <div key={c.name} className="flex items-center gap-1">
+            <span
+              className="w-1.5 h-1.5 rounded-full shrink-0"
+              style={{ backgroundColor: c.color }}
             />
-          ))}
-          {/* Country dots with glow */}
-          {PRESENCE_COUNTRIES.map((c) => (
-            <g key={c.name}>
-              <circle cx={c.cx} cy={c.cy} r={8} fill={c.color} opacity={0.15} />
-              <circle cx={c.cx} cy={c.cy} r={4} fill={c.color} opacity={0.4} />
-              <circle cx={c.cx} cy={c.cy} r={2} fill={c.color} />
-            </g>
-          ))}
-        </svg>
-        {/* Legend */}
-        <div className="flex flex-col gap-2 flex-1 min-w-0">
-          {PRESENCE_COUNTRIES.map((c) => (
-            <div key={c.name} className="flex items-center gap-2">
-              <span
-                className="w-2 h-2 rounded-full shrink-0"
-                style={{ backgroundColor: c.color }}
-              />
-              <span className="text-xs font-medium text-app-text truncate">{c.name}</span>
-            </div>
-          ))}
-          <p className="text-[10px] text-app-text-muted mt-1">3 pays actifs</p>
-        </div>
+            <span className="text-[10px] text-app-text-muted">{c.name}</span>
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -368,9 +359,9 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   return (
     <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
-      {/* Greeting + date — single compact line */}
-      <div className="shrink-0 mb-2">
-        <div className="flex items-baseline gap-2 flex-wrap">
+      {/* Greeting + date + presence map — top row */}
+      <div className="shrink-0 mb-2 flex items-center justify-between gap-4">
+        <div className="flex items-baseline gap-2 flex-wrap min-w-0">
           <h1 className="text-lg font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
           </h1>
@@ -382,6 +373,7 @@ export default function DashboardClient(props: DashboardClientProps) {
             })}
           </span>
         </div>
+        <AfricaPresenceMap />
       </div>
 
       {/* Stats row — plain numbers, no cards */}
@@ -457,26 +449,28 @@ export default function DashboardClient(props: DashboardClientProps) {
           {/* Main chart — Revenue / Orders toggle */}
           {chartData.length > 1 && (
             <div className="border border-app-border rounded-xl p-4 bg-app-card flex flex-col">
-              {/* Chart header: total value + segmented control */}
-              <div className="flex items-start justify-between mb-1 shrink-0">
-                <div>
-                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
-                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
-                  </p>
-                  <div className="flex items-baseline gap-2 mt-1">
-                    <span className="text-2xl font-black text-app-text tabular-nums">
-                      {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+              {/* Chart header */}
+              <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap">
+                      {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
+                    </p>
+                    <span className="text-[10px] text-app-text-muted whitespace-nowrap">
+                      — {t('last7days')}
                     </span>
-                    <span className="text-[10px] text-app-text-muted">{t('last7days')}</span>
                   </div>
+                  <span className="text-xl font-black text-app-text tabular-nums mt-0.5 block">
+                    {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+                  </span>
                 </div>
 
                 {/* Segmented control */}
-                <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border">
+                <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
                   <button
                     onClick={() => setChartMode('revenue')}
                     className={cn(
-                      'px-3 py-1 rounded-md text-[10px] font-semibold transition-all',
+                      'px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'revenue'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
@@ -487,7 +481,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                   <button
                     onClick={() => setChartMode('orders')}
                     className={cn(
-                      'px-3 py-1 rounded-md text-[10px] font-semibold transition-all',
+                      'px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'orders'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
@@ -499,7 +493,7 @@ export default function DashboardClient(props: DashboardClientProps) {
               </div>
 
               {/* Chart area */}
-              <div className="h-[160px]">
+              <div className="h-[150px]">
                 <Suspense
                   fallback={
                     <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
@@ -570,127 +564,120 @@ export default function DashboardClient(props: DashboardClientProps) {
           </div>
         </div>
 
-        {/* ── Right column — map + orders ─────────────────── */}
-        <div className="flex-1 min-h-0 flex flex-col min-w-0 gap-3">
-          {/* Africa presence map */}
-          <AfricaPresenceMap label={t('presenceMap')} />
-
-          {/* Recent orders */}
-          <div className="flex-1 min-h-0 flex flex-col border border-app-border rounded-xl overflow-hidden">
-            <div className="flex items-center justify-between px-4 py-2.5 border-b border-app-border shrink-0">
-              <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
-                {t('recentOrders')}
-              </p>
-              <Link
-                href={`${adminBase}/orders`}
-                className="text-[10px] font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-0.5"
-              >
-                {t('viewAll')}
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-
-            {recentOrders.length > 0 ? (
-              <div className="overflow-hidden flex-1 min-h-0 flex flex-col">
-                <div className="overflow-y-auto flex-1 scrollbar-hide">
-                  {recentOrders.slice(0, 15).map((order) => {
-                    const sc = STATUS_STYLES[order.status as OrderStatus] || STATUS_STYLES.pending;
-                    const statusKey =
-                      `status${order.status.charAt(0).toUpperCase()}${order.status.slice(1)}Card` as Parameters<
-                        typeof to
-                      >[0];
-                    const orderLabel =
-                      order.order_number || `#${order.id.slice(0, 6).toUpperCase()}`;
-                    const ageSeconds = Math.floor(
-                      (now - new Date(order.created_at).getTime()) / 1000,
-                    );
-                    const isNew = ageSeconds < 300; // < 5 min
-                    return (
-                      <Link
-                        key={order.id}
-                        href={`${adminBase}/orders/${order.id}`}
-                        className={cn(
-                          'flex items-start gap-2.5 px-3 py-2 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors',
-                          isNew && 'bg-accent/[0.04]',
-                        )}
-                      >
-                        {/* Status dot — glowing ring for new orders */}
-                        <div className="relative shrink-0 mt-1">
-                          <div className={cn('w-2 h-2 rounded-full', sc.dot)} />
-                          {isNew && (
-                            <div className="absolute -inset-1 rounded-full border-2 border-accent/40 animate-ping" />
-                          )}
-                          {!isNew && sc.pulse && (
-                            <div
-                              className={cn(
-                                'absolute inset-0 w-2 h-2 rounded-full animate-ping',
-                                sc.dot,
-                              )}
-                            />
-                          )}
-                        </div>
-                        {/* Order info */}
-                        <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                          <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-mono text-[11px] font-bold text-app-text shrink-0">
-                              {order.table_number}
-                            </span>
-                            <span className="text-[10px] text-app-text-muted">{orderLabel}</span>
-                            <span
-                              className={cn(
-                                'text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
-                                sc.bg,
-                                sc.text,
-                              )}
-                            >
-                              {to(statusKey)}
-                            </span>
-                            {isNew && (
-                              <span className="text-[9px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
-                                NEW
-                              </span>
-                            )}
-                          </div>
-                          {order.items && order.items.length > 0 && (
-                            <div className="flex flex-wrap gap-x-2 gap-y-0.5">
-                              {order.items.map((item, idx) => (
-                                <span
-                                  key={idx}
-                                  className="text-[10px] text-app-text-muted leading-tight"
-                                >
-                                  {item.quantity}× {item.name}
-                                  {idx < (order.items?.length ?? 0) - 1 && (
-                                    <span className="text-app-border ml-0.5">·</span>
-                                  )}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                        {/* Price + time */}
-                        <div className="flex flex-col items-end gap-0.5 shrink-0 mt-0.5">
-                          <span className="text-xs font-bold text-app-text tabular-nums">
-                            {fmtF(order.total_price)}
-                          </span>
-                          <span className="flex items-center gap-0.5 text-[10px] text-app-text-muted">
-                            <Clock className="w-2.5 h-2.5" />
-                            {timeAgo(order.created_at, tc, locale)}
-                          </span>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="p-10 text-center flex-1 flex flex-col items-center justify-center">
-                <div className="w-10 h-10 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-2">
-                  <ShoppingBag className="w-5 h-5 text-app-text-muted" />
-                </div>
-                <p className="text-sm font-bold text-app-text">{t('noOrdersDescAlt')}</p>
-              </div>
-            )}
+        {/* ── Right column — orders (full height, scrollable) ── */}
+        <div className="flex-1 min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-app-border shrink-0">
+            <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
+              {t('recentOrders')}
+            </p>
+            <Link
+              href={`${adminBase}/orders`}
+              className="text-[10px] font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-0.5"
+            >
+              {t('viewAll')}
+              <ChevronRight className="w-3 h-3" />
+            </Link>
           </div>
+
+          {recentOrders.length > 0 ? (
+            <div className="overflow-hidden flex-1 min-h-0 flex flex-col">
+              <div className="overflow-y-auto flex-1 scrollbar-hide">
+                {recentOrders.slice(0, 15).map((order) => {
+                  const sc = STATUS_STYLES[order.status as OrderStatus] || STATUS_STYLES.pending;
+                  const statusKey =
+                    `status${order.status.charAt(0).toUpperCase()}${order.status.slice(1)}Card` as Parameters<
+                      typeof to
+                    >[0];
+                  const orderLabel = order.order_number || `#${order.id.slice(0, 6).toUpperCase()}`;
+                  const ageSeconds = Math.floor(
+                    (now - new Date(order.created_at).getTime()) / 1000,
+                  );
+                  const isNew = ageSeconds < 300; // < 5 min
+                  return (
+                    <Link
+                      key={order.id}
+                      href={`${adminBase}/orders/${order.id}`}
+                      className={cn(
+                        'flex items-start gap-2.5 px-3 py-2 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors',
+                        isNew && 'bg-accent/[0.04]',
+                      )}
+                    >
+                      {/* Status dot — glowing ring for new orders */}
+                      <div className="relative shrink-0 mt-1">
+                        <div className={cn('w-2 h-2 rounded-full', sc.dot)} />
+                        {isNew && (
+                          <div className="absolute -inset-1 rounded-full border-2 border-accent/40 animate-ping" />
+                        )}
+                        {!isNew && sc.pulse && (
+                          <div
+                            className={cn(
+                              'absolute inset-0 w-2 h-2 rounded-full animate-ping',
+                              sc.dot,
+                            )}
+                          />
+                        )}
+                      </div>
+                      {/* Order info */}
+                      <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-[11px] font-bold text-app-text shrink-0">
+                            {order.table_number}
+                          </span>
+                          <span className="text-[10px] text-app-text-muted">{orderLabel}</span>
+                          <span
+                            className={cn(
+                              'text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
+                              sc.bg,
+                              sc.text,
+                            )}
+                          >
+                            {to(statusKey)}
+                          </span>
+                          {isNew && (
+                            <span className="text-[9px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
+                              NEW
+                            </span>
+                          )}
+                        </div>
+                        {order.items && order.items.length > 0 && (
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                            {order.items.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] text-app-text-muted leading-tight"
+                              >
+                                {item.quantity}× {item.name}
+                                {idx < (order.items?.length ?? 0) - 1 && (
+                                  <span className="text-app-border ml-0.5">·</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      {/* Price + time */}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-app-text tabular-nums">
+                          {fmtF(order.total_price)}
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px] text-app-text-muted">
+                          <Clock className="w-2.5 h-2.5" />
+                          {timeAgo(order.created_at, tc, locale)}
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="p-10 text-center flex-1 flex flex-col items-center justify-center">
+              <div className="w-10 h-10 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-2">
+                <ShoppingBag className="w-5 h-5 text-app-text-muted" />
+              </div>
+              <p className="text-sm font-bold text-app-text">{t('noOrdersDescAlt')}</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
