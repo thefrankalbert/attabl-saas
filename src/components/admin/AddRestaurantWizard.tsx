@@ -189,7 +189,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                   value={name}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder={t('addRestaurant.namePlaceholder')}
-                  className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
+                  className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-1 focus:ring-accent/30"
                 />
               </div>
 
@@ -221,7 +221,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                     value={slug}
                     onChange={(e) => handleSlugChange(e.target.value)}
                     placeholder={t('addRestaurant.slugPlaceholder')}
-                    className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-2 focus:ring-accent/20"
+                    className="h-11 rounded-lg border-app-border focus:border-accent focus:ring-1 focus:ring-accent/30"
                   />
                   <span className="shrink-0 text-xs text-app-text-muted">.attabl.com</span>
                 </div>

@@ -257,7 +257,7 @@ export default function ItemsClient({
             {/* Filters inline */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,7 +270,7 @@ export default function ItemsClient({
                 </SelectContent>
               </Select>
               <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('all')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -351,7 +351,7 @@ export default function ItemsClient({
                     }
                     setSelectedIds(next);
                   }}
-                  className="rounded border-app-border text-accent focus:ring-accent"
+                  className="rounded border-app-border text-accent focus:ring-accent/30"
                 />
                 <span className="text-xs text-app-text-muted">
                   {tc('selectAll') || 'Select all'}
@@ -374,7 +374,7 @@ export default function ItemsClient({
                       setSelectedIds(next);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded border-app-border text-accent focus:ring-accent shrink-0"
+                    className="rounded border-app-border text-accent focus:ring-accent/30 shrink-0"
                   />
                   {item.image_url ? (
                     <Image
@@ -652,7 +652,7 @@ export default function ItemsClient({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required
                 />
               </div>
@@ -662,7 +662,7 @@ export default function ItemsClient({
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
             </div>
@@ -674,7 +674,7 @@ export default function ItemsClient({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t('descriptionFrPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
               <div className="space-y-1.5">
@@ -684,7 +684,7 @@ export default function ItemsClient({
                   onChange={(e) => setDescriptionEn(e.target.value)}
                   placeholder={t('descriptionEnPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
             </div>
@@ -696,7 +696,7 @@ export default function ItemsClient({
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
                   min={0}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required
                 />
               </div>
@@ -726,7 +726,7 @@ export default function ItemsClient({
                           min={0}
                           step={cur === 'XAF' ? 1 : 0.01}
                           placeholder="0"
-                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent text-sm"
+                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
                         />
                       </div>
                     ))}
@@ -736,7 +736,7 @@ export default function ItemsClient({
               <div className="space-y-1.5">
                 <Label className="text-app-text">{t('category')}</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                     <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -796,7 +796,7 @@ export default function ItemsClient({
                 onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
                 placeholder={ta('caloriesPlaceholder')}
-                className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent w-full sm:w-[200px]"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-[200px]"
               />
             </div>
             <div className="flex items-center gap-6 pt-2">

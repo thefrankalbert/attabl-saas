@@ -575,7 +575,7 @@ export function QRCustomizerPanel({
                       updateField('ctaText', CTA_PRESETS[preset]);
                     }
                   }}
-                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                 >
                   {CTA_PRESET_ENTRIES.map(([key, text]) => (
                     <option key={key} value={key}>
@@ -614,7 +614,7 @@ export function QRCustomizerPanel({
                   onChange={(e) => updateField('descriptionText', e.target.value)}
                   placeholder="Ajoutez une description..."
                   rows={3}
-                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-1 focus:ring-accent/30 resize-none"
                 />
               </div>
             </Section>
@@ -734,7 +734,7 @@ export function QRCustomizerPanel({
                   <select
                     value={config.fontFamily}
                     onChange={(e) => updateField('fontFamily', e.target.value)}
-                    className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                    className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                   >
                     {FONT_OPTIONS.map((font) => (
                       <option key={font.value} value={font.value}>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useId } from 'react';
+import { useCallback, useId, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Plus, Folder, Edit2, Trash2, ToggleLeft, ToggleRight, GripVertical } from 'lucide-react';
@@ -18,16 +18,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 
 import { cn } from '@/lib/utils';
-import type { Menu, Venue } from '@/types/admin.types';
+import type { Menu } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
 
 interface MenusTableProps {
   tenantSlug: string;
   menus: Menu[];
-  venues: Venue[];
-  filteredStandalone: Menu[];
-  menusByVenue: Record<string, Menu[]>;
   searchQuery: string;
   loading: boolean;
   selectedIds: Set<string>;
@@ -97,7 +94,7 @@ function MenuRow({
         type="checkbox"
         checked={isSelected}
         onChange={onToggleSelect}
-        className="w-4 h-4 rounded border-app-border accent-accent focus:ring-accent shrink-0 cursor-pointer"
+        className="w-4 h-4 rounded border-app-border accent-accent focus:ring-accent/30 shrink-0 cursor-pointer"
       />
 
       {/* Drag handle */}
@@ -180,9 +177,6 @@ function MenuRow({
 export default function MenusTable({
   tenantSlug,
   menus,
-  venues,
-  filteredStandalone,
-  menusByVenue,
   searchQuery,
   loading,
   selectedIds,
@@ -206,6 +200,13 @@ export default function MenusTable({
     }),
     useSensor(KeyboardSensor),
   );
+
+  // Filter menus by search query, preserving display_order
+  const allFilteredMenus = useMemo(() => {
+    if (!searchQuery) return menus;
+    const q = searchQuery.toLowerCase();
+    return menus.filter((m) => m.name.toLowerCase().includes(q));
+  }, [menus, searchQuery]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -243,13 +244,13 @@ export default function MenusTable({
         </div>
       )}
 
-      {/* Standalone menus */}
-      {filteredStandalone.length > 0 && (
+      {/* Single SortableContext for all menus — flat list */}
+      {allFilteredMenus.length > 0 && (
         <SortableContext
-          items={filteredStandalone.map((m) => m.id)}
+          items={allFilteredMenus.map((m) => m.id)}
           strategy={verticalListSortingStrategy}
         >
-          {filteredStandalone.map((menu) => (
+          {allFilteredMenus.map((menu) => (
             <MenuRow
               key={menu.id}
               menu={menu}
@@ -264,36 +265,6 @@ export default function MenusTable({
           ))}
         </SortableContext>
       )}
-
-      {/* Menus by venue — flat list, no venue section headers */}
-      {Object.entries(menusByVenue).map(([venueId, venueMenus]) => {
-        const filtered = venueMenus.filter((m) =>
-          m.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-        if (filtered.length === 0) return null;
-
-        return (
-          <SortableContext
-            key={venueId}
-            items={filtered.map((m) => m.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            {filtered.map((menu) => (
-              <MenuRow
-                key={menu.id}
-                menu={menu}
-                tenantSlug={tenantSlug}
-                isSelected={selectedIds.has(menu.id)}
-                onToggleSelect={() => onToggleSelect(menu.id)}
-                onEdit={() => onEdit(menu)}
-                onDelete={() => onDelete(menu)}
-                onToggle={() => onToggle(menu)}
-                onAddChild={() => onAddChild(menu.id)}
-              />
-            ))}
-          </SortableContext>
-        );
-      })}
 
       {/* Empty state */}
       {menus.length === 0 && !loading && (

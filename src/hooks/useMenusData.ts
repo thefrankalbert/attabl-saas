@@ -12,7 +12,7 @@ import {
   actionDeleteMenu,
   actionReorderMenus,
 } from '@/app/actions/menus';
-import type { Menu, Venue } from '@/types/admin.types';
+import type { Menu } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -29,7 +29,6 @@ export interface MenuFormData {
 interface UseMenusDataParams {
   tenantId: string;
   initialMenus: Menu[];
-  venues: Venue[];
 }
 
 export interface UseMenusDataReturn {
@@ -37,8 +36,6 @@ export interface UseMenusDataReturn {
   loading: boolean;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  filteredStandalone: Menu[];
-  menusByVenue: Record<string, Menu[]>;
   isLimitReached: boolean;
   maxMenus: number;
   createMenu: (data: MenuFormData) => Promise<void>;
@@ -52,11 +49,7 @@ export interface UseMenusDataReturn {
 
 // ─── Hook ───────────────────────────────────────────────
 
-export function useMenusData({
-  tenantId,
-  initialMenus,
-  venues,
-}: UseMenusDataParams): UseMenusDataReturn {
+export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): UseMenusDataReturn {
   const [searchQuery, setSearchQuery] = useSessionState('menus:searchQuery', '');
 
   const { toast } = useToast();
@@ -166,28 +159,29 @@ export function useMenusData({
   };
 
   const reorder = async (dragIndex: number, dropIndex: number) => {
+    const previous = menus;
     const reordered = [...menus];
     const [moved] = reordered.splice(dragIndex, 1);
     reordered.splice(dropIndex, 0, moved);
     // Optimistic update in query cache
     queryClient.setQueryData(['menus', tenantId], reordered);
 
-    const orderedIds = reordered.map((m) => m.id);
-    await actionReorderMenus(tenantId, orderedIds);
+    try {
+      const orderedIds = reordered.map((m) => m.id);
+      const result = await actionReorderMenus(tenantId, orderedIds);
+      if (result.error) {
+        // Rollback on server error
+        queryClient.setQueryData(['menus', tenantId], previous);
+        toast({ title: result.error, variant: 'destructive' });
+      }
+    } catch {
+      // Rollback on network/unexpected error
+      queryClient.setQueryData(['menus', tenantId], previous);
+      toast({ title: tc('error'), variant: 'destructive' });
+    }
   };
 
   // ─── Derived data ─────────────────────────────────────
-
-  const standaloneMenus = menus.filter((m) => !m.venue_id);
-  const menusByVenue = venues.reduce<Record<string, Menu[]>>((acc, venue) => {
-    const venueMenus = menus.filter((m) => m.venue_id === venue.id);
-    if (venueMenus.length > 0) acc[venue.id] = venueMenus;
-    return acc;
-  }, {});
-
-  const filteredStandalone = standaloneMenus.filter((m) =>
-    m.name.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
 
   const limitReached = checkLimit('maxMenus', menus.length);
 
@@ -196,8 +190,6 @@ export function useMenusData({
     loading,
     searchQuery,
     setSearchQuery,
-    filteredStandalone,
-    menusByVenue,
     isLimitReached: limitReached,
     maxMenus: limits.maxMenus,
     createMenu,

@@ -395,7 +395,7 @@ export default function SuggestionsClient({
                 <select
                   value={sourceItemId}
                   onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                 >
                   <option value="">{tc('selectPlaceholder')}</option>
                   {menuItems.map((item) => (
@@ -437,7 +437,7 @@ export default function SuggestionsClient({
                 <select
                   value={targetItemId}
                   onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2"
+                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                 >
                   <option value="">{tc('selectPlaceholder')}</option>
                   {menuItems.map((item) => (
@@ -456,7 +456,7 @@ export default function SuggestionsClient({
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t('serverAdvicePlaceholder')}
-                  className="rounded-lg focus-visible:ring-accent"
+                  className="rounded-lg focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
                 <p className="mt-1 text-xs text-app-text-secondary">{t('addServerAdvice')}</p>
               </div>

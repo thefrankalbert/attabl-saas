@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,8 +12,19 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Volume2, VolumeX, ChevronRight, Eye, ShoppingBag } from 'lucide-react';
+import {
+  Search,
+  Volume2,
+  VolumeX,
+  ChevronRight,
+  Eye,
+  ShoppingBag,
+  Check,
+  Lock,
+} from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { SOUND_LIBRARY } from '@/lib/sounds/sound-library';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
@@ -52,11 +63,45 @@ export default function OrdersClient({
     soundEnabled,
     toggleSound,
     play: playNotification,
+    preview: previewSound,
+    currentSoundId,
+    setSoundId,
     audioRef,
   } = useNotificationSound({
     soundId: notificationSoundId,
     tenantId,
   });
+
+  const [showSoundPicker, setShowSoundPicker] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const { plan } = useSubscription();
+  const isPremium = plan === 'premium';
+
+  const handleSoundPointerDown = useCallback(() => {
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      setShowSoundPicker(true);
+    }, 500);
+  }, []);
+
+  const handleSoundPointerUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (!longPressTriggered.current) {
+      toggleSound();
+    }
+  }, [toggleSound]);
+
+  const handleSoundPointerLeave = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -202,7 +247,7 @@ export default function OrdersClient({
               }
               setSelectedIds(next);
             }}
-            className="rounded border-app-border text-accent focus:ring-accent"
+            className="rounded border-app-border text-accent focus:ring-accent/30"
           />
         ),
         cell: ({ row }: { row: { original: Order } }) => (
@@ -217,7 +262,7 @@ export default function OrdersClient({
               setSelectedIds(next);
             }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded border-app-border text-accent focus:ring-accent"
+            className="rounded border-app-border text-accent focus:ring-accent/30"
           />
         ),
         enableSorting: false,
@@ -380,18 +425,73 @@ export default function OrdersClient({
               </TabsList>
             </Tabs>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSound}
-              className={cn(
-                'shrink-0 ml-auto',
-                soundEnabled && 'text-accent border-accent bg-accent-muted',
+            <div className="relative shrink-0 ml-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                onPointerDown={handleSoundPointerDown}
+                onPointerUp={handleSoundPointerUp}
+                onPointerLeave={handleSoundPointerLeave}
+                className={cn(
+                  'select-none',
+                  soundEnabled && 'text-accent border-accent bg-accent-muted',
+                )}
+                title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+
+              {/* Sound picker popover — opens on long press */}
+              {showSoundPicker && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSoundPicker(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-app-card border border-app-border rounded-xl shadow-lg overflow-hidden">
+                    <div className="px-3 py-2 border-b border-app-border">
+                      <p className="text-xs font-bold text-app-text">
+                        {t('soundPicker') || 'Sonnerie de notification'}
+                      </p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5">
+                      {SOUND_LIBRARY.map((sound) => {
+                        const isLocked = sound.isPremium && !isPremium;
+                        const isActive = currentSoundId === sound.id;
+                        return (
+                          <button
+                            key={sound.id}
+                            type="button"
+                            disabled={isLocked}
+                            onClick={() => {
+                              if (!isLocked) {
+                                setSoundId(sound.id);
+                                previewSound(sound.id);
+                              }
+                            }}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
+                              isActive
+                                ? 'bg-accent-muted text-accent'
+                                : 'text-app-text hover:bg-app-hover',
+                              isLocked && 'opacity-50 cursor-not-allowed',
+                            )}
+                          >
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-xs font-medium break-words">
+                                {sound.name}
+                              </span>
+                              <span className="block text-[10px] text-app-text-muted break-words">
+                                {sound.description}
+                              </span>
+                            </span>
+                            {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            {isLocked && <Lock className="w-3 h-3 shrink-0 text-app-text-muted" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
               )}
-              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </Button>
+            </div>
           </div>
         </div>
 

@@ -36,6 +36,7 @@
     "none": "Ninguno",
     "select": "Seleccionar",
     "selectPlaceholder": "Seleccionar...",
+    "selectAll": "Seleccionar todo",
     "product": "Producto",
     "products": "Productos",
     "suggests": "sugiere",
@@ -63,6 +64,7 @@
     "connectionRestored": "Conexión restablecida — Sincronizando...",
     "errorTitle": "Ups, algo salió mal",
     "errorDescription": "Nos disculpamos por las molestias. Inténtelo de nuevo o vuelva a la página de inicio.",
+    "errorHint": "No te preocupes, estas cosas pasan.",
     "retry": "Reintentar",
     "backToHome": "Volver al inicio",
     "notFoundTitle": "Página no encontrada",
@@ -178,7 +180,8 @@
     "checkoutWarning": "Atención: El pedido debe estar 'Listo' antes de cobrar.",
     "roomNumber": "Hab.{number}",
     "noOrdersTitle": "Sin pedidos",
-    "noOrdersDesc": "Los pedidos aparecerán aquí a medida que lleguen"
+    "noOrdersDesc": "Los pedidos aparecerán aquí a medida que lleguen",
+    "soundPicker": "Tono de notificación"
   },
   "delivery": {
     "deliveryInfo": "Información de entrega",
@@ -272,6 +275,7 @@
     "viewDetails": "Ver detalles",
     "unknownItem": "Artículo desconocido",
     "dashboardOverview": "Resumen",
+    "last7days": "Últimos 7 días",
     "popularCategories": "Categorias populares",
     "topItemsTitle": "Top articulos",
     "quickAccessTitle": "Acceso rapido",

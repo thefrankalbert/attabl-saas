@@ -496,7 +496,7 @@ export default function MenuDetailClient({
                               <input
                                 ref={priceInputRef}
                                 type="number"
-                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent"
+                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
                                 onBlur={() => saveInlinePrice(item)}

@@ -207,7 +207,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
               id="pdf-import-menu"
               value={menuId}
               onChange={(e) => setMenuId(e.target.value)}
-              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
               required
               disabled={step === 'extracting'}
             >
