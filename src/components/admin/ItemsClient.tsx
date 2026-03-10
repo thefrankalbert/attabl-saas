@@ -219,7 +219,8 @@ export default function ItemsClient({
       const { error } = await supabase
         .from('menu_items')
         .update({ is_available: !item.is_available })
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
       loadItems();
     } catch {
@@ -232,7 +233,8 @@ export default function ItemsClient({
       const { error } = await supabase
         .from('menu_items')
         .update({ is_featured: !item.is_featured })
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
@@ -303,7 +305,8 @@ export default function ItemsClient({
                       await supabase
                         .from('menu_items')
                         .update({ is_available: !item.is_available })
-                        .eq('id', item.id);
+                        .eq('id', item.id)
+                        .eq('tenant_id', tenantId);
                     }
                   }
                   setSelectedIds(new Set());
@@ -387,7 +390,7 @@ export default function ItemsClient({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-app-text text-sm truncate">{item.name}</p>
+                    <p className="font-semibold text-app-text text-sm break-words">{item.name}</p>
                     <p className="text-xs text-app-text-muted mt-0.5">
                       {item.category?.name || t('uncategorized')}
                     </p>

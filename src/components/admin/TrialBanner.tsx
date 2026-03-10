@@ -32,7 +32,7 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
     >
       <div className="flex items-center gap-2 min-w-0">
         <Clock className={`w-4 h-4 flex-shrink-0 ${styleConfig.iconClass}`} />
-        <span className={`font-medium truncate ${styleConfig.textClass}`}>{message}</span>
+        <span className={`font-medium break-words ${styleConfig.textClass}`}>{message}</span>
         <Link
           href={upgradeUrl}
           className={`inline-flex items-center gap-1 font-semibold whitespace-nowrap hover:underline ${styleConfig.linkClass}`}

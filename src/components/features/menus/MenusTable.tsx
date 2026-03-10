@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useId } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import {
@@ -133,7 +133,7 @@ function MenuRow({
         href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
         className="flex-1 min-w-0 flex items-center gap-2"
       >
-        <span className="font-medium text-sm text-app-text truncate hover:underline">
+        <span className="font-medium text-sm text-app-text hover:underline break-words">
           {menu.name}
         </span>
         {showVenueBadge && menu.venue && (
@@ -230,6 +230,7 @@ export default function MenusTable({
   onCreateFirst,
 }: MenusTableProps) {
   const t = useTranslations('menus');
+  const dndId = useId();
 
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -262,7 +263,12 @@ export default function MenusTable({
   );
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      id={dndId}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       {/* Loading state */}
       {loading && (
         <div className="space-y-1">

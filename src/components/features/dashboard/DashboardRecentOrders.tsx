@@ -218,7 +218,7 @@ export default function DashboardRecentOrders({
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-app-text truncate">{item.name}</p>
+                      <p className="text-xs font-bold text-app-text break-words">{item.name}</p>
                       <span className="text-[10px] text-app-text-muted font-semibold uppercase">
                         {item.unit}
                       </span>

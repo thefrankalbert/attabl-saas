@@ -412,7 +412,7 @@ export function TablesClient({
                     <>
                       <span
                         className={cn(
-                          'text-sm flex-1 min-w-0 truncate',
+                          'text-sm flex-1 min-w-0 break-words',
                           selectedZoneId === zone.id
                             ? 'font-semibold text-app-text'
                             : 'text-app-text',

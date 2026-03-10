@@ -350,7 +350,7 @@ export default function MenuDetailClient({
             {t('breadcrumbMenus')}
           </Link>
           <span className="text-app-text-secondary">/</span>
-          <h1 className="text-app-text font-semibold truncate">{menu.name}</h1>
+          <h1 className="text-app-text font-semibold break-words">{menu.name}</h1>
         </div>
         <button
           onClick={toggleMenuActive}
@@ -487,7 +487,7 @@ export default function MenuDetailClient({
                             ) : (
                               <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                             )}
-                            <span className="flex-1 text-sm text-app-text font-medium truncate">
+                            <span className="flex-1 text-sm text-app-text font-medium break-words">
                               {item.name}
                             </span>
 

@@ -468,7 +468,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         {index + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-app-text truncate group-hover:text-app-text-secondary transition-colors">
+                        <p className="text-sm font-medium text-app-text break-words group-hover:text-app-text-secondary transition-colors">
                           {item.name}
                         </p>
                         <p className="text-xs text-app-text-muted">

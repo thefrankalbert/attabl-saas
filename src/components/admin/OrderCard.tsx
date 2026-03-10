@@ -177,7 +177,7 @@ export default function OrderCard({
               <div key={i} className="flex justify-between text-sm">
                 <span className="flex gap-2">
                   <span className="font-bold w-5 text-app-text-secondary">{item.quantity}x</span>
-                  <span className="text-app-text truncate max-w-[140px]">{item.name}</span>
+                  <span className="text-app-text break-words">{item.name}</span>
                 </span>
               </div>
             ))}
