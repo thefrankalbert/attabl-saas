@@ -164,7 +164,7 @@ function MenuRow({
         className={cn(
           'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all shrink-0',
           menu.is_active
-            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+            ? 'bg-status-success-bg text-status-success border-status-success/20'
             : 'bg-app-bg text-app-text-secondary border-app-border',
         )}
       >
@@ -286,27 +286,25 @@ export default function MenusTable({
               {t('independentMenus')}
             </p>
           )}
-          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-            <SortableContext
-              items={filteredStandalone.map((m) => m.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredStandalone.map((menu) => (
-                <MenuRow
-                  key={menu.id}
-                  menu={menu}
-                  tenantSlug={tenantSlug}
-                  venues={venues}
-                  isSelected={selectedIds.has(menu.id)}
-                  onToggleSelect={() => onToggleSelect(menu.id)}
-                  onEdit={() => onEdit(menu)}
-                  onDelete={() => onDelete(menu)}
-                  onToggle={() => onToggle(menu)}
-                  onAddChild={() => onAddChild(menu.id)}
-                />
-              ))}
-            </SortableContext>
-          </div>
+          <SortableContext
+            items={filteredStandalone.map((m) => m.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            {filteredStandalone.map((menu) => (
+              <MenuRow
+                key={menu.id}
+                menu={menu}
+                tenantSlug={tenantSlug}
+                venues={venues}
+                isSelected={selectedIds.has(menu.id)}
+                onToggleSelect={() => onToggleSelect(menu.id)}
+                onEdit={() => onEdit(menu)}
+                onDelete={() => onDelete(menu)}
+                onToggle={() => onToggle(menu)}
+                onAddChild={() => onAddChild(menu.id)}
+              />
+            ))}
+          </SortableContext>
         </div>
       )}
 
@@ -326,35 +324,33 @@ export default function MenusTable({
                 {venue?.name || t('space')}
               </p>
             </div>
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-              <SortableContext
-                items={filtered.map((m) => m.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {filtered.map((menu) => (
-                  <MenuRow
-                    key={menu.id}
-                    menu={menu}
-                    tenantSlug={tenantSlug}
-                    venues={venues}
-                    isSelected={selectedIds.has(menu.id)}
-                    showVenueBadge={false}
-                    onToggleSelect={() => onToggleSelect(menu.id)}
-                    onEdit={() => onEdit(menu)}
-                    onDelete={() => onDelete(menu)}
-                    onToggle={() => onToggle(menu)}
-                    onAddChild={() => onAddChild(menu.id)}
-                  />
-                ))}
-              </SortableContext>
-            </div>
+            <SortableContext
+              items={filtered.map((m) => m.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {filtered.map((menu) => (
+                <MenuRow
+                  key={menu.id}
+                  menu={menu}
+                  tenantSlug={tenantSlug}
+                  venues={venues}
+                  isSelected={selectedIds.has(menu.id)}
+                  showVenueBadge={false}
+                  onToggleSelect={() => onToggleSelect(menu.id)}
+                  onEdit={() => onEdit(menu)}
+                  onDelete={() => onDelete(menu)}
+                  onToggle={() => onToggle(menu)}
+                  onAddChild={() => onAddChild(menu.id)}
+                />
+              ))}
+            </SortableContext>
           </div>
         );
       })}
 
       {/* Empty state */}
       {menus.length === 0 && !loading && (
-        <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+        <div className="p-12 text-center">
           <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Folder className="w-7 h-7 text-app-text-muted" />
           </div>
