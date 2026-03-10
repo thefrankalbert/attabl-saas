@@ -136,6 +136,7 @@
     "tabReady": "Listos",
     "tabCompleted": "Completados",
     "serverLabel": "Camarero",
+    "customerLabel": "Cliente",
     "dateColumn": "Fecha",
     "searchTable": "Buscar por mesa...",
     "noOrdersMatch": "Ningún pedido coincide",

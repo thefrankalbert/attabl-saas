@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCachedTenant } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
-import type { Order } from '@/types/admin.types';
+import type { Order, ItemStatus, Course } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,6 +54,12 @@ export default async function SingleOrderPage({ params }: PageProps) {
         name: (item.item_name as string) || 'Item inconnu',
         quantity: (item.quantity as number) || 0,
         price: (item.price_at_order as number) || 0,
+        menu_item_id: item.menu_item_id as string | undefined,
+        notes: item.notes as string | undefined,
+        customer_notes: item.customer_notes as string | undefined,
+        modifiers: item.modifiers as Array<{ name: string; price: number }> | undefined,
+        item_status: item.item_status as ItemStatus | undefined,
+        course: item.course as Course | undefined,
       }),
     ),
   };

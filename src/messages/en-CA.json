@@ -136,6 +136,7 @@
     "tabReady": "Ready",
     "tabCompleted": "Completed",
     "serverLabel": "Server",
+    "customerLabel": "Customer",
     "dateColumn": "Date",
     "searchTable": "Search by table...",
     "noOrdersMatch": "No orders match",

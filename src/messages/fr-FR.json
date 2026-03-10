@@ -136,6 +136,7 @@
     "tabReady": "Prêtes",
     "tabCompleted": "Terminées",
     "serverLabel": "Serveur",
+    "customerLabel": "Client",
     "dateColumn": "Date",
     "searchTable": "Rechercher par table...",
     "noOrdersMatch": "Aucune commande ne correspond",
