@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -88,8 +89,9 @@ export async function POST(request: Request) {
       couponResult = { couponId: validation.coupon?.id };
     }
 
-    // 5. Fetch tenant config for tax & service charge
-    const { data: tenant, error: tenantError } = await supabase
+    // 5. Fetch tenant config for tax & service charge (use admin client to bypass RLS)
+    const adminSupabase = createAdminClient();
+    const { data: tenant, error: tenantError } = await adminSupabase
       .from('tenants')
       .select(
         'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',

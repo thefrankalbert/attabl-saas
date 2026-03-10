@@ -77,7 +77,7 @@ export function createOrderService(supabase: SupabaseClient) {
       const itemIds = items.map((item) => item.id);
       const { data: menuItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('id, name, price, prices, is_available')
+        .select('id, name, price, is_available')
         .eq('tenant_id', tenantId)
         .in('id', itemIds);
 

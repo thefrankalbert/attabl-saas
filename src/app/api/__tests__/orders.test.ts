@@ -85,7 +85,7 @@ vi.mock('@/lib/plans/features', () => ({
   canAccessFeature: vi.fn(() => false),
 }));
 
-// ─── Supabase query builder mock (for tenant config fetch) ────
+// ─── Supabase query builder mock (for tenant config fetch via admin client) ────
 const mockSupabaseSingle = vi.fn();
 const mockSupabaseEq = vi.fn(() => ({ single: mockSupabaseSingle }));
 const mockSupabaseSelect = vi.fn(() => ({ eq: mockSupabaseEq }));
@@ -98,6 +98,14 @@ vi.mock('@/lib/supabase/server', async () => ({
       })),
     }),
   ),
+}));
+
+vi.mock('@/lib/supabase/admin', () => ({
+  createAdminClient: vi.fn(() => ({
+    from: vi.fn(() => ({
+      select: mockSupabaseSelect,
+    })),
+  })),
 }));
 
 // ─── Helpers ───────────────────────────────────────────────────

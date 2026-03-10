@@ -171,7 +171,9 @@
     "clientReceiptPrinted": "Impression reçu client lancée",
     "statusUpdated": "Statut mis à jour",
     "checkoutWarning": "Attention: La commande doit être 'Prête' avant l'encaissement.",
-    "roomNumber": "Ch.{number}"
+    "roomNumber": "Ch.{number}",
+    "noOrdersTitle": "Aucune commande",
+    "noOrdersDesc": "Les commandes apparaîtront ici au fur et à mesure"
   },
   "delivery": {
     "deliveryInfo": "Infos de livraison",
@@ -1549,6 +1551,9 @@
     "scanSuccess": "Code scanné avec succès !",
     "scanError": "Erreur lors du scan",
     "cameraError": "Impossible d'accéder à la caméra. Vérifiez les permissions.",
+    "splashSubtitle": "Menu digital et commande en ligne",
+    "splashEnter": "Voir le menu",
+    "splashSkip": "Continuer sans plein écran",
     "close": "Fermer",
     "tableNumber": "Table {number}",
     "selectYourTable": "Sélectionner votre table",

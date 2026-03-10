@@ -171,7 +171,9 @@
     "clientReceiptPrinted": "Client receipt printing started",
     "statusUpdated": "Status updated",
     "checkoutWarning": "Warning: Order must be 'Ready' before checkout.",
-    "roomNumber": "Rm.{number}"
+    "roomNumber": "Rm.{number}",
+    "noOrdersTitle": "No orders yet",
+    "noOrdersDesc": "Orders will appear here as they come in"
   },
   "delivery": {
     "deliveryInfo": "Delivery Info",
@@ -1549,6 +1551,9 @@
     "scanSuccess": "Code scanned successfully!",
     "scanError": "Error scanning",
     "cameraError": "Unable to access camera. Check permissions.",
+    "splashSubtitle": "Digital menu & online ordering",
+    "splashEnter": "View menu",
+    "splashSkip": "Continue without fullscreen",
     "close": "Close",
     "tableNumber": "Table {number}",
     "selectYourTable": "Select your table",

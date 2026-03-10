@@ -118,7 +118,7 @@ export interface Order {
   tenant_id: string;
   order_number?: string;
   table_number: string;
-  total_price: number;
+  total_price: number; // mapped from DB column `total`
   total?: number;
   total_amount?: number;
   status: OrderStatus;

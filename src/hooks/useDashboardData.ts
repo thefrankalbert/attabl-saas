@@ -30,6 +30,7 @@ export interface UseDashboardDataParams {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
+  userName?: string;
   initialStats: DashboardStats;
   initialRecentOrders: Order[];
   initialPopularItems: PopularItem[];
