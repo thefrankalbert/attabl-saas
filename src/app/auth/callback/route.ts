@@ -58,29 +58,18 @@ export async function GET(request: Request) {
           logger.warn('Failed to track login', { error: String(loginTrackError) });
         }
 
-        // Check if user is Super Admin
-        const isSuperAdmin =
-          existingAdmin.is_super_admin === true || existingAdmin.role === 'super_admin';
-
-        // Super Admin: redirect to tenant selector
-        if (isSuperAdmin) {
-          return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
-        }
-
         const tenantsData = existingAdmin.tenants as unknown as {
           slug: string;
           onboarding_completed: boolean;
         } | null;
 
-        if (tenantsData?.slug) {
-          // Check if onboarding is completed
-          if (tenantsData.onboarding_completed === false) {
-            return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
-          }
-
-          // Existing user with completed onboarding - redirect to dashboard
-          return NextResponse.redirect(`${requestUrl.origin}/sites/${tenantsData.slug}/admin`);
+        // Check if onboarding is pending
+        if (tenantsData?.onboarding_completed === false) {
+          return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
         }
+
+        // All authenticated users land on the tenant hub
+        return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
       }
 
       // User has no tenant — need to create one via OAuth signup

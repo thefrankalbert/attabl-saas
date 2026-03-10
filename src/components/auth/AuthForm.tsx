@@ -128,43 +128,19 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error('Aucun restaurant associé à ce compte');
         }
 
-        // Check if any entry is super admin
-        const isSuperAdmin = adminUsers.some(
-          (au) => au.is_super_admin === true || au.role === 'super_admin',
-        );
+        // Check if any tenant needs onboarding
+        const needsOnboarding = adminUsers.some((au) => {
+          const t = au.tenants as unknown as { onboarding_completed: boolean } | null;
+          return t?.onboarding_completed === false;
+        });
 
-        if (isSuperAdmin) {
-          window.location.href = '/admin/tenants';
-          return;
-        }
-
-        // Multi-restaurant owner → redirect to hub
-        if (adminUsers.length > 1) {
-          window.location.href = '/admin/tenants';
-          return;
-        }
-
-        // Single restaurant — direct redirect
-        const singleAdmin = adminUsers[0];
-        const tenantsData = singleAdmin.tenants as unknown as {
-          slug: string;
-          onboarding_completed: boolean;
-        } | null;
-
-        const tenantSlug = tenantsData?.slug;
-        const onboardingCompleted = tenantsData?.onboarding_completed;
-
-        if (!tenantSlug) {
-          throw new Error('Restaurant non trouvé');
-        }
-
-        if (onboardingCompleted === false) {
+        if (needsOnboarding) {
           window.location.href = '/onboarding';
           return;
         }
 
-        const origin = window.location.origin;
-        window.location.href = `${origin}/sites/${tenantSlug}/admin`;
+        // All users land on the tenant hub — single or multi
+        window.location.href = '/admin/tenants';
       }
     } catch (err) {
       logger.error('Auth form submit failed', err);
