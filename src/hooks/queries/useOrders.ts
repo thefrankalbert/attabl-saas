@@ -16,7 +16,7 @@ export function useOrders(tenantId: string, statusFilter?: string) {
       let query = supabase
         .from('orders')
         .select(
-          '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course), server:admin_users!orders_server_id_fkey(id, full_name)',
+          '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course), server:admin_users!orders_server_id_fkey(id, full_name)',
         )
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
@@ -38,7 +38,6 @@ export function useOrders(tenantId: string, statusFilter?: string) {
           quantity: (oi.quantity as number) || 0,
           price: (oi.price_at_order as number) || 0,
           menu_item_id: oi.menu_item_id as string | undefined,
-          notes: oi.notes as string | undefined,
           customer_notes: oi.customer_notes as string | undefined,
           item_status: oi.item_status as ItemStatus | undefined,
           course: oi.course as Course | undefined,

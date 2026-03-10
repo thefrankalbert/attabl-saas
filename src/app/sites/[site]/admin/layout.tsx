@@ -73,6 +73,19 @@ export default async function AdminLayout({
     adminUser = adminData;
   }
 
+  // Fetch all tenants managed by this user (for tenant switcher)
+  const { data: userTenantLinks } = await supabase
+    .from('admin_users')
+    .select('tenant_id, tenants(id, name, slug)')
+    .eq('user_id', user.id);
+
+  const userTenants = (userTenantLinks ?? [])
+    .map((link) => {
+      const t = link.tenants as unknown as { id: string; name: string; slug: string } | null;
+      return t ? { id: t.id, name: t.name, slug: t.slug } : null;
+    })
+    .filter((t): t is { id: string; name: string; slug: string } => t !== null);
+
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
@@ -88,8 +101,12 @@ export default async function AdminLayout({
               name: tenant.name,
               slug: tenant.slug,
               logo_url: tenant.logo_url ?? undefined,
+              subscription_plan: tenant.subscription_plan ?? undefined,
             }}
+            userName={adminUser?.name || user.email || ''}
+            userTenants={userTenants}
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
+            breadcrumbs={<AdminBreadcrumbs />}
           >
             <PermissionsProvider role={userRole}>
               <OfflineIndicator />
@@ -111,14 +128,7 @@ export default async function AdminLayout({
                         : null
                     }
                   >
-                    <AdminContentWrapper
-                      chrome={
-                        <>
-                          <TrialBanner tenantSlug={tenantSlug} />
-                          <AdminBreadcrumbs />
-                        </>
-                      }
-                    >
+                    <AdminContentWrapper chrome={<TrialBanner tenantSlug={tenantSlug} />}>
                       {children}
                     </AdminContentWrapper>
                   </SubscriptionProvider>
