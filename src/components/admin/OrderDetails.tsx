@@ -2,7 +2,16 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Clock, Printer, Receipt, CreditCard, AlertCircle, User } from 'lucide-react';
+import {
+  Clock,
+  Printer,
+  Receipt,
+  CreditCard,
+  AlertCircle,
+  User,
+  MessageSquare,
+  Phone,
+} from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
@@ -93,7 +102,7 @@ export default function OrderDetails({
         {/* Header Info */}
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <h2 className="text-2xl font-bold text-app-text">
+            <h2 className="text-lg sm:text-2xl font-bold text-app-text">
               {order.order_number || t('tableNumber', { number: order.table_number })}
             </h2>
             <div className="flex items-center gap-2 text-sm text-app-text-secondary">
@@ -125,6 +134,35 @@ export default function OrderDetails({
             </span>
           </div>
         </div>
+
+        {/* Customer Info & Notes */}
+        {(order.customer_name || order.customer_phone || order.notes) && (
+          <div className="border border-app-border rounded-xl p-4 space-y-2">
+            {(order.customer_name || order.customer_phone) && (
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-sm text-app-text-secondary">
+                  {order.customer_phone ? (
+                    <Phone className="w-4 h-4" />
+                  ) : (
+                    <User className="w-4 h-4" />
+                  )}
+                  {t('customerLabel')}
+                </span>
+                <span className="text-sm font-medium text-app-text">
+                  {[order.customer_name, order.customer_phone].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+            )}
+            {order.notes && (
+              <div className="flex items-start gap-1.5">
+                <MessageSquare className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-amber-600 bg-amber-500/10 px-2 py-1 rounded flex-1">
+                  {order.notes}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Items */}
         <div className="border border-app-border rounded-xl overflow-hidden">
