@@ -254,9 +254,9 @@ export function AdminSidebar({
                   suppressHydrationWarning
                   className="w-full flex flex-col items-center gap-2 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-center"
                 >
-                  {/* Large QR icon */}
-                  <div className="w-14 h-14 rounded-xl bg-accent-muted shrink-0 flex items-center justify-center">
-                    <QrCode className="w-7 h-7 text-accent" />
+                  {/* Large QR icon — 3x original w-9 */}
+                  <div className="w-[72px] h-[72px] rounded-2xl bg-accent-muted shrink-0 flex items-center justify-center">
+                    <QrCode className="w-9 h-9 text-accent" />
                   </div>
                   {/* Plan badge — above name, smaller */}
                   <span className="text-[9px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
@@ -264,7 +264,7 @@ export function AdminSidebar({
                   </span>
                   {/* User name — single line */}
                   <div className="flex items-center gap-1.5 w-full justify-center">
-                    <p className="text-xs font-semibold text-app-text truncate">
+                    <p className="text-[11px] font-semibold text-app-text truncate">
                       {userName || 'Utilisateur'}
                     </p>
                     <ChevronUp className="w-3 h-3 text-app-text-muted shrink-0" />

@@ -107,6 +107,49 @@ const DashboardChart = lazy(() =>
   })),
 );
 
+// Semi-circular gauge chart for stats overview
+const StatsGauge = lazy(() =>
+  import('recharts').then((mod) => ({
+    default: function StatsGaugeInner({
+      data,
+    }: {
+      data: Array<{ name: string; value: number; displayValue: string; color: string }>;
+    }) {
+      const { PieChart, Pie, Cell, ResponsiveContainer } = mod;
+      // Total for center label
+      const total = data.reduce((s, d) => s + d.value, 0);
+      return (
+        <div className="relative">
+          <ResponsiveContainer width="100%" height={130}>
+            <PieChart>
+              <Pie
+                data={data}
+                cx="50%"
+                cy="95%"
+                startAngle={180}
+                endAngle={0}
+                innerRadius={70}
+                outerRadius={100}
+                paddingAngle={2}
+                dataKey="value"
+                stroke="none"
+              >
+                {data.map((entry, i) => (
+                  <Cell key={i} fill={entry.color} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+          {/* Center value */}
+          <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-center">
+            <span className="text-2xl font-black text-app-text tabular-nums">{total}</span>
+          </div>
+        </div>
+      );
+    },
+  })),
+);
+
 // Avg basket mini chart (separate lazy component)
 const AvgBasketChart = lazy(() =>
   import('recharts').then((mod) => ({
@@ -285,69 +328,108 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
       </div>
 
-      {/* Stats row — plain numbers, no cards */}
-      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3">
-        {showFin && (
-          <div>
-            <p className="text-xs text-app-text-muted">{t('revenueToday')}</p>
-            <div className="flex items-baseline gap-2">
-              <span className="text-2xl font-black text-app-text tabular-nums">
+      {/* Stats gauge — semi-circular doughnut */}
+      <div className="shrink-0 mb-3 border border-app-border rounded-xl p-4 bg-app-card">
+        <Suspense
+          fallback={<div className="h-[130px] rounded-lg bg-app-elevated/20 animate-pulse" />}
+        >
+          <StatsGauge
+            data={[
+              ...(showFin
+                ? [
+                    {
+                      name: t('revenueToday'),
+                      value: Math.max(stats.revenueToday, 1),
+                      displayValue: fmtF(stats.revenueToday),
+                      color: '#4ade80',
+                    },
+                  ]
+                : []),
+              {
+                name: t('ordersToday'),
+                value: Math.max(stats.ordersToday, 1),
+                displayValue: String(stats.ordersToday),
+                color: '#60a5fa',
+              },
+              {
+                name: t('activeItems'),
+                value: Math.max(stats.activeItems, 1),
+                displayValue: String(stats.activeItems),
+                color: '#f97316',
+              },
+              {
+                name: t('activeTables'),
+                value: Math.max(stats.activeCards, 1),
+                displayValue: String(stats.activeCards),
+                color: '#a78bfa',
+              },
+            ]}
+          />
+        </Suspense>
+        {/* Legend table */}
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-1.5 mt-2">
+          {showFin && (
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#4ade80] shrink-0" />
+              <span className="text-[11px] text-app-text-muted">{t('revenueToday')}</span>
+              <span className="text-[11px] font-bold text-app-text tabular-nums">
                 {fmtF(stats.revenueToday)}
               </span>
               {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
                 <span
                   className={cn(
-                    'text-xs font-bold flex items-center gap-0.5',
+                    'text-[10px] font-bold flex items-center gap-0.5',
                     stats.revenueTrend > 0 ? 'text-status-success' : 'text-status-error',
                   )}
                 >
                   {stats.revenueTrend > 0 ? (
-                    <TrendingUp className="w-3 h-3" />
+                    <TrendingUp className="w-2.5 h-2.5" />
                   ) : (
-                    <TrendingDown className="w-3 h-3" />
+                    <TrendingDown className="w-2.5 h-2.5" />
                   )}
                   {stats.revenueTrend > 0 ? '+' : ''}
                   {stats.revenueTrend}%
                 </span>
               )}
             </div>
-          </div>
-        )}
-        <div>
-          <p className="text-xs text-app-text-muted">{t('ordersToday')}</p>
-          <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-app-text tabular-nums">
+          )}
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#60a5fa] shrink-0" />
+            <span className="text-[11px] text-app-text-muted">{t('ordersToday')}</span>
+            <span className="text-[11px] font-bold text-app-text tabular-nums">
               {stats.ordersToday}
             </span>
             {stats.ordersTrend !== undefined && stats.ordersTrend !== 0 && (
               <span
                 className={cn(
-                  'text-xs font-bold flex items-center gap-0.5',
+                  'text-[10px] font-bold flex items-center gap-0.5',
                   stats.ordersTrend > 0 ? 'text-status-success' : 'text-status-error',
                 )}
               >
                 {stats.ordersTrend > 0 ? (
-                  <TrendingUp className="w-3 h-3" />
+                  <TrendingUp className="w-2.5 h-2.5" />
                 ) : (
-                  <TrendingDown className="w-3 h-3" />
+                  <TrendingDown className="w-2.5 h-2.5" />
                 )}
                 {stats.ordersTrend > 0 ? '+' : ''}
                 {stats.ordersTrend}%
               </span>
             )}
           </div>
-        </div>
-        <div>
-          <p className="text-xs text-app-text-muted">{t('activeItems')}</p>
-          <span className="text-2xl font-black text-app-text tabular-nums">
-            {stats.activeItems}
-          </span>
-        </div>
-        <div>
-          <p className="text-xs text-app-text-muted">{t('activeTables')}</p>
-          <span className="text-2xl font-black text-app-text tabular-nums">
-            {stats.activeCards}
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#f97316] shrink-0" />
+            <span className="text-[11px] text-app-text-muted">{t('activeItems')}</span>
+            <span className="text-[11px] font-bold text-app-text tabular-nums">
+              {stats.activeItems}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#a78bfa] shrink-0" />
+            <span className="text-[11px] text-app-text-muted">{t('activeTables')}</span>
+            <span className="text-[11px] font-bold text-app-text tabular-nums">
+              {stats.activeCards}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -359,46 +441,43 @@ export default function DashboardClient(props: DashboardClientProps) {
           {chartData.length > 1 && (
             <div className="border border-app-border rounded-xl p-4 bg-app-card flex flex-col">
               {/* Chart header */}
-              <div className="flex items-center justify-between gap-3 mb-3 shrink-0">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap">
-                      {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
-                    </p>
-                    <span className="text-[10px] text-app-text-muted whitespace-nowrap">
+              <div className="flex flex-col gap-2 mb-3 shrink-0">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest truncate">
+                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersToday')}
+                    <span className="font-normal normal-case tracking-normal ml-1">
                       — {t('last7days')}
                     </span>
+                  </p>
+                  {/* Segmented control */}
+                  <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
+                    <button
+                      onClick={() => setChartMode('revenue')}
+                      className={cn(
+                        'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                        chartMode === 'revenue'
+                          ? 'bg-accent text-accent-text shadow-sm'
+                          : 'text-app-text-muted hover:text-app-text-secondary',
+                      )}
+                    >
+                      {t('revenueLabel')}
+                    </button>
+                    <button
+                      onClick={() => setChartMode('orders')}
+                      className={cn(
+                        'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                        chartMode === 'orders'
+                          ? 'bg-accent text-accent-text shadow-sm'
+                          : 'text-app-text-muted hover:text-app-text-secondary',
+                      )}
+                    >
+                      {t('ordersLabel')}
+                    </button>
                   </div>
-                  <span className="text-xl font-black text-app-text tabular-nums mt-0.5 block">
-                    {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
-                  </span>
                 </div>
-
-                {/* Segmented control */}
-                <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
-                  <button
-                    onClick={() => setChartMode('revenue')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
-                      chartMode === 'revenue'
-                        ? 'bg-accent text-accent-text shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary',
-                    )}
-                  >
-                    {t('revenueLabel')}
-                  </button>
-                  <button
-                    onClick={() => setChartMode('orders')}
-                    className={cn(
-                      'px-2.5 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
-                      chartMode === 'orders'
-                        ? 'bg-accent text-accent-text shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary',
-                    )}
-                  >
-                    {t('ordersLabel')}
-                  </button>
-                </div>
+                <span className="text-xl font-black text-app-text tabular-nums">
+                  {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+                </span>
               </div>
 
               {/* Chart area */}
