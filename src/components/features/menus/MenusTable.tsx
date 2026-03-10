@@ -6,7 +6,6 @@ import Link from 'next/link';
 import {
   Plus,
   Folder,
-  ChevronRight,
   Edit2,
   Trash2,
   ToggleLeft,
@@ -202,10 +201,6 @@ function MenuRow({
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
-
-      <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`} className="shrink-0">
-        <ChevronRight className="w-4 h-4 text-app-text-muted" />
-      </Link>
     </div>
   );
 }
