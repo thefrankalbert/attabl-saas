@@ -14,25 +14,24 @@ interface SingleOrderClientProps {
 export default function SingleOrderClient({ order: initialOrder }: SingleOrderClientProps) {
   const router = useRouter();
   const t = useTranslations('orders');
-  const tc = useTranslations('common');
 
   const displayLabel = initialOrder.order_number || `#${initialOrder.id.slice(0, 8).toUpperCase()}`;
 
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Compact header row */}
-      <div className="flex items-center gap-3 mb-6">
-        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => router.back()}>
-          <ChevronLeft className="w-5 h-5" />
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Inline header — same line as breadcrumb text */}
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 h-7 w-7 p-0"
+          onClick={() => router.back()}
+        >
+          <ChevronLeft className="w-4 h-4" />
         </Button>
-        <div className="min-w-0">
-          <h1 className="text-lg font-bold text-app-text truncate">
-            {t('orderDetails')} — {displayLabel}
-          </h1>
-          <p className="text-xs text-app-text-muted">
-            {tc('table')} {initialOrder.table_number}
-          </p>
-        </div>
+        <h1 className="text-sm font-semibold text-app-text truncate">
+          {t('orderDetails')} — {displayLabel}
+        </h1>
       </div>
 
       <OrderDetails
