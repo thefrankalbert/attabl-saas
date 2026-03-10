@@ -254,9 +254,15 @@ export function AdminSidebar({
                   suppressHydrationWarning
                   className="w-full flex flex-col items-center gap-2 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-center"
                 >
-                  {/* Large QR icon — 3x original w-9 */}
-                  <div className="w-[72px] h-[72px] rounded-2xl bg-accent-muted shrink-0 flex items-center justify-center">
-                    <QrCode className="w-9 h-9 text-accent" />
+                  {/* Scannable QR code — links to client space */}
+                  <div className="w-[72px] h-[72px] rounded-2xl bg-white shrink-0 flex items-center justify-center p-1.5">
+                    <QRCodeSVG
+                      value={clientUrl}
+                      size={60}
+                      bgColor="#ffffff"
+                      fgColor="#000000"
+                      level="M"
+                    />
                   </div>
                   {/* Plan badge — above name, smaller */}
                   <span className="text-[9px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
