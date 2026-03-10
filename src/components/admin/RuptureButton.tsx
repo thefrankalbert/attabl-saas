@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { XCircle, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
@@ -22,6 +23,7 @@ export default function RuptureButton({
   const [loading, setLoading] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const { toast } = useToast();
+  const t = useTranslations('inventory');
 
   const handleToggle = async () => {
     if (!confirming) {
@@ -45,12 +47,14 @@ export default function RuptureButton({
     setLoading(false);
 
     if (error) {
-      toast({ title: 'Erreur de mise à jour', variant: 'destructive' });
+      toast({ title: t('updateError'), variant: 'destructive' });
       return;
     }
 
     toast({
-      title: newStatus ? `${itemName} remis en service` : `${itemName} marqué indisponible`,
+      title: newStatus
+        ? t('itemBackInStock', { name: itemName })
+        : t('itemMarkedUnavailable', { name: itemName }),
     });
 
     onRupture?.();
@@ -67,7 +71,7 @@ export default function RuptureButton({
     return (
       <button
         onClick={handleToggle}
-        title={confirming ? 'Confirmer rupture' : 'Marquer en rupture'}
+        title={confirming ? t('confirmRupture') : t('markRupture')}
         className={cn(
           'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
           confirming
@@ -84,7 +88,7 @@ export default function RuptureButton({
   return (
     <button
       onClick={handleToggle}
-      title={confirming ? 'Confirmer remise en service' : 'Remettre en service'}
+      title={confirming ? t('confirmBackInStock') : t('backInStock')}
       className={cn(
         'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
         confirming

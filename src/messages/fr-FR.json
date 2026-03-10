@@ -66,7 +66,9 @@
     "retry": "Réessayer",
     "backToHome": "Retour à l'accueil",
     "notFoundTitle": "Page introuvable",
-    "notFoundDescription": "Cette page n'existe pas ou a été déplacée. Vérifiez l'URL ou revenez à l'accueil."
+    "notFoundDescription": "Cette page n'existe pas ou a été déplacée. Vérifiez l'URL ou revenez à l'accueil.",
+    "lessThanHour": "Moins d'une heure",
+    "expired": "Expiré"
   },
   "checkout": {
     "successTitle": "Paiement réussi !",
@@ -640,7 +642,10 @@
     "slug": "Slug",
     "slugDescription": "Votre sous-domaine unique. Contactez le support pour le modifier.",
     "pageTitle": "Paramètres",
-    "pageDescription": "Gérez les informations et le branding de votre établissement."
+    "pageDescription": "Gérez les informations et le branding de votre établissement.",
+    "verifyDomain": "Vérifier",
+    "dnsConfig": "Configuration DNS",
+    "currentUrl": "URL actuelle :"
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -890,7 +895,11 @@
     "resend": "Renvoyer",
     "newPassword": "Nouveau mot de passe",
     "newPasswordPlaceholder": "Laisser vide pour ne pas changer",
-    "passwordHint": "Laissez vide pour conserver le mot de passe actuel."
+    "passwordHint": "Laissez vide pour conserver le mot de passe actuel.",
+    "emailRequired": "Veuillez saisir une adresse email",
+    "inviteSentTo": "Invitation envoyée à {email}",
+    "invitationResent": "Invitation renvoyée",
+    "invitationCancelled": "Invitation annulée"
   },
   "reports": {
     "title": "Rapports",

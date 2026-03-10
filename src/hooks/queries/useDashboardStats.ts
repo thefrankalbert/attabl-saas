@@ -82,12 +82,12 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         supabase
           .from('orders')
           .select(
-            `id, table_number, status, total, created_at,
+            `id, order_number, table_number, status, total, created_at,
            order_items(id, quantity, price_at_order, menu_items(name))`,
           )
           .eq('tenant_id', tenantId)
           .order('created_at', { ascending: false })
-          .limit(8),
+          .limit(12),
         // Low stock items
         supabase
           .from('ingredients')
@@ -139,6 +139,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         (order) => ({
           id: order.id as string,
           tenant_id: tenantId,
+          order_number: (order.order_number as string) || undefined,
           table_number: (order.table_number as string) || 'N/A',
           status: ((order.status as string) || 'pending') as Order['status'],
           total_price: Number(order.total || 0),

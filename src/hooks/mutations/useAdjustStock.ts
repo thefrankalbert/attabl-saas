@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { createInventoryService } from '@/services/inventory.service';
 import { useToast } from '@/components/ui/use-toast';
@@ -21,6 +22,7 @@ interface AdjustStockInput {
 export function useAdjustStock(tenantId: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const tc = useTranslations('common');
 
   return useMutation({
     mutationKey: ['adjust-stock', tenantId],
@@ -35,7 +37,7 @@ export function useAdjustStock(tenantId: string) {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
     },
     onError: (error: Error) => {
-      toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
+      toast({ title: tc('error'), description: error.message, variant: 'destructive' });
     },
     retry: 3,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),

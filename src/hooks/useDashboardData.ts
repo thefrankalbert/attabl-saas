@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStats } from '@/hooks/queries';
@@ -81,6 +82,7 @@ export function useDashboardData({
   initialRecentOrders,
 }: UseDashboardDataParams): UseDashboardDataReturn {
   const { toast } = useToast();
+  const ta = useTranslations('admin');
   const supabase = createClient();
   const queryClient = useQueryClient();
 
@@ -113,10 +115,10 @@ export function useDashboardData({
       { orderId, status: newStatus },
       {
         onSuccess: () => {
-          toast({ title: 'Status updated' });
+          toast({ title: ta('statusUpdated') });
         },
         onError: () => {
-          toast({ title: 'Error updating status', variant: 'destructive' });
+          toast({ title: ta('statusUpdateError'), variant: 'destructive' });
         },
       },
     );

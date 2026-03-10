@@ -1,366 +1,332 @@
 'use client';
 
+import { useMemo, lazy, Suspense } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDashboardData, timeAgo } from '@/hooks/useDashboardData';
 import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
-import { formatCurrencyCompact, formatCurrency } from '@/lib/utils/currency';
+import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, ChevronRight, Clock, ShoppingBag, Zap } from 'lucide-react';
 import {
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts';
+  TrendingUp,
+  TrendingDown,
+  ChevronRight,
+  Clock,
+  ShoppingBag,
+  QrCode,
+  UtensilsCrossed,
+  BarChart3,
+} from 'lucide-react';
+import type { CSSProperties } from 'react';
 import { cn } from '@/lib/utils';
+
+// Lazy-load recharts for faster initial paint
+const RevenueChart = lazy(() =>
+  import('recharts').then((mod) => ({
+    default: function RevenueChartInner({
+      data,
+      fmtF,
+      revenueLabel,
+    }: {
+      data: Array<{ label: string; value: number }>;
+      fmtF: (n: number) => string;
+      revenueLabel: string;
+    }) {
+      const { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis } = mod;
+      return (
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={data} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
+            <defs>
+              <linearGradient id="rev-grad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--app-accent)" stopOpacity={0.25} />
+                <stop offset="100%" stopColor="var(--app-accent)" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis
+              dataKey="label"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+            />
+            <YAxis hide />
+            <Tooltip
+              contentStyle={
+                {
+                  backgroundColor: 'var(--app-card)',
+                  border: '1px solid var(--app-border)',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.75rem',
+                  padding: '6px 10px',
+                } as CSSProperties
+              }
+              formatter={(value) => [fmtF(Number(value ?? 0)), revenueLabel]}
+            />
+            <Area
+              type="monotone"
+              dataKey="value"
+              stroke="var(--app-accent)"
+              fill="url(#rev-grad)"
+              strokeWidth={2}
+              dot={false}
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      );
+    },
+  })),
+);
 
 type DashboardClientProps = UseDashboardDataParams & {
   establishmentType?: string;
 };
 
-// ─── Animated counter ───────────────────────────────────
-
-function useAnimatedCount(target: number, duration = 900) {
-  const [count, setCount] = useState(0);
-  useEffect(() => {
-    let raf: number;
-    if (target === 0) {
-      raf = requestAnimationFrame(() => setCount(0));
-      return () => cancelAnimationFrame(raf);
-    }
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = Math.min((now - start) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      setCount(Math.round(eased * target));
-      if (t < 1) raf = requestAnimationFrame(step);
-    };
-    raf = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(raf);
-  }, [target, duration]);
-  return count;
-}
-
-// ─── CSS Animations ─────────────────────────────────────
-
-const ANIMATIONS_CSS = `
-@keyframes dash-fade-up {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.dash-up { animation: dash-fade-up 0.5s ease both; }
-`;
-
-// ─── Dashboard ──────────────────────────────────────────
-
 export default function DashboardClient(props: DashboardClientProps) {
-  const { tenantSlug, tenantName, currency = 'XAF' } = props;
+  const { tenantSlug, tenantName, userName, currency = 'XAF' } = props;
 
   const t = useTranslations('admin');
+  const tc = useTranslations('common');
+  const to = useTranslations('orders');
   const locale = useLocale();
   const adminBase = `/sites/${tenantSlug}/admin`;
-  const fmtC = (n: number) => formatCurrencyCompact(n, currency as CurrencyCode);
   const fmtF = (n: number) => formatCurrency(n, currency as CurrencyCode);
 
-  const { stats, recentOrders, revenueSparkline, ordersSparkline, itemsSparkline, loading } =
-    useDashboardData(props);
+  const { stats, recentOrders, revenueSparkline, loading } = useDashboardData(props);
 
   const { can } = usePermissions();
   const showFin = can('canViewAllFinances');
 
-  const animRevenue = useAnimatedCount(stats.revenueToday, 1200);
-  const animOrders = useAnimatedCount(stats.ordersToday, 800);
-  const animItems = useAnimatedCount(stats.activeItems, 700);
-
   const hour = new Date().getHours();
   const greetKey = hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
-  // ─── Loading skeleton ──────────────────────────────────
+  // Stable timestamp for "new order" detection — refreshes when orders change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const now = useMemo(() => Date.now(), [recentOrders]);
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 gap-3 sm:gap-4 overflow-hidden">
-        <div className="shrink-0 h-[52px] animate-pulse" />
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 gap-4 overflow-hidden">
+        <div className="h-8 w-64 rounded-lg bg-app-elevated/30 animate-pulse" />
+        <div className="flex gap-6">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-[80px] rounded-2xl bg-app-elevated/30 animate-pulse" />
+            <div key={i} className="h-12 w-32 rounded-lg bg-app-elevated/30 animate-pulse" />
           ))}
         </div>
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-5 gap-3 sm:gap-4 min-h-0">
-          <div className="md:col-span-3 rounded-2xl bg-app-elevated/30 animate-pulse" />
-          <div className="md:col-span-2 rounded-2xl bg-app-elevated/30 animate-pulse" />
-        </div>
+        <div className="flex-1 rounded-lg bg-app-elevated/30 animate-pulse" />
       </div>
     );
   }
 
-  // ─── Render ────────────────────────────────────────────
+  // Build sparkline data with labels
+  const chartData =
+    revenueSparkline.length > 1
+      ? revenueSparkline.map((p, i) => {
+          const d = new Date();
+          d.setDate(d.getDate() - (revenueSparkline.length - 1 - i));
+          return {
+            label: d.toLocaleDateString(locale, { weekday: 'short' }),
+            value: p.value,
+          };
+        })
+      : [];
+
+  const todayAvgBasket =
+    stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <>
-      <style>{ANIMATIONS_CSS}</style>
-
-      <div
-        className={cn(
-          'h-full p-4 sm:p-5 lg:p-6',
-          'flex flex-col gap-3 sm:gap-4 overflow-y-auto scrollbar-hide',
-          'md:grid md:grid-rows-[auto_auto_1fr] md:gap-4 md:overflow-y-hidden',
-        )}
-      >
-        {/* ━━━ GREETING ━━━ */}
-        <div className="dash-up">
-          <h1 className="text-lg sm:text-xl font-bold text-app-text tracking-tight">
-            {t(greetKey)}, {tenantName}
+    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
+      {/* Greeting + date — single compact line */}
+      <div className="shrink-0 mb-2">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <h1 className="text-lg font-bold text-app-text">
+            {t(greetKey)}, {userName || tenantName}
           </h1>
-          <p className="text-sm text-app-text-muted mt-0.5 capitalize">
+          <span className="text-xs text-app-text-muted capitalize">
             {new Date().toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
               month: 'long',
-              year: 'numeric',
             })}
-          </p>
+          </span>
         </div>
+      </div>
 
-        {/* ━━━ ROW 2: KPI STRIP with sparklines ━━━━━━━━━━━━━ */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {(
-            [
-              {
-                label: t('revenueToday'),
-                value: fmtC(animRevenue),
-                trend: stats.revenueTrend,
-                sparkline: revenueSparkline,
-                color: 'var(--app-accent)',
-                show: showFin,
-              },
-              {
-                label: t('ordersToday'),
-                value: animOrders.toString(),
-                trend: stats.ordersTrend,
-                sparkline: ordersSparkline,
-                color: 'oklch(0.65 0.15 250)',
-                show: true,
-              },
-              {
-                label: t('activeItems'),
-                value: animItems.toString(),
-                trend: undefined,
-                sparkline: itemsSparkline,
-                color: 'oklch(0.65 0.12 170)',
-                show: true,
-              },
-              {
-                label: t('activeTables'),
-                value: stats.activeCards.toString(),
-                trend: undefined,
-                sparkline: [],
-                color: 'oklch(0.65 0.12 300)',
-                show: true,
-              },
-              {
-                label: t('avgBasket'),
-                value:
-                  stats.ordersToday > 0
-                    ? fmtC(Math.round(stats.revenueToday / stats.ordersToday))
-                    : '—',
-                trend: undefined,
-                sparkline: [],
-                color: 'oklch(0.65 0.12 50)',
-                show: showFin,
-              },
-            ] as const
-          )
-            .filter((k) => k.show)
-            .map((kpi) => {
-              // Compute average for reference line (dashed baseline)
-              const avg =
-                kpi.sparkline.length > 1
-                  ? kpi.sparkline.reduce((s, p) => s + p.value, 0) / kpi.sparkline.length
-                  : 0;
-
-              return (
-                <div
-                  key={kpi.label}
-                  className="rounded-2xl bg-app-card p-4 sm:p-5 dash-up flex flex-col justify-between min-h-[120px]"
+      {/* Stats row — plain numbers, no cards */}
+      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3">
+        {showFin && (
+          <div>
+            <p className="text-xs text-app-text-muted">{t('revenueToday')}</p>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-black text-app-text tabular-nums">
+                {fmtF(stats.revenueToday)}
+              </span>
+              {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
+                <span
+                  className={cn(
+                    'text-xs font-bold flex items-center gap-0.5',
+                    stats.revenueTrend > 0 ? 'text-status-success' : 'text-status-error',
+                  )}
                 >
-                  {/* Top row: label + sparkline */}
-                  <div className="flex items-start justify-between gap-2">
-                    <p className="text-xs text-app-text-muted font-medium flex items-center gap-1">
-                      {kpi.label}
-                      <ChevronRight className="w-3 h-3" />
-                    </p>
-                    {/* Micro sparkline — thin line, top-right like reference */}
-                    {kpi.sparkline.length > 1 && (
-                      <div className="w-[55%] h-[36px] shrink-0">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={kpi.sparkline}
-                            margin={{ top: 4, right: 2, left: 2, bottom: 4 }}
-                          >
-                            <ReferenceLine
-                              y={avg}
-                              stroke={kpi.color}
-                              strokeDasharray="3 3"
-                              strokeOpacity={0.3}
-                            />
-                            <Line
-                              type="monotone"
-                              dataKey="value"
-                              stroke={kpi.color}
-                              strokeWidth={1.5}
-                              dot={false}
-                              animationDuration={1200}
-                            />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Bottom: big value + trend */}
-                  <div className="flex items-baseline gap-2 mt-auto pt-2">
-                    <span className="text-2xl sm:text-3xl font-black text-app-text tabular-nums tracking-tight leading-none">
-                      {kpi.value}
-                    </span>
-                    {kpi.trend !== undefined && kpi.trend !== 0 && (
-                      <span
-                        className={cn(
-                          'text-xs font-bold flex items-center gap-0.5',
-                          kpi.trend > 0 ? 'text-status-success' : 'text-status-error',
-                        )}
-                      >
-                        {kpi.trend > 0 ? (
-                          <TrendingUp className="w-3 h-3" />
-                        ) : (
-                          <TrendingDown className="w-3 h-3" />
-                        )}
-                        {kpi.trend > 0 ? '+' : ''}
-                        {kpi.trend}%
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-        </div>
-
-        {/* ━━━ ROW 3: OVERVIEW + RECENT ORDERS ━━━━━━━━━━━━━ */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 sm:gap-4 md:min-h-0">
-          {/* Revenue Overview (3/5) */}
-          <div className="md:col-span-3 rounded-2xl bg-app-card p-4 sm:p-5 md:flex md:flex-col md:overflow-hidden dash-up">
-            <div className="flex items-center justify-between mb-3 shrink-0">
-              <h2 className="text-xs font-semibold text-app-text-muted uppercase tracking-widest">
-                {t('dashboardOverview')}
-              </h2>
-              {ordersSparkline.length > 0 && (
-                <span className="inline-flex items-center gap-1 text-xs text-accent font-semibold">
-                  <Zap className="w-3 h-3" />
-                  Live
+                  {stats.revenueTrend > 0 ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {stats.revenueTrend > 0 ? '+' : ''}
+                  {stats.revenueTrend}%
                 </span>
               )}
             </div>
+          </div>
+        )}
+        <div>
+          <p className="text-xs text-app-text-muted">{t('ordersToday')}</p>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-black text-app-text tabular-nums">
+              {stats.ordersToday}
+            </span>
+            {stats.ordersTrend !== undefined && stats.ordersTrend !== 0 && (
+              <span
+                className={cn(
+                  'text-xs font-bold flex items-center gap-0.5',
+                  stats.ordersTrend > 0 ? 'text-status-success' : 'text-status-error',
+                )}
+              >
+                {stats.ordersTrend > 0 ? (
+                  <TrendingUp className="w-3 h-3" />
+                ) : (
+                  <TrendingDown className="w-3 h-3" />
+                )}
+                {stats.ordersTrend > 0 ? '+' : ''}
+                {stats.ordersTrend}%
+              </span>
+            )}
+          </div>
+        </div>
+        <div>
+          <p className="text-xs text-app-text-muted">{t('activeItems')}</p>
+          <span className="text-2xl font-black text-app-text tabular-nums">
+            {stats.activeItems}
+          </span>
+        </div>
+        <div>
+          <p className="text-xs text-app-text-muted">{t('activeTables')}</p>
+          <span className="text-2xl font-black text-app-text tabular-nums">
+            {stats.activeCards}
+          </span>
+        </div>
+      </div>
 
-            {/* Chart */}
-            <div className="flex-1 min-h-[60px] md:min-h-0 -mx-1 mb-3">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
-                  data={
-                    revenueSparkline.length > 1
-                      ? revenueSparkline
-                      : [
-                          { label: '0', value: 0 },
-                          { label: '1', value: 0 },
-                        ]
+      {/* ── Two-column: left (chart + shortcuts), right (orders) ─── */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+        {/* ── Left column ──────────────────────────────────── */}
+        <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
+          {/* Revenue chart — always visible, lazy-loaded */}
+          {chartData.length > 1 && (
+            <div className="rounded-xl border border-app-border bg-app-card p-3">
+              <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest mb-2">
+                {t('dashboardOverview')}
+              </p>
+              <div className="h-[140px]">
+                <Suspense
+                  fallback={
+                    <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
                   }
-                  margin={{ top: 4, right: 0, left: 0, bottom: 0 }}
                 >
-                  <defs>
-                    <linearGradient id="overview-area" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--app-accent)" stopOpacity={0.35} />
-                      <stop offset="100%" stopColor="var(--app-accent)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: 'oklch(0.10 0.005 260)',
-                      border: 'none',
-                      borderRadius: '0.75rem',
-                      fontSize: '0.8rem',
-                      padding: '8px 12px',
-                      boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                    }}
-                    labelStyle={{ color: 'oklch(0.45 0 0)' }}
-                    itemStyle={{ color: 'oklch(0.93 0 0)' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="value"
-                    stroke="var(--app-accent)"
-                    fill="url(#overview-area)"
-                    strokeWidth={2}
-                    dot={false}
-                    animationDuration={1800}
-                    animationEasing="ease-out"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
+                  <RevenueChart data={chartData} fmtF={fmtF} revenueLabel={t('revenueToday')} />
+                </Suspense>
+              </div>
             </div>
+          )}
 
-            {/* CTA row */}
-            <div className="flex gap-3 shrink-0">
-              <Link
-                href={`${adminBase}/orders`}
-                className="flex-1 text-center px-4 py-2.5 rounded-xl bg-accent text-accent-text text-sm font-semibold hover:opacity-90 transition-opacity touch-manipulation"
-              >
-                {t('viewOrders')}
-              </Link>
-              <Link
-                href={`${adminBase}/pos`}
-                className="flex-1 text-center px-4 py-2.5 rounded-xl bg-app-elevated text-app-text-secondary text-sm font-semibold hover:bg-app-hover transition-colors touch-manipulation"
-              >
-                {t('openPos')}
-              </Link>
+          {/* Avg basket — compact stat card */}
+          {showFin && todayAvgBasket > 0 && (
+            <div className="rounded-xl border border-app-border bg-app-card px-3 py-2.5 flex items-center justify-between">
+              <div>
+                <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
+                  {t('avgBasket')}
+                </p>
+                <p className="text-[10px] text-app-text-muted mt-0.5">{t('perOrder')}</p>
+              </div>
+              <span className="text-xl font-black text-app-text tabular-nums">
+                {fmtF(todayAvgBasket)}
+              </span>
             </div>
+          )}
+
+          {/* Quick actions */}
+          <div className="flex gap-2 mt-auto">
+            <Link
+              href={`${adminBase}/menus`}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+            >
+              <UtensilsCrossed className="w-3.5 h-3.5" />
+              {t('menusMgmt')}
+            </Link>
+            <Link
+              href={`${adminBase}/qr-codes`}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+            >
+              <QrCode className="w-3.5 h-3.5" />
+              {t('qrGenerator')}
+            </Link>
+            <Link
+              href={`${adminBase}/reports`}
+              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl border border-app-border text-app-text-secondary text-xs font-semibold hover:bg-app-hover transition-colors"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              {t('reportsLabel')}
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Right column — orders (full height, scrollable) ── */}
+        <div className="flex-1 min-h-0 flex flex-col min-w-0">
+          <div className="flex items-center justify-between mb-1.5 shrink-0">
+            <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
+              {t('recentOrders')}
+            </p>
+            <Link
+              href={`${adminBase}/orders`}
+              className="text-[10px] font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-0.5"
+            >
+              {t('viewAll')}
+              <ChevronRight className="w-3 h-3" />
+            </Link>
           </div>
 
-          {/* Recent Orders (2/5) */}
-          <div className="md:col-span-2 rounded-2xl bg-app-card p-4 sm:p-5 md:flex md:flex-col md:overflow-hidden dash-up">
-            <div className="flex items-center justify-between mb-2 shrink-0">
-              <h2 className="text-xs font-semibold text-app-text-muted uppercase tracking-widest">
-                {t('recentOrders')}
-              </h2>
-              <Link
-                href={`${adminBase}/orders`}
-                className="text-xs font-semibold text-accent hover:text-accent-hover transition-colors flex items-center gap-0.5"
-              >
-                {t('viewAll')}
-                <ChevronRight className="w-3 h-3" />
-              </Link>
-            </div>
-
-            {/* Order list */}
-            <div className="flex-1 min-h-0 md:overflow-y-auto md:scrollbar-hide space-y-1">
-              {recentOrders.length > 0 ? (
-                recentOrders.slice(0, 6).map((order) => {
+          {recentOrders.length > 0 ? (
+            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex-1 min-h-0 flex flex-col">
+              <div className="overflow-y-auto flex-1 scrollbar-hide">
+                {recentOrders.slice(0, 15).map((order) => {
                   const sc = STATUS_STYLES[order.status as OrderStatus] || STATUS_STYLES.pending;
+                  const statusKey =
+                    `status${order.status.charAt(0).toUpperCase()}${order.status.slice(1)}Card` as Parameters<
+                      typeof to
+                    >[0];
+                  const orderLabel = order.order_number || `#${order.id.slice(0, 6).toUpperCase()}`;
+                  const ageSeconds = Math.floor(
+                    (now - new Date(order.created_at).getTime()) / 1000,
+                  );
+                  const isNew = ageSeconds < 300; // < 5 min
                   return (
                     <Link
                       key={order.id}
                       href={`${adminBase}/orders/${order.id}`}
-                      className="group flex items-center gap-2 p-2.5 rounded-xl hover:bg-app-elevated/50 transition-all touch-manipulation"
+                      className={cn(
+                        'flex items-start gap-2.5 px-3 py-2 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors',
+                        isNew && 'bg-accent/[0.04]',
+                      )}
                     >
-                      <div className="relative shrink-0">
+                      {/* Status dot — glowing ring for new orders */}
+                      <div className="relative shrink-0 mt-1">
                         <div className={cn('w-2 h-2 rounded-full', sc.dot)} />
-                        {sc.pulse && (
+                        {isNew && (
+                          <div className="absolute -inset-1 rounded-full border-2 border-accent/40 animate-ping" />
+                        )}
+                        {!isNew && sc.pulse && (
                           <div
                             className={cn(
                               'absolute inset-0 w-2 h-2 rounded-full animate-ping',
@@ -369,46 +335,69 @@ export default function DashboardClient(props: DashboardClientProps) {
                           />
                         )}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="font-mono text-xs font-bold text-app-text">
+                      {/* Order info */}
+                      <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-mono text-[11px] font-bold text-app-text shrink-0">
                             {order.table_number}
                           </span>
+                          <span className="text-[10px] text-app-text-muted">{orderLabel}</span>
                           <span
                             className={cn(
-                              'text-xs font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider',
+                              'text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0',
                               sc.bg,
                               sc.text,
                             )}
                           >
-                            {order.status}
+                            {to(statusKey)}
                           </span>
+                          {isNew && (
+                            <span className="text-[9px] font-bold text-accent bg-accent/10 px-1.5 py-0.5 rounded-full">
+                              NEW
+                            </span>
+                          )}
                         </div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <Clock className="w-2.5 h-2.5 text-app-text-muted" />
-                          <span className="text-xs text-app-text-muted">
-                            {timeAgo(order.created_at, t, locale)}
-                          </span>
-                        </div>
+                        {order.items && order.items.length > 0 && (
+                          <div className="flex flex-wrap gap-x-2 gap-y-0.5">
+                            {order.items.map((item, idx) => (
+                              <span
+                                key={idx}
+                                className="text-[10px] text-app-text-muted leading-tight"
+                              >
+                                {item.quantity}× {item.name}
+                                {idx < (order.items?.length ?? 0) - 1 && (
+                                  <span className="text-app-border ml-0.5">·</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <span className="text-xs font-bold text-app-text tabular-nums shrink-0">
-                        {fmtF(order.total_price)}
-                      </span>
+                      {/* Price + time */}
+                      <div className="flex flex-col items-end gap-0.5 shrink-0 mt-0.5">
+                        <span className="text-xs font-bold text-app-text tabular-nums">
+                          {fmtF(order.total_price)}
+                        </span>
+                        <span className="flex items-center gap-0.5 text-[10px] text-app-text-muted">
+                          <Clock className="w-2.5 h-2.5" />
+                          {timeAgo(order.created_at, tc, locale)}
+                        </span>
+                      </div>
                     </Link>
                   );
-                })
-              ) : (
-                <div className="flex-1 flex flex-col items-center justify-center py-12 text-center">
-                  <ShoppingBag className="w-10 h-10 text-app-text-muted/40 mb-3" />
-                  <p className="text-sm font-medium text-app-text-secondary">
-                    {t('noOrdersDescAlt')}
-                  </p>
-                </div>
-              )}
+                })}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-app-card rounded-xl border border-app-border p-10 text-center flex-1 flex flex-col items-center justify-center">
+              <div className="w-10 h-10 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-2">
+                <ShoppingBag className="w-5 h-5 text-app-text-muted" />
+              </div>
+              <p className="text-sm font-bold text-app-text">{t('noOrdersDescAlt')}</p>
+            </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 }

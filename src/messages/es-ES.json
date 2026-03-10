@@ -66,7 +66,9 @@
     "retry": "Reintentar",
     "backToHome": "Volver al inicio",
     "notFoundTitle": "Página no encontrada",
-    "notFoundDescription": "Esta página no existe o ha sido movida. Verifique la URL o vuelva al inicio."
+    "notFoundDescription": "Esta página no existe o ha sido movida. Verifique la URL o vuelva al inicio.",
+    "lessThanHour": "Menos de una hora",
+    "expired": "Expirado"
   },
   "checkout": {
     "successTitle": "¡Pago exitoso!",
@@ -647,7 +649,10 @@
     "slug": "Slug",
     "slugDescription": "Su subdominio único. Contacte con soporte para cambiarlo.",
     "pageTitle": "Configuración",
-    "pageDescription": "Gestione la información y el branding de su establecimiento."
+    "pageDescription": "Gestione la información y el branding de su establecimiento.",
+    "verifyDomain": "Verificar",
+    "dnsConfig": "Configuración DNS",
+    "currentUrl": "URL actual:"
   },
   "commandPalette": {
     "placeholder": "Buscar una página o acción...",
@@ -896,7 +901,11 @@
     "resend": "Reenviar",
     "newPassword": "Nueva contraseña",
     "newPasswordPlaceholder": "Dejar en blanco para no cambiar",
-    "passwordHint": "Dejar en blanco para conservar la contraseña actual."
+    "passwordHint": "Dejar en blanco para conservar la contraseña actual.",
+    "emailRequired": "Por favor ingrese una dirección de correo electrónico",
+    "inviteSentTo": "Invitación enviada a {email}",
+    "invitationResent": "Invitación reenviada",
+    "invitationCancelled": "Invitación cancelada"
   },
   "reports": {
     "title": "Informes",

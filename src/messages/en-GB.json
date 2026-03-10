@@ -66,7 +66,9 @@
     "retry": "Try again",
     "backToHome": "Back to home",
     "notFoundTitle": "Page not found",
-    "notFoundDescription": "This page does not exist or has been moved. Check the URL or go back to the home page."
+    "notFoundDescription": "This page does not exist or has been moved. Check the URL or go back to the home page.",
+    "lessThanHour": "Less than an hour",
+    "expired": "Expired"
   },
   "checkout": {
     "successTitle": "Payment successful!",
@@ -640,7 +642,10 @@
     "slug": "Slug",
     "slugDescription": "Your unique subdomain. Contact support to change it.",
     "pageTitle": "Settings",
-    "pageDescription": "Manage your establishment's information and branding."
+    "pageDescription": "Manage your establishment's information and branding.",
+    "verifyDomain": "Verify",
+    "dnsConfig": "DNS Configuration",
+    "currentUrl": "Current URL:"
   },
   "commandPalette": {
     "placeholder": "Search for a page or action...",
@@ -889,7 +894,11 @@
     "resend": "Resend",
     "newPassword": "New password",
     "newPasswordPlaceholder": "Leave blank to keep current",
-    "passwordHint": "Leave blank to keep the current password."
+    "passwordHint": "Leave blank to keep the current password.",
+    "emailRequired": "Please enter an email address",
+    "inviteSentTo": "Invitation sent to {email}",
+    "invitationResent": "Invitation resent",
+    "invitationCancelled": "Invitation cancelled"
   },
   "reports": {
     "title": "Reports",
