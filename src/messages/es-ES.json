@@ -171,7 +171,9 @@
     "clientReceiptPrinted": "Impresión de recibo de cliente iniciada",
     "statusUpdated": "Estado actualizado",
     "checkoutWarning": "Atención: El pedido debe estar 'Listo' antes de cobrar.",
-    "roomNumber": "Hab.{number}"
+    "roomNumber": "Hab.{number}",
+    "noOrdersTitle": "Sin pedidos",
+    "noOrdersDesc": "Los pedidos aparecerán aquí a medida que lleguen"
   },
   "delivery": {
     "deliveryInfo": "Información de entrega",
@@ -1549,6 +1551,9 @@
     "scanSuccess": "¡Código escaneado correctamente!",
     "scanError": "Error al escanear",
     "cameraError": "No se ha podido acceder a la cámara. Compruebe los permisos.",
+    "splashSubtitle": "Menú digital y pedidos en línea",
+    "splashEnter": "Ver el menú",
+    "splashSkip": "Continuar sin pantalla completa",
     "close": "Cerrar",
     "tableNumber": "Mesa {number}",
     "selectYourTable": "Seleccione su mesa",

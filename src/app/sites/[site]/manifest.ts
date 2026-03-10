@@ -25,7 +25,7 @@ export default async function manifest({
     short_name: shortName,
     description: `Menu digital pour ${name}`,
     start_url: `/sites/${site}`,
-    display: 'standalone',
+    display: 'fullscreen',
     background_color: '#ffffff',
     theme_color: themeColor,
     icons: [

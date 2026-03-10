@@ -74,14 +74,19 @@ export default function InstallPrompt({
     localStorage.setItem(STORAGE_VISIT_COUNT, String(visitCount));
 
     // ─── Engagement-based trigger ──────────────────────
-    // Show on 2nd+ visit immediately, or on 1st visit after scroll
+    // QR code users (URL has ?table= param): show immediately
+    // 2nd+ visit: show after 1.5s
+    // 1st visit: show after scroll
+    const isQrScan = new URLSearchParams(window.location.search).has('table');
     let showTimer: ReturnType<typeof setTimeout> | undefined;
 
-    const triggerShow = () => {
-      showTimer = setTimeout(() => setShow(true), 1500);
+    const triggerShow = (delay = 1500) => {
+      showTimer = setTimeout(() => setShow(true), delay);
     };
 
-    if (visitCount >= 2) {
+    if (isQrScan) {
+      triggerShow(800);
+    } else if (visitCount >= 2) {
       triggerShow();
     } else {
       // 1st visit: wait for meaningful scroll (200px)
@@ -137,7 +142,12 @@ export default function InstallPrompt({
 
   return (
     <div
-      className={`fixed left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom] ${hasFloatingCart ? 'bottom-[140px]' : 'bottom-24'}`}
+      className="fixed left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
+      style={{
+        bottom: hasFloatingCart
+          ? 'calc(140px + env(safe-area-inset-bottom, 0px))'
+          : 'calc(96px + env(safe-area-inset-bottom, 0px))',
+      }}
     >
       <div className="flex items-center gap-3 p-3">
         {logoUrl ? (

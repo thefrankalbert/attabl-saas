@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import AdsSlider from '@/components/tenant/AdsSlider';
 import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
+import FullscreenSplash from '@/components/tenant/FullscreenSplash';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import TablePicker from '@/components/tenant/TablePicker';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
@@ -162,7 +163,7 @@ export default function ClientMenuPage({
         return () => clearTimeout(timer);
       }
     }
-  }, [initialTable]);
+  }, [initialTable, tenant.slug]);
 
   // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {
@@ -239,7 +240,17 @@ export default function ClientMenuPage({
 
   // ─── Render ────────────────────────────────────────────
   return (
-    <div className="flex-1 w-full min-h-screen pb-24">
+    <div
+      className="flex-1 w-full min-h-screen"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      {/* ═══ FULLSCREEN SPLASH — shown on QR code scan ═══ */}
+      <FullscreenSplash
+        tenantName={tenant.name}
+        logoUrl={tenant.logo_url}
+        primaryColor={tenant.primary_color || '#000000'}
+      />
+
       {/* ═══ STICKY HEADER — appears when scrolled past search bar ═══ */}
       {isSearchSticky && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
@@ -291,7 +302,7 @@ export default function ClientMenuPage({
                   alt={tenant.name}
                   width={260}
                   height={24}
-                  className="h-6 w-auto max-w-[260px] object-contain"
+                  className="h-6 w-auto max-w-[180px] sm:max-w-[260px] object-contain"
                   priority
                 />
               ) : (
@@ -536,10 +547,7 @@ export default function ClientMenuPage({
               {t('exploreFlavors')}
             </h2>
           </div>
-          <div
-            className="grid grid-cols-4 gap-3"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}
-          >
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ gap: '12px' }}>
             {categories.slice(0, 8).map((cat, idx) => (
               <button
                 key={cat.id}
@@ -558,8 +566,8 @@ export default function ClientMenuPage({
               >
                 <div
                   style={{
-                    width: '72px',
-                    height: '72px',
+                    width: 'clamp(56px, 16vw, 72px)',
+                    height: 'clamp(56px, 16vw, 72px)',
                     margin: '0 auto',
                     borderRadius: '50%',
                     backgroundColor: '#f9fafb',
