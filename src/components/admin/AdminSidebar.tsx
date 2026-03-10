@@ -2,15 +2,34 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
+import {
+  ChevronUp,
+  Settings,
+  ChevronsUpDown,
+  Check,
+  ArrowLeft,
+  LayoutGrid,
+  LogOut,
+  PanelLeftClose,
+  PanelLeftOpen,
+  QrCode,
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { isAdminHome } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import type { NavGroupConfig, NavItemConfig } from '@/lib/layout/navigation-config';
 
 // ─── Types ──────────────────────────────────────────────
+
+interface TenantSwitchOption {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface AdminSidebarProps {
   basePath: string;
@@ -18,7 +37,10 @@ interface AdminSidebarProps {
     name: string;
     slug: string;
     logo_url?: string;
+    subscription_plan?: string;
   };
+  userName?: string;
+  userTenants?: TenantSwitchOption[];
   className?: string;
 }
 
@@ -27,7 +49,13 @@ interface AdminSidebarProps {
 /** IDs of groups that render at the bottom of the sidebar */
 const BOTTOM_GROUP_IDS = new Set(['pos', 'kitchen', 'service']);
 
-/** Settings link appended after all NAV_GROUPS */
+/** ID of the analyse group — rendered inside account popover */
+const ANALYSE_GROUP_ID = 'analyse';
+
+/** Item paths that move from organization into the account popover */
+const POPOVER_ITEM_PATHS = new Set(['/inventory', '/recipes', '/suppliers']);
+
+/** Settings link rendered inside account popover */
 const SETTINGS_ITEM = {
   path: '/settings',
   icon: Settings,
@@ -42,43 +70,57 @@ function isPathActive(pathname: string, basePath: string, itemPath: string): boo
   return pathname === fullPath || pathname.startsWith(`${fullPath}/`);
 }
 
-function isGroupActive(pathname: string, basePath: string, group: NavGroupConfig): boolean {
-  if (group.directPath !== undefined) {
-    return isPathActive(pathname, basePath, group.directPath);
-  }
-  return group.items.some((item) => isPathActive(pathname, basePath, item.path));
-}
-
 // ─── Component ──────────────────────────────────────────
 
-export function AdminSidebar({ basePath, tenant, className }: AdminSidebarProps) {
+export function AdminSidebar({
+  basePath,
+  tenant,
+  userName,
+  userTenants = [],
+  className,
+}: AdminSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const t = useTranslations('sidebar');
   const [collapsed, setCollapsed] = useState(false);
 
-  // All collapsible groups start expanded
-  const collapsibleGroups = NAV_GROUPS.filter((g) => g.items.length > 0);
-  const [expanded, setExpanded] = useState<Set<string>>(
-    () => new Set(collapsibleGroups.map((g) => g.id)),
+  // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
+  // Also filter out popover items from organization group
+  const nonAnalyseGroups = NAV_GROUPS.filter((g) => g.id !== ANALYSE_GROUP_ID).map((g) => {
+    if (g.id === 'organization') {
+      return { ...g, items: g.items.filter((item) => !POPOVER_ITEM_PATHS.has(item.path)) };
+    }
+    return g;
+  });
+
+  // Reorder: dashboard first, then POS/Kitchen/Service, then the rest
+  const dashboardGroup = nonAnalyseGroups.filter((g) => g.id === 'dashboard');
+  const bottomGroups = nonAnalyseGroups.filter((g) => BOTTOM_GROUP_IDS.has(g.id));
+  const restGroups = nonAnalyseGroups.filter(
+    (g) => g.id !== 'dashboard' && !BOTTOM_GROUP_IDS.has(g.id),
   );
+  const mainGroups = [...dashboardGroup, ...bottomGroups, ...restGroups];
 
-  const toggleGroup = (id: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  const analyseGroup = NAV_GROUPS.find((g) => g.id === ANALYSE_GROUP_ID);
+
+  // Items moved from organization to popover
+  const organizationGroup = NAV_GROUPS.find((g) => g.id === 'organization');
+  const popoverOrgItems = organizationGroup
+    ? organizationGroup.items.filter((item) => POPOVER_ITEM_PATHS.has(item.path))
+    : [];
+
+  // Client-facing URL for QR code
+  const clientUrl = `https://${tenant.slug}.attabl.com`;
+
+  // Plan display label
+  const planLabel = tenant.subscription_plan
+    ? `Plan ${tenant.subscription_plan.charAt(0).toUpperCase()}${tenant.subscription_plan.slice(1)}`
+    : 'Plan Gratuit';
+
+  // Switch to another tenant
+  const switchTenant = (slug: string) => {
+    router.push(`/sites/${slug}/admin`);
   };
-
-  // Split groups into main (top) and bottom sections
-  const mainGroups = NAV_GROUPS.filter((g) => !BOTTOM_GROUP_IDS.has(g.id));
-  const bottomGroups = NAV_GROUPS.filter((g) => BOTTOM_GROUP_IDS.has(g.id));
-
-  const settingsActive = isPathActive(pathname, basePath, SETTINGS_ITEM.path);
 
   return (
     <aside
@@ -88,110 +130,269 @@ export function AdminSidebar({ basePath, tenant, className }: AdminSidebarProps)
         className,
       )}
     >
-      {/* ── Tenant profile header ── */}
-      <div className="shrink-0 px-4 pt-4 pb-6">
-        <Link
-          href={basePath}
-          className={cn('flex items-center gap-3 group', collapsed && 'justify-center')}
-          title={collapsed ? tenant.name : undefined}
-        >
-          {tenant.logo_url ? (
-            <Image
-              src={tenant.logo_url}
-              alt={tenant.name}
-              width={32}
-              height={32}
-              className="w-8 h-8 rounded-lg object-cover shrink-0"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-lg bg-app-elevated flex items-center justify-center font-bold text-xs text-app-text-secondary shrink-0">
-              {tenant.name.charAt(0).toUpperCase()}
-            </div>
-          )}
-          <span
-            className={cn(
-              'font-semibold text-sm text-app-text truncate group-hover:text-accent transition-colors',
-              collapsed && 'hidden',
-            )}
+      {/* ── Tenant switcher header (back arrow + name + address + switch) ── */}
+      <div className="shrink-0 border-b border-app-border">
+        <div className={cn('flex items-center gap-2', collapsed ? 'px-2 py-3' : 'pl-3 pr-1 py-3')}>
+          {/* Back arrow / spaces grid */}
+          <Link
+            href={isAdminHome(pathname, basePath) ? '/admin/tenants' : basePath}
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
+            title={isAdminHome(pathname, basePath) ? 'Mes espaces' : 'Retour'}
           >
-            {tenant.name}
-          </span>
-        </Link>
+            {isAdminHome(pathname, basePath) ? (
+              <LayoutGrid className="w-4 h-4 text-app-text-muted" />
+            ) : (
+              <ArrowLeft className="w-4 h-4 text-app-text-muted" />
+            )}
+          </Link>
+
+          {/* Tenant switcher popover */}
+          {!collapsed && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  suppressHydrationWarning
+                  className="flex-1 flex items-center gap-2 min-w-0 px-2 py-1 rounded-lg hover:bg-app-hover transition-colors text-left"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-app-text truncate">{tenant.name}</p>
+                    <p className="text-[10px] text-app-text-muted truncate">
+                      {tenant.slug}.attabl.com
+                    </p>
+                  </div>
+                  <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent
+                side="bottom"
+                align="center"
+                sideOffset={4}
+                className="w-[calc(var(--radix-popover-trigger-width)-16px)] p-0 bg-app-card border-app-border rounded-xl shadow-lg"
+              >
+                <div className="p-1.5">
+                  {userTenants.length > 0 ? (
+                    userTenants.map((t) => {
+                      const isCurrent = t.slug === tenant.slug;
+                      return (
+                        <button
+                          key={t.id}
+                          type="button"
+                          onClick={() => {
+                            if (!isCurrent) switchTenant(t.slug);
+                          }}
+                          className={cn(
+                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left',
+                            isCurrent
+                              ? 'bg-accent/8 text-accent'
+                              : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                          )}
+                        >
+                          <div className="w-7 h-7 rounded-lg bg-app-elevated flex items-center justify-center font-bold text-[10px] shrink-0">
+                            {t.name.charAt(0).toUpperCase()}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{t.name}</p>
+                            <p className="text-[10px] text-app-text-muted truncate">
+                              {t.slug}.attabl.com
+                            </p>
+                          </div>
+                          {isCurrent && <Check className="w-4 h-4 shrink-0" />}
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="px-3 py-2.5 text-sm text-app-text-muted">{tenant.name}</div>
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+        </div>
       </div>
 
       {/* ── Scrollable navigation ── */}
       <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
-        {mainGroups.map((group) => (
+        {mainGroups.map((group, index) => (
           <SidebarGroup
             key={group.id}
             group={group}
             basePath={basePath}
             pathname={pathname}
-            isExpanded={expanded.has(group.id)}
-            onToggle={() => toggleGroup(group.id)}
             collapsed={collapsed}
             t={t}
+            showSeparator={index > 0 && group.items.length > 0}
           />
         ))}
       </nav>
 
       {/* ── Collapse toggle ── */}
-      <div className="shrink-0">
+      <div className="shrink-0 pb-1 px-3">
         <button
           type="button"
           onClick={() => setCollapsed((prev) => !prev)}
-          className="w-full flex items-center justify-center py-2 text-app-text-muted/50 hover:text-app-text-muted transition-colors"
+          className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted/40 hover:text-app-text-muted hover:bg-app-hover transition-colors overflow-hidden"
           title={collapsed ? t('expand') : t('collapse')}
         >
           {collapsed ? (
-            <PanelLeftOpen className="w-4 h-4" />
+            <PanelLeftOpen className="w-4 h-4 shrink-0" />
           ) : (
-            <PanelLeftClose className="w-4 h-4" />
+            <PanelLeftClose className="w-4 h-4 shrink-0" />
           )}
+          <span className="text-xs whitespace-nowrap">{t('collapse')}</span>
         </button>
       </div>
 
-      {/* ── Bottom section ── */}
-      <div className="shrink-0 px-3 py-3 space-y-1">
-        {bottomGroups.map((group) => {
-          const href = group.directPath !== undefined ? `${basePath}${group.directPath}` : basePath;
-          const active = isGroupActive(pathname, basePath, group);
-          const Icon = group.icon;
-
-          return (
-            <Link
-              key={group.id}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
-                active
-                  ? 'text-accent bg-accent/8 border-l-2 border-accent'
-                  : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-                collapsed && 'justify-center',
-              )}
-              title={collapsed ? t(group.titleKey) : undefined}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className={cn('truncate', collapsed && 'hidden')}>{t(group.titleKey)}</span>
-            </Link>
-          );
-        })}
-
-        {/* Settings */}
-        <Link
-          href={`${basePath}${SETTINGS_ITEM.path}`}
-          className={cn(
-            'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
-            settingsActive
-              ? 'text-accent bg-accent/8 border-l-2 border-accent'
-              : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-            collapsed && 'justify-center',
+      {/* ── Bottom card: QR + user + popover ── */}
+      <div className="shrink-0">
+        <Popover>
+          {!collapsed ? (
+            <div className="px-3 pb-3 pt-2">
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  suppressHydrationWarning
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-app-hover/50 transition-colors text-left"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-accent/10 shrink-0 flex items-center justify-center">
+                    <QrCode className="w-5 h-5 text-accent" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-app-text truncate">
+                      {userName || 'Utilisateur'}
+                    </p>
+                    <p className="text-[10px] text-app-text-muted">{planLabel}</p>
+                  </div>
+                  <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
+                </button>
+              </PopoverTrigger>
+              <div className="hidden qr-download-source">
+                <QRCodeSVG
+                  value={clientUrl}
+                  size={512}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="H"
+                />
+              </div>
+            </div>
+          ) : (
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                suppressHydrationWarning
+                className="w-full px-2 py-3 flex justify-center hover:bg-app-hover transition-colors"
+              >
+                <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                  <QrCode className="w-5 h-5 text-accent" />
+                </div>
+              </button>
+            </PopoverTrigger>
           )}
-          title={collapsed ? t(SETTINGS_ITEM.labelKey) : undefined}
-        >
-          <SETTINGS_ITEM.icon className="w-4 h-4 shrink-0" />
-          <span className={cn('truncate', collapsed && 'hidden')}>{t(SETTINGS_ITEM.labelKey)}</span>
-        </Link>
+          <PopoverContent
+            side="top"
+            align="center"
+            sideOffset={8}
+            className="w-[calc(var(--radix-popover-trigger-width)-16px)] p-0 bg-app-card border-app-border rounded-xl shadow-lg"
+          >
+            {/* Settings link */}
+            <div className="p-1.5">
+              <Link
+                href={`${basePath}${SETTINGS_ITEM.path}`}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  isPathActive(pathname, basePath, SETTINGS_ITEM.path)
+                    ? 'text-accent bg-accent/8'
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                )}
+              >
+                <SETTINGS_ITEM.icon className="w-4 h-4 shrink-0" />
+                <span>{t(SETTINGS_ITEM.labelKey)}</span>
+              </Link>
+            </div>
+
+            {/* Organization items moved to popover (Inventaire, Fiches techniques, Fournisseurs) */}
+            {popoverOrgItems.length > 0 && (
+              <>
+                <div className="px-4 pt-2 pb-1">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted/60">
+                    {t('groupOrganization')}
+                  </p>
+                </div>
+                <div className="p-1.5 pt-0">
+                  {popoverOrgItems.map((item) => {
+                    const href = `${basePath}${item.path}`;
+                    const active = isPathActive(pathname, basePath, item.path);
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.path}
+                        href={href}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                          active
+                            ? 'text-accent bg-accent/8'
+                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                        )}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{t(item.labelKey)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Analyse items */}
+            {analyseGroup && analyseGroup.items.length > 0 && (
+              <>
+                <div className="px-4 pt-2 pb-1">
+                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted/60">
+                    {t(analyseGroup.titleKey)}
+                  </p>
+                </div>
+                <div className="p-1.5 pt-0">
+                  {analyseGroup.items.map((item) => {
+                    const href = `${basePath}${item.path}`;
+                    const active = isPathActive(pathname, basePath, item.path);
+                    const Icon = item.icon;
+
+                    return (
+                      <Link
+                        key={item.path}
+                        href={href}
+                        className={cn(
+                          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                          active
+                            ? 'text-accent bg-accent/8'
+                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                        )}
+                      >
+                        <Icon className="w-4 h-4 shrink-0" />
+                        <span>{t(item.labelKey)}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+
+            {/* Logout */}
+            <div className="p-1.5 border-t border-app-border">
+              <form action="/api/auth/signout" method="post">
+                <button
+                  type="submit"
+                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-status-error hover:bg-status-error-bg transition-colors"
+                >
+                  <LogOut className="w-4 h-4 shrink-0" />
+                  <span>{t('logout')}</span>
+                </button>
+              </form>
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
     </aside>
   );
@@ -203,20 +404,18 @@ interface SidebarGroupProps {
   group: NavGroupConfig;
   basePath: string;
   pathname: string;
-  isExpanded: boolean;
-  onToggle: () => void;
   collapsed: boolean;
   t: ReturnType<typeof useTranslations>;
+  showSeparator?: boolean;
 }
 
 function SidebarGroup({
   group,
   basePath,
   pathname,
-  isExpanded,
-  onToggle,
   collapsed,
   t,
+  showSeparator,
 }: SidebarGroupProps) {
   // Direct link groups (no sub-items) — render as a single link
   if (group.directPath !== undefined && group.items.length === 0) {
@@ -230,7 +429,7 @@ function SidebarGroup({
         className={cn(
           'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
           active
-            ? 'text-accent bg-accent/8 border-l-2 border-accent'
+            ? 'text-accent bg-accent/8'
             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
           collapsed && 'justify-center',
         )}
@@ -242,12 +441,43 @@ function SidebarGroup({
     );
   }
 
-  // Collapsible group with sub-items
-  const hasActiveChild = group.items.some((item) => isPathActive(pathname, basePath, item.path));
-
-  // When sidebar is collapsed, hide group labels and children
+  // When sidebar is collapsed, just show icons
   if (collapsed) {
     return (
+      <>
+        {showSeparator && <hr className="border-app-border my-2" />}
+        <div className="space-y-0.5">
+          {group.items.map((item) => {
+            const href = `${basePath}${item.path}`;
+            const active = isPathActive(pathname, basePath, item.path);
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.path}
+                href={href}
+                className={cn(
+                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm transition-colors',
+                  active
+                    ? 'text-accent bg-accent/8'
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                )}
+                title={t(item.labelKey)}
+              >
+                <Icon className="w-4 h-4 shrink-0" />
+              </Link>
+            );
+          })}
+        </div>
+      </>
+    );
+  }
+
+  return (
+    <div>
+      {/* Separator line instead of group title */}
+      {showSeparator && <hr className="border-app-border my-2" />}
+
       <div className="space-y-0.5">
         {group.items.map((item) => {
           const href = `${basePath}${item.path}`;
@@ -259,67 +489,18 @@ function SidebarGroup({
               key={item.path}
               href={href}
               className={cn(
-                'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm transition-colors',
+                'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
                 active
-                  ? 'text-accent bg-accent/8 border-l-2 border-accent'
+                  ? 'text-accent bg-accent/8'
                   : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
               )}
-              title={t(item.labelKey)}
             >
               <Icon className="w-4 h-4 shrink-0" />
+              <span className="truncate">{t(item.labelKey)}</span>
             </Link>
           );
         })}
       </div>
-    );
-  }
-
-  return (
-    <div>
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          'w-full flex items-center justify-between px-3 py-1.5 rounded-lg text-[11px] font-medium uppercase tracking-widest transition-colors',
-          hasActiveChild
-            ? 'text-app-text-muted/60'
-            : 'text-app-text-muted/60 hover:text-app-text-secondary',
-        )}
-      >
-        <span>{t(group.titleKey)}</span>
-        <ChevronDown
-          className={cn(
-            'w-3.5 h-3.5 transition-transform duration-200',
-            !isExpanded && '-rotate-90',
-          )}
-        />
-      </button>
-
-      {isExpanded && (
-        <div className="mt-0.5 space-y-0.5">
-          {group.items.map((item) => {
-            const href = `${basePath}${item.path}`;
-            const active = isPathActive(pathname, basePath, item.path);
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.path}
-                href={href}
-                className={cn(
-                  'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
-                  active
-                    ? 'text-accent bg-accent/8 border-l-2 border-accent'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-                )}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{t(item.labelKey)}</span>
-              </Link>
-            );
-          })}
-        </div>
-      )}
     </div>
   );
 }

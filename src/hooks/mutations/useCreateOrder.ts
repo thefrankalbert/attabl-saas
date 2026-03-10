@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { createInventoryService } from '@/services/inventory.service';
@@ -124,6 +125,7 @@ async function verifyPricesServerSide(
 export function useCreateOrder(tenantId: string) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const tc = useTranslations('common');
 
   return useMutation({
     mutationKey: ['create-order', tenantId],
@@ -225,7 +227,7 @@ export function useCreateOrder(tenantId: string) {
             ? String((error as { message: string }).message)
             : String(error);
       logger.error('Failed to create order', { message, error });
-      toast({ title: 'Erreur', description: message, variant: 'destructive' });
+      toast({ title: tc('error'), description: message, variant: 'destructive' });
     },
     retry: 10,
     retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),

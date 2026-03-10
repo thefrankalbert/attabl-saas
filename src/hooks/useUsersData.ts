@@ -69,27 +69,33 @@ export interface UseUsersDataReturn {
 
 // ─── Helpers ───────────────────────────────────────────────
 
-export function timeAgo(dateStr: string): string {
+export function timeAgo(
+  dateStr: string,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
   const now = new Date();
   const date = new Date(dateStr);
   const diffMs = now.getTime() - date.getTime();
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return "moins d'une heure";
-  if (diffHours < 24) return `${diffHours}h`;
+  if (diffHours < 1) return t('lessThanHour');
+  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}j`;
+  return t('daysAgo', { count: diffDays });
 }
 
-export function timeUntil(dateStr: string): string {
+export function timeUntil(
+  dateStr: string,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
   const now = new Date();
   const date = new Date(dateStr);
   const diffMs = date.getTime() - now.getTime();
-  if (diffMs <= 0) return 'Expiree';
+  if (diffMs <= 0) return t('expired');
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-  if (diffHours < 1) return "moins d'une heure";
-  if (diffHours < 24) return `${diffHours}h`;
+  if (diffHours < 1) return t('lessThanHour');
+  if (diffHours < 24) return t('hoursAgo', { count: diffHours });
   const diffDays = Math.floor(diffHours / 24);
-  return `${diffDays}j`;
+  return t('daysAgo', { count: diffDays });
 }
 
 // ─── Hook ──────────────────────────────────────────────────
@@ -148,7 +154,7 @@ export function useUsersData({
     } finally {
       setLoadingInvitations(false);
     }
-  }, [tenantId]);
+  }, []);
 
   useEffect(() => {
     if (canManageUsers) {
@@ -159,7 +165,7 @@ export function useUsersData({
   // Handle invitation send
   const handleSendInvitation = async () => {
     if (!inviteEmail) {
-      toast({ title: 'Veuillez saisir une adresse email', variant: 'destructive' });
+      toast({ title: t('emailRequired'), variant: 'destructive' });
       return;
     }
 
@@ -176,11 +182,11 @@ export function useUsersData({
         const errorMessage =
           errorData && typeof errorData === 'object' && 'error' in errorData
             ? String((errorData as { error: string }).error)
-            : "Erreur lors de l'envoi de l'invitation";
+            : tc('unknownError');
         throw new Error(errorMessage);
       }
 
-      toast({ title: `Invitation envoyee a ${inviteEmail}` });
+      toast({ title: t('inviteSentTo', { email: inviteEmail }) });
       setInviteEmail('');
       setInviteRole('waiter');
       setIsModalOpen(false);
@@ -205,10 +211,10 @@ export function useUsersData({
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors du renvoi de l'invitation");
+        throw new Error(tc('unknownError'));
       }
 
-      toast({ title: 'Invitation renvoyee' });
+      toast({ title: t('invitationResent') });
       void fetchInvitations();
     } catch (e: unknown) {
       toast({
@@ -230,10 +236,10 @@ export function useUsersData({
       });
 
       if (!response.ok) {
-        throw new Error("Erreur lors de l'annulation de l'invitation");
+        throw new Error(tc('unknownError'));
       }
 
-      toast({ title: 'Invitation annulee' });
+      toast({ title: t('invitationCancelled') });
       void fetchInvitations();
     } catch (e: unknown) {
       toast({
