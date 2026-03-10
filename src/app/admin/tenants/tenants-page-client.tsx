@@ -51,6 +51,7 @@ export default function TenantsPageClient() {
   // Owner hub state
   const [restaurants, setRestaurants] = useState<OwnerDashboardRow[]>([]);
   const [showWizard, setShowWizard] = useState(false);
+  const [userName, setUserName] = useState('');
 
   const router = useRouter();
   const supabase = createClient();
@@ -69,8 +70,11 @@ export default function TenantsPageClient() {
       // Check all admin_users entries for this user
       const { data: adminUsers } = await supabase
         .from('admin_users')
-        .select('is_super_admin, role')
+        .select('is_super_admin, role, full_name')
         .eq('user_id', user.id);
+
+      const firstAdmin = adminUsers?.[0];
+      setUserName(firstAdmin?.full_name || user.email?.split('@')[0] || '');
 
       const isSuperAdmin = (adminUsers || []).some(
         (au) => au.is_super_admin === true || au.role === 'super_admin',
@@ -179,10 +183,14 @@ export default function TenantsPageClient() {
     router.push('/login');
   };
 
+  // ─── Greeting ─────────────────────────────────────────────
+  const hour = new Date().getHours();
+  const greetKey = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+
   // ─── Loading state ─────────────────────────────────────────
   if (mode === 'loading') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-app-bg">
+      <div className="flex h-dvh items-center justify-center bg-app-bg">
         <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
       </div>
     );
@@ -191,174 +199,182 @@ export default function TenantsPageClient() {
   // ─── SUPER ADMIN MODE ──────────────────────────────────────
   if (mode === 'superadmin') {
     return (
-      <div className="min-h-screen bg-app-bg">
-        <header className="border-b border-app-border">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-            <div className="flex items-center gap-4">
-              <div className="rounded-xl bg-accent p-2.5">
-                <Shield className="h-5 w-5 text-accent-text" />
+      <div className="h-dvh flex flex-col bg-app-bg">
+        {/* Header — matches dashboard compact style */}
+        <header className="shrink-0 border-b border-app-border px-4 sm:px-6 py-3">
+          <div className="mx-auto flex max-w-6xl items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="rounded-xl bg-accent p-2">
+                <Shield className="h-4 w-4 text-accent-text" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-xl font-bold tracking-tight text-app-text">ATTABL</h1>
-                  <span className="text-xl font-light text-app-text-muted">/</span>
-                  <span className="text-sm font-medium text-app-text-secondary">Super Admin</span>
+                  <h1 className="text-lg font-bold text-app-text">ATTABL</h1>
+                  <span className="text-app-text-muted">/</span>
+                  <span className="text-xs font-medium text-app-text-secondary">Super Admin</span>
                 </div>
-                <p className="text-xs text-app-text-muted">
-                  Gestion centralisee de tous les etablissements
-                </p>
               </div>
             </div>
-            <Button variant="outline" onClick={handleLogout} className="gap-2 rounded-lg">
-              <LogOut className="h-4 w-4" />
-              Deconnexion
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2 rounded-xl border-app-border"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Déconnexion</span>
             </Button>
           </div>
         </header>
 
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          {/* Stats row — flat design with line separators */}
-          <div className="mb-8 grid grid-cols-2 gap-px md:grid-cols-4 rounded-xl border border-app-border overflow-hidden bg-app-border">
-            {[
-              {
-                icon: Store,
-                label: 'Total',
-                value: stats.total,
-                iconBg: 'bg-accent',
-                iconColor: 'text-accent-text',
-              },
-              {
-                icon: Zap,
-                label: 'Actifs',
-                value: stats.active,
-                iconBg: 'bg-status-success/10',
-                iconColor: 'text-status-success',
-              },
-              {
-                icon: Crown,
-                label: 'Premium',
-                value: stats.premium,
-                iconBg: 'bg-amber-500/10',
-                iconColor: 'text-amber-500',
-              },
-              {
-                icon: Clock,
-                label: 'Trial',
-                value: stats.trial,
-                iconBg: 'bg-app-elevated',
-                iconColor: 'text-app-text-muted',
-              },
-            ].map((stat) => (
-              <div key={stat.label} className="bg-app-card p-5">
-                <div className="mb-3 flex items-center gap-2">
-                  <div className={`rounded-lg p-1.5 ${stat.iconBg}`}>
-                    <stat.icon className={`h-3.5 w-3.5 ${stat.iconColor}`} />
-                  </div>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
-                    {stat.label}
-                  </span>
-                </div>
-                <p className="text-3xl font-black tracking-tight text-app-text">{stat.value}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="relative max-w-sm flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-app-text-muted" />
-              <Input
-                placeholder="Rechercher par nom ou slug..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 text-sm"
-              />
-            </div>
-            <p className="text-xs text-app-text-muted">
-              {filteredTenants.length} etablissement{filteredTenants.length !== 1 ? 's' : ''}{' '}
-              {searchQuery && 'trouves'}
-            </p>
-          </div>
-
-          {filteredTenants.length > 0 ? (
-            <div className="divide-y divide-app-border rounded-xl border border-app-border overflow-hidden">
-              {filteredTenants.map((tenant) => (
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto scrollbar-hide">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
+            {/* Stats — compact cards matching dashboard gauge legend */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
+              {[
+                {
+                  icon: Store,
+                  label: 'Total',
+                  value: stats.total,
+                  color: 'text-accent',
+                  bg: 'bg-accent-muted',
+                },
+                {
+                  icon: Zap,
+                  label: 'Actifs',
+                  value: stats.active,
+                  color: 'text-status-success',
+                  bg: 'bg-app-status-success-bg',
+                },
+                {
+                  icon: Crown,
+                  label: 'Premium',
+                  value: stats.premium,
+                  color: 'text-amber-500',
+                  bg: 'bg-amber-500/10',
+                },
+                {
+                  icon: Clock,
+                  label: 'Trial',
+                  value: stats.trial,
+                  color: 'text-app-text-muted',
+                  bg: 'bg-app-elevated',
+                },
+              ].map((stat) => (
                 <div
-                  key={tenant.id}
-                  className="flex items-center justify-between gap-4 bg-app-card p-4 hover:bg-app-hover transition-colors"
+                  key={stat.label}
+                  className="border border-app-border rounded-xl p-3 bg-app-card"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-app-elevated shrink-0">
-                      <Building2 className="h-5 w-5 text-app-text-muted" />
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={`rounded-lg p-1 ${stat.bg}`}>
+                      <stat.icon className={`h-3 w-3 ${stat.color}`} />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-semibold text-app-text truncate">
-                        {tenant.name}
-                      </h3>
-                      <p className="text-xs text-app-text-muted">{tenant.slug}</p>
-                    </div>
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
+                      {stat.label}
+                    </span>
                   </div>
+                  <p className="text-2xl font-black text-app-text tabular-nums">{stat.value}</p>
+                </div>
+              ))}
+            </div>
 
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="hidden sm:flex items-center gap-2">
-                      <Badge variant="outline" className="text-[11px] font-semibold">
-                        {tenant.subscription_plan || 'N/A'}
-                      </Badge>
-                      <div className="flex items-center gap-1.5">
+            {/* Search */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-app-text-muted" />
+                <Input
+                  placeholder="Rechercher par nom ou slug..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 text-sm rounded-xl bg-app-elevated border-app-border"
+                />
+              </div>
+              <span className="text-[10px] text-app-text-muted shrink-0">
+                {filteredTenants.length} établissement{filteredTenants.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+
+            {/* Tenant list */}
+            {filteredTenants.length > 0 ? (
+              <div className="space-y-1.5">
+                {filteredTenants.map((tenant) => (
+                  <div
+                    key={tenant.id}
+                    className="flex items-center justify-between gap-3 border border-app-border rounded-xl bg-app-card p-3 hover:bg-app-hover transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-app-elevated shrink-0">
+                        <Building2 className="h-4 w-4 text-app-text-muted" />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="text-sm font-semibold text-app-text truncate">
+                          {tenant.name}
+                        </h3>
+                        <p className="text-[10px] text-app-text-muted">{tenant.slug}.attabl.com</p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div className="hidden sm:flex items-center gap-2">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] font-semibold rounded-lg border-app-border"
+                        >
+                          {tenant.subscription_plan || 'N/A'}
+                        </Badge>
                         <span
                           className={`inline-block h-2 w-2 rounded-full ${
                             tenant.is_active ? 'bg-status-success' : 'bg-app-text-muted'
                           }`}
                         />
-                        <span className="text-[11px] font-medium text-app-text-muted">
-                          {tenant.is_active ? 'Actif' : 'Inactif'}
-                        </span>
                       </div>
-                    </div>
-                    <div className="flex gap-2">
                       <Button
                         size="sm"
                         onClick={() => handleSelectTenant(tenant.slug)}
-                        className="rounded-lg"
+                        className="rounded-xl gap-1.5 h-8 text-xs"
                       >
                         Dashboard
+                        <ArrowRight className="h-3 w-3" />
                       </Button>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => handleViewMenu(tenant.slug)}
-                        className="gap-1.5 rounded-lg"
+                        className="rounded-xl h-8 border-app-border"
                       >
-                        <ExternalLink className="h-3.5 w-3.5" />
+                        <ExternalLink className="h-3 w-3" />
                       </Button>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-app-border py-20">
-              <div className="mb-4 rounded-2xl bg-app-elevated p-5">
-                <Building2 className="h-10 w-10 text-app-text-muted" />
+                ))}
               </div>
-              <h3 className="mb-1 text-sm font-semibold text-app-text">
-                {searchQuery ? 'Aucun resultat' : 'Aucun etablissement'}
-              </h3>
-              <p className="max-w-xs text-center text-xs text-app-text-muted">
-                {searchQuery
-                  ? `Aucun etablissement ne correspond a "${searchQuery}". Essayez un autre terme.`
-                  : 'Aucun etablissement enregistre pour le moment.'}
-              </p>
-              {searchQuery && (
-                <Button
-                  variant="outline"
-                  onClick={() => setSearchQuery('')}
-                  className="mt-4 rounded-lg text-xs"
-                >
-                  Effacer la recherche
-                </Button>
-              )}
-            </div>
-          )}
+            ) : (
+              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-app-border py-16 bg-app-card">
+                <div className="mb-3 rounded-xl bg-app-elevated p-4">
+                  <Building2 className="h-8 w-8 text-app-text-muted" />
+                </div>
+                <h3 className="text-sm font-semibold text-app-text mb-1">
+                  {searchQuery ? 'Aucun résultat' : 'Aucun établissement'}
+                </h3>
+                <p className="text-xs text-app-text-muted text-center max-w-xs">
+                  {searchQuery
+                    ? `Aucun établissement ne correspond à "${searchQuery}".`
+                    : 'Aucun établissement enregistré pour le moment.'}
+                </p>
+                {searchQuery && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSearchQuery('')}
+                    className="mt-3 rounded-xl text-xs"
+                  >
+                    Effacer
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -366,92 +382,107 @@ export default function TenantsPageClient() {
 
   // ─── OWNER HUB MODE ────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-app-bg">
-      {/* Header */}
-      <header className="border-b border-app-border">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 sm:px-6 py-4 sm:py-5">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
-            <div className="rounded-xl bg-accent p-2.5 shrink-0">
-              <Building2 className="h-5 w-5 text-accent-text" />
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-lg sm:text-xl font-bold tracking-tight text-app-text truncate">
-                Mes Etablissements
-              </h1>
-              <p className="text-xs text-app-text-muted hidden sm:block">
-                Gerez tous vos restaurants depuis un seul endroit
-              </p>
-            </div>
+    <div className="h-dvh flex flex-col bg-app-bg">
+      {/* Header — greeting style like dashboard */}
+      <header className="shrink-0 border-b border-app-border px-4 sm:px-6 py-3">
+        <div className="mx-auto flex max-w-6xl items-center justify-between">
+          <div className="flex items-baseline gap-2 flex-wrap min-w-0">
+            <h1 className="text-lg font-bold text-app-text">
+              {greetKey}, {userName}
+            </h1>
+            <span className="text-xs text-app-text-muted capitalize" suppressHydrationWarning>
+              {new Date().toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </span>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="gap-2 rounded-lg shrink-0"
+            className="gap-2 rounded-xl border-app-border shrink-0"
           >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Deconnexion</span>
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline text-xs">Déconnexion</span>
           </Button>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl px-3 sm:px-6 py-6 sm:py-8">
-        {/* Global KPIs — flat design, line-separated */}
-        <div className="mb-6 sm:mb-8 grid grid-cols-2 md:grid-cols-4 gap-px rounded-xl border border-app-border overflow-hidden bg-app-border">
-          {[
-            {
-              icon: TrendingUp,
-              label: "CA Aujourd'hui",
-              value: formatCFA(ownerGlobals.totalRevenueToday),
-              iconBg: 'bg-accent',
-              iconColor: 'text-accent-text',
-            },
-            {
-              icon: TrendingUp,
-              label: 'CA ce mois',
-              value: formatCFA(ownerGlobals.totalRevenueMonth),
-              iconBg: 'bg-status-success/10',
-              iconColor: 'text-status-success',
-            },
-            {
-              icon: ShoppingBag,
-              label: 'Commandes',
-              value: String(ownerGlobals.totalOrdersToday),
-              iconBg: 'bg-blue-500/10',
-              iconColor: 'text-blue-500',
-            },
-            {
-              icon: Store,
-              label: 'Restaurants',
-              value: String(ownerGlobals.totalRestaurants),
-              iconBg: 'bg-app-elevated',
-              iconColor: 'text-app-text-muted',
-            },
-          ].map((stat) => (
-            <div key={stat.label} className="bg-app-card p-4 sm:p-5">
-              <div className="mb-2 sm:mb-3 flex items-center gap-2">
-                <div className={`rounded-lg p-1.5 ${stat.iconBg}`}>
-                  <stat.icon className={`h-3.5 w-3.5 ${stat.iconColor}`} />
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
+          {/* Global KPIs — compact card grid matching dashboard */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
+            {[
+              {
+                icon: TrendingUp,
+                label: "CA aujourd'hui",
+                value: formatCFA(ownerGlobals.totalRevenueToday),
+                color: 'text-accent',
+                bg: 'bg-accent-muted',
+              },
+              {
+                icon: TrendingUp,
+                label: 'CA ce mois',
+                value: formatCFA(ownerGlobals.totalRevenueMonth),
+                color: 'text-status-success',
+                bg: 'bg-app-status-success-bg',
+              },
+              {
+                icon: ShoppingBag,
+                label: 'Commandes',
+                value: String(ownerGlobals.totalOrdersToday),
+                color: 'text-blue-500',
+                bg: 'bg-blue-500/10',
+              },
+              {
+                icon: Store,
+                label: 'Établissements',
+                value: String(ownerGlobals.totalRestaurants),
+                color: 'text-app-text-muted',
+                bg: 'bg-app-elevated',
+              },
+            ].map((stat) => (
+              <div key={stat.label} className="border border-app-border rounded-xl p-3 bg-app-card">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className={`rounded-lg p-1 ${stat.bg}`}>
+                    <stat.icon className={`h-3 w-3 ${stat.color}`} />
+                  </div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted truncate">
+                    {stat.label}
+                  </span>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted truncate">
-                  {stat.label}
-                </span>
+                <p className="text-xl sm:text-2xl font-black text-app-text tabular-nums">
+                  {stat.value}
+                </p>
               </div>
-              <p className="text-xl sm:text-2xl font-black tracking-tight text-app-text">
-                {stat.value}
-              </p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        {/* Restaurant list — flat rows with line separators */}
-        <div className="divide-y divide-app-border rounded-xl border border-app-border overflow-hidden">
-          {restaurants.map((r) => (
-            <div
-              key={r.tenant_id}
-              className="bg-app-card p-4 sm:p-5 hover:bg-app-hover transition-colors"
+          {/* Section title */}
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
+              Mes établissements
+            </h2>
+            <button
+              onClick={() => setShowWizard(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
             >
-              <div className="flex items-center justify-between gap-4">
+              <Plus className="h-3.5 w-3.5" />
+              Ajouter
+            </button>
+          </div>
+
+          {/* Restaurant cards */}
+          <div className="space-y-1.5">
+            {restaurants.map((r) => (
+              <div
+                key={r.tenant_id}
+                onClick={() => handleSelectTenant(r.tenant_slug)}
+                className="flex items-center justify-between gap-3 border border-app-border rounded-xl bg-app-card p-3 sm:p-4 hover:bg-app-hover hover:border-accent/20 transition-all cursor-pointer group"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   {r.tenant_logo_url ? (
                     <Image
@@ -459,86 +490,59 @@ export default function TenantsPageClient() {
                       alt={r.tenant_name}
                       width={40}
                       height={40}
-                      className="h-10 w-10 rounded-lg object-cover shrink-0"
+                      className="h-10 w-10 rounded-xl object-cover shrink-0"
                     />
                   ) : (
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-app-elevated shrink-0">
-                      <Building2 className="h-5 w-5 text-app-text-muted" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-app-elevated shrink-0">
+                      <Building2 className="h-4 w-4 text-app-text-muted" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <h3 className="text-sm font-semibold text-app-text truncate">
-                      {r.tenant_name}
-                    </h3>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-app-text-muted">{r.tenant_slug}.attabl.com</p>
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`inline-block h-1.5 w-1.5 rounded-full ${
-                            r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'
-                          }`}
-                        />
-                        <span className="text-[10px] text-app-text-muted">
-                          {r.tenant_is_active ? 'Actif' : 'Inactif'}
-                        </span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-app-text truncate">
+                        {r.tenant_name}
+                      </h3>
+                      <span
+                        className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
+                          r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'
+                        }`}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[10px] text-app-text-muted">{r.tenant_slug}.attabl.com</p>
+                      {r.tenant_plan && (
+                        <Badge
+                          variant="outline"
+                          className="text-[9px] font-semibold rounded-md border-app-border px-1.5 py-0"
+                        >
+                          {r.tenant_plan}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                {/* KPIs inline — hidden on mobile */}
-                <div className="hidden md:flex items-center gap-6 text-right">
-                  <div>
-                    <p className="text-[10px] text-app-text-muted uppercase tracking-wide">
+                {/* KPIs inline */}
+                <div className="flex items-center gap-4 shrink-0">
+                  <div className="hidden md:block text-right">
+                    <p className="text-[9px] text-app-text-muted uppercase tracking-wide">
                       Commandes
                     </p>
                     <p className="text-sm font-bold text-app-text tabular-nums">
                       {Number(r.orders_today)}
                     </p>
                   </div>
-                  <div>
-                    <p className="text-[10px] text-app-text-muted uppercase tracking-wide">CA</p>
+                  <div className="hidden md:block text-right">
+                    <p className="text-[9px] text-app-text-muted uppercase tracking-wide">CA</p>
                     <p className="text-sm font-bold text-app-text tabular-nums">
                       {formatCFA(Number(r.revenue_today))}
                     </p>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 shrink-0">
-                  {r.tenant_plan && (
-                    <Badge
-                      variant="outline"
-                      className="text-[11px] font-semibold hidden sm:inline-flex"
-                    >
-                      {r.tenant_plan}
-                    </Badge>
-                  )}
-                  <Button
-                    size="sm"
-                    onClick={() => handleSelectTenant(r.tenant_slug)}
-                    className="rounded-lg gap-1.5"
-                  >
-                    Gerer
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
+                  <ArrowRight className="h-4 w-4 text-app-text-muted group-hover:text-accent transition-colors" />
                 </div>
               </div>
-            </div>
-          ))}
-
-          {/* Add restaurant row */}
-          <button
-            onClick={() => setShowWizard(true)}
-            className="flex items-center gap-3 w-full bg-app-card p-4 sm:p-5 hover:bg-app-hover transition-colors text-left"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border-2 border-dashed border-app-border shrink-0">
-              <Plus className="h-5 w-5 text-app-text-muted" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-app-text">Ajouter un etablissement</p>
-              <p className="text-xs text-app-text-muted">Creez un nouveau restaurant</p>
-            </div>
-          </button>
+            ))}
+          </div>
         </div>
       </div>
 
