@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
-import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { RefreshCw, Home, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -23,31 +23,55 @@ export default function Error({
   }, [error]);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="text-center max-w-md">
-        <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-          <AlertTriangle className="w-10 h-10 text-red-600" />
+    <div className="min-h-screen bg-app-bg flex items-center justify-center p-4">
+      <div className="text-center max-w-sm">
+        {/* Fun animated illustration */}
+        <div className="relative mx-auto mb-8 w-32 h-32">
+          {/* Outer glow ring */}
+          <div
+            className="absolute inset-0 rounded-full bg-accent/10 animate-ping"
+            style={{ animationDuration: '3s' }}
+          />
+          {/* Inner circle */}
+          <div className="relative w-32 h-32 rounded-full bg-app-card border-2 border-app-border flex items-center justify-center">
+            <div className="relative">
+              <Zap className="w-12 h-12 text-accent" />
+              <span className="absolute -top-1 -right-1 text-2xl" role="img" aria-label="oops">
+                {'!'}
+              </span>
+            </div>
+          </div>
         </div>
 
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">{t('errorTitle')}</h2>
-        <p className="text-gray-600 mb-6">{t('errorDescription')}</p>
+        <h2 className="text-2xl font-bold text-app-text mb-2">{t('errorTitle')}</h2>
+        <p className="text-app-text-secondary mb-8 text-sm leading-relaxed">
+          {t('errorDescription')}
+        </p>
 
         {process.env.NODE_ENV === 'development' && (
-          <div className="mb-6 p-3 bg-red-50 rounded-lg text-left">
-            <p className="text-xs font-mono text-red-700 break-all">{error.message}</p>
-            {error.digest && <p className="text-xs text-red-500 mt-1">Digest: {error.digest}</p>}
+          <div className="mb-6 p-3 bg-status-error-bg rounded-xl text-left border border-app-border">
+            <p className="text-xs font-mono text-status-error break-all">{error.message}</p>
+            {error.digest && (
+              <p className="text-xs text-app-text-muted mt-1">Digest: {error.digest}</p>
+            )}
           </div>
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button onClick={reset} className="bg-amber-600 hover:bg-amber-700">
-            <RefreshCw className="w-4 h-4 mr-2" />
+          <Button
+            onClick={reset}
+            className="bg-accent text-accent-text hover:bg-accent-hover gap-2"
+          >
+            <RefreshCw className="w-4 h-4" />
             {t('retry')}
           </Button>
 
           <Link href="/">
-            <Button variant="outline">
-              <Home className="w-4 h-4 mr-2" />
+            <Button
+              variant="outline"
+              className="border-app-border text-app-text hover:bg-app-hover gap-2 w-full"
+            >
+              <Home className="w-4 h-4" />
               {t('backToHome')}
             </Button>
           </Link>

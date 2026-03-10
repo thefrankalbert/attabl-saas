@@ -77,7 +77,7 @@ export function AdminBreadcrumbs() {
   });
 
   return (
-    <Breadcrumb className="mb-4">
+    <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>

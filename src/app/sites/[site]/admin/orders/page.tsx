@@ -32,7 +32,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   const { data: initialOrders, error: queryError } = await supabase
     .from('orders')
     .select(
-      '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course)',
+      '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
     )
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
@@ -50,7 +50,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     const { data: adminOrders } = await adminSupabase
       .from('orders')
       .select(
-        '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course)',
+        '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
       )
       .eq('tenant_id', tenant.id)
       .order('created_at', { ascending: false })
@@ -68,7 +68,6 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
         quantity: (oi.quantity as number) || 0,
         price: (oi.price_at_order as number) || 0,
         menu_item_id: oi.menu_item_id as string | undefined,
-        notes: oi.notes as string | undefined,
         customer_notes: oi.customer_notes as string | undefined,
         item_status: oi.item_status as ItemStatus | undefined,
         course: oi.course as Course | undefined,
