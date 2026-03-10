@@ -169,98 +169,6 @@ const AvgBasketChart = lazy(() =>
   })),
 );
 
-// ─── Africa Presence Map ──────────────────────────────────
-// Simplified SVG hex-dot map showing ATTABL deployment countries
-const PRESENCE_COUNTRIES = [
-  { name: 'Cameroun', cx: 108, cy: 102, color: '#4ade80' },
-  { name: 'Tchad', cx: 118, cy: 78, color: '#60a5fa' },
-  { name: 'Burkina Faso', cx: 72, cy: 86, color: '#f97316' },
-] as const;
-
-function AfricaPresenceMapBg() {
-  return (
-    <>
-      {/* Large faded Africa hex map — centered background watermark */}
-      <svg
-        viewBox="0 0 200 200"
-        className="absolute top-1/2 left-[25%] -translate-x-1/2 -translate-y-1/2 w-[340px] h-[340px] pointer-events-none select-none opacity-60"
-        aria-hidden="true"
-      >
-        {AFRICA_HEX_GRID.map((hex, i) => (
-          <polygon
-            key={i}
-            points={hexPoints(hex.x, hex.y, 5)}
-            fill="var(--app-border)"
-            opacity={0.18}
-          />
-        ))}
-        {PRESENCE_COUNTRIES.map((c) => (
-          <g key={c.name}>
-            <circle cx={c.cx} cy={c.cy} r={12} fill={c.color} opacity={0.1} />
-            <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.2} />
-            <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} opacity={0.5} />
-          </g>
-        ))}
-      </svg>
-      {/* Legend — below the map, centered on left column */}
-      <div className="absolute bottom-4 left-[25%] -translate-x-1/2 flex items-center gap-3 pointer-events-none select-none">
-        {PRESENCE_COUNTRIES.map((c) => (
-          <div key={c.name} className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: c.color }} />
-            <span className="text-[10px] font-medium text-app-text-muted/40">{c.name}</span>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-// Generate hex polygon points string
-function hexPoints(cx: number, cy: number, r: number): string {
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
-  }).join(' ');
-}
-
-// Pre-computed hex positions forming Africa's silhouette
-const AFRICA_HEX_GRID = (() => {
-  // Approximate Africa shape as hex grid coordinates
-  // Each row: [startCol, endCol] at a given row index
-  const rows: Array<[number, number, number]> = [
-    // [row, colStart, colEnd] — rough Africa outline
-    [4, 7, 12],
-    [5, 6, 13],
-    [6, 5, 14],
-    [7, 5, 14],
-    [8, 4, 14],
-    [9, 4, 14],
-    [10, 5, 13],
-    [11, 5, 13],
-    [12, 6, 13],
-    [13, 7, 13],
-    [14, 7, 12],
-    [15, 8, 12],
-    [16, 8, 12],
-    [17, 9, 12],
-    [18, 9, 11],
-    [19, 10, 11],
-    [20, 10, 11],
-  ];
-  const hexes: Array<{ x: number; y: number }> = [];
-  const spacing = 11;
-  for (const [row, colStart, colEnd] of rows) {
-    const offsetX = row % 2 === 0 ? 0 : spacing / 2;
-    for (let col = colStart; col <= colEnd; col++) {
-      hexes.push({
-        x: col * spacing + offsetX,
-        y: row * (spacing * 0.866),
-      });
-    }
-  }
-  return hexes;
-})();
-
 type DashboardClientProps = UseDashboardDataParams & {
   establishmentType?: string;
 };
@@ -360,12 +268,9 @@ export default function DashboardClient(props: DashboardClientProps) {
     stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden relative">
-      {/* Africa hex map — faded background watermark */}
-      <AfricaPresenceMapBg />
-
+    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
       {/* Greeting + date */}
-      <div className="shrink-0 mb-2 relative z-10">
+      <div className="shrink-0 mb-2">
         <div className="flex items-baseline gap-2 flex-wrap">
           <h1 className="text-lg font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
@@ -381,7 +286,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* Stats row — plain numbers, no cards */}
-      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3 relative z-10">
+      <div className="shrink-0 flex flex-wrap gap-x-8 gap-y-3 mb-3">
         {showFin && (
           <div>
             <p className="text-xs text-app-text-muted">{t('revenueToday')}</p>
@@ -447,7 +352,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* ── Two-column: left (chart + shortcuts), right (orders) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 relative z-10">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
           {/* Main chart — Revenue / Orders toggle */}
