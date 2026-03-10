@@ -252,29 +252,25 @@ export function AdminSidebar({
                 <button
                   type="button"
                   suppressHydrationWarning
-                  className="w-full flex flex-col items-center gap-2 p-3 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-center"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-left"
                 >
-                  {/* Scannable QR code — links to client space */}
-                  <div className="w-[72px] h-[72px] rounded-2xl bg-white shrink-0 flex items-center justify-center p-1.5">
+                  {/* Scannable QR code */}
+                  <div className="w-11 h-11 rounded-lg bg-white shrink-0 flex items-center justify-center p-1">
                     <QRCodeSVG
                       value={clientUrl}
-                      size={60}
+                      size={36}
                       bgColor="#ffffff"
                       fgColor="#000000"
                       level="M"
                     />
                   </div>
-                  {/* Plan badge — above name, smaller */}
-                  <span className="text-[9px] font-semibold text-accent bg-accent-muted px-2 py-0.5 rounded-md">
-                    {planLabel}
-                  </span>
-                  {/* User name — single line */}
-                  <div className="flex items-center gap-1.5 w-full justify-center">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[11px] font-semibold text-app-text truncate">
                       {userName || 'Utilisateur'}
                     </p>
-                    <ChevronUp className="w-3 h-3 text-app-text-muted shrink-0" />
+                    <span className="text-[9px] font-semibold text-accent">{planLabel}</span>
                   </div>
+                  <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                 </button>
               </PopoverTrigger>
               <div className="hidden qr-download-source">

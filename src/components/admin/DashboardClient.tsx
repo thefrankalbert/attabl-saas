@@ -109,7 +109,7 @@ const StatsGauge = lazy(() =>
       const { PieChart, Pie, Cell, ResponsiveContainer } = mod;
       return (
         <div className="relative">
-          <ResponsiveContainer width="100%" height={70}>
+          <ResponsiveContainer width="100%" height={58}>
             <PieChart>
               <Pie
                 data={data}
@@ -117,8 +117,8 @@ const StatsGauge = lazy(() =>
                 cy="100%"
                 startAngle={180}
                 endAngle={0}
-                innerRadius={38}
-                outerRadius={55}
+                innerRadius={30}
+                outerRadius={46}
                 paddingAngle={2}
                 dataKey="value"
                 stroke="none"
@@ -326,112 +326,100 @@ export default function DashboardClient(props: DashboardClientProps) {
         </span>
       </div>
 
-      {/* Stats gauge — compact semi-circular doughnut, same width as chart below */}
-      <div className="shrink-0 mb-2 border border-app-border rounded-xl px-4 py-2 bg-app-card lg:w-[50%]">
-        <div className="flex items-center gap-4">
-          {/* Gauge chart — compact */}
-          <div className="shrink-0 w-[140px]">
-            <Suspense
-              fallback={<div className="h-[70px] rounded-lg bg-app-elevated/20 animate-pulse" />}
-            >
-              <StatsGauge
-                data={[
+      {/* ── Two-column: left (gauge + chart + shortcuts), right (orders from top) ─── */}
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+        {/* ── Left column ──────────────────────────────────── */}
+        <div className="shrink-0 lg:w-[50%] flex flex-col gap-2">
+          {/* Stats gauge — compact */}
+          <div className="border border-app-border rounded-xl px-3 py-2 bg-app-card">
+            <div className="flex items-center gap-3">
+              <div className="shrink-0 w-[110px]">
+                <Suspense
+                  fallback={
+                    <div className="h-[60px] rounded-lg bg-app-elevated/20 animate-pulse" />
+                  }
+                >
+                  <StatsGauge
+                    data={[
+                      ...(showFin
+                        ? [
+                            {
+                              name: t('revenueToday'),
+                              value: Math.max(stats.revenueToday, 1),
+                              displayValue: fmtF(stats.revenueToday),
+                              color: '#4ade80',
+                            },
+                          ]
+                        : []),
+                      {
+                        name: t('ordersToday'),
+                        value: Math.max(stats.ordersToday, 1),
+                        displayValue: String(stats.ordersToday),
+                        color: '#60a5fa',
+                      },
+                      {
+                        name: t('activeItems'),
+                        value: Math.max(stats.activeItems, 1),
+                        displayValue: String(stats.activeItems),
+                        color: '#f97316',
+                      },
+                      {
+                        name: t('activeTables'),
+                        value: Math.max(stats.activeCards, 1),
+                        displayValue: String(stats.activeCards),
+                        color: '#a78bfa',
+                      },
+                    ]}
+                  />
+                </Suspense>
+              </div>
+              {/* Legend */}
+              <div className="flex-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+                {[
                   ...(showFin
                     ? [
                         {
-                          name: t('revenueToday'),
-                          value: Math.max(stats.revenueToday, 1),
-                          displayValue: fmtF(stats.revenueToday),
                           color: '#4ade80',
+                          label: t('revenueToday'),
+                          value: fmtF(stats.revenueToday),
+                          trend: stats.revenueTrend,
                         },
                       ]
                     : []),
                   {
-                    name: t('ordersToday'),
-                    value: Math.max(stats.ordersToday, 1),
-                    displayValue: String(stats.ordersToday),
                     color: '#60a5fa',
+                    label: t('ordersToday'),
+                    value: String(stats.ordersToday),
+                    trend: stats.ordersTrend,
                   },
-                  {
-                    name: t('activeItems'),
-                    value: Math.max(stats.activeItems, 1),
-                    displayValue: String(stats.activeItems),
-                    color: '#f97316',
-                  },
-                  {
-                    name: t('activeTables'),
-                    value: Math.max(stats.activeCards, 1),
-                    displayValue: String(stats.activeCards),
-                    color: '#a78bfa',
-                  },
-                ]}
-              />
-            </Suspense>
-          </div>
-          {/* Legend — side-by-side with gauge */}
-          <div className="flex-1 grid grid-cols-2 gap-x-4 gap-y-1">
-            {showFin && (
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#4ade80] shrink-0" />
-                <span className="text-[10px] text-app-text-muted truncate">
-                  {t('revenueToday')}
-                </span>
-                <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
-                  {fmtF(stats.revenueToday)}
-                </span>
-                {stats.revenueTrend !== undefined && stats.revenueTrend !== 0 && (
-                  <span
-                    className={cn(
-                      'text-[9px] font-bold',
-                      stats.revenueTrend > 0 ? 'text-status-success' : 'text-status-error',
+                  { color: '#f97316', label: t('activeItems'), value: String(stats.activeItems) },
+                  { color: '#a78bfa', label: t('activeTables'), value: String(stats.activeCards) },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-1 min-w-0">
+                    <span
+                      className="w-1.5 h-1.5 rounded-full shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-[9px] text-app-text-muted truncate">{item.label}</span>
+                    <span className="text-[9px] font-bold text-app-text tabular-nums ml-auto shrink-0">
+                      {item.value}
+                    </span>
+                    {'trend' in item && item.trend !== undefined && item.trend !== 0 && (
+                      <span
+                        className={cn(
+                          'text-[8px] font-bold shrink-0',
+                          (item.trend ?? 0) > 0 ? 'text-status-success' : 'text-status-error',
+                        )}
+                      >
+                        {(item.trend ?? 0) > 0 ? '+' : ''}
+                        {item.trend}%
+                      </span>
                     )}
-                  >
-                    {stats.revenueTrend > 0 ? '+' : ''}
-                    {stats.revenueTrend}%
-                  </span>
-                )}
+                  </div>
+                ))}
               </div>
-            )}
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#60a5fa] shrink-0" />
-              <span className="text-[10px] text-app-text-muted truncate">{t('ordersToday')}</span>
-              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
-                {stats.ordersToday}
-              </span>
-              {stats.ordersTrend !== undefined && stats.ordersTrend !== 0 && (
-                <span
-                  className={cn(
-                    'text-[9px] font-bold',
-                    stats.ordersTrend > 0 ? 'text-status-success' : 'text-status-error',
-                  )}
-                >
-                  {stats.ordersTrend > 0 ? '+' : ''}
-                  {stats.ordersTrend}%
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#f97316] shrink-0" />
-              <span className="text-[10px] text-app-text-muted truncate">{t('activeItems')}</span>
-              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
-                {stats.activeItems}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#a78bfa] shrink-0" />
-              <span className="text-[10px] text-app-text-muted truncate">{t('activeTables')}</span>
-              <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto">
-                {stats.activeCards}
-              </span>
             </div>
           </div>
-        </div>
-      </div>
-
-      {/* ── Two-column: left (chart + shortcuts), right (orders) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
-        {/* ── Left column ──────────────────────────────────── */}
-        <div className="shrink-0 lg:w-[50%] flex flex-col gap-3">
           {/* Main chart — Revenue / Orders toggle */}
           {chartData.length > 1 && (
             <div className="border border-app-border rounded-xl p-4 bg-app-card flex flex-col">
