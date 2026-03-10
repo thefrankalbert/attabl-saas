@@ -63,7 +63,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         // Today's orders for stats
         supabase
           .from('orders')
-          .select('id, total, status, created_at')
+          .select('id, total, tip_amount, status, created_at')
           .eq('tenant_id', tenantId)
           .gte('created_at', today.toISOString()),
         // Active items count
@@ -82,7 +82,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         supabase
           .from('orders')
           .select(
-            `id, order_number, table_number, status, total, created_at,
+            `id, order_number, table_number, status, total, tip_amount, created_at,
            order_items(id, quantity, price_at_order, menu_items(name))`,
           )
           .eq('tenant_id', tenantId)
@@ -99,14 +99,14 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         // Yesterday's orders for trend comparison
         supabase
           .from('orders')
-          .select('id, total, status')
+          .select('id, total, tip_amount, status')
           .eq('tenant_id', tenantId)
           .gte('created_at', yesterday.toISOString())
           .lt('created_at', today.toISOString()),
         // Last 7 days for sparklines
         supabase
           .from('orders')
-          .select('id, total, created_at, status')
+          .select('id, total, tip_amount, created_at, status')
           .eq('tenant_id', tenantId)
           .gte('created_at', sevenDaysAgo.toISOString()),
         // Order items with categories for donut (join orders for tenant scoping)
@@ -126,9 +126,8 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           .reduce(
             (sum, o) =>
               sum +
-              Number(
-                (o as Record<string, unknown>).total || (o as Record<string, unknown>).total || 0,
-              ),
+              Number((o as Record<string, unknown>).total || 0) +
+              Number((o as Record<string, unknown>).tip_amount || 0),
             0,
           ),
         activeItems: itemsRes.count || 0,
@@ -143,6 +142,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           table_number: (order.table_number as string) || 'N/A',
           status: ((order.status as string) || 'pending') as Order['status'],
           total_price: Number(order.total || 0),
+          tip_amount: Number(order.tip_amount || 0),
           created_at: order.created_at as string,
           items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
             (item: Record<string, unknown>) => ({
@@ -164,9 +164,8 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         .reduce(
           (sum, o) =>
             sum +
-            Number(
-              (o as Record<string, unknown>).total || (o as Record<string, unknown>).total || 0,
-            ),
+            Number((o as Record<string, unknown>).total || 0) +
+            Number((o as Record<string, unknown>).tip_amount || 0),
           0,
         );
       const yesterdayCount = yesterdayOrders.length;
@@ -195,7 +194,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         const key = (o.created_at as string)?.slice(0, 10);
         if (key && dayBuckets[key]) {
           dayBuckets[key].count++;
-          dayBuckets[key].revenue += Number(o.total || o.total || 0);
+          dayBuckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
         }
       }
       const bucketValues = Object.values(dayBuckets);

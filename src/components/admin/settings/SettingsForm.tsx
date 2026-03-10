@@ -118,7 +118,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
             </TabsContent>
 
             {/* Security tab */}
-            <SettingsSecurity form={form} t={t} />
+            <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} />
 
             {/* Contact tab */}
             <SettingsContact form={form} t={t} />

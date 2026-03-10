@@ -68,6 +68,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const taxAmount = order.tax_amount || 0;
   const serviceCharge = order.service_charge_amount || 0;
   const discount = order.discount_amount || 0;
+  const tipAmount = order.tip_amount || 0;
   const total = order.total || order.total_price || subtotal;
 
   let breakdownHTML = `
@@ -82,6 +83,9 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   }
   if (discount > 0) {
     breakdownHTML += `<tr><td style="color:#dc2626;">Réduction</td><td style="text-align:right;color:#dc2626;">-${formatAmount(discount, currency)}</td></tr>`;
+  }
+  if (tipAmount > 0) {
+    breakdownHTML += `<tr><td>Pourboire</td><td style="text-align:right;">${formatAmount(tipAmount, currency)}</td></tr>`;
   }
 
   // Payment method

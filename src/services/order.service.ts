@@ -20,6 +20,7 @@ interface CreateOrderInput {
   tax_amount?: number;
   service_charge_amount?: number;
   discount_amount?: number;
+  tip_amount?: number;
   coupon_id?: string;
   server_id?: string;
   display_currency?: string;
@@ -245,6 +246,7 @@ export function createOrderService(supabase: SupabaseClient) {
           tax_amount: input.tax_amount ?? 0,
           service_charge_amount: input.service_charge_amount ?? 0,
           discount_amount: input.discount_amount ?? 0,
+          tip_amount: input.tip_amount ?? 0,
           payment_status: 'pending',
           coupon_id: input.coupon_id || null,
           server_id: input.server_id ?? null,

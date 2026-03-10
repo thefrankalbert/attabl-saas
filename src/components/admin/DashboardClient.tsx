@@ -627,11 +627,16 @@ export default function DashboardClient(props: DashboardClientProps) {
                           </div>
                         )}
                       </div>
-                      {/* Price + time */}
+                      {/* Price + tip + time */}
                       <div className="flex flex-col items-end gap-0.5 shrink-0 mt-0.5">
                         <span className="text-xs font-bold text-app-text tabular-nums">
-                          {fmtF(order.total_price)}
+                          {fmtF(order.total_price + (order.tip_amount || 0))}
                         </span>
+                        {(order.tip_amount ?? 0) > 0 && (
+                          <span className="text-[9px] text-emerald-500 font-medium tabular-nums">
+                            +{fmtF(order.tip_amount!)} {t('tipLabel')}
+                          </span>
+                        )}
                         <span className="flex items-center gap-0.5 text-[10px] text-app-text-muted">
                           <Clock className="w-2.5 h-2.5" />
                           {timeAgo(order.created_at, tc, locale)}

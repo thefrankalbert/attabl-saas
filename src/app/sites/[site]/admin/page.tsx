@@ -70,7 +70,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         // Commandes du jour (pour stats)
         supabase
           .from('orders')
-          .select('id, total, status, created_at')
+          .select('id, total, tip_amount, status, created_at')
           .eq('tenant_id', tenant.id)
           .gte('created_at', today.toISOString()),
 
@@ -92,7 +92,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         supabase
           .from('orders')
           .select(
-            `id, table_number, status, total, created_at,
+            `id, table_number, status, total, tip_amount, created_at,
            order_items(id, quantity, price_at_order, menu_items(name))`,
           )
           .eq('tenant_id', tenant.id)
@@ -102,7 +102,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         // Yesterday's orders for trend
         supabase
           .from('orders')
-          .select('id, total, status')
+          .select('id, total, tip_amount, status')
           .eq('tenant_id', tenant.id)
           .gte('created_at', yesterday.toISOString())
           .lt('created_at', today.toISOString()),
@@ -114,7 +114,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       ordersToday: ordersData.length,
       revenueToday: ordersData
         .filter((o) => o.status === 'delivered')
-        .reduce((sum, o) => sum + Number(o.total || 0), 0),
+        .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0),
       activeItems: itemsCountRes.count || 0,
       activeCards: venuesCountRes.count || 0,
     };
@@ -123,7 +123,11 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     const yesterdayOrders = yesterdayRes.data || [];
     const yesterdayRevenue = yesterdayOrders
       .filter((o: Record<string, unknown>) => o.status === 'delivered')
-      .reduce((sum: number, o: Record<string, unknown>) => sum + Number(o.total || 0), 0);
+      .reduce(
+        (sum: number, o: Record<string, unknown>) =>
+          sum + Number(o.total || 0) + Number(o.tip_amount || 0),
+        0,
+      );
     const yesterdayCount = yesterdayOrders.length;
 
     if (yesterdayCount > 0) {
@@ -144,6 +148,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       table_number: (order.table_number as string) || 'N/A',
       status: ((order.status as string) || 'pending') as Order['status'],
       total_price: Number(order.total || 0),
+      tip_amount: Number(order.tip_amount || 0),
       created_at: order.created_at as string,
       items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
         (item: Record<string, unknown>) => ({
