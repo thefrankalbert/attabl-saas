@@ -45,7 +45,7 @@ import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { useDevice } from '@/hooks/useDevice';
-import { createClient } from '@/lib/supabase/client';
+import { actionDeleteOrders } from '@/app/actions/orders';
 import { logger } from '@/lib/logger';
 
 interface OrdersClientProps {
@@ -437,20 +437,20 @@ export default function OrdersClient({
 
     setIsDeleting(true);
     try {
-      const supabase = createClient();
-      const { error } = await supabase.from('orders').delete().in('id', ids);
+      const result = await actionDeleteOrders(ids);
 
-      if (error) {
-        logger.error('Bulk delete orders failed', error, { orderIds: ids });
+      if (result.error) {
+        logger.error('Bulk delete orders failed', new Error(result.error), { orderIds: ids });
         toast({
           title: t('bulkDeleteError'),
+          description: result.error,
           variant: 'destructive',
         });
         return;
       }
 
       toast({
-        title: t('bulkDeleteSuccess', { count: ids.length }),
+        title: t('bulkDeleteSuccess', { count: result.deletedCount ?? ids.length }),
       });
       setSelectedIds(new Set());
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
@@ -583,7 +583,7 @@ export default function OrdersClient({
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 px-4 py-2 mt-3 border-b border-app-border bg-accent-muted rounded-lg">
+          <div className="flex items-center gap-3 px-4 py-2.5 mt-3 border border-app-border bg-app-elevated rounded-xl shadow-sm">
             <span className="text-sm font-medium text-app-text">
               {t('selected', { count: selectedIds.size })}
             </span>
@@ -608,7 +608,7 @@ export default function OrdersClient({
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-1.5"
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors flex items-center gap-1.5"
             >
               <Trash2 className="w-3.5 h-3.5" />
               {tc('delete')}
@@ -617,7 +617,7 @@ export default function OrdersClient({
               onClick={() => {
                 setSelectedIds(new Set());
               }}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
             >
               {tc('cancel')}
             </button>
