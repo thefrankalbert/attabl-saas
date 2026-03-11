@@ -361,7 +361,7 @@ export default function ItemsClient({
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                  className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
                   <input
                     type="checkbox"
@@ -382,11 +382,11 @@ export default function ItemsClient({
                       alt={item.name}
                       width={48}
                       height={48}
-                      className="w-12 h-12 rounded-lg object-cover border border-app-border"
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover border border-app-border shrink-0"
                     />
                   ) : (
-                    <div className="w-12 h-12 rounded-lg bg-app-bg flex items-center justify-center">
-                      <ImageIcon className="w-5 h-5 text-app-text-muted" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-app-bg flex items-center justify-center shrink-0">
+                      <ImageIcon className="w-4 h-4 sm:w-5 sm:h-5 text-app-text-muted" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -395,7 +395,7 @@ export default function ItemsClient({
                       {item.category?.name || t('uncategorized')}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p className="font-bold text-app-text text-sm tabular-nums">
                       {formatCurrency(item.price, currency)}
                     </p>
@@ -406,7 +406,7 @@ export default function ItemsClient({
                       toggleAvailable(item);
                     }}
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all',
+                      'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 whitespace-nowrap',
                       item.is_available
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',

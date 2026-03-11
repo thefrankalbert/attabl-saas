@@ -411,9 +411,9 @@ export default function OrdersClient({
           {/* Hidden Audio */}
           <audio ref={audioRef} preload="auto" />
 
-          {/* Search + Tabs + Sound — single row */}
-          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
-            <div className="relative w-auto min-w-48 shrink-0">
+          {/* Search + Tabs + Sound — wraps on mobile */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+            <div className="relative w-full sm:w-auto sm:min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -424,8 +424,12 @@ export default function OrdersClient({
               />
             </div>
 
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="shrink-0">
-              <TabsList>
+            <Tabs
+              value={statusFilter}
+              onValueChange={setStatusFilter}
+              className="shrink-0 max-w-full"
+            >
+              <TabsList className="overflow-x-auto scrollbar-hide">
                 <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
                 <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
                 <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
