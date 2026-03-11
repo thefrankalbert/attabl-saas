@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
+import { useSound } from '@/contexts/SoundContext';
 import { cn } from '@/lib/utils';
 
 const TYPE_ICONS: Record<Notification['type'], typeof Info> = {
@@ -62,11 +63,21 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
   const t = useTranslations('notifications');
   const site = params?.site as string | undefined;
   const basePath = site ? `/sites/${site}/admin` : '/admin';
+  const { play } = useSound();
 
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications({
     tenantId,
     userId,
   });
+
+  // Play notification sound when unread count increases (new notification arrived)
+  const prevUnreadCountRef = useRef(unreadCount);
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      play();
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, play]);
 
   const handleClick = async (notification: Notification) => {
     if (!notification.read) {

@@ -16,6 +16,7 @@ import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
 import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialog';
+import { SoundProvider } from '@/contexts/SoundContext';
 import type { AdminRole } from '@/types/admin.types';
 
 interface AdminUser {
@@ -93,49 +94,56 @@ export default async function AdminLayout({
       {showOnboardingResume && <OnboardingResumeDialog />}
       <QueryProvider>
         <ThemeProvider>
-          <AdminLayoutClient
-            isDevMode={false}
-            basePath={`/sites/${tenantSlug}/admin`}
-            role={userRole}
-            tenant={{
-              name: tenant.name,
-              slug: tenant.slug,
-              logo_url: tenant.logo_url ?? undefined,
-              subscription_plan: tenant.subscription_plan ?? undefined,
-            }}
-            userName={adminUser?.name || user.email || ''}
-            userTenants={userTenants}
-            notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
-            breadcrumbs={<AdminBreadcrumbs />}
+          <SoundProvider
+            tenantId={tenant.id}
+            notificationSoundId={tenant.notification_sound_id ?? undefined}
           >
-            <PermissionsProvider role={userRole}>
-              <OfflineIndicator />
-              <CommandPalette />
-              <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
-                <AdminIdleWrapper
-                  idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-                  screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-                  tenantName={tenant.name}
-                >
-                  <SubscriptionProvider
-                    tenant={
-                      tenant
-                        ? {
-                            subscription_plan: tenant.subscription_plan,
-                            subscription_status: tenant.subscription_status,
-                            trial_ends_at: tenant.trial_ends_at,
-                          }
-                        : null
-                    }
+            <AdminLayoutClient
+              isDevMode={false}
+              basePath={`/sites/${tenantSlug}/admin`}
+              role={userRole}
+              tenant={{
+                name: tenant.name,
+                slug: tenant.slug,
+                logo_url: tenant.logo_url ?? undefined,
+                subscription_plan: tenant.subscription_plan ?? undefined,
+              }}
+              userName={adminUser?.name || user.email || ''}
+              userTenants={userTenants}
+              notifications={
+                <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
+              }
+              breadcrumbs={<AdminBreadcrumbs />}
+            >
+              <PermissionsProvider role={userRole}>
+                <OfflineIndicator />
+                <CommandPalette />
+                <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+                  <AdminIdleWrapper
+                    idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                    screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                    tenantName={tenant.name}
                   >
-                    <AdminContentWrapper chrome={<TrialBanner tenantSlug={tenantSlug} />}>
-                      {children}
-                    </AdminContentWrapper>
-                  </SubscriptionProvider>
-                </AdminIdleWrapper>
-              </ShortcutsProvider>
-            </PermissionsProvider>
-          </AdminLayoutClient>
+                    <SubscriptionProvider
+                      tenant={
+                        tenant
+                          ? {
+                              subscription_plan: tenant.subscription_plan,
+                              subscription_status: tenant.subscription_status,
+                              trial_ends_at: tenant.trial_ends_at,
+                            }
+                          : null
+                      }
+                    >
+                      <AdminContentWrapper chrome={<TrialBanner tenantSlug={tenantSlug} />}>
+                        {children}
+                      </AdminContentWrapper>
+                    </SubscriptionProvider>
+                  </AdminIdleWrapper>
+                </ShortcutsProvider>
+              </PermissionsProvider>
+            </AdminLayoutClient>
+          </SoundProvider>
         </ThemeProvider>
       </QueryProvider>
     </div>

@@ -14,6 +14,7 @@ import {
   type SoundDefinition,
 } from '@/lib/sounds/sound-library';
 import { createClient } from '@/lib/supabase/client';
+import { useSound } from '@/contexts/SoundContext';
 import { logger } from '@/lib/logger';
 
 const ACCEPTED_AUDIO_TYPES = ['audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp3'];
@@ -36,13 +37,14 @@ export function SoundSettings({
   const t = useTranslations('settings');
   const { canAccess, effectivePlan } = useSubscription();
   const { toast } = useToast();
+  const { setSoundId: setGlobalSoundId, preview: globalPreview } = useSound();
   const [selectedId, setSelectedId] = useState(currentSoundId);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [uploadingSound, setUploadingSound] = useState(false);
   const [customSoundUrl, setCustomSoundUrl] = useState<string | null>(
     isCustomSound(currentSoundId) ? currentSoundId : null,
   );
-  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const localPreviewRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const isPremium = effectivePlan === 'premium' || effectivePlan === 'enterprise';
@@ -68,22 +70,22 @@ export function SoundSettings({
 
   const displaySounds = customSoundEntry ? [...SOUND_LIBRARY, customSoundEntry] : SOUND_LIBRARY;
 
-  // Cleanup audio on unmount to prevent memory leaks
+  // Cleanup preview audio on unmount to prevent memory leaks
   useEffect(() => {
     return () => {
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
+      if (localPreviewRef.current) {
+        localPreviewRef.current.pause();
+        localPreviewRef.current = null;
       }
     };
   }, []);
 
   const handlePreview = (sound: SoundDefinition) => {
     // Stop current playback
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-      audioRef.current = null;
+    if (localPreviewRef.current) {
+      localPreviewRef.current.pause();
+      localPreviewRef.current.currentTime = 0;
+      localPreviewRef.current = null;
     }
 
     // If clicking the same sound that's playing, stop it
@@ -92,23 +94,23 @@ export function SoundSettings({
       return;
     }
 
-    // Play the new sound
+    // Play the new sound via global preview (handles autoplay policy)
     try {
       const audio = new Audio(sound.file);
-      audioRef.current = audio;
+      localPreviewRef.current = audio;
       setPlayingId(sound.id);
 
-      // Add error handler before play
       audio.onerror = () => {
         toast({ title: t('soundError'), description: t('soundPlayError'), variant: 'destructive' });
         setPlayingId(null);
-        audioRef.current = null;
+        localPreviewRef.current = null;
       };
 
       audio.play().catch(() => {
-        toast({ title: t('soundError'), description: t('soundPlayError'), variant: 'destructive' });
+        // Fallback to global preview which handles autoplay
+        globalPreview(sound.id);
         setPlayingId(null);
-        audioRef.current = null;
+        localPreviewRef.current = null;
       });
 
       audio.onended = () => {
@@ -132,6 +134,8 @@ export function SoundSettings({
 
     setSelectedId(sound.id);
     onSoundChange(sound.id);
+    // Update the global sound context so new sound takes effect immediately
+    setGlobalSoundId(sound.id);
   };
 
   const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,6 +185,7 @@ export function SoundSettings({
       setCustomSoundUrl(publicUrl);
       setSelectedId(publicUrl);
       onSoundChange(publicUrl);
+      setGlobalSoundId(publicUrl);
 
       toast({
         title: t('soundUploaded'),
@@ -217,6 +222,7 @@ export function SoundSettings({
     setCustomSoundUrl(null);
     setSelectedId(DEFAULT_SOUND_ID);
     onSoundChange(DEFAULT_SOUND_ID);
+    setGlobalSoundId(DEFAULT_SOUND_ID);
   };
 
   return (

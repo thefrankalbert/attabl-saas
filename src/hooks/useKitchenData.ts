@@ -7,7 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useRouter, useParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useSound } from '@/contexts/SoundContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
@@ -18,6 +18,7 @@ import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
 
 interface UseKitchenDataParams {
   tenantId: string;
+  /** @deprecated Sound is now managed globally via SoundContext */
   notificationSoundId?: string;
 }
 
@@ -93,10 +94,7 @@ const COLUMN_STYLES = {
 
 // ─── Hook ───────────────────────────────────────────────
 
-export function useKitchenData({
-  tenantId,
-  notificationSoundId,
-}: UseKitchenDataParams): UseKitchenDataReturn {
+export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDataReturn {
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
@@ -108,15 +106,7 @@ export function useKitchenData({
   const { isFullscreen, toggleFullscreen } = useFullscreen();
   const [activeTab, setActiveTab] = useSessionState<ColumnKey>('kitchen:activeTab', 'pending');
 
-  const {
-    soundEnabled,
-    toggleSound,
-    play: playNotification,
-    audioRef,
-  } = useNotificationSound({
-    soundId: notificationSoundId,
-    tenantId,
-  });
+  const { soundEnabled, toggleSound, play: playNotification, audioRef } = useSound();
 
   const { toast } = useToast();
   const router = useRouter();

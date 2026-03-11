@@ -352,13 +352,19 @@ export function AdminSidebar({
                 <CreditCard className="w-4 h-4 shrink-0" />
                 <span>{t('navSubscription')}</span>
               </Link>
-              <a
-                href="mailto:support@attabl.com"
-                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
+              <Link
+                href={`${basePath}/support`}
+                onClick={() => setAccountPopoverOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  isPathActive(pathname, basePath, '/support')
+                    ? 'text-accent bg-accent-muted'
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                )}
               >
                 <LifeBuoy className="w-4 h-4 shrink-0" />
                 <span>{t('navSupport')}</span>
-              </a>
+              </Link>
             </div>
 
             {/* Organization items moved to popover (Inventaire, Fiches techniques, Fournisseurs) */}

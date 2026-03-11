@@ -29,8 +29,9 @@ import {
   Check,
   Lock,
   Trash2,
+  X,
 } from 'lucide-react';
-import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { useSound } from '@/contexts/SoundContext';
 import { SOUND_LIBRARY } from '@/lib/sounds/sound-library';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -51,14 +52,11 @@ import { logger } from '@/lib/logger';
 interface OrdersClientProps {
   tenantId: string;
   initialOrders: Order[];
+  /** @deprecated Sound is now managed globally via SoundContext */
   notificationSoundId?: string;
 }
 
-export default function OrdersClient({
-  tenantId,
-  initialOrders,
-  notificationSoundId,
-}: OrdersClientProps) {
+export default function OrdersClient({ tenantId, initialOrders }: OrdersClientProps) {
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
@@ -82,11 +80,7 @@ export default function OrdersClient({
     preview: previewSound,
     currentSoundId,
     setSoundId,
-    audioRef,
-  } = useNotificationSound({
-    soundId: notificationSoundId,
-    tenantId,
-  });
+  } = useSound();
 
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -485,9 +479,6 @@ export default function OrdersClient({
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          {/* Hidden Audio */}
-          <audio ref={audioRef} preload="auto" data-notification-audio />
-
           {/* Search + Tabs + Sound — wraps on mobile/tablet portrait */}
           <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
             <div className="relative w-full lg:w-auto lg:min-w-48 shrink-0">
@@ -586,13 +577,13 @@ export default function OrdersClient({
           </div>
         </div>
 
-        {/* Bulk action bar */}
+        {/* Bulk action bar — fixed floating at bottom */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 px-4 py-2.5 mt-3 border border-app-border bg-app-elevated rounded-xl shadow-sm">
-            <span className="text-sm font-medium text-app-text">
+          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 border border-app-border bg-app-elevated rounded-lg animate-in slide-in-from-bottom-4 fade-in duration-200">
+            <span className="text-xs font-medium text-app-text tabular-nums">
               {t('selected', { count: selectedIds.size })}
             </span>
-            <div className="flex-1" />
+            <div className="w-px h-5 bg-app-border" />
             <button
               onClick={() => {
                 const ids = Array.from(selectedIds);
@@ -607,24 +598,26 @@ export default function OrdersClient({
                 });
                 setSelectedIds(new Set());
               }}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
+              title={t('advanceStatus')}
+              className="p-2 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
             >
-              {t('advanceStatus')}
+              <ChevronRight className="w-4 h-4" />
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors flex items-center gap-1.5"
+              title={tc('delete')}
+              className="p-2 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              {tc('delete')}
+              <Trash2 className="w-4 h-4" />
             </button>
             <button
               onClick={() => {
                 setSelectedIds(new Set());
               }}
-              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
+              title={tc('cancel')}
+              className="p-2 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
             >
-              {tc('cancel')}
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
