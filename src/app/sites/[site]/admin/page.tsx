@@ -56,6 +56,9 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   };
   let initialRecentOrders: Order[] = [];
 
+  let initialRevenueSparkline: { value: number }[] = [];
+  let initialOrdersSparkline: { value: number }[] = [];
+
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -64,31 +67,35 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     yesterday.setDate(yesterday.getDate() - 1);
     yesterday.setHours(0, 0, 0, 0);
 
-    // Requêtes parallèles pour optimiser la performance
-    const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, yesterdayRes] =
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
+
+    // Parallel queries — each is independent so we handle errors per-query
+    const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, yesterdayRes, weekRes] =
       await Promise.all([
-        // Commandes du jour (pour stats)
+        // Today's orders (for stats)
         supabase
           .from('orders')
           .select('id, total, tip_amount, status, created_at')
           .eq('tenant_id', tenant.id)
           .gte('created_at', today.toISOString()),
 
-        // Nombre d'items actifs
+        // Active items count
         supabase
           .from('menu_items')
           .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenant.id)
           .eq('is_available', true),
 
-        // Nombre de venues actifs
+        // Active venues count
         supabase
           .from('venues')
           .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenant.id)
           .eq('is_active', true),
 
-        // Commandes récentes
+        // Recent orders
         supabase
           .from('orders')
           .select(
@@ -106,6 +113,13 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
           .eq('tenant_id', tenant.id)
           .gte('created_at', yesterday.toISOString())
           .lt('created_at', today.toISOString()),
+
+        // Last 7 days for sparklines (computed server-side for instant chart paint)
+        supabase
+          .from('orders')
+          .select('id, total, tip_amount, created_at, status')
+          .eq('tenant_id', tenant.id)
+          .gte('created_at', sevenDaysAgo.toISOString()),
       ]);
 
     // Stats
@@ -141,6 +155,26 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       );
     }
 
+    // Sparklines: bucket 7-day orders by date for instant chart rendering
+    const weekOrders = (weekRes.data || []) as Array<Record<string, unknown>>;
+    const dayBuckets: Record<string, { revenue: number; count: number }> = {};
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const key = d.toISOString().slice(0, 10);
+      dayBuckets[key] = { revenue: 0, count: 0 };
+    }
+    for (const o of weekOrders) {
+      const key = (o.created_at as string)?.slice(0, 10);
+      if (key && dayBuckets[key]) {
+        dayBuckets[key].count++;
+        dayBuckets[key].revenue += Number(o.total || 0) + Number(o.tip_amount || 0);
+      }
+    }
+    const bucketValues = Object.values(dayBuckets);
+    initialRevenueSparkline = bucketValues.map((b) => ({ value: b.revenue }));
+    initialOrdersSparkline = bucketValues.map((b) => ({ value: b.count }));
+
     // Recent Orders
     initialRecentOrders = (recentOrdersRes.data || []).map((order: Record<string, unknown>) => ({
       id: order.id as string,
@@ -159,10 +193,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         }),
       ),
     }));
-
-    // Popular items data is handled client-side by useDashboardStats
   } catch {
-    // Fallback avec données vides (already initialized above)
+    // Fallback with empty data (already initialized above)
   }
 
   return (
@@ -174,6 +206,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       initialStats={initialStats}
       initialRecentOrders={initialRecentOrders}
       initialPopularItems={[]}
+      initialRevenueSparkline={initialRevenueSparkline}
+      initialOrdersSparkline={initialOrdersSparkline}
       currency={tenant.currency}
       establishmentType={tenant.establishment_type ?? 'restaurant'}
     />

@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 import type {
   DashboardStats,
   Order,
@@ -29,10 +30,29 @@ interface DashboardData {
   itemsSparkline: SparklinePoint[];
 }
 
+/** Safely execute a Supabase query, returning null on failure instead of throwing. */
+async function safeQuery<T>(
+  queryFn: () => PromiseLike<{ data: T | null; error: unknown; count?: number | null }>,
+  label: string,
+): Promise<{ data: T | null; count: number | null }> {
+  try {
+    const res = await queryFn();
+    if (res.error) {
+      logger.warn(`[Dashboard] Query "${label}" failed`, { error: res.error });
+      return { data: null, count: null };
+    }
+    return { data: res.data, count: (res.count as number) ?? null };
+  } catch (err) {
+    logger.warn(`[Dashboard] Query "${label}" threw`, { error: err });
+    return { data: null, count: null };
+  }
+}
+
 /**
  * Fetch dashboard stats: today's orders, revenue, active items, active venues,
  * recent orders with items, and low-stock ingredients.
- * Matches the queries in DashboardClient loadStats/loadRecentOrders/loadStock.
+ *
+ * Each query is isolated so a single failure cannot block other charts from loading.
  */
 export function useDashboardStats(tenantId: string, initialData?: DashboardData) {
   return useQuery<DashboardData>({
@@ -50,86 +70,107 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
       sevenDaysAgo.setHours(0, 0, 0, 0);
 
-      const [
-        ordersRes,
-        itemsRes,
-        venuesRes,
-        recentRes,
-        stockRes,
-        yesterdayRes,
-        weekRes,
-        categoryRes,
-      ] = await Promise.all([
-        // Today's orders for stats
-        supabase
-          .from('orders')
-          .select('id, total, tip_amount, status, created_at')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', today.toISOString()),
-        // Active items count
-        supabase
-          .from('menu_items')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_available', true),
-        // Active venues count
-        supabase
-          .from('venues')
-          .select('id', { count: 'exact', head: true })
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true),
-        // Recent orders with items
-        supabase
-          .from('orders')
-          .select(
-            `id, order_number, table_number, status, total, tip_amount, created_at,
-           order_items(id, quantity, price_at_order, menu_items(name))`,
-          )
-          .eq('tenant_id', tenantId)
-          .order('created_at', { ascending: false })
-          .limit(12),
-        // Low stock items
-        supabase
-          .from('ingredients')
-          .select('id, name, unit, current_stock, min_stock_alert')
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true)
-          .order('current_stock', { ascending: true })
-          .limit(10),
-        // Yesterday's orders for trend comparison
-        supabase
-          .from('orders')
-          .select('id, total, tip_amount, status')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', yesterday.toISOString())
-          .lt('created_at', today.toISOString()),
-        // Last 7 days for sparklines
-        supabase
-          .from('orders')
-          .select('id, total, tip_amount, created_at, status')
-          .eq('tenant_id', tenantId)
-          .gte('created_at', sevenDaysAgo.toISOString()),
-        // Order items with categories for donut (join orders for tenant scoping)
-        supabase
-          .from('order_items')
-          .select(
-            'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id)',
-          )
-          .eq('orders.tenant_id', tenantId),
-      ]);
+      // ── Fire all queries in parallel with individual error isolation ──
+      const [ordersRes, itemsRes, venuesRes, recentRes, stockRes, yesterdayRes, weekRes] =
+        await Promise.all([
+          // Today's orders for stats
+          safeQuery(
+            () =>
+              supabase
+                .from('orders')
+                .select('id, total, tip_amount, status, created_at')
+                .eq('tenant_id', tenantId)
+                .gte('created_at', today.toISOString()),
+            'todayOrders',
+          ),
+          // Active items count
+          safeQuery(
+            () =>
+              supabase
+                .from('menu_items')
+                .select('id', { count: 'exact', head: true })
+                .eq('tenant_id', tenantId)
+                .eq('is_available', true),
+            'activeItems',
+          ),
+          // Active venues count
+          safeQuery(
+            () =>
+              supabase
+                .from('venues')
+                .select('id', { count: 'exact', head: true })
+                .eq('tenant_id', tenantId)
+                .eq('is_active', true),
+            'activeVenues',
+          ),
+          // Recent orders with items
+          safeQuery(
+            () =>
+              supabase
+                .from('orders')
+                .select(
+                  `id, order_number, table_number, status, total, tip_amount, created_at,
+                 order_items(id, quantity, price_at_order, menu_items(name))`,
+                )
+                .eq('tenant_id', tenantId)
+                .order('created_at', { ascending: false })
+                .limit(12),
+            'recentOrders',
+          ),
+          // Low stock items
+          safeQuery(
+            () =>
+              supabase
+                .from('ingredients')
+                .select('id, name, unit, current_stock, min_stock_alert')
+                .eq('tenant_id', tenantId)
+                .eq('is_active', true)
+                .order('current_stock', { ascending: true })
+                .limit(10),
+            'stockItems',
+          ),
+          // Yesterday's orders for trend comparison
+          safeQuery(
+            () =>
+              supabase
+                .from('orders')
+                .select('id, total, tip_amount, status')
+                .eq('tenant_id', tenantId)
+                .gte('created_at', yesterday.toISOString())
+                .lt('created_at', today.toISOString()),
+            'yesterdayOrders',
+          ),
+          // Last 7 days for sparklines
+          safeQuery(
+            () =>
+              supabase
+                .from('orders')
+                .select('id, total, tip_amount, created_at, status')
+                .eq('tenant_id', tenantId)
+                .gte('created_at', sevenDaysAgo.toISOString()),
+            'weekOrders',
+          ),
+        ]);
 
-      const ordersData = ordersRes.data || [];
+      // Category query is non-critical — fire separately so it never blocks core data
+      const categoryRes = await safeQuery(
+        () =>
+          supabase
+            .from('order_items')
+            .select(
+              'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id)',
+            )
+            .eq('orders.tenant_id', tenantId),
+        'categoryBreakdown',
+      );
+
+      // ── Build stats from isolated results ──
+      const ordersData = (ordersRes.data || []) as Array<Record<string, unknown>>;
       const stats: DashboardStats = {
         ordersToday: ordersData.length,
         revenueToday: ordersData
-          .filter((o) => (o as Record<string, unknown>).status === 'delivered')
-          .reduce(
-            (sum, o) =>
-              sum +
-              Number((o as Record<string, unknown>).total || 0) +
-              Number((o as Record<string, unknown>).tip_amount || 0),
-            0,
-          ),
+          .filter((o) => o.status === 'delivered')
+          .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0),
         activeItems: itemsRes.count || 0,
         activeCards: venuesRes.count || 0,
       };
@@ -155,19 +196,13 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         }),
       );
 
-      const stockItems = (stockRes.data as StockItem[]) || [];
+      const stockItems = ((stockRes.data as StockItem[]) || []) as StockItem[];
 
-      // Trend calculations
-      const yesterdayOrders = yesterdayRes.data || [];
+      // ── Trend calculations ──
+      const yesterdayOrders = (yesterdayRes.data || []) as Array<Record<string, unknown>>;
       const yesterdayRevenue = yesterdayOrders
-        .filter((o) => (o as Record<string, unknown>).status === 'delivered')
-        .reduce(
-          (sum, o) =>
-            sum +
-            Number((o as Record<string, unknown>).total || 0) +
-            Number((o as Record<string, unknown>).tip_amount || 0),
-          0,
-        );
+        .filter((o) => o.status === 'delivered')
+        .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0);
       const yesterdayCount = yesterdayOrders.length;
 
       if (yesterdayCount > 0) {
@@ -181,7 +216,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         );
       }
 
-      // Sparklines: group 7-day orders by date
+      // ── Sparklines: group 7-day orders by date ──
       const weekOrders = (weekRes.data || []) as Array<Record<string, unknown>>;
       const dayBuckets: Record<string, { revenue: number; count: number }> = {};
       for (let i = 0; i < 7; i++) {
@@ -206,13 +241,12 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
       }));
       const itemsSparkline: SparklinePoint[] = []; // No per-day item count available
 
-      // Hourly orders: group today's orders by hour
+      // ── Hourly orders: group today's orders by hour ──
       const hourlyMap: Record<number, number> = {};
       for (let h = 8; h <= 22; h++) hourlyMap[h] = 0;
       for (const o of ordersData) {
-        const createdAt = (o as Record<string, unknown>).created_at;
-        if (createdAt) {
-          const hour = new Date(createdAt as string).getHours();
+        if (o.created_at) {
+          const hour = new Date(o.created_at as string).getHours();
           if (hourlyMap[hour] !== undefined) hourlyMap[hour]++;
         }
       }
@@ -221,7 +255,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
         count,
       }));
 
-      // Category breakdown: group order_items by category
+      // ── Category breakdown (non-critical) ──
       const categoryMap: Record<string, number> = {};
       const categoryItems = (categoryRes.data || []) as Array<Record<string, unknown>>;
       for (const item of categoryItems) {

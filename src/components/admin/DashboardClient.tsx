@@ -420,72 +420,70 @@ export default function DashboardClient(props: DashboardClientProps) {
               </div>
             </div>
           </div>
-          {/* Main chart — Revenue / Orders toggle */}
-          {chartData.length > 1 && (
-            <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card flex flex-col">
-              {/* Chart header */}
-              <div className="mb-3 shrink-0">
-                {/* Segmented control row */}
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">
-                    {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
-                  </p>
-                  <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
-                    <button
-                      onClick={() => setChartMode('revenue')}
-                      className={cn(
-                        'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
-                        chartMode === 'revenue'
-                          ? 'bg-accent text-accent-text shadow-sm'
-                          : 'text-app-text-muted hover:text-app-text-secondary',
-                      )}
-                    >
-                      {t('revenueLabel')}
-                    </button>
-                    <button
-                      onClick={() => setChartMode('orders')}
-                      className={cn(
-                        'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
-                        chartMode === 'orders'
-                          ? 'bg-accent text-accent-text shadow-sm'
-                          : 'text-app-text-muted hover:text-app-text-secondary',
-                      )}
-                    >
-                      {t('ordersLabel')}
-                    </button>
-                  </div>
-                </div>
-                {/* Value + period */}
-                <div className="flex items-baseline gap-1.5 sm:gap-2">
-                  <span className="text-lg sm:text-xl font-black text-app-text tabular-nums truncate">
-                    {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
-                  </span>
-                  <span className="text-[10px] text-app-text-muted shrink-0">{t('last7days')}</span>
+          {/* Main chart — Revenue / Orders toggle (always rendered) */}
+          <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card flex flex-col">
+            {/* Chart header */}
+            <div className="mb-3 shrink-0">
+              {/* Segmented control row */}
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">
+                  {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
+                </p>
+                <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
+                  <button
+                    onClick={() => setChartMode('revenue')}
+                    className={cn(
+                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      chartMode === 'revenue'
+                        ? 'bg-accent text-accent-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary',
+                    )}
+                  >
+                    {t('revenueLabel')}
+                  </button>
+                  <button
+                    onClick={() => setChartMode('orders')}
+                    className={cn(
+                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      chartMode === 'orders'
+                        ? 'bg-accent text-accent-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary',
+                    )}
+                  >
+                    {t('ordersLabel')}
+                  </button>
                 </div>
               </div>
-
-              {/* Chart area */}
-              <div className="h-[120px] sm:h-[150px]">
-                <Suspense
-                  fallback={
-                    <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
-                  }
-                >
-                  <DashboardChart
-                    revenueData={chartData}
-                    ordersData={ordersChartData}
-                    fmtF={fmtF}
-                    mode={chartMode}
-                    revenueLabel={t('revenueToday')}
-                    ordersLabel={t('ordersToday')}
-                  />
-                </Suspense>
+              {/* Value + period */}
+              <div className="flex items-baseline gap-1.5 sm:gap-2">
+                <span className="text-lg sm:text-xl font-black text-app-text tabular-nums truncate">
+                  {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
+                </span>
+                <span className="text-[10px] text-app-text-muted shrink-0">{t('last7days')}</span>
               </div>
             </div>
-          )}
 
-          {/* Avg basket mini chart */}
-          {showFin && avgBasketChartData.length > 1 && (
+            {/* Chart area */}
+            <div className="h-[120px] sm:h-[150px]">
+              <Suspense
+                fallback={
+                  <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
+                }
+              >
+                <DashboardChart
+                  revenueData={chartData}
+                  ordersData={ordersChartData}
+                  fmtF={fmtF}
+                  mode={chartMode}
+                  revenueLabel={t('revenueToday')}
+                  ordersLabel={t('ordersToday')}
+                />
+              </Suspense>
+            </div>
+          </div>
+
+          {/* Avg basket mini chart (always rendered when user has finance permission) */}
+          {showFin && (
             <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card">
               <div className="flex items-center justify-between mb-1">
                 <div>
