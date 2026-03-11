@@ -181,7 +181,13 @@
     "roomNumber": "Rm.{number}",
     "noOrdersTitle": "No orders yet",
     "noOrdersDesc": "Orders will appear here as they come in",
-    "soundPicker": "Notification ringtone"
+    "soundPicker": "Notification ringtone",
+    "selected": "{count, plural, one {# order selected} other {# orders selected}}",
+    "advanceStatus": "Advance status",
+    "bulkDeleteConfirm": "Delete {count, plural, one {# order} other {# orders}}?",
+    "bulkDeleteDesc": "This action cannot be undone. Deleted orders cannot be recovered.",
+    "bulkDeleteSuccess": "{count, plural, one {# order deleted} other {# orders deleted}}",
+    "bulkDeleteError": "Error deleting orders"
   },
   "delivery": {
     "deliveryInfo": "Delivery Info",
@@ -1503,7 +1509,14 @@
     "availableServers": "Available",
     "searchPlaceholder": "Search",
     "avgDuration": "Avg. Duration",
-    "fullCapacity": "Full"
+    "fullCapacity": "Full",
+    "readyOrders": "Ready Orders",
+    "noReadyOrders": "No ready orders",
+    "noReadyOrdersDesc": "Orders ready for delivery will appear here.",
+    "markDelivered": "Delivered",
+    "tableLabel": "Table",
+    "itemsCount": "{count} item(s)",
+    "orderAge": "{minutes} min ago"
   },
   "stockHistory": {
     "title": "Movement history",
@@ -1564,6 +1577,7 @@
     "statusInKitchen": "In kitchen",
     "statusReady": "Ready",
     "statusServed": "Served",
+    "statusDelivered": "Delivered",
     "statusCancelled": "Cancelled",
     "total": "Total",
     "cancelOrderConfirm": "Cancel this order?",

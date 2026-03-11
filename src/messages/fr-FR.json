@@ -181,7 +181,13 @@
     "roomNumber": "Ch.{number}",
     "noOrdersTitle": "Aucune commande",
     "noOrdersDesc": "Les commandes apparaîtront ici au fur et à mesure",
-    "soundPicker": "Sonnerie de notification"
+    "soundPicker": "Sonnerie de notification",
+    "selected": "{count, plural, one {# commande sélectionnée} other {# commandes sélectionnées}}",
+    "advanceStatus": "Avancer le statut",
+    "bulkDeleteConfirm": "Supprimer {count, plural, one {# commande} other {# commandes}} ?",
+    "bulkDeleteDesc": "Cette action est irréversible. Les commandes supprimées ne pourront pas être récupérées.",
+    "bulkDeleteSuccess": "{count, plural, one {# commande supprimée} other {# commandes supprimées}}",
+    "bulkDeleteError": "Erreur lors de la suppression des commandes"
   },
   "delivery": {
     "deliveryInfo": "Informations de livraison",
@@ -1504,7 +1510,14 @@
     "availableServers": "Disponibles",
     "searchPlaceholder": "Rechercher",
     "avgDuration": "Durée moy.",
-    "fullCapacity": "Complet"
+    "fullCapacity": "Complet",
+    "readyOrders": "Commandes prêtes",
+    "noReadyOrders": "Aucune commande prête",
+    "noReadyOrdersDesc": "Les commandes prêtes à servir apparaîtront ici.",
+    "markDelivered": "Livré",
+    "tableLabel": "Table",
+    "itemsCount": "{count} article(s)",
+    "orderAge": "il y a {minutes} min"
   },
   "stockHistory": {
     "title": "Historique des mouvements",
@@ -1565,6 +1578,7 @@
     "statusInKitchen": "En cuisine",
     "statusReady": "Prête",
     "statusServed": "Servie",
+    "statusDelivered": "Livrée",
     "statusCancelled": "Annulée",
     "total": "Total",
     "cancelOrderConfirm": "Annuler cette commande ?",

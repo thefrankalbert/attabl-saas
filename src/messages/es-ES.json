@@ -181,7 +181,13 @@
     "roomNumber": "Hab.{number}",
     "noOrdersTitle": "Sin pedidos",
     "noOrdersDesc": "Los pedidos aparecerán aquí a medida que lleguen",
-    "soundPicker": "Tono de notificación"
+    "soundPicker": "Tono de notificación",
+    "selected": "{count, plural, one {# pedido seleccionado} other {# pedidos seleccionados}}",
+    "advanceStatus": "Avanzar estado",
+    "bulkDeleteConfirm": "¿Eliminar {count, plural, one {# pedido} other {# pedidos}}?",
+    "bulkDeleteDesc": "Esta acción no se puede deshacer. Los pedidos eliminados no se pueden recuperar.",
+    "bulkDeleteSuccess": "{count, plural, one {# pedido eliminado} other {# pedidos eliminados}}",
+    "bulkDeleteError": "Error al eliminar los pedidos"
   },
   "delivery": {
     "deliveryInfo": "Información de entrega",
@@ -1564,6 +1570,7 @@
     "statusInKitchen": "En cocina",
     "statusReady": "Listo",
     "statusServed": "Servido",
+    "statusDelivered": "Entregado",
     "statusCancelled": "Cancelado",
     "total": "Total",
     "cancelOrderConfirm": "¿Cancelar este pedido?",

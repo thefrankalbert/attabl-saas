@@ -13,6 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import {
   Search,
   Volume2,
   VolumeX,
@@ -21,6 +28,7 @@ import {
   ShoppingBag,
   Check,
   Lock,
+  Trash2,
 } from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
 import { SOUND_LIBRARY } from '@/lib/sounds/sound-library';
@@ -37,6 +45,8 @@ import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 import { useDevice } from '@/hooks/useDevice';
+import { createClient } from '@/lib/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface OrdersClientProps {
   tenantId: string;
@@ -60,6 +70,8 @@ export default function OrdersClient({
   const [search, setSearch] = useSessionState('orders:search', '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: tenantSettings } = useTenantSettings(tenantId);
 
@@ -325,10 +337,21 @@ export default function OrdersClient({
         header: () => t('orderDetails'),
         cell: ({ row }) => {
           const items = row.original.items || [];
+          const summary = items
+            .slice(0, 3)
+            .map((i) => `${i.quantity}× ${i.name}`)
+            .join(', ');
+          const remaining = items.length - 3;
           return (
-            <span className="text-app-text-secondary text-sm">
-              {items.length} {items.length === 1 ? tc('item') : tc('items')}
-            </span>
+            <div className="max-w-[220px]">
+              <span className="text-app-text text-sm line-clamp-1">
+                {summary}
+                {remaining > 0 && <span className="text-app-text-muted"> +{remaining}</span>}
+              </span>
+              <span className="text-app-text-muted text-xs block">
+                {items.reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
+              </span>
+            </div>
           );
         },
         enableSorting: false,
@@ -407,6 +430,41 @@ export default function OrdersClient({
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
     updateOrderStatus.mutate({ orderId, status: newStatus });
   };
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    setIsDeleting(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.from('orders').delete().in('id', ids);
+
+      if (error) {
+        logger.error('Bulk delete orders failed', error, { orderIds: ids });
+        toast({
+          title: t('bulkDeleteError'),
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      toast({
+        title: t('bulkDeleteSuccess', { count: ids.length }),
+      });
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+    } catch (err) {
+      logger.error('Bulk delete orders unexpected error', err as Error, { orderIds: ids });
+      toast({
+        title: t('bulkDeleteError'),
+        variant: 'destructive',
+      });
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
+  }, [selectedIds, tenantId, queryClient, toast, t]);
 
   // Hide less important columns on tablet portrait to prevent horizontal scroll
   const { isTablet } = useDevice();
@@ -525,9 +583,9 @@ export default function OrdersClient({
 
         {/* Bulk action bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 px-4 py-2 mt-3 border-b border-app-border bg-accent-muted">
+          <div className="flex items-center gap-3 px-4 py-2 mt-3 border-b border-app-border bg-accent-muted rounded-lg">
             <span className="text-sm font-medium text-app-text">
-              {selectedIds.size} {t('selected') || 'selected'}
+              {t('selected', { count: selectedIds.size })}
             </span>
             <div className="flex-1" />
             <button
@@ -546,7 +604,14 @@ export default function OrdersClient({
               }}
               className="text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
             >
-              {t('advanceStatus') || 'Advance status'}
+              {t('advanceStatus')}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-red-600 text-white hover:bg-red-700 transition-colors flex items-center gap-1.5"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              {tc('delete')}
             </button>
             <button
               onClick={() => {
@@ -558,6 +623,36 @@ export default function OrdersClient({
             </button>
           </div>
         )}
+
+        {/* Bulk delete confirmation dialog */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-lg font-bold text-app-text">
+                {t('bulkDeleteConfirm', { count: selectedIds.size })}
+              </DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-app-text-muted py-2">{t('bulkDeleteDesc')}</p>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+                disabled={isDeleting}
+              >
+                {tc('cancel')}
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleBulkDelete}
+                disabled={isDeleting}
+                className="gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                {isDeleting ? tc('loading') : tc('delete')}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Orders Table / Cards */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
@@ -615,14 +710,27 @@ export default function OrdersClient({
                         </div>
                       </div>
 
-                      {/* Row 2: Server + Items + Total */}
+                      {/* Row 2: Item names summary */}
+                      {items.length > 0 && (
+                        <p className="text-xs text-app-text-secondary line-clamp-1">
+                          {items
+                            .slice(0, 3)
+                            .map((i) => `${i.quantity}× ${i.name}`)
+                            .join(', ')}
+                          {items.length > 3 && (
+                            <span className="text-app-text-muted"> +{items.length - 3}</span>
+                          )}
+                        </p>
+                      )}
+
+                      {/* Row 3: Server + Items count + Total */}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-app-text-muted break-words">
                           {order.server?.full_name ?? '—'}
                         </span>
                         <div className="flex items-center gap-3">
                           <span className="text-app-text-secondary">
-                            {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                            {items.reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
                           </span>
                           <div className="text-right">
                             <span className="font-mono font-bold text-app-text">
