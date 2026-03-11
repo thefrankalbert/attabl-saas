@@ -155,7 +155,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
         ) : (
           <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
             {/* Desktop table */}
-            <div className="hidden md:block">
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
                   <tr className="border-b border-app-border bg-app-bg/50">

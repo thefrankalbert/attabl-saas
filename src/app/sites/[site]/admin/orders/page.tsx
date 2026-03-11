@@ -75,10 +75,12 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   );
 
   return (
-    <OrdersClient
-      tenantId={tenant.id}
-      initialOrders={transformedOrders}
-      notificationSoundId={tenant.notification_sound_id}
-    />
+    <div className="max-w-7xl mx-auto">
+      <OrdersClient
+        tenantId={tenant.id}
+        initialOrders={transformedOrders}
+        notificationSoundId={tenant.notification_sound_id}
+      />
+    </div>
   );
 }

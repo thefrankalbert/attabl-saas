@@ -468,8 +468,8 @@ export default function OnboardingPage() {
               <div className="h-32 rounded-xl bg-app-elevated/20" />
             </div>
           </div>
-          <div className="hidden lg:flex w-[320px] items-center justify-center p-6">
-            <div className="w-[220px] h-[440px] rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
+          <div className="hidden lg:flex w-80 items-center justify-center p-6">
+            <div className="w-56 h-[440px] rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
           </div>
         </div>
       </div>
@@ -676,7 +676,7 @@ export default function OnboardingPage() {
         </div>
 
         {/* Phone preview — desktop only */}
-        <div className="hidden lg:flex w-[320px] items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
+        <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
           <PhonePreview data={data} phase={phase} />
         </div>
       </div>

@@ -450,7 +450,7 @@ export default function ServiceManager({ tenantId }: Props) {
           <div className="h-8 w-40 bg-app-bg rounded-lg animate-pulse" />
         </div>
         <div className="flex-1 min-h-0 flex gap-4 mt-4">
-          <div className="hidden md:block md:w-[220px] lg:w-[280px] shrink-0">
+          <div className="hidden md:block md:w-56 lg:w-72 shrink-0">
             <div className="h-full bg-app-card rounded-xl border border-app-border animate-pulse" />
           </div>
           <div className="flex-1 space-y-4">
@@ -496,7 +496,7 @@ export default function ServiceManager({ tenantId }: Props) {
       {/* ═══ Content: Sidebar + Grid ═════════════════════════ */}
       <div className="flex-1 min-h-0 flex gap-4 mt-4 sm:mt-5">
         {/* ─── Left sidebar (desktop) ─────────────────────── */}
-        <aside className="hidden md:flex md:w-[220px] lg:w-[280px] shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
+        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
           {/* Search */}
           <div className="p-3 border-b border-app-border">
             <div className="relative">

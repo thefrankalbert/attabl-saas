@@ -198,18 +198,20 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   }
 
   return (
-    <DashboardClient
-      tenantId={tenant.id}
-      tenantSlug={tenant.slug}
-      tenantName={tenant.name}
-      userName={userName}
-      initialStats={initialStats}
-      initialRecentOrders={initialRecentOrders}
-      initialPopularItems={[]}
-      initialRevenueSparkline={initialRevenueSparkline}
-      initialOrdersSparkline={initialOrdersSparkline}
-      currency={tenant.currency}
-      establishmentType={tenant.establishment_type ?? 'restaurant'}
-    />
+    <div className="max-w-7xl mx-auto">
+      <DashboardClient
+        tenantId={tenant.id}
+        tenantSlug={tenant.slug}
+        tenantName={tenant.name}
+        userName={userName}
+        initialStats={initialStats}
+        initialRecentOrders={initialRecentOrders}
+        initialPopularItems={[]}
+        initialRevenueSparkline={initialRevenueSparkline}
+        initialOrdersSparkline={initialOrdersSparkline}
+        currency={tenant.currency}
+        establishmentType={tenant.establishment_type ?? 'restaurant'}
+      />
+    </div>
   );
 }

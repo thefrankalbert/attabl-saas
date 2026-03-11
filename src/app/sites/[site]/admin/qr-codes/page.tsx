@@ -41,19 +41,21 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   const menuUrl = getTenantUrl(tenant.slug);
 
   return (
-    <QRCodePage
-      tenant={{
-        name: tenant.name,
-        slug: tenant.slug,
-        logoUrl: tenant.logo_url,
-        primaryColor: tenant.primary_color || '#000000',
-        secondaryColor: tenant.secondary_color || '#FFFFFF',
-        description: tenant.description,
-      }}
-      menuUrl={menuUrl}
-      zones={zones || []}
-      tables={tables || []}
-      menus={(menus || []) as { id: string; name: string; slug: string; is_active: boolean }[]}
-    />
+    <div className="max-w-7xl mx-auto">
+      <QRCodePage
+        tenant={{
+          name: tenant.name,
+          slug: tenant.slug,
+          logoUrl: tenant.logo_url,
+          primaryColor: tenant.primary_color || '#000000',
+          secondaryColor: tenant.secondary_color || '#FFFFFF',
+          description: tenant.description,
+        }}
+        menuUrl={menuUrl}
+        zones={zones || []}
+        tables={tables || []}
+        menus={(menus || []) as { id: string; name: string; slug: string; is_active: boolean }[]}
+      />
+    </div>
   );
 }

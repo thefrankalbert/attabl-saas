@@ -29,10 +29,12 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
     .range(0, 24);
 
   return (
-    <AuditLogClient
-      tenantId={tenant.id}
-      initialLogs={(initialLogs as Record<string, unknown>[]) || []}
-      initialCount={count || 0}
-    />
+    <div className="max-w-7xl mx-auto">
+      <AuditLogClient
+        tenantId={tenant.id}
+        initialLogs={(initialLogs as Record<string, unknown>[]) || []}
+        initialCount={count || 0}
+      />
+    </div>
   );
 }

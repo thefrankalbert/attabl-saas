@@ -52,12 +52,14 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
   }
 
   return (
-    <MenuDetailClient
-      tenantId={tenant.id}
-      tenantSlug={tenant.slug}
-      menu={menu}
-      categories={categories || []}
-      items={items}
-    />
+    <div className="max-w-7xl mx-auto">
+      <MenuDetailClient
+        tenantId={tenant.id}
+        tenantSlug={tenant.slug}
+        menu={menu}
+        categories={categories || []}
+        items={items}
+      />
+    </div>
   );
 }

@@ -302,7 +302,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
 
               {/* Recipe Editor Panel */}
-              <div className="md:w-[350px] lg:w-[450px] bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="md:w-80 lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
                 {selectedItemId && selectedItem ? (
                   <div className="flex flex-col h-full">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">

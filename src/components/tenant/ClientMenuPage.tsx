@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, Utensils, ChevronRight, Bell } from 'lucide-react';
+import { Search, ShoppingCart, Utensils, ChevronRight, Bell, Heart } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -224,12 +224,12 @@ export default function ClientMenuPage({
   return (
     <div
       className="min-h-screen bg-[#FAFAF8]"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ FULLSCREEN SPLASH ═══ */}
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ STICKY HEADER ═══ */}
+      {/* ═══ STICKY HEADER (appears on scroll) ═══ */}
       <div
         className={cn(
           'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
@@ -274,52 +274,60 @@ export default function ClientMenuPage({
         </div>
       </div>
 
-      {/* ═══ HEADER — Restaurant profile style ═══ */}
-      <div className="px-5 pt-4 pb-2">
+      {/* ═══ HEADER — Profile style (exactly like screenshot) ═══ */}
+      <div className="px-5 pt-5 pb-1">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3.5">
+            {/* Round avatar — matching screenshot circle */}
             {tenant.logo_url ? (
               <Image
                 src={tenant.logo_url}
                 alt={tenant.name}
-                width={44}
-                height={44}
-                className="h-11 w-11 rounded-full object-cover ring-2 ring-white shadow-sm"
+                width={52}
+                height={52}
+                className="h-[52px] w-[52px] rounded-full object-cover border-[2.5px] border-white shadow-md"
                 priority
               />
             ) : (
               <div
-                className="h-11 w-11 rounded-full flex items-center justify-center shadow-sm"
+                className="h-[52px] w-[52px] rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
                 style={{ backgroundColor: primary }}
               >
-                <span className="text-white text-lg font-bold">{tenant.name.charAt(0)}</span>
+                <span className="text-white text-xl font-bold">{tenant.name.charAt(0)}</span>
               </div>
             )}
             <div>
-              <h1 className="text-base font-bold text-neutral-900 leading-tight">{tenant.name}</h1>
-              {tableNumber && (
-                <p className="text-xs text-neutral-500">
-                  {t('seatedAtTable', { table: tableNumber })}
-                </p>
-              )}
+              <h1 className="text-[17px] font-bold text-neutral-900 leading-tight">
+                {tenant.name}
+              </h1>
+              <p className="text-[13px] text-neutral-500 mt-0.5">
+                {tableNumber
+                  ? t('seatedAtTable', { table: tableNumber })
+                  : tenant.description
+                    ? tenant.description.length > 30
+                      ? tenant.description.slice(0, 30) + '…'
+                      : tenant.description
+                    : t('welcomeSubtitle')}
+              </p>
             </div>
           </div>
-          <button className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors">
-            <Bell className="w-5 h-5 text-neutral-600" />
+          {/* Bell icon — top right like screenshot */}
+          <button className="w-10 h-10 rounded-full bg-white border border-neutral-100 shadow-sm flex items-center justify-center hover:bg-neutral-50 transition-colors">
+            <Bell className="w-[18px] h-[18px] text-neutral-600" />
           </button>
         </div>
       </div>
 
-      {/* ═══ SEARCH BAR ═══ */}
-      <div ref={searchBarRef} className="px-5 py-3">
+      {/* ═══ SEARCH BAR — Rounded pill style like screenshot ═══ */}
+      <div ref={searchBarRef} className="px-5 pt-4 pb-2">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
           className="relative w-full"
         >
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="w-4 h-4 text-neutral-400" strokeWidth={2} />
+            <Search className="w-[18px] h-[18px] text-neutral-400" strokeWidth={1.8} />
           </div>
-          <div className="w-full bg-white border border-neutral-200 rounded-2xl py-3 pl-11 pr-5 text-sm text-neutral-400 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+          <div className="w-full bg-white border border-neutral-200/80 rounded-xl py-3.5 pl-11 pr-5 text-[14px] text-neutral-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {t('searchMenu')}
           </div>
         </button>
@@ -327,14 +335,14 @@ export default function ClientMenuPage({
 
       {/* ═══ ADS BANNER ═══ */}
       {ads && ads.length > 0 && (
-        <div className="px-5 mb-4">
+        <div className="px-5 py-2">
           <AdsSlider ads={ads} />
         </div>
       )}
 
       {/* ═══ ANNOUNCEMENT BANNER ═══ */}
       {announcement && (
-        <div className="px-5 mb-5">
+        <div className="px-5 mb-1 mt-1">
           <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '21/9' }}>
             {announcement.image_url ? (
               <Image
@@ -371,23 +379,23 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CATEGORY GRID ═══ */}
+      {/* ═══ CATEGORY CIRCLES — 2×4 grid, exactly like screenshot ═══ */}
       {categories.length > 0 && (
-        <div className="px-5 mb-6">
-          <div className="grid grid-cols-4 gap-y-5 gap-x-2">
-            {categories.slice(0, 8).map((cat, idx) => (
+        <div className="px-5 pt-4 pb-2">
+          <div className="grid grid-cols-4 gap-y-4 gap-x-3">
+            {categories.slice(0, 8).map((cat) => (
               <button
                 key={cat.id}
                 onClick={() => {
                   router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`);
                 }}
-                className="flex flex-col items-center gap-1.5 group"
-                style={{ animationDelay: `${idx * 40}ms` }}
+                className="flex flex-col items-center gap-2 group"
               >
-                <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center group-hover:shadow-md group-hover:border-neutral-200 transition-all">
-                  <span className="text-2xl">{getCategoryEmoji(cat.name)}</span>
+                {/* Circular icon — cream/beige background like screenshot */}
+                <div className="w-16 h-16 rounded-full bg-[#F5F0E8] flex items-center justify-center group-hover:bg-[#EDE6D8] transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                  <span className="text-[26px] leading-none">{getCategoryEmoji(cat.name)}</span>
                 </div>
-                <span className="text-[11px] font-medium text-neutral-600 leading-tight text-center line-clamp-2">
+                <span className="text-[11px] font-medium text-neutral-700 leading-tight text-center line-clamp-1">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
@@ -396,70 +404,35 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CART PREVIEW ═══ */}
-      {cartItems.length > 0 && (
-        <div className="px-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-neutral-900">{t('yourCart')}</h2>
-            <Link
-              href={`/sites/${tenant.slug}/cart`}
-              className="text-xs font-semibold hover:underline transition-colors"
-              style={{ color: primary }}
-            >
-              {t('viewAll')} →
-            </Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
-            {cartItems.slice(0, 5).map((item) => (
-              <Link
-                key={item.id}
-                href={`/sites/${tenant.slug}/cart`}
-                className="flex-shrink-0 w-28 bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-2.5 hover:shadow-md transition-shadow"
+      {/* ═══ EXPLORE VENUES — Horizontal scroll with circular avatars (like "Explore cooking mentors") ═══ */}
+      {venues && venues.length > 0 && (
+        <div className="pt-5 pb-2">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-[15px] font-bold text-neutral-900">{t('ourUniverses')}</h2>
+            {venues.length > 1 && (
+              <button
+                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+                className="text-[12px] font-semibold text-neutral-500 hover:text-neutral-700 transition-colors"
               >
-                <div className="w-full h-16 bg-neutral-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      width={112}
-                      height={64}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Utensils className="w-5 h-5 text-neutral-300" />
-                  )}
-                </div>
-                <h3 className="text-[10px] font-semibold text-neutral-800 line-clamp-2 mb-1 leading-tight">
-                  {item.name}
-                </h3>
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-bold" style={{ color: primary }}>
-                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                  </span>
-                  <span className="text-[9px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
-                    x{item.quantity}
-                  </span>
-                </div>
-              </Link>
-            ))}
+                {t('viewAll')}
+              </button>
+            )}
           </div>
-        </div>
-      )}
-
-      {/* ═══ VENUE CARDS ═══ */}
-      {venues && venues.length > 1 && (
-        <div className="px-5 mb-6">
-          <h2 className="text-base font-bold text-neutral-900 mb-3">{t('ourUniverses')}</h2>
-          <div className="flex flex-col gap-3">
+          <div className="flex gap-4 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            {/* "All menus" entry */}
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="w-full bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3 hover:shadow-md transition-shadow text-left"
+              className="flex flex-col items-center gap-1.5 flex-shrink-0"
             >
-              <div className="w-10 h-10 rounded-xl bg-neutral-50 flex items-center justify-center">
-                <Utensils className="w-5 h-5 text-neutral-400" />
+              <div
+                className="w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                style={{ backgroundColor: `${primary}15` }}
+              >
+                <Utensils className="w-6 h-6" style={{ color: primary }} />
               </div>
-              <span className="text-sm font-semibold text-neutral-900">{t('allMenus')}</span>
-              <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto" />
+              <span className="text-[11px] font-medium text-neutral-600 text-center w-[60px] line-clamp-1">
+                {t('allMenus')}
+              </span>
             </button>
             {venues.map((venue) => (
               <button
@@ -467,55 +440,106 @@ export default function ClientMenuPage({
                 onClick={() =>
                   router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
                 }
-                className="w-full bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden hover:shadow-md transition-shadow text-left"
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <div className="h-36 relative overflow-hidden">
+                <div className="w-[60px] h-[60px] rounded-full overflow-hidden border-2 border-white shadow-sm bg-neutral-100">
                   {venue.image_url ? (
                     <Image
                       src={venue.image_url}
                       alt={venue.name}
-                      fill
-                      sizes="(max-width: 768px) 100vw, 600px"
-                      className="object-cover"
+                      width={60}
+                      height={60}
+                      className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-neutral-100 flex items-center justify-center">
-                      <Utensils className="w-10 h-10 text-neutral-300" />
+                    <div className="w-full h-full flex items-center justify-center bg-[#F5F0E8]">
+                      <span className="text-lg font-bold text-neutral-400">
+                        {venue.name.charAt(0)}
+                      </span>
                     </div>
                   )}
                 </div>
-                <div className="p-3.5">
-                  <h3 className="text-sm font-bold text-neutral-900">{venue.name}</h3>
-                  {venue.description && (
-                    <p className="text-xs text-neutral-500 mt-0.5">{venue.description}</p>
-                  )}
-                </div>
+                <span className="text-[11px] font-medium text-neutral-600 text-center w-[60px] line-clamp-1">
+                  {venue.name}
+                </span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* ═══ FEATURED ITEMS — 2-column grid (inspiration style) ═══ */}
-      {featuredItems.length > 0 && (
-        <div className="px-5 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-neutral-900">{t('dontMiss')}</h2>
-            <button
-              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="text-xs font-semibold transition-colors"
+      {/* ═══ CART PREVIEW — Horizontal scroll (like screenshot mentors section) ═══ */}
+      {cartItems.length > 0 && (
+        <div className="pt-4 pb-1">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-[15px] font-bold text-neutral-900">{t('yourCart')}</h2>
+            <Link
+              href={`/sites/${tenant.slug}/cart`}
+              className="text-[12px] font-semibold transition-colors"
               style={{ color: primary }}
             >
-              {t('viewAll')} →
+              {t('viewAll')}
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            {cartItems.slice(0, 6).map((item) => (
+              <Link
+                key={item.id}
+                href={`/sites/${tenant.slug}/cart`}
+                className="flex-shrink-0 w-[120px] bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
+              >
+                <div className="w-full h-[80px] bg-neutral-50 overflow-hidden flex items-center justify-center">
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      width={120}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Utensils className="w-5 h-5 text-neutral-300" />
+                  )}
+                </div>
+                <div className="p-2.5">
+                  <h3 className="text-[11px] font-semibold text-neutral-800 line-clamp-2 leading-tight mb-1">
+                    {item.name}
+                  </h3>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold" style={{ color: primary }}>
+                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                    </span>
+                    <span className="text-[9px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-full">
+                      x{item.quantity}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ FEATURED ITEMS — "Recipes populer" style 2-col grid ═══ */}
+      {featuredItems.length > 0 && (
+        <div className="pt-5 pb-2 px-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-[15px] font-bold text-neutral-900">{t('dontMiss')}</h2>
+            <button
+              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+              className="text-[12px] font-semibold text-neutral-500 hover:text-neutral-700 transition-colors"
+            >
+              {t('viewAll')}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3.5">
             {featuredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-white rounded-2xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden text-left hover:shadow-md transition-shadow group"
+                className="bg-white rounded-2xl overflow-hidden text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow group"
               >
+                {/* Image with heart icon overlay — like screenshot */}
                 <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
                   {item.image_url ? (
                     <Image
@@ -530,30 +554,34 @@ export default function ClientMenuPage({
                       <Utensils className="w-8 h-8 text-neutral-300" />
                     </div>
                   )}
+                  {/* Heart icon — top right like screenshot */}
+                  <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                    <Heart className="w-4 h-4 text-neutral-400" />
+                  </div>
                 </div>
-                <div className="p-3">
+                <div className="p-3 pt-2.5">
                   <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug line-clamp-2 mb-1.5">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
-                  {/* Tags row */}
+                  {/* Tags row — like screenshot category pills */}
                   <div className="flex flex-wrap gap-1 mb-2">
                     {item.category?.name && (
-                      <span className="text-[9px] font-medium text-neutral-500 bg-neutral-100 rounded-full px-2 py-0.5">
+                      <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded-full px-2.5 py-0.5">
                         {getTranslatedContent(lang, item.category.name, item.category.name_en)}
                       </span>
                     )}
                     {item.is_vegetarian && (
-                      <span className="text-[9px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
+                      <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-0.5">
                         Veggie
                       </span>
                     )}
                     {item.is_spicy && (
-                      <span className="text-[9px] font-medium text-orange-600 bg-orange-50 rounded-full px-2 py-0.5">
+                      <span className="text-[10px] font-medium text-orange-600 bg-orange-50 rounded-full px-2.5 py-0.5">
                         Spicy
                       </span>
                     )}
                   </div>
-                  <span className="text-sm font-bold" style={{ color: primary }}>
+                  <span className="text-[14px] font-bold" style={{ color: primary }}>
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
                 </div>
@@ -564,10 +592,10 @@ export default function ClientMenuPage({
       )}
 
       {/* ═══ "SEE FULL MENU" CTA ═══ */}
-      <div className="px-5 mb-8">
+      <div className="px-5 pt-4 pb-6">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          className="w-full py-4 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
+          className="w-full py-4 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity active:scale-[0.98]"
           style={{ backgroundColor: primary }}
         >
           <Utensils className="w-[18px] h-[18px]" />
@@ -577,7 +605,7 @@ export default function ClientMenuPage({
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div className="fixed bottom-[72px] left-4 right-4 z-40 max-w-[512px] mx-auto">
+        <div className="fixed bottom-[72px] left-4 right-4 z-40 max-w-lg mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"

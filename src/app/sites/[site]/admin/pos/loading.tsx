@@ -18,7 +18,7 @@ export default function POSLoading() {
       </div>
 
       {/* Cart sidebar */}
-      <div className="hidden md:flex w-[320px] lg:w-[380px] bg-app-elevated rounded-xl shrink-0" />
+      <div className="hidden md:flex w-80 lg:w-96 bg-app-elevated rounded-xl shrink-0" />
     </div>
   );
 }
