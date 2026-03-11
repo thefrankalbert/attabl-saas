@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Bell, CheckCheck, Info, AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
@@ -65,19 +65,16 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
   const basePath = site ? `/sites/${site}/admin` : '/admin';
   const { play } = useSound();
 
+  // Play sound immediately when a new notification arrives via realtime
+  const handleNewNotification = useCallback(() => {
+    play();
+  }, [play]);
+
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications({
     tenantId,
     userId,
+    onNewNotification: handleNewNotification,
   });
-
-  // Play notification sound when unread count increases (new notification arrived)
-  const prevUnreadCountRef = useRef(unreadCount);
-  useEffect(() => {
-    if (unreadCount > prevUnreadCountRef.current) {
-      play();
-    }
-    prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount, play]);
 
   const handleClick = async (notification: Notification) => {
     if (!notification.read) {

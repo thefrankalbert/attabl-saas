@@ -434,12 +434,26 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
+    // Snapshot current data for rollback on error
+    const previousOrders = queryClient.getQueryData<Order[]>(['orders', tenantId]);
+
+    // Optimistic update: remove deleted orders from cache immediately
+    const idsSet = new Set(ids);
+    queryClient.setQueryData<Order[]>(['orders', tenantId], (old) =>
+      old ? old.filter((o) => !idsSet.has(o.id)) : old,
+    );
+    setSelectedIds(new Set());
+    setShowDeleteConfirm(false);
+
     setIsDeleting(true);
     try {
       const result = await actionDeleteOrders(ids);
 
       if (result.error) {
         logger.error('Bulk delete orders failed', new Error(result.error), { orderIds: ids });
+        // Rollback optimistic update
+        queryClient.setQueryData(['orders', tenantId], previousOrders);
+        setSelectedIds(new Set(ids));
         toast({
           title: t('bulkDeleteError'),
           description: result.error,
@@ -451,17 +465,19 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
       toast({
         title: t('bulkDeleteSuccess', { count: result.deletedCount ?? ids.length }),
       });
-      setSelectedIds(new Set());
+      // Revalidate in background to sync with server
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
     } catch (err) {
       logger.error('Bulk delete orders unexpected error', err as Error, { orderIds: ids });
+      // Rollback optimistic update
+      queryClient.setQueryData(['orders', tenantId], previousOrders);
+      setSelectedIds(new Set(ids));
       toast({
         title: t('bulkDeleteError'),
         variant: 'destructive',
       });
     } finally {
       setIsDeleting(false);
-      setShowDeleteConfirm(false);
     }
   }, [selectedIds, tenantId, queryClient, toast, t]);
 
@@ -577,50 +593,53 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           </div>
         </div>
 
-        {/* Bulk action bar — fixed floating at bottom */}
-        {selectedIds.size > 0 && (
-          <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-3 py-2 border border-app-border bg-app-elevated rounded-lg animate-in slide-in-from-bottom-4 fade-in duration-200">
-            <span className="text-xs font-medium text-app-text tabular-nums">
-              {t('selected', { count: selectedIds.size })}
-            </span>
-            <div className="w-px h-5 bg-app-border" />
-            <button
-              onClick={() => {
-                const ids = Array.from(selectedIds);
-                ids.forEach((id) => {
-                  const order = orders.find((o) => o.id === id);
-                  if (order) {
-                    const config = statusConfig[order.status];
-                    if (config.nextStatus) {
-                      handleStatusChange(id, config.nextStatus);
-                    }
+        {/* Bulk action bar — inline above table */}
+        <div
+          className={cn(
+            'flex items-center gap-2 h-8 mt-3 transition-opacity duration-150',
+            selectedIds.size > 0 ? 'opacity-100' : 'opacity-0 pointer-events-none',
+          )}
+        >
+          <span className="text-xs font-medium text-app-text tabular-nums">
+            {t('selected', { count: selectedIds.size })}
+          </span>
+          <div className="w-px h-4 bg-app-border" />
+          <button
+            onClick={() => {
+              const ids = Array.from(selectedIds);
+              ids.forEach((id) => {
+                const order = orders.find((o) => o.id === id);
+                if (order) {
+                  const config = statusConfig[order.status];
+                  if (config.nextStatus) {
+                    handleStatusChange(id, config.nextStatus);
                   }
-                });
-                setSelectedIds(new Set());
-              }}
-              title={t('advanceStatus')}
-              className="p-2 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              title={tc('delete')}
-              className="p-2 rounded-lg bg-red-500/15 text-red-400 border border-red-500/20 hover:bg-red-500/25 transition-colors"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => {
-                setSelectedIds(new Set());
-              }}
-              title={tc('cancel')}
-              className="p-2 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        )}
+                }
+              });
+              setSelectedIds(new Set());
+            }}
+            title={t('advanceStatus')}
+            className="p-1.5 rounded text-accent hover:bg-accent-muted transition-colors"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            title={tc('delete')}
+            className="p-1.5 rounded text-red-400 hover:bg-red-500/15 transition-colors"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => {
+              setSelectedIds(new Set());
+            }}
+            title={tc('cancel')}
+            className="p-1.5 rounded text-app-text-muted hover:bg-app-hover transition-colors"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
         {/* Bulk delete confirmation dialog */}
         <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
