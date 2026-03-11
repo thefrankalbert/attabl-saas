@@ -10,7 +10,7 @@ export const onboardingSaveSchema = z.object({
     .number()
     .int('Le step doit être un entier')
     .min(1, 'Step minimum: 1')
-    .max(4, 'Step maximum: 4'),
+    .max(5, 'Step maximum: 5'),
   data: z.record(z.string(), z.unknown()),
 });
 

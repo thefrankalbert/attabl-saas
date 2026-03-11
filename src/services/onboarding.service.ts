@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from './errors';
 import { createTableConfigService } from './table-config.service';
+import { logger } from '@/lib/logger';
 
 interface TableZoneData {
   name: string;
@@ -28,6 +29,7 @@ interface MenuItem {
   name: string;
   price?: number;
   category?: string;
+  imageUrl?: string;
 }
 
 interface OnboardingCompleteData {
@@ -47,40 +49,80 @@ interface OnboardingCompleteData {
   menuItems?: MenuItem[];
 }
 
+/**
+ * Full draft data stored as JSONB in onboarding_progress.draft.
+ * Mirrors the client-side OnboardingData interface so ALL fields are persisted.
+ */
+interface OnboardingDraft {
+  // Establishment
+  establishmentType?: string;
+  address?: string;
+  city?: string;
+  country?: string;
+  phone?: string;
+  tableCount?: number;
+  language?: string;
+  currency?: string;
+  // Type-specific
+  starRating?: number;
+  hasRestaurant?: boolean;
+  hasTerrace?: boolean;
+  hasWifi?: boolean;
+  registerCount?: number;
+  hasDelivery?: boolean;
+  totalCapacity?: number;
+  // Tables
+  tableConfigMode?: string;
+  tableZones?: TableZoneData[];
+  // Branding
+  logoUrl?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
+  description?: string;
+  // Menu
+  menuOption?: string;
+  menuItems?: MenuItem[];
+  // QR
+  qrTemplate?: string;
+  qrStyle?: string;
+  qrCta?: string;
+  qrDescription?: string;
+  // Tenant name (editable during onboarding)
+  tenantName?: string;
+}
+
 interface OnboardingState {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
   step: number;
   completed: boolean;
-  data: {
-    establishmentType: string;
-    address: string;
-    city: string;
-    country: string;
-    phone: string;
-    tableCount: number;
-    tableConfigMode: 'complete' | 'minimum' | 'skip';
-    tableZones: TableZoneData[];
-    logoUrl: string;
-    primaryColor: string;
-    secondaryColor: string;
-    description: string;
-  };
+  data: OnboardingDraft;
 }
 
 /**
  * Onboarding service — handles the multi-step onboarding flow.
  *
- * Extracted from onboarding/save, onboarding/complete, and onboarding/state routes.
+ * Data is persisted in two places:
+ * 1. `tenants` table — key business fields (establishment_type, logo_url, etc.)
+ * 2. `onboarding_progress.draft` (JSONB) — FULL onboarding state including all fields
+ *    that don't have dedicated tenant columns (menu items, QR config, language, etc.)
+ *
+ * On restore, draft takes priority since it has the most complete snapshot.
  */
 export function createOnboardingService(supabase: SupabaseClient) {
   return {
     /**
      * Saves progress for a specific onboarding step.
-     * Updates tenant fields based on the step number.
+     * - Writes key fields to tenants table (for immediate use by other parts of the app)
+     * - Writes FULL data as JSONB draft to onboarding_progress (for restoration)
      */
-    async saveStep(tenantId: string, step: number, data: OnboardingStepData): Promise<void> {
+    async saveStep(
+      tenantId: string,
+      step: number,
+      data: OnboardingStepData,
+      fullDraft?: OnboardingDraft,
+    ): Promise<void> {
       const tenantUpdate: Record<string, unknown> = {};
 
       if (step === 1) {
@@ -91,32 +133,44 @@ export function createOnboardingService(supabase: SupabaseClient) {
         tenantUpdate.phone = data.phone;
         tenantUpdate.table_count = data.tableCount;
       }
-      // Step 2 (tables) is stored in onboarding data, not tenant fields
+      // Step 2 (tables) is stored in draft, not tenant fields
       else if (step === 3) {
         tenantUpdate.logo_url = data.logoUrl;
         tenantUpdate.primary_color = data.primaryColor;
         tenantUpdate.secondary_color = data.secondaryColor;
         tenantUpdate.description = data.description;
       }
-      // Step 4 (menu) is handled separately
+      // Step 4 (menu) is stored in draft
       // Step 5 uses completeOnboarding()
 
       if (Object.keys(tenantUpdate).length > 0) {
         const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
-        if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
+        if (error) {
+          logger.error('Failed to update tenant during onboarding save', error);
+          throw new ServiceError('Failed to update tenant', 'INTERNAL');
+        }
       }
 
-      // Update or insert onboarding progress
-      await supabase.from('onboarding_progress').upsert(
-        {
-          tenant_id: tenantId,
-          step: step + 1, // Next step
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'tenant_id',
-        },
-      );
+      // Update or insert onboarding progress WITH full draft
+      const progressData: Record<string, unknown> = {
+        tenant_id: tenantId,
+        step: step + 1, // Next step
+        updated_at: new Date().toISOString(),
+      };
+
+      // Store full draft if provided
+      if (fullDraft) {
+        progressData.draft = fullDraft;
+      }
+
+      const { error: progressError } = await supabase
+        .from('onboarding_progress')
+        .upsert(progressData, { onConflict: 'tenant_id' });
+
+      if (progressError) {
+        // Non-blocking: log but don't throw. The tenant update already succeeded.
+        logger.error('Failed to save onboarding draft', progressError);
+      }
     },
 
     /**
@@ -149,7 +203,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         .eq('id', tenantId);
       if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
 
-      // 2. Mark progress as completed
+      // 2. Mark progress as completed (clear draft since onboarding is done)
       await supabase.from('onboarding_progress').upsert(
         {
           tenant_id: tenantId,
@@ -157,6 +211,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
           completed: true,
           completed_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
+          draft: null,
         },
         {
           onConflict: 'tenant_id',
@@ -234,6 +289,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
 
     /**
      * Retrieves the current onboarding state for a user.
+     * Merges tenant fields with the saved draft for maximum data recovery.
      */
     async getState(userId: string): Promise<OnboardingState> {
       // Get the user's tenant via admin_users join
@@ -269,33 +325,48 @@ export function createOnboardingService(supabase: SupabaseClient) {
 
       const tenant = Array.isArray(adminUser.tenants) ? adminUser.tenants[0] : adminUser.tenants;
 
-      // Get onboarding progress
+      // Get onboarding progress INCLUDING the draft
       const { data: progress } = await supabase
         .from('onboarding_progress')
-        .select('step, completed')
+        .select('step, completed, draft')
         .eq('tenant_id', tenant.id)
         .single();
+
+      // Base data from tenant table columns
+      const baseData: OnboardingDraft = {
+        establishmentType: tenant.establishment_type || 'restaurant',
+        address: tenant.address || '',
+        city: tenant.city || '',
+        country: tenant.country || 'Tchad',
+        phone: tenant.phone || '',
+        tableCount: tenant.table_count || 10,
+        tableConfigMode: 'skip',
+        tableZones: [],
+        logoUrl: tenant.logo_url || '',
+        primaryColor: tenant.primary_color || '#CCFF00',
+        secondaryColor: tenant.secondary_color || '#000000',
+        description: tenant.description || '',
+      };
+
+      // Merge with draft data (draft takes priority for fields it contains)
+      const draft = (progress?.draft as OnboardingDraft | null) || {};
+      const mergedData: OnboardingDraft = {
+        ...baseData,
+        ...draft,
+        // Ensure tenant table values win for fields that are written there directly,
+        // unless the draft has a newer/different value
+        logoUrl: draft.logoUrl || baseData.logoUrl,
+        primaryColor: draft.primaryColor || baseData.primaryColor,
+        secondaryColor: draft.secondaryColor || baseData.secondaryColor,
+      };
 
       return {
         tenantId: tenant.id,
         tenantSlug: tenant.slug,
-        tenantName: tenant.name,
+        tenantName: draft.tenantName || tenant.name,
         step: progress?.step || 1,
         completed: progress?.completed || false,
-        data: {
-          establishmentType: tenant.establishment_type || 'restaurant',
-          address: tenant.address || '',
-          city: tenant.city || '',
-          country: tenant.country || 'Tchad',
-          phone: tenant.phone || '',
-          tableCount: tenant.table_count || 10,
-          tableConfigMode: 'skip' as const,
-          tableZones: [],
-          logoUrl: tenant.logo_url || '',
-          primaryColor: tenant.primary_color || '#CCFF00',
-          secondaryColor: tenant.secondary_color || '#000000',
-          description: tenant.description || '',
-        },
+        data: mergedData,
       };
     },
   };

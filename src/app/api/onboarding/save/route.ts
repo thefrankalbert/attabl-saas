@@ -55,9 +55,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
     }
 
-    // 5. Save step via service
+    // 5. Save step via service (pass full data as draft for complete restoration)
     const onboardingService = createOnboardingService(supabase);
-    await onboardingService.saveStep(adminUser.tenant_id, step, data);
+    await onboardingService.saveStep(adminUser.tenant_id, step, data, data);
 
     return NextResponse.json({ success: true });
   } catch (error) {

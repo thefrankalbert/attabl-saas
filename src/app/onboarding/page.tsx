@@ -198,18 +198,37 @@ export default function OnboardingPage() {
         const res = await fetch('/api/onboarding/state');
         if (res.ok) {
           const state = await res.json();
+          const restoredData = state.data || {};
+
+          // Extract navigation position metadata from the draft (if saved)
+          const savedPhase =
+            typeof restoredData._phase === 'number' ? restoredData._phase : undefined;
+          const savedSubScreen =
+            typeof restoredData._subScreen === 'number' ? restoredData._subScreen : undefined;
+
+          // Clean metadata keys before setting data state
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { _phase: _p, _subScreen: _s, ...cleanData } = restoredData;
+
           setData((prev) => ({
             ...prev,
             tenantId: state.tenantId,
             tenantSlug: state.tenantSlug,
             tenantName: state.tenantName,
-            ...state.data,
+            ...cleanData,
           }));
-          const { phase: restoredPhase, subScreen: restoredSub } = oldStepToPhaseScreen(
-            state.step || 0,
-          );
-          setPhase(restoredPhase);
-          setSubScreen(restoredSub);
+
+          // Restore exact position from draft metadata, or fall back to step-based mapping
+          if (savedPhase !== undefined && savedSubScreen !== undefined) {
+            setPhase(savedPhase);
+            setSubScreen(savedSubScreen);
+          } else {
+            const { phase: restoredPhase, subScreen: restoredSub } = oldStepToPhaseScreen(
+              state.step || 0,
+            );
+            setPhase(restoredPhase);
+            setSubScreen(restoredSub);
+          }
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -231,10 +250,16 @@ export default function OnboardingPage() {
     const timer = setTimeout(async () => {
       setAutoSaveStatus('saving');
       try {
+        // Send full data with navigation position metadata for exact restoration
+        const draftPayload = {
+          ...data,
+          _phase: phase,
+          _subScreen: subScreen,
+        };
         const res = await fetch('/api/onboarding/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ step: apiStep, data }),
+          body: JSON.stringify({ step: apiStep, data: draftPayload }),
         });
         if (res.ok) {
           setAutoSaveStatus('saved');
@@ -246,6 +271,25 @@ export default function OnboardingPage() {
     }, 2000);
     return () => clearTimeout(timer);
   }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
+
+  // ─── Save on tab close / navigate away (beacon API for reliability) ──────
+
+  useEffect(() => {
+    if (loading || phase === 0) return;
+    const handleBeforeUnload = () => {
+      const draftPayload = {
+        ...data,
+        _phase: phase,
+        _subScreen: subScreen,
+      };
+      const blob = new Blob([JSON.stringify({ step: apiStep, data: draftPayload })], {
+        type: 'application/json',
+      });
+      navigator.sendBeacon('/api/onboarding/save', blob);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [data, phase, subScreen, loading, apiStep]);
 
   // ─── Keyboard navigation ──────────────────────────────────────────────────
 
@@ -274,10 +318,15 @@ export default function OnboardingPage() {
 
   const saveStep = async () => {
     try {
+      const draftPayload = {
+        ...data,
+        _phase: phase,
+        _subScreen: subScreen,
+      };
       const res = await fetch('/api/onboarding/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: apiStep, data }),
+        body: JSON.stringify({ step: apiStep, data: draftPayload }),
       });
       if (!res.ok) {
         toast({ title: t('saveError'), variant: 'destructive' });

@@ -18,12 +18,20 @@ describe('onboardingSaveSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject step above 4', () => {
+  it('should reject step above 5', () => {
+    const result = onboardingSaveSchema.safeParse({
+      step: 6,
+      data: {},
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('should accept step 5', () => {
     const result = onboardingSaveSchema.safeParse({
       step: 5,
       data: {},
     });
-    expect(result.success).toBe(false);
+    expect(result.success).toBe(true);
   });
 
   it('should reject non-integer step', () => {
