@@ -2,7 +2,7 @@
 
 import { useDevice } from '@/hooks/useDevice';
 import { DataTable, SortableHeader } from '@/components/admin/DataTable';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -22,6 +22,8 @@ interface ResponsiveDataTableProps<TData> {
   mobileConfig?: MobileCardConfig<TData>;
   /** When provided, sorting state is persisted to sessionStorage */
   storageKey?: string;
+  /** Column visibility map — hide specific columns on certain screen sizes */
+  columnVisibility?: VisibilityState;
 }
 
 // ─── Component ──────────────────────────────────────────
@@ -35,6 +37,7 @@ export function ResponsiveDataTable<TData>({
   onRowClick,
   mobileConfig,
   storageKey,
+  columnVisibility,
 }: ResponsiveDataTableProps<TData>) {
   const { isMobile } = useDevice();
 
@@ -79,6 +82,7 @@ export function ResponsiveDataTable<TData>({
       emptyMessage={emptyMessage}
       onRowClick={onRowClick}
       storageKey={storageKey}
+      columnVisibility={columnVisibility}
     />
   );
 }

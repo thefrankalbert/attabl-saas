@@ -29,13 +29,14 @@ import { ResponsiveDataTable, SortableHeader } from '@/components/admin/Responsi
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
-import type { ColumnDef } from '@tanstack/react-table';
+import type { ColumnDef, VisibilityState } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 import { STATUS_STYLES } from '@/lib/design-tokens';
 import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
+import { useDevice } from '@/hooks/useDevice';
 
 interface OrdersClientProps {
   tenantId: string;
@@ -407,6 +408,16 @@ export default function OrdersClient({
     updateOrderStatus.mutate({ orderId, status: newStatus });
   };
 
+  // Hide less important columns on tablet portrait to prevent horizontal scroll
+  const { isTablet } = useDevice();
+  const columnVisibility = useMemo<VisibilityState>(
+    () =>
+      isTablet
+        ? { select: false, server: false, items_count: false }
+        : { select: true, server: true, items_count: true },
+    [isTablet],
+  );
+
   return (
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
@@ -414,9 +425,9 @@ export default function OrdersClient({
           {/* Hidden Audio */}
           <audio ref={audioRef} preload="auto" />
 
-          {/* Search + Tabs + Sound — wraps on mobile */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
-            <div className="relative w-full sm:w-auto sm:min-w-48 shrink-0">
+          {/* Search + Tabs + Sound — wraps on mobile/tablet portrait */}
+          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
+            <div className="relative w-full lg:w-auto lg:min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -567,6 +578,7 @@ export default function OrdersClient({
               emptyMessage={t('noOrdersMatch')}
               onRowClick={(order) => setSelectedOrder(order)}
               storageKey="orders"
+              columnVisibility={columnVisibility}
               mobileConfig={{
                 renderCard: (order) => {
                   const config = statusConfig[order.status];
