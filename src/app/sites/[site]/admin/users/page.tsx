@@ -57,10 +57,12 @@ export default async function UsersPage({ params }: { params: Promise<{ site: st
     .order('created_at', { ascending: false });
 
   return (
-    <UsersClient
-      tenantId={tenant.id}
-      currentUserRole={currentUserData.role as AdminRole}
-      initialUsers={(users as AdminUser[]) || []}
-    />
+    <div className="max-w-7xl mx-auto">
+      <UsersClient
+        tenantId={tenant.id}
+        currentUserRole={currentUserData.role as AdminRole}
+        initialUsers={(users as AdminUser[]) || []}
+      />
+    </div>
   );
 }

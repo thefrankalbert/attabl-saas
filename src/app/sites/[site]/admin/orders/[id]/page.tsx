@@ -72,5 +72,9 @@ export default async function SingleOrderPage({ params }: PageProps) {
     ),
   };
 
-  return <SingleOrderClient order={transformedOrder} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <SingleOrderClient order={transformedOrder} />
+    </div>
+  );
 }

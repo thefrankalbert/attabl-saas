@@ -103,11 +103,13 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   }
 
   return (
-    <TablesClient
-      venueId={venueId}
-      initialZones={zones}
-      initialTables={initialTables}
-      initialSelectedZoneId={selectedZoneId}
-    />
+    <div className="max-w-7xl mx-auto">
+      <TablesClient
+        venueId={venueId}
+        initialZones={zones}
+        initialTables={initialTables}
+        initialSelectedZoneId={selectedZoneId}
+      />
+    </div>
   );
 }

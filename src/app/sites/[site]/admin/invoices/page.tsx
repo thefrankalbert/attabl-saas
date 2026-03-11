@@ -27,10 +27,12 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
     .single();
 
   return (
-    <InvoiceHistoryClient
-      tenantId={tenant.id}
-      hasStripeCustomer={!!stripeInfo?.stripe_customer_id}
-      currency={tenant.currency || 'XAF'}
-    />
+    <div className="max-w-7xl mx-auto">
+      <InvoiceHistoryClient
+        tenantId={tenant.id}
+        hasStripeCustomer={!!stripeInfo?.stripe_customer_id}
+        currency={tenant.currency || 'XAF'}
+      />
+    </div>
   );
 }

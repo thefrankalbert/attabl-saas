@@ -43,12 +43,14 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
   const currency = (tenant.currency as CurrencyCode) || 'XAF';
 
   return (
-    <ItemsClient
-      tenantId={tenant.id}
-      initialItems={items}
-      initialCategories={(categoriesRes.data || []) as Category[]}
-      currency={currency}
-      supportedCurrencies={[currency]}
-    />
+    <div className="max-w-7xl mx-auto">
+      <ItemsClient
+        tenantId={tenant.id}
+        initialItems={items}
+        initialCategories={(categoriesRes.data || []) as Category[]}
+        currency={currency}
+        supportedCurrencies={[currency]}
+      />
+    </div>
   );
 }

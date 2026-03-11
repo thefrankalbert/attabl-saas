@@ -23,5 +23,9 @@ export default async function ServicePage({ params }: { params: Promise<{ site: 
     );
   }
 
-  return <ServiceManager tenantId={tenant.id} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <ServiceManager tenantId={tenant.id} />
+    </div>
+  );
 }

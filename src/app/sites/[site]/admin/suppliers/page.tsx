@@ -23,5 +23,9 @@ export default async function SuppliersPage({ params }: { params: Promise<{ site
     );
   }
 
-  return <SuppliersClient tenantId={tenant.id} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <SuppliersClient tenantId={tenant.id} />
+    </div>
+  );
 }

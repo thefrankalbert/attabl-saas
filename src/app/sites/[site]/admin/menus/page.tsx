@@ -38,11 +38,13 @@ export default async function MenusPage({ params }: MenusPageProps) {
     .order('name');
 
   return (
-    <MenusClient
-      tenantId={tenant.id}
-      tenantSlug={tenant.slug}
-      initialMenus={menus || []}
-      venues={venues || []}
-    />
+    <div className="max-w-7xl mx-auto">
+      <MenusClient
+        tenantId={tenant.id}
+        tenantSlug={tenant.slug}
+        initialMenus={menus || []}
+        venues={venues || []}
+      />
+    </div>
   );
 }

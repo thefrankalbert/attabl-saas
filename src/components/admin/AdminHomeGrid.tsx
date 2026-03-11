@@ -168,7 +168,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
     <div className="flex-1 flex flex-col md:flex-row gap-3 min-h-0 overflow-hidden">
       {/* ━━━ Left: Featured tiles (POS + Kitchen) — full height ━━━ */}
       {featuredTiles.length > 0 && (
-        <div className="shrink-0 flex md:flex-col gap-3 md:w-[200px] lg:w-[220px]">
+        <div className="shrink-0 flex md:flex-col gap-3 md:w-52 lg:w-56">
           {featuredTiles.map((tile) => {
             const Icon = tile.icon;
             return (

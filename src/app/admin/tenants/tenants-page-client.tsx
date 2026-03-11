@@ -435,7 +435,7 @@ export default function TenantsPageClient() {
 
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-5">
               {[
                 {
                   icon: Store,

@@ -23,5 +23,9 @@ export default async function InventoryPage({ params }: { params: Promise<{ site
     );
   }
 
-  return <InventoryClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <InventoryClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />
+    </div>
+  );
 }

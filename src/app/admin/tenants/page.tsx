@@ -31,5 +31,9 @@ export default async function TenantsPage() {
     notFound();
   }
 
-  return <TenantsPageClient />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <TenantsPageClient />
+    </div>
+  );
 }

@@ -257,7 +257,7 @@ export default function ItemsClient({
             {/* Filters inline */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                <SelectTrigger className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -270,7 +270,7 @@ export default function ItemsClient({
                 </SelectContent>
               </Select>
               <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
+                <SelectTrigger className="h-9 w-full sm:w-36 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('all')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -485,7 +485,7 @@ export default function ItemsClient({
             {/* Panel */}
             <div
               className={cn(
-                'fixed right-0 top-0 h-full w-full sm:w-[400px] z-50 bg-app-card border-l border-app-border rounded-l-xl overflow-y-auto',
+                'fixed right-0 top-0 h-full w-full sm:w-96 z-50 bg-app-card border-l border-app-border rounded-l-xl overflow-y-auto',
                 'transition-transform duration-300 ease-out translate-x-0',
               )}
             >
@@ -796,7 +796,7 @@ export default function ItemsClient({
                 onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
                 placeholder={ta('caloriesPlaceholder')}
-                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-[200px]"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
               />
             </div>
             <div className="flex items-center gap-6 pt-2">

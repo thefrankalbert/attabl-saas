@@ -23,5 +23,9 @@ export default async function RecipesPage({ params }: { params: Promise<{ site: 
     );
   }
 
-  return <RecipesClient tenantId={tenant.id} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <RecipesClient tenantId={tenant.id} />
+    </div>
+  );
 }

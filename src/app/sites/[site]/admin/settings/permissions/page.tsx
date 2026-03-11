@@ -65,5 +65,9 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
     }
   }
 
-  return <PermissionsClient tenantId={tenantId} initialOverrides={overrides} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <PermissionsClient tenantId={tenantId} initialOverrides={overrides} />
+    </div>
+  );
 }

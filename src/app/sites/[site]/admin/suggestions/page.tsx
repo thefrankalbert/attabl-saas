@@ -24,11 +24,13 @@ export default async function SuggestionsPage({ params }: { params: Promise<{ si
   }
 
   return (
-    <SuggestionsClient
-      tenantId={tenant.id}
-      subscriptionPlan={tenant.subscription_plan}
-      subscriptionStatus={tenant.subscription_status}
-      trialEndsAt={tenant.trial_ends_at}
-    />
+    <div className="max-w-7xl mx-auto">
+      <SuggestionsClient
+        tenantId={tenant.id}
+        subscriptionPlan={tenant.subscription_plan}
+        subscriptionStatus={tenant.subscription_status}
+        trialEndsAt={tenant.trial_ends_at}
+      />
+    </div>
   );
 }

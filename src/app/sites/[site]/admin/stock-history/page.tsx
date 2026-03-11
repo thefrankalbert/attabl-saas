@@ -23,5 +23,9 @@ export default async function StockHistoryPage({ params }: { params: Promise<{ s
     );
   }
 
-  return <StockHistoryClient tenantId={tenant.id} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <StockHistoryClient tenantId={tenant.id} />
+    </div>
+  );
 }

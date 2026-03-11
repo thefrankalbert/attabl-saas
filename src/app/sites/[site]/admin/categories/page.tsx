@@ -41,5 +41,9 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
       }) as Category & { items_count: number },
   );
 
-  return <CategoriesClient tenantId={tenant.id} initialCategories={formatted} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <CategoriesClient tenantId={tenant.id} initialCategories={formatted} />
+    </div>
+  );
 }

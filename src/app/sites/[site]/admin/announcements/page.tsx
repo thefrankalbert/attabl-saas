@@ -36,9 +36,11 @@ export default async function AnnouncementsPage({ params }: { params: Promise<{ 
     .order('created_at', { ascending: false });
 
   return (
-    <AnnouncementsClient
-      tenantId={tenant.id}
-      initialAnnouncements={(announcements as Announcement[]) || []}
-    />
+    <div className="max-w-7xl mx-auto">
+      <AnnouncementsClient
+        tenantId={tenant.id}
+        initialAnnouncements={(announcements as Announcement[]) || []}
+      />
+    </div>
   );
 }

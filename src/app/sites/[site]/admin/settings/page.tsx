@@ -20,7 +20,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   if (!tenant) notFound();
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <div className="h-full flex flex-col overflow-hidden max-w-7xl mx-auto">
       <SettingsForm
         tenant={{
           id: tenant.id,

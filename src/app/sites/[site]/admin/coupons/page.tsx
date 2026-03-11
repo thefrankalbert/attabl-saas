@@ -35,10 +35,12 @@ export default async function CouponsPage({ params }: { params: Promise<{ site: 
     .order('created_at', { ascending: false });
 
   return (
-    <CouponsClient
-      tenantId={tenant.id}
-      initialCoupons={coupons || []}
-      currency={tenant.currency || 'XAF'}
-    />
+    <div className="max-w-7xl mx-auto">
+      <CouponsClient
+        tenantId={tenant.id}
+        initialCoupons={coupons || []}
+        currency={tenant.currency || 'XAF'}
+      />
+    </div>
   );
 }

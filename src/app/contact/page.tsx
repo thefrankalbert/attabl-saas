@@ -43,7 +43,7 @@ export default function ContactPage() {
     <div className="flex h-screen w-full bg-app-bg">
       {/* Left — Form on white */}
       <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-[55%] lg:px-20">
-        <div className="w-full max-w-[460px]">
+        <div className="w-full max-w-md">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}

@@ -35,5 +35,9 @@ export default async function AdsPage({ params }: { params: Promise<{ site: stri
     .eq('tenant_id', tenant.id)
     .order('sort_order', { ascending: true });
 
-  return <AdsClient tenantId={tenant.id} initialAds={(ads as Ad[]) || []} />;
+  return (
+    <div className="max-w-7xl mx-auto">
+      <AdsClient tenantId={tenant.id} initialAds={(ads as Ad[]) || []} />
+    </div>
+  );
 }

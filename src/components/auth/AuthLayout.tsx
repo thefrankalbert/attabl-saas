@@ -18,7 +18,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
       {/* ── Left — Form panel ─────────────────────────────── */}
       <div className="w-full md:w-[55%] lg:w-[50%] flex flex-col px-4 sm:px-8 md:px-10 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
-        <div className="w-full max-w-[420px] m-auto">{children}</div>
+        <div className="w-full max-w-md m-auto">{children}</div>
       </div>
 
       {/* ── Right — Showcase panel ────────────────────────── */}
