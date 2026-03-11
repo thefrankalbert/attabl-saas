@@ -527,7 +527,7 @@ export default function DashboardClient(props: DashboardClientProps) {
               {t('reportsLabel')}
             </Link>
             <Link
-              href={`${adminBase}/inventory/history`}
+              href={`${adminBase}/stock-history`}
               className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
             >
               <Package className="w-3.5 h-3.5" />
