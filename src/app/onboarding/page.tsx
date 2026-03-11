@@ -24,6 +24,7 @@ import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
 import { PhonePreview } from '@/components/onboarding/PhonePreview';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 // ─── Phase / sub-screen definitions ────────────────────────────────────────────
 
@@ -479,7 +480,11 @@ export default function OnboardingPage() {
 
   if (phase === 0) {
     return (
-      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
+      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg relative">
+        {/* Theme toggle on welcome screen */}
+        <div className="absolute top-4 right-4 z-20">
+          <ThemeToggle />
+        </div>
         <WelcomeStep
           tenantName={data.tenantName}
           onStart={() => {
@@ -551,7 +556,7 @@ export default function OnboardingPage() {
           })}
         </div>
 
-        {/* Right: auto-save status */}
+        {/* Right: auto-save status + theme toggle */}
         <div className="flex items-center gap-2 shrink-0">
           {autoSaveStatus === 'saving' && (
             <span className="text-[10px] text-app-text-muted flex items-center gap-1">
@@ -565,6 +570,7 @@ export default function OnboardingPage() {
               <span className="hidden sm:inline">{t('autoSaved')}</span>
             </span>
           )}
+          <ThemeToggle />
         </div>
       </header>
 
