@@ -42,6 +42,10 @@ interface AdminSidebarProps {
   userName?: string;
   userTenants?: TenantSwitchOption[];
   className?: string;
+  /** Controlled collapsed state (lifted to layout for persistence) */
+  collapsed?: boolean;
+  /** Callback when user toggles collapsed state */
+  onToggleCollapsed?: () => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────
@@ -78,11 +82,15 @@ export function AdminSidebar({
   userName,
   userTenants = [],
   className,
+  collapsed: controlledCollapsed,
+  onToggleCollapsed,
 }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('sidebar');
-  const [collapsed, setCollapsed] = useState(false);
+  const [internalCollapsed, setInternalCollapsed] = useState(false);
+  const collapsed = controlledCollapsed ?? internalCollapsed;
+  const handleToggleCollapsed = onToggleCollapsed ?? (() => setInternalCollapsed((prev) => !prev));
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
@@ -220,7 +228,7 @@ export function AdminSidebar({
         <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
           <button
             type="button"
-            onClick={() => setCollapsed((prev) => !prev)}
+            onClick={handleToggleCollapsed}
             className={cn(
               'w-full flex items-center gap-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden',
               collapsed ? 'justify-center px-0' : 'px-3',

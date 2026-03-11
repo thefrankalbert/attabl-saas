@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useCallback } from 'react';
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { AdminTopBar } from './AdminTopBar';
 import { AdminBottomNav } from './AdminBottomNav';
@@ -8,6 +9,8 @@ import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
 import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
+
+const SIDEBAR_STORAGE_KEY = 'attabl-sidebar-collapsed';
 
 // ─── Inner Layout ───────────────────────────────────────
 
@@ -45,14 +48,50 @@ function AdminLayoutInner({
   notifications,
   breadcrumbs,
 }: AdminLayoutInnerProps) {
-  const { isMobile } = useDeviceContext();
+  const { isMobile, isTablet } = useDeviceContext();
   const pathname = usePathname();
   const isHome = isAdminHome(pathname, basePath);
   const immersive = isImmersivePage(pathname);
 
+  // Sidebar collapsed state — persisted to localStorage, respected across navigations
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (stored !== null) return stored === 'true';
+    } catch {
+      // localStorage unavailable
+    }
+    // Default: collapsed on tablet, expanded on desktop
+    return window.innerWidth < 1024;
+  });
+
+  // Auto-collapse on tablet portrait, but only on initial mount / device change
+  // NEVER auto-expand — user's explicit choice is always respected
+  useEffect(() => {
+    if (isTablet && !sidebarCollapsed) {
+      setSidebarCollapsed(true);
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, 'true');
+      } catch {}
+    }
+    // Only run when device type changes (tablet vs desktop), not on every render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTablet]);
+
+  const handleToggleCollapsed = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(SIDEBAR_STORAGE_KEY, String(next));
+      } catch {}
+      return next;
+    });
+  }, []);
+
   return (
     <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
-      {/* Sidebar — desktop only, hidden on immersive pages */}
+      {/* Sidebar — tablet & desktop, hidden on immersive pages */}
       {!immersive && (
         <AdminSidebar
           basePath={basePath}
@@ -60,6 +99,8 @@ function AdminLayoutInner({
           userName={userName}
           userTenants={userTenants}
           className="hidden md:flex"
+          collapsed={sidebarCollapsed}
+          onToggleCollapsed={handleToggleCollapsed}
         />
       )}
 

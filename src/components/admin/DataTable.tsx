@@ -8,6 +8,7 @@ import {
   useReactTable,
   type ColumnDef,
   type SortingState,
+  type VisibilityState,
   type Column,
 } from '@tanstack/react-table';
 import { useState } from 'react';
@@ -63,6 +64,8 @@ interface DataTableProps<TData> {
   onRowClick?: (row: TData) => void;
   /** When provided, sorting state is persisted to sessionStorage under this key */
   storageKey?: string;
+  /** Column visibility map — hide specific columns by id */
+  columnVisibility?: VisibilityState;
 }
 
 export function DataTable<TData>({
@@ -73,6 +76,7 @@ export function DataTable<TData>({
   emptyMessage = 'Aucune donnée',
   onRowClick,
   storageKey,
+  columnVisibility,
 }: DataTableProps<TData>) {
   const [sortingLocal, setSortingLocal] = useState<SortingState>([]);
   const [sortingSession, setSortingSession] = useSessionState<SortingState>(
@@ -86,7 +90,7 @@ export function DataTable<TData>({
   const table = useReactTable({
     data,
     columns,
-    state: { sorting },
+    state: { sorting, columnVisibility },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -98,10 +102,10 @@ export function DataTable<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full">
+    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0">
       {/* Scrollable table area — thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
-        <table className="w-full text-sm">
+        <table className="w-full text-sm min-w-0">
           {/* Sticky Header */}
           <thead className="bg-app-bg sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
