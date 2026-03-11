@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { useTranslations, useLocale } from 'next-intl';
@@ -119,221 +119,148 @@ export default function CartPage() {
     [items],
   );
 
+  // Ref to track the latest fetch and ignore stale results
+  const fetchIdRef = useRef(0);
+
   // ─── Smart suggestions ────────────────────────────────────
   useEffect(() => {
-    const fetchSmartSuggestions = async () => {
-      if (!currentRestaurantId || items.length === 0) {
-        setActiveRecommendation(null);
-        setUpsellItems([]);
-        return;
-      }
+    // Debounce: wait 300ms before fetching to avoid rapid re-fetches on cart changes
+    const debounceTimer = setTimeout(() => {
+      fetchIdRef.current += 1;
+      const thisFetchId = fetchIdRef.current;
 
-      setIsLoadingUpsell(true);
-      try {
-        const supabase = createClient();
-        const cartIds = new Set(items.map((i) => i.id));
-        const collected: UpsellItem[] = [];
-
-        // ── Strategy 1: Admin-configured pairings for items in cart ──
-        const { data: pairings } = await supabase
-          .from('item_suggestions')
-          .select(
-            'suggestion_type, suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(id, name, name_en, price, image_url, is_available, category_id)',
-          )
-          .eq('tenant_id', currentRestaurantId)
-          .in('menu_item_id', Array.from(cartIds))
-          .eq('is_active', true)
-          .order('display_order', { ascending: true })
-          .limit(8);
-
-        if (pairings && pairings.length > 0) {
-          const seen = new Set<string>();
-          for (const p of pairings) {
-            const si = p.suggested_item as unknown as Record<string, unknown> | null;
-            if (!si || si.is_available === false) continue;
-            const id = si.id as string;
-            if (cartIds.has(id) || seen.has(id)) continue;
-            seen.add(id);
-            collected.push({
-              id,
-              name: si.name as string,
-              name_en: (si.name_en as string) || undefined,
-              price: si.price as number,
-              image_url: (si.image_url as string) || undefined,
-            });
-          }
-        }
-
-        // If we got enough from pairings, use those
-        if (collected.length >= 3) {
-          setActiveRecommendation({
-            type: 'pairing',
-            title: t('upsellPairings'),
-            icon: 'pairing',
-          });
-          setUpsellItems(collected.slice(0, 6));
-          setIsLoadingUpsell(false);
+      const fetchSmartSuggestions = async () => {
+        if (!currentRestaurantId || items.length === 0) {
+          setActiveRecommendation(null);
+          setUpsellItems([]);
           return;
         }
 
-        // ── Strategy 2: Contextual category complement ──────────
-        // Find which categories are in the cart, suggest from others
-        const cartCategoryIds = new Set(
-          items.map((i) => i.category_id).filter(Boolean) as string[],
-        );
+        // Don't clear previous suggestions while loading — keep stale data visible
+        setIsLoadingUpsell(true);
+        try {
+          const supabase = createClient();
+          const cartIds = new Set(items.map((i) => i.id));
+          const collected: UpsellItem[] = [];
 
-        // Fetch all categories to understand the menu structure
-        const { data: allCategories } = await supabase
-          .from('categories')
-          .select('id, name')
-          .eq('tenant_id', currentRestaurantId);
-
-        const categoryMap = new Map((allCategories || []).map((c) => [c.id, c.name.toLowerCase()]));
-
-        // Detect what's missing based on actual DB categories
-        const hasDrinkCategory = [...cartCategoryIds].some((id) => {
-          const name = categoryMap.get(id) || '';
-          return /boisson|drink|cocktail|wine|vin|bière|beer|jus|eau|soft|soda|café|coffee|thé|tea/.test(
-            name,
-          );
-        });
-        const hasDessertCategory = [...cartCategoryIds].some((id) => {
-          const name = categoryMap.get(id) || '';
-          return /dessert|douceur|sucré|sweet|glace|pâtisserie|fruit/.test(name);
-        });
-
-        // Find complement categories (not in cart)
-        let complementCategoryIds: string[] = [];
-        let recommendation: CartRecommendation | null = null;
-
-        if (!hasDrinkCategory) {
-          // Suggest drinks
-          complementCategoryIds = (allCategories || [])
-            .filter((c) =>
-              /boisson|drink|cocktail|wine|vin|bière|beer|jus|eau|soft|soda|café|coffee|thé|tea/.test(
-                c.name.toLowerCase(),
-              ),
+          // ── Strategy 1: Admin-configured pairings for items in cart ──
+          const { data: pairings } = await supabase
+            .from('item_suggestions')
+            .select(
+              'suggestion_type, suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(id, name, name_en, price, image_url, is_available, category_id)',
             )
-            .map((c) => c.id);
-          recommendation = {
-            type: 'drinks',
-            title: t('upsellDrinks'),
-            icon: 'drinks',
-          };
-        } else if (!hasDessertCategory) {
-          // Suggest desserts
-          complementCategoryIds = (allCategories || [])
-            .filter((c) =>
-              /dessert|douceur|sucré|sweet|glace|pâtisserie|fruit/.test(c.name.toLowerCase()),
-            )
-            .map((c) => c.id);
-          recommendation = {
-            type: 'desserts',
-            title: t('upsellDesserts'),
-            icon: 'desserts',
-          };
-        }
-
-        if (complementCategoryIds.length > 0 && recommendation) {
-          const { data: complementItems } = await supabase
-            .from('menu_items')
-            .select('id, name, name_en, price, image_url, category_id, is_featured')
-            .in('category_id', complementCategoryIds)
-            .eq('is_available', true)
             .eq('tenant_id', currentRestaurantId)
-            .order('is_featured', { ascending: false })
+            .in('menu_item_id', Array.from(cartIds))
+            .eq('is_active', true)
             .order('display_order', { ascending: true })
             .limit(8);
 
-          if (complementItems && complementItems.length > 0) {
-            const extras = complementItems
-              .filter((mi) => !cartIds.has(mi.id))
-              .map((mi) => ({
-                id: mi.id,
-                name: mi.name,
-                name_en: mi.name_en ?? undefined,
-                price: mi.price,
-                image_url: mi.image_url ?? undefined,
-                category_name: (allCategories || []).find((c) => c.id === mi.category_id)?.name,
-              }));
-
-            if (extras.length > 0) {
-              // Merge with any pairings we already found
-              const merged = [...collected, ...extras];
-              const seen = new Set<string>();
-              const deduped = merged.filter((item) => {
-                if (seen.has(item.id)) return false;
-                seen.add(item.id);
-                return true;
+          if (pairings && pairings.length > 0) {
+            const seen = new Set<string>();
+            for (const p of pairings) {
+              const si = p.suggested_item as unknown as Record<string, unknown> | null;
+              if (!si || si.is_available === false) continue;
+              const id = si.id as string;
+              if (cartIds.has(id) || seen.has(id)) continue;
+              seen.add(id);
+              collected.push({
+                id,
+                name: si.name as string,
+                name_en: (si.name_en as string) || undefined,
+                price: si.price as number,
+                image_url: (si.image_url as string) || undefined,
               });
-
-              setActiveRecommendation(recommendation);
-              setUpsellItems(deduped.slice(0, 6));
-              setIsLoadingUpsell(false);
-              return;
             }
           }
-        }
 
-        // ── Strategy 3: Featured items fallback ─────────────────
-        const { data: featured } = await supabase
-          .from('menu_items')
-          .select('id, name, name_en, price, image_url, category_id')
-          .eq('tenant_id', currentRestaurantId)
-          .eq('is_available', true)
-          .eq('is_featured', true)
-          .limit(8);
-
-        if (featured && featured.length > 0) {
-          const extras = featured
-            .filter((mi) => !cartIds.has(mi.id))
-            .map((mi) => ({
-              id: mi.id,
-              name: mi.name,
-              name_en: mi.name_en ?? undefined,
-              price: mi.price,
-              image_url: mi.image_url ?? undefined,
-              category_name: (allCategories || []).find((c) => c.id === mi.category_id)?.name,
-            }));
-
-          if (extras.length > 0) {
-            const merged = [...collected, ...extras];
-            const seen = new Set<string>();
-            const deduped = merged.filter((item) => {
-              if (seen.has(item.id)) return false;
-              seen.add(item.id);
-              return true;
-            });
-
+          // If we got enough from pairings, use those
+          if (collected.length >= 3) {
+            if (thisFetchId !== fetchIdRef.current) return;
             setActiveRecommendation({
-              type: 'featured',
-              title: t('upsellFeatured'),
-              icon: 'featured',
+              type: 'pairing',
+              title: t('upsellPairings'),
+              icon: 'pairing',
             });
-            setUpsellItems(deduped.slice(0, 6));
+            setUpsellItems(collected.slice(0, 6));
             setIsLoadingUpsell(false);
             return;
           }
-        }
 
-        // ── Strategy 4: Popular from other categories ───────────
-        if (cartCategoryIds.size > 0) {
-          const otherCatIds = (allCategories || [])
-            .filter((c) => !cartCategoryIds.has(c.id))
-            .map((c) => c.id);
+          // ── Strategy 2: Contextual category complement ──────────
+          // Find which categories are in the cart, suggest from others
+          const cartCategoryIds = new Set(
+            items.map((i) => i.category_id).filter(Boolean) as string[],
+          );
 
-          if (otherCatIds.length > 0) {
-            const { data: otherItems } = await supabase
+          // Fetch all categories to understand the menu structure
+          const { data: allCategories } = await supabase
+            .from('categories')
+            .select('id, name')
+            .eq('tenant_id', currentRestaurantId);
+
+          const categoryMap = new Map(
+            (allCategories || []).map((c) => [c.id, c.name.toLowerCase()]),
+          );
+
+          // Detect what's missing based on actual DB categories
+          const hasDrinkCategory = [...cartCategoryIds].some((id) => {
+            const name = categoryMap.get(id) || '';
+            return /boisson|drink|cocktail|wine|vin|bi[eè]re|beer|jus|eau|soft|soda|caf[eé]|coffee|th[eé]|tea/.test(
+              name,
+            );
+          });
+          const hasDessertCategory = [...cartCategoryIds].some((id) => {
+            const name = categoryMap.get(id) || '';
+            return /dessert|douceur|sucr[eé]|sweet|glace|p[aâ]tisserie|fruit/.test(name);
+          });
+
+          // Find complement categories (not in cart)
+          let complementCategoryIds: string[] = [];
+          let recommendation: CartRecommendation | null = null;
+
+          if (!hasDrinkCategory) {
+            // Suggest drinks
+            complementCategoryIds = (allCategories || [])
+              .filter((c) =>
+                /boisson|drink|cocktail|wine|vin|bi[eè]re|beer|jus|eau|soft|soda|caf[eé]|coffee|th[eé]|tea/.test(
+                  c.name.toLowerCase(),
+                ),
+              )
+              .map((c) => c.id);
+            recommendation = {
+              type: 'drinks',
+              title: t('upsellDrinks'),
+              icon: 'drinks',
+            };
+          } else if (!hasDessertCategory) {
+            // Suggest desserts
+            complementCategoryIds = (allCategories || [])
+              .filter((c) =>
+                /dessert|douceur|sucr[eé]|sweet|glace|p[aâ]tisserie|fruit/.test(
+                  c.name.toLowerCase(),
+                ),
+              )
+              .map((c) => c.id);
+            recommendation = {
+              type: 'desserts',
+              title: t('upsellDesserts'),
+              icon: 'desserts',
+            };
+          }
+
+          if (complementCategoryIds.length > 0 && recommendation) {
+            const { data: complementItems } = await supabase
               .from('menu_items')
-              .select('id, name, name_en, price, image_url, category_id')
-              .in('category_id', otherCatIds)
+              .select('id, name, name_en, price, image_url, category_id, is_featured')
+              .in('category_id', complementCategoryIds)
               .eq('is_available', true)
               .eq('tenant_id', currentRestaurantId)
+              .order('is_featured', { ascending: false })
               .order('display_order', { ascending: true })
-              .limit(6);
+              .limit(8);
 
-            if (otherItems && otherItems.length > 0) {
-              const extras = otherItems
+            if (complementItems && complementItems.length > 0) {
+              const extras = complementItems
                 .filter((mi) => !cartIds.has(mi.id))
                 .map((mi) => ({
                   id: mi.id,
@@ -345,39 +272,135 @@ export default function CartPage() {
                 }));
 
               if (extras.length > 0) {
-                setActiveRecommendation({
-                  type: 'complement',
-                  title: t('upsellComplement'),
-                  icon: 'pairing',
+                if (thisFetchId !== fetchIdRef.current) return;
+                // Merge with any pairings we already found
+                const merged = [...collected, ...extras];
+                const seen = new Set<string>();
+                const deduped = merged.filter((item) => {
+                  if (seen.has(item.id)) return false;
+                  seen.add(item.id);
+                  return true;
                 });
-                setUpsellItems(extras.slice(0, 6));
+
+                setActiveRecommendation(recommendation);
+                setUpsellItems(deduped.slice(0, 6));
                 setIsLoadingUpsell(false);
                 return;
               }
             }
           }
-        }
 
-        // Nothing found — use pairings we collected (even if < 3)
-        if (collected.length > 0) {
-          setActiveRecommendation({
-            type: 'pairing',
-            title: t('upsellPairings'),
-            icon: 'pairing',
-          });
-          setUpsellItems(collected);
-        } else {
-          setActiveRecommendation(null);
-          setUpsellItems([]);
-        }
-      } catch (err) {
-        logger.error('Error fetching suggestions:', err);
-      } finally {
-        setIsLoadingUpsell(false);
-      }
-    };
+          // ── Strategy 3: Featured items fallback ─────────────────
+          const { data: featured } = await supabase
+            .from('menu_items')
+            .select('id, name, name_en, price, image_url, category_id')
+            .eq('tenant_id', currentRestaurantId)
+            .eq('is_available', true)
+            .eq('is_featured', true)
+            .limit(8);
 
-    fetchSmartSuggestions();
+          if (featured && featured.length > 0) {
+            const extras = featured
+              .filter((mi) => !cartIds.has(mi.id))
+              .map((mi) => ({
+                id: mi.id,
+                name: mi.name,
+                name_en: mi.name_en ?? undefined,
+                price: mi.price,
+                image_url: mi.image_url ?? undefined,
+                category_name: (allCategories || []).find((c) => c.id === mi.category_id)?.name,
+              }));
+
+            if (extras.length > 0) {
+              if (thisFetchId !== fetchIdRef.current) return;
+              const merged = [...collected, ...extras];
+              const seen = new Set<string>();
+              const deduped = merged.filter((item) => {
+                if (seen.has(item.id)) return false;
+                seen.add(item.id);
+                return true;
+              });
+
+              setActiveRecommendation({
+                type: 'featured',
+                title: t('upsellFeatured'),
+                icon: 'featured',
+              });
+              setUpsellItems(deduped.slice(0, 6));
+              setIsLoadingUpsell(false);
+              return;
+            }
+          }
+
+          // ── Strategy 4: Popular from other categories ───────────
+          if (cartCategoryIds.size > 0) {
+            const otherCatIds = (allCategories || [])
+              .filter((c) => !cartCategoryIds.has(c.id))
+              .map((c) => c.id);
+
+            if (otherCatIds.length > 0) {
+              const { data: otherItems } = await supabase
+                .from('menu_items')
+                .select('id, name, name_en, price, image_url, category_id')
+                .in('category_id', otherCatIds)
+                .eq('is_available', true)
+                .eq('tenant_id', currentRestaurantId)
+                .order('display_order', { ascending: true })
+                .limit(6);
+
+              if (otherItems && otherItems.length > 0) {
+                const extras = otherItems
+                  .filter((mi) => !cartIds.has(mi.id))
+                  .map((mi) => ({
+                    id: mi.id,
+                    name: mi.name,
+                    name_en: mi.name_en ?? undefined,
+                    price: mi.price,
+                    image_url: mi.image_url ?? undefined,
+                    category_name: (allCategories || []).find((c) => c.id === mi.category_id)?.name,
+                  }));
+
+                if (extras.length > 0) {
+                  if (thisFetchId !== fetchIdRef.current) return;
+                  setActiveRecommendation({
+                    type: 'complement',
+                    title: t('upsellComplement'),
+                    icon: 'pairing',
+                  });
+                  setUpsellItems(extras.slice(0, 6));
+                  setIsLoadingUpsell(false);
+                  return;
+                }
+              }
+            }
+          }
+
+          // Nothing found — use pairings we collected (even if < 3)
+          if (thisFetchId !== fetchIdRef.current) return;
+          if (collected.length > 0) {
+            setActiveRecommendation({
+              type: 'pairing',
+              title: t('upsellPairings'),
+              icon: 'pairing',
+            });
+            setUpsellItems(collected);
+          } else {
+            setActiveRecommendation(null);
+            setUpsellItems([]);
+          }
+        } catch (err) {
+          logger.error('Error fetching suggestions:', err);
+        } finally {
+          if (thisFetchId === fetchIdRef.current) {
+            setIsLoadingUpsell(false);
+          }
+        }
+      };
+
+      fetchSmartSuggestions();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRestaurantId, cartItemIds]);
 
@@ -639,9 +662,12 @@ export default function CartPage() {
         </section>
 
         {/* UPSELL SUGGESTIONS */}
+        {/* Show section if we have items OR if loading with no previous items (first load) */}
         <AnimatePresence>
-          {(isLoadingUpsell || (activeRecommendation && upsellItems.length > 0)) && (
+          {(activeRecommendation && upsellItems.length > 0) ||
+          (isLoadingUpsell && upsellItems.length === 0) ? (
             <motion.section
+              key="upsell-section"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
@@ -656,7 +682,7 @@ export default function CartPage() {
                   <Utensils className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
                 )}
                 <h2 className="text-sm font-bold text-neutral-900">
-                  {isLoadingUpsell ? (
+                  {isLoadingUpsell && !activeRecommendation ? (
                     <div className="h-4 w-32 bg-neutral-200 rounded animate-pulse" />
                   ) : (
                     activeRecommendation?.title
@@ -666,7 +692,7 @@ export default function CartPage() {
 
               <div className="p-3 overflow-x-auto scrollbar-hide">
                 <div className="flex gap-3 min-w-max px-1">
-                  {isLoadingUpsell
+                  {isLoadingUpsell && upsellItems.length === 0
                     ? [1, 2, 3].map((i) => (
                         <div
                           key={i}
@@ -728,7 +754,7 @@ export default function CartPage() {
                 </div>
               </div>
             </motion.section>
-          )}
+          ) : null}
         </AnimatePresence>
 
         {/* ORDER SUMMARY */}

@@ -23,7 +23,8 @@ interface KitchenFiltersProps {
   isFullscreen: boolean;
   toggleFullscreen: () => void;
   goBack: () => void;
-  audioRef: React.RefObject<HTMLAudioElement | null>;
+  /** @deprecated Audio element is now mounted globally via SoundContext */
+  audioRef?: React.RefObject<HTMLAudioElement | null>;
   /** true = chef/admin full view, false = server/waiter simplified view */
   isChefView: boolean;
 }
@@ -44,15 +45,12 @@ export default function KitchenFilters({
   isFullscreen,
   toggleFullscreen,
   goBack,
-  audioRef,
   isChefView,
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
 
   return (
     <>
-      <audio ref={audioRef} preload="auto" data-notification-audio />
-
       {/* ━━━ COMPACT HEADER ━━━ */}
       <header className="h-11 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/80 shrink-0">
         {/* Left: Logo + counters */}

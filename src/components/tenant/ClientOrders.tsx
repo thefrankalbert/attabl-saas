@@ -62,10 +62,6 @@ function isWithinEditWindow(createdAt: string): boolean {
   return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
 }
 
-function getRemainingMs(createdAt: string): number {
-  return Math.max(0, EDIT_WINDOW_MS - (Date.now() - new Date(createdAt).getTime()));
-}
-
 // ─── Component ──────────────────────────────────────────
 
 export default function ClientOrders({
@@ -329,9 +325,6 @@ export default function ClientOrders({
 
       {orders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
-        const remainingMs = canEdit ? getRemainingMs(order.created_at) : 0;
-        const remainingMin = Math.floor(remainingMs / 60000);
-        const remainingSec = Math.floor((remainingMs % 60000) / 1000);
         const isEditing = editingOrderId === order.id;
 
         return (
@@ -428,9 +421,6 @@ export default function ClientOrders({
                             <>
                               <Pencil className="w-4 h-4" />
                               {t('editOrder')}
-                              <span className="ml-1 text-xs opacity-75 font-mono">
-                                {remainingMin}:{remainingSec.toString().padStart(2, '0')}
-                              </span>
                             </>
                           )}
                         </button>

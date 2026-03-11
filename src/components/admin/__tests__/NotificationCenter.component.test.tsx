@@ -41,6 +41,18 @@ vi.mock('next-intl', () => ({
   },
 }));
 
+vi.mock('@/contexts/SoundContext', () => ({
+  useSound: () => ({
+    soundEnabled: true,
+    toggleSound: vi.fn(),
+    play: vi.fn(),
+    preview: vi.fn(),
+    currentSoundId: 'classic-bell',
+    setSoundId: vi.fn(),
+    audioRef: { current: null },
+  }),
+}));
+
 // ─── requestAnimationFrame mock (happy-dom doesn't fire callbacks) ───
 
 beforeEach(() => {

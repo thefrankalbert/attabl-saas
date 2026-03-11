@@ -159,22 +159,21 @@ export async function POST(request: Request) {
       throw orderError;
     }
 
-    // 9. Create in-app notification for admins (non-blocking)
-    adminSupabase
-      .from('notifications')
-      .insert({
-        tenant_id: tenantId,
-        user_id: null, // broadcast to all tenant admins
-        type: 'info',
-        title: `Nouvelle commande — Table ${tableNumber}`,
-        body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString()} ${tenant.currency || 'XAF'}`,
-        link: `/orders`,
-      })
-      .then(({ error: notifError }) => {
-        if (notifError) {
-          logger.error('Failed to create order notification (non-blocking)', notifError);
-        }
+    // 9. Create in-app notification for admins
+    const { error: notifError } = await adminSupabase.from('notifications').insert({
+      tenant_id: tenantId,
+      user_id: null, // broadcast to all tenant admins
+      type: 'info',
+      title: `Nouvelle commande — Table ${tableNumber}`,
+      body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString()} ${tenant.currency || 'XAF'}`,
+      link: `/orders`,
+    });
+    if (notifError) {
+      logger.error('Failed to create order notification', notifError, {
+        tenantId,
+        orderId: result.orderId,
       });
+    }
 
     // 10. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
