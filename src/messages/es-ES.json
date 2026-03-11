@@ -1955,7 +1955,17 @@
     "logoFileTooLarge": "El archivo es demasiado grande (máx. 15 MB)",
     "uploadError": "Error al subir la imagen",
     "validationFailed": "Algunos campos son inválidos",
-    "articlePhoto": "Foto"
+    "articlePhoto": "Foto",
+    "phaseIdentity": "Identidad",
+    "phaseMenu": "Menú",
+    "phaseLaunch": "Lanzamiento",
+    "phaseIdentityDesc": "Su establecimiento y su marca",
+    "phaseMenuDesc": "Mesas y carta del menú",
+    "phaseLaunchDesc": "Código QR y puesta en línea",
+    "continueButton": "Continuar",
+    "optional": "opcional",
+    "studioTitle": "Bienvenido a su estudio",
+    "studioSubtitle": "Configure su menú digital en pocos minutos"
   },
   "auditLog": {
     "title": "Registro de auditoría",

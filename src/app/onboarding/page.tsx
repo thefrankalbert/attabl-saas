@@ -3,15 +3,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 import {
-  Building2,
-  LayoutGrid,
   Palette,
   UtensilsCrossed,
   Rocket,
-  Check,
   ArrowRight,
   ArrowLeft,
-  Layout,
+  Loader2,
+  LayoutGrid,
+  Check,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -22,18 +21,60 @@ import { BrandingStep } from '@/components/onboarding/BrandingStep';
 import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
+import { PhonePreview } from '@/components/onboarding/PhonePreview';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 
-const STEP_ICONS = [Building2, LayoutGrid, Palette, UtensilsCrossed, Rocket] as const;
+// ─── Phase / sub-screen definitions ────────────────────────────────────────────
 
-const STEP_KEYS = [
-  { name: 'stepEstablishment', desc: 'stepEstablishmentDesc' },
-  { name: 'stepTables', desc: 'stepTablesDesc' },
-  { name: 'stepBranding', desc: 'stepBrandingDesc' },
-  { name: 'stepMenu', desc: 'stepMenuDesc' },
-  { name: 'stepLaunch', desc: 'stepLaunchDesc' },
-] as const;
+type ScreenKey = 'establishment' | 'branding' | 'details' | 'tables' | 'menu' | 'qr' | 'summary';
+
+interface PhaseDefinition {
+  labelKey: string;
+  icon: typeof Palette;
+  subScreens: ScreenKey[];
+}
+
+const PHASES: PhaseDefinition[] = [
+  {
+    labelKey: 'phaseIdentity',
+    icon: Palette,
+    subScreens: ['establishment', 'branding', 'details'],
+  },
+  { labelKey: 'phaseMenu', icon: UtensilsCrossed, subScreens: ['tables', 'menu'] },
+  { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
+];
+
+/** Map screen key → old API step number for saving */
+const SCREEN_TO_API_STEP: Record<ScreenKey, number> = {
+  establishment: 1,
+  branding: 3,
+  details: 1,
+  tables: 2,
+  menu: 4,
+  qr: 5,
+  summary: 5,
+};
+
+/** Convert old saved step → new phase/subScreen */
+function oldStepToPhaseScreen(oldStep: number): { phase: number; subScreen: number } {
+  switch (oldStep) {
+    case 1:
+      return { phase: 1, subScreen: 0 };
+    case 2:
+      return { phase: 2, subScreen: 0 };
+    case 3:
+      return { phase: 1, subScreen: 1 };
+    case 4:
+      return { phase: 2, subScreen: 1 };
+    case 5:
+      return { phase: 3, subScreen: 0 };
+    default:
+      return { phase: 0, subScreen: 0 };
+  }
+}
+
+// ─── Exported data interface (used by child components) ────────────────────────
 
 export interface OnboardingData {
   // Step 1: Establishment
@@ -75,16 +116,22 @@ export interface OnboardingData {
   tenantName: string;
 }
 
+// ─── Component ─────────────────────────────────────────────────────────────────
+
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const { toast } = useToast();
-  const [currentStep, setCurrentStep] = useState(0);
+
+  // Navigation state: phase 0 = welcome, 1–3 = studio phases
+  const [phase, setPhase] = useState(0);
+  const [subScreen, setSubScreen] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const touchStartX = useRef(0);
+
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
     address: '',
@@ -118,6 +165,33 @@ export default function OnboardingPage() {
     tenantName: '',
   });
 
+  // ─── Derived values ────────────────────────────────────────────────────────
+
+  const currentPhase = phase >= 1 && phase <= 3 ? PHASES[phase - 1] : null;
+  const screenKey: ScreenKey | null = currentPhase
+    ? (currentPhase.subScreens[subScreen] ?? null)
+    : null;
+  const apiStep = screenKey ? SCREEN_TO_API_STEP[screenKey] : 0;
+
+  const isLastScreen = phase === 3 && subScreen === PHASES[2].subScreens.length - 1;
+
+  // ─── Step completeness check (adapted for phases) ──────────────────────────
+
+  const phaseIsComplete = (p: number): boolean => {
+    switch (p) {
+      case 1:
+        return !!data.tenantName && !!data.establishmentType && !!data.primaryColor;
+      case 2:
+        return true;
+      case 3:
+        return true;
+      default:
+        return false;
+    }
+  };
+
+  // ─── Fetch saved state ─────────────────────────────────────────────────────
+
   useEffect(() => {
     const fetchOnboardingState = async () => {
       try {
@@ -131,7 +205,11 @@ export default function OnboardingPage() {
             tenantName: state.tenantName,
             ...state.data,
           }));
-          setCurrentStep(state.step || 0);
+          const { phase: restoredPhase, subScreen: restoredSub } = oldStepToPhaseScreen(
+            state.step || 0,
+          );
+          setPhase(restoredPhase);
+          setSubScreen(restoredSub);
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
@@ -145,9 +223,10 @@ export default function OnboardingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Auto-save debounced
+  // ─── Auto-save debounced ───────────────────────────────────────────────────
+
   useEffect(() => {
-    if (loading || currentStep === 0 || currentStep === 5) return;
+    if (loading || phase === 0 || isLastScreen) return;
     setAutoSaveStatus('idle');
     const timer = setTimeout(async () => {
       setAutoSaveStatus('saving');
@@ -155,7 +234,7 @@ export default function OnboardingPage() {
         const res = await fetch('/api/onboarding/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ step: currentStep, data }),
+          body: JSON.stringify({ step: apiStep, data }),
         });
         if (res.ok) {
           setAutoSaveStatus('saved');
@@ -166,37 +245,39 @@ export default function OnboardingPage() {
       }
     }, 2000);
     return () => clearTimeout(timer);
-  }, [data, currentStep, loading]);
+  }, [data, phase, subScreen, loading, apiStep, isLastScreen]);
 
-  // Keyboard navigation
+  // ─── Keyboard navigation ──────────────────────────────────────────────────
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-      if (e.key === 'ArrowRight' && currentStep > 0 && currentStep < 5) {
-        setError(null);
-        setDirection('forward');
-        setCurrentStep((prev) => prev + 1);
+      if (e.key === 'ArrowRight' && phase >= 1 && !isLastScreen) {
+        goNext();
       }
-      if (e.key === 'ArrowLeft' && currentStep > 1) {
-        setError(null);
-        setDirection('backward');
-        setCurrentStep((prev) => prev - 1);
+      if (e.key === 'ArrowLeft' && (phase > 1 || (phase === 1 && subScreen > 0))) {
+        goPrev();
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentStep]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, subScreen]);
+
+  // ─── Data update callback ─────────────────────────────────────────────────
 
   const updateData = useCallback((newData: Partial<OnboardingData>) => {
     setData((prev) => ({ ...prev, ...newData }));
   }, []);
+
+  // ─── Save current step ────────────────────────────────────────────────────
 
   const saveStep = async () => {
     try {
       const res = await fetch('/api/onboarding/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: currentStep, data }),
+        body: JSON.stringify({ step: apiStep, data }),
       });
       if (!res.ok) {
         toast({ title: t('saveError'), variant: 'destructive' });
@@ -211,45 +292,47 @@ export default function OnboardingPage() {
     document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };
 
-  const nextStep = () => {
+  // ─── Navigation ───────────────────────────────────────────────────────────
+
+  const goNext = () => {
     setError(null);
     setDirection('forward');
-    if (currentStep < 5) {
-      setCurrentStep((prev) => prev + 1);
-      scrollToTop();
+
+    if (phase >= 1) saveStep();
+
+    if (currentPhase && subScreen < currentPhase.subScreens.length - 1) {
+      setSubScreen((s) => s + 1);
+    } else if (phase < 3) {
+      setPhase((p) => p + 1);
+      setSubScreen(0);
     }
-    // Save in background (non-blocking)
-    if (currentStep > 0) {
-      saveStep();
-    }
+    scrollToTop();
   };
 
-  const prevStep = () => {
+  const goPrev = () => {
     setError(null);
     setDirection('backward');
-    if (currentStep > 1) {
-      setCurrentStep((prev) => prev - 1);
-      scrollToTop();
+
+    if (subScreen > 0) {
+      setSubScreen((s) => s - 1);
+    } else if (phase > 1) {
+      const prevPhase = PHASES[phase - 2];
+      setPhase((p) => p - 1);
+      setSubScreen(prevPhase.subScreens.length - 1);
     }
+    scrollToTop();
   };
 
-  // Task 8: Visual validation indicators
-  const stepIsComplete = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!data.tenantName && !!data.establishmentType;
-      case 2:
-        return true; // tables are optional
-      case 3:
-        return !!data.primaryColor;
-      case 4:
-        return true; // menu is optional
-      case 5:
-        return true;
-      default:
-        return false;
-    }
+  const goToPhase = (targetPhase: number) => {
+    if (targetPhase >= phase) return; // only allow going to completed phases
+    setError(null);
+    setDirection('backward');
+    setPhase(targetPhase);
+    setSubScreen(0);
+    scrollToTop();
   };
+
+  // ─── Complete onboarding ──────────────────────────────────────────────────
 
   const completeOnboarding = async () => {
     setSaving(true);
@@ -280,296 +363,271 @@ export default function OnboardingPage() {
     }
   };
 
+  // ─── Content rendering ────────────────────────────────────────────────────
+
+  const renderScreen = () => {
+    if (!screenKey) return null;
+    switch (screenKey) {
+      case 'establishment':
+        return <EstablishmentStep data={data} updateData={updateData} />;
+      case 'branding':
+        return <BrandingStep data={data} updateData={updateData} />;
+      case 'details':
+        return <EstablishmentStep data={data} updateData={updateData} variant="details" />;
+      case 'tables':
+        return <TablesStep data={data} updateData={updateData} />;
+      case 'menu':
+        return <MenuStep data={data} updateData={updateData} />;
+      case 'qr':
+        return <LaunchStep data={data} updateData={updateData} variant="qr" />;
+      case 'summary':
+        return <LaunchStep data={data} updateData={updateData} variant="summary" />;
+    }
+  };
+
+  // ─── Loading skeleton ─────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <div className="h-dvh bg-app-bg flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="h-12 w-12 bg-accent rounded-xl" />
-          <p className="text-app-text-secondary">...</p>
+      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
+        {/* Top strip skeleton */}
+        <header className="shrink-0 h-14 bg-app-card/80 border-b border-app-border/50 flex items-center px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded bg-app-elevated animate-pulse" />
+            <div className="h-4 w-24 rounded bg-app-elevated animate-pulse" />
+          </div>
+          <div className="flex-1 flex justify-center gap-3">
+            {[1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="h-8 rounded-full bg-app-elevated animate-pulse"
+                style={{ width: `${80 + i * 10}px` }}
+              />
+            ))}
+          </div>
+          <div className="h-4 w-12 rounded bg-app-elevated animate-pulse" />
+        </header>
+
+        {/* Two-column skeleton */}
+        <div className="flex-1 min-h-0 flex">
+          <div className="flex-1 p-6 space-y-6 animate-pulse">
+            <div className="h-7 w-64 rounded-lg bg-app-elevated/30" />
+            <div className="h-4 w-96 rounded bg-app-elevated/20" />
+            <div className="space-y-4">
+              <div className="h-48 rounded-xl bg-app-elevated/20" />
+              <div className="h-32 rounded-xl bg-app-elevated/20" />
+            </div>
+          </div>
+          <div className="hidden lg:flex w-[320px] items-center justify-center p-6">
+            <div className="w-[220px] h-[440px] rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
+          </div>
         </div>
       </div>
     );
   }
 
+  // ─── Welcome screen (phase 0) ─────────────────────────────────────────────
+
+  if (phase === 0) {
+    return (
+      <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
+        <WelcomeStep
+          tenantName={data.tenantName}
+          onStart={() => {
+            setDirection('forward');
+            setPhase(1);
+            setSubScreen(0);
+          }}
+        />
+      </div>
+    );
+  }
+
+  // ─── Studio layout (phases 1–3) ───────────────────────────────────────────
+
+  const canGoBack = phase > 1 || subScreen > 0;
+
   return (
-    <div className="h-dvh bg-app-bg flex overflow-hidden">
-      {/* Sidebar — Desktop (lg+): w-72, icons + titles + descriptions */}
-      {/* Sidebar — Tablet (md): w-56, icons + titles only */}
-      {currentStep > 0 && (
-        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-app-elevated border-r border-app-border">
-          {/* Logo */}
-          <div className="p-6 lg:p-8">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="bg-accent rounded-xl p-2">
-                <Layout className="h-5 w-5 text-accent-text" />
-              </div>
-              <span className="text-xl font-bold text-app-text">ATTABL</span>
-            </Link>
-          </div>
-
-          {/* Steps */}
-          <nav className="flex-1 px-4 lg:px-6">
-            <div className="space-y-1">
-              {STEP_KEYS.map((stepKey, index) => {
-                const stepId = index + 1;
-                const isCompleted = currentStep > stepId;
-                const isCurrent = currentStep === stepId;
-                const Icon = STEP_ICONS[index];
-
-                return (
-                  <div key={stepId} className="relative">
-                    {/* Connecting line */}
-                    {index < STEP_KEYS.length - 1 && (
-                      <div
-                        className={`absolute left-[26px] top-[42px] h-[24px] w-[2px] -translate-x-1/2 ${
-                          isCompleted ? 'bg-accent' : 'bg-app-elevated'
-                        }`}
-                      />
-                    )}
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isCompleted) {
-                          setError(null);
-                          setDirection('backward');
-                          setCurrentStep(stepId);
-                        }
-                      }}
-                      className={`relative z-10 w-full flex items-center gap-3 p-2.5 rounded-xl transition-all text-left ${
-                        isCurrent
-                          ? 'bg-app-card border border-app-border'
-                          : isCompleted
-                            ? 'hover:bg-app-card/60 cursor-pointer'
-                            : 'opacity-50 cursor-default'
-                      }`}
-                    >
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                          isCompleted
-                            ? 'bg-accent text-accent-text'
-                            : isCurrent
-                              ? 'bg-accent text-accent-text'
-                              : 'bg-app-elevated text-app-text-muted'
-                        }`}
-                      >
-                        {isCompleted ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
-                      </div>
-                      <div className="min-w-0">
-                        <p
-                          className={`text-sm font-medium truncate ${
-                            isCurrent ? 'text-app-text' : 'text-app-text-secondary'
-                          }`}
-                        >
-                          {t(stepKey.name)}
-                        </p>
-                        {/* Description: visible on lg+ only */}
-                        <p className="hidden lg:block text-xs text-app-text-muted truncate">
-                          {t(stepKey.desc)}
-                        </p>
-                      </div>
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </nav>
-
-          {/* Footer */}
-          <div className="p-4 lg:p-6 border-t border-app-border">
-            {data.tenantName && (
-              <p className="text-sm font-medium text-app-text truncate">{data.tenantName}</p>
-            )}
-            <p className="text-xs text-app-text-muted">{t('trialReminder')}</p>
-          </div>
-        </aside>
-      )}
-
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Mobile Header — only below md (sidebar takes over at md+) */}
-        {currentStep > 0 && (
-          <div className="md:hidden shrink-0">
-            {/* Logo row */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-app-border">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="bg-accent rounded-lg p-1.5">
-                  <Layout className="h-4 w-4 text-accent-text" />
-                </div>
-                <span className="font-bold text-app-text">ATTABL</span>
-              </Link>
-              <span className="text-xs text-app-text-muted uppercase tracking-wide font-medium">
-                {t('step')} {currentStep} {t('stepOf')} 5
-              </span>
-            </div>
-
-            {/* Horizontal step circles */}
-            <div className="flex items-center justify-center gap-0 py-3 px-2 sm:px-4">
-              {STEP_ICONS.map((Icon, index) => {
-                const stepId = index + 1;
-                const isCompleted = currentStep > stepId;
-                const isCurrent = currentStep === stepId;
-
-                return (
-                  <div key={stepId} className="flex items-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (isCompleted) {
-                          setError(null);
-                          setDirection('backward');
-                          setCurrentStep(stepId);
-                        }
-                      }}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all ${
-                        isCompleted
-                          ? 'bg-accent text-accent-text cursor-pointer'
-                          : isCurrent
-                            ? 'bg-accent text-accent-text'
-                            : 'bg-app-elevated text-app-text-muted'
-                      }`}
-                    >
-                      {isCompleted ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : (
-                        <Icon className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                    {/* Connecting line */}
-                    {index < STEP_ICONS.length - 1 && (
-                      <div
-                        className={`w-4 sm:w-10 h-0.5 ${
-                          currentStep > stepId ? 'bg-accent' : 'bg-app-elevated'
-                        }`}
-                      />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Step Content */}
-        <div
-          id="onboarding-content"
-          className="flex-1 flex flex-col overflow-hidden p-4 sm:p-5 md:p-6 lg:p-8"
-          onTouchStart={(e) => {
-            touchStartX.current = e.touches[0].clientX;
-          }}
-          onTouchEnd={(e) => {
-            const diff = touchStartX.current - e.changedTouches[0].clientX;
-            if (Math.abs(diff) > 80) {
-              if (diff > 0 && currentStep > 0 && currentStep < 5) nextStep();
-              if (diff < 0 && currentStep > 1) prevStep();
-            }
-          }}
-        >
-          <div className="w-full max-w-5xl mx-auto flex flex-col flex-1 min-h-0">
-            <div
-              key={currentStep}
-              className={`flex-1 min-h-0 flex flex-col ${
-                currentStep > 0
-                  ? direction === 'forward'
-                    ? 'animate-in slide-in-from-right-4 fade-in duration-200'
-                    : 'animate-in slide-in-from-left-4 fade-in duration-200'
-                  : ''
-              }`}
-            >
-              {currentStep === 0 && (
-                <WelcomeStep
-                  tenantName={data.tenantName}
-                  onStart={() => {
-                    setDirection('forward');
-                    setCurrentStep(1);
-                  }}
-                />
-              )}
-              {currentStep === 1 && <EstablishmentStep data={data} updateData={updateData} />}
-              {currentStep === 2 && <TablesStep data={data} updateData={updateData} />}
-              {currentStep === 3 && <BrandingStep data={data} updateData={updateData} />}
-              {currentStep === 4 && <MenuStep data={data} updateData={updateData} />}
-              {currentStep === 5 && <LaunchStep data={data} updateData={updateData} />}
-            </div>
-          </div>
+    <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
+      {/* ═══ Floating top navigation strip ═══ */}
+      <header className="shrink-0 h-14 bg-app-card/80 backdrop-blur-xl border-b border-app-border/50 flex items-center px-4 sm:px-6 z-10">
+        {/* Left: logo link + tenant name */}
+        <div className="flex items-center gap-2 min-w-0 shrink-0">
+          <Link
+            href="/"
+            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
+            title="Accueil"
+          >
+            <LayoutGrid className="w-4 h-4 text-app-text-muted" />
+          </Link>
+          <span className="text-sm font-semibold text-app-text truncate max-w-[120px] hidden sm:inline">
+            {data.tenantName || 'ATTABL'}
+          </span>
         </div>
 
-        {/* Error Banner */}
-        {error && (
-          <div className="mx-4 md:mx-6 lg:mx-12 mb-2 shrink-0">
-            <div className="w-full max-w-5xl mx-auto p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex items-center justify-between">
-              <span>{error}</span>
-              <button
-                onClick={() => setError(null)}
-                className="text-red-500/60 hover:text-red-500 ml-3 shrink-0"
-              >
-                <span className="sr-only">Close</span>
-                &times;
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Center: 3 phase tabs */}
+        <div className="flex-1 flex justify-center gap-1">
+          {PHASES.map((phaseDef, idx) => {
+            const phaseNum = idx + 1;
+            const isActive = phase === phaseNum;
+            const isCompleted = phase > phaseNum;
+            const isFuture = phase < phaseNum;
+            const Icon = phaseDef.icon;
 
-        {/* Footer Navigation — hidden on step 0 (welcome screen) */}
-        {currentStep > 0 && (
-          <div className="border-t border-app-border p-4 md:p-6 shrink-0 pb-[env(safe-area-inset-bottom)]">
-            <div className="w-full max-w-5xl mx-auto flex items-center justify-between">
-              {/* Back button or auto-save status on step 1 */}
-              {currentStep === 1 ? (
-                <span className="text-xs text-app-text-muted min-w-[80px]">
-                  {autoSaveStatus === 'saving' && t('autoSaving')}
-                  {autoSaveStatus === 'saved' && `✓ ${t('autoSaved')}`}
-                </span>
-              ) : (
+            return (
+              <button
+                key={phaseNum}
+                type="button"
+                onClick={() => {
+                  if (isCompleted && phaseIsComplete(phaseNum)) goToPhase(phaseNum);
+                }}
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                  isActive
+                    ? 'text-accent'
+                    : isCompleted
+                      ? 'text-app-text-secondary hover:bg-app-hover cursor-pointer'
+                      : 'text-app-text-muted opacity-40 cursor-default'
+                }`}
+                disabled={isFuture}
+              >
+                {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
+                <span className="hidden sm:inline">{t(phaseDef.labelKey)}</span>
+
+                {/* Bottom accent line for active tab — single clean line */}
+                {isActive && (
+                  <span className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Right: auto-save status */}
+        <div className="flex items-center gap-2 shrink-0">
+          {autoSaveStatus === 'saving' && (
+            <span className="text-[10px] text-app-text-muted flex items-center gap-1">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span className="hidden sm:inline">{t('autoSaving')}</span>
+            </span>
+          )}
+          {autoSaveStatus === 'saved' && (
+            <span className="text-[10px] text-accent flex items-center gap-1">
+              <Check className="w-3 h-3" />
+              <span className="hidden sm:inline">{t('autoSaved')}</span>
+            </span>
+          )}
+        </div>
+      </header>
+
+      {/* ═══ Content area: config panel + phone preview ═══ */}
+      <div className="flex-1 min-h-0 flex">
+        {/* Config panel */}
+        <div className="flex-1 flex flex-col min-w-0">
+          <main
+            className="flex-1 min-h-0 overflow-y-auto scroll-smooth"
+            data-onboarding-scroll
+            onTouchStart={(e) => {
+              touchStartX.current = e.touches[0].clientX;
+            }}
+            onTouchEnd={(e) => {
+              const diff = touchStartX.current - e.changedTouches[0].clientX;
+              if (Math.abs(diff) > 80) {
+                if (diff > 0 && !isLastScreen) goNext();
+                if (diff < 0 && canGoBack) goPrev();
+              }
+            }}
+          >
+            {/* Animated content */}
+            <div
+              key={`${phase}-${subScreen}`}
+              className={
+                direction === 'forward'
+                  ? 'animate-in slide-in-from-right-4 fade-in duration-200'
+                  : 'animate-in slide-in-from-left-4 fade-in duration-200'
+              }
+            >
+              {renderScreen()}
+
+              {/* Error Banner */}
+              {error && (
+                <div className="px-4 sm:px-6 lg:px-8 pb-2">
+                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between">
+                    <span>{error}</span>
+                    <button
+                      onClick={() => setError(null)}
+                      className="text-red-400/60 hover:text-red-400 ml-3 shrink-0"
+                    >
+                      <span className="sr-only">Close</span>
+                      &times;
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Bottom spacer so content doesn't hide behind fixed nav */}
+              <div className="h-20" />
+            </div>
+          </main>
+
+          {/* ═══ Fixed bottom navigation bar ═══ */}
+          <div className="shrink-0 border-t border-app-border/50 bg-app-card/80 backdrop-blur-xl px-4 sm:px-6 lg:px-8 py-3">
+            <div className="flex items-center justify-between">
+              {/* Back button */}
+              {canGoBack ? (
                 <button
                   type="button"
-                  onClick={prevStep}
-                  className="flex items-center gap-1.5 text-sm text-app-text-secondary hover:text-app-text transition-colors"
+                  onClick={goPrev}
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
                 </button>
+              ) : (
+                <span />
               )}
 
-              <div className="flex items-center gap-2">
-                {/* Skip button — skips entire step (not on step 5) */}
-                {currentStep < 5 && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
-                      if (currentStep < 5) {
-                        setDirection('forward');
-                        setCurrentStep((prev) => prev + 1);
-                      }
-                    }}
-                    disabled={saving}
-                    className="text-app-text-muted hover:text-app-text-secondary"
-                  >
-                    {t('skip')}
-                  </Button>
-                )}
-
-                {/* Continue / Launch — with validation opacity (Task 8) */}
-                {currentStep < 5 ? (
-                  <Button
-                    variant="default"
-                    onClick={nextStep}
-                    disabled={saving}
-                    className={!stepIsComplete(currentStep) ? 'opacity-60' : ''}
-                  >
-                    {saving ? '...' : t('next')}
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button variant="default" onClick={completeOnboarding} disabled={saving}>
-                    {saving ? '...' : t('launchCTA')}
-                    <Rocket className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
+              {/* Continue / Launch button */}
+              {isLastScreen ? (
+                <Button
+                  variant="default"
+                  onClick={completeOnboarding}
+                  disabled={saving}
+                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {t('launchCTA')}
+                      <Rocket className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  onClick={goNext}
+                  disabled={saving}
+                  className="h-11 rounded-xl gap-2 text-sm font-bold px-6"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {t('next')}
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
-        )}
+        </div>
+
+        {/* Phone preview — desktop only */}
+        <div className="hidden lg:flex w-[320px] items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
+          <PhonePreview data={data} phase={phase} />
+        </div>
       </div>
     </div>
   );
