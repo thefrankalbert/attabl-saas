@@ -620,29 +620,71 @@ export default function TenantsPageClient() {
         </div>
       </header>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto scrollbar-hide">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5 space-y-5">
-          {/* ═══ REVENUE & ORDERS CHART SECTION ═══ */}
-          <div className="bg-app-card rounded-2xl border border-app-border overflow-hidden">
-            {/* Chart header with period toggle */}
-            <div className="px-4 sm:px-5 pt-4 pb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                {/* Revenue / Orders toggle */}
+      {/* Content — single viewport, no scroll */}
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="mx-auto max-w-6xl w-full px-4 sm:px-6 py-3 flex-1 flex flex-col gap-3 min-h-0">
+          {/* ═══ TOP ROW: KPIs + Chart ═══ */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 shrink-0">
+            {/* KPI compact cards — 3 cards in first column */}
+            <div className="flex md:flex-col gap-2">
+              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <TrendingUp className="h-3 w-3 text-accent" />
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
+                    CA
+                  </span>
+                </div>
+                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
+                  {formatCFA(ownerGlobals.totalRevenueToday)}
+                </p>
+                <p className="text-[9px] text-app-text-muted">
+                  Mois : {formatCFA(ownerGlobals.totalRevenueMonth)}
+                </p>
+              </div>
+              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <ShoppingBag className="h-3 w-3 text-blue-500" />
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
+                    Commandes
+                  </span>
+                </div>
+                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
+                  {ownerGlobals.totalOrdersToday}
+                </p>
+                <p className="text-[9px] text-app-text-muted">
+                  Mois : {ownerGlobals.totalOrdersMonth}
+                </p>
+              </div>
+              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Store className="h-3 w-3 text-app-text-muted" />
+                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
+                    Sites
+                  </span>
+                </div>
+                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
+                  {ownerGlobals.totalRestaurants}
+                </p>
+              </div>
+            </div>
+
+            {/* Chart — takes 3 cols */}
+            <div className="md:col-span-3 bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col">
+              <div className="px-3 pt-2.5 pb-1.5 flex items-center justify-between">
                 <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
                   <button
                     onClick={() => setChartMode('revenue')}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                       chartMode === 'revenue'
                         ? 'bg-app-card text-accent shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary'
                     }`}
                   >
-                    Chiffre d&apos;affaires
+                    CA
                   </button>
                   <button
                     onClick={() => setChartMode('orders')}
-                    className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
                       chartMode === 'orders'
                         ? 'bg-app-card text-accent shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary'
@@ -651,359 +693,280 @@ export default function TenantsPageClient() {
                     Commandes
                   </button>
                 </div>
-              </div>
-
-              {/* Day / Month toggle */}
-              <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
-                <button
-                  onClick={() => setChartPeriod('day')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                    chartPeriod === 'day'
-                      ? 'bg-app-card text-app-text shadow-sm'
-                      : 'text-app-text-muted hover:text-app-text-secondary'
-                  }`}
-                >
-                  <CalendarDays className="h-3 w-3" />
-                  Aujourd&apos;hui
-                </button>
-                <button
-                  onClick={() => setChartPeriod('month')}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                    chartPeriod === 'month'
-                      ? 'bg-app-card text-app-text shadow-sm'
-                      : 'text-app-text-muted hover:text-app-text-secondary'
-                  }`}
-                >
-                  <CalendarDays className="h-3 w-3" />
-                  Ce mois
-                </button>
-              </div>
-            </div>
-
-            {/* Big numbers */}
-            <div className="px-4 sm:px-5 pb-3 flex items-end gap-6">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted mb-0.5">
-                  {chartMode === 'revenue' ? 'Chiffre d\u2019affaires' : 'Commandes'}
-                </p>
-                <p className="text-2xl sm:text-3xl font-black text-app-text tabular-nums leading-none">
-                  {chartMode === 'revenue' ? formatCFA(displayRevenue) : displayOrders}
-                </p>
-              </div>
-              <div className="mb-1">
-                <div className="flex items-center gap-2 text-[10px]">
-                  <span className="flex items-center gap-1 text-app-text-muted">
-                    <Store className="h-3 w-3" />
-                    {ownerGlobals.totalRestaurants} établissement
-                    {ownerGlobals.totalRestaurants !== 1 ? 's' : ''}
-                  </span>
+                <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
+                  <button
+                    onClick={() => setChartPeriod('day')}
+                    className={`flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                      chartPeriod === 'day'
+                        ? 'bg-app-card text-app-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary'
+                    }`}
+                  >
+                    <CalendarDays className="h-2.5 w-2.5" />
+                    Jour
+                  </button>
+                  <button
+                    onClick={() => setChartPeriod('month')}
+                    className={`flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
+                      chartPeriod === 'month'
+                        ? 'bg-app-card text-app-text shadow-sm'
+                        : 'text-app-text-muted hover:text-app-text-secondary'
+                    }`}
+                  >
+                    <CalendarDays className="h-2.5 w-2.5" />
+                    Mois
+                  </button>
                 </div>
               </div>
-            </div>
-
-            {/* Chart */}
-            <div className="px-2 sm:px-3 pb-4 h-[180px] sm:h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                {chartMode === 'revenue' ? (
-                  <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="hubRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
-                        <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.1} />
-                        <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                      dy={6}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                      tickFormatter={formatCompactCFA}
-                      width={45}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: '#111827',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        color: '#fff',
-                        padding: '8px 12px',
-                      }}
-                      formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
-                      labelStyle={{ color: '#9ca3af', fontSize: '10px', marginBottom: '2px' }}
-                      cursor={{
-                        stroke: 'var(--accent)',
-                        strokeWidth: 1,
-                        strokeDasharray: '4 4',
-                      }}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="revenue"
-                      stroke="var(--accent)"
-                      fill="url(#hubRevenueGrad)"
-                      strokeWidth={2}
-                      dot={false}
-                      activeDot={{
-                        r: 4,
-                        fill: 'var(--accent)',
-                        stroke: '#fff',
-                        strokeWidth: 2,
-                      }}
-                    />
-                  </AreaChart>
-                ) : (
-                  <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
-                    <XAxis
-                      dataKey="label"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                      dy={6}
-                      interval="preserveStartEnd"
-                    />
-                    <YAxis
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fill: '#9ca3af', fontWeight: 500 }}
-                      width={30}
-                      allowDecimals={false}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: '#111827',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '12px',
-                        color: '#fff',
-                        padding: '8px 12px',
-                      }}
-                      formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
-                      labelStyle={{ color: '#9ca3af', fontSize: '10px', marginBottom: '2px' }}
-                      cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
-                    />
-                    <Bar
-                      dataKey="orders"
-                      fill="var(--accent)"
-                      radius={[4, 4, 0, 0]}
-                      maxBarSize={28}
-                    />
-                  </BarChart>
-                )}
-              </ResponsiveContainer>
+              <div className="px-2 pb-2 flex-1 min-h-[120px] h-[140px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  {chartMode === 'revenue' ? (
+                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="hubRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
+                          <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.1} />
+                          <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        dy={4}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        tickFormatter={formatCompactCFA}
+                        width={40}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: '#111827',
+                          border: 'none',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          color: '#fff',
+                          padding: '6px 10px',
+                        }}
+                        formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
+                        labelStyle={{ color: '#9ca3af', fontSize: '9px', marginBottom: '2px' }}
+                        cursor={{
+                          stroke: 'var(--accent)',
+                          strokeWidth: 1,
+                          strokeDasharray: '4 4',
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="revenue"
+                        stroke="var(--accent)"
+                        fill="url(#hubRevenueGrad)"
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{
+                          r: 3,
+                          fill: 'var(--accent)',
+                          stroke: '#fff',
+                          strokeWidth: 2,
+                        }}
+                      />
+                    </AreaChart>
+                  ) : (
+                    <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <XAxis
+                        dataKey="label"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        dy={4}
+                        interval="preserveStartEnd"
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        width={25}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: '#111827',
+                          border: 'none',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                          color: '#fff',
+                          padding: '6px 10px',
+                        }}
+                        formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
+                        labelStyle={{ color: '#9ca3af', fontSize: '9px', marginBottom: '2px' }}
+                        cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
+                      />
+                      <Bar
+                        dataKey="orders"
+                        fill="var(--accent)"
+                        radius={[3, 3, 0, 0]}
+                        maxBarSize={24}
+                      />
+                    </BarChart>
+                  )}
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
 
-          {/* ═══ RECENT ORDERS + KPIs row ═══ */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Recent orders — takes 2 cols */}
-            <div className="md:col-span-2 bg-app-card rounded-2xl border border-app-border overflow-hidden">
-              <div className="px-4 sm:px-5 py-3 border-b border-app-border flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Receipt className="h-3.5 w-3.5 text-app-text-muted" />
-                  <h2 className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
+          {/* ═══ BOTTOM ROW: Recent Orders + Establishments ═══ */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
+            {/* Recent orders */}
+            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0">
+              <div className="px-3 py-2 border-b border-app-border flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-1.5">
+                  <Receipt className="h-3 w-3 text-app-text-muted" />
+                  <h2 className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
                     Commandes récentes
                   </h2>
                 </div>
                 {recentOrders.length > 0 && (
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-status-success" />
                     </span>
-                    <span className="text-[9px] text-status-success font-medium">Live</span>
+                    <span className="text-[8px] text-status-success font-medium">Live</span>
                   </div>
                 )}
               </div>
-
-              {recentOrders.length > 0 ? (
-                <div className="divide-y divide-app-border">
-                  {recentOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      onClick={() => handleSelectTenant(order.tenant_slug)}
-                      className="flex items-center gap-3 px-4 sm:px-5 py-2.5 hover:bg-app-hover transition-colors cursor-pointer"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold text-app-text">
-                            #{order.order_number}
-                          </span>
-                          <span
-                            className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
-                          >
-                            {STATUS_LABELS[order.status] || order.status}
-                          </span>
+              <div className="flex-1 overflow-y-auto scrollbar-hide">
+                {recentOrders.length > 0 ? (
+                  <div className="divide-y divide-app-border">
+                    {recentOrders.map((order) => (
+                      <div
+                        key={order.id}
+                        onClick={() => handleSelectTenant(order.tenant_slug)}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-app-hover transition-colors cursor-pointer"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-bold text-app-text">
+                              #{order.order_number}
+                            </span>
+                            <span
+                              className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
+                            >
+                              {STATUS_LABELS[order.status] || order.status}
+                            </span>
+                          </div>
+                          {restaurants.length > 1 && (
+                            <p className="text-[9px] text-app-text-muted truncate">
+                              {order.tenant_name}
+                            </p>
+                          )}
                         </div>
-                        {restaurants.length > 1 && (
-                          <p className="text-[10px] text-app-text-muted truncate">
-                            {order.tenant_name}
+                        <div className="text-right shrink-0">
+                          <p className="text-[11px] font-bold text-app-text tabular-nums">
+                            {formatCFA(order.total)}
                           </p>
-                        )}
+                          <p className="text-[8px] text-app-text-muted tabular-nums">
+                            {formatTime(order.created_at)}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-bold text-app-text tabular-nums">
-                          {formatCFA(order.total)}
-                        </p>
-                        <p className="text-[9px] text-app-text-muted tabular-nums">
-                          {formatTime(order.created_at)}
-                        </p>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6">
+                    <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
+                    <p className="text-[10px] text-app-text-muted">Aucune commande récente</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Establishments */}
+            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0">
+              <div className="px-3 py-2 border-b border-app-border flex items-center justify-between shrink-0">
+                <h2 className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
+                  Mes établissements
+                </h2>
+                <button
+                  onClick={() => setShowWizard(true)}
+                  className="flex items-center gap-1 text-[10px] font-medium text-accent hover:text-accent-hover transition-colors"
+                >
+                  <Plus className="h-3 w-3" />
+                  Ajouter
+                </button>
+              </div>
+              <div className="flex-1 overflow-y-auto scrollbar-hide">
+                <div className="divide-y divide-app-border">
+                  {restaurants.map((r) => (
+                    <div
+                      key={r.tenant_id}
+                      onClick={() => handleSelectTenant(r.tenant_slug)}
+                      className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer group"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {r.tenant_logo_url ? (
+                          <Image
+                            src={r.tenant_logo_url}
+                            alt={r.tenant_name}
+                            width={32}
+                            height={32}
+                            className="h-8 w-8 rounded-lg object-cover shrink-0"
+                          />
+                        ) : (
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-elevated shrink-0">
+                            <Building2 className="h-3.5 w-3.5 text-app-text-muted" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-1.5">
+                            <h3 className="text-xs font-semibold text-app-text truncate">
+                              {r.tenant_name}
+                            </h3>
+                            <span
+                              className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
+                                r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'
+                              }`}
+                            />
+                            {r.tenant_plan && (
+                              <Badge
+                                variant="outline"
+                                className="text-[8px] font-semibold rounded-md border-app-border px-1 py-0"
+                              >
+                                {r.tenant_plan}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-[9px] text-app-text-muted">
+                            {r.tenant_slug}.attabl.com
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 shrink-0">
+                        <div className="hidden sm:block text-right">
+                          <p className="text-[8px] text-app-text-muted uppercase">Cmd</p>
+                          <p className="text-xs font-bold text-app-text tabular-nums">
+                            {Number(r.orders_today)}
+                          </p>
+                        </div>
+                        <div className="hidden sm:block text-right">
+                          <p className="text-[8px] text-app-text-muted uppercase">CA</p>
+                          <p className="text-xs font-bold text-app-text tabular-nums">
+                            {formatCFA(Number(r.revenue_today))}
+                          </p>
+                        </div>
+                        <ArrowRight className="h-3.5 w-3.5 text-app-text-muted group-hover:text-accent transition-colors" />
                       </div>
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-10">
-                  <ShoppingBag className="h-6 w-6 text-app-text-muted/30 mb-2" />
-                  <p className="text-xs text-app-text-muted">Aucune commande récente</p>
-                </div>
-              )}
-            </div>
-
-            {/* Side KPI cards */}
-            <div className="space-y-3">
-              <div className="bg-app-card rounded-2xl border border-app-border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="rounded-lg p-1.5 bg-accent-muted">
-                    <TrendingUp className="h-3.5 w-3.5 text-accent" />
-                  </div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                    CA aujourd&apos;hui
-                  </span>
-                </div>
-                <p className="text-xl font-black text-app-text tabular-nums">
-                  {formatCFA(ownerGlobals.totalRevenueToday)}
-                </p>
-                <p className="text-[10px] text-app-text-muted mt-1">
-                  Mois : {formatCFA(ownerGlobals.totalRevenueMonth)}
-                </p>
               </div>
-
-              <div className="bg-app-card rounded-2xl border border-app-border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="rounded-lg p-1.5 bg-blue-500/10">
-                    <ShoppingBag className="h-3.5 w-3.5 text-blue-500" />
-                  </div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                    Commandes
-                  </span>
-                </div>
-                <p className="text-xl font-black text-app-text tabular-nums">
-                  {ownerGlobals.totalOrdersToday}
-                </p>
-                <p className="text-[10px] text-app-text-muted mt-1">
-                  Mois : {ownerGlobals.totalOrdersMonth}
-                </p>
-              </div>
-
-              <div className="bg-app-card rounded-2xl border border-app-border p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="rounded-lg p-1.5 bg-app-elevated">
-                    <Store className="h-3.5 w-3.5 text-app-text-muted" />
-                  </div>
-                  <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                    Établissements
-                  </span>
-                </div>
-                <p className="text-xl font-black text-app-text tabular-nums">
-                  {ownerGlobals.totalRestaurants}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* ═══ MY ESTABLISHMENTS ═══ */}
-          <div>
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
-                Mes établissements
-              </h2>
-              <button
-                onClick={() => setShowWizard(true)}
-                className="flex items-center gap-1.5 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Ajouter
-              </button>
-            </div>
-
-            <div className="space-y-1.5">
-              {restaurants.map((r) => (
-                <div
-                  key={r.tenant_id}
-                  onClick={() => handleSelectTenant(r.tenant_slug)}
-                  className="flex items-center justify-between gap-3 border border-app-border rounded-xl bg-app-card p-3 sm:p-4 hover:bg-app-hover hover:border-accent/20 transition-all cursor-pointer group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    {r.tenant_logo_url ? (
-                      <Image
-                        src={r.tenant_logo_url}
-                        alt={r.tenant_name}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 rounded-xl object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-app-elevated shrink-0">
-                        <Building2 className="h-4 w-4 text-app-text-muted" />
-                      </div>
-                    )}
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-sm font-semibold text-app-text truncate">
-                          {r.tenant_name}
-                        </h3>
-                        <span
-                          className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
-                            r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'
-                          }`}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <p className="text-[10px] text-app-text-muted">
-                          {r.tenant_slug}.attabl.com
-                        </p>
-                        {r.tenant_plan && (
-                          <Badge
-                            variant="outline"
-                            className="text-[9px] font-semibold rounded-md border-app-border px-1.5 py-0"
-                          >
-                            {r.tenant_plan}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 shrink-0">
-                    <div className="hidden md:block text-right">
-                      <p className="text-[9px] text-app-text-muted uppercase tracking-wide">
-                        Commandes
-                      </p>
-                      <p className="text-sm font-bold text-app-text tabular-nums">
-                        {Number(r.orders_today)}
-                      </p>
-                    </div>
-                    <div className="hidden md:block text-right">
-                      <p className="text-[9px] text-app-text-muted uppercase tracking-wide">CA</p>
-                      <p className="text-sm font-bold text-app-text tabular-nums">
-                        {formatCFA(Number(r.revenue_today))}
-                      </p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-app-text-muted group-hover:text-accent transition-colors" />
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
