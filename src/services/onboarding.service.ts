@@ -47,6 +47,8 @@ interface OnboardingCompleteData {
   primaryColor?: string;
   secondaryColor?: string;
   description?: string;
+  currency?: string;
+  language?: string;
   tenantSlug?: string;
   menuItems?: MenuItem[];
 }
@@ -206,6 +208,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
       if (data.tenantName) {
         tenantUpdate.name = data.tenantName;
       }
+      if (data.currency) {
+        tenantUpdate.currency = data.currency;
+      }
       const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
       if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
 
@@ -259,33 +264,64 @@ export function createOnboardingService(supabase: SupabaseClient) {
         }
       }
 
-      // 4. Create category and menu items if provided
+      // 4. Create categories and menu items if provided
       if (data.menuItems && data.menuItems.length > 0 && data.menuItems.some((item) => item.name)) {
-        const categoryName = data.menuItems[0]?.category || 'Menu';
+        const validItems = data.menuItems.filter((item) => item.name && item.name.trim());
 
-        const { data: category } = await supabase
-          .from('categories')
-          .insert({
-            tenant_id: tenantId,
-            name: categoryName,
-            sort_order: 1,
-          })
-          .select()
-          .single();
+        if (validItems.length > 0) {
+          // Group items by category name so each category is created separately
+          const itemsByCategory = new Map<string, MenuItem[]>();
+          for (const item of validItems) {
+            const catName = item.category?.trim() || 'Menu';
+            const existing = itemsByCategory.get(catName) || [];
+            existing.push(item);
+            itemsByCategory.set(catName, existing);
+          }
 
-        if (category) {
-          const validItems = data.menuItems.filter((item) => item.name && item.name.trim());
+          let categorySortOrder = 1;
+          let itemDisplayOrder = 1;
 
-          if (validItems.length > 0) {
-            await supabase.from('menu_items').insert(
-              validItems.map((item) => ({
+          for (const [categoryName, items] of itemsByCategory) {
+            const { data: category, error: catError } = await supabase
+              .from('categories')
+              .insert({
+                tenant_id: tenantId,
+                name: categoryName,
+                is_active: true,
+                sort_order: categorySortOrder,
+                display_order: categorySortOrder,
+              })
+              .select()
+              .single();
+
+            if (catError || !category) {
+              logger.error('Failed to create category during onboarding', catError, {
+                categoryName,
+                tenantId,
+              });
+              continue;
+            }
+
+            categorySortOrder++;
+
+            const { error: itemsError } = await supabase.from('menu_items').insert(
+              items.map((item) => ({
                 tenant_id: tenantId,
                 category_id: category.id,
                 name: item.name,
                 price: item.price || 0,
+                image_url: item.imageUrl || null,
                 is_available: true,
+                display_order: itemDisplayOrder++,
               })),
             );
+
+            if (itemsError) {
+              logger.error('Failed to create menu items during onboarding', itemsError, {
+                categoryName,
+                tenantId,
+              });
+            }
           }
         }
       }
@@ -318,6 +354,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
             primary_color,
             secondary_color,
             description,
+            currency,
             onboarding_completed
           )
         `,
@@ -346,6 +383,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         country: tenant.country || 'Tchad',
         phone: tenant.phone || '',
         tableCount: tenant.table_count || 10,
+        currency: tenant.currency || 'XAF',
         tableConfigMode: 'skip',
         tableZones: [],
         logoUrl: tenant.logo_url || '',

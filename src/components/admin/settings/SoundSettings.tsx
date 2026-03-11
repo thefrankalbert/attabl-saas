@@ -132,10 +132,6 @@ export function SoundSettings({
 
     setSelectedId(sound.id);
     onSoundChange(sound.id);
-    toast({
-      title: t('soundSelected'),
-      description: t('soundSelectedDesc', { name: sound.name }),
-    });
   };
 
   const handleSoundUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -221,11 +217,6 @@ export function SoundSettings({
     setCustomSoundUrl(null);
     setSelectedId(DEFAULT_SOUND_ID);
     onSoundChange(DEFAULT_SOUND_ID);
-
-    toast({
-      title: t('soundSelected'),
-      description: t('soundSelectedDesc', { name: SOUND_LIBRARY[0].name }),
-    });
   };
 
   return (

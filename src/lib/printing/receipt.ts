@@ -12,15 +12,23 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Génère le HTML d'un reçu client pour impression.
- * Format monospace optimisé pour imprimante thermique 80mm.
+ * Génère le HTML d'un reçu client premium pour impression.
+ * Design épuré inspiré du client-space, optimisé pour imprimante thermique 80mm.
  */
 export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const currency = tenant.currency || 'XAF';
+  const currencySymbol = getCurrencySymbol(currency);
   const items = order.items || [];
-  const orderDate = new Date(order.created_at).toLocaleString('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'short',
+  const primaryColor = tenant.primary_color || '#18181b';
+
+  const orderDate = new Date(order.created_at).toLocaleDateString('fr-FR', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric',
+  });
+  const orderTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   const serviceTypeLabels: Record<string, string> = {
@@ -32,38 +40,39 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
 
   const serviceLabel = serviceTypeLabels[order.service_type || 'dine_in'] || 'Sur place';
 
-  // Build items rows
+  // ─── Header section (logo or name) ────────────────────
+  const logoHTML = tenant.logo_url
+    ? `<img src="${escapeHtml(tenant.logo_url)}" alt="${escapeHtml(tenant.name || '')}" style="max-height:48px;max-width:160px;margin:0 auto 8px;display:block;object-fit:contain;" />`
+    : '';
+
+  // ─── Items rows ────────────────────────────────────────
   const itemsHTML = items
-    .map(
-      (item) => `
-      <tr>
-        <td style="text-align:left;">${item.quantity}x ${escapeHtml(item.name)}</td>
-        <td style="text-align:right;">${formatAmount(item.price * item.quantity, currency)}</td>
-      </tr>
-      ${
-        item.notes
-          ? `<tr><td colspan="2" style="font-size:11px;color:#666;padding-left:20px;">↳ ${escapeHtml(item.notes)}</td></tr>`
-          : ''
+    .map((item) => {
+      const lineTotal = item.price * item.quantity;
+      let row = `
+        <div class="item-row">
+          <span class="item-qty">${item.quantity}</span>
+          <span class="item-name">${escapeHtml(item.name)}</span>
+          <span class="item-price">${formatAmount(lineTotal, currency)}</span>
+        </div>`;
+
+      if (item.notes) {
+        row += `<div class="item-detail">↳ ${escapeHtml(item.notes)}</div>`;
       }
-      ${
-        item.customer_notes
-          ? `<tr><td colspan="2" style="font-size:11px;color:#c59000;padding-left:20px;">📝 ${escapeHtml(item.customer_notes)}</td></tr>`
-          : ''
+      if (item.customer_notes) {
+        row += `<div class="item-detail item-detail--note">Note: ${escapeHtml(item.customer_notes)}</div>`;
       }
-      ${
-        item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0
-          ? item.modifiers
-              .map(
-                (m) =>
-                  `<tr><td colspan="2" style="font-size:11px;color:#0066cc;padding-left:20px;">+ ${escapeHtml(m.name)} (${formatAmount(m.price, currency)})</td></tr>`,
-              )
-              .join('')
-          : ''
-      }`,
-    )
+      if (item.modifiers && Array.isArray(item.modifiers) && item.modifiers.length > 0) {
+        for (const m of item.modifiers) {
+          row += `<div class="item-detail item-detail--mod">+ ${escapeHtml(m.name)} (${formatAmount(m.price, currency)})</div>`;
+        }
+      }
+
+      return row;
+    })
     .join('');
 
-  // Build breakdown
+  // ─── Breakdown ─────────────────────────────────────────
   const subtotal = order.subtotal || order.total_price || order.total || 0;
   const taxAmount = order.tax_amount || 0;
   const serviceCharge = order.service_charge_amount || 0;
@@ -72,23 +81,41 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const total = order.total || order.total_price || subtotal;
 
   let breakdownHTML = `
-    <tr><td>Sous-total</td><td style="text-align:right;">${formatAmount(subtotal, currency)}</td></tr>
-  `;
+    <div class="breakdown-row">
+      <span>Sous-total</span>
+      <span>${formatAmount(subtotal, currency)}</span>
+    </div>`;
 
   if (taxAmount > 0) {
-    breakdownHTML += `<tr><td>TVA</td><td style="text-align:right;">${formatAmount(taxAmount, currency)}</td></tr>`;
+    breakdownHTML += `
+    <div class="breakdown-row">
+      <span>TVA</span>
+      <span>${formatAmount(taxAmount, currency)}</span>
+    </div>`;
   }
   if (serviceCharge > 0) {
-    breakdownHTML += `<tr><td>Service</td><td style="text-align:right;">${formatAmount(serviceCharge, currency)}</td></tr>`;
+    breakdownHTML += `
+    <div class="breakdown-row">
+      <span>Service</span>
+      <span>${formatAmount(serviceCharge, currency)}</span>
+    </div>`;
   }
   if (discount > 0) {
-    breakdownHTML += `<tr><td style="color:#dc2626;">Réduction</td><td style="text-align:right;color:#dc2626;">-${formatAmount(discount, currency)}</td></tr>`;
+    breakdownHTML += `
+    <div class="breakdown-row breakdown-row--discount">
+      <span>Réduction</span>
+      <span>-${formatAmount(discount, currency)}</span>
+    </div>`;
   }
   if (tipAmount > 0) {
-    breakdownHTML += `<tr><td>Pourboire</td><td style="text-align:right;">${formatAmount(tipAmount, currency)}</td></tr>`;
+    breakdownHTML += `
+    <div class="breakdown-row breakdown-row--tip">
+      <span>Pourboire</span>
+      <span>+${formatAmount(tipAmount, currency)}</span>
+    </div>`;
   }
 
-  // Payment method
+  // ─── Payment method ────────────────────────────────────
   const paymentLabels: Record<string, string> = {
     cash: 'Espèces',
     card: 'Carte bancaire',
@@ -98,6 +125,9 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     ? paymentLabels[order.payment_method] || order.payment_method
     : '';
 
+  // ─── Tenant URL ────────────────────────────────────────
+  const tenantUrl = tenant.slug ? `${tenant.slug}.attabl.com` : '';
+
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -105,94 +135,321 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   <title>Reçu - ${escapeHtml(order.order_number || `Table ${order.table_number}`)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: 'Courier New', monospace;
+      font-family: -apple-system, 'Segoe UI', system-ui, sans-serif;
       font-size: 13px;
-      width: 300px;
+      width: 302px;
       margin: 0 auto;
-      padding: 10px;
-      color: #000;
+      padding: 0;
+      color: #18181b;
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
     }
-    .center { text-align: center; }
-    .bold { font-weight: bold; }
-    .separator {
-      border-top: 1px dashed #000;
-      margin: 8px 0;
+
+    .receipt {
+      padding: 16px 14px;
     }
-    table { width: 100%; border-collapse: collapse; }
-    td { padding: 2px 0; vertical-align: top; }
-    .total-row td {
-      font-size: 16px;
-      font-weight: bold;
+
+    /* ─── Header ─────────────────────────────────── */
+    .header {
+      text-align: center;
+      padding-bottom: 14px;
+    }
+    .header .tenant-name {
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: ${primaryColor};
+      margin-bottom: 2px;
+    }
+    .header .tenant-info {
+      font-size: 10px;
+      color: #a1a1aa;
+      line-height: 1.5;
+    }
+
+    /* ─── Dividers ────────────────────────────────── */
+    .divider {
+      border: none;
+      border-top: 1px solid #e4e4e7;
+      margin: 12px 0;
+    }
+    .divider--strong {
+      border-top: 2px solid #18181b;
+      margin: 14px 0;
+    }
+
+    /* ─── Order info card ─────────────────────────── */
+    .info-card {
+      background: #fafafa;
+      border: 1px solid #f4f4f5;
+      border-radius: 8px;
+      padding: 10px 12px;
+      margin-bottom: 2px;
+    }
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 3px 0;
+    }
+    .info-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a1a1aa;
+      font-weight: 600;
+    }
+    .info-value {
+      font-size: 12px;
+      font-weight: 700;
+      color: #18181b;
+      font-variant-numeric: tabular-nums;
+    }
+    .info-value--mono {
+      font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    }
+
+    /* ─── Items section ───────────────────────────── */
+    .items-header {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #a1a1aa;
+      font-weight: 600;
+      padding: 0 0 6px;
+    }
+    .item-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 5px 0;
+    }
+    .item-qty {
+      font-size: 12px;
+      font-weight: 800;
+      color: ${primaryColor};
+      min-width: 18px;
+      text-align: center;
+    }
+    .item-name {
+      flex: 1;
+      font-size: 12px;
+      color: #18181b;
+      line-height: 1.3;
+    }
+    .item-price {
+      font-size: 12px;
+      font-weight: 700;
+      color: #18181b;
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+    .item-detail {
+      font-size: 10px;
+      color: #71717a;
+      padding: 1px 0 1px 26px;
+      line-height: 1.4;
+    }
+    .item-detail--note {
+      color: #ca8a04;
+    }
+    .item-detail--mod {
+      color: #2563eb;
+    }
+
+    /* ─── Breakdown ───────────────────────────────── */
+    .breakdown-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #71717a;
+      padding: 2px 0;
+    }
+    .breakdown-row--discount {
+      color: #dc2626;
+    }
+    .breakdown-row--tip {
+      color: #059669;
+    }
+
+    /* ─── Total ───────────────────────────────────── */
+    .total-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 4px;
+    }
+    .total-label {
+      font-size: 14px;
+      font-weight: 800;
+      color: #18181b;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .total-amount {
+      font-size: 20px;
+      font-weight: 900;
+      color: #18181b;
+      font-variant-numeric: tabular-nums;
+    }
+    .total-currency {
+      font-size: 12px;
+      font-weight: 600;
+      color: #a1a1aa;
+      margin-left: 4px;
+    }
+
+    /* ─── Payment badge ───────────────────────────── */
+    .payment-badge {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #71717a;
+      background: #f4f4f5;
+      border: 1px solid #e4e4e7;
+      border-radius: 4px;
+      padding: 3px 10px;
+    }
+
+    /* ─── Footer ──────────────────────────────────── */
+    .footer {
+      text-align: center;
       padding-top: 6px;
-      border-top: 2px solid #000;
     }
+    .footer .thank-you {
+      font-size: 13px;
+      font-weight: 700;
+      color: #18181b;
+      margin-bottom: 4px;
+    }
+    .footer .tenant-url {
+      font-size: 10px;
+      color: #a1a1aa;
+      letter-spacing: 0.02em;
+    }
+    .footer .powered {
+      font-size: 9px;
+      color: #d4d4d8;
+      margin-top: 8px;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ─── Print styles ────────────────────────────── */
     @media print {
       body { width: 100%; }
       @page { margin: 0; size: 80mm auto; }
+      .info-card { background: #fff; border: 1px solid #e4e4e7; }
     }
   </style>
 </head>
 <body>
-  <!-- Header -->
-  <div class="center">
-    <h2 style="font-size:18px;margin-bottom:4px;">${escapeHtml(tenant.name || 'Restaurant')}</h2>
-    ${tenant.address ? `<p style="font-size:11px;">${escapeHtml(tenant.address)}</p>` : ''}
-    ${tenant.phone ? `<p style="font-size:11px;">Tél: ${escapeHtml(tenant.phone)}</p>` : ''}
+<div class="receipt">
+
+  <!-- ═══ Header ═══ -->
+  <div class="header">
+    ${logoHTML}
+    <div class="tenant-name">${escapeHtml(tenant.name || 'Restaurant')}</div>
+    ${tenant.address ? `<div class="tenant-info">${escapeHtml(tenant.address)}</div>` : ''}
+    ${tenant.phone ? `<div class="tenant-info">Tél : ${escapeHtml(tenant.phone)}</div>` : ''}
   </div>
 
-  <div class="separator"></div>
+  <hr class="divider" />
 
-  <!-- Order info -->
-  <table>
-    <tr><td class="bold">N°</td><td style="text-align:right;">${escapeHtml(order.order_number || '—')}</td></tr>
-    <tr><td>Date</td><td style="text-align:right;">${orderDate}</td></tr>
-    <tr><td>Table</td><td style="text-align:right;">${escapeHtml(String(order.table_number || '—'))}</td></tr>
-    <tr><td>Service</td><td style="text-align:right;">${serviceLabel}</td></tr>
-    ${order.room_number ? `<tr><td>Chambre</td><td style="text-align:right;">${escapeHtml(String(order.room_number))}</td></tr>` : ''}
-    ${order.customer_name ? `<tr><td>Client</td><td style="text-align:right;">${escapeHtml(order.customer_name)}</td></tr>` : ''}
-    <tr><td>Devise</td><td style="text-align:right;">${getCurrencySymbol(currency)}</td></tr>
-  </table>
+  <!-- ═══ Order info ═══ -->
+  <div class="info-card">
+    <div class="info-row">
+      <span class="info-label">N° commande</span>
+      <span class="info-value info-value--mono">${escapeHtml(order.order_number || '—')}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Date</span>
+      <span class="info-value">${orderDate}</span>
+    </div>
+    <div class="info-row">
+      <span class="info-label">Heure</span>
+      <span class="info-value info-value--mono">${orderTime}</span>
+    </div>
+    ${
+      order.table_number
+        ? `<div class="info-row">
+      <span class="info-label">Table</span>
+      <span class="info-value info-value--mono">${escapeHtml(String(order.table_number))}</span>
+    </div>`
+        : ''
+    }
+    <div class="info-row">
+      <span class="info-label">Service</span>
+      <span class="info-value">${serviceLabel}</span>
+    </div>
+    ${
+      order.room_number
+        ? `<div class="info-row">
+      <span class="info-label">Chambre</span>
+      <span class="info-value info-value--mono">${escapeHtml(String(order.room_number))}</span>
+    </div>`
+        : ''
+    }
+    ${
+      order.customer_name
+        ? `<div class="info-row">
+      <span class="info-label">Client</span>
+      <span class="info-value">${escapeHtml(order.customer_name)}</span>
+    </div>`
+        : ''
+    }
+    <div class="info-row">
+      <span class="info-label">Devise</span>
+      <span class="info-value">${currencySymbol}</span>
+    </div>
+  </div>
 
-  <div class="separator"></div>
+  <hr class="divider" />
 
-  <!-- Items -->
-  <table>
-    ${itemsHTML}
-  </table>
+  <!-- ═══ Items ═══ -->
+  <div class="items-header">Articles commandés</div>
+  ${itemsHTML}
 
-  <div class="separator"></div>
+  <hr class="divider" />
 
-  <!-- Breakdown -->
-  <table>
-    ${breakdownHTML}
-  </table>
+  <!-- ═══ Breakdown ═══ -->
+  ${breakdownHTML}
 
-  <table>
-    <tr class="total-row">
-      <td>TOTAL</td>
-      <td style="text-align:right;">${formatAmount(total, currency)}</td>
-    </tr>
-  </table>
+  <hr class="divider--strong" />
+
+  <!-- ═══ Total ═══ -->
+  <div class="total-section">
+    <span class="total-label">Total</span>
+    <span>
+      <span class="total-amount">${formatAmount(total + tipAmount, currency)}</span>
+      <span class="total-currency">${currencySymbol}</span>
+    </span>
+  </div>
 
   ${
     paymentLabel
       ? `
-    <div class="separator"></div>
-    <table>
-      <tr><td>Paiement</td><td style="text-align:right;">${paymentLabel}</td></tr>
-    </table>
-  `
+  <hr class="divider" />
+  <div style="text-align:center;padding:4px 0;">
+    <span class="payment-badge">${paymentLabel}</span>
+  </div>`
       : ''
   }
 
-  <div class="separator"></div>
+  <hr class="divider" />
 
-  <!-- Footer -->
-  <div class="center" style="margin-top:10px;">
-    <p style="font-size:12px;">Merci pour votre visite !</p>
-    <p style="font-size:10px;color:#888;margin-top:6px;">Powered by ATTABL</p>
+  <!-- ═══ Footer ═══ -->
+  <div class="footer">
+    <div class="thank-you">Merci pour votre visite !</div>
+    ${tenantUrl ? `<div class="tenant-url">${escapeHtml(tenantUrl)}</div>` : ''}
+    <div class="powered">Powered by ATTABL</div>
   </div>
+
+</div>
 </body>
 </html>`;
 }

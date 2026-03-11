@@ -18,17 +18,17 @@ describe('onboardingSaveSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject step above 5', () => {
+  it('should reject step above 6', () => {
     const result = onboardingSaveSchema.safeParse({
-      step: 6,
+      step: 7,
       data: {},
     });
     expect(result.success).toBe(false);
   });
 
-  it('should accept step 5', () => {
+  it('should accept step 6', () => {
     const result = onboardingSaveSchema.safeParse({
-      step: 5,
+      step: 6,
       data: {},
     });
     expect(result.success).toBe(true);
