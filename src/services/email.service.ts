@@ -5,6 +5,29 @@
 import { Resend } from 'resend';
 import { logger } from '@/lib/logger';
 
+/** Escape user-controlled strings before interpolating into HTML. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/** Sanitise a URL for use in an href attribute. */
+function sanitizeUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+      return encodeURI(url);
+    }
+    return '';
+  } catch {
+    return '';
+  }
+}
+
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Attabl <notifications@attabl.com>';
@@ -48,9 +71,9 @@ export async function sendStockAlertEmail(
     .map((item) => {
       const status = item.is_out ? '🔴 Rupture' : '🟡 Stock bas';
       return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:500">${item.name}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.current_stock} ${item.unit}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.min_stock_alert} ${item.unit}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:500">${escapeHtml(item.name)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.current_stock} ${escapeHtml(item.unit)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.min_stock_alert} ${escapeHtml(item.unit)}</td>
         <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${status}</td>
       </tr>`;
     })
@@ -58,13 +81,13 @@ export async function sendStockAlertEmail(
 
   const subject =
     outOfStockItems.length > 0
-      ? `⚠️ ${data.tenantName} — ${outOfStockItems.length} produit(s) en rupture de stock`
-      : `📉 ${data.tenantName} — ${lowStockItems.length} produit(s) en stock bas`;
+      ? `⚠️ ${escapeHtml(data.tenantName)} — ${outOfStockItems.length} produit(s) en rupture de stock`
+      : `📉 ${escapeHtml(data.tenantName)} — ${lowStockItems.length} produit(s) en stock bas`;
 
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0">
-        <h1 style="color:white;margin:0;font-size:20px">Alerte Stock — ${data.tenantName}</h1>
+        <h1 style="color:white;margin:0;font-size:20px">Alerte Stock — ${escapeHtml(data.tenantName)}</h1>
       </div>
       <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none">
         <p style="color:#374151;margin:0 0 16px">
@@ -83,7 +106,7 @@ export async function sendStockAlertEmail(
           <tbody>${itemRows}</tbody>
         </table>
         <div style="margin-top:24px;text-align:center">
-          <a href="${data.dashboardUrl}" style="display:inline-block;background:#1f2937;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500">
+          <a href="${sanitizeUrl(data.dashboardUrl)}" style="display:inline-block;background:#1f2937;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500">
             Voir l'inventaire
           </a>
         </div>
@@ -141,20 +164,20 @@ export async function sendInvitationEmail(to: string, data: InvitationEmailData)
   const html = `
     <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
       <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0;text-align:center">
-        ${data.restaurantLogoUrl ? `<img src="${data.restaurantLogoUrl}" alt="" style="height:48px;margin-bottom:12px;border-radius:8px" />` : ''}
-        <h1 style="color:white;margin:0;font-size:22px">${data.restaurantName}</h1>
+        ${data.restaurantLogoUrl ? `<img src="${sanitizeUrl(data.restaurantLogoUrl)}" alt="" style="height:48px;margin-bottom:12px;border-radius:8px" />` : ''}
+        <h1 style="color:white;margin:0;font-size:22px">${escapeHtml(data.restaurantName)}</h1>
       </div>
       <div style="background:white;padding:32px 24px;border:1px solid #e5e7eb;border-top:none">
         <h2 style="color:#111827;margin:0 0 16px;font-size:18px">Vous avez ete invite !</h2>
         <p style="color:#374151;margin:0 0 8px;line-height:1.6">
-          Vous avez ete invite a rejoindre l'equipe de <strong>${data.restaurantName}</strong> sur ATTABL
-          en tant que <strong>${roleLabel}</strong>.
+          Vous avez ete invite a rejoindre l'equipe de <strong>${escapeHtml(data.restaurantName)}</strong> sur ATTABL
+          en tant que <strong>${escapeHtml(roleLabel)}</strong>.
         </p>
         <p style="color:#6b7280;margin:0 0 24px;font-size:14px">
           Cette invitation expire dans 72 heures.
         </p>
         <div style="text-align:center;margin:32px 0">
-          <a href="${data.inviteUrl}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
+          <a href="${sanitizeUrl(data.inviteUrl)}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
             Accepter l'invitation
           </a>
         </div>
@@ -174,7 +197,7 @@ export async function sendInvitationEmail(to: string, data: InvitationEmailData)
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
       to: [to],
-      subject: `Rejoignez l'equipe de ${data.restaurantName} sur ATTABL`,
+      subject: `Rejoignez l'equipe de ${escapeHtml(data.restaurantName)} sur ATTABL`,
       html,
     });
 

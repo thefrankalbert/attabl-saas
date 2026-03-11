@@ -143,7 +143,7 @@ export async function actionUpdateMenu(
 
   try {
     const menuService = createMenuService(supabase);
-    const menu = await menuService.updateMenu(parsed.data);
+    const menu = await menuService.updateMenu(tenantId, parsed.data);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {
@@ -183,7 +183,7 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
 
   try {
     const menuService = createMenuService(supabase);
-    await menuService.deleteMenu(menuId);
+    await menuService.deleteMenu(menuId, tenantId);
 
     // Fire-and-forget audit log
     const audit = createAuditService(supabase, {

@@ -48,6 +48,7 @@ const localeLabels: Record<string, { label: string; flag: string }> = {
 interface EstablishmentStepProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
+  variant?: 'identity' | 'details';
 }
 
 /** Compact toggle switch component */
@@ -61,7 +62,7 @@ function ToggleSwitch({
   onChange: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between py-2">
       <Label className="text-sm font-medium text-app-text-secondary">{label}</Label>
       <button
         type="button"
@@ -69,7 +70,7 @@ function ToggleSwitch({
         aria-checked={checked}
         onClick={onChange}
         className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
-          checked ? 'bg-[#CCFF00]' : 'bg-app-elevated'
+          checked ? 'bg-accent' : 'bg-app-elevated'
         }`}
       >
         <span
@@ -97,14 +98,14 @@ function NumberStepper({
   onChange: (val: number) => void;
 }) {
   return (
-    <div>
-      <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">{label}</Label>
-      <div className="rounded-xl border border-app-border inline-flex items-center h-10">
+    <div className="py-1">
+      <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
+      <div className="rounded-xl border border-app-border bg-app-elevated/50 inline-flex items-center h-11">
         <button
           type="button"
           onClick={() => value > min && onChange(value - 1)}
           disabled={value <= min}
-          className="px-3 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-3.5 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed rounded-l-xl hover:bg-app-hover transition-colors"
         >
           <Minus className="h-4 w-4" />
         </button>
@@ -119,13 +120,13 @@ function NumberStepper({
               onChange(val);
             }
           }}
-          className="w-14 text-center text-sm font-medium text-app-text border-0 bg-transparent focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-16 text-center text-sm font-semibold text-app-text border-x border-app-border bg-transparent focus:outline-none h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
         />
         <button
           type="button"
           onClick={() => value < max && onChange(value + 1)}
           disabled={value >= max}
-          className="px-3 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed"
+          className="px-3.5 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed rounded-r-xl hover:bg-app-hover transition-colors"
         >
           <Plus className="h-4 w-4" />
         </button>
@@ -134,24 +135,37 @@ function NumberStepper({
   );
 }
 
-export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) {
+export function EstablishmentStep({
+  data,
+  updateData,
+  variant = 'identity',
+}: EstablishmentStepProps) {
   const t = useTranslations('onboarding');
   const router = useRouter();
 
+  const showIdentity = variant === 'identity';
+  const showDetails = variant === 'details';
+
   return (
     <div className="h-full flex flex-col">
-      {/* Title & Subtitle */}
-      <div className="shrink-0 mb-3">
-        <h1 className="text-2xl font-bold text-app-text mb-1">{t('establishmentTitle')}</h1>
-        <p className="text-app-text-secondary text-sm">{t('establishmentSubtitle')}</p>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
-          {/* Left column: Name, Type, Address, City/Country, Phone */}
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="tenantName" className="text-sm font-medium text-app-text-secondary">
+        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+          {/* Header */}
+          <div className="mb-3">
+            <h1 className="text-base font-bold text-app-text mb-0.5">
+              {showDetails ? t('addressLabel') : t('establishmentTitle')}
+            </h1>
+            <p className="text-app-text-secondary text-xs">
+              {showDetails ? t('phoneLabel') : t('establishmentSubtitle')}
+            </p>
+          </div>
+
+          {showIdentity && (
+            <div className="mb-3">
+              <Label
+                htmlFor="tenantName"
+                className="text-xs font-semibold text-app-text mb-1.5 block"
+              >
                 {t('nameLabel')}
               </Label>
               <Input
@@ -160,15 +174,17 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                 placeholder={t('namePlaceholder')}
                 value={data.tenantName}
                 onChange={(e) => updateData({ tenantName: e.target.value })}
-                className="mt-1 h-10 rounded-xl border-app-border text-sm"
+                className="h-10 rounded-xl border-app-border bg-app-elevated/50 text-sm px-4 focus-visible:border-accent focus-visible:ring-1 focus-visible:ring-accent/30"
               />
             </div>
+          )}
 
-            <div>
-              <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+          {showIdentity && (
+            <div className="mb-3">
+              <Label className="text-xs font-semibold text-app-text mb-2 block">
                 {t('stepEstablishment')}
               </Label>
-              <div className="grid grid-cols-3 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
                 {establishmentTypes.map((type) => {
                   const Icon = type.icon;
                   const isSelected = data.establishmentType === type.id;
@@ -177,14 +193,26 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                       key={type.id}
                       type="button"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`rounded-xl p-2 border text-center transition-all ${
+                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 ${
                         isSelected
-                          ? 'border-[#CCFF00] bg-[#CCFF00]/5'
+                          ? 'border-accent bg-accent/5'
                           : 'border-app-border hover:border-app-border-hover'
                       }`}
                     >
-                      <Icon className="h-4 w-4 mx-auto mb-1 text-app-text-secondary" />
-                      <span className="font-medium text-app-text text-xs block truncate">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${
+                          isSelected ? 'bg-accent/10' : 'bg-app-elevated'
+                        }`}
+                      >
+                        <Icon
+                          className={`h-4 w-4 ${isSelected ? 'text-accent' : 'text-app-text-muted'}`}
+                        />
+                      </div>
+                      <span
+                        className={`font-medium text-[10px] text-center leading-tight ${
+                          isSelected ? 'text-app-text' : 'text-app-text-secondary'
+                        }`}
+                      >
                         {t(type.titleKey)}
                       </span>
                     </button>
@@ -192,254 +220,286 @@ export function EstablishmentStep({ data, updateData }: EstablishmentStepProps) 
                 })}
               </div>
             </div>
+          )}
 
-            <div className="pt-2 border-t border-app-border">
-              <Label
-                htmlFor="address"
-                className="text-sm font-medium text-app-text-secondary flex items-center gap-2"
-              >
-                <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
-                {t('addressLabel')}
-              </Label>
-              <Input
-                id="address"
-                type="text"
-                placeholder={t('addressPlaceholder')}
-                value={data.address}
-                onChange={(e) => updateData({ address: e.target.value })}
-                className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
+          {showDetails && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Left: Address */}
               <div>
-                <Label htmlFor="city" className="text-sm font-medium text-app-text-secondary">
-                  {t('cityLabel')}
-                </Label>
-                <Input
-                  id="city"
-                  type="text"
-                  placeholder={t('cityPlaceholder')}
-                  value={data.city}
-                  onChange={(e) => updateData({ city: e.target.value })}
-                  className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
-                />
-              </div>
-              <div>
-                <Label htmlFor="country" className="text-sm font-medium text-app-text-secondary">
-                  {t('countryLabel')}
-                </Label>
-                <Input
-                  id="country"
-                  type="text"
-                  placeholder={t('countryLabel')}
-                  value={data.country}
-                  onChange={(e) => updateData({ country: e.target.value })}
-                  className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label
-                htmlFor="phone"
-                className="text-sm font-medium text-app-text-secondary flex items-center gap-2"
-              >
-                <Phone className="h-3.5 w-3.5" />
-                {t('phoneLabel')}
-              </Label>
-              <Input
-                id="phone"
-                type="tel"
-                placeholder={t('phonePlaceholder')}
-                value={data.phone}
-                onChange={(e) => updateData({ phone: e.target.value })}
-                className="mt-1.5 h-10 rounded-xl border-app-border text-sm"
-              />
-            </div>
-          </div>
-
-          {/* Right column: Language, Currency, Type-specific fields */}
-          <div className="space-y-4">
-            {/* Language */}
-            <div>
-              <Label className="text-sm font-medium text-app-text-secondary">
-                {t('languageLabel')}
-              </Label>
-              <Select
-                value={data.language}
-                onValueChange={(val) => {
-                  updateData({ language: val });
-                  document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365}`;
-                  router.refresh();
-                }}
-              >
-                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-app-border text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(localeLabels).map(([code, { label, flag }]) => (
-                    <SelectItem key={code} value={code}>
-                      <span className="inline-flex items-center gap-2">
-                        <span>{flag}</span>
-                        <span>{label}</span>
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Currency */}
-            <div>
-              <Label className="text-sm font-medium text-app-text-secondary">
-                {t('currencyLabel')}
-              </Label>
-              <Select value={data.currency} onValueChange={(val) => updateData({ currency: val })}>
-                <SelectTrigger className="mt-1.5 h-10 rounded-xl border-app-border text-sm">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
-                  <SelectItem value="USD">USD ($)</SelectItem>
-                  <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
-                  <SelectItem value="XAF">XAF (FCFA)</SelectItem>
-                  <SelectItem value="XOF">XOF (FCFA)</SelectItem>
-                  <SelectItem value="MAD">
-                    MAD ({'\u062f'}.{'\u0645'}.)
-                  </SelectItem>
-                  <SelectItem value="TND">
-                    TND ({'\u062f'}.{'\u062a'})
-                  </SelectItem>
-                  <SelectItem value="CAD">CAD ($)</SelectItem>
-                  <SelectItem value="CHF">CHF (Fr.)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Divider — type-specific section */}
-            {data.establishmentType && (
-              <div className="pt-1 border-t border-app-border">
-                <p className="text-[10px] uppercase tracking-wide text-app-text-muted font-medium mb-2">
-                  {t('typeSpecificLabel')}
+                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                  {t('addressLabel')}
                 </p>
-              </div>
-            )}
 
-            {data.establishmentType === 'restaurant' && (
-              <>
-                <NumberStepper
-                  label={t('tableCountLabel')}
-                  value={data.tableCount}
-                  min={1}
-                  max={500}
-                  onChange={(val) => updateData({ tableCount: val })}
-                />
-                <NumberStepper
-                  label={t('totalCapacity')}
-                  value={data.totalCapacity ?? 1}
-                  min={1}
-                  max={9999}
-                  onChange={(val) => updateData({ totalCapacity: val })}
-                />
-              </>
-            )}
+                <div className="space-y-4">
+                  <div>
+                    <Label
+                      htmlFor="address"
+                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                    >
+                      <MapPin className="h-3.5 w-3.5 text-app-text-muted" />
+                      {t('addressLabel')}
+                    </Label>
+                    <Input
+                      id="address"
+                      type="text"
+                      placeholder={t('addressPlaceholder')}
+                      value={data.address}
+                      onChange={(e) => updateData({ address: e.target.value })}
+                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                    />
+                  </div>
 
-            {data.establishmentType === 'hotel' && (
-              <>
-                <NumberStepper
-                  label={t('roomCountLabel')}
-                  value={data.tableCount}
-                  min={1}
-                  max={500}
-                  onChange={(val) => updateData({ tableCount: val })}
-                />
-                <div>
-                  <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
-                    {t('starRating')}
-                  </Label>
-                  <div className="flex gap-1">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => updateData({ starRating: star })}
-                        className={`text-lg ${(data.starRating || 0) >= star ? 'text-yellow-400' : 'text-app-text-muted'}`}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label
+                        htmlFor="city"
+                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
                       >
-                        ★
-                      </button>
-                    ))}
+                        {t('cityLabel')}
+                      </Label>
+                      <Input
+                        id="city"
+                        type="text"
+                        placeholder={t('cityPlaceholder')}
+                        value={data.city}
+                        onChange={(e) => updateData({ city: e.target.value })}
+                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      />
+                    </div>
+                    <div>
+                      <Label
+                        htmlFor="country"
+                        className="text-sm font-medium text-app-text-secondary mb-1.5 block"
+                      >
+                        {t('countryLabel')}
+                      </Label>
+                      <Input
+                        id="country"
+                        type="text"
+                        placeholder={t('countryLabel')}
+                        value={data.country}
+                        onChange={(e) => updateData({ country: e.target.value })}
+                        className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label
+                      htmlFor="phone"
+                      className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-1.5"
+                    >
+                      <Phone className="h-3.5 w-3.5 text-app-text-muted" />
+                      {t('phoneLabel')}
+                    </Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder={t('phonePlaceholder')}
+                      value={data.phone}
+                      onChange={(e) => updateData({ phone: e.target.value })}
+                      className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm"
+                    />
                   </div>
                 </div>
-                <ToggleSwitch
-                  label={t('hasRestaurant')}
-                  checked={!!data.hasRestaurant}
-                  onChange={() => updateData({ hasRestaurant: !data.hasRestaurant })}
-                />
-              </>
-            )}
+              </div>
 
-            {data.establishmentType === 'bar' && (
-              <>
-                <NumberStepper
-                  label={t('tableCountLabel')}
-                  value={data.tableCount}
-                  min={1}
-                  max={500}
-                  onChange={(val) => updateData({ tableCount: val })}
-                />
-                <ToggleSwitch
-                  label={t('hasTerrace')}
-                  checked={!!data.hasTerrace}
-                  onChange={() => updateData({ hasTerrace: !data.hasTerrace })}
-                />
-              </>
-            )}
+              {/* Right: Configuration */}
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-5">
+                  Configuration
+                </p>
 
-            {data.establishmentType === 'cafe' && (
-              <>
-                <NumberStepper
-                  label={t('seatCount')}
-                  value={data.tableCount}
-                  min={1}
-                  max={500}
-                  onChange={(val) => updateData({ tableCount: val })}
-                />
-                <ToggleSwitch
-                  label={t('hasWifi')}
-                  checked={!!data.hasWifi}
-                  onChange={() => updateData({ hasWifi: !data.hasWifi })}
-                />
-              </>
-            )}
+                <div className="space-y-4">
+                  {/* Language */}
+                  <div>
+                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                      {t('languageLabel')}
+                    </Label>
+                    <Select
+                      value={data.language}
+                      onValueChange={(val) => {
+                        updateData({ language: val });
+                        document.cookie = `NEXT_LOCALE=${val};path=/;max-age=${60 * 60 * 24 * 365}`;
+                        router.refresh();
+                      }}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Object.entries(localeLabels).map(([code, { label, flag }]) => (
+                          <SelectItem key={code} value={code}>
+                            <span className="inline-flex items-center gap-2">
+                              <span>{flag}</span>
+                              <span>{label}</span>
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {data.establishmentType === 'fastfood' && (
-              <>
-                <NumberStepper
-                  label={t('registerCount')}
-                  value={data.registerCount ?? 1}
-                  min={1}
-                  max={100}
-                  onChange={(val) => updateData({ registerCount: val })}
-                />
-                <ToggleSwitch
-                  label={t('hasDelivery')}
-                  checked={!!data.hasDelivery}
-                  onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
-                />
-              </>
-            )}
+                  {/* Currency */}
+                  <div>
+                    <Label className="text-sm font-medium text-app-text-secondary mb-1.5 block">
+                      {t('currencyLabel')}
+                    </Label>
+                    <Select
+                      value={data.currency}
+                      onValueChange={(val) => updateData({ currency: val })}
+                    >
+                      <SelectTrigger className="h-11 rounded-xl border-app-border bg-app-elevated/50 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="EUR">EUR ({'\u20ac'})</SelectItem>
+                        <SelectItem value="USD">USD ($)</SelectItem>
+                        <SelectItem value="GBP">GBP ({'\u00a3'})</SelectItem>
+                        <SelectItem value="XAF">XAF (FCFA)</SelectItem>
+                        <SelectItem value="XOF">XOF (FCFA)</SelectItem>
+                        <SelectItem value="MAD">
+                          MAD ({'\u062f'}.{'\u0645'}.)
+                        </SelectItem>
+                        <SelectItem value="TND">
+                          TND ({'\u062f'}.{'\u062a'})
+                        </SelectItem>
+                        <SelectItem value="CAD">CAD ($)</SelectItem>
+                        <SelectItem value="CHF">CHF (Fr.)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            {data.establishmentType === 'other' && (
-              <NumberStepper
-                label={t('tableCountLabel')}
-                value={data.tableCount}
-                min={1}
-                max={500}
-                onChange={(val) => updateData({ tableCount: val })}
-              />
-            )}
-          </div>
+                  {/* Type-specific fields */}
+                  {data.establishmentType && (
+                    <div className="pt-2 border-t border-app-border">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
+                        {t('typeSpecificLabel')}
+                      </p>
+
+                      {data.establishmentType === 'restaurant' && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('tableCountLabel')}
+                            value={data.tableCount}
+                            min={1}
+                            max={500}
+                            onChange={(val) => updateData({ tableCount: val })}
+                          />
+                          <NumberStepper
+                            label={t('totalCapacity')}
+                            value={data.totalCapacity ?? 1}
+                            min={1}
+                            max={9999}
+                            onChange={(val) => updateData({ totalCapacity: val })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'hotel' && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('roomCountLabel')}
+                            value={data.tableCount}
+                            min={1}
+                            max={500}
+                            onChange={(val) => updateData({ tableCount: val })}
+                          />
+                          <div>
+                            <Label className="text-sm font-medium text-app-text-secondary mb-2 block">
+                              {t('starRating')}
+                            </Label>
+                            <div className="flex gap-1.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <button
+                                  key={star}
+                                  type="button"
+                                  onClick={() => updateData({ starRating: star })}
+                                  className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all ${
+                                    (data.starRating || 0) >= star
+                                      ? 'border-amber-400 bg-amber-400/10 text-amber-400'
+                                      : 'border-app-border text-app-text-muted hover:border-app-border-hover'
+                                  }`}
+                                >
+                                  ★
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <ToggleSwitch
+                            label={t('hasRestaurant')}
+                            checked={!!data.hasRestaurant}
+                            onChange={() => updateData({ hasRestaurant: !data.hasRestaurant })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'bar' && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('tableCountLabel')}
+                            value={data.tableCount}
+                            min={1}
+                            max={500}
+                            onChange={(val) => updateData({ tableCount: val })}
+                          />
+                          <ToggleSwitch
+                            label={t('hasTerrace')}
+                            checked={!!data.hasTerrace}
+                            onChange={() => updateData({ hasTerrace: !data.hasTerrace })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'cafe' && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('seatCount')}
+                            value={data.tableCount}
+                            min={1}
+                            max={500}
+                            onChange={(val) => updateData({ tableCount: val })}
+                          />
+                          <ToggleSwitch
+                            label={t('hasWifi')}
+                            checked={!!data.hasWifi}
+                            onChange={() => updateData({ hasWifi: !data.hasWifi })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'fastfood' && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('registerCount')}
+                            value={data.registerCount ?? 1}
+                            min={1}
+                            max={100}
+                            onChange={(val) => updateData({ registerCount: val })}
+                          />
+                          <ToggleSwitch
+                            label={t('hasDelivery')}
+                            checked={!!data.hasDelivery}
+                            onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'other' && (
+                        <NumberStepper
+                          label={t('tableCountLabel')}
+                          value={data.tableCount}
+                          min={1}
+                          max={500}
+                          onChange={(val) => updateData({ tableCount: val })}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

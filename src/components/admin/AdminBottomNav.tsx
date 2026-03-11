@@ -72,7 +72,7 @@ export function AdminBottomNav({ basePath, role }: AdminBottomNavProps) {
               />
               <span
                 className={cn(
-                  'text-[10px] leading-tight truncate max-w-[64px]',
+                  'text-[10px] leading-tight truncate max-w-[72px]',
                   isActive ? 'font-semibold' : 'font-medium',
                 )}
               >

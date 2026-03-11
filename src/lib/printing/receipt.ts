@@ -1,6 +1,16 @@
 import type { Order, Tenant } from '@/types/admin.types';
 import { formatAmount, getCurrencySymbol } from '@/lib/utils/currency';
 
+/** Escape user-controlled strings before interpolating into HTML. */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 /**
  * Génère le HTML d'un reçu client pour impression.
  * Format monospace optimisé pour imprimante thermique 80mm.
@@ -27,17 +37,17 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
     .map(
       (item) => `
       <tr>
-        <td style="text-align:left;">${item.quantity}x ${item.name}</td>
+        <td style="text-align:left;">${item.quantity}x ${escapeHtml(item.name)}</td>
         <td style="text-align:right;">${formatAmount(item.price * item.quantity, currency)}</td>
       </tr>
       ${
         item.notes
-          ? `<tr><td colspan="2" style="font-size:11px;color:#666;padding-left:20px;">↳ ${item.notes}</td></tr>`
+          ? `<tr><td colspan="2" style="font-size:11px;color:#666;padding-left:20px;">↳ ${escapeHtml(item.notes)}</td></tr>`
           : ''
       }
       ${
         item.customer_notes
-          ? `<tr><td colspan="2" style="font-size:11px;color:#c59000;padding-left:20px;">📝 ${item.customer_notes}</td></tr>`
+          ? `<tr><td colspan="2" style="font-size:11px;color:#c59000;padding-left:20px;">📝 ${escapeHtml(item.customer_notes)}</td></tr>`
           : ''
       }
       ${
@@ -45,7 +55,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
           ? item.modifiers
               .map(
                 (m) =>
-                  `<tr><td colspan="2" style="font-size:11px;color:#0066cc;padding-left:20px;">+ ${m.name} (${formatAmount(m.price, currency)})</td></tr>`,
+                  `<tr><td colspan="2" style="font-size:11px;color:#0066cc;padding-left:20px;">+ ${escapeHtml(m.name)} (${formatAmount(m.price, currency)})</td></tr>`,
               )
               .join('')
           : ''
@@ -58,6 +68,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   const taxAmount = order.tax_amount || 0;
   const serviceCharge = order.service_charge_amount || 0;
   const discount = order.discount_amount || 0;
+  const tipAmount = order.tip_amount || 0;
   const total = order.total || order.total_price || subtotal;
 
   let breakdownHTML = `
@@ -72,6 +83,9 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   }
   if (discount > 0) {
     breakdownHTML += `<tr><td style="color:#dc2626;">Réduction</td><td style="text-align:right;color:#dc2626;">-${formatAmount(discount, currency)}</td></tr>`;
+  }
+  if (tipAmount > 0) {
+    breakdownHTML += `<tr><td>Pourboire</td><td style="text-align:right;">${formatAmount(tipAmount, currency)}</td></tr>`;
   }
 
   // Payment method
@@ -88,7 +102,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Reçu - ${order.order_number || `Table ${order.table_number}`}</title>
+  <title>Reçu - ${escapeHtml(order.order_number || `Table ${order.table_number}`)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -122,21 +136,21 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
 <body>
   <!-- Header -->
   <div class="center">
-    <h2 style="font-size:18px;margin-bottom:4px;">${tenant.name || 'Restaurant'}</h2>
-    ${tenant.address ? `<p style="font-size:11px;">${tenant.address}</p>` : ''}
-    ${tenant.phone ? `<p style="font-size:11px;">Tél: ${tenant.phone}</p>` : ''}
+    <h2 style="font-size:18px;margin-bottom:4px;">${escapeHtml(tenant.name || 'Restaurant')}</h2>
+    ${tenant.address ? `<p style="font-size:11px;">${escapeHtml(tenant.address)}</p>` : ''}
+    ${tenant.phone ? `<p style="font-size:11px;">Tél: ${escapeHtml(tenant.phone)}</p>` : ''}
   </div>
 
   <div class="separator"></div>
 
   <!-- Order info -->
   <table>
-    <tr><td class="bold">N°</td><td style="text-align:right;">${order.order_number || '—'}</td></tr>
+    <tr><td class="bold">N°</td><td style="text-align:right;">${escapeHtml(order.order_number || '—')}</td></tr>
     <tr><td>Date</td><td style="text-align:right;">${orderDate}</td></tr>
-    <tr><td>Table</td><td style="text-align:right;">${order.table_number || '—'}</td></tr>
+    <tr><td>Table</td><td style="text-align:right;">${escapeHtml(String(order.table_number || '—'))}</td></tr>
     <tr><td>Service</td><td style="text-align:right;">${serviceLabel}</td></tr>
-    ${order.room_number ? `<tr><td>Chambre</td><td style="text-align:right;">${order.room_number}</td></tr>` : ''}
-    ${order.customer_name ? `<tr><td>Client</td><td style="text-align:right;">${order.customer_name}</td></tr>` : ''}
+    ${order.room_number ? `<tr><td>Chambre</td><td style="text-align:right;">${escapeHtml(String(order.room_number))}</td></tr>` : ''}
+    ${order.customer_name ? `<tr><td>Client</td><td style="text-align:right;">${escapeHtml(order.customer_name)}</td></tr>` : ''}
     <tr><td>Devise</td><td style="text-align:right;">${getCurrencySymbol(currency)}</td></tr>
   </table>
 

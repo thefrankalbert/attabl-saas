@@ -266,7 +266,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         className={cn(
                           'w-full text-left px-4 py-3 flex items-center justify-between transition-colors',
                           isSelected
-                            ? 'bg-primary/5 border-l-4 border-primary'
+                            ? 'bg-accent-muted border-l-4 border-accent'
                             : 'hover:bg-app-bg border-l-4 border-transparent',
                         )}
                       >
@@ -274,7 +274,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                           <p
                             className={cn(
                               'font-medium text-sm',
-                              isSelected ? 'text-primary' : 'text-app-text',
+                              isSelected ? 'text-accent' : 'text-app-text',
                             )}
                           >
                             {item.name}
@@ -302,7 +302,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
 
               {/* Recipe Editor Panel */}
-              <div className="lg:w-[450px] bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="md:w-[350px] lg:w-[450px] bg-app-card rounded-xl border border-app-border overflow-hidden">
                 {selectedItemId && selectedItem ? (
                   <div className="flex flex-col h-full">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">
@@ -324,7 +324,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                               <select
                                 value={line.ingredient_id}
                                 onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-2 focus:ring-accent"
+                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-1 focus:ring-accent/30"
                               >
                                 {ingredients.map((ing) => (
                                   <option key={ing.id} value={ing.id}>
@@ -355,7 +355,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             </div>
                             <button
                               onClick={() => removeLine(idx)}
-                              className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-500/10 rounded transition-colors"
+                              className="p-1.5 text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>

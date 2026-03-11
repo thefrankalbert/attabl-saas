@@ -37,6 +37,7 @@ async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['
     .select('role')
     .eq('user_id', user.id)
     .eq('tenant_id', tenantId)
+    .eq('is_active', true)
     .single();
 
   if (dbError || !adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
@@ -149,7 +150,15 @@ export async function actionCreateAdminUser(
     newData: { email: parsed.data.email, full_name: parsed.data.full_name, role: parsed.data.role },
   });
 
-  revalidatePath(`/sites/${tenantId}/admin/users`);
+  // Fetch tenant slug for correct revalidation path
+  const { data: tenantData } = await adminClient
+    .from('tenants')
+    .select('slug')
+    .eq('id', tenantId)
+    .single();
+  if (tenantData?.slug) {
+    revalidatePath(`/sites/${tenantData.slug}/admin/users`);
+  }
 
   return { success: true };
 }
@@ -221,6 +230,16 @@ export async function actionDeleteAdminUser(
     oldData: { email: targetUser.email, full_name: targetUser.full_name, role: targetUser.role },
   });
 
+  // Revalidate users page cache
+  const { data: tenantData } = await adminClient
+    .from('tenants')
+    .select('slug')
+    .eq('id', tenantId)
+    .single();
+  if (tenantData?.slug) {
+    revalidatePath(`/sites/${tenantData.slug}/admin/users`);
+  }
+
   return { success: true };
 }
 
@@ -273,6 +292,16 @@ export async function actionUpdateAdminUser(
     entityId: userId,
     newData: { role: data.role, full_name: data.full_name, is_active: data.is_active },
   });
+
+  // Revalidate users page cache
+  const { data: tenantData } = await adminClient
+    .from('tenants')
+    .select('slug')
+    .eq('id', tenantId)
+    .single();
+  if (tenantData?.slug) {
+    revalidatePath(`/sites/${tenantData.slug}/admin/users`);
+  }
 
   return { success: true };
 }

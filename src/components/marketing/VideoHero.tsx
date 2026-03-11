@@ -60,7 +60,7 @@ export default function VideoHero() {
           </Link>
           <Link
             href="/contact"
-            className="rounded-full bg-primary px-8 py-4 text-base font-semibold text-black transition-all hover:scale-105"
+            className="rounded-full border border-white text-white px-8 py-4 text-base font-semibold transition-all hover:bg-white/10 hover:scale-105"
           >
             Contacter l&apos;équipe
           </Link>

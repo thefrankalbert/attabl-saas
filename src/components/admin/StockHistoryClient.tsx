@@ -117,7 +117,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
             <span
               className={cn(
                 'font-mono font-medium',
-                isPositive ? 'text-green-600' : 'text-red-600',
+                isPositive ? 'text-status-success' : 'text-status-error',
               )}
             >
               {isPositive ? '+' : ''}
@@ -142,7 +142,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorKey: 'notes',
         header: () => t('columnNotes'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] break-words block">
             {row.original.notes || '\u2014'}
           </span>
         ),
@@ -215,7 +215,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                   <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
                     {/* Row 1: Ingredient + Date */}
                     <div className="flex items-start justify-between gap-2">
-                      <span className="font-medium text-app-text truncate">
+                      <span className="font-medium text-app-text break-words">
                         {movement.ingredient?.name || '\u2014'}
                         {movement.ingredient?.unit && (
                           <span className="text-app-text-muted ml-1 text-xs">
@@ -241,7 +241,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                       <span
                         className={cn(
                           'font-mono font-bold',
-                          isPositive ? 'text-green-600' : 'text-red-600',
+                          isPositive ? 'text-status-success' : 'text-status-error',
                         )}
                       >
                         {isPositive ? '+' : ''}
@@ -251,7 +251,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
                     {/* Row 3: Supplier + Notes */}
                     {(movement.supplier?.name || movement.notes) && (
-                      <div className="text-xs text-app-text-secondary truncate">
+                      <div className="text-xs text-app-text-secondary break-words">
                         {movement.supplier?.name && <span>{movement.supplier.name}</span>}
                         {movement.supplier?.name && movement.notes && <span> — </span>}
                         {movement.notes && <span>{movement.notes}</span>}

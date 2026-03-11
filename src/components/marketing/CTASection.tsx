@@ -23,7 +23,7 @@ export default function CTASection() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/signup"
-              className="bg-[#CCFF00] text-black px-8 py-4 rounded-xl text-base font-semibold hover:bg-[#b3e600] transition-colors"
+              className="bg-accent text-black px-8 py-4 rounded-xl text-base font-semibold hover:bg-accent-hover transition-colors"
             >
               Commencer gratuitement
             </Link>

@@ -105,7 +105,6 @@ export async function POST(request: Request) {
     });
   } catch (error: unknown) {
     logger.error('Stripe checkout error', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur Stripe';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

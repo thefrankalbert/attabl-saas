@@ -350,7 +350,7 @@ export default function MenuDetailClient({
             {t('breadcrumbMenus')}
           </Link>
           <span className="text-app-text-secondary">/</span>
-          <h1 className="text-app-text font-semibold truncate">{menu.name}</h1>
+          <h1 className="text-app-text font-semibold break-words">{menu.name}</h1>
         </div>
         <button
           onClick={toggleMenuActive}
@@ -487,7 +487,7 @@ export default function MenuDetailClient({
                             ) : (
                               <Utensils className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
                             )}
-                            <span className="flex-1 text-sm text-app-text font-medium truncate">
+                            <span className="flex-1 text-sm text-app-text font-medium break-words">
                               {item.name}
                             </span>
 
@@ -496,7 +496,7 @@ export default function MenuDetailClient({
                               <input
                                 ref={priceInputRef}
                                 type="number"
-                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
                                 onBlur={() => saveInlinePrice(item)}
@@ -509,7 +509,7 @@ export default function MenuDetailClient({
                             ) : (
                               <button
                                 onClick={() => startEditingPrice(item)}
-                                className="text-sm font-bold text-app-text tabular-nums hover:text-blue-500 hover:underline transition-colors cursor-pointer"
+                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline transition-colors cursor-pointer"
                                 title={t('editItem')}
                               >
                                 {t('priceFcfa', { count: item.price })}
@@ -517,7 +517,7 @@ export default function MenuDetailClient({
                             )}
 
                             {(item.modifiers?.length ?? 0) > 0 && (
-                              <span className="text-[10px] font-bold text-blue-500 bg-blue-500/10 px-1.5 py-0.5 rounded-full">
+                              <span className="text-[10px] font-bold text-accent bg-accent-muted px-1.5 py-0.5 rounded-full">
                                 {item.modifiers!.length} mod.
                               </span>
                             )}
@@ -611,7 +611,7 @@ export default function MenuDetailClient({
               min={0}
             />
           </div>
-          <div className="flex justify-end gap-3 pt-4 border-t">
+          <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
             <Button type="button" variant="outline" onClick={() => setShowCategoryModal(false)}>
               {t('cancel')}
             </Button>
@@ -692,7 +692,7 @@ export default function MenuDetailClient({
                 )}
               </button>
             </div>
-            <div className="flex justify-end gap-3 pt-4 border-t">
+            <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>
                 {t('cancel')}
               </Button>

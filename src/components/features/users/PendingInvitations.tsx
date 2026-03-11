@@ -69,10 +69,10 @@ export default function PendingInvitations({
                           <RoleIcon className="w-3 h-3" />
                           {roleConfig.label}
                         </div>
-                        <span>{t('sentAgo', { time: timeAgo(invitation.created_at) })}</span>
+                        <span>{t('sentAgo', { time: timeAgo(invitation.created_at, tc) })}</span>
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {t('expiresIn', { time: timeUntil(invitation.expires_at) })}
+                          {t('expiresIn', { time: timeUntil(invitation.expires_at, tc) })}
                         </span>
                       </div>
                     </div>
@@ -95,7 +95,7 @@ export default function PendingInvitations({
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-600 hover:bg-red-500/10"
+                      className="h-8 gap-1.5 text-xs text-status-error hover:text-status-error hover:bg-status-error-bg"
                       onClick={() => onCancel(invitation.id)}
                       disabled={cancellingId === invitation.id}
                     >

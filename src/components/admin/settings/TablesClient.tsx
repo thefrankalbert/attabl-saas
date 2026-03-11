@@ -380,7 +380,7 @@ export function TablesClient({
                       <Input
                         value={editingZoneName}
                         onChange={(e) => setEditingZoneName(e.target.value)}
-                        className="h-7 text-sm rounded-lg focus:ring-accent"
+                        className="h-7 text-sm rounded-lg focus:ring-accent/30"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveZoneName(zone.id);
                           if (e.key === 'Escape') setEditingZoneId(null);
@@ -412,7 +412,7 @@ export function TablesClient({
                     <>
                       <span
                         className={cn(
-                          'text-sm flex-1 min-w-0 truncate',
+                          'text-sm flex-1 min-w-0 break-words',
                           selectedZoneId === zone.id
                             ? 'font-semibold text-app-text'
                             : 'text-app-text',
@@ -532,7 +532,7 @@ export function TablesClient({
                           <Input
                             value={editingDisplayName}
                             onChange={(e) => setEditingDisplayName(e.target.value)}
-                            className="h-7 text-sm rounded-lg focus:ring-accent"
+                            className="h-7 text-sm rounded-lg focus:ring-accent/30"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveTableName(table.id);
                               if (e.key === 'Escape') setEditingTableId(null);
@@ -565,7 +565,7 @@ export function TablesClient({
                           onChange={(e) =>
                             handleUpdateCapacity(table, parseInt(e.target.value, 10))
                           }
-                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-accent focus:outline-none"
+                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-1 focus:ring-accent/30 focus:outline-none"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
                             <option key={n} value={n}>
@@ -581,7 +581,7 @@ export function TablesClient({
                           type="checkbox"
                           checked={table.is_active}
                           onChange={() => handleToggleActive(table)}
-                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent"
+                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent/30"
                         />
                         <span className="text-xs text-app-text-secondary">
                           {table.is_active ? t('active') : t('inactive')}
@@ -640,7 +640,7 @@ export function TablesClient({
               value={zoneName}
               onChange={(e) => setZoneName(e.target.value)}
               placeholder={t('zoneNamePlaceholder')}
-              className="rounded-lg focus:ring-accent"
+              className="rounded-lg focus:ring-accent/30"
               required
             />
           </div>
@@ -653,7 +653,7 @@ export function TablesClient({
               value={zonePrefix}
               onChange={(e) => setZonePrefix(e.target.value)}
               placeholder={t('zonePrefixPlaceholder')}
-              className="rounded-lg focus:ring-accent"
+              className="rounded-lg focus:ring-accent/30"
               required
               maxLength={5}
             />
@@ -698,7 +698,7 @@ export function TablesClient({
                 type="number"
                 value={tableCount}
                 onChange={(e) => setTableCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="rounded-lg focus:ring-accent"
+                className="rounded-lg focus:ring-accent/30"
                 min={1}
                 max={50}
                 required
@@ -713,7 +713,7 @@ export function TablesClient({
                 type="number"
                 value={tableCapacity}
                 onChange={(e) => setTableCapacity(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="rounded-lg focus:ring-accent"
+                className="rounded-lg focus:ring-accent/30"
                 min={1}
                 max={50}
                 required

@@ -31,6 +31,18 @@
   --color-accent-muted: var(--app-accent-muted);
   --color-accent-text: var(--app-accent-text);
 
+  /* Accent ramp (50-900) */
+  --color-accent-50: var(--accent-50);
+  --color-accent-100: var(--accent-100);
+  --color-accent-200: var(--accent-200);
+  --color-accent-300: var(--accent-300);
+  --color-accent-400: var(--accent-400);
+  --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+  --color-accent-700: var(--accent-700);
+  --color-accent-800: var(--accent-800);
+  --color-accent-900: var(--accent-900);
+
   /* Danger */
   --color-danger: #ef4444;
   --color-danger-hover: #dc2626;
@@ -73,27 +85,44 @@
 :root {
   color-scheme: dark;
 
-  --app-bg: #0f1117;
-  --app-card: #1a1d27;
-  --app-elevated: #242836;
-  --app-hover: #2a2f3d;
+  /* Surfaces — near-black, minimal chroma, ~3.5% lightness steps */
+  --app-bg: oklch(0.105 0.005 260); /* ~#0d0e14 — near black */
+  --app-card: oklch(0.14 0.005 260); /* ~#16171f — barely visible cards */
+  --app-elevated: oklch(0.175 0.005 260); /* ~#1f2028 — modals, dropdowns */
+  --app-hover: oklch(0.21 0.005 260); /* ~#282a33 — hover states */
 
-  --app-border: rgba(255, 255, 255, 0.06);
-  --app-border-hover: rgba(255, 255, 255, 0.12);
+  /* Borders — extremely subtle in dark mode (cards rely on bg diff, not borders) */
+  --app-border: oklch(0.19 0.004 260);
+  --app-border-hover: oklch(0.26 0.004 260);
 
-  --app-text: #f0f0f0;
-  --app-text-secondary: rgba(255, 255, 255, 0.55);
-  --app-text-muted: rgba(255, 255, 255, 0.3);
+  /* Text — 3-level hierarchy */
+  --app-text: oklch(0.93 0 0); /* ~#ededed — headings */
+  --app-text-secondary: oklch(0.65 0 0); /* ~#999 — body text */
+  --app-text-muted: oklch(0.45 0 0); /* ~#666 — labels, captions */
 
-  --app-accent: #ccff00;
-  --app-accent-hover: #b8e600;
-  --app-accent-muted: rgba(204, 255, 0, 0.12);
-  --app-accent-text: #111111;
+  /* Accent — lime, vivid but not neon */
+  --app-accent: oklch(0.87 0.22 128);
+  --app-accent-hover: oklch(0.8 0.2 128);
+  --app-accent-muted: oklch(0.18 0.05 128);
+  --app-accent-text: oklch(0.13 0.03 128);
 
-  --app-status-success-bg: rgba(5, 150, 105, 0.15);
-  --app-status-warning-bg: rgba(217, 119, 6, 0.15);
-  --app-status-error-bg: rgba(220, 38, 38, 0.15);
-  --app-status-info-bg: rgba(37, 99, 235, 0.15);
+  /* Accent ramp — single hue, variable lightness */
+  --accent-50: oklch(0.97 0.06 128);
+  --accent-100: oklch(0.93 0.1 128);
+  --accent-200: oklch(0.86 0.14 128);
+  --accent-300: oklch(0.78 0.18 128);
+  --accent-400: oklch(0.7 0.2 128);
+  --accent-500: oklch(0.62 0.2 128);
+  --accent-600: oklch(0.52 0.17 128);
+  --accent-700: oklch(0.43 0.14 128);
+  --accent-800: oklch(0.35 0.11 128);
+  --accent-900: oklch(0.27 0.08 128);
+
+  /* Status backgrounds — very subtle tinted surfaces */
+  --app-status-success-bg: oklch(0.16 0.03 155);
+  --app-status-warning-bg: oklch(0.16 0.03 75);
+  --app-status-error-bg: oklch(0.16 0.03 25);
+  --app-status-info-bg: oklch(0.16 0.03 260);
 
   /* shadcn/ui compat vars */
   --background: var(--app-bg);
@@ -107,27 +136,44 @@
 .light {
   color-scheme: light;
 
-  --app-bg: #f5f5f7;
-  --app-card: #ffffff;
-  --app-elevated: #f0f0f2;
-  --app-hover: #eaeaec;
+  /* Surfaces — same hue 260, inverted lightness, ~2% steps */
+  --app-bg: oklch(0.965 0.003 260); /* ~#f5f5f7 */
+  --app-card: oklch(1 0 0); /* pure white */
+  --app-elevated: oklch(0.955 0.003 260); /* ~#f0f0f2 */
+  --app-hover: oklch(0.935 0.003 260); /* ~#eaeaec */
 
-  --app-border: rgba(0, 0, 0, 0.08);
-  --app-border-hover: rgba(0, 0, 0, 0.15);
+  /* Borders */
+  --app-border: oklch(0.87 0.003 260);
+  --app-border-hover: oklch(0.78 0.003 260);
 
-  --app-text: #111111;
-  --app-text-secondary: rgba(0, 0, 0, 0.55);
-  --app-text-muted: rgba(0, 0, 0, 0.3);
+  /* Text */
+  --app-text: oklch(0.13 0 0); /* ~#111 — near black */
+  --app-text-secondary: oklch(0.38 0 0); /* dark gray */
+  --app-text-muted: oklch(0.55 0 0); /* medium gray */
 
-  --app-accent: #4d7c0f;
-  --app-accent-hover: #3f6212;
-  --app-accent-muted: rgba(77, 124, 15, 0.1);
-  --app-accent-text: #ffffff;
+  /* Accent — medium green, readable on white */
+  --app-accent: oklch(0.5 0.18 128);
+  --app-accent-hover: oklch(0.43 0.16 128);
+  --app-accent-muted: oklch(0.94 0.06 128);
+  --app-accent-text: oklch(1 0 0); /* white text on accent */
 
-  --app-status-success-bg: #ecfdf5;
-  --app-status-warning-bg: #fffbeb;
-  --app-status-error-bg: #fef2f2;
-  --app-status-info-bg: #eff6ff;
+  /* Accent ramp (light mode) */
+  --accent-50: oklch(0.97 0.06 128);
+  --accent-100: oklch(0.93 0.1 128);
+  --accent-200: oklch(0.86 0.14 128);
+  --accent-300: oklch(0.78 0.18 128);
+  --accent-400: oklch(0.7 0.2 128);
+  --accent-500: oklch(0.62 0.2 128);
+  --accent-600: oklch(0.52 0.17 128);
+  --accent-700: oklch(0.43 0.14 128);
+  --accent-800: oklch(0.35 0.11 128);
+  --accent-900: oklch(0.27 0.08 128);
+
+  /* Status backgrounds — light tinted surfaces */
+  --app-status-success-bg: oklch(0.96 0.03 155);
+  --app-status-warning-bg: oklch(0.96 0.03 85);
+  --app-status-error-bg: oklch(0.96 0.03 25);
+  --app-status-info-bg: oklch(0.96 0.03 260);
 }
 
 body {

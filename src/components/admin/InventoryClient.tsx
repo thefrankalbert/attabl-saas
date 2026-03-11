@@ -325,7 +325,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {/* Row 1: Title + Search + Filters + Add — all on one line (desktop) */}
               <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 {/* Title */}
-                <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Package className="w-5 h-5" />
                   {t('inventory')}
                   <span className="text-sm font-normal text-app-text-muted">
@@ -382,7 +382,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                             className={cn(
                               'inline-flex items-center justify-center rounded-full min-w-[18px] h-[18px] text-[10px] font-bold px-1',
                               filterStatus === status
-                                ? 'bg-white/20'
+                                ? 'bg-app-bg/30'
                                 : status === 'out'
                                   ? 'bg-red-500/15'
                                   : 'bg-amber-500/15',
@@ -418,11 +418,11 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     const badge = getStockBadge(ing);
                     const unitLabel = INGREDIENT_UNITS[ing.unit]?.labelShort || ing.unit;
                     return (
-                      <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3">
+                      <div className="border-b border-app-border py-3 px-4">
                         {/* Row 1: Name + Status */}
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-medium text-app-text truncate">{ing.name}</p>
+                            <p className="font-medium text-app-text break-words">{ing.name}</p>
                             {ing.category && (
                               <p className="text-xs text-app-text-secondary">{ing.category}</p>
                             )}
@@ -438,7 +438,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         </div>
 
                         {/* Row 2: Stock + Cost */}
-                        <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center justify-between text-sm mt-2">
                           <span className="text-app-text-secondary">
                             {t('currentStock')}:{' '}
                             <span className="font-mono font-bold text-app-text">
@@ -455,7 +455,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         </div>
 
                         {/* Row 3: Actions */}
-                        <div className="flex justify-end gap-2 pt-1">
+                        <div className="flex justify-end gap-2 pt-2">
                           <Button
                             variant="outline"
                             size="sm"
@@ -511,7 +511,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     <select
                       value={formUnit}
                       onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                     >
                       {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
                         <option key={u} value={u}>
@@ -619,7 +619,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                       <select
                         value={adjustType}
                         onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                       >
                         {(
                           ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
@@ -653,7 +653,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         <select
                           value={adjustSupplierId}
                           onChange={(e) => setAdjustSupplierId(e.target.value)}
-                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-2 focus:ring-accent"
+                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                         >
                           <option value="">— {tc('none')} —</option>
                           {activeSuppliers.map((s) => (

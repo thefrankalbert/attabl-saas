@@ -196,97 +196,43 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Title / Subtitle */}
-      <div className="shrink-0 mb-4">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('menuTitle')}</h1>
-        <p className="text-neutral-500 text-sm">{t('menuSubtitle')}</p>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
-          {/* Left Column: Preview & Tip */}
-          <div className="space-y-4">
-            {/* Live Menu Preview */}
-            <div className="border border-neutral-200 rounded-xl p-3 bg-neutral-50 mb-4">
-              <p className="text-[10px] text-neutral-400 mb-1.5 font-medium uppercase tracking-wide">
-                {t('previewLabel')}
-              </p>
-              <div
-                className="p-2 rounded-lg"
-                style={{ backgroundColor: data.secondaryColor || '#000000' }}
-              >
-                {categories.slice(0, 2).map((cat) => (
-                  <div key={cat.id} className="mb-2 last:mb-0">
-                    {cat.name && (
-                      <p
-                        className="text-[10px] font-bold mb-1"
-                        style={{ color: data.primaryColor || '#CCFF00' }}
-                      >
-                        {cat.name}
-                      </p>
-                    )}
-                    {cat.items
-                      .slice(0, 3)
-                      .filter((i) => i.name)
-                      .map((item) => (
-                        <div
-                          key={item.id}
-                          className="flex items-center justify-between gap-2 mb-0.5"
-                        >
-                          <div className="flex items-center gap-1.5">
-                            {item.imageUrl && (
-                              <img
-                                src={item.imageUrl}
-                                alt=""
-                                className="w-4 h-4 rounded-sm object-cover"
-                              />
-                            )}
-                            <span
-                              className="text-[10px]"
-                              style={{ color: data.primaryColor || '#CCFF00' }}
-                            >
-                              {item.name}
-                            </span>
-                          </div>
-                          {parseFloat(item.price) > 0 && (
-                            <span
-                              className="text-[10px] font-medium"
-                              style={{ color: data.primaryColor || '#CCFF00' }}
-                            >
-                              {item.price} {data.currency || 'EUR'}
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                  </div>
-                ))}
-              </div>
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-lg font-bold text-app-text mb-1">{t('menuTitle')}</h1>
+            <p className="text-app-text-secondary text-sm">{t('menuSubtitle')}</p>
+          </div>
 
-              {/* Tip Card - Moved to left column */}
-              <div className="p-3 rounded-xl bg-neutral-50 border border-neutral-100">
-                <div className="flex items-start gap-2">
-                  <UtensilsCrossed className="h-4 w-4 text-neutral-400 mt-0.5 shrink-0" />
-                  <p className="text-xs text-neutral-600">{t('menuTip')}</p>
-                </div>
-              </div>
+          {/* Tip */}
+          <div className="mb-6 p-4 rounded-xl bg-accent/5 border border-accent/20">
+            <div className="flex items-start gap-2.5">
+              <UtensilsCrossed className="h-4 w-4 text-accent mt-0.5 shrink-0" />
+              <p className="text-xs text-app-text-secondary">{t('menuTip')}</p>
             </div>
+          </div>
 
-            {/* Right Column: Categories */}
-            <div className="space-y-3 border-t lg:border-t-0 lg:border-l border-neutral-100 lg:pl-10 pt-6 lg:pt-0">
+          {/* Categories — Full width */}
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+              Menu
+            </p>
+
+            <div className="space-y-4">
               {categories.map((category) => {
                 const articleCount = category.items.length;
 
                 return (
                   <div
                     key={category.id}
-                    className="border border-neutral-200 rounded-xl overflow-hidden"
+                    className="rounded-xl border border-app-border overflow-hidden"
                   >
                     {/* Category Header */}
-                    <div className="flex items-center gap-2 p-3 bg-neutral-50">
+                    <div className="flex items-center gap-3 p-4 bg-app-elevated/50">
                       <button
                         type="button"
                         onClick={() => toggleCategory(category.id)}
-                        className="p-1 rounded-md text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 transition-colors"
+                        className="p-1.5 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
                         aria-label={category.expanded ? 'Collapse' : 'Expand'}
                       >
                         {category.expanded ? (
@@ -301,28 +247,31 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
-                        className="flex-1 h-9 bg-app-card border-app-border rounded-lg text-sm font-medium"
+                        className="flex-1 h-10 bg-app-bg border-app-border rounded-xl text-sm font-semibold"
                       />
 
-                      <span className="text-xs text-app-text-secondary whitespace-nowrap px-2 py-1 bg-app-card border border-app-border rounded-full">
+                      <span className="text-xs text-app-text-muted whitespace-nowrap px-2.5 py-1 bg-app-bg border border-app-border rounded-full font-medium">
                         {t('articlesCount', { count: articleCount })}
                       </span>
 
                       <button
                         type="button"
                         onClick={() => deleteCategory(category.id)}
-                        className="p-1.5 rounded-md text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                        className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
                         aria-label={t('deleteCategory')}
                       >
                         <X className="h-4 w-4" />
                       </button>
                     </div>
 
-                    {/* Category Body (expanded) */}
+                    {/* Category Body */}
                     {category.expanded && (
-                      <div className="p-3 space-y-2">
+                      <div className="p-4 space-y-2.5">
                         {category.items.map((item) => (
-                          <div key={item.id} className="flex items-center gap-2">
+                          <div
+                            key={item.id}
+                            className="flex items-center gap-2.5 p-2 rounded-xl bg-app-elevated/20 hover:bg-app-elevated/40 transition-colors"
+                          >
                             {/* Photo upload */}
                             <div className="relative shrink-0">
                               <input
@@ -338,15 +287,15 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 }}
                               />
                               {uploadingItemId === item.id ? (
-                                <div className="w-8 h-8 rounded-md border border-neutral-300 flex items-center justify-center">
-                                  <Loader2 className="h-3.5 w-3.5 text-neutral-400 animate-spin" />
+                                <div className="w-9 h-9 rounded-xl border border-app-border flex items-center justify-center">
+                                  <Loader2 className="h-3.5 w-3.5 text-app-text-muted animate-spin" />
                                 </div>
                               ) : item.imageUrl ? (
-                                <div className="relative w-8 h-8">
+                                <div className="relative w-9 h-9">
                                   <img
                                     src={item.imageUrl}
                                     alt=""
-                                    className="w-8 h-8 rounded-md object-cover"
+                                    className="w-9 h-9 rounded-xl object-cover"
                                   />
                                   <button
                                     type="button"
@@ -361,9 +310,9 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               ) : (
                                 <label
                                   htmlFor={`photo-${item.id}`}
-                                  className="w-8 h-8 rounded-md border border-dashed border-neutral-300 flex items-center justify-center cursor-pointer hover:border-neutral-400"
+                                  className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
                                 >
-                                  <Camera className="h-3.5 w-3.5 text-neutral-400" />
+                                  <Camera className="h-3.5 w-3.5 text-app-text-muted" />
                                 </label>
                               )}
                             </div>
@@ -374,7 +323,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               onChange={(e) =>
                                 updateArticle(category.id, item.id, 'name', e.target.value)
                               }
-                              className="flex-1 h-9 bg-neutral-50 border-neutral-200 rounded-lg text-sm"
+                              className="flex-1 h-9 bg-app-bg border-app-border rounded-xl text-sm"
                             />
                             <div className="flex items-center gap-1.5">
                               <Input
@@ -386,16 +335,16 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 onChange={(e) =>
                                   updateArticle(category.id, item.id, 'price', e.target.value)
                                 }
-                                className="w-28 h-9 bg-neutral-50 border-neutral-200 rounded-lg text-sm"
+                                className="w-28 h-9 bg-app-bg border-app-border rounded-xl text-sm"
                               />
-                              <span className="text-xs text-neutral-400">
+                              <span className="text-xs text-app-text-muted font-medium">
                                 {data.currency || 'EUR'}
                               </span>
                             </div>
                             <button
                               type="button"
                               onClick={() => deleteArticle(category.id, item.id)}
-                              className="p-1.5 rounded-md text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                              className="p-1.5 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
                               aria-label={t('deleteArticle')}
                             >
                               <X className="h-3.5 w-3.5" />
@@ -407,13 +356,13 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           <button
                             type="button"
                             onClick={() => addArticle(category.id)}
-                            className="flex items-center gap-2 px-3 py-2 w-full rounded-lg border border-dashed border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-700 transition-colors text-sm"
+                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             {t('addArticle')}
                           </button>
                         ) : (
-                          <p className="text-xs text-neutral-400 text-center py-1">
+                          <p className="text-xs text-app-text-muted text-center py-1">
                             {t('maxArticles')}
                           </p>
                         )}
@@ -422,21 +371,21 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                   </div>
                 );
               })}
-            </div>
 
-            {/* Add Category Button */}
-            {categories.length < 5 ? (
-              <button
-                type="button"
-                onClick={addCategory}
-                className="mt-3 flex items-center gap-2 px-3 py-2.5 w-full rounded-xl border-2 border-dashed border-neutral-200 text-neutral-500 hover:border-neutral-300 hover:text-neutral-700 transition-colors text-sm"
-              >
-                <Plus className="h-4 w-4" />
-                {t('addCategory')}
-              </button>
-            ) : (
-              <p className="mt-3 text-xs text-neutral-400 text-center">{t('maxCategories')}</p>
-            )}
+              {/* Add Category Button */}
+              {categories.length < 5 ? (
+                <button
+                  type="button"
+                  onClick={addCategory}
+                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t('addCategory')}
+                </button>
+              ) : (
+                <p className="text-xs text-app-text-muted text-center">{t('maxCategories')}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

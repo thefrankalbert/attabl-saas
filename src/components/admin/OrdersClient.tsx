@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useCallback } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,15 +12,28 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Search, Volume2, VolumeX, ChevronRight, Eye } from 'lucide-react';
+import {
+  Search,
+  Volume2,
+  VolumeX,
+  ChevronRight,
+  Eye,
+  ShoppingBag,
+  Check,
+  Lock,
+} from 'lucide-react';
 import { useNotificationSound } from '@/hooks/useNotificationSound';
+import { SOUND_LIBRARY } from '@/lib/sounds/sound-library';
+import { useSubscription } from '@/contexts/SubscriptionContext';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import OrderDetails from '@/components/admin/OrderDetails';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Order, OrderStatus } from '@/types/admin.types';
+import type { Order } from '@/types/admin.types';
+import { STATUS_STYLES } from '@/lib/design-tokens';
+import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
 interface OrdersClientProps {
@@ -44,24 +57,59 @@ export default function OrdersClient({
   const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
   const [search, setSearch] = useSessionState('orders:search', '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const {
     soundEnabled,
     toggleSound,
     play: playNotification,
+    preview: previewSound,
+    currentSoundId,
+    setSoundId,
     audioRef,
   } = useNotificationSound({
     soundId: notificationSoundId,
     tenantId,
   });
 
+  const [showSoundPicker, setShowSoundPicker] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressTriggered = useRef(false);
+  const { plan } = useSubscription();
+  const isPremium = plan === 'premium';
+
+  const handleSoundPointerDown = useCallback(() => {
+    longPressTriggered.current = false;
+    longPressTimer.current = setTimeout(() => {
+      longPressTriggered.current = true;
+      setShowSoundPicker(true);
+    }, 500);
+  }, []);
+
+  const handleSoundPointerUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+    if (!longPressTriggered.current) {
+      toggleSound();
+    }
+  }, [toggleSound]);
+
+  const handleSoundPointerLeave = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
-  // TanStack Query for orders
+  // TanStack Query for orders — use || to handle empty arrays from persistent cache
   const { data: queryOrders } = useOrders(tenantId);
-  const orders = queryOrders ?? initialOrders;
+  const orders = queryOrders?.length ? queryOrders : initialOrders;
 
   // Realtime subscription via shared hook
   useRealtimeSubscription<Record<string, unknown>>({
@@ -122,52 +170,58 @@ export default function OrdersClient({
     return result;
   }, [orders, statusFilter, search]);
 
-  // Status badge config
+  // Status badge config — uses semantic design tokens for colors
   const statusConfig: Record<
-    OrderStatus,
+    string,
     {
       label: string;
       bg: string;
+      text: string;
       nextStatus: OrderStatus | null;
       nextLabel: string | null;
-      actionBg: string;
+      actionDot: string;
     }
   > = useMemo(
     () => ({
       pending: {
         label: t('statusPendingCard'),
-        bg: 'bg-amber-500/10 text-amber-500',
+        bg: STATUS_STYLES.pending.bg,
+        text: STATUS_STYLES.pending.text,
         nextStatus: 'preparing',
         nextLabel: t('actionPrepare'),
-        actionBg: 'bg-amber-500',
+        actionDot: STATUS_STYLES.pending.dot,
       },
       preparing: {
         label: t('statusPreparingCard'),
-        bg: 'bg-blue-500/10 text-blue-500',
+        bg: STATUS_STYLES.preparing.bg,
+        text: STATUS_STYLES.preparing.text,
         nextStatus: 'ready',
         nextLabel: t('actionReady'),
-        actionBg: 'bg-blue-500',
+        actionDot: STATUS_STYLES.preparing.dot,
       },
       ready: {
         label: t('statusReadyCard'),
-        bg: 'bg-emerald-500/10 text-emerald-500',
+        bg: STATUS_STYLES.ready.bg,
+        text: STATUS_STYLES.ready.text,
         nextStatus: 'delivered',
         nextLabel: t('actionDeliver'),
-        actionBg: 'bg-emerald-500',
+        actionDot: STATUS_STYLES.ready.dot,
       },
       delivered: {
         label: t('statusDeliveredCard'),
-        bg: 'bg-slate-500/10 text-slate-500',
+        bg: STATUS_STYLES.delivered.bg,
+        text: STATUS_STYLES.delivered.text,
         nextStatus: null,
         nextLabel: null,
-        actionBg: '',
+        actionDot: '',
       },
       cancelled: {
         label: t('statusCancelledCard'),
-        bg: 'bg-red-500/10 text-red-500',
+        bg: STATUS_STYLES.cancelled.bg,
+        text: STATUS_STYLES.cancelled.text,
         nextStatus: null,
         nextLabel: null,
-        actionBg: '',
+        actionDot: '',
       },
     }),
     [t],
@@ -176,6 +230,43 @@ export default function OrdersClient({
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<Order, unknown>[]>(
     () => [
+      {
+        id: 'select',
+        header: () => (
+          <input
+            type="checkbox"
+            checked={
+              filteredOrders.length > 0 && filteredOrders.every((o) => selectedIds.has(o.id))
+            }
+            onChange={(e) => {
+              const next = new Set(selectedIds);
+              if (e.target.checked) {
+                filteredOrders.forEach((o) => next.add(o.id));
+              } else {
+                filteredOrders.forEach((o) => next.delete(o.id));
+              }
+              setSelectedIds(next);
+            }}
+            className="rounded border-app-border text-accent focus:ring-accent/30"
+          />
+        ),
+        cell: ({ row }: { row: { original: Order } }) => (
+          <input
+            type="checkbox"
+            checked={selectedIds.has(row.original.id)}
+            onChange={(e) => {
+              e.stopPropagation();
+              const next = new Set(selectedIds);
+              if (e.target.checked) next.add(row.original.id);
+              else next.delete(row.original.id);
+              setSelectedIds(next);
+            }}
+            onClick={(e) => e.stopPropagation()}
+            className="rounded border-app-border text-accent focus:ring-accent/30"
+          />
+        ),
+        enableSorting: false,
+      },
       {
         accessorKey: 'table_number',
         header: ({ column }) => (
@@ -216,7 +307,9 @@ export default function OrdersClient({
         cell: ({ row }) => {
           const config = statusConfig[row.original.status];
           return (
-            <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
+            <span
+              className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg, config.text)}
+            >
               {config.label}
             </span>
           );
@@ -246,8 +339,18 @@ export default function OrdersClient({
         cell: ({ row }) => {
           const total =
             row.original.total_price ?? row.original.total ?? row.original.total_amount ?? 0;
+          const tip = row.original.tip_amount ?? 0;
           return (
-            <span className="font-mono font-bold text-app-text">{total.toLocaleString()}</span>
+            <div className="text-right">
+              <span className="font-mono font-bold text-app-text">
+                {(total + tip).toLocaleString()}
+              </span>
+              {tip > 0 && (
+                <span className="block text-[10px] text-emerald-500 font-medium">
+                  +{tip.toLocaleString()} tip
+                </span>
+              )}
+            </div>
           );
         },
         meta: { className: 'text-right' },
@@ -279,9 +382,9 @@ export default function OrdersClient({
                     handleStatusChange(order.id, config.nextStatus!);
                   }}
                   className={cn(
-                    'text-xs text-white gap-1 min-h-[44px]',
-                    config.actionBg,
-                    `hover:${config.actionBg}/90`,
+                    'text-xs text-accent-text gap-1 min-h-[44px]',
+                    config.actionDot,
+                    `hover:opacity-90`,
                   )}
                 >
                   {config.nextLabel} <ChevronRight className="w-4 h-4" />
@@ -294,7 +397,7 @@ export default function OrdersClient({
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, tc, statusConfig],
+    [t, tc, statusConfig, selectedIds, filteredOrders],
   );
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
@@ -304,20 +407,13 @@ export default function OrdersClient({
   return (
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 space-y-3">
+        <div className="shrink-0">
           {/* Hidden Audio */}
           <audio ref={audioRef} preload="auto" />
 
-          {/* Header — single line on desktop */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
-              {ta('ordersCount')}
-              <span className="text-base font-normal text-app-text-secondary ml-2">
-                ({orders.length})
-              </span>
-            </h1>
-
-            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+          {/* Search + Tabs + Sound — single row */}
+          <div className="flex items-center gap-3 overflow-x-auto scrollbar-hide">
+            <div className="relative w-auto min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -328,20 +424,7 @@ export default function OrdersClient({
               />
             </div>
 
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={toggleSound}
-              className={cn('shrink-0', soundEnabled && 'text-primary border-primary bg-primary/5')}
-              title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
-            >
-              {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
-            </Button>
-          </div>
-
-          {/* Status filter tabs */}
-          <div className="overflow-x-auto scrollbar-hide">
-            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="w-full">
+            <Tabs value={statusFilter} onValueChange={setStatusFilter} className="shrink-0">
               <TabsList>
                 <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
                 <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
@@ -351,84 +434,208 @@ export default function OrdersClient({
                 <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
               </TabsList>
             </Tabs>
+
+            <div className="relative shrink-0 ml-auto">
+              <Button
+                variant="outline"
+                size="icon"
+                onPointerDown={handleSoundPointerDown}
+                onPointerUp={handleSoundPointerUp}
+                onPointerLeave={handleSoundPointerLeave}
+                className={cn(
+                  'select-none',
+                  soundEnabled && 'text-accent border-accent bg-accent-muted',
+                )}
+                title={soundEnabled ? tc('soundEnabled') : tc('soundDisabled')}
+              >
+                {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
+              </Button>
+
+              {/* Sound picker popover — opens on long press */}
+              {showSoundPicker && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSoundPicker(false)} />
+                  <div className="absolute right-0 top-full mt-2 z-50 w-64 bg-app-card border border-app-border rounded-xl shadow-lg overflow-hidden">
+                    <div className="px-3 py-2 border-b border-app-border">
+                      <p className="text-xs font-bold text-app-text">
+                        {t('soundPicker') || 'Sonnerie de notification'}
+                      </p>
+                    </div>
+                    <div className="max-h-60 overflow-y-auto scrollbar-hide p-1.5 space-y-0.5">
+                      {SOUND_LIBRARY.map((sound) => {
+                        const isLocked = sound.isPremium && !isPremium;
+                        const isActive = currentSoundId === sound.id;
+                        return (
+                          <button
+                            key={sound.id}
+                            type="button"
+                            disabled={isLocked}
+                            onClick={() => {
+                              if (!isLocked) {
+                                setSoundId(sound.id);
+                                previewSound(sound.id);
+                              }
+                            }}
+                            className={cn(
+                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
+                              isActive
+                                ? 'bg-accent-muted text-accent'
+                                : 'text-app-text hover:bg-app-hover',
+                              isLocked && 'opacity-50 cursor-not-allowed',
+                            )}
+                          >
+                            <span className="flex-1 min-w-0">
+                              <span className="block text-xs font-medium break-words">
+                                {sound.name}
+                              </span>
+                              <span className="block text-[10px] text-app-text-muted break-words">
+                                {sound.description}
+                              </span>
+                            </span>
+                            {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
+                            {isLocked && <Lock className="w-3 h-3 shrink-0 text-app-text-muted" />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
+        {/* Bulk action bar */}
+        {selectedIds.size > 0 && (
+          <div className="flex items-center gap-3 px-4 py-2 mt-3 border-b border-app-border bg-accent-muted">
+            <span className="text-sm font-medium text-app-text">
+              {selectedIds.size} {t('selected') || 'selected'}
+            </span>
+            <div className="flex-1" />
+            <button
+              onClick={() => {
+                const ids = Array.from(selectedIds);
+                ids.forEach((id) => {
+                  const order = orders.find((o) => o.id === id);
+                  if (order) {
+                    const config = statusConfig[order.status];
+                    if (config.nextStatus) {
+                      handleStatusChange(id, config.nextStatus);
+                    }
+                  }
+                });
+                setSelectedIds(new Set());
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-accent text-accent-text hover:opacity-90 transition-colors"
+            >
+              {t('advanceStatus') || 'Advance status'}
+            </button>
+            <button
+              onClick={() => {
+                setSelectedIds(new Set());
+              }}
+              className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
+            >
+              {tc('cancel')}
+            </button>
+          </div>
+        )}
+
         {/* Orders Table / Cards */}
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-          <ResponsiveDataTable
-            columns={columns}
-            data={filteredOrders}
-            emptyMessage={t('noOrdersMatch')}
-            onRowClick={(order) => setSelectedOrder(order)}
-            storageKey="orders"
-            mobileConfig={{
-              renderCard: (order) => {
-                const config = statusConfig[order.status];
-                const total = order.total_price ?? order.total ?? order.total_amount ?? 0;
-                const items = order.items || [];
-                return (
-                  <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-3 active:bg-app-bg transition-colors">
-                    {/* Row 1: Table + Status + Time */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
-                          {order.table_number}
+          {orders.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <ShoppingBag className="w-10 h-10 text-app-text-muted mb-3" />
+              <p className="text-sm font-medium text-app-text-secondary mb-1">
+                {t('noOrdersTitle') || 'No orders yet'}
+              </p>
+              <p className="text-xs text-app-text-muted">
+                {t('noOrdersDesc') || 'Orders will appear here as they come in'}
+              </p>
+            </div>
+          ) : (
+            <ResponsiveDataTable
+              columns={columns}
+              data={filteredOrders}
+              emptyMessage={t('noOrdersMatch')}
+              onRowClick={(order) => setSelectedOrder(order)}
+              storageKey="orders"
+              mobileConfig={{
+                renderCard: (order) => {
+                  const config = statusConfig[order.status];
+                  const total =
+                    (order.total_price ?? order.total ?? order.total_amount ?? 0) +
+                    (order.tip_amount ?? 0);
+                  const items = order.items || [];
+                  return (
+                    <div className="border-b border-app-border py-4 space-y-3 active:bg-app-hover transition-colors">
+                      {/* Row 1: Table + Status + Time */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
+                            {order.table_number}
+                          </div>
+                          <span className="font-semibold text-app-text">{order.table_number}</span>
                         </div>
-                        <span className="font-semibold text-app-text">{order.table_number}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-app-text-muted">
+                            {new Date(order.created_at).toLocaleTimeString([], {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </span>
+                          <span
+                            className={cn(
+                              'px-2 py-1 rounded-full text-xs font-bold',
+                              config.bg,
+                              config.text,
+                            )}
+                          >
+                            {config.label}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-app-text-muted">
-                          {new Date(order.created_at).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                        <span className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg)}>
-                          {config.label}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Row 2: Server + Items + Total */}
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-app-text-muted truncate">
-                        {order.server?.full_name ?? '—'}
-                      </span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-app-text-secondary">
-                          {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                      {/* Row 2: Server + Items + Total */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-app-text-muted break-words">
+                          {order.server?.full_name ?? '—'}
                         </span>
-                        <span className="font-mono font-bold text-app-text">
-                          {total.toLocaleString()}
-                        </span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-app-text-secondary">
+                            {items.length} {items.length === 1 ? tc('item') : tc('items')}
+                          </span>
+                          <span className="font-mono font-bold text-app-text">
+                            {total.toLocaleString()}
+                          </span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Row 3: Actions */}
-                    {config.nextStatus && (
-                      <div className="flex justify-end pt-1">
-                        <Button
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStatusChange(order.id, config.nextStatus!);
-                          }}
-                          className={cn(
-                            'text-xs text-white gap-1 min-h-[44px]',
-                            config.actionBg,
-                            `hover:${config.actionBg}/90`,
-                          )}
-                        >
-                          {config.nextLabel} <ChevronRight className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                );
-              },
-            }}
-          />
+                      {/* Row 3: Actions */}
+                      {config.nextStatus && (
+                        <div className="flex justify-end pt-1">
+                          <Button
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleStatusChange(order.id, config.nextStatus!);
+                            }}
+                            className={cn(
+                              'text-xs text-accent-text gap-1 min-h-[44px]',
+                              config.actionDot,
+                              `hover:opacity-90`,
+                            )}
+                          >
+                            {config.nextLabel} <ChevronRight className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                },
+              }}
+            />
+          )}
         </div>
 
         {/* Detail Modal */}

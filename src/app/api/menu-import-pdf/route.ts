@@ -6,6 +6,16 @@ import { pdfImportLimiter, getClientIp } from '@/lib/rate-limit';
 import { createPdfImportService } from '@/services/pdf-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
+import { z } from 'zod';
+
+const pdfItemSchema = z.object({
+  category: z.string(),
+  name: z.string(),
+  price: z.number(),
+  description: z.string().optional(),
+});
+
+const pdfItemsSchema = z.array(pdfItemSchema).min(1).max(500);
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
@@ -69,6 +79,19 @@ export async function POST(request: Request) {
 
     if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+    }
+
+    // 5b. Verify user belongs to this tenant
+    const { data: membership } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
     const importService = createPdfImportService(supabase);
@@ -153,10 +176,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Parse the items JSON and import
-    let items: PdfExtractedItem[];
+    // Parse the items JSON and validate with Zod
+    let rawItems: unknown;
     try {
-      items = JSON.parse(itemsJson) as PdfExtractedItem[];
+      rawItems = JSON.parse(itemsJson);
     } catch {
       return NextResponse.json(
         { error: 'Le champ "items" contient un JSON invalide.' },
@@ -164,9 +187,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!Array.isArray(items) || items.length === 0) {
-      return NextResponse.json({ error: "Le tableau d'items est vide." }, { status: 400 });
+    const parsed = pdfItemsSchema.safeParse(rawItems);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Données invalides', details: parsed.error.flatten() },
+        { status: 400 },
+      );
     }
+
+    const items = parsed.data as PdfExtractedItem[];
 
     const result = await importService.importItems(tenant.id, menuId, items);
 
@@ -176,8 +205,14 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('PDF import ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

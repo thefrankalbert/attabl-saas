@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useId } from 'react';
 import { useTranslations } from 'next-intl';
 import { Plus, Loader2, Folder, GripVertical, Utensils, Edit2, Trash2 } from 'lucide-react';
 import {
@@ -111,6 +111,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
 }
 
 export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
+  const dndId = useId();
   const t = useTranslations('categories');
   const tc = useTranslations('common');
   const [showModal, setShowModal] = useState(false);
@@ -135,8 +136,11 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   );
 
   // TanStack Query for categories with item count
-  const { data: categories = initialCategories as CategoryWithCount[], isLoading: loading } =
-    useCategories(tenantId, { withItemCount: true });
+  const { data: categories = initialCategories as CategoryWithCount[], isLoading } = useCategories(
+    tenantId,
+    { withItemCount: true },
+  );
+  const loading = isLoading && categories.length === 0;
 
   const loadCategories = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['categories', tenantId] });
@@ -162,26 +166,32 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         return;
       }
 
+      const previous = categories;
       const reordered = arrayMove(categories, oldIndex, newIndex);
 
-      // Update display_order in database
+      // Optimistic update
+      queryClient.setQueryData(['categories', tenantId, true], reordered);
+
+      // Persist to database
       try {
-        const updates = reordered.map((cat, i: number) => ({
-          id: cat.id,
-          display_order: i,
-          tenant_id: tenantId,
-          name: cat.name,
-        }));
-        const { error } = await supabase.from('categories').upsert(updates);
+        const updatePromises = reordered.map((cat, i: number) =>
+          supabase
+            .from('categories')
+            .update({ display_order: i })
+            .eq('id', cat.id)
+            .eq('tenant_id', tenantId),
+        );
+        const results = await Promise.all(updatePromises);
+        const error = results.find((r) => r.error)?.error;
         if (error) throw error;
-        loadCategories();
       } catch (err: unknown) {
+        // Rollback on error
+        queryClient.setQueryData(['categories', tenantId, true], previous);
         logger.error('Failed to reorder categories', err);
         toast({ title: tc('updateError'), variant: 'destructive' });
-        loadCategories();
       }
     },
-    [categories, supabase, tenantId, loadCategories, toast, tc],
+    [categories, supabase, tenantId, queryClient, toast, tc],
   );
 
   const openNewModal = () => {
@@ -254,26 +264,23 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0">
-          {/* Header — single row like inventory */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-              <Folder className="w-5 h-5" />
-              {t('title')}
-              <span className="text-sm font-normal text-app-text-muted">({categories.length})</span>
-            </h1>
+        <div className="shrink-0 flex items-center">
+          <div className="inline-flex items-center gap-2 border border-app-border rounded-lg px-1.5 py-1">
+            <span className="text-xs font-bold text-app-text-secondary tabular-nums px-1.5 shrink-0">
+              {categories.length}
+            </span>
             <Button
               onClick={openNewModal}
               variant="default"
               size="sm"
-              className="gap-2 h-9 lg:ml-auto shrink-0"
+              className="gap-1.5 h-7 rounded-md shrink-0"
             >
-              <Plus className="w-4 h-4" /> {t('newCategory')}
+              <Plus className="w-3.5 h-3.5" /> {t('newCategory')}
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
           {/* List */}
           {loading ? (
             <div className="space-y-3">
@@ -286,6 +293,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
             </div>
           ) : categories.length > 0 ? (
             <DndContext
+              id={dndId}
               sensors={sensors}
               collisionDetection={closestCenter}
               onDragStart={handleDragStart}
@@ -361,7 +369,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required
                 />
               </div>
@@ -374,7 +382,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
             </div>
@@ -388,7 +396,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 value={displayOrder}
                 onChange={(e) => setDisplayOrder(Number(e.target.value))}
                 min={0}
-                className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
               />
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-app-border">

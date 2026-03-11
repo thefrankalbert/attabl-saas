@@ -259,7 +259,14 @@ export default function MenuItemCard({
       </div>
 
       {/* IMAGE SECTION — Right (with floating +/- on corner) */}
-      <div style={{ position: 'relative', flexShrink: 0, width: '80px', height: '80px' }}>
+      <div
+        style={{
+          position: 'relative',
+          flexShrink: 0,
+          width: 'clamp(60px, 20vw, 80px)',
+          height: 'clamp(60px, 20vw, 80px)',
+        }}
+      >
         <div
           style={{
             width: '100%',

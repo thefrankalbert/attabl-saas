@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollRestoration from '@/components/shared/ScrollRestoration';
+import { AgentationOverlay } from '@/components/shared/AgentationOverlay';
 import { cn } from '@/lib/utils';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
@@ -75,6 +76,7 @@ export default async function RootLayout({
             </Suspense>
             {children}
             <Toaster />
+            <AgentationOverlay />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

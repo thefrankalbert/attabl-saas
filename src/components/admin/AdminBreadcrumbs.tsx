@@ -64,14 +64,20 @@ export function AdminBreadcrumbs() {
     const isLast = index === segments.length - 1;
 
     // Try to get a translated label, fall back to capitalized segment
+    // Detect UUIDs and show a short hash instead
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(segment);
     const labelKey = SEGMENT_LABEL_MAP[segment];
-    const label = labelKey ? t(labelKey) : decodeURIComponent(segment);
+    const label = labelKey
+      ? t(labelKey)
+      : isUuid
+        ? `#${segment.slice(0, 8).toUpperCase()}`
+        : decodeURIComponent(segment);
 
     return { href, label, isLast, segment };
   });
 
   return (
-    <Breadcrumb className="mb-4">
+    <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem>
           <BreadcrumbLink asChild>

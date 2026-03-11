@@ -3,14 +3,8 @@ import { checkAndNotifyLowStock } from '../notification.service';
 
 // Mock createAdminClient
 const mockFrom = vi.fn();
-const mockAuth = {
-  admin: {
-    listUsers: vi.fn(),
-  },
-};
 const mockSupabase = {
   from: mockFrom,
-  auth: mockAuth,
 };
 
 vi.mock('@/lib/supabase/admin', () => ({
@@ -29,6 +23,7 @@ function setupChain(data: unknown, error: unknown = null) {
     eq: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     in: vi.fn().mockReturnThis(),
+    not: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
     single: vi.fn().mockResolvedValue({ data, error }),
     insert: vi.fn().mockResolvedValue({ data: null, error: null }),
@@ -67,6 +62,7 @@ describe('checkAndNotifyLowStock', () => {
     ];
 
     let callIndex = 0;
+    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         const chain = setupChain(null);
@@ -85,8 +81,16 @@ describe('checkAndNotifyLowStock', () => {
         return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
       }
       if (table === 'admin_users') {
+        if (adminCallIndex === 0) {
+          adminCallIndex++;
+          // First call: fetch user_ids
+          const chain = setupChain(null);
+          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+          return chain;
+        }
+        // Second call: fetch emails
         const chain = setupChain(null);
-        chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
         return chain;
       }
       if (table === 'tenants') {
@@ -102,9 +106,6 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.listUsers.mockResolvedValue({
-      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
-    });
     mockSendStockAlertEmail.mockResolvedValue(true);
 
     await checkAndNotifyLowStock('tenant-1');
@@ -135,6 +136,7 @@ describe('checkAndNotifyLowStock', () => {
         return chain;
       }
       if (table === 'admin_users') {
+        // First call returns empty admin users list
         const chain = setupChain(null);
         chain.eq.mockResolvedValue({ data: [], error: null });
         return chain;
@@ -151,6 +153,7 @@ describe('checkAndNotifyLowStock', () => {
       { id: 'ing-1', name: 'Salt', unit: 'kg', current_stock: 0, min_stock_alert: 5 },
     ];
 
+    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         const chain = setupChain(null);
@@ -163,8 +166,14 @@ describe('checkAndNotifyLowStock', () => {
         return chain;
       }
       if (table === 'admin_users') {
+        if (adminCallIndex === 0) {
+          adminCallIndex++;
+          const chain = setupChain(null);
+          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+          return chain;
+        }
         const chain = setupChain(null);
-        chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
         return chain;
       }
       if (table === 'tenants') {
@@ -180,9 +189,6 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.listUsers.mockResolvedValue({
-      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
-    });
     mockSendStockAlertEmail.mockResolvedValue(false);
 
     // Should not throw, just return
@@ -196,6 +202,7 @@ describe('checkAndNotifyLowStock', () => {
 
     const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
 
+    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         const chain = setupChain(null);
@@ -210,9 +217,18 @@ describe('checkAndNotifyLowStock', () => {
         return chain;
       }
       if (table === 'admin_users') {
+        if (adminCallIndex === 0) {
+          adminCallIndex++;
+          const chain = setupChain(null);
+          chain.eq.mockResolvedValue({
+            data: [{ user_id: 'user-1' }, { user_id: 'user-2' }] as unknown[],
+            error: null,
+          });
+          return chain;
+        }
         const chain = setupChain(null);
-        chain.eq.mockResolvedValue({
-          data: [{ user_id: 'user-1' }, { user_id: 'user-2' }] as unknown[],
+        chain.not.mockResolvedValue({
+          data: [{ email: 'admin1@test.com' }, { email: 'admin2@test.com' }],
           error: null,
         });
         return chain;
@@ -230,14 +246,6 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.listUsers.mockResolvedValue({
-      data: {
-        users: [
-          { id: 'user-1', email: 'admin1@test.com' },
-          { id: 'user-2', email: 'admin2@test.com' },
-        ],
-      },
-    });
     mockSendStockAlertEmail.mockResolvedValue(true);
 
     await checkAndNotifyLowStock('tenant-1');
@@ -263,6 +271,7 @@ describe('checkAndNotifyLowStock', () => {
 
     const insertMock = vi.fn().mockResolvedValue({ data: null, error: null });
 
+    let adminCallIndex = 0;
     mockFrom.mockImplementation((table: string) => {
       if (table === 'ingredients') {
         const chain = setupChain(null);
@@ -276,8 +285,14 @@ describe('checkAndNotifyLowStock', () => {
         return chain;
       }
       if (table === 'admin_users') {
+        if (adminCallIndex === 0) {
+          adminCallIndex++;
+          const chain = setupChain(null);
+          chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+          return chain;
+        }
         const chain = setupChain(null);
-        chain.eq.mockResolvedValue({ data: [{ user_id: 'user-1' }], error: null });
+        chain.not.mockResolvedValue({ data: [{ email: 'admin@test.com' }], error: null });
         return chain;
       }
       if (table === 'tenants') {
@@ -293,9 +308,6 @@ describe('checkAndNotifyLowStock', () => {
       return setupChain(null);
     });
 
-    mockAuth.admin.listUsers.mockResolvedValue({
-      data: { users: [{ id: 'user-1', email: 'admin@test.com' }] },
-    });
     mockSendStockAlertEmail.mockResolvedValue(true);
 
     await checkAndNotifyLowStock('tenant-1');

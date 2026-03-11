@@ -13,12 +13,20 @@ import {
   AlertTriangle,
   Edit2,
   Trash2,
+  Package,
+  MoreVertical,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -64,6 +72,7 @@ export default function ItemsClient({
   const [filterCategory, setFilterCategory] = useSessionState('items:filterCategory', 'all');
   const [filterAvailable, setFilterAvailable] = useSessionState('items:filterAvailable', 'all');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Form state
   const [name, setName] = useState('');
@@ -210,7 +219,8 @@ export default function ItemsClient({
       const { error } = await supabase
         .from('menu_items')
         .update({ is_available: !item.is_available })
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
       loadItems();
     } catch {
@@ -223,7 +233,8 @@ export default function ItemsClient({
       const { error } = await supabase
         .from('menu_items')
         .update({ is_featured: !item.is_featured })
-        .eq('id', item.id);
+        .eq('id', item.id)
+        .eq('tenant_id', tenantId);
       if (error) throw error;
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
@@ -246,7 +257,7 @@ export default function ItemsClient({
             {/* Filters inline */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select value={filterCategory} onValueChange={setFilterCategory}>
-                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectTrigger className="h-9 w-full sm:w-[180px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('allCategories')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,7 +270,7 @@ export default function ItemsClient({
                 </SelectContent>
               </Select>
               <Select value={filterAvailable} onValueChange={setFilterAvailable}>
-                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent">
+                <SelectTrigger className="h-9 w-full sm:w-[140px] text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                   <SelectValue placeholder={t('all')} />
                 </SelectTrigger>
                 <SelectContent>
@@ -281,6 +292,39 @@ export default function ItemsClient({
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {/* Bulk action bar */}
+          {selectedIds.size > 0 && (
+            <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
+              <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
+              <div className="flex-1" />
+              <button
+                onClick={async () => {
+                  for (const id of selectedIds) {
+                    const item = items.find((i) => i.id === id);
+                    if (item) {
+                      await supabase
+                        .from('menu_items')
+                        .update({ is_available: !item.is_available })
+                        .eq('id', item.id)
+                        .eq('tenant_id', tenantId);
+                    }
+                  }
+                  setSelectedIds(new Set());
+                  loadItems();
+                }}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
+              >
+                Toggle availability
+              </button>
+              <button
+                onClick={() => setSelectedIds(new Set())}
+                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          )}
+
           {/* Items List */}
           {loading ? (
             <div className="space-y-3">
@@ -293,12 +337,45 @@ export default function ItemsClient({
             </div>
           ) : items.length > 0 ? (
             <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+              {/* Select all header */}
+              <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
+                <input
+                  type="checkbox"
+                  checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
+                  onChange={(e) => {
+                    const next = new Set(selectedIds);
+                    if (e.target.checked) {
+                      items.forEach((i) => next.add(i.id));
+                    } else {
+                      items.forEach((i) => next.delete(i.id));
+                    }
+                    setSelectedIds(next);
+                  }}
+                  className="rounded border-app-border text-accent focus:ring-accent/30"
+                />
+                <span className="text-xs text-app-text-muted">
+                  {tc('selectAll') || 'Select all'}
+                </span>
+              </div>
               {items.map((item) => (
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
                   className="flex flex-wrap md:flex-nowrap items-center gap-3 md:gap-4 px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(item.id)}
+                    onChange={(e) => {
+                      e.stopPropagation();
+                      const next = new Set(selectedIds);
+                      if (e.target.checked) next.add(item.id);
+                      else next.delete(item.id);
+                      setSelectedIds(next);
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="rounded border-app-border text-accent focus:ring-accent/30 shrink-0"
+                  />
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -313,7 +390,7 @@ export default function ItemsClient({
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-app-text text-sm truncate">{item.name}</p>
+                    <p className="font-semibold text-app-text text-sm break-words">{item.name}</p>
                     <p className="text-xs text-app-text-muted mt-0.5">
                       {item.category?.name || t('uncategorized')}
                     </p>
@@ -347,56 +424,54 @@ export default function ItemsClient({
                       </>
                     )}
                   </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFeatured(item);
-                    }}
-                    className={cn(
-                      'p-2.5 rounded-lg transition-all min-h-[44px] min-w-[44px] flex items-center justify-center',
-                      item.is_featured
-                        ? 'text-amber-500 bg-amber-500/10'
-                        : 'text-app-text-muted hover:text-amber-500 hover:bg-app-bg',
-                    )}
-                  >
-                    <Star className={cn('w-4 h-4', item.is_featured && 'fill-current')} />
-                  </button>
-                  <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditModal(item);
-                      }}
-                      className="h-8 w-8 p-0"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(item);
-                      }}
-                      className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-1.5 rounded-lg hover:bg-app-hover text-app-text-muted"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditModal(item);
+                        }}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" /> {t('edit')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFeatured(item);
+                        }}
+                      >
+                        <Star className="w-4 h-4 mr-2" />{' '}
+                        {item.is_featured ? t('removedFromFeatured') : t('addedToFeatured')}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDelete(item);
+                        }}
+                        className="text-status-error"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" /> {t('delete')}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-              <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-                <ImageIcon className="w-8 h-8 text-app-text-muted" />
-              </div>
-              <h3 className="text-lg font-bold text-app-text">{t('noItems')}</h3>
-              <p className="text-sm text-app-text-secondary mt-2">{t('noItemsDesc')}</p>
-              <Button onClick={openNewModal} variant="default" className="mt-6">
-                {t('addItem')}
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <Package className="w-10 h-10 text-app-text-muted mb-3" />
+              <p className="text-sm font-medium text-app-text-secondary mb-1">{t('noItems')}</p>
+              <p className="text-xs text-app-text-muted mb-4">{t('noItemsDesc')}</p>
+              <Button onClick={openNewModal} size="sm">
+                <Plus className="w-4 h-4 mr-1" /> {t('addItem')}
               </Button>
             </div>
           )}
@@ -577,7 +652,7 @@ export default function ItemsClient({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required
                 />
               </div>
@@ -587,7 +662,7 @@ export default function ItemsClient({
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
             </div>
@@ -599,7 +674,7 @@ export default function ItemsClient({
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder={t('descriptionFrPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
               <div className="space-y-1.5">
@@ -609,7 +684,7 @@ export default function ItemsClient({
                   onChange={(e) => setDescriptionEn(e.target.value)}
                   placeholder={t('descriptionEnPlaceholder')}
                   rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                 />
               </div>
             </div>
@@ -621,7 +696,7 @@ export default function ItemsClient({
                   value={price}
                   onChange={(e) => setPrice(Number(e.target.value))}
                   min={0}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required
                 />
               </div>
@@ -651,7 +726,7 @@ export default function ItemsClient({
                           min={0}
                           step={cur === 'XAF' ? 1 : 0.01}
                           placeholder="0"
-                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent text-sm"
+                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
                         />
                       </div>
                     ))}
@@ -661,7 +736,7 @@ export default function ItemsClient({
               <div className="space-y-1.5">
                 <Label className="text-app-text">{t('category')}</Label>
                 <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent">
+                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30">
                     <SelectValue placeholder={t('selectCategory')} />
                   </SelectTrigger>
                   <SelectContent>
@@ -721,7 +796,7 @@ export default function ItemsClient({
                 onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
                 min={0}
                 placeholder={ta('caloriesPlaceholder')}
-                className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent w-full sm:w-[200px]"
+                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-[200px]"
               />
             </div>
             <div className="flex items-center gap-6 pt-2">

@@ -5,7 +5,7 @@ import { z } from 'zod';
  * Used in admin coupon CRUD and API routes.
  */
 
-export const createCouponSchema = z.object({
+const couponBaseSchema = z.object({
   code: z
     .string()
     .min(2, 'Le code doit contenir au moins 2 caractères')
@@ -26,9 +26,20 @@ export const createCouponSchema = z.object({
   is_active: z.boolean().default(true),
 });
 
-export const updateCouponSchema = createCouponSchema.partial().extend({
-  is_active: z.boolean().optional(),
-});
+const percentageCap = (data: { discount_type?: string; discount_value?: number }) =>
+  data.discount_type !== 'percentage' || (data.discount_value ?? 0) <= 100;
+
+const percentageCapMessage = {
+  message: 'Le pourcentage ne peut pas dépasser 100%',
+  path: ['discount_value'],
+};
+
+export const createCouponSchema = couponBaseSchema.refine(percentageCap, percentageCapMessage);
+
+export const updateCouponSchema = couponBaseSchema
+  .partial()
+  .extend({ is_active: z.boolean().optional() })
+  .refine(percentageCap, percentageCapMessage);
 
 export type CreateCouponInput = z.infer<typeof createCouponSchema>;
 export type UpdateCouponInput = z.infer<typeof updateCouponSchema>;

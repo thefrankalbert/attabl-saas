@@ -472,6 +472,7 @@ export function createExcelImportService(supabase: SupabaseClient) {
             is_available: item.isAvailable,
             is_featured: item.isFeatured,
             slug: slugify(item.name),
+            display_order: nextItemOrder,
           });
 
           if (itemError) {

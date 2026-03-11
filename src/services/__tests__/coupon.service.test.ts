@@ -298,17 +298,38 @@ describe('CouponService', () => {
     });
   });
 
-  describe('incrementUsage', () => {
-    it('should call RPC increment_coupon_usage', async () => {
+  describe('claimUsage', () => {
+    it('should call RPC claim_coupon_usage and return true on success', async () => {
       const supabase = createMockSupabase();
-      supabase.rpc.mockResolvedValue({ data: null, error: null });
+      supabase.rpc.mockResolvedValue({ data: true, error: null });
 
       const service = createCouponService(asSupabase(supabase));
-      await service.incrementUsage('coupon-1');
+      const result = await service.claimUsage('coupon-1');
 
-      expect(supabase.rpc).toHaveBeenCalledWith('increment_coupon_usage', {
+      expect(result).toBe(true);
+      expect(supabase.rpc).toHaveBeenCalledWith('claim_coupon_usage', {
         p_coupon_id: 'coupon-1',
       });
+    });
+
+    it('should return false when coupon limit is reached', async () => {
+      const supabase = createMockSupabase();
+      supabase.rpc.mockResolvedValue({ data: false, error: null });
+
+      const service = createCouponService(asSupabase(supabase));
+      const result = await service.claimUsage('coupon-1');
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false on RPC error', async () => {
+      const supabase = createMockSupabase();
+      supabase.rpc.mockResolvedValue({ data: null, error: { message: 'RPC error' } });
+
+      const service = createCouponService(asSupabase(supabase));
+      const result = await service.claimUsage('coupon-1');
+
+      expect(result).toBe(false);
     });
   });
 });

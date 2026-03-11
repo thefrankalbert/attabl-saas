@@ -113,8 +113,10 @@ export default function PaymentModal({
             payment_status: 'paid',
             paid_at: new Date().toISOString(),
             status: 'delivered',
+            ...(tipAmount > 0 ? { tip_amount: tipAmount } : {}),
           })
-          .eq('id', order.id);
+          .eq('id', order.id)
+          .eq('tenant_id', order.tenant_id);
 
         if (error) {
           toast({ title: t('paymentError'), description: error.message, variant: 'destructive' });
@@ -181,7 +183,7 @@ export default function PaymentModal({
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-1">
               {t('amountToPay')}
             </p>
-            <p className="text-3xl lg:text-5xl font-bold text-white tabular-nums tracking-tight">
+            <p className="text-2xl sm:text-3xl lg:text-5xl font-bold text-white tabular-nums tracking-tight">
               {formatCurrency(totalWithTip, currency)}
             </p>
             {tipAmount > 0 && (
@@ -345,7 +347,7 @@ export default function PaymentModal({
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
               {t('amountToPay')}
             </p>
-            <p className="text-2xl font-bold text-white tabular-nums">
+            <p className="text-xl sm:text-2xl font-bold text-white tabular-nums">
               {formatCurrency(totalWithTip, currency)}
             </p>
           </div>

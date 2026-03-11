@@ -6,7 +6,6 @@ import { z } from 'zod';
  */
 
 export const subscribeSchema = z.object({
-  tenantId: z.string().uuid(),
   endpoint: z.string().url(),
   p256dh: z.string().min(1),
   auth: z.string().min(1),

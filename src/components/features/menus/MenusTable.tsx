@@ -1,20 +1,9 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useId, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import {
-  Plus,
-  Folder,
-  ChevronRight,
-  Edit2,
-  Trash2,
-  ToggleLeft,
-  ToggleRight,
-  Building2,
-  Globe,
-  GripVertical,
-} from 'lucide-react';
+import { Plus, Folder, Edit2, Trash2, ToggleLeft, ToggleRight, GripVertical } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -27,18 +16,15 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+
 import { cn } from '@/lib/utils';
-import type { Menu, Venue } from '@/types/admin.types';
+import type { Menu } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
 
 interface MenusTableProps {
   tenantSlug: string;
   menus: Menu[];
-  venues: Venue[];
-  filteredStandalone: Menu[];
-  menusByVenue: Record<string, Menu[]>;
   searchQuery: string;
   loading: boolean;
   selectedIds: Set<string>;
@@ -54,10 +40,7 @@ interface MenusTableProps {
 interface MenuRowProps {
   menu: Menu;
   tenantSlug: string;
-  venues: Venue[];
   isSelected: boolean;
-  /** Hide venue badge when row is already under a venue section header */
-  showVenueBadge?: boolean;
   onToggleSelect: () => void;
   onEdit: () => void;
   onDelete: () => void;
@@ -70,9 +53,7 @@ interface MenuRowProps {
 function MenuRow({
   menu,
   tenantSlug,
-  venues,
   isSelected,
-  showVenueBadge = true,
   onToggleSelect,
   onEdit,
   onDelete,
@@ -113,7 +94,7 @@ function MenuRow({
         type="checkbox"
         checked={isSelected}
         onChange={onToggleSelect}
-        className="w-4 h-4 rounded border-app-border text-blue-600 focus:ring-blue-500 shrink-0 cursor-pointer"
+        className="w-4 h-4 rounded border-app-border accent-accent focus:ring-accent/30 shrink-0 cursor-pointer"
       />
 
       {/* Drag handle */}
@@ -128,29 +109,14 @@ function MenuRow({
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </button>
 
-      {/* Name + meta */}
+      {/* Name */}
       <Link
         href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
         className="flex-1 min-w-0 flex items-center gap-2"
       >
-        <span className="font-medium text-sm text-app-text truncate hover:underline">
+        <span className="font-medium text-sm text-app-text hover:underline break-words">
           {menu.name}
         </span>
-        {showVenueBadge && menu.venue && (
-          <Badge variant="outline" className="text-[10px] gap-1 shrink-0">
-            <Building2 className="w-2.5 h-2.5" />
-            {menu.venue.name}
-          </Badge>
-        )}
-        {!menu.venue_id && venues.length > 0 && (
-          <Badge
-            variant="outline"
-            className="text-[10px] gap-1 shrink-0 border-accent/15 text-accent bg-accent/5"
-          >
-            <Globe className="w-2.5 h-2.5" />
-            {t('sharedMenuBadge')}
-          </Badge>
-        )}
         {childCount > 0 && (
           <span className="text-xs text-app-text-muted shrink-0">
             {t('subMenuCount', { count: childCount })}
@@ -164,7 +130,7 @@ function MenuRow({
         className={cn(
           'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all shrink-0',
           menu.is_active
-            ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+            ? 'bg-status-success-bg text-status-success border-status-success/20'
             : 'bg-app-bg text-app-text-secondary border-app-border',
         )}
       >
@@ -202,10 +168,6 @@ function MenuRow({
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
-
-      <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`} className="shrink-0">
-        <ChevronRight className="w-4 h-4 text-app-text-muted" />
-      </Link>
     </div>
   );
 }
@@ -215,9 +177,6 @@ function MenuRow({
 export default function MenusTable({
   tenantSlug,
   menus,
-  venues,
-  filteredStandalone,
-  menusByVenue,
   searchQuery,
   loading,
   selectedIds,
@@ -230,6 +189,7 @@ export default function MenusTable({
   onCreateFirst,
 }: MenusTableProps) {
   const t = useTranslations('menus');
+  const dndId = useId();
 
   // @dnd-kit sensors
   const sensors = useSensors(
@@ -240,6 +200,13 @@ export default function MenusTable({
     }),
     useSensor(KeyboardSensor),
   );
+
+  // Filter menus by search query, preserving display_order
+  const allFilteredMenus = useMemo(() => {
+    if (!searchQuery) return menus;
+    const q = searchQuery.toLowerCase();
+    return menus.filter((m) => m.name.toLowerCase().includes(q));
+  }, [menus, searchQuery]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -262,7 +229,12 @@ export default function MenusTable({
   );
 
   return (
-    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+    <DndContext
+      id={dndId}
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
       {/* Loading state */}
       {loading && (
         <div className="space-y-1">
@@ -272,83 +244,31 @@ export default function MenusTable({
         </div>
       )}
 
-      {/* Standalone menus */}
-      {filteredStandalone.length > 0 && (
-        <div>
-          {venues.length > 0 && (
-            <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest px-4 py-2">
-              {t('independentMenus')}
-            </p>
-          )}
-          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-            <SortableContext
-              items={filteredStandalone.map((m) => m.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {filteredStandalone.map((menu) => (
-                <MenuRow
-                  key={menu.id}
-                  menu={menu}
-                  tenantSlug={tenantSlug}
-                  venues={venues}
-                  isSelected={selectedIds.has(menu.id)}
-                  onToggleSelect={() => onToggleSelect(menu.id)}
-                  onEdit={() => onEdit(menu)}
-                  onDelete={() => onDelete(menu)}
-                  onToggle={() => onToggle(menu)}
-                  onAddChild={() => onAddChild(menu.id)}
-                />
-              ))}
-            </SortableContext>
-          </div>
-        </div>
+      {/* Single SortableContext for all menus — flat list */}
+      {allFilteredMenus.length > 0 && (
+        <SortableContext
+          items={allFilteredMenus.map((m) => m.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {allFilteredMenus.map((menu) => (
+            <MenuRow
+              key={menu.id}
+              menu={menu}
+              tenantSlug={tenantSlug}
+              isSelected={selectedIds.has(menu.id)}
+              onToggleSelect={() => onToggleSelect(menu.id)}
+              onEdit={() => onEdit(menu)}
+              onDelete={() => onDelete(menu)}
+              onToggle={() => onToggle(menu)}
+              onAddChild={() => onAddChild(menu.id)}
+            />
+          ))}
+        </SortableContext>
       )}
-
-      {/* Menus by venue */}
-      {Object.entries(menusByVenue).map(([venueId, venueMenus]) => {
-        const venue = venues.find((v) => v.id === venueId);
-        const filtered = venueMenus.filter((m) =>
-          m.name.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
-        if (filtered.length === 0) return null;
-
-        return (
-          <div key={venueId} className="mt-4">
-            <div className="flex items-center gap-2 px-4 py-2">
-              <Building2 className="w-4 h-4 text-app-text-muted" />
-              <p className="text-xs font-bold text-app-text-muted uppercase tracking-widest">
-                {venue?.name || t('space')}
-              </p>
-            </div>
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-              <SortableContext
-                items={filtered.map((m) => m.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                {filtered.map((menu) => (
-                  <MenuRow
-                    key={menu.id}
-                    menu={menu}
-                    tenantSlug={tenantSlug}
-                    venues={venues}
-                    isSelected={selectedIds.has(menu.id)}
-                    showVenueBadge={false}
-                    onToggleSelect={() => onToggleSelect(menu.id)}
-                    onEdit={() => onEdit(menu)}
-                    onDelete={() => onDelete(menu)}
-                    onToggle={() => onToggle(menu)}
-                    onAddChild={() => onAddChild(menu.id)}
-                  />
-                ))}
-              </SortableContext>
-            </div>
-          </div>
-        );
-      })}
 
       {/* Empty state */}
       {menus.length === 0 && !loading && (
-        <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+        <div className="p-12 text-center">
           <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Folder className="w-7 h-7 text-app-text-muted" />
           </div>
