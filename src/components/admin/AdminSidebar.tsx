@@ -306,10 +306,13 @@ export function AdminSidebar({
             </PopoverTrigger>
           )}
           <PopoverContent
-            side="top"
-            align="center"
+            side={collapsed ? 'right' : 'top'}
+            align={collapsed ? 'end' : 'center'}
             sideOffset={8}
-            className="w-[calc(var(--radix-popover-trigger-width)-16px)] p-0 bg-app-card border-app-border rounded-xl shadow-lg"
+            className={cn(
+              'p-0 bg-app-card border-app-border rounded-xl shadow-lg',
+              collapsed ? 'w-56' : 'w-[calc(var(--radix-popover-trigger-width)-16px)]',
+            )}
           >
             {/* Settings link */}
             <div className="p-1.5">

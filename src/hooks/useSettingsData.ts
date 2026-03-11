@@ -72,6 +72,7 @@ export interface UseSettingsDataReturn {
   saving: boolean;
   selectedSoundId: string;
   setSelectedSoundId: (id: string) => void;
+  hasUnsavedChanges: boolean;
   handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
   onSubmit: (data: SettingsFormValues) => Promise<void>;
   onValidationError: (errors: FieldErrors<SettingsFormValues>) => void;
@@ -92,9 +93,8 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
   const [logoPreview, setLogoPreview] = useState<string | null>(tenant.logo_url || null);
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [selectedSoundId, setSelectedSoundId] = useState(
-    tenant.notification_sound_id || 'classic-bell',
-  );
+  const initialSoundId = tenant.notification_sound_id || 'classic-bell';
+  const [selectedSoundId, setSelectedSoundId] = useState(initialSoundId);
 
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -251,6 +251,9 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     }
   };
 
+  const soundChanged = selectedSoundId !== initialSoundId;
+  const hasUnsavedChanges = form.formState.isDirty || soundChanged;
+
   return {
     form,
     logoPreview,
@@ -258,6 +261,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     saving,
     selectedSoundId,
     setSelectedSoundId,
+    hasUnsavedChanges,
     handleLogoUpload,
     onSubmit,
     onValidationError,
