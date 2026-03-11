@@ -148,22 +148,8 @@ export default function ClientMenuPage({
   const [isSearchSticky, setIsSearchSticky] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // ─── Auto-open QR on first visit ──────────────────────
-  const scannerCheckRef = useRef(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || scannerCheckRef.current) return;
-    scannerCheckRef.current = true;
-
-    const savedTable = localStorage.getItem(`attabl_${tenant.slug}_table`);
-    if (!initialTable && !savedTable) {
-      // Don't auto-open scanner in development — only in production
-      if (process.env.NODE_ENV === 'production') {
-        const timer = setTimeout(() => setIsQRScannerOpen(true), 600);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [initialTable, tenant.slug]);
+  // QR scanner is only opened manually — the customer already scanned a QR code
+  // to reach this page, so auto-opening another scanner prompt makes no sense.
 
   // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {

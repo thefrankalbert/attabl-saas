@@ -1956,7 +1956,17 @@
     "logoFileTooLarge": "Le fichier est trop volumineux (max 15 Mo)",
     "uploadError": "Erreur lors du téléchargement",
     "validationFailed": "Certains champs sont invalides",
-    "articlePhoto": "Photo"
+    "articlePhoto": "Photo",
+    "phaseIdentity": "Identité",
+    "phaseMenu": "Menu",
+    "phaseLaunch": "Lancement",
+    "phaseIdentityDesc": "Votre établissement et votre marque",
+    "phaseMenuDesc": "Tables et carte du menu",
+    "phaseLaunchDesc": "QR code et mise en ligne",
+    "continueButton": "Continuer",
+    "optional": "optionnel",
+    "studioTitle": "Bienvenue dans votre studio",
+    "studioSubtitle": "Configurez votre menu digital en quelques minutes"
   },
   "auditLog": {
     "title": "Journal d'audit",

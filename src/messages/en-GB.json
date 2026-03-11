@@ -1955,7 +1955,17 @@
     "logoFileTooLarge": "File is too large (max 15 MB)",
     "uploadError": "Error uploading image",
     "validationFailed": "Some fields are invalid",
-    "articlePhoto": "Photo"
+    "articlePhoto": "Photo",
+    "phaseIdentity": "Identity",
+    "phaseMenu": "Menu",
+    "phaseLaunch": "Launch",
+    "phaseIdentityDesc": "Your establishment and brand",
+    "phaseMenuDesc": "Tables and menu items",
+    "phaseLaunchDesc": "QR code and go live",
+    "continueButton": "Continue",
+    "optional": "optional",
+    "studioTitle": "Welcome to your studio",
+    "studioSubtitle": "Set up your digital menu in just a few minutes"
   },
   "auditLog": {
     "title": "Audit Log",

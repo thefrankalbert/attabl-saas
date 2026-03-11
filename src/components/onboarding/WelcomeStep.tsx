@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, LayoutGrid, Palette, UtensilsCrossed, Rocket, ArrowRight } from 'lucide-react';
+import { Building2, UtensilsCrossed, Rocket, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from 'next-intl';
 
@@ -9,52 +9,58 @@ interface WelcomeStepProps {
   onStart: () => void;
 }
 
-const STEPS = [
-  { icon: Building2, key: 'stepEstablishment' },
-  { icon: LayoutGrid, key: 'stepTables' },
-  { icon: Palette, key: 'stepBranding' },
-  { icon: UtensilsCrossed, key: 'stepMenu' },
-  { icon: Rocket, key: 'stepLaunch' },
+const PHASES = [
+  { icon: Building2, label: 'phaseIdentity', desc: 'phaseIdentityDesc' },
+  { icon: UtensilsCrossed, label: 'phaseMenu', desc: 'phaseMenuDesc' },
+  { icon: Rocket, label: 'phaseLaunch', desc: 'phaseLaunchDesc' },
 ] as const;
 
 export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
   const t = useTranslations('onboarding');
 
   return (
-    <div className="h-full flex flex-col items-center justify-center text-center py-8">
-      <div className="bg-[#CCFF00] rounded-2xl p-4 mb-6">
-        <Rocket className="h-8 w-8 text-black" />
-      </div>
+    <div className="h-full flex flex-col items-center justify-center px-4 bg-app-bg">
+      <div className="flex flex-col items-center text-center">
+        {/* Brand mark */}
+        <p className="text-[11px] font-bold uppercase tracking-[0.25em] text-app-text-muted mb-10">
+          ATTABL
+        </p>
 
-      <h1 className="text-2xl font-bold text-app-text mb-2">
-        {t('welcomeTitle', { name: tenantName || '' })}
-      </h1>
-      <p className="text-app-text-secondary text-sm mb-8 max-w-sm">{t('welcomeSubtitle')}</p>
+        {/* Headline */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-app-text mb-3">
+          {t('welcomeTitle', { name: tenantName || '' })}
+        </h1>
+        <p className="text-base text-app-text-secondary mb-12">{t('studioSubtitle')}</p>
 
-      {/* Step overview */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
-        {STEPS.map((step, i) => {
-          const Icon = step.icon;
-          return (
-            <div key={i} className="flex items-center gap-3">
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-app-elevated flex items-center justify-center">
-                  <Icon className="h-3 w-3 sm:h-4 sm:w-4 text-app-text-secondary" />
+        {/* Phase indicators */}
+        <div className="flex items-start gap-8 sm:gap-12 mb-12">
+          {PHASES.map((phase, i) => {
+            const Icon = phase.icon;
+            return (
+              <div key={i} className="flex flex-col items-center gap-2.5 max-w-[100px]">
+                <div className="w-11 h-11 rounded-xl bg-app-elevated flex items-center justify-center">
+                  <Icon className="h-5 w-5 text-app-text-secondary" />
                 </div>
-                <span className="text-[10px] text-app-text-muted font-medium">{t(step.key)}</span>
+                <p className="text-xs font-semibold text-app-text">{t(phase.label)}</p>
+                <p className="text-[10px] text-app-text-muted leading-snug">{t(phase.desc)}</p>
               </div>
-              {i < STEPS.length - 1 && (
-                <div className="hidden sm:block w-4 h-px bg-app-border mb-5" />
-              )}
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
 
-      <Button variant="default" onClick={onStart}>
-        {t('welcomeCTA')}
-        <ArrowRight className="h-4 w-4" />
-      </Button>
+        {/* CTA */}
+        <Button
+          variant="default"
+          onClick={onStart}
+          className="h-12 rounded-xl gap-2.5 text-sm font-bold px-10 shadow-lg shadow-accent/20 active:scale-[0.97] transition-all"
+        >
+          {t('welcomeCTA')}
+          <ArrowRight className="h-4 w-4" />
+        </Button>
+
+        {/* Trial reminder */}
+        <p className="text-[10px] text-app-text-muted mt-6">{t('trialReminder')}</p>
+      </div>
     </div>
   );
 }
