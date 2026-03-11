@@ -1,10 +1,13 @@
 'use client';
 
-import { Upload, Loader2 } from 'lucide-react';
+import { useState } from 'react';
+import { Upload, Loader2, CheckCircle2, Clock, Globe, Mail } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
+import { useToast } from '@/components/ui/use-toast';
 import {
   Select,
   SelectContent,
@@ -13,6 +16,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import Image from 'next/image';
+import { useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import { locales, type Locale } from '@/i18n/config';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
@@ -27,15 +33,27 @@ const ESTABLISHMENT_TYPES = [
   { value: 'other', label: 'Autre' },
 ];
 
+const LOCALE_LABELS: Record<Locale, { label: string; flag: string }> = {
+  'fr-FR': { label: 'Francais (France)', flag: 'FR' },
+  'fr-CA': { label: 'Francais (Canada)', flag: 'CA' },
+  'en-US': { label: 'English (US)', flag: 'US' },
+  'en-GB': { label: 'English (UK)', flag: 'GB' },
+  'en-AU': { label: 'English (Australia)', flag: 'AU' },
+  'en-CA': { label: 'English (Canada)', flag: 'CA' },
+  'en-IE': { label: 'English (Ireland)', flag: 'IE' },
+  'es-ES': { label: 'Espanol (Espana)', flag: 'ES' },
+};
+
 // ─── Types ─────────────────────────────────────────────────
 
 interface SettingsIdentityProps {
   form: UseFormReturn<SettingsFormValues>;
-  tenant: { slug: string };
+  tenant: { slug: string; custom_domain?: string | null };
   logoPreview: string | null;
   uploading: boolean;
   saving: boolean;
   onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onDomainSave: (domain: string | null) => Promise<void>;
   t: (key: string) => string;
 }
 
@@ -48,6 +66,7 @@ export default function SettingsIdentity({
   uploading,
   saving,
   onLogoUpload,
+  onDomainSave,
   t,
 }: SettingsIdentityProps) {
   const {
@@ -58,6 +77,68 @@ export default function SettingsIdentity({
   } = form;
 
   const watchedEstablishmentType = watch('establishmentType');
+  const { toast } = useToast();
+  const locale = useLocale();
+  const router = useRouter();
+
+  // Domain state
+  const [domain, setDomain] = useState(tenant.custom_domain || '');
+  const [verifying, setVerifying] = useState(false);
+  const [verified, setVerified] = useState(!!tenant.custom_domain);
+  const [domainSaving, setDomainSaving] = useState(false);
+
+  const handleVerifyDomain = async () => {
+    if (!domain.trim()) return;
+    setVerifying(true);
+    try {
+      const res = await fetch('/api/domain-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-tenant-slug': tenant.slug },
+        body: JSON.stringify({ domain: domain.trim() }),
+      });
+      const data = await res.json();
+      setVerified(data.verified);
+      if (!data.verified) {
+        toast({ title: t('domainPending'), variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: t('domainPending'), variant: 'destructive' });
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  const handleSaveDomain = async () => {
+    setDomainSaving(true);
+    try {
+      await onDomainSave(domain.trim() || null);
+      toast({ title: t('domainSaved') });
+    } catch {
+      toast({ title: t('settingsSaveError'), variant: 'destructive' });
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  const handleRemoveDomain = async () => {
+    setDomainSaving(true);
+    try {
+      await onDomainSave(null);
+      setDomain('');
+      setVerified(false);
+      toast({ title: t('domainRemoved') });
+    } catch {
+      toast({ title: t('settingsSaveError'), variant: 'destructive' });
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  const handleLocaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newLocale = e.target.value;
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+    router.refresh();
+  };
 
   return (
     <TabsContent value="identity" className="mt-0">
@@ -154,8 +235,124 @@ export default function SettingsIdentity({
             <span className="text-sm text-app-text-muted">.attabl.com</span>
           </div>
           <p className="text-xs text-app-text-secondary">
-            {t('slugDescription') ?? 'Your unique subdomain. Contact support to change it.'}
+            {t('slugDescription') ?? 'Your unique subdomain. Contact support to change it.'}{' '}
+            <a
+              href="mailto:support@attabl.com"
+              className="text-accent hover:underline inline-flex items-center gap-1"
+            >
+              <Mail className="w-3 h-3" />
+              support@attabl.com
+            </a>
           </p>
+        </div>
+
+        <hr className="border-app-border" />
+
+        {/* Domain section (moved from separate tab) */}
+        <div className="space-y-4">
+          <div>
+            <Label className="text-sm font-semibold text-app-text">{t('customDomain')}</Label>
+            <p className="text-xs text-app-text-secondary mt-0.5">{t('customDomainDesc')}</p>
+          </div>
+
+          <div className="flex gap-2">
+            <Input
+              value={domain}
+              onChange={(e) => {
+                setDomain(e.target.value);
+                setVerified(false);
+              }}
+              placeholder={t('customDomainPlaceholder')}
+              className="flex-1 min-h-[44px]"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleVerifyDomain}
+              disabled={verifying || !domain.trim()}
+              className="min-h-[44px]"
+            >
+              {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('verifyDomain')}
+            </Button>
+          </div>
+
+          {domain.trim() && (
+            <div className="flex items-center gap-2 text-xs">
+              {verified ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  <span className="text-emerald-600">{t('domainVerified')}</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  <span className="text-amber-600">{t('domainPending')}</span>
+                </>
+              )}
+            </div>
+          )}
+
+          <div className="rounded-lg border border-app-border p-3 text-xs text-app-text-secondary">
+            <p className="font-medium text-app-text mb-1">{t('dnsConfig')}</p>
+            <p>{t('domainInstructions')}</p>
+            <code className="block mt-2 bg-app-elevated p-2 rounded text-xs font-mono">
+              CNAME &rarr; cname.vercel-dns.com
+            </code>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="default"
+              onClick={handleSaveDomain}
+              disabled={domainSaving || !domain.trim()}
+              className="min-h-[44px]"
+            >
+              {domainSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {t('save')}
+            </Button>
+            {tenant.custom_domain && (
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleRemoveDomain}
+                disabled={domainSaving}
+                className="text-red-600 min-h-[44px]"
+              >
+                {t('remove')}
+              </Button>
+            )}
+          </div>
+
+          <p className="text-xs text-app-text-muted">
+            {t('currentUrl')}{' '}
+            <code className="bg-app-elevated px-1 rounded">{tenant.slug}.attabl.com</code>
+          </p>
+        </div>
+
+        <hr className="border-app-border" />
+
+        {/* Language section (moved from separate tab) */}
+        <div className="space-y-2">
+          <Label className="text-sm font-semibold text-app-text">{t('languageSection')}</Label>
+          <p className="text-xs text-app-text-secondary">{t('languageDescription')}</p>
+          <div className="relative flex items-center max-w-xs">
+            <Globe className="absolute left-2.5 h-3.5 w-3.5 text-app-text-muted pointer-events-none" />
+            <select
+              value={locale}
+              onChange={handleLocaleChange}
+              className="w-full h-10 min-h-[44px] pl-8 pr-3 text-sm bg-app-elevated border border-app-border text-app-text hover:bg-app-hover rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors"
+            >
+              {locales.map((loc) => {
+                const info = LOCALE_LABELS[loc];
+                return (
+                  <option key={loc} value={loc}>
+                    {info.label}
+                  </option>
+                );
+              })}
+            </select>
+          </div>
         </div>
       </div>
     </TabsContent>
