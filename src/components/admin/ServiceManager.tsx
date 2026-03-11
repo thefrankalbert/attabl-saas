@@ -5,7 +5,19 @@ import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
-import { UserCheck, X, LayoutGrid, Activity, Clock, Search, User } from 'lucide-react';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
+import { useToast } from '@/components/ui/use-toast';
+import {
+  UserCheck,
+  X,
+  LayoutGrid,
+  Activity,
+  Clock,
+  Search,
+  User,
+  CheckCircle2,
+  Utensils,
+} from 'lucide-react';
 import {
   Select,
   SelectTrigger,
@@ -15,7 +27,8 @@ import {
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import type { Table, Zone, AdminUser, TableAssignment } from '@/types/admin.types';
+import { logger } from '@/lib/logger';
+import type { Table, Zone, AdminUser, TableAssignment, Order } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -212,37 +225,81 @@ export default function ServiceManager({ tenantId }: Props) {
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [sidebarSearch, setSidebarSearch] = useState('');
 
+  const [readyOrders, setReadyOrders] = useState<Order[]>([]);
+  const [now, setNow] = useState(() => Date.now());
+  const { toast } = useToast();
+
+  // Refresh "now" every 60s for elapsed-time display
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+
   const { data: assignments = [] } = useAssignments(tenantId);
   const assignServer = useAssignServer(tenantId);
   const releaseAssignment = useReleaseAssignment(tenantId);
 
   // ── Data fetching (preserved) ─────────────────────────────
 
+  const loadReadyOrders = useCallback(async () => {
+    const supabase = createClient();
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const { data, error } = await supabase
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('tenant_id', tenantId)
+      .eq('status', 'ready')
+      .gte('created_at', todayStart.toISOString())
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      logger.error('Failed to load ready orders', error);
+    } else {
+      setReadyOrders(data as Order[]);
+    }
+  }, [tenantId]);
+
   useEffect(() => {
     async function fetchData() {
       const supabase = createClient();
-      const { data: zonesData } = await supabase
-        .from('zones')
-        .select('*, tables(*), venues!inner(tenant_id)')
-        .eq('venues.tenant_id', tenantId)
-        .order('display_order');
+      const [zonesResult, serversResult, ordersResult] = await Promise.all([
+        supabase
+          .from('zones')
+          .select('*, tables(*), venues!inner(tenant_id)')
+          .eq('venues.tenant_id', tenantId)
+          .order('display_order'),
+        supabase
+          .from('admin_users')
+          .select('id, full_name, role, is_active')
+          .eq('tenant_id', tenantId)
+          .in('role', ['waiter', 'manager', 'admin', 'owner'])
+          .eq('is_active', true)
+          .order('full_name'),
+        (() => {
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+          return supabase
+            .from('orders')
+            .select('*, order_items(*)')
+            .eq('tenant_id', tenantId)
+            .eq('status', 'ready')
+            .gte('created_at', todayStart.toISOString())
+            .order('created_at', { ascending: true });
+        })(),
+      ]);
 
-      const { data: serversData } = await supabase
-        .from('admin_users')
-        .select('id, full_name, role, is_active')
-        .eq('tenant_id', tenantId)
-        .in('role', ['waiter', 'manager', 'admin', 'owner'])
-        .eq('is_active', true)
-        .order('full_name');
-
-      if (zonesData) setZones(zonesData as ZoneWithTables[]);
-      if (serversData) setServers(serversData as AdminUser[]);
+      if (zonesResult.data) setZones(zonesResult.data as ZoneWithTables[]);
+      if (serversResult.data) setServers(serversResult.data as AdminUser[]);
+      if (ordersResult.data) setReadyOrders(ordersResult.data as Order[]);
+      if (ordersResult.error) logger.error('Failed to load ready orders', ordersResult.error);
       setLoading(false);
     }
     fetchData();
   }, [tenantId]);
 
-  // ── Realtime subscription (preserved) ─────────────────────
+  // ── Realtime subscription for assignments ──────────────────
 
   useEffect(() => {
     const supabase = createClient();
@@ -264,6 +321,48 @@ export default function ServiceManager({ tenantId }: Props) {
       supabase.removeChannel(channel);
     };
   }, [tenantId]);
+
+  // ── Realtime subscription for orders (ready status) ────────
+
+  useRealtimeSubscription<Record<string, unknown>>({
+    channelName: `service_orders_${tenantId}`,
+    table: 'orders',
+    filter: `tenant_id=eq.${tenantId}`,
+    onInsert: () => {
+      loadReadyOrders();
+    },
+    onUpdate: () => {
+      loadReadyOrders();
+    },
+    onDelete: () => {
+      loadReadyOrders();
+    },
+  });
+
+  // ── Mark order as delivered ─────────────────────────────────
+
+  const handleMarkDelivered = useCallback(
+    async (orderId: string) => {
+      // Optimistic update
+      setReadyOrders((prev) => prev.filter((o) => o.id !== orderId));
+
+      const supabase = createClient();
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'delivered' })
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
+
+      if (error) {
+        logger.error('Failed to mark order as delivered', error);
+        toast({ title: tc('error'), variant: 'destructive' });
+        loadReadyOrders(); // Revert on error
+      } else {
+        toast({ title: t('markDelivered') });
+      }
+    },
+    [tenantId, loadReadyOrders, toast, tc, t],
+  );
 
   // ── Handlers (preserved) ──────────────────────────────────
 
@@ -459,6 +558,61 @@ export default function ServiceManager({ tenantId }: Props) {
               </div>
             </div>
 
+            {/* ── COMMANDES PRETES (ready orders) ── */}
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                  {t('readyOrders')}
+                </span>
+                <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-status-success-bg text-status-success text-[9px] font-bold px-1">
+                  {readyOrders.length}
+                </span>
+              </div>
+              <div className="space-y-1.5">
+                {readyOrders.length === 0 ? (
+                  <p className="text-xs text-app-text-muted py-2">{t('noReadyOrdersDesc')}</p>
+                ) : (
+                  readyOrders.map((order) => {
+                    const items =
+                      order.items ||
+                      (order as unknown as { order_items?: { id: string }[] }).order_items ||
+                      [];
+                    const minutesAgo = Math.floor(
+                      (now - new Date(order.created_at).getTime()) / 60000,
+                    );
+                    return (
+                      <div
+                        key={order.id}
+                        className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-colors"
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-1.5">
+                            <Utensils className="w-3 h-3 text-emerald-500" />
+                            <span className="text-xs font-bold text-app-text">
+                              {t('tableLabel')} {order.table_number}
+                            </span>
+                          </div>
+                          <span className="text-[10px] text-app-text-muted tabular-nums">
+                            {t('orderAge', { minutes: minutesAgo })}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-app-text-muted mb-2">
+                          {t('itemsCount', { count: items.length })}
+                        </p>
+                        <button
+                          onClick={() => handleMarkDelivered(order.id)}
+                          className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 min-h-[36px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {t('markDelivered')}
+                        </button>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
             {/* ── DISPONIBLES (available servers) ── */}
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -601,8 +755,59 @@ export default function ServiceManager({ tenantId }: Props) {
               })
             )}
 
-            {/* Mobile-only: inline assignment summary */}
-            <div className="md:hidden">
+            {/* Mobile-only: ready orders + assignment summary */}
+            <div className="md:hidden space-y-4">
+              {/* Ready orders — mobile */}
+              {readyOrders.length > 0 && (
+                <div className="bg-app-card rounded-xl border border-emerald-500/20 p-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <span className="text-sm font-semibold text-app-text">{t('readyOrders')}</span>
+                    <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-status-success-bg text-status-success text-[9px] font-bold px-1">
+                      {readyOrders.length}
+                    </span>
+                  </div>
+                  <div className="space-y-2">
+                    {readyOrders.map((order) => {
+                      const items =
+                        order.items ||
+                        (order as unknown as { order_items?: { id: string }[] }).order_items ||
+                        [];
+                      const minutesAgo = Math.floor(
+                        (now - new Date(order.created_at).getTime()) / 60000,
+                      );
+                      return (
+                        <div
+                          key={order.id}
+                          className="flex items-center justify-between py-2 border-b border-app-border/50 last:border-0"
+                        >
+                          <div className="flex items-center gap-2 min-w-0 flex-1">
+                            <Utensils className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <div className="min-w-0">
+                              <span className="text-xs font-bold text-app-text">
+                                {t('tableLabel')} {order.table_number}
+                              </span>
+                              <span className="text-[10px] text-app-text-muted ml-2">
+                                {t('itemsCount', { count: items.length })} ·{' '}
+                                {t('orderAge', { minutes: minutesAgo })}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleMarkDelivered(order.id)}
+                            className="shrink-0 flex items-center gap-1 px-3 py-2 min-h-[36px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            {t('markDelivered')}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Assignment summary */}
               {assignments.length > 0 && (
                 <div className="bg-app-card rounded-xl border border-app-border p-4">
                   <div className="flex items-center gap-2 mb-3">
