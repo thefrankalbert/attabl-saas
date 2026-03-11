@@ -1,6 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { createSlugService } from './slug.service';
 import { ServiceError } from './errors';
+import { sendWelcomeConfirmationEmail } from './email.service';
+import { logger } from '@/lib/logger';
 
 interface CreateTenantInput {
   slug: string;
@@ -122,11 +124,11 @@ export function createSignupService(supabase: SupabaseClient) {
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(input.restaurantName);
 
-      // 2. Create auth user
+      // 2. Create auth user (NOT auto-confirmed — must verify via email)
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: input.email,
         password: input.password,
-        email_confirm: true,
+        email_confirm: false,
         user_metadata: {
           restaurant_name: input.restaurantName,
           phone: input.phone,
@@ -186,6 +188,30 @@ export function createSignupService(supabase: SupabaseClient) {
 
       // 5. Create default venue (best-effort, no rollback)
       await this.createDefaultVenue(tenant.id);
+
+      // 6. Generate confirmation link and send welcome email
+      try {
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'signup',
+          email: input.email,
+          password: input.password,
+        });
+
+        if (linkError || !linkData?.properties?.hashed_token) {
+          logger.error('Failed to generate confirmation link', { error: linkError });
+        } else {
+          const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+          const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
+
+          await sendWelcomeConfirmationEmail(input.email, {
+            restaurantName: input.restaurantName,
+            confirmationUrl,
+          });
+        }
+      } catch (emailErr) {
+        // Email sending is best-effort — do not fail signup
+        logger.error('Failed to send confirmation email', emailErr);
+      }
 
       return { slug: tenant.slug, tenantId: tenant.id };
     },

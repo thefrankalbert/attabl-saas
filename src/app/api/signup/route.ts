@@ -42,7 +42,8 @@ export async function POST(request: Request) {
       success: true,
       slug: result.slug,
       tenantId: result.tenantId,
-      message: 'Restaurant créé avec succès !',
+      requiresConfirmation: true,
+      message: 'Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.',
     });
   } catch (error) {
     if (error instanceof ServiceError) {

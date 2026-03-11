@@ -30,5 +30,10 @@ export const signupOAuthSchema = z.object({
   plan: z.enum(['essentiel', 'premium']).optional(),
 });
 
+export const resendConfirmationSchema = z.object({
+  email: z.string().email('Email invalide'),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SignupOAuthInput = z.infer<typeof signupOAuthSchema>;
+export type ResendConfirmationInput = z.infer<typeof resendConfirmationSchema>;
