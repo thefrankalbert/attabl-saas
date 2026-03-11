@@ -78,15 +78,19 @@ export default function OrderDetails({
   const handlePrintReceipt = () => {
     const tenantForPrint = {
       name: tenant?.name || 'Restaurant',
+      slug: tenant?.slug || '',
       address: tenant?.address || '',
       phone: tenant?.phone || '',
       currency: currency,
+      logo_url: tenant?.logo_url || '',
+      primary_color: tenant?.primary_color || '#18181b',
     } as Tenant;
     printReceipt(order, tenantForPrint);
     toast({ title: t('clientReceiptPrinted') });
   };
 
   const displayTotal = order.total || order.total_price || 0;
+  const tipAmount = order.tip_amount ?? 0;
   const hasBreakdown =
     (order.subtotal && order.subtotal > 0) || (order.tax_amount && order.tax_amount > 0);
 
@@ -126,7 +130,14 @@ export default function OrderDetails({
                   {serviceLabels[order.service_type] || order.service_type}
                 </Badge>
               )}
-              <span className="text-lg font-bold text-app-text ml-auto">{fmt(displayTotal)}</span>
+              <span className="text-lg font-bold text-app-text ml-auto">
+                {fmt(displayTotal + tipAmount)}
+              </span>
+              {tipAmount > 0 && (
+                <span className="text-[10px] text-emerald-500 font-medium">
+                  +{fmt(tipAmount)} {ta('tipLabel')}
+                </span>
+              )}
               <span className="flex items-center gap-1 text-[10px] text-app-text-muted">
                 <Clock className="w-3 h-3" />
                 {new Date(order.created_at).toLocaleString(locale)}
@@ -239,15 +250,29 @@ export default function OrderDetails({
                     <span>-{fmt(order.discount_amount!)}</span>
                   </div>
                 )}
-                {(order.tip_amount ?? 0) > 0 && (
+                {tipAmount > 0 && (
                   <div className="flex justify-between text-[11px] text-emerald-500">
                     <span>{ta('tipLabel')}</span>
-                    <span>+{fmt(order.tip_amount!)}</span>
+                    <span>+{fmt(tipAmount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-xs text-app-text border-t border-app-border pt-1.5 mt-1">
                   <span>{tc('total')}</span>
-                  <span>{fmt(displayTotal + (order.tip_amount || 0))}</span>
+                  <span>{fmt(displayTotal + tipAmount)}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Tip-only footer when no full breakdown exists but tip is present */}
+            {!hasBreakdown && tipAmount > 0 && (
+              <div className="border-t border-app-border px-3 py-2 space-y-1 shrink-0 bg-app-bg">
+                <div className="flex justify-between text-[11px] text-emerald-500">
+                  <span>{ta('tipLabel')}</span>
+                  <span>+{fmt(tipAmount)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-xs text-app-text border-t border-app-border pt-1.5 mt-1">
+                  <span>{tc('total')}</span>
+                  <span>{fmt(displayTotal + tipAmount)}</span>
                 </div>
               </div>
             )}

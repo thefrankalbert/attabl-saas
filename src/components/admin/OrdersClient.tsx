@@ -31,8 +31,9 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import type { ColumnDef } from '@tanstack/react-table';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Order } from '@/types/admin.types';
+import type { Order, CurrencyCode } from '@/types/admin.types';
 import { STATUS_STYLES } from '@/lib/design-tokens';
+import { useTenantSettings } from '@/hooks/queries/useTenantSettings';
 import type { OrderStatus } from '@/lib/design-tokens';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
 
@@ -58,6 +59,8 @@ export default function OrdersClient({
   const [search, setSearch] = useSessionState('orders:search', '');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const { data: tenantSettings } = useTenantSettings(tenantId);
 
   const {
     soundEnabled,
@@ -347,7 +350,7 @@ export default function OrdersClient({
               </span>
               {tip > 0 && (
                 <span className="block text-[10px] text-emerald-500 font-medium">
-                  +{tip.toLocaleString()} tip
+                  +{tip.toLocaleString()} {ta('tipLabel')}
                 </span>
               )}
             </div>
@@ -605,9 +608,16 @@ export default function OrdersClient({
                           <span className="text-app-text-secondary">
                             {items.length} {items.length === 1 ? tc('item') : tc('items')}
                           </span>
-                          <span className="font-mono font-bold text-app-text">
-                            {total.toLocaleString()}
-                          </span>
+                          <div className="text-right">
+                            <span className="font-mono font-bold text-app-text">
+                              {total.toLocaleString()}
+                            </span>
+                            {(order.tip_amount ?? 0) > 0 && (
+                              <span className="block text-[10px] text-emerald-500 font-medium">
+                                +{(order.tip_amount ?? 0).toLocaleString()} {ta('tipLabel')}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -653,6 +663,8 @@ export default function OrdersClient({
                 // Trigger a refresh logic if usually needed, but generic realtime handles it mostly.
                 // We can force status update in local state here if specialized logic requires it.
               }}
+              tenant={tenantSettings as Partial<import('@/types/admin.types').Tenant> | undefined}
+              currency={(tenantSettings?.currency || 'XAF') as CurrencyCode}
             />
           )}
         </AdminModal>
