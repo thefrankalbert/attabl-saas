@@ -19,7 +19,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { isAdminHome } from '@/lib/constants';
+import { isAdminHome, getTenantUrl } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import type { NavGroupConfig, NavItemConfig } from '@/lib/layout/navigation-config';
 
@@ -109,8 +109,8 @@ export function AdminSidebar({
     ? organizationGroup.items.filter((item) => POPOVER_ITEM_PATHS.has(item.path))
     : [];
 
-  // Client-facing URL for QR code
-  const clientUrl = `https://${tenant.slug}.attabl.com`;
+  // Client-facing URL for QR code (subdomain format)
+  const clientUrl = getTenantUrl(tenant.slug);
 
   // Plan display label
   const planLabel = tenant.subscription_plan

@@ -36,7 +36,10 @@ interface QRCodePageProps {
 }
 
 function buildQRUrl(baseUrl: string, tableName?: string, menuSlug?: string): string {
-  const url = new URL(baseUrl);
+  // When a specific menu is selected, link to /menu which handles the ?menu= param.
+  // The root page (/) is the home/landing for the tenant; /menu shows the full menu detail.
+  const path = menuSlug ? '/menu' : '';
+  const url = new URL(`${baseUrl}${path}`);
   if (tableName) url.searchParams.set('table', tableName);
   if (menuSlug) url.searchParams.set('menu', menuSlug);
   return url.toString();

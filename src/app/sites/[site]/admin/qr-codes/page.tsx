@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
+import { getTenantUrl } from '@/lib/constants';
 
 export default async function QRCodesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
@@ -35,9 +36,9 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
       .order('display_order', { ascending: true }),
   ]);
 
-  // Construct menu URL — use /sites/ path which works everywhere
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
-  const menuUrl = `${baseUrl}/sites/${tenant.slug}`;
+  // Construct menu URL — use subdomain format (e.g. https://radisson.attabl.com)
+  // The middleware rewrites subdomain requests to /sites/{slug}/ internally
+  const menuUrl = getTenantUrl(tenant.slug);
 
   return (
     <QRCodePage
