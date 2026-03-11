@@ -29,11 +29,12 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
 
   const supabase = await createClient();
 
+  const orderSelect =
+    '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course), server:admin_users!orders_server_id_fkey(id, full_name)';
+
   const { data: initialOrders, error: queryError } = await supabase
     .from('orders')
-    .select(
-      '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
-    )
+    .select(orderSelect)
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
     .limit(100);
@@ -49,9 +50,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     const adminSupabase = createAdminClient();
     const { data: adminOrders } = await adminSupabase
       .from('orders')
-      .select(
-        '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
-      )
+      .select(orderSelect)
       .eq('tenant_id', tenant.id)
       .order('created_at', { ascending: false })
       .limit(100);

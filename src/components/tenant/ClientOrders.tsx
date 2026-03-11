@@ -143,15 +143,13 @@ export default function ClientOrders({
     };
   }, [tenantId]);
 
-  // ─── Realtime: listen for status changes on recent orders ──
+  // ─── Realtime: listen for status changes on ALL tracked orders ──
 
   useEffect(() => {
     const supabase = supabaseRef.current;
-    const recentPendingIds = orders
-      .filter((o) => EDITABLE_STATUSES.has(o.status) && isWithinEditWindow(o.created_at))
-      .map((o) => o.id);
+    const orderIds = orders.map((o) => o.id);
 
-    if (recentPendingIds.length === 0) return;
+    if (orderIds.length === 0) return;
 
     const channel = supabase
       .channel('order-status-updates')
@@ -170,7 +168,11 @@ export default function ClientOrders({
           );
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          logger.error('ClientOrders realtime channel error');
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -412,8 +414,9 @@ function BadgeStatus({ status }: { status: string }) {
   const styles: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
     confirmed: 'bg-blue-50 text-blue-700',
-    preparing: 'bg-purple-50 text-purple-700',
+    preparing: 'bg-blue-50 text-blue-700',
     ready: 'bg-emerald-50 text-emerald-700',
+    delivered: 'bg-neutral-100 text-neutral-600',
     served: 'bg-neutral-100 text-neutral-600',
     cancelled: 'bg-red-50 text-red-600',
   };
@@ -423,6 +426,7 @@ function BadgeStatus({ status }: { status: string }) {
     confirmed: 'statusConfirmed',
     preparing: 'statusInKitchen',
     ready: 'statusReady',
+    delivered: 'statusDelivered',
     served: 'statusServed',
     cancelled: 'statusCancelled',
   };
