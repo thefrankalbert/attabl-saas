@@ -155,7 +155,24 @@ export async function POST(request: Request) {
       throw orderError;
     }
 
-    // 9. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
+    // 9. Create in-app notification for admins (non-blocking)
+    adminSupabase
+      .from('notifications')
+      .insert({
+        tenant_id: tenantId,
+        user_id: null, // broadcast to all tenant admins
+        type: 'info',
+        title: `Nouvelle commande — Table ${tableNumber}`,
+        body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString()} ${tenant.currency || 'XAF'}`,
+        link: `/orders`,
+      })
+      .then(({ error: notifError }) => {
+        if (notifError) {
+          logger.error('Failed to create order notification (non-blocking)', notifError);
+        }
+      });
+
+    // 10. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
       'inventoryTracking',
       tenant?.subscription_plan as SubscriptionPlan | null,
@@ -167,7 +184,7 @@ export async function POST(request: Request) {
       inventoryService
         .destockOrder(result.orderId, tenantId)
         .then(() => {
-          // 10. Check stock alerts after destock (non-blocking)
+          // 11. Check stock alerts after destock (non-blocking)
           const hasAlerts = canAccessFeature(
             'stockAlerts',
             tenant?.subscription_plan as SubscriptionPlan | null,
