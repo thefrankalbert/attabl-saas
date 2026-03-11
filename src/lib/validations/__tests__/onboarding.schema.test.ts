@@ -18,9 +18,9 @@ describe('onboardingSaveSchema', () => {
     expect(result.success).toBe(false);
   });
 
-  it('should reject step above 4', () => {
+  it('should reject step above 5', () => {
     const result = onboardingSaveSchema.safeParse({
-      step: 5,
+      step: 6,
       data: {},
     });
     expect(result.success).toBe(false);
