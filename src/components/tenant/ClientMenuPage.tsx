@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, Utensils, ChevronRight } from 'lucide-react';
+import { Search, ShoppingCart, Utensils, ChevronRight, Bell } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -31,12 +31,10 @@ import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-lg" />,
+  loading: () => <div className="h-64 animate-pulse bg-neutral-100 rounded-2xl" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
-
-// formatPrice is now handled by useDisplayCurrency().formatDisplayPrice
 
 const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
   return lang === 'en' && en ? en : fr;
@@ -134,6 +132,8 @@ export default function ClientMenuPage({
   const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const primary = tenant.primary_color || '#2D5A3D';
+
   // ─── State ─────────────────────────────────────────────
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
@@ -147,9 +147,6 @@ export default function ClientMenuPage({
   });
   const [isSearchSticky, setIsSearchSticky] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
-
-  // QR scanner is only opened manually — the customer already scanned a QR code
-  // to reach this page, so auto-opening another scanner prompt makes no sense.
 
   // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {
@@ -218,7 +215,6 @@ export default function ClientMenuPage({
       });
     }
 
-    // If QR contains a menu slug, navigate to menu page
     if (result.menuSlug) {
       router.push(`/sites/${tenant.slug}/menu?menu=${result.menuSlug}`);
     }
@@ -227,404 +223,243 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="flex-1 w-full min-h-screen"
+      className="min-h-screen bg-[#FAFAF8]"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ═══ FULLSCREEN SPLASH — shown on QR code scan ═══ */}
-      <FullscreenSplash
-        tenantName={tenant.name}
-        logoUrl={tenant.logo_url}
-        primaryColor={tenant.primary_color || '#000000'}
-      />
+      {/* ═══ FULLSCREEN SPLASH ═══ */}
+      <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ STICKY HEADER — appears when scrolled past search bar ═══ */}
-      {isSearchSticky && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>
-            <div style={{ width: '100%', padding: '12px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {/* Logo or tenant name */}
-                <div style={{ flex: 1 }}>
-                  <h2 style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
-                    {tenant.name}
-                  </h2>
-                </div>
-                <div style={{ width: '40px' }} />
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ GRADIENT HERO SECTION ═══ */}
+      {/* ═══ STICKY HEADER ═══ */}
       <div
-        className="pt-6"
-        style={{
-          background: `linear-gradient(180deg, ${tenant.primary_color || '#003058'} 0%, ${tenant.primary_color || '#003058'}cc 22%, ${tenant.primary_color || '#003058'}88 40%, ${tenant.primary_color || '#003058'}44 55%, ${tenant.primary_color || '#003058'}22 68%, ${tenant.primary_color || '#003058'}11 78%, ${tenant.primary_color || '#003058'}08 86%, transparent 93%, #ffffff 100%)`,
-        }}
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
+          isSearchSticky
+            ? 'opacity-100 translate-y-0'
+            : 'opacity-0 -translate-y-2 pointer-events-none',
+        )}
       >
-        <div>
-          {/* Original Header — visible when not scrolled */}
-          <div
-            className={cn(
-              'transition-opacity duration-300',
-              isSearchSticky ? 'opacity-0' : 'opacity-100',
-            )}
-          >
-            <div
-              className="w-full px-4 py-3 flex items-center justify-between"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 16px',
-              }}
-            >
-              <div style={{ width: '40px' }} />
-              {/* Logo or tenant name */}
+        <div className="bg-[#FAFAF8]/95 backdrop-blur-md border-b border-neutral-200/60">
+          <div className="flex items-center justify-between px-5 py-3">
+            <div className="flex items-center gap-3">
               {tenant.logo_url ? (
                 <Image
                   src={tenant.logo_url}
                   alt={tenant.name}
-                  width={260}
-                  height={24}
-                  className="h-6 w-auto max-w-[180px] sm:max-w-[260px] object-contain"
-                  priority
+                  width={28}
+                  height={28}
+                  className="h-7 w-7 rounded-full object-cover"
                 />
               ) : (
-                <h1
-                  className="text-xl font-bold text-white tracking-tight"
-                  style={{
-                    color: '#ffffff',
-                    fontSize: '20px',
-                    fontWeight: 700,
-                    letterSpacing: '-0.02em',
-                  }}
+                <div
+                  className="h-7 w-7 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: primary }}
                 >
-                  {tenant.name}
-                </h1>
+                  <span className="text-white text-xs font-bold">{tenant.name.charAt(0)}</span>
+                </div>
               )}
-              <div style={{ width: '40px' }} />
+              <span className="text-sm font-semibold text-neutral-900">{tenant.name}</span>
             </div>
-          </div>
-
-          {/* ADS BANNER */}
-          {ads && ads.length > 0 && !isSearchSticky && (
-            <div className="px-4 mb-6">
-              <AdsSlider ads={ads} />
-            </div>
-          )}
-
-          {/* ANNOUNCEMENT BANNER */}
-          {announcement && !isSearchSticky && (
-            <div style={{ padding: '0 16px', marginBottom: '24px' }}>
-              <div
-                style={{
-                  position: 'relative',
-                  borderRadius: '28px',
-                  overflow: 'hidden',
-                  aspectRatio: '21/9',
-                }}
-              >
-                {announcement.image_url ? (
-                  <Image
-                    src={announcement.image_url}
-                    alt={getTranslatedContent(lang, announcement.title, announcement.title_en)}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 600px"
-                    style={{ objectFit: 'cover' }}
-                  />
-                ) : (
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      background: `linear-gradient(135deg, ${tenant.primary_color || '#003058'} 0%, ${tenant.primary_color || '#003058'}99 100%)`,
-                    }}
-                  />
-                )}
-                {/* Gradient overlay */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    background:
-                      'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.1) 50%, transparent 100%)',
-                  }}
-                />
-                {/* Text at bottom */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    padding: '16px 20px',
-                  }}
+            {totalCartItems > 0 && (
+              <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
+                <ShoppingCart className="w-5 h-5 text-neutral-700" />
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+                  style={{ backgroundColor: primary }}
                 >
-                  <h3
-                    style={{
-                      fontSize: '16px',
-                      fontWeight: 700,
-                      color: '#ffffff',
-                      marginBottom: '4px',
-                      lineHeight: 1.3,
-                    }}
-                  >
-                    {getTranslatedContent(lang, announcement.title, announcement.title_en)}
-                  </h3>
-                  {announcement.description && (
-                    <p
-                      style={{
-                        fontSize: '12px',
-                        color: 'rgba(255,255,255,0.85)',
-                        lineHeight: 1.4,
-                        overflow: 'hidden',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                      }}
-                    >
-                      {getTranslatedContent(
-                        lang,
-                        announcement.description,
-                        announcement.description_en,
-                      )}
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="w-full px-4">
-            {/* SEARCH BAR — navigates to menu page */}
-            <div ref={searchBarRef} style={{ marginTop: '16px', marginBottom: '24px' }}>
-              <button
-                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="relative w-full"
-                style={{ position: 'relative', width: '100%', textAlign: 'left' }}
-              >
-                <div
-                  className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    bottom: 0,
-                    left: 0,
-                    paddingLeft: '16px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    pointerEvents: 'none',
-                    color: '#9ca3af',
-                  }}
-                >
-                  <Search
-                    className="w-[18px] h-[18px]"
-                    style={{ width: '18px', height: '18px' }}
-                    strokeWidth={1.5}
-                  />
-                </div>
-                <div
-                  className="w-full bg-white border border-gray-300 rounded-3xl py-3 pl-11 pr-5 text-sm font-medium text-gray-400"
-                  style={{
-                    width: '100%',
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '24px',
-                    padding: '12px 20px 12px 44px',
-                    fontSize: '14px',
-                    fontWeight: 500,
-                    color: '#9ca3af',
-                  }}
-                >
-                  {t('searchMenu')}
-                </div>
-              </button>
-            </div>
-
-            {/* Welcome text + table number */}
-            <div style={{ marginBottom: '20px' }}>
-              <h1
-                className="text-white text-xl sm:text-2xl font-bold mb-1 leading-tight"
-                style={{
-                  color: '#ffffff',
-                  fontSize: '22px',
-                  fontWeight: 700,
-                  marginBottom: '4px',
-                  lineHeight: 1.2,
-                }}
-              >
-                {t('heroSubtitle')}
-              </h1>
-              {tableNumber && (
-                <p
-                  className="text-white/80 text-sm sm:text-base font-normal"
-                  style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}
-                >
-                  {t('seatedAtTable', { table: tableNumber })}
-                </p>
-              )}
-            </div>
-
-            {/* CART PREVIEW — horizontal scroll cards */}
-            {cartItems.length > 0 && (
-              <div className="mb-6">
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-white tracking-tight">
-                    {t('yourCart')}
-                  </h2>
-                  <Link
-                    href={`/sites/${tenant.slug}/cart`}
-                    className="text-[10px] font-bold uppercase tracking-widest text-white/70 hover:text-white transition-colors"
-                  >
-                    {t('viewAll')} →
-                  </Link>
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
-                  {cartItems.slice(0, 5).map((item) => (
-                    <Link
-                      key={item.id}
-                      href={`/sites/${tenant.slug}/cart`}
-                      className="flex-shrink-0 bg-white rounded-xl border border-gray-300 transition-all p-3 w-32 group"
-                    >
-                      <div className="w-full h-20 bg-app-elevated rounded-lg overflow-hidden mb-2 flex items-center justify-center">
-                        <Utensils className="w-6 h-6 text-gray-300" />
-                      </div>
-                      <h3 className="text-[10px] font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">
-                        {item.name}
-                      </h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-bold text-[#C5A065]">
-                          {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                        </span>
-                        <span className="text-[9px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
-                          x{item.quantity}
-                        </span>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+                  {totalCartItems}
+                </span>
+              </Link>
             )}
           </div>
         </div>
       </div>
 
-      {/* ═══ CATEGORY GRID (emoji circles — navigate to menu page) ═══ */}
-      {categories.length > 0 && (
-        <div style={{ backgroundColor: '#ffffff', padding: '8px 16px 32px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '20px',
-            }}
-          >
-            <h2
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#1f2937',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {t('exploreFlavors')}
-            </h2>
+      {/* ═══ HEADER — Restaurant profile style ═══ */}
+      <div className="px-5 pt-4 pb-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {tenant.logo_url ? (
+              <Image
+                src={tenant.logo_url}
+                alt={tenant.name}
+                width={44}
+                height={44}
+                className="h-11 w-11 rounded-full object-cover ring-2 ring-white shadow-sm"
+                priority
+              />
+            ) : (
+              <div
+                className="h-11 w-11 rounded-full flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: primary }}
+              >
+                <span className="text-white text-lg font-bold">{tenant.name.charAt(0)}</span>
+              </div>
+            )}
+            <div>
+              <h1 className="text-base font-bold text-neutral-900 leading-tight">{tenant.name}</h1>
+              {tableNumber && (
+                <p className="text-xs text-neutral-500">
+                  {t('seatedAtTable', { table: tableNumber })}
+                </p>
+              )}
+            </div>
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ gap: '12px' }}>
+          <button className="p-2 rounded-full bg-neutral-100 hover:bg-neutral-200 transition-colors">
+            <Bell className="w-5 h-5 text-neutral-600" />
+          </button>
+        </div>
+      </div>
+
+      {/* ═══ SEARCH BAR ═══ */}
+      <div ref={searchBarRef} className="px-5 py-3">
+        <button
+          onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+          className="relative w-full"
+        >
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+            <Search className="w-4 h-4 text-neutral-400" strokeWidth={2} />
+          </div>
+          <div className="w-full bg-white border border-neutral-200 rounded-2xl py-3 pl-11 pr-5 text-sm text-neutral-400 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
+            {t('searchMenu')}
+          </div>
+        </button>
+      </div>
+
+      {/* ═══ ADS BANNER ═══ */}
+      {ads && ads.length > 0 && (
+        <div className="px-5 mb-4">
+          <AdsSlider ads={ads} />
+        </div>
+      )}
+
+      {/* ═══ ANNOUNCEMENT BANNER ═══ */}
+      {announcement && (
+        <div className="px-5 mb-5">
+          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '21/9' }}>
+            {announcement.image_url ? (
+              <Image
+                src={announcement.image_url}
+                alt={getTranslatedContent(lang, announcement.title, announcement.title_en)}
+                fill
+                sizes="(max-width: 768px) 100vw, 600px"
+                className="object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full"
+                style={{
+                  background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)`,
+                }}
+              />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+            <div className="absolute bottom-0 left-0 right-0 p-4">
+              <h3 className="text-sm font-bold text-white mb-0.5 leading-snug">
+                {getTranslatedContent(lang, announcement.title, announcement.title_en)}
+              </h3>
+              {announcement.description && (
+                <p className="text-xs text-white/80 line-clamp-2 leading-relaxed">
+                  {getTranslatedContent(
+                    lang,
+                    announcement.description,
+                    announcement.description_en,
+                  )}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CATEGORY GRID ═══ */}
+      {categories.length > 0 && (
+        <div className="px-5 mb-6">
+          <div className="grid grid-cols-4 gap-y-5 gap-x-2">
             {categories.slice(0, 8).map((cat, idx) => (
               <button
                 key={cat.id}
                 onClick={() => {
                   router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`);
                 }}
-                className="text-center group animate-fade-in-up"
-                style={{
-                  textAlign: 'center',
-                  animationDelay: `${idx * 50}ms`,
-                  border: 'none',
-                  background: 'none',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
+                className="flex flex-col items-center gap-1.5 group"
+                style={{ animationDelay: `${idx * 40}ms` }}
               >
-                <div
-                  style={{
-                    width: 'clamp(56px, 16vw, 72px)',
-                    height: 'clamp(56px, 16vw, 72px)',
-                    margin: '0 auto',
-                    borderRadius: '50%',
-                    backgroundColor: '#f9fafb',
-                    padding: '4px',
-                    marginBottom: '8px',
-                  }}
-                >
-                  <div
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      border: '1px solid #f3f4f6',
-                      background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-                    }}
-                  >
-                    <span style={{ fontSize: '28px', lineHeight: 1 }}>
-                      {getCategoryEmoji(cat.name)}
-                    </span>
-                  </div>
+                <div className="w-14 h-14 rounded-2xl bg-white border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] flex items-center justify-center group-hover:shadow-md group-hover:border-neutral-200 transition-all">
+                  <span className="text-2xl">{getCategoryEmoji(cat.name)}</span>
                 </div>
-                <p
-                  style={{
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    color: '#4b5563',
-                    lineHeight: 1.3,
-                    overflow: 'hidden',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: 'vertical',
-                  }}
-                >
+                <span className="text-[11px] font-medium text-neutral-600 leading-tight text-center line-clamp-2">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
-                </p>
+                </span>
               </button>
             ))}
           </div>
         </div>
       )}
 
-      {/* ═══ VENUE CARDS (navigate to menu page) ═══ */}
+      {/* ═══ CART PREVIEW ═══ */}
+      {cartItems.length > 0 && (
+        <div className="px-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-neutral-900">{t('yourCart')}</h2>
+            <Link
+              href={`/sites/${tenant.slug}/cart`}
+              className="text-xs font-semibold hover:underline transition-colors"
+              style={{ color: primary }}
+            >
+              {t('viewAll')} →
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide">
+            {cartItems.slice(0, 5).map((item) => (
+              <Link
+                key={item.id}
+                href={`/sites/${tenant.slug}/cart`}
+                className="flex-shrink-0 w-28 bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-2.5 hover:shadow-md transition-shadow"
+              >
+                <div className="w-full h-16 bg-neutral-50 rounded-lg overflow-hidden mb-2 flex items-center justify-center">
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      width={112}
+                      height={64}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Utensils className="w-5 h-5 text-neutral-300" />
+                  )}
+                </div>
+                <h3 className="text-[10px] font-semibold text-neutral-800 line-clamp-2 mb-1 leading-tight">
+                  {item.name}
+                </h3>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold" style={{ color: primary }}>
+                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                  </span>
+                  <span className="text-[9px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded">
+                    x{item.quantity}
+                  </span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ VENUE CARDS ═══ */}
       {venues && venues.length > 1 && (
-        <div style={{ padding: '0 16px', marginBottom: '40px' }}>
-          <p style={{ fontSize: '18px', fontWeight: 600, color: '#1f2937', marginBottom: '16px' }}>
-            {t('ourUniverses')}
-          </p>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {/* All button — navigate to full menu */}
+        <div className="px-5 mb-6">
+          <h2 className="text-base font-bold text-neutral-900 mb-3">{t('ourUniverses')}</h2>
+          <div className="flex flex-col gap-3">
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              style={{
-                width: '100%',
-                backgroundColor: '#fff',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                border: '1px solid #e5e7eb',
-                textAlign: 'left',
-                padding: '16px',
-                cursor: 'pointer',
-              }}
+              className="w-full bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] p-4 flex items-center gap-3 hover:shadow-md transition-shadow text-left"
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <Utensils style={{ width: '24px', height: '24px', color: '#9ca3af' }} />
-                <span style={{ fontSize: '14px', fontWeight: 700, color: '#111827' }}>
-                  {t('allMenus')}
-                </span>
+              <div className="w-10 h-10 rounded-xl bg-neutral-50 flex items-center justify-center">
+                <Utensils className="w-5 h-5 text-neutral-400" />
               </div>
+              <span className="text-sm font-semibold text-neutral-900">{t('allMenus')}</span>
+              <ChevronRight className="w-4 h-4 text-neutral-400 ml-auto" />
             </button>
             {venues.map((venue) => (
               <button
@@ -632,19 +467,9 @@ export default function ClientMenuPage({
                 onClick={() =>
                   router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
                 }
-                style={{
-                  width: '100%',
-                  backgroundColor: '#fff',
-                  borderRadius: '12px',
-                  overflow: 'hidden',
-                  border: '1px solid #e5e7eb',
-                  textAlign: 'left',
-                  cursor: 'pointer',
-                  padding: 0,
-                  display: 'block',
-                }}
+                className="w-full bg-white rounded-xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden hover:shadow-md transition-shadow text-left"
               >
-                <div style={{ height: '176px', position: 'relative', overflow: 'hidden' }}>
+                <div className="h-36 relative overflow-hidden">
                   {venue.image_url ? (
                     <Image
                       src={venue.image_url}
@@ -652,31 +477,17 @@ export default function ClientMenuPage({
                       fill
                       sizes="(max-width: 768px) 100vw, 600px"
                       className="object-cover"
-                      style={{ objectFit: 'cover' }}
                     />
                   ) : (
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        backgroundColor: '#f3f4f6',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Utensils style={{ width: '40px', height: '40px', color: '#d1d5db' }} />
+                    <div className="w-full h-full bg-neutral-100 flex items-center justify-center">
+                      <Utensils className="w-10 h-10 text-neutral-300" />
                     </div>
                   )}
                 </div>
-                <div style={{ padding: '16px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#111827' }}>
-                    {venue.name}
-                  </h3>
+                <div className="p-3.5">
+                  <h3 className="text-sm font-bold text-neutral-900">{venue.name}</h3>
                   {venue.description && (
-                    <p style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
-                      {venue.description}
-                    </p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{venue.description}</p>
                   )}
                 </div>
               </button>
@@ -685,117 +496,64 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ FEATURED ITEMS (horizontal scroll) ═══ */}
+      {/* ═══ FEATURED ITEMS — 2-column grid (inspiration style) ═══ */}
       {featuredItems.length > 0 && (
-        <div style={{ padding: '0 16px', marginBottom: '32px' }}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '16px',
-            }}
-          >
-            <h2
-              style={{
-                fontSize: '18px',
-                fontWeight: 600,
-                color: '#1f2937',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              {t('dontMiss')}
-            </h2>
+        <div className="px-5 mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-neutral-900">{t('dontMiss')}</h2>
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.1em',
-                color: '#9ca3af',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className="text-xs font-semibold transition-colors"
+              style={{ color: primary }}
             >
               {t('viewAll')} →
             </button>
           </div>
-          <div
-            style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '8px' }}
-            className="scrollbar-hide"
-          >
+          <div className="grid grid-cols-2 gap-3">
             {featuredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                style={{
-                  flexShrink: 0,
-                  width: '160px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '16px',
-                  overflow: 'hidden',
-                  border: '1px solid #e5e7eb',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  padding: 0,
-                }}
+                className="bg-white rounded-2xl border border-neutral-100 shadow-[0_1px_4px_rgba(0,0,0,0.04)] overflow-hidden text-left hover:shadow-md transition-shadow group"
               >
-                <div
-                  style={{
-                    width: '100%',
-                    height: '120px',
-                    position: 'relative',
-                    overflow: 'hidden',
-                    backgroundColor: '#f3f4f6',
-                  }}
-                >
+                <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
                       alt={getTranslatedContent(lang, item.name, item.name_en)}
                       fill
-                      sizes="160px"
-                      style={{ objectFit: 'cover' }}
+                      sizes="(max-width: 768px) 50vw, 300px"
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                   ) : (
-                    <div
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Utensils style={{ width: '28px', height: '28px', color: '#d1d5db' }} />
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Utensils className="w-8 h-8 text-neutral-300" />
                     </div>
                   )}
                 </div>
-                <div style={{ padding: '10px 12px' }}>
-                  <h3
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: '#111827',
-                      lineHeight: 1.3,
-                      overflow: 'hidden',
-                      display: '-webkit-box',
-                      WebkitLineClamp: 2,
-                      WebkitBoxOrient: 'vertical',
-                      marginBottom: '4px',
-                    }}
-                  >
+                <div className="p-3">
+                  <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug line-clamp-2 mb-1.5">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
-                  <span
-                    style={{
-                      fontSize: '13px',
-                      fontWeight: 700,
-                      color: tenant.primary_color || '#003058',
-                    }}
-                  >
+                  {/* Tags row */}
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {item.category?.name && (
+                      <span className="text-[9px] font-medium text-neutral-500 bg-neutral-100 rounded-full px-2 py-0.5">
+                        {getTranslatedContent(lang, item.category.name, item.category.name_en)}
+                      </span>
+                    )}
+                    {item.is_vegetarian && (
+                      <span className="text-[9px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2 py-0.5">
+                        Veggie
+                      </span>
+                    )}
+                    {item.is_spicy && (
+                      <span className="text-[9px] font-medium text-orange-600 bg-orange-50 rounded-full px-2 py-0.5">
+                        Spicy
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-sm font-bold" style={{ color: primary }}>
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
                 </div>
@@ -806,81 +564,38 @@ export default function ClientMenuPage({
       )}
 
       {/* ═══ "SEE FULL MENU" CTA ═══ */}
-      <div style={{ padding: '0 16px', marginBottom: '32px' }}>
+      <div className="px-5 mb-8">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          style={{
-            width: '100%',
-            padding: '16px',
-            borderRadius: '16px',
-            backgroundColor: tenant.primary_color || '#003058',
-            color: '#ffffff',
-            fontSize: '15px',
-            fontWeight: 700,
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '8px',
-          }}
+          className="w-full py-4 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity"
+          style={{ backgroundColor: primary }}
         >
-          <Utensils style={{ width: '18px', height: '18px' }} />
+          <Utensils className="w-[18px] h-[18px]" />
           {t('seeFullMenu')}
         </button>
       </div>
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '72px',
-            left: '16px',
-            right: '16px',
-            zIndex: 40,
-            maxWidth: '512px',
-            margin: '0 auto',
-          }}
-        >
+        <div className="fixed bottom-[72px] left-4 right-4 z-40 max-w-[512px] mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '14px 20px',
-              borderRadius: '16px',
-              color: '#ffffff',
-              backgroundColor: '#14b8a6',
-              textDecoration: 'none',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-            }}
+            className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"
+            style={{ backgroundColor: primary }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <ShoppingCart style={{ width: '16px', height: '16px' }} />
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4" />
               </div>
-              <span style={{ fontWeight: 600, fontSize: '14px' }}>
+              <span className="font-semibold text-sm">
                 {t('cartItemCount', { count: totalCartItems })}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '14px' }}>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm">
                 {formatDisplayPrice(grandTotal, tenant.currency)}
               </span>
-              <ChevronRight style={{ width: '16px', height: '16px' }} />
+              <ChevronRight className="w-4 h-4" />
             </div>
           </Link>
         </div>
@@ -909,7 +624,6 @@ export default function ClientMenuPage({
         hasFloatingCart={totalCartItems > 0}
       />
 
-      {/* ═══ ITEM DETAIL SHEET (for featured items) ═══ */}
       <ItemDetailSheet
         item={selectedItem}
         isOpen={!!selectedItem}
