@@ -20,9 +20,13 @@ export const updateTenantSettingsSchema = z.object({
     .string()
     .regex(hexColorRegex, 'Couleur secondaire invalide (format: #RGB ou #RRGGBB)'),
   address: z.string().max(200, "L'adresse ne doit pas dépasser 200 caractères").optional(),
+  city: z.string().max(100, 'La ville ne doit pas dépasser 100 caractères').optional(),
+  country: z.string().max(100, 'Le pays ne doit pas dépasser 100 caractères').optional(),
   phone: z.string().max(20, 'Le téléphone ne doit pas dépasser 20 caractères').optional(),
   logoUrl: z.string().url().optional().or(z.literal('')),
   notificationSoundId: z.string().max(500).optional(),
+  establishmentType: z.string().max(50).optional(),
+  tableCount: z.number().int().min(0).max(500).optional(),
   // ─── Production upgrade: business config ─────────────────
   currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
   supportedCurrencies: z

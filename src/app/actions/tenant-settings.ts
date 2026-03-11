@@ -27,9 +27,13 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       primaryColor: formData.get('primaryColor') as string,
       secondaryColor: formData.get('secondaryColor') as string,
       address: (formData.get('address') as string) || undefined,
+      city: (formData.get('city') as string) || undefined,
+      country: (formData.get('country') as string) || undefined,
       phone: (formData.get('phone') as string) || undefined,
       logoUrl: (formData.get('logoUrl') as string) || undefined,
       notificationSoundId: (formData.get('notificationSoundId') as string) || undefined,
+      establishmentType: (formData.get('establishmentType') as string) || undefined,
+      tableCount: formData.get('tableCount') ? Number(formData.get('tableCount')) : undefined,
       // Billing fields
       currency: (formData.get('currency') as string) || 'XAF',
       supportedCurrencies: (() => {

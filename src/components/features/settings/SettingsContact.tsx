@@ -35,6 +35,26 @@ export default function SettingsContact({ form, t }: SettingsContactProps) {
           {errors.address && <p className="text-xs text-status-error">{errors.address.message}</p>}
         </div>
         <div className="space-y-2">
+          <Label htmlFor="city">{t('city') ?? 'Ville'}</Label>
+          <Input
+            id="city"
+            {...register('city')}
+            placeholder={t('cityPlaceholder') ?? 'ex: Douala'}
+            className="min-h-[44px]"
+          />
+          {errors.city && <p className="text-xs text-status-error">{errors.city.message}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="country">{t('country') ?? 'Pays'}</Label>
+          <Input
+            id="country"
+            {...register('country')}
+            placeholder={t('countryPlaceholder') ?? 'ex: Cameroun'}
+            className="min-h-[44px]"
+          />
+          {errors.country && <p className="text-xs text-status-error">{errors.country.message}</p>}
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="phone">{t('phone')}</Label>
           <Input
             id="phone"

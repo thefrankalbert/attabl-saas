@@ -21,8 +21,13 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     primaryColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, messages.invalidColor),
     secondaryColor: z.string().regex(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/, messages.invalidColor),
     address: z.string().optional(),
+    city: z.string().optional(),
+    country: z.string().optional(),
     phone: z.string().optional(),
     logo_url: z.string().optional(),
+    // Establishment
+    establishmentType: z.string().optional(),
+    tableCount: z.number().int().min(0).max(500).optional(),
     // Billing fields
     currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
     supportedCurrencies: z
@@ -52,7 +57,11 @@ export interface SettingsTenant {
   primary_color?: string;
   secondary_color?: string;
   address?: string;
+  city?: string;
+  country?: string;
   phone?: string;
+  establishment_type?: string;
+  table_count?: number;
   notification_sound_id?: string;
   currency?: CurrencyCode;
   supported_currencies?: CurrencyCode[];
@@ -104,8 +113,12 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       primaryColor: tenant.primary_color || '#000000',
       secondaryColor: tenant.secondary_color || '#FFFFFF',
       address: tenant.address || '',
+      city: tenant.city || '',
+      country: tenant.country || '',
       phone: tenant.phone || '',
       logo_url: tenant.logo_url || '',
+      establishmentType: tenant.establishment_type || 'restaurant',
+      tableCount: tenant.table_count ?? 10,
       currency: tenant.currency || 'XAF',
       supportedCurrencies: tenant.supported_currencies || [tenant.currency || 'XAF'],
       enableTax: tenant.enable_tax ?? false,
@@ -208,9 +221,13 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('primaryColor', data.primaryColor);
       formData.append('secondaryColor', data.secondaryColor);
       formData.append('address', data.address || '');
+      formData.append('city', data.city || '');
+      formData.append('country', data.country || '');
       formData.append('phone', data.phone || '');
       if (data.logo_url) formData.append('logoUrl', data.logo_url);
       formData.append('notificationSoundId', selectedSoundId);
+      formData.append('establishmentType', data.establishmentType || 'restaurant');
+      formData.append('tableCount', String(data.tableCount ?? 10));
       // Billing fields — reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       if (data.supportedCurrencies) {

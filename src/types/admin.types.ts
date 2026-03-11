@@ -75,11 +75,19 @@ export interface Tenant {
   service_charge_rate?: number;
   enable_tax?: boolean;
   enable_service_charge?: boolean;
+  // ─── Establishment ───────────────────────────────────
+  establishment_type?: string;
+  city?: string;
+  country?: string;
+  table_count?: number;
+  onboarding_completed?: boolean;
   // ─── Extras ────────────────────────────────────────────
   description?: string;
   address?: string;
   phone?: string;
   notification_sound_id?: string;
+  idle_timeout_minutes?: number | null;
+  screen_lock_mode?: 'overlay' | 'password';
 }
 
 export interface AdminUser {
