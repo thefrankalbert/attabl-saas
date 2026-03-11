@@ -2,19 +2,45 @@
 
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import LogoMarquee from './LogoMarquee';
 
 export default function VideoHero() {
+  const [videoReady, setVideoReady] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const handleCanPlay = useCallback(() => {
+    setVideoReady(true);
+  }, []);
+
+  // Eagerly hint the browser to prioritize the video download
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    // Force load in case preload="auto" is not enough
+    video.load();
+  }, []);
+
   return (
     <section className="relative min-h-screen w-full overflow-hidden h-dvh">
       {/* Video Background */}
       <div className="absolute inset-0 z-0">
+        {/* Solid background color matching the video tone — visible instantly */}
+        <div className="absolute inset-0 bg-[#141210]" />
+
         <video
+          ref={videoRef}
           autoPlay
           muted
           loop
           playsInline
-          className="absolute left-1/2 top-1/2 min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover"
+          preload="auto"
+          poster="/videos/hero-poster.jpg"
+          onCanPlay={handleCanPlay}
+          className={`absolute left-1/2 top-1/2 min-h-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-700 ${
+            videoReady ? 'opacity-100' : 'opacity-0'
+          }`}
         >
           <source src="/videos/hero.mp4" type="video/mp4" />
         </video>
