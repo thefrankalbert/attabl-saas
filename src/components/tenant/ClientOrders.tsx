@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Loader2, ChevronDown, Pencil, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Loader2, ChevronDown, Pencil, ArrowLeft, BellRing, X } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
@@ -13,6 +13,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
+import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -78,7 +79,10 @@ export default function ClientOrders({
   const [editingOrderId, setEditingOrderId] = useState<string | null>(null);
   const [, setTick] = useState(0); // force re-render for countdown
   const supabaseRef = useRef(createClient());
+  const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const t = useTranslations('tenant');
+  const { notifyOrderReady, showReadyBanner, dismissBanner, readyOrderNumber } =
+    useClientOrderNotification();
   const locale = useLocale();
   const dateLocale = locale.startsWith('fr') ? fr : undefined;
 
@@ -163,9 +167,16 @@ export default function ClientOrders({
         },
         (payload) => {
           const updated = payload.new as { id: string; status: string };
-          setOrders((prev) =>
-            prev.map((o) => (o.id === updated.id ? { ...o, status: updated.status } : o)),
-          );
+          setOrders((prev) => {
+            // Detect transition to "ready" and notify
+            const existing = prev.find((o) => o.id === updated.id);
+            const prevStatus = previousStatusesRef.current.get(updated.id) || existing?.status;
+            if (updated.status === 'ready' && prevStatus !== 'ready' && existing) {
+              notifyOrderReady(existing.order_number || existing.id.slice(0, 5));
+            }
+            previousStatusesRef.current.set(updated.id, updated.status);
+            return prev.map((o) => (o.id === updated.id ? { ...o, status: updated.status } : o));
+          });
         },
       )
       .subscribe((status) => {
@@ -189,6 +200,16 @@ export default function ClientOrders({
 
     const interval = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(interval);
+  }, [orders]);
+
+  // ─── Track initial statuses for transition detection ───
+
+  useEffect(() => {
+    for (const o of orders) {
+      if (!previousStatusesRef.current.has(o.id)) {
+        previousStatusesRef.current.set(o.id, o.status);
+      }
+    }
   }, [orders]);
 
   // ─── Edit order handler ────────────────────────────────
@@ -286,6 +307,26 @@ export default function ClientOrders({
       className="space-y-3 px-4"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
+      {/* Order ready banner */}
+      {showReadyBanner && (
+        <div className="relative bg-emerald-500 text-white rounded-xl px-4 py-4 flex items-center gap-3 shadow-lg">
+          <BellRing className="w-6 h-6 shrink-0" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
+            <p className="text-xs opacity-90">
+              {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
+            </p>
+          </div>
+          <button
+            onClick={dismissBanner}
+            className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {orders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
         const remainingMs = canEdit ? getRemainingMs(order.created_at) : 0;
