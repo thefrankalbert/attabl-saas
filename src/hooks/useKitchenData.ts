@@ -152,11 +152,32 @@ export function useKitchenData({
         .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
         .eq('tenant_id', tenantId)
         .in('status', ['pending', 'preparing', 'ready'])
+        .in('preparation_zone', ['kitchen', 'mixed']) // Exclude bar-only orders from KDS
         .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setOrders(data as Order[]);
+
+      // Map DB order_items (item_name, price_at_order) → OrderItem interface (name, price)
+      const mapped = (data || []).map(
+        (row: Record<string, unknown> & { order_items?: Array<Record<string, unknown>> }) => ({
+          ...row,
+          items: (row.order_items || []).map((oi) => ({
+            id: oi.id as string,
+            name: (oi.item_name as string) || '',
+            quantity: (oi.quantity as number) || 1,
+            price: (oi.price_at_order as number) || 0,
+            menu_item_id: oi.menu_item_id as string | undefined,
+            notes: oi.notes as string | undefined,
+            customer_notes: oi.customer_notes as string | undefined,
+            item_status: (oi.item_status as ItemStatus) || 'pending',
+            course: oi.course as string | undefined,
+            modifiers: oi.modifiers as Array<{ name: string; price: number }> | undefined,
+          })),
+        }),
+      );
+
+      setOrders(mapped as Order[]);
       setLastUpdate(new Date());
     } catch (error) {
       logger.error('KDS loading error', error);

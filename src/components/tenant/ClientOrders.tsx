@@ -43,7 +43,7 @@ interface ClientOrdersProps {
 
 // ─── Constants ──────────────────────────────────────────
 
-const EDIT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+const EDIT_WINDOW_MS = 3 * 60 * 1000; // 3 minutes
 const EDITABLE_STATUSES = new Set(['pending']);
 
 // ─── Helpers ────────────────────────────────────────────
@@ -369,7 +369,7 @@ export default function ClientOrders({
                       })}
                     </div>
 
-                    {/* Edit button — visible only for pending orders within 5 min */}
+                    {/* Edit button — visible only for pending orders within 3 min */}
                     {canEdit && (
                       <div className="px-4 pb-4">
                         <button
@@ -393,6 +393,15 @@ export default function ClientOrders({
                             </>
                           )}
                         </button>
+                      </div>
+                    )}
+
+                    {/* "En preparation" message when kitchen has started */}
+                    {!canEdit && order.status === 'preparing' && (
+                      <div className="px-4 pb-4">
+                        <div className="w-full h-10 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2">
+                          {t('statusInKitchen')}
+                        </div>
                       </div>
                     )}
                   </div>
