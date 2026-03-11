@@ -197,7 +197,7 @@ export default function ItemDetailSheet({
           {/* Sheet */}
           <motion.div
             key="sheet"
-            className="fixed inset-x-0 bottom-0 z-[61] flex max-h-[90vh] flex-col rounded-t-2xl bg-white"
+            className="fixed inset-x-0 bottom-0 z-[61] flex max-h-[90vh] flex-col rounded-t-2xl bg-app-card"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
@@ -241,7 +241,7 @@ export default function ItemDetailSheet({
               <div className="px-5 pb-4 pt-4">
                 {/* Title + close */}
                 <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-xl font-bold text-neutral-900">
+                  <h2 className="text-xl font-bold text-app-text">
                     {getTranslatedContent(language, item.name, item.name_en)}
                   </h2>
                   <button
@@ -416,7 +416,7 @@ export default function ItemDetailSheet({
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}
                     rows={2}
-                    className="w-full resize-none rounded-xl border border-neutral-100 bg-neutral-50 px-4 py-3 text-sm text-neutral-800 placeholder:text-neutral-400 focus:border-neutral-300 focus:outline-none focus:ring-0"
+                    className="w-full resize-none rounded-xl border border-app-border/50 bg-app-elevated px-4 py-3 text-sm text-app-text placeholder:text-app-text-muted focus:border-app-border focus:outline-none focus:ring-0"
                   />
                 </div>
               </div>
@@ -424,14 +424,14 @@ export default function ItemDetailSheet({
 
             {/* ─── Sticky footer ──────────────────────────────── */}
             <div
-              className="border-t border-neutral-100 bg-white px-5 py-4"
+              className="border-t border-app-border/50 bg-app-card px-5 py-4"
               style={{
                 paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)',
               }}
             >
               <div className="flex items-center gap-3">
                 {/* Quantity controls */}
-                <div className="flex items-center gap-2 rounded-full border border-neutral-200 px-1 py-1">
+                <div className="flex items-center gap-2 rounded-full border border-app-border px-1 py-1">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                     className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition-colors active:bg-neutral-100"
@@ -439,7 +439,7 @@ export default function ItemDetailSheet({
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="min-w-[24px] text-center text-sm font-bold text-neutral-900">
+                  <span className="min-w-[24px] text-center text-sm font-bold text-app-text">
                     {quantity}
                   </span>
                   <button

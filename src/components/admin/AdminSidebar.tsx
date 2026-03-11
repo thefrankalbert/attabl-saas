@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { isAdminHome, getTenantUrl } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
@@ -365,6 +366,8 @@ export function AdminSidebar({
                 <LifeBuoy className="w-4 h-4 shrink-0" />
                 <span>{t('navSupport')}</span>
               </Link>
+              {/* Dark/light mode toggle */}
+              <ThemeToggle label={t('navTheme')} />
             </div>
 
             {/* Organization items moved to popover (Inventaire, Fiches techniques, Fournisseurs) */}

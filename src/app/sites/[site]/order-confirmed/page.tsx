@@ -160,7 +160,7 @@ function OrderConfirmedContent() {
   // ─── Success animation overlay ─────────────────────────
   if (showSuccess) {
     return (
-      <main className="min-h-screen bg-white flex flex-col items-center justify-center px-4">
+      <main className="min-h-screen bg-app-bg flex flex-col items-center justify-center px-4">
         <div className="flex flex-col items-center animate-fade-up">
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center"
@@ -174,8 +174,8 @@ function OrderConfirmedContent() {
               strokeWidth={2.5}
             />
           </div>
-          <p className="mt-5 text-lg font-bold text-neutral-900">{t('orderSent')}</p>
-          <p className="mt-1 text-sm text-neutral-400">{t('orderBeingPrepared')}</p>
+          <p className="mt-5 text-lg font-bold text-app-text">{t('orderSent')}</p>
+          <p className="mt-1 text-sm text-app-text-muted">{t('orderBeingPrepared')}</p>
         </div>
 
         <style jsx>{`
@@ -200,8 +200,8 @@ function OrderConfirmedContent() {
   // ─── Loading ───────────────────────────────────────────
   if (loading) {
     return (
-      <main className="min-h-screen bg-neutral-50 flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+      <main className="min-h-screen bg-app-bg flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
       </main>
     );
   }
@@ -209,8 +209,8 @@ function OrderConfirmedContent() {
   // ─── Order not found ──────────────────────────────────
   if (!order) {
     return (
-      <main className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center px-4">
-        <p className="text-neutral-500 mb-4">{t('orderNotFound')}</p>
+      <main className="min-h-screen bg-app-bg flex flex-col items-center justify-center px-4">
+        <p className="text-app-text-muted mb-4">{t('orderNotFound')}</p>
         <Link
           href={menuPath}
           className="text-white px-6 py-3 rounded-xl font-medium"
@@ -224,19 +224,19 @@ function OrderConfirmedContent() {
 
   // ─── Order confirmed view ─────────────────────────────
   return (
-    <main className="min-h-screen bg-neutral-50 pb-24">
+    <main className="min-h-screen bg-app-bg pb-24">
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+      <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
           <Link
             href={menuPath}
-            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-neutral-900">{t('orderSent')}</h1>
-            <p className="text-xs text-neutral-400">
+            <h1 className="text-base font-bold text-app-text">{t('orderSent')}</h1>
+            <p className="text-xs text-app-text-muted">
               {t('orderNumber', { number: order.order_number || order.id.slice(0, 5) })}
             </p>
           </div>
@@ -283,20 +283,20 @@ function OrderConfirmedContent() {
         <OrderStatusMessage status={order.status} />
 
         {/* Order summary card — same style as cart */}
-        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
           {order.table_number && (
-            <div className="px-4 py-3 border-b border-neutral-100 flex items-center justify-between">
-              <span className="text-xs text-neutral-400 uppercase tracking-wider font-semibold">
+            <div className="px-4 py-3 border-b border-app-border/50 flex items-center justify-between">
+              <span className="text-xs text-app-text-muted uppercase tracking-wider font-semibold">
                 {t('tableLabel')}
               </span>
-              <span className="text-sm font-bold text-neutral-900 font-mono">
+              <span className="text-sm font-bold text-app-text font-mono">
                 {order.table_number}
               </span>
             </div>
           )}
 
           {/* Items */}
-          <div className="divide-y divide-neutral-100">
+          <div className="divide-y divide-app-border/50">
             {(order.items || []).map((item, idx) => (
               <div key={idx} className="px-4 py-3 flex items-center gap-3">
                 <span
@@ -305,8 +305,8 @@ function OrderConfirmedContent() {
                 >
                   {item.quantity}
                 </span>
-                <span className="flex-1 text-sm text-neutral-900">{item.name}</span>
-                <span className="text-sm font-bold text-neutral-900 whitespace-nowrap">
+                <span className="flex-1 text-sm text-app-text">{item.name}</span>
+                <span className="text-sm font-bold text-app-text whitespace-nowrap">
                   {formatDisplayPrice(item.price * item.quantity)}
                 </span>
               </div>
@@ -314,18 +314,18 @@ function OrderConfirmedContent() {
           </div>
 
           {/* Tip + Total */}
-          <div className="px-4 py-3 border-t border-neutral-200 space-y-2">
+          <div className="px-4 py-3 border-t border-app-border space-y-2">
             {order.tip_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-neutral-500">{t('tip')}</span>
+                <span className="text-app-text-muted">{t('tip')}</span>
                 <span className="text-emerald-600 font-medium">
                   +{formatDisplayPrice(order.tip_amount)}
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-neutral-900">{t('total')}</span>
-              <span className="text-xl font-black text-neutral-900">
+              <span className="text-base font-bold text-app-text">{t('total')}</span>
+              <span className="text-xl font-black text-app-text">
                 {formatDisplayPrice(order.total + order.tip_amount)}
               </span>
             </div>
@@ -409,8 +409,8 @@ export default function OrderConfirmedPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-neutral-50 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        <div className="min-h-screen bg-app-bg flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
         </div>
       }
     >

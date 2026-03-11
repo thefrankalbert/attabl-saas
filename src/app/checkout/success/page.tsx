@@ -45,20 +45,20 @@ function CheckoutSuccessContent() {
   if (loading) {
     return (
       <div className="min-h-dvh flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <Loader2 className="h-8 w-8 animate-spin text-app-text-muted" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-dvh flex items-center justify-center bg-zinc-50 px-4">
+    <div className="min-h-dvh flex items-center justify-center bg-app-bg px-4">
       <Card className="w-full max-w-md">
         <CardContent className="pt-6 text-center">
           <div className="h-16 w-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="h-8 w-8 text-green-600" />
           </div>
           <h2 className="text-2xl font-bold mb-2">{t('successTitle')}</h2>
-          <p className="text-zinc-600 mb-6">{t('successDescription')}</p>
+          <p className="text-app-text-muted mb-6">{t('successDescription')}</p>
           <div className="space-y-3">
             {tenantSlug ? (
               <Button asChild size="lg" className="w-full">
@@ -84,7 +84,7 @@ export default function CheckoutSuccessPage() {
     <Suspense
       fallback={
         <div className="min-h-dvh flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+          <Loader2 className="h-8 w-8 animate-spin text-app-text-muted" />
         </div>
       }
     >

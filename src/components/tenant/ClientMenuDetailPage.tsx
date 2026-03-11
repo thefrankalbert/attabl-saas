@@ -22,7 +22,7 @@ import SearchOverlay from '@/components/tenant/SearchOverlay';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-lg" />,
+  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-lg" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -521,7 +521,7 @@ export default function ClientMenuDetailPage({
 
         {/* Inline search results */}
         {searchQuery.length >= 2 && searchResults.length > 0 && (
-          <div className="mt-2 bg-white rounded-2xl border border-gray-200 shadow-lg overflow-hidden z-50 relative">
+          <div className="mt-2 bg-app-card rounded-2xl border border-app-border shadow-lg overflow-hidden z-50 relative">
             <div className="p-2">
               <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">
                 {t('dishesFound')}
@@ -741,8 +741,8 @@ export default function ClientMenuDetailPage({
         </div>
       ) : (
         <div className="text-center py-20">
-          <div className="bg-white rounded-2xl shadow-sm p-8 max-w-sm mx-auto">
-            <p className="text-gray-500 font-medium">{t('noMenuAvailable')}</p>
+          <div className="bg-app-card rounded-2xl shadow-sm p-8 max-w-sm mx-auto">
+            <p className="text-app-text-muted font-medium">{t('noMenuAvailable')}</p>
           </div>
         </div>
       )}

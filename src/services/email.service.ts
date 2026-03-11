@@ -88,7 +88,8 @@ function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): str
 }
 
 // ---------------------------------------------------------------------------
-// Welcome / Confirmation Email
+// Email 1 — Verification d'adresse (court, transactionnel)
+// Envoye immediatement apres inscription.
 // ---------------------------------------------------------------------------
 
 interface WelcomeConfirmationEmailData {
@@ -109,8 +110,8 @@ export async function sendWelcomeConfirmationEmail(
   const safeUrl = sanitizeUrl(data.confirmationUrl);
   const rawUrl = escapeHtml(data.confirmationUrl);
 
-  const subject = `Confirmez votre adresse email pour ${data.restaurantName}`;
-  const preheader = `Votre compte ATTABL pour ${data.restaurantName} est presque pret. Confirmez votre adresse pour commencer.`;
+  const subject = `Confirmez votre adresse — ${data.restaurantName}`;
+  const preheader = `Un clic pour activer votre compte ATTABL pour ${data.restaurantName}.`;
 
   const bodyContent = `
           <!-- Header -->
@@ -121,33 +122,37 @@ export async function sendWelcomeConfirmationEmail(
           </tr>
           <!-- Body -->
           <tr>
-            <td style="background-color:#ffffff;padding:32px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
-              <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#18181b;">
-                Bienvenue, ${safeRestaurantName}
-              </p>
-              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">
-                Votre compte a bien ete cree sur ATTABL. Pour activer votre espace et commencer a configurer votre menu digital, veuillez confirmer votre adresse email.
+            <td style="background-color:#ffffff;padding:36px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;text-align:center;">
+              <p style="margin:0 0 12px;font-size:20px;font-weight:600;color:#18181b;">
+                Confirmez votre adresse email
               </p>
               <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#3f3f46;">
-                Ce lien est valide pendant 24 heures.
+                ${safeRestaurantName}, appuyez sur le bouton ci-dessous pour activer votre compte.
               </p>
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center" style="padding:4px 0 28px;">
-                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" fillcolor="#CCFF00"><center style="color:#000000;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmer mon adresse</center></v:roundrect><![endif]-->
+                  <td align="center" style="padding:4px 0 20px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:260px;" arcsize="17%" fillcolor="#18181b"><center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmer mon adresse</center></v:roundrect><![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="${safeUrl}" style="display:inline-block;background-color:#CCFF00;color:#000000;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
                       Confirmer mon adresse
                     </a>
                     <!--<![endif]-->
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#71717a;">
-                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+              <p style="margin:0 0 24px;font-size:12px;color:#a1a1aa;">
+                Ce lien expire dans 24 heures.
               </p>
-              <p style="margin:0;font-size:12px;line-height:1.4;color:#71717a;word-break:break-all;">
+              <!-- Separator -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+              <p style="margin:20px 0 8px;font-size:12px;line-height:1.5;color:#a1a1aa;">
+                Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :
+              </p>
+              <p style="margin:0;font-size:11px;line-height:1.4;color:#a1a1aa;word-break:break-all;">
                 ${rawUrl}
               </p>
             </td>
@@ -155,23 +160,23 @@ export async function sendWelcomeConfirmationEmail(
           <!-- Bottom bar -->
           <tr>
             <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;">
-                Si vous n'avez pas cree de compte sur ATTABL, ignorez simplement cet email.
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
+                Vous n'avez pas cree de compte ? Ignorez cet email.
               </p>
             </td>
           </tr>`;
 
   const html = wrapHtmlDocument({ preheader, bodyContent });
 
-  const text = `Bienvenue sur ATTABL, ${data.restaurantName}
+  const text = `Confirmez votre adresse email — ATTABL
 
-Votre compte a bien ete cree. Pour activer votre espace et commencer a configurer votre menu digital, confirmez votre adresse email en ouvrant le lien ci-dessous :
+${data.restaurantName}, activez votre compte en ouvrant le lien ci-dessous :
 
 ${data.confirmationUrl}
 
-Ce lien est valide pendant 24 heures.
+Ce lien expire dans 24 heures.
 
-Si vous n'avez pas cree de compte sur ATTABL, ignorez simplement cet email.
+Vous n'avez pas cree de compte ? Ignorez cet email.
 
 ---
 ${FOOTER_TAGLINE}
@@ -195,6 +200,215 @@ ${FOOTER_ADDRESS}`;
     return true;
   } catch (err) {
     logger.error('Failed to send confirmation email', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Email 2 — Bienvenue + Onboarding (envoye apres verification)
+// ---------------------------------------------------------------------------
+
+interface WelcomeOnboardingEmailData {
+  restaurantName: string;
+  dashboardUrl: string;
+  totalRestaurants: number;
+}
+
+export async function sendWelcomeOnboardingEmail(
+  to: string,
+  data: WelcomeOnboardingEmailData,
+): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping welcome email');
+    return false;
+  }
+
+  const safeRestaurantName = escapeHtml(data.restaurantName);
+  const safeUrl = sanitizeUrl(data.dashboardUrl);
+
+  const subject = `${data.restaurantName}, votre menu digital est pret`;
+  const preheader = `Creez votre premier menu en quelques minutes. ${data.restaurantName} est pret a accueillir ses clients.`;
+
+  const bodyContent = `
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">ATTABL</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:36px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+              <!-- Badge -->
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#f0fdf4;color:#166534;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:5px 12px;border-radius:100px;">
+                    Compte active
+                  </td>
+                </tr>
+              </table>
+              <!-- Titre -->
+              <p style="margin:20px 0 6px;font-size:22px;font-weight:700;color:#18181b;line-height:1.3;">
+                ${safeRestaurantName}, bienvenue sur ATTABL.
+              </p>
+              <p style="margin:0 0 24px;font-size:16px;color:#71717a;line-height:1.4;">
+                Votre menu digital est pret a prendre vie.
+              </p>
+              <!-- Corps -->
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#3f3f46;">
+                A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services, sans appeler un graphiste ni relancer d'impression.
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#3f3f46;">
+                Vos clients scannent un QR code, votre menu s'affiche. <strong style="color:#18181b;">Un plat en rupture ? Vous le retirez en 10 secondes.</strong> Un nouveau dessert ? Il est en ligne avant le coup de feu.
+              </p>
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 8px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="17%" fillcolor="#18181b"><center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Creer mon premier menu</center></v:roundrect><![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                      Creer mon premier menu
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:8px 0 0;font-size:12px;color:#a1a1aa;text-align:center;">
+                Prend environ 5 minutes
+              </p>
+            </td>
+          </tr>
+          <!-- Steps section -->
+          <tr>
+            <td style="background-color:#ffffff;padding:0 28px 32px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+              <!-- Separator -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+              <p style="margin:24px 0 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a1a1aa;">
+                Votre premier menu en 3 etapes
+              </p>
+              <!-- Step 1 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+                <tr>
+                  <td width="32" valign="top" style="padding-right:12px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">1</td>
+                    </tr></table>
+                  </td>
+                  <td valign="top">
+                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Ajoutez vos plats et vos prix</p>
+                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Tapez-les directement ou importez votre carte existante. ~ 3 min</p>
+                  </td>
+                </tr>
+              </table>
+              <!-- Step 2 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+                <tr>
+                  <td width="32" valign="top" style="padding-right:12px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">2</td>
+                    </tr></table>
+                  </td>
+                  <td valign="top">
+                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Personnalisez le look</p>
+                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Ajoutez votre logo, choisissez vos couleurs, ajoutez des photos. ~ 2 min</p>
+                  </td>
+                </tr>
+              </table>
+              <!-- Step 3 -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
+                <tr>
+                  <td width="32" valign="top" style="padding-right:12px;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">3</td>
+                    </tr></table>
+                  </td>
+                  <td valign="top">
+                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Recuperez votre QR code</p>
+                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Imprimez-le ou collez-le sur vos tables. ~ 30 sec</p>
+                  </td>
+                </tr>
+              </table>
+              <!-- Separator -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+              <!-- Social proof -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td style="background-color:#fafafa;padding:16px 20px;border-radius:8px;text-align:center;margin-top:20px;">
+                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.6;">
+                      <strong style="color:#3f3f46;">${data.totalRestaurants} restaurants et hotels</strong> utilisent ATTABL au quotidien pour garder leur carte toujours a jour.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+              <!-- Help -->
+              <p style="margin:24px 0 0;font-size:13px;color:#71717a;text-align:center;line-height:1.6;">
+                Besoin d'aide pour demarrer ?
+                <a href="mailto:support@attabl.com" style="color:#18181b;font-weight:600;text-decoration:none;border-bottom:1px solid #d4d4d8;">Ecrivez-nous</a>
+                — on repond en moins de 2 heures.
+              </p>
+            </td>
+          </tr>
+          <!-- Bottom bar -->
+          <tr>
+            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
+                <a href="https://attabl.com" style="color:#a1a1aa;text-decoration:underline;">attabl.com</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://attabl.com/confidentialite" style="color:#a1a1aa;text-decoration:underline;">Confidentialite</a>
+                &nbsp;&middot;&nbsp;
+                <a href="https://attabl.com/conditions" style="color:#a1a1aa;text-decoration:underline;">Conditions</a>
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const text = `${data.restaurantName}, bienvenue sur ATTABL !
+
+Votre compte est active. Votre menu digital est pret a prendre vie.
+
+A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services, sans appeler un graphiste ni relancer d'impression.
+
+Creez votre premier menu ici :
+${data.dashboardUrl}
+
+VOTRE PREMIER MENU EN 3 ETAPES :
+
+1. Ajoutez vos plats et vos prix (~3 min)
+2. Personnalisez le look (~2 min)
+3. Recuperez votre QR code (~30 sec)
+
+${data.totalRestaurants} restaurants et hotels utilisent deja ATTABL.
+
+Besoin d'aide ? Ecrivez-nous : support@attabl.com — on repond en moins de 2 heures.
+
+---
+${FOOTER_TAGLINE}
+${FOOTER_ADDRESS}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      replyTo: REPLY_TO,
+      to: [to],
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error('Resend welcome onboarding email error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send welcome onboarding email', err);
     return false;
   }
 }

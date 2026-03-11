@@ -31,7 +31,7 @@ import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-lg" />,
+  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-lg" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -488,7 +488,7 @@ export default function ClientMenuPage({
                       href={`/sites/${tenant.slug}/cart`}
                       className="flex-shrink-0 bg-white rounded-xl border border-gray-300 transition-all p-3 w-32 group"
                     >
-                      <div className="w-full h-20 bg-gray-100 rounded-lg overflow-hidden mb-2 flex items-center justify-center">
+                      <div className="w-full h-20 bg-app-elevated rounded-lg overflow-hidden mb-2 flex items-center justify-center">
                         <Utensils className="w-6 h-6 text-gray-300" />
                       </div>
                       <h3 className="text-[10px] font-bold text-gray-900 line-clamp-2 mb-1 leading-tight">

@@ -481,10 +481,6 @@ export default function OnboardingPage() {
   if (phase === 0) {
     return (
       <div className="h-dvh overflow-hidden flex flex-col bg-app-bg relative">
-        {/* Theme toggle on welcome screen */}
-        <div className="absolute top-4 right-4 z-20">
-          <ThemeToggle />
-        </div>
         <WelcomeStep
           tenantName={data.tenantName}
           onStart={() => {
