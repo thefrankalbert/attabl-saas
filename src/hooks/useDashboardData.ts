@@ -35,6 +35,8 @@ export interface UseDashboardDataParams {
   initialStats: DashboardStats;
   initialRecentOrders: Order[];
   initialPopularItems: PopularItem[];
+  initialRevenueSparkline?: SparklinePoint[];
+  initialOrdersSparkline?: SparklinePoint[];
   currency?: CurrencyCode;
 }
 
@@ -80,21 +82,24 @@ export function useDashboardData({
   tenantId,
   initialStats,
   initialRecentOrders,
+  initialRevenueSparkline = [],
+  initialOrdersSparkline = [],
 }: UseDashboardDataParams): UseDashboardDataReturn {
   const { toast } = useToast();
   const ta = useTranslations('admin');
   const supabase = createClient();
   const queryClient = useQueryClient();
 
-  // TanStack Query for dashboard data
+  // TanStack Query for dashboard data — pass server-computed sparklines as initialData
+  // so charts render immediately on first paint without waiting for client fetch
   const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
     stats: initialStats,
     recentOrders: initialRecentOrders,
     stockItems: [],
     categoryBreakdown: [],
     hourlyOrders: [],
-    revenueSparkline: [],
-    ordersSparkline: [],
+    revenueSparkline: initialRevenueSparkline,
+    ordersSparkline: initialOrdersSparkline,
     itemsSparkline: [],
   });
 
