@@ -83,6 +83,7 @@ export function AdminSidebar({
   const router = useRouter();
   const t = useTranslations('sidebar');
   const [collapsed, setCollapsed] = useState(false);
+  const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
   // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
   // Also filter out popover items from organization group
@@ -125,14 +126,19 @@ export function AdminSidebar({
   return (
     <aside
       className={cn(
-        'shrink-0 bg-app-card flex-col transition-all duration-200',
+        'shrink-0 bg-app-card flex-col transition-all duration-200 overflow-hidden',
         collapsed ? 'w-16' : 'w-56',
         className,
       )}
     >
       {/* ── Tenant switcher header + collapse toggle ── */}
       <div className="shrink-0 border-b border-app-border">
-        <div className={cn('flex items-center gap-2', collapsed ? 'px-2 py-3' : 'pl-3 pr-1 py-3')}>
+        <div
+          className={cn(
+            'flex items-center py-3',
+            collapsed ? 'px-2 justify-center' : 'pl-3 pr-1 gap-2',
+          )}
+        >
           {/* Back arrow / spaces grid */}
           <Link
             href={isAdminHome(pathname, basePath) ? '/admin/tenants' : basePath}
@@ -211,11 +217,14 @@ export function AdminSidebar({
         </div>
 
         {/* Collapse toggle — directly under tenant info */}
-        <div className="px-3 pb-2">
+        <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
           <button
             type="button"
             onClick={() => setCollapsed((prev) => !prev)}
-            className="w-full flex items-center gap-3 px-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden"
+            className={cn(
+              'w-full flex items-center gap-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden',
+              collapsed ? 'justify-center px-0' : 'px-3',
+            )}
             title={collapsed ? t('expand') : t('collapse')}
           >
             {collapsed ? (
@@ -223,13 +232,13 @@ export function AdminSidebar({
             ) : (
               <PanelLeftClose className="w-4 h-4 shrink-0" />
             )}
-            <span className="text-xs whitespace-nowrap">{t('collapse')}</span>
+            {!collapsed && <span className="text-xs whitespace-nowrap">{t('collapse')}</span>}
           </button>
         </div>
       </div>
 
       {/* ── Scrollable navigation ── */}
-      <nav className="flex-1 overflow-y-auto py-3 px-3 space-y-1">
+      <nav className={cn('flex-1 overflow-y-auto py-3 space-y-1', collapsed ? 'px-2' : 'px-3')}>
         {mainGroups.map((group, index) => (
           <SidebarGroup
             key={group.id}
@@ -245,7 +254,7 @@ export function AdminSidebar({
 
       {/* ── Bottom card: QR + user + popover ── */}
       <div className="shrink-0">
-        <Popover>
+        <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
           {!collapsed ? (
             <div className="px-3 pb-3 pt-2">
               <PopoverTrigger asChild>
@@ -288,7 +297,7 @@ export function AdminSidebar({
               <button
                 type="button"
                 suppressHydrationWarning
-                className="w-full px-2 py-3 flex justify-center hover:bg-app-hover transition-colors"
+                className="w-full py-3 flex justify-center hover:bg-app-hover transition-colors"
               >
                 <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center">
                   <QrCode className="w-5 h-5 text-accent" />
@@ -306,6 +315,7 @@ export function AdminSidebar({
             <div className="p-1.5">
               <Link
                 href={`${basePath}${SETTINGS_ITEM.path}`}
+                onClick={() => setAccountPopoverOpen(false)}
                 className={cn(
                   'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                   isPathActive(pathname, basePath, SETTINGS_ITEM.path)
@@ -336,6 +346,7 @@ export function AdminSidebar({
                       <Link
                         key={item.path}
                         href={href}
+                        onClick={() => setAccountPopoverOpen(false)}
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                           active
@@ -370,6 +381,7 @@ export function AdminSidebar({
                       <Link
                         key={item.path}
                         href={href}
+                        onClick={() => setAccountPopoverOpen(false)}
                         className={cn(
                           'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
                           active
@@ -434,16 +446,16 @@ function SidebarGroup({
       <Link
         href={href}
         className={cn(
-          'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
+          'flex items-center py-1.5 rounded-lg text-sm transition-colors',
           active
             ? 'text-accent bg-accent-muted'
             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-          collapsed && 'justify-center',
+          collapsed ? 'justify-center px-0' : 'gap-3 px-3',
         )}
         title={collapsed ? t(group.titleKey) : undefined}
       >
         <Icon className="w-4 h-4 shrink-0" />
-        <span className={cn('truncate', collapsed && 'hidden')}>{t(group.titleKey)}</span>
+        {!collapsed && <span className="truncate">{t(group.titleKey)}</span>}
       </Link>
     );
   }
@@ -464,7 +476,7 @@ function SidebarGroup({
                 key={item.path}
                 href={href}
                 className={cn(
-                  'flex items-center justify-center px-3 py-1.5 rounded-lg text-sm transition-colors',
+                  'flex items-center justify-center py-1.5 rounded-lg text-sm transition-colors',
                   active
                     ? 'text-accent bg-accent-muted'
                     : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
