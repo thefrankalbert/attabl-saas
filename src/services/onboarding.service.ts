@@ -11,6 +11,7 @@ interface TableZoneData {
 }
 
 interface OnboardingStepData {
+  tenantName?: string;
   establishmentType?: string;
   address?: string;
   city?: string;
@@ -33,6 +34,7 @@ interface MenuItem {
 }
 
 interface OnboardingCompleteData {
+  tenantName?: string;
   establishmentType?: string;
   address?: string;
   city?: string;
@@ -126,6 +128,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
       const tenantUpdate: Record<string, unknown> = {};
 
       if (step === 1) {
+        if (data.tenantName) {
+          tenantUpdate.name = data.tenantName;
+        }
         tenantUpdate.establishment_type = data.establishmentType;
         tenantUpdate.address = data.address;
         tenantUpdate.city = data.city;
@@ -183,24 +188,25 @@ export function createOnboardingService(supabase: SupabaseClient) {
       tenantId: string,
       data: OnboardingCompleteData,
     ): Promise<{ slug?: string }> {
-      // 1. Final tenant update
-      const { error } = await supabase
-        .from('tenants')
-        .update({
-          establishment_type: data.establishmentType,
-          address: data.address,
-          city: data.city,
-          country: data.country,
-          phone: data.phone,
-          table_count: data.tableCount,
-          logo_url: data.logoUrl,
-          primary_color: data.primaryColor,
-          secondary_color: data.secondaryColor,
-          description: data.description,
-          onboarding_completed: true,
-          onboarding_completed_at: new Date().toISOString(),
-        })
-        .eq('id', tenantId);
+      // 1. Final tenant update (includes name so the real name replaces the signup placeholder)
+      const tenantUpdate: Record<string, unknown> = {
+        establishment_type: data.establishmentType,
+        address: data.address,
+        city: data.city,
+        country: data.country,
+        phone: data.phone,
+        table_count: data.tableCount,
+        logo_url: data.logoUrl,
+        primary_color: data.primaryColor,
+        secondary_color: data.secondaryColor,
+        description: data.description,
+        onboarding_completed: true,
+        onboarding_completed_at: new Date().toISOString(),
+      };
+      if (data.tenantName) {
+        tenantUpdate.name = data.tenantName;
+      }
+      const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
       if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
 
       // 2. Mark progress as completed (clear draft since onboarding is done)

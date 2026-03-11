@@ -28,6 +28,7 @@ const menuItemSchema = z.object({
 
 export const onboardingCompleteSchema = z.object({
   data: z.object({
+    tenantName: z.string().max(200).optional(),
     establishmentType: z.string().max(50).optional(),
     address: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
