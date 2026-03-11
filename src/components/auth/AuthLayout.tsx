@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { TestimonialCarousel } from './TestimonialCarousel';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -9,7 +10,12 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-dvh md:h-dvh w-full flex bg-app-bg">
+    <div className="min-h-dvh md:h-dvh w-full flex bg-app-bg relative">
+      {/* Theme toggle — top-right corner */}
+      <div className="absolute top-4 right-4 z-20">
+        <ThemeToggle />
+      </div>
+
       {/* ── Left — Form panel ─────────────────────────────── */}
       <div className="w-full md:w-[55%] flex flex-col px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
         <div className="w-full max-w-[420px] m-auto">{children}</div>

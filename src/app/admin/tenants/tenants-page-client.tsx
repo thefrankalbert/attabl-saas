@@ -27,6 +27,7 @@ import Image from 'next/image';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
 import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import {
   AreaChart,
   Area,
@@ -417,15 +418,18 @@ export default function TenantsPageClient() {
                 </div>
               </div>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2 rounded-xl border-app-border"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">Déconnexion</span>
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-2 rounded-xl border-app-border"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline text-xs">Déconnexion</span>
+              </Button>
+            </div>
           </div>
         </header>
 
@@ -601,15 +605,18 @@ export default function TenantsPageClient() {
               })}
             </span>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 rounded-xl border-app-border shrink-0"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline text-xs">Déconnexion</span>
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <ThemeToggle />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleLogout}
+              className="gap-2 rounded-xl border-app-border"
+            >
+              <LogOut className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline text-xs">Déconnexion</span>
+            </Button>
+          </div>
         </div>
       </header>
 

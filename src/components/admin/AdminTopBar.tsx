@@ -2,10 +2,10 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sun, Moon, Maximize, Minimize } from 'lucide-react';
+import { Maximize, Minimize } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isImmersivePage } from '@/lib/constants';
-import { useTheme } from '@/contexts/ThemeContext';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -19,7 +19,6 @@ interface AdminTopBarProps {
 
 export function AdminTopBar({ basePath, notifications, breadcrumbs }: AdminTopBarProps) {
   const pathname = usePathname();
-  const { resolved, setTheme } = useTheme();
   const t = useTranslations('admin');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -70,14 +69,7 @@ export function AdminTopBar({ basePath, notifications, breadcrumbs }: AdminTopBa
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>
-        <button
-          type="button"
-          onClick={() => setTheme(resolved === 'dark' ? 'light' : 'dark')}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary transition-colors touch-manipulation"
-          title={t('topbar.toggleTheme')}
-        >
-          {resolved === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-        </button>
+        <ThemeToggle />
       </div>
     </header>
   );
