@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -21,11 +21,24 @@ interface UseNotificationsOptions {
   tenantId: string;
   userId?: string;
   enabled?: boolean;
+  /** Called immediately when a new notification arrives via realtime (before query refetch) */
+  onNewNotification?: () => void;
 }
 
-export function useNotifications({ tenantId, userId, enabled = true }: UseNotificationsOptions) {
+export function useNotifications({
+  tenantId,
+  userId,
+  enabled = true,
+  onNewNotification,
+}: UseNotificationsOptions) {
   const queryClient = useQueryClient();
   const queryKey = useMemo(() => ['notifications', tenantId, userId], [tenantId, userId]);
+
+  // Keep callback ref stable to avoid re-subscribing on every render
+  const onNewNotificationRef = useRef(onNewNotification);
+  useEffect(() => {
+    onNewNotificationRef.current = onNewNotification;
+  });
 
   const { data: notifications = [], isLoading } = useQuery<Notification[]>({
     queryKey,
@@ -45,11 +58,14 @@ export function useNotifications({ tenantId, userId, enabled = true }: UseNotifi
     enabled: enabled && !!tenantId,
   });
 
-  // Realtime subscription — invalidate on any change
+  // Realtime subscription — invalidate on any change + fire callback on INSERT
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `notifications_${tenantId}_${userId ?? 'all'}`,
     table: 'notifications',
     filter: `tenant_id=eq.${tenantId}`,
+    onInsert: () => {
+      onNewNotificationRef.current?.();
+    },
     onChange: () => {
       queryClient.invalidateQueries({ queryKey });
     },

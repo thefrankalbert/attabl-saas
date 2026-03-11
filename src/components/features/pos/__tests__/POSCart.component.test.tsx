@@ -13,20 +13,12 @@ vi.mock('next-intl', () => ({
   useTranslations: () => (key: string) => key,
 }));
 
-vi.mock('next/link', () => ({
-  default: ({
-    children,
-    href,
-    ...rest
-  }: {
-    children: React.ReactNode;
-    href: string;
-    [key: string]: unknown;
-  }) => (
-    <a href={href} {...rest}>
-      {children}
-    </a>
-  ),
+vi.mock('@/components/ui/dialog', () => ({
+  Dialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+    open ? <div data-testid="dialog">{children}</div> : null,
+  DialogContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogHeader: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
 }));
 
 vi.mock('@/lib/utils/currency', () => ({
@@ -86,11 +78,12 @@ function renderCart(overrides: Record<string, unknown> = {}) {
     currency: 'XAF' as CurrencyCode,
     total: 0,
     orderNumber: 42,
-    basePath: '/sites/test/admin',
     serviceType: 'dine_in' as ServiceType,
     selectedTable: '',
     roomNumber: '',
     deliveryAddress: '',
+    zones: [],
+    allTables: [],
     ...mockCallbacks,
     ...overrides,
   };

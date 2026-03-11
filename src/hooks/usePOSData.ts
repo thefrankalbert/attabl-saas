@@ -9,7 +9,7 @@ import { useCreateOrder } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { useSessionState } from '@/hooks/useSessionState';
-import type { MenuItem, ServiceType, CurrencyCode } from '@/types/admin.types';
+import type { MenuItem, ServiceType, CurrencyCode, Zone, Table } from '@/types/admin.types';
 
 export type CartItem = MenuItem & {
   quantity: number;
@@ -57,6 +57,10 @@ export function usePOSData(tenantId: string) {
 
   // ─── Suggestions ────────────────────────────────────────
   const [suggestions, setSuggestions] = useState<POSSuggestion[]>([]);
+
+  // ─── Zones & Tables (for dine-in table picker) ────────
+  const [zones, setZones] = useState<Zone[]>([]);
+  const [allTables, setAllTables] = useState<Table[]>([]);
 
   // ─── Note editing state ─────────────────────────────────
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
@@ -122,7 +126,7 @@ export function usePOSData(tenantId: string) {
   // ─── Load tenant currency and suggestions ───────────────
   const loadExtras = useCallback(async () => {
     try {
-      const [tenantRes, suggestionsRes] = await Promise.all([
+      const [tenantRes, suggestionsRes, venuesRes] = await Promise.all([
         supabase.from('tenants').select('currency').eq('id', tenantId).single(),
         supabase
           .from('item_suggestions')
@@ -131,6 +135,7 @@ export function usePOSData(tenantId: string) {
           )
           .eq('tenant_id', tenantId)
           .eq('is_active', true),
+        supabase.from('venues').select('id').eq('tenant_id', tenantId).limit(1).single(),
       ]);
 
       if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
@@ -146,8 +151,31 @@ export function usePOSData(tenantId: string) {
           })),
         );
       }
+
+      // Fetch zones and tables for the dine-in table picker
+      if (venuesRes.data?.id) {
+        const venueId = venuesRes.data.id as string;
+        const { data: zonesData } = await supabase
+          .from('zones')
+          .select('*')
+          .eq('venue_id', venueId)
+          .order('display_order');
+
+        if (zonesData && zonesData.length > 0) {
+          setZones(zonesData as Zone[]);
+          const zoneIds = zonesData.map((z: Record<string, unknown>) => z.id as string);
+          const { data: tablesData } = await supabase
+            .from('tables')
+            .select('*')
+            .in('zone_id', zoneIds)
+            .eq('is_active', true)
+            .order('table_number');
+
+          if (tablesData) setAllTables(tablesData as Table[]);
+        }
+      }
     } catch {
-      // Non-critical — suggestions and currency are optional enhancements
+      // Non-critical — suggestions, currency, and tables are optional enhancements
     }
   }, [supabase, tenantId]);
 
@@ -332,6 +360,10 @@ export function usePOSData(tenantId: string) {
     setRoomNumber,
     deliveryAddress,
     setDeliveryAddress,
+
+    // Zones & Tables
+    zones,
+    allTables,
 
     // Cart actions
     addToCart,

@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
@@ -60,8 +60,6 @@ export default function POSClient({ tenantId }: POSClientProps) {
   useContextualShortcuts(shortcuts);
 
   const router = useRouter();
-  const pathname = usePathname();
-  const basePath = pathname.replace(/\/pos$/, '');
 
   if (pos.loading) return <div className="p-8 text-center text-app-text-muted">{t('loading')}</div>;
 
@@ -147,7 +145,6 @@ export default function POSClient({ tenantId }: POSClientProps) {
               currency={pos.currency}
               total={pos.total}
               orderNumber={pos.orderNumber}
-              basePath={basePath}
               serviceType={pos.serviceType}
               setServiceType={pos.setServiceType}
               selectedTable={pos.selectedTable}
@@ -156,6 +153,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
               setRoomNumber={pos.setRoomNumber}
               deliveryAddress={pos.deliveryAddress}
               setDeliveryAddress={pos.setDeliveryAddress}
+              zones={pos.zones}
+              allTables={pos.allTables}
               onUpdateQuantity={pos.updateQuantity}
               onClearCart={pos.clearCart}
               onEditNotes={(itemId, currentNotes) => {
