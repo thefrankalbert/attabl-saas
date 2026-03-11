@@ -46,10 +46,12 @@ export function useNotificationSound(
   const { soundId: initialSoundId, tenantId } = options;
   const lsPrefix = tenantId ? `${tenantId}_` : '';
 
-  // State
+  // State — default to enabled (critical for restaurant order alerts)
   const [soundEnabled, setSoundEnabled] = useState(() => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') return true;
     const stored = localStorage.getItem(`${lsPrefix}${LS_ENABLED_KEY}`);
+    // Default to true if never set (first-time users get sound on)
+    if (stored === null) return true;
     return stored === 'true';
   });
 

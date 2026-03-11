@@ -100,11 +100,21 @@ vi.mock('@/lib/supabase/server', async () => ({
   ),
 }));
 
+const mockNotificationInsert = vi.fn(() => ({
+  then: vi.fn((cb: (result: { error: null }) => void) => {
+    cb({ error: null });
+    return { catch: vi.fn() };
+  }),
+}));
+
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: vi.fn(() => ({
-    from: vi.fn(() => ({
-      select: mockSupabaseSelect,
-    })),
+    from: vi.fn((table: string) => {
+      if (table === 'notifications') {
+        return { insert: mockNotificationInsert };
+      }
+      return { select: mockSupabaseSelect };
+    }),
   })),
 }));
 
