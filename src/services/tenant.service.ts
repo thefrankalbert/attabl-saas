@@ -8,9 +8,14 @@ interface TenantSettings {
   primaryColor: string;
   secondaryColor: string;
   address?: string;
+  city?: string;
+  country?: string;
   phone?: string;
   logoUrl?: string;
   notificationSoundId?: string;
+  // Establishment
+  establishmentType?: string;
+  tableCount?: number;
   // Facturation fields
   currency?: CurrencyCode;
   supportedCurrencies?: CurrencyCode[];
@@ -45,8 +50,12 @@ export function createTenantService(supabase: SupabaseClient) {
           primary_color: settings.primaryColor,
           secondary_color: settings.secondaryColor,
           address: settings.address ?? null,
+          city: settings.city ?? null,
+          country: settings.country ?? null,
           phone: settings.phone ?? null,
           logo_url: settings.logoUrl || null,
+          establishment_type: settings.establishmentType ?? null,
+          table_count: settings.tableCount ?? null,
           notification_sound_id: settings.notificationSoundId ?? null,
           // Facturation fields
           currency: settings.currency ?? 'XAF',

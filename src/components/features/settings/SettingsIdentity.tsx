@@ -5,9 +5,27 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { TabsContent } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import Image from 'next/image';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
+
+const ESTABLISHMENT_TYPES = [
+  { value: 'restaurant', label: 'Restaurant' },
+  { value: 'hotel', label: 'Hotel' },
+  { value: 'cafe', label: 'Cafe' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'brasserie', label: 'Brasserie' },
+  { value: 'fast-food', label: 'Fast-food' },
+  { value: 'food-truck', label: 'Food truck' },
+  { value: 'other', label: 'Autre' },
+];
 
 // ─── Types ─────────────────────────────────────────────────
 
@@ -34,8 +52,12 @@ export default function SettingsIdentity({
 }: SettingsIdentityProps) {
   const {
     register,
+    watch,
+    setValue,
     formState: { errors },
   } = form;
+
+  const watchedEstablishmentType = watch('establishmentType');
 
   return (
     <TabsContent value="identity" className="mt-0">
@@ -56,6 +78,25 @@ export default function SettingsIdentity({
                 placeholder={t('descriptionPlaceholder')}
                 className="resize-none h-24 min-h-[44px]"
               />
+            </div>
+
+            <div className="space-y-2">
+              <Label>{t('establishmentType') ?? "Type d'etablissement"}</Label>
+              <Select
+                value={watchedEstablishmentType || 'restaurant'}
+                onValueChange={(val) => setValue('establishmentType', val, { shouldDirty: true })}
+              >
+                <SelectTrigger className="min-h-[44px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ESTABLISHMENT_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
