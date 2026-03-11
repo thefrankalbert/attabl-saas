@@ -77,8 +77,8 @@ export function AdminBreadcrumbs() {
   });
 
   return (
-    <Breadcrumb>
-      <BreadcrumbList>
+    <Breadcrumb className="overflow-hidden">
+      <BreadcrumbList className="flex-nowrap overflow-hidden">
         <BreadcrumbItem>
           <BreadcrumbLink asChild>
             <Link href={basePath}>

@@ -246,11 +246,11 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 gap-4 overflow-hidden">
-        <div className="h-8 w-64 rounded-lg bg-app-elevated/30 animate-pulse" />
-        <div className="flex gap-6">
+      <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 gap-4 overflow-hidden">
+        <div className="h-8 w-48 sm:w-64 rounded-lg bg-app-elevated/30 animate-pulse" />
+        <div className="grid grid-cols-2 sm:flex gap-3 sm:gap-6">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-12 w-32 rounded-lg bg-app-elevated/30 animate-pulse" />
+            <div key={i} className="h-12 sm:w-32 rounded-lg bg-app-elevated/30 animate-pulse" />
           ))}
         </div>
         <div className="flex-1 rounded-lg bg-app-elevated/30 animate-pulse" />
@@ -302,14 +302,14 @@ export default function DashboardClient(props: DashboardClientProps) {
     stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <div className="h-full flex flex-col p-4 sm:p-5 lg:p-6 overflow-hidden">
+    <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 overflow-hidden">
       {/* Greeting + date + time */}
-      <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <h1 className="text-lg font-bold text-app-text">
+      <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-1 sm:gap-2">
+        <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap min-w-0">
+          <h1 className="text-base sm:text-lg font-bold text-app-text truncate max-w-[200px] sm:max-w-none">
             {t(greetKey)}, {userName || tenantName}
           </h1>
-          <span className="text-xs text-app-text-muted capitalize">
+          <span className="text-[10px] sm:text-xs text-app-text-muted capitalize hidden sm:inline">
             {currentTime.toLocaleDateString(locale, {
               weekday: 'long',
               day: 'numeric',
@@ -318,22 +318,22 @@ export default function DashboardClient(props: DashboardClientProps) {
           </span>
         </div>
         <span
-          className="text-sm font-mono font-bold text-app-text tabular-nums flex items-center gap-1.5"
+          className="text-xs sm:text-sm font-mono font-bold text-app-text tabular-nums flex items-center gap-1 sm:gap-1.5 shrink-0"
           suppressHydrationWarning
         >
-          <Clock className="w-3.5 h-3.5 text-app-text-muted" />
+          <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-app-text-muted" />
           {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
         </span>
       </div>
 
       {/* ── Two-column: left (gauge + chart + shortcuts), right (orders from top) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3">
+      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 overflow-y-auto lg:overflow-hidden">
         {/* ── Left column ──────────────────────────────────── */}
-        <div className="shrink-0 lg:w-[50%] flex flex-col gap-2">
+        <div className="shrink-0 lg:shrink lg:w-[50%] flex flex-col gap-2">
           {/* Stats gauge — compact */}
-          <div className="border border-app-border rounded-xl px-3 py-2 bg-app-card">
-            <div className="flex items-center gap-3">
-              <div className="shrink-0 w-[110px]">
+          <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="shrink-0 w-[80px] sm:w-[110px]">
                 <Suspense
                   fallback={
                     <div className="h-[60px] rounded-lg bg-app-elevated/20 animate-pulse" />
@@ -374,7 +374,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                 </Suspense>
               </div>
               {/* Legend */}
-              <div className="flex-1 grid grid-cols-2 gap-x-3 gap-y-0.5">
+              <div className="flex-1 min-w-0 grid grid-cols-2 gap-x-2 sm:gap-x-3 gap-y-0.5">
                 {[
                   ...(showFin
                     ? [
@@ -422,7 +422,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           </div>
           {/* Main chart — Revenue / Orders toggle */}
           {chartData.length > 1 && (
-            <div className="border border-app-border rounded-xl p-4 bg-app-card flex flex-col">
+            <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card flex flex-col">
               {/* Chart header */}
               <div className="mb-3 shrink-0">
                 {/* Segmented control row */}
@@ -456,16 +456,16 @@ export default function DashboardClient(props: DashboardClientProps) {
                   </div>
                 </div>
                 {/* Value + period */}
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xl font-black text-app-text tabular-nums">
+                <div className="flex items-baseline gap-1.5 sm:gap-2">
+                  <span className="text-lg sm:text-xl font-black text-app-text tabular-nums truncate">
                     {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
                   </span>
-                  <span className="text-[10px] text-app-text-muted">{t('last7days')}</span>
+                  <span className="text-[10px] text-app-text-muted shrink-0">{t('last7days')}</span>
                 </div>
               </div>
 
               {/* Chart area */}
-              <div className="h-[150px]">
+              <div className="h-[120px] sm:h-[150px]">
                 <Suspense
                   fallback={
                     <div className="w-full h-full rounded-lg bg-app-elevated/20 animate-pulse" />
@@ -486,7 +486,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
           {/* Avg basket mini chart */}
           {showFin && avgBasketChartData.length > 1 && (
-            <div className="border border-app-border rounded-xl p-4 bg-app-card">
+            <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card">
               <div className="flex items-center justify-between mb-1">
                 <div>
                   <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
@@ -514,31 +514,31 @@ export default function DashboardClient(props: DashboardClientProps) {
           <div className="flex gap-1.5 mt-auto">
             <Link
               href={`${adminBase}/qr-codes`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
-              <QrCode className="w-3.5 h-3.5" />
-              {t('qrGenerator')}
+              <QrCode className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('qrGenerator')}</span>
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
-              <BarChart3 className="w-3.5 h-3.5" />
-              {t('reportsLabel')}
+              <BarChart3 className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('reportsLabel')}</span>
             </Link>
             <Link
               href={`${adminBase}/stock-history`}
-              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors"
+              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
-              <Package className="w-3.5 h-3.5" />
-              {t('stockHistoryLabel')}
+              <Package className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">{t('stockHistoryLabel')}</span>
             </Link>
           </div>
         </div>
 
         {/* ── Right column — orders (full height, scrollable) ── */}
-        <div className="flex-1 min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-app-border shrink-0">
+        <div className="flex-1 min-h-[200px] lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
+          <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-app-border shrink-0">
             <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
               {t('recentOrders')}
             </p>
@@ -570,7 +570,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                       key={order.id}
                       href={`${adminBase}/orders/${order.id}`}
                       className={cn(
-                        'flex items-start gap-2.5 px-3 py-2 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors',
+                        'flex items-start gap-2 sm:gap-2.5 px-2.5 sm:px-3 py-2 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors',
                         isNew && 'bg-accent/[0.04]',
                       )}
                     >
