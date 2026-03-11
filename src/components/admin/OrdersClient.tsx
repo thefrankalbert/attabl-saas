@@ -294,6 +294,11 @@ export default function OrdersClient({
               {row.original.table_number}
             </div>
             <span className="font-medium text-app-text">{row.original.table_number}</span>
+            {row.original.preparation_zone === 'bar' && (
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400">
+                BAR
+              </span>
+            )}
           </div>
         ),
       },

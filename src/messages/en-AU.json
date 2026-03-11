@@ -1260,7 +1260,12 @@
     "categoryDeleted": "Category deleted",
     "loadingError": "Error loading",
     "saveError": "Error saving",
-    "deleteError": "Error deleting"
+    "deleteError": "Error deleting",
+    "preparationZone": "Preparation zone",
+    "preparationZoneDesc": "Where items in this category are prepared. Bar-only orders won't appear in the kitchen display.",
+    "zoneKitchen": "Kitchen",
+    "zoneBar": "Bar",
+    "zoneBoth": "Both"
   },
   "items": {
     "title": "Dishes & Items",

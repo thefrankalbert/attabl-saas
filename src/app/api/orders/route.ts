@@ -68,10 +68,13 @@ export async function POST(request: Request) {
       tip_amount,
     } = parseResult.data;
 
-    const { validatedTotal, verifiedPrices } = await orderService.validateOrderItems(
+    const { validatedTotal, verifiedPrices, categoryIds } = await orderService.validateOrderItems(
       tenantId,
       items,
     );
+
+    // 3b. Determine preparation zone (kitchen vs bar routing)
+    const preparationZone = await orderService.determinePreparationZone(tenantId, categoryIds);
 
     // 4. Validate coupon if provided
     let discountAmount = 0;
@@ -146,6 +149,7 @@ export async function POST(request: Request) {
         coupon_id: couponResult?.couponId,
         display_currency,
         verifiedPrices,
+        preparation_zone: preparationZone,
       });
     } catch (orderError) {
       // Rollback coupon usage if order creation fails
