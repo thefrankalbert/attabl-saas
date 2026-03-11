@@ -481,7 +481,7 @@ export default function OrdersClient({
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
           {/* Hidden Audio */}
-          <audio ref={audioRef} preload="auto" />
+          <audio ref={audioRef} preload="auto" data-notification-audio />
 
           {/* Search + Tabs + Sound — wraps on mobile/tablet portrait */}
           <div className="flex flex-wrap lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">

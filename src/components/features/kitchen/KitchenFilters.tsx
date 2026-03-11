@@ -51,7 +51,7 @@ export default function KitchenFilters({
 
   return (
     <>
-      <audio ref={audioRef} preload="auto" />
+      <audio ref={audioRef} preload="auto" data-notification-audio />
 
       {/* ━━━ COMPACT HEADER ━━━ */}
       <header className="h-11 border-b border-white/[0.06] flex items-center justify-between px-2 sm:px-3 bg-neutral-900/80 shrink-0">
