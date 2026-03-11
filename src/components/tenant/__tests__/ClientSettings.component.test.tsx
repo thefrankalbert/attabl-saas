@@ -282,11 +282,11 @@ describe('ClientSettings', () => {
 
   // ─── Layout ─────────────────────────────────────────
 
-  it('main element uses neutral-50 background', () => {
+  it('main element uses theme background', () => {
     const { container } = renderSettings();
     const main = container.querySelector('main');
     expect(main).toBeTruthy();
-    expect(main!.className).toContain('bg-neutral-50');
+    expect(main!.className).toContain('bg-app-bg');
   });
 
   // ─── Translation keys used consistently ─────────────

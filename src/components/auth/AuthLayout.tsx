@@ -17,12 +17,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       </div>
 
       {/* ── Left — Form panel ─────────────────────────────── */}
-      <div className="w-full md:w-[55%] flex flex-col px-4 sm:px-8 md:px-12 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
+      <div className="w-full md:w-[55%] lg:w-[50%] flex flex-col px-4 sm:px-8 md:px-10 lg:px-20 py-6 sm:py-10 md:overflow-y-auto">
         <div className="w-full max-w-[420px] m-auto">{children}</div>
       </div>
 
       {/* ── Right — Showcase panel ────────────────────────── */}
-      <div className="hidden md:flex md:w-[45%] items-center py-4 pr-4 md:pr-5 pl-0">
+      <div className="hidden md:flex md:w-[45%] lg:w-[50%] items-center py-4 pr-4 md:pr-5 pl-0">
         <div className="relative flex flex-col w-full h-full overflow-hidden rounded-[1.5rem] bg-app-card border border-app-border">
           {/* Subtle accent glow top */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60%] h-[1px] bg-gradient-to-r from-transparent via-accent/30 to-transparent" />

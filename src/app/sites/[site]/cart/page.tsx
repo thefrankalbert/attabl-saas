@@ -486,25 +486,25 @@ export default function CartPage() {
   // ─── Empty cart ────────────────────────────────────────────
   if (items.length === 0) {
     return (
-      <main className="min-h-screen bg-neutral-50 pb-20">
+      <main className="min-h-screen bg-app-bg pb-20">
         <div className="max-w-lg mx-auto px-4 pt-10 pb-2 relative flex items-center justify-center">
           <button
             onClick={() => router.back()}
-            className="absolute left-4 p-2 text-neutral-400 hover:text-neutral-900 transition-colors"
+            className="absolute left-4 p-2 text-app-text-muted hover:text-app-text transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-lg font-bold text-neutral-800 uppercase tracking-widest">
+          <h1 className="text-lg font-bold text-app-text uppercase tracking-widest">
             {t('yourCart')}
           </h1>
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
-          <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-10 h-10 text-neutral-300" />
+          <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-10 h-10 text-app-text-muted/40" />
           </div>
-          <h2 className="text-xl font-bold text-neutral-800 mb-2">{t('emptyCart')}</h2>
-          <p className="text-sm text-neutral-500 text-center mb-8">{t('emptyCartDesc')}</p>
+          <h2 className="text-xl font-bold text-app-text mb-2">{t('emptyCart')}</h2>
+          <p className="text-sm text-app-text-muted text-center mb-8">{t('emptyCartDesc')}</p>
           <Link href={menuPath}>
             <button
               className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
@@ -522,25 +522,25 @@ export default function CartPage() {
 
   // ─── Main cart ─────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-neutral-50 pb-44">
+    <main className="min-h-screen bg-app-bg pb-44">
       {/* HEADER */}
-      <div className="sticky top-0 z-40 bg-white border-b border-neutral-200">
+      <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 text-neutral-600 hover:text-neutral-900 transition-colors"
+            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
           <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-neutral-900">{t('yourCart')}</h1>
-            <p className="text-xs text-neutral-400">{t('itemCount', { count: totalItems })}</p>
+            <h1 className="text-base font-bold text-app-text">{t('yourCart')}</h1>
+            <p className="text-xs text-app-text-muted">{t('itemCount', { count: totalItems })}</p>
           </div>
           <button
             onClick={() => {
               if (confirm(t('clearCartConfirm'))) clearCart();
             }}
-            className="p-2 -mr-2 text-neutral-400 hover:text-red-500 transition-colors"
+            className="p-2 -mr-2 text-app-text-muted hover:text-red-500 transition-colors"
           >
             <Trash2 className="w-5 h-5" />
           </button>
@@ -550,13 +550,13 @@ export default function CartPage() {
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
+          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-medium text-red-800 text-sm">{error}</p>}
+                {error && <p className="font-medium text-red-500 text-sm">{error}</p>}
                 {validationErrors.length > 0 && (
-                  <ul className="mt-1 text-sm text-red-700 list-disc list-inside">
+                  <ul className="mt-1 text-sm text-red-400 list-disc list-inside">
                     {validationErrors.map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
@@ -568,8 +568,8 @@ export default function CartPage() {
         )}
 
         {/* CART ITEMS */}
-        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
-          <div className="divide-y divide-neutral-100">
+        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+          <div className="divide-y divide-app-border/50">
             <AnimatePresence mode="popLayout">
               {items.map((item) => {
                 const itemKey = getCartItemKey(item);
@@ -597,7 +597,7 @@ export default function CartPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                        className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -609,7 +609,7 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                        className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 transition-colors"
+                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -617,11 +617,11 @@ export default function CartPage() {
 
                     {/* Name & variant */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-neutral-900 leading-tight">
+                      <h3 className="text-sm font-medium text-app-text leading-tight">
                         {getTranslatedContent(language, item.name, item.name_en)}
                       </h3>
                       {(optionLabel || variantLabel) && (
-                        <p className="text-xs text-neutral-400 mt-0.5">
+                        <p className="text-xs text-app-text-muted mt-0.5">
                           {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
                         </p>
                       )}
@@ -629,7 +629,7 @@ export default function CartPage() {
 
                     {/* Price + delete */}
                     <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-neutral-900 text-right whitespace-nowrap">
+                      <span className="text-sm font-bold text-app-text text-right whitespace-nowrap">
                         {resolveAndFormatPrice(
                           item.price * item.quantity,
                           item.prices,
@@ -638,7 +638,7 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => removeFromCart(itemKey)}
-                        className="p-1 text-neutral-300 hover:text-red-500 transition-colors"
+                        className="p-1 text-app-text-muted/40 hover:text-red-500 transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -650,13 +650,13 @@ export default function CartPage() {
           </div>
 
           {/* Notes input */}
-          <div className="px-4 py-3 border-t border-neutral-100">
+          <div className="px-4 py-3 border-t border-app-border/50">
             <input
               type="text"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder={t('cartNotesPlaceholder')}
-              className="w-full text-sm bg-transparent text-neutral-500 placeholder:text-neutral-400 focus:outline-none focus:text-neutral-700 transition-colors"
+              className="w-full text-sm bg-transparent text-app-text-muted placeholder:text-app-text-muted/60 focus:outline-none focus:text-app-text transition-colors"
             />
           </div>
         </section>
@@ -671,9 +671,9 @@ export default function CartPage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="bg-white rounded-xl border border-neutral-200 overflow-hidden"
+              className="bg-app-card rounded-xl border border-app-border overflow-hidden"
             >
-              <div className="px-4 py-3 border-b border-neutral-100 flex items-center gap-2">
+              <div className="px-4 py-3 border-b border-app-border/50 flex items-center gap-2">
                 {activeRecommendation?.icon === 'drinks' ? (
                   <Coffee className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
                 ) : activeRecommendation?.icon === 'desserts' ? (
@@ -681,9 +681,9 @@ export default function CartPage() {
                 ) : (
                   <Utensils className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
                 )}
-                <h2 className="text-sm font-bold text-neutral-900">
+                <h2 className="text-sm font-bold text-app-text">
                   {isLoadingUpsell && !activeRecommendation ? (
-                    <div className="h-4 w-32 bg-neutral-200 rounded animate-pulse" />
+                    <div className="h-4 w-32 bg-app-elevated rounded animate-pulse" />
                   ) : (
                     activeRecommendation?.title
                   )}
@@ -696,11 +696,11 @@ export default function CartPage() {
                     ? [1, 2, 3].map((i) => (
                         <div
                           key={i}
-                          className="w-[130px] flex-shrink-0 bg-neutral-50 rounded-xl p-2.5 border border-neutral-100 animate-pulse"
+                          className="w-[130px] flex-shrink-0 bg-app-elevated rounded-xl p-2.5 border border-app-border/50 animate-pulse"
                         >
-                          <div className="w-full h-20 bg-neutral-100 rounded-lg mb-2" />
-                          <div className="h-3 w-3/4 bg-neutral-100 rounded mb-1" />
-                          <div className="h-3 w-1/2 bg-neutral-100 rounded" />
+                          <div className="w-full h-20 bg-app-hover rounded-lg mb-2" />
+                          <div className="h-3 w-3/4 bg-app-hover rounded mb-1" />
+                          <div className="h-3 w-1/2 bg-app-hover rounded" />
                         </div>
                       ))
                     : upsellItems.map((item) => {
@@ -712,9 +712,9 @@ export default function CartPage() {
                         return (
                           <div
                             key={item.id}
-                            className="w-[130px] flex-shrink-0 bg-white rounded-xl p-2.5 border border-neutral-100 shadow-sm"
+                            className="w-[130px] flex-shrink-0 bg-app-card rounded-xl p-2.5 border border-app-border/50 shadow-sm"
                           >
-                            <div className="w-full h-20 rounded-lg mb-2.5 overflow-hidden relative bg-neutral-50 flex items-center justify-center">
+                            <div className="w-full h-20 rounded-lg mb-2.5 overflow-hidden relative bg-app-elevated flex items-center justify-center">
                               {hasImage ? (
                                 <Image
                                   src={item.image_url!}
@@ -727,19 +727,19 @@ export default function CartPage() {
                                   }
                                 />
                               ) : (
-                                <Utensils className="w-5 h-5 text-neutral-300" />
+                                <Utensils className="w-5 h-5 text-app-text-muted/40" />
                               )}
                               <div className="absolute top-1 right-1 z-10">
                                 <button
                                   onClick={() => handleAddUpsellItem(item)}
-                                  className="w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center active:scale-90 transition-all"
+                                  className="w-7 h-7 rounded-full bg-app-card/90 shadow-md flex items-center justify-center active:scale-90 transition-all"
                                   style={{ color: 'var(--tenant-primary)' }}
                                 >
                                   <Plus className="w-4 h-4" />
                                 </button>
                               </div>
                             </div>
-                            <h3 className="text-[11px] font-bold text-neutral-800 line-clamp-2 leading-tight mb-2 h-7">
+                            <h3 className="text-[11px] font-bold text-app-text line-clamp-2 leading-tight mb-2 h-7">
                               {getTranslatedContent(language, item.name, item.name_en)}
                             </h3>
                             <span
@@ -758,12 +758,12 @@ export default function CartPage() {
         </AnimatePresence>
 
         {/* ORDER SUMMARY */}
-        <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
+        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
           <div className="px-4 py-3 space-y-3">
             {/* Subtotal */}
             <div className="flex justify-between text-sm">
-              <span className="text-neutral-500">{t('subtotal')}</span>
-              <span className="text-neutral-900 font-medium">
+              <span className="text-app-text-muted">{t('subtotal')}</span>
+              <span className="text-app-text font-medium">
                 {formatDisplayPrice(subtotal, currencyCode)}
               </span>
             </div>
@@ -771,10 +771,10 @@ export default function CartPage() {
             {/* Tax */}
             {enableTax && taxAmount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-neutral-500">
+                <span className="text-app-text-muted">
                   {t('tax')} ({taxRate}%)
                 </span>
-                <span className="text-neutral-900 font-medium">
+                <span className="text-app-text font-medium">
                   {formatDisplayPrice(taxAmount, currencyCode)}
                 </span>
               </div>
@@ -783,10 +783,10 @@ export default function CartPage() {
             {/* Service charge */}
             {enableServiceCharge && serviceChargeAmount > 0 && (
               <div className="flex justify-between text-sm">
-                <span className="text-neutral-500">
+                <span className="text-app-text-muted">
                   {t('serviceCharge')} ({serviceChargeRate}%)
                 </span>
-                <span className="text-neutral-900 font-medium">
+                <span className="text-app-text font-medium">
                   {formatDisplayPrice(serviceChargeAmount, currencyCode)}
                 </span>
               </div>
@@ -802,7 +802,7 @@ export default function CartPage() {
 
             {/* Tip */}
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-500">{t('tip')}</span>
+              <span className="text-app-text-muted">{t('tip')}</span>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() =>
@@ -814,13 +814,13 @@ export default function CartPage() {
                   className={cn(
                     'w-7 h-7 rounded-full border flex items-center justify-center transition-all',
                     tipAmount === 0
-                      ? 'border-neutral-200 text-neutral-300 cursor-not-allowed'
-                      : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 hover:bg-neutral-50 active:scale-95',
+                      ? 'border-app-border text-app-text-muted/40 cursor-not-allowed'
+                      : 'border-app-border text-app-text-secondary hover:border-app-border hover:bg-app-hover active:scale-95',
                   )}
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-sm font-bold text-neutral-900 min-w-[60px] text-center">
+                <span className="text-sm font-bold text-app-text min-w-[60px] text-center">
                   {formatDisplayPrice(tipAmount, currencyCode)}
                 </span>
                 <button
@@ -839,10 +839,10 @@ export default function CartPage() {
             </div>
 
             {/* Total */}
-            <div className="border-t border-neutral-200 pt-3">
+            <div className="border-t border-app-border pt-3">
               <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-neutral-900">{t('total')}</span>
-                <span className="text-xl font-black text-neutral-900">
+                <span className="text-base font-bold text-app-text">{t('total')}</span>
+                <span className="text-xl font-black text-app-text">
                   {formatDisplayPrice(finalTotal, currencyCode)}
                 </span>
               </div>
@@ -853,7 +853,7 @@ export default function CartPage() {
 
       {/* STICKY CTA — above bottom nav */}
       <div
-        className="fixed left-0 right-0 z-[60] bg-white border-t border-neutral-200 p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
+        className="fixed left-0 right-0 z-[60] bg-app-card border-t border-app-border p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
         style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
       >
         <div className="max-w-lg mx-auto">

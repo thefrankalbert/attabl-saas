@@ -58,10 +58,10 @@ export default function SearchOverlay({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed inset-0 z-[55] bg-[#FAFAFA] flex flex-col"
+          className="fixed inset-0 z-[55] bg-app-bg flex flex-col"
         >
           {/* Search header */}
-          <div className="sticky top-0 z-10 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
+          <div className="sticky top-0 z-10 bg-app-card border-b border-app-border/50 px-4 py-3 flex items-center gap-3">
             <button
               onClick={onClose}
               className="p-2 rounded-full hover:bg-neutral-100 transition-colors"

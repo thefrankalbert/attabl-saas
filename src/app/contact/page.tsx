@@ -15,7 +15,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-neutral-800 disabled:opacity-50"
+      className="w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-text transition-all hover:bg-accent-hover disabled:opacity-50"
     >
       {pending ? (
         <span className="flex items-center justify-center gap-2">
@@ -40,9 +40,9 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="flex h-screen w-full bg-white">
+    <div className="flex h-screen w-full bg-app-bg">
       {/* Left — Form on white */}
-      <div className="flex w-full items-center justify-center bg-white px-8 sm:px-16 lg:w-[55%] lg:px-20">
+      <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-[55%] lg:px-20">
         <div className="w-full max-w-[460px]">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -52,17 +52,17 @@ export default function ContactPage() {
             {/* Back to home */}
             <Link
               href="/"
-              className="mb-8 inline-flex items-center text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900"
+              className="mb-8 inline-flex items-center text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
             >
               <span className="mr-2">&larr;</span>
               {t('back')}
             </Link>
 
-            <h1 className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-tight text-neutral-900 sm:text-4xl">
+            <h1 className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-tight text-app-text sm:text-4xl">
               {t('title')}
             </h1>
 
-            <p className="mt-3 text-sm leading-relaxed text-neutral-500">{t('subtitle')}</p>
+            <p className="mt-3 text-sm leading-relaxed text-app-text-muted">{t('subtitle')}</p>
 
             {formState.success ? (
               <motion.div
@@ -73,12 +73,12 @@ export default function ContactPage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold text-neutral-900">{t('successTitle')}</h3>
-                <p className="mt-2 text-sm text-neutral-600">{formState.message}</p>
+                <h3 className="text-xl font-bold text-app-text">{t('successTitle')}</h3>
+                <p className="mt-2 text-sm text-app-text-muted">{formState.message}</p>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="mt-6 rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
+                  className="mt-6 rounded-lg border border-app-border px-5 py-2.5 text-sm font-semibold text-app-text transition-colors hover:bg-app-hover"
                 >
                   {t('newMessage')}
                 </button>
@@ -92,7 +92,7 @@ export default function ContactPage() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="name" className="text-xs font-semibold text-neutral-700">
+                    <label htmlFor="name" className="text-xs font-semibold text-app-text-secondary">
                       {t('labelName')}
                     </label>
                     <input
@@ -101,14 +101,17 @@ export default function ContactPage() {
                       id="name"
                       required
                       placeholder={t('placeholderName')}
-                      className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
                     />
                     {formState.errors?.name && (
                       <p className="text-xs text-red-500">{formState.errors.name[0]}</p>
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label htmlFor="company" className="text-xs font-semibold text-neutral-700">
+                    <label
+                      htmlFor="company"
+                      className="text-xs font-semibold text-app-text-secondary"
+                    >
                       {t('labelCompany')}
                     </label>
                     <input
@@ -116,13 +119,13 @@ export default function ContactPage() {
                       name="company"
                       id="company"
                       placeholder={t('placeholderCompany')}
-                      className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                      className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-xs font-semibold text-neutral-700">
+                  <label htmlFor="email" className="text-xs font-semibold text-app-text-secondary">
                     {t('labelEmail')}
                   </label>
                   <input
@@ -131,7 +134,7 @@ export default function ContactPage() {
                     id="email"
                     required
                     placeholder={t('placeholderEmail')}
-                    className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
                   />
                   {formState.errors?.email && (
                     <p className="text-xs text-red-500">{formState.errors.email[0]}</p>
@@ -139,7 +142,10 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="message" className="text-xs font-semibold text-neutral-700">
+                  <label
+                    htmlFor="message"
+                    className="text-xs font-semibold text-app-text-secondary"
+                  >
                     {t('labelMessage')}
                   </label>
                   <textarea
@@ -148,7 +154,7 @@ export default function ContactPage() {
                     rows={3}
                     required
                     placeholder={t('placeholderMessage')}
-                    className="w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 p-4 text-sm transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    className="w-full resize-none rounded-xl border border-app-border bg-app-elevated p-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
                   />
                   {formState.errors?.message && (
                     <p className="text-xs text-red-500">{formState.errors.message[0]}</p>
@@ -157,7 +163,7 @@ export default function ContactPage() {
 
                 <SubmitButton />
 
-                <p className="text-center text-[11px] text-neutral-400">{t('disclaimer')}</p>
+                <p className="text-center text-[11px] text-app-text-muted">{t('disclaimer')}</p>
               </form>
             )}
           </motion.div>

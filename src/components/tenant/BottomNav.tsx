@@ -51,14 +51,8 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
 
   return (
     <nav
+      className="fixed bottom-0 left-0 right-0 z-50 bg-app-card border-t border-app-border"
       style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        backgroundColor: '#ffffff',
-        borderTop: '1px solid #e5e7eb',
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
@@ -79,35 +73,13 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
             <button
               key={item.label}
               onClick={item.onClick}
-              style={{
-                position: 'relative',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '4px',
-                padding: '8px 12px',
-                minWidth: '72px',
-                color: item.isActive ? '#000000' : '#9ca3af',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className={`relative flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[72px] bg-transparent border-none cursor-pointer ${
+                item.isActive ? 'text-app-text' : 'text-app-text-muted'
+              }`}
             >
               {/* Active indicator top bar */}
               {item.isActive && (
-                <span
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: '32px',
-                    height: '2px',
-                    backgroundColor: '#000000',
-                    borderRadius: '0 0 2px 2px',
-                  }}
-                />
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-app-text rounded-b-sm" />
               )}
 
               <div style={{ position: 'relative' }}>
@@ -117,26 +89,7 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
                 />
                 {/* Badge for cart */}
                 {'badge' in item && item.badge && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: '-8px',
-                      right: '-8px',
-                      zIndex: 20,
-                      backgroundColor: '#ef4444',
-                      color: '#ffffff',
-                      fontSize: '9px',
-                      fontWeight: 700,
-                      height: '16px',
-                      minWidth: '16px',
-                      padding: '0 4px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      borderRadius: '9999px',
-                      border: '2px solid #ffffff',
-                    }}
-                  >
+                  <span className="absolute -top-2 -right-2 z-20 bg-red-500 text-white text-[9px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full border-2 border-app-card">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}

@@ -268,7 +268,7 @@ export default function ClientOrders({
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-neutral-400" />
+        <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
       </div>
     );
   }
@@ -278,11 +278,11 @@ export default function ClientOrders({
   if (orders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <div className="w-20 h-20 bg-neutral-100 rounded-full flex items-center justify-center mb-6">
-          <ShoppingBag className="w-10 h-10 text-neutral-300" />
+        <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mb-6">
+          <ShoppingBag className="w-10 h-10 text-app-text-muted/40" />
         </div>
-        <h2 className="text-xl font-bold text-neutral-800 mb-2">{t('noOrders')}</h2>
-        <p className="text-sm text-neutral-500 text-center mb-8 max-w-xs">{t('noOrdersDesc')}</p>
+        <h2 className="text-xl font-bold text-app-text mb-2">{t('noOrders')}</h2>
+        <p className="text-sm text-app-text-muted text-center mb-8 max-w-xs">{t('noOrdersDesc')}</p>
         <Link href={`/sites/${tenantSlug}/menu`}>
           <button
             className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
@@ -331,7 +331,7 @@ export default function ClientOrders({
           <motion.div
             key={order.id}
             layout
-            className="bg-white rounded-xl border border-neutral-200 overflow-hidden"
+            className="bg-app-card rounded-xl border border-app-border overflow-hidden"
           >
             {/* Collapsed header */}
             <button
@@ -340,7 +340,7 @@ export default function ClientOrders({
             >
               <div className="flex items-center gap-3">
                 <BadgeStatus status={order.status} />
-                <span className="text-sm font-semibold text-neutral-900">
+                <span className="text-sm font-semibold text-app-text">
                   #{order.order_number || order.id.slice(0, 5)}
                 </span>
               </div>
@@ -350,7 +350,7 @@ export default function ClientOrders({
                 </span>
                 <ChevronDown
                   className={cn(
-                    'w-4 h-4 text-neutral-400 transition-transform',
+                    'w-4 h-4 text-app-text-muted transition-transform',
                     expandedOrderId === order.id && 'rotate-180',
                   )}
                 />
@@ -367,9 +367,9 @@ export default function ClientOrders({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="border-t border-neutral-100">
+                  <div className="border-t border-app-border/50">
                     {/* Items — matching cart item layout */}
-                    <div className="divide-y divide-neutral-100">
+                    <div className="divide-y divide-app-border/50">
                       {(order.items || []).map((item: OrderItem, idx: number) => (
                         <div key={idx} className="px-4 py-3 flex items-center gap-3">
                           <span
@@ -378,8 +378,8 @@ export default function ClientOrders({
                           >
                             {item.quantity}
                           </span>
-                          <span className="flex-1 text-sm text-neutral-900">{item.name}</span>
-                          <span className="text-sm font-bold text-neutral-900 whitespace-nowrap">
+                          <span className="flex-1 text-sm text-app-text">{item.name}</span>
+                          <span className="text-sm font-bold text-app-text whitespace-nowrap">
                             {formatDisplayPrice(item.price * item.quantity, currency)}
                           </span>
                         </div>
@@ -387,17 +387,17 @@ export default function ClientOrders({
                     </div>
 
                     {/* Total — matching cart style */}
-                    <div className="px-4 py-3 border-t border-neutral-200">
+                    <div className="px-4 py-3 border-t border-app-border">
                       <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-neutral-900">{t('total')}</span>
-                        <span className="text-xl font-black text-neutral-900">
+                        <span className="text-base font-bold text-app-text">{t('total')}</span>
+                        <span className="text-xl font-black text-app-text">
                           {formatDisplayPrice(order.total, currency)}
                         </span>
                       </div>
                     </div>
 
                     {/* Date */}
-                    <div className="px-4 pb-3 text-xs text-neutral-400">
+                    <div className="px-4 pb-3 text-xs text-app-text-muted">
                       {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
                         locale: dateLocale,
                       })}

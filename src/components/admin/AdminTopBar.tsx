@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import { Maximize, Minimize } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { isImmersivePage } from '@/lib/constants';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -17,7 +16,7 @@ interface AdminTopBarProps {
 
 // ─── Component ──────────────────────────────────────────
 
-export function AdminTopBar({ basePath, notifications, breadcrumbs }: AdminTopBarProps) {
+export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
   const pathname = usePathname();
   const t = useTranslations('admin');
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -69,7 +68,6 @@ export function AdminTopBar({ basePath, notifications, breadcrumbs }: AdminTopBa
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </button>
-        <ThemeToggle />
       </div>
     </header>
   );
