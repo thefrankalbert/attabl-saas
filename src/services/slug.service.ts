@@ -1,5 +1,46 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+const RESERVED_SLUGS = new Set([
+  'admin',
+  'api',
+  'auth',
+  'www',
+  'mail',
+  'app',
+  'login',
+  'signup',
+  'checkout',
+  'onboarding',
+  'dashboard',
+  'settings',
+  'billing',
+  '_next',
+  'static',
+  'public',
+  'assets',
+  'cdn',
+  'docs',
+  'help',
+  'support',
+  'status',
+  'monitoring',
+  'health',
+  'webhook',
+  'webhooks',
+  'dev',
+  'staging',
+  'test',
+  'demo',
+  'attabl',
+  'features',
+  'pricing',
+  'contact',
+  'about',
+  'terms',
+  'privacy',
+  'sitemap',
+]);
+
 /**
  * Slug generation service.
  *
@@ -29,19 +70,39 @@ export function createSlugService(supabase: SupabaseClient) {
      * If the base slug already exists, appends a random 3-digit number.
      */
     async generateUniqueSlug(name: string): Promise<string> {
-      const baseSlug = this.normalizeToSlug(name);
+      let baseSlug = this.normalizeToSlug(name);
 
-      const { data: existingTenant } = await supabase
-        .from('tenants')
-        .select('slug')
-        .eq('slug', baseSlug)
-        .single();
-
-      if (existingTenant) {
-        return `${baseSlug}-${Math.floor(Math.random() * 1000)}`;
+      // If the slug is reserved, append a suffix to avoid conflicts with system routes
+      if (RESERVED_SLUGS.has(baseSlug)) {
+        baseSlug = `${baseSlug}-restaurant`;
       }
 
-      return baseSlug;
+      // Check for existing slugs with this base (including numbered variants)
+      const { data: existingSlugs } = await supabase
+        .from('tenants')
+        .select('slug')
+        .like('slug', `${baseSlug}%`);
+
+      if (!existingSlugs || existingSlugs.length === 0) {
+        return baseSlug;
+      }
+
+      const existingSet = new Set(existingSlugs.map((t) => t.slug));
+
+      if (!existingSet.has(baseSlug)) {
+        return baseSlug;
+      }
+
+      // Find next available number suffix
+      for (let i = 2; i <= 9999; i++) {
+        const candidate = `${baseSlug}-${i}`;
+        if (!existingSet.has(candidate)) {
+          return candidate;
+        }
+      }
+
+      // Fallback: use timestamp for guaranteed uniqueness
+      return `${baseSlug}-${Date.now().toString(36)}`;
     },
   };
 }

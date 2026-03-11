@@ -39,15 +39,27 @@ const ENTITY_TYPES = [
 ] as const;
 const ACTIONS = ['create', 'update', 'delete'] as const;
 
-export default function AuditLogClient({ tenantId }: { tenantId: string }) {
+interface AuditLogClientProps {
+  tenantId: string;
+  initialLogs?: Record<string, unknown>[];
+  initialCount?: number;
+}
+
+export default function AuditLogClient({
+  tenantId,
+  initialLogs,
+  initialCount,
+}: AuditLogClientProps) {
   const t = useTranslations('auditLog');
   const tc = useTranslations('common');
   const supabase = createClient();
 
-  const [logs, setLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [logs, setLogs] = useState<AuditLogEntry[]>(
+    (initialLogs as unknown as AuditLogEntry[]) || [],
+  );
+  const [loading, setLoading] = useState(!initialLogs);
   const [page, setPage] = useSessionState('auditLog:page', 0);
-  const [totalCount, setTotalCount] = useState(0);
+  const [totalCount, setTotalCount] = useState(initialCount || 0);
   const [showFilters, setShowFilters] = useState(false);
 
   // Filters

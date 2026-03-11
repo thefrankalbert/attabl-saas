@@ -20,9 +20,11 @@ interface CreateOrderInput {
   tax_amount?: number;
   service_charge_amount?: number;
   discount_amount?: number;
+  tip_amount?: number;
   coupon_id?: string;
   server_id?: string;
   display_currency?: string;
+  verifiedPrices?: Map<string, number>;
 }
 
 interface CreateOrderResult {
@@ -72,11 +74,11 @@ export function createOrderService(supabase: SupabaseClient) {
     async validateOrderItems(
       tenantId: string,
       items: OrderItemInput[],
-    ): Promise<{ validatedTotal: number }> {
+    ): Promise<{ validatedTotal: number; verifiedPrices: Map<string, number> }> {
       const itemIds = items.map((item) => item.id);
       const { data: menuItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('id, name, price, prices, is_available')
+        .select('id, name, price, is_available')
         .eq('tenant_id', tenantId)
         .in('id', itemIds);
 
@@ -85,10 +87,41 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la vérification du menu', 'INTERNAL', menuError);
       }
 
+      // Fetch server-side modifier prices for all items
+      const { data: dbModifiers } = await supabase
+        .from('item_modifiers')
+        .select('id, menu_item_id, name, price')
+        .eq('tenant_id', tenantId)
+        .in('menu_item_id', itemIds);
+
+      const modifiersByItem = new Map<string, Map<string, number>>();
+      for (const mod of dbModifiers || []) {
+        if (!modifiersByItem.has(mod.menu_item_id)) {
+          modifiersByItem.set(mod.menu_item_id, new Map());
+        }
+        modifiersByItem.get(mod.menu_item_id)!.set(mod.name.toLowerCase(), mod.price);
+      }
+
+      // Fetch server-side variant prices for all items
+      const { data: dbVariants } = await supabase
+        .from('item_price_variants')
+        .select('id, menu_item_id, variant_name_fr, price')
+        .eq('tenant_id', tenantId)
+        .in('menu_item_id', itemIds);
+
+      const variantsByItem = new Map<string, Map<string, number>>();
+      for (const v of dbVariants || []) {
+        if (!variantsByItem.has(v.menu_item_id)) {
+          variantsByItem.set(v.menu_item_id, new Map());
+        }
+        variantsByItem.get(v.menu_item_id)!.set(v.variant_name_fr.toLowerCase(), v.price);
+      }
+
       const menuItemsMap = new Map(menuItems?.map((item) => [item.id, item]) || []);
 
       const validationErrors: string[] = [];
       let calculatedTotal = 0;
+      const verifiedPrices = new Map<string, number>();
 
       for (const item of items) {
         const menuItem = menuItemsMap.get(item.id);
@@ -103,17 +136,47 @@ export function createOrderService(supabase: SupabaseClient) {
           continue;
         }
 
-        // Price with variant or base price
-        const expectedPrice = item.selectedVariant?.price || menuItem.price;
+        // Determine server-verified price: variant price from DB, or base item price
+        let expectedPrice = menuItem.price;
+        if (item.selectedVariant) {
+          const itemVariants = variantsByItem.get(item.id);
+          const serverVariantPrice = itemVariants?.get(item.selectedVariant.name_fr.toLowerCase());
+          if (serverVariantPrice !== undefined) {
+            expectedPrice = serverVariantPrice;
+          } else {
+            validationErrors.push(
+              `Variante "${item.selectedVariant.name_fr}" non trouvée pour "${menuItem.name}"`,
+            );
+            continue;
+          }
+        }
 
         // 1% tolerance for rounding
         if (Math.abs(item.price - expectedPrice) > expectedPrice * 0.01) {
           validationErrors.push(`Prix de "${menuItem.name}" a changé`);
         }
 
-        // Include modifiers in total calculation
-        const modifiersTotal = item.modifiers?.reduce((sum, m) => sum + m.price, 0) || 0;
-        calculatedTotal += (item.price + modifiersTotal) * item.quantity;
+        // Verify modifier prices server-side
+        const itemModifiers = modifiersByItem.get(item.id);
+        let modifiersTotal = 0;
+        if (item.modifiers && item.modifiers.length > 0) {
+          for (const mod of item.modifiers) {
+            const serverPrice = itemModifiers?.get(mod.name.toLowerCase());
+            if (serverPrice !== undefined) {
+              // Use server price, not client price
+              modifiersTotal += serverPrice;
+            } else {
+              // Modifier not found in DB — reject
+              validationErrors.push(
+                `Modificateur "${mod.name}" non trouvé pour "${menuItem.name}"`,
+              );
+            }
+          }
+        }
+
+        // Use server-verified prices for total calculation
+        verifiedPrices.set(item.id, expectedPrice);
+        calculatedTotal += (expectedPrice + modifiersTotal) * item.quantity;
       }
 
       if (validationErrors.length > 0) {
@@ -128,7 +191,7 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Le total de la commande doit être supérieur à 0', 'VALIDATION');
       }
 
-      return { validatedTotal: calculatedTotal };
+      return { validatedTotal: calculatedTotal, verifiedPrices };
     },
 
     /**
@@ -183,6 +246,7 @@ export function createOrderService(supabase: SupabaseClient) {
           tax_amount: input.tax_amount ?? 0,
           service_charge_amount: input.service_charge_amount ?? 0,
           discount_amount: input.discount_amount ?? 0,
+          tip_amount: input.tip_amount ?? 0,
           payment_status: 'pending',
           coupon_id: input.coupon_id || null,
           server_id: input.server_id ?? null,
@@ -213,7 +277,7 @@ export function createOrderService(supabase: SupabaseClient) {
           item_name: item.name,
           item_name_en: item.name_en || null,
           quantity: item.quantity,
-          price_at_order: item.price,
+          price_at_order: input.verifiedPrices?.get(item.id) ?? item.price,
           customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,

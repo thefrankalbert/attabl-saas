@@ -118,7 +118,7 @@ export interface Order {
   tenant_id: string;
   order_number?: string;
   table_number: string;
-  total_price: number;
+  total_price: number; // mapped from DB column `total`
   total?: number;
   total_amount?: number;
   status: OrderStatus;
@@ -138,6 +138,7 @@ export interface Order {
   tax_amount?: number;
   service_charge_amount?: number;
   discount_amount?: number;
+  tip_amount?: number;
   // ─── Payment tracking ─────────────────────────────────
   payment_method?: PaymentMethod;
   payment_status?: PaymentStatus;

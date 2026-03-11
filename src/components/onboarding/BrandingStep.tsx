@@ -4,7 +4,7 @@
 import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Upload, X, Layout, Image as ImageIcon, Type } from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { LogoCropper } from '@/components/onboarding/LogoCropper';
@@ -122,311 +122,286 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
           onError={handleCropError}
         />
       )}
-      {/* Title & Subtitle */}
-      <div className="shrink-0 mb-3">
-        <h1 className="text-2xl font-bold text-neutral-900 mb-1">{t('brandingTitle')}</h1>
-        <p className="text-neutral-500 text-sm">{t('brandingSubtitle')}</p>
-      </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
-          {/* Left column: Preview, Logo Upload, Description */}
-          <div className="space-y-6">
-            {/* Live Preview */}
-            <div className="border border-neutral-200 rounded-xl p-3 bg-neutral-50">
-              <p className="text-[10px] text-neutral-400 mb-1.5 font-medium uppercase tracking-wide">
-                {t('previewLabel')}
+        <div className="px-4 py-3 sm:px-6 sm:py-4 lg:px-8 lg:py-5">
+          {/* Header */}
+          <div className="mb-4">
+            <h1 className="text-lg font-bold text-app-text mb-1">{t('brandingTitle')}</h1>
+            <p className="text-app-text-secondary text-sm">{t('brandingSubtitle')}</p>
+          </div>
+
+          {/* Two-column: Logo & Description + Colors */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Left: Logo & Description */}
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+                Identit\u00e9 visuelle
               </p>
-              <div
-                className="p-2 rounded-lg text-center"
-                style={{ backgroundColor: data.secondaryColor }}
-              >
-                <div
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full"
-                  style={{ backgroundColor: data.primaryColor }}
-                >
-                  {data.logoUrl ? (
-                    <img
-                      src={data.logoUrl}
-                      alt="Logo"
-                      className="w-5 h-5 rounded-full object-cover"
-                    />
-                  ) : (
-                    <Layout className="h-4 w-4" style={{ color: data.secondaryColor }} />
-                  )}
-                  <span className="font-bold text-xs" style={{ color: data.secondaryColor }}>
-                    {data.tenantName || 'Mon établissement'}
-                  </span>
-                </div>
-                {data.description && (
-                  <p
-                    className="mt-1.5 text-[10px] text-center opacity-80"
-                    style={{ color: data.primaryColor }}
+
+              {/* Logo Upload */}
+              <div className="mb-4">
+                <Label className="text-sm font-medium text-app-text-secondary mb-3 flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-app-text-muted" />
+                  {t('logoLabel') || 'Logo'}
+                </Label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+
+                <div className="flex items-start gap-4">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => !data.logoUrl && fileInputRef.current?.click()}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (!data.logoUrl) fileInputRef.current?.click();
+                      }
+                    }}
+                    className="relative w-28 h-28 shrink-0 border border-dashed border-app-border rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-accent/40 transition-colors"
                   >
-                    {data.description}
-                  </p>
-                )}
+                    {data.logoUrl ? (
+                      <>
+                        <img src={data.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeLogo();
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              removeLogo();
+                            }
+                          }}
+                          className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100 transition-opacity"
+                          aria-label={t('logoDelete')}
+                        >
+                          <X className="h-5 w-5 text-white" />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="h-5 w-5 text-app-text-muted mb-1.5" />
+                        <span className="text-[10px] text-app-text-muted text-center px-2">
+                          {t('logoUpload')}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                  <div className="pt-3">
+                    <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
+                    {data.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="mt-2 text-xs text-accent hover:underline"
+                      >
+                        {t('logoChange')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <Label
+                  htmlFor="description"
+                  className="text-sm font-medium text-app-text-secondary flex items-center gap-2 mb-2"
+                >
+                  <Type className="h-4 w-4 text-app-text-muted" />
+                  {t('descriptionLabel')}
+                </Label>
+                <textarea
+                  id="description"
+                  placeholder={t('descriptionPlaceholder')}
+                  value={data.description}
+                  onChange={(e) => {
+                    if (e.target.value.length <= 500) {
+                      updateData({ description: e.target.value });
+                    }
+                  }}
+                  rows={3}
+                  maxLength={500}
+                  className="w-full px-4 py-3 bg-app-elevated/50 border border-app-border rounded-xl resize-none text-sm focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                />
+                <p className="text-xs text-app-text-muted mt-1.5 text-right">
+                  {t('charCount', { count: data.description.length, max: 500 })}
+                </p>
               </div>
             </div>
 
-            {/* Logo Upload */}
+            {/* Right: Colors */}
             <div>
-              <Label className="text-neutral-700 font-medium mb-2 block text-sm flex items-center gap-2">
-                <ImageIcon className="h-4 w-4 text-neutral-400" />
-                {t('logoLabel') || 'Logo'}
-              </Label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleLogoUpload}
-                className="hidden"
-              />
+              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+                Couleurs
+              </p>
 
-              <div className="flex items-start gap-4">
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => !data.logoUrl && fileInputRef.current?.click()}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      if (!data.logoUrl) fileInputRef.current?.click();
-                    }
-                  }}
-                  className="relative w-[120px] h-[120px] shrink-0 border-2 border-dashed border-neutral-300 rounded-xl flex flex-col items-center justify-center overflow-hidden cursor-pointer hover:border-neutral-400"
-                  style={{ width: 120, height: 120, maxWidth: 120, maxHeight: 120 }}
-                >
-                  {data.logoUrl ? (
-                    <>
-                      <img
-                        src={data.logoUrl}
-                        alt="Logo"
-                        className="w-full h-full object-cover"
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      />
+              {/* Presets */}
+              <div className="mb-4">
+                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
+                  {t('colorPresetsLabel')}
+                </Label>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {colorPresets.map((preset) => {
+                    const isSelected = isPresetSelected(preset);
+                    return (
+                      <button
+                        key={preset.name}
+                        type="button"
+                        onClick={() => {
+                          updateData({
+                            primaryColor: preset.primary,
+                            secondaryColor: preset.secondary,
+                          });
+                        }}
+                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all ${
+                          isSelected
+                            ? 'border-accent bg-accent/5 shadow-sm'
+                            : 'border-app-border hover:border-app-border-hover'
+                        }`}
+                      >
+                        <div
+                          className="w-7 h-7 rounded-lg border border-app-border/50 flex items-center justify-center"
+                          style={{ backgroundColor: preset.secondary }}
+                        >
+                          <div
+                            className="w-3.5 h-3.5 rounded-md"
+                            style={{ backgroundColor: preset.primary }}
+                          />
+                        </div>
+                        <span className="text-[7px] font-semibold text-app-text-muted truncate w-full text-center">
+                          {preset.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom Colors */}
+              <div>
+                <Label className="text-xs font-semibold text-app-text mb-2.5 block">
+                  {t('customColorsLabel')}
+                  {!hasPresetMatch && (
+                    <span className="ml-1.5 text-[10px] text-accent">(actif)</span>
+                  )}
+                </Label>
+                <div className="space-y-4">
+                  {/* Primary */}
+                  <div>
+                    <Label
+                      htmlFor="primaryColor"
+                      className="text-xs font-medium text-app-text-secondary mb-1 block"
+                    >
+                      {t('primaryColor')}
+                    </Label>
+                    <div className="flex items-center gap-2">
                       <div
                         role="button"
                         tabIndex={0}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeLogo();
-                        }}
+                        onClick={() =>
+                          setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
+                        }
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                            removeLogo();
+                            e.preventDefault();
+                            setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
                           }
                         }}
-                        className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 hover:opacity-100"
-                        aria-label={t('logoDelete')}
-                      >
-                        <X className="h-5 w-5 text-white" />
+                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
+                        style={{ backgroundColor: data.primaryColor }}
+                      />
+                      <Input
+                        type="text"
+                        value={data.primaryColor}
+                        onChange={(e) => updateData({ primaryColor: e.target.value })}
+                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+                      />
+                    </div>
+                    {showPickerFor === 'primary' && (
+                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
+                        {colorGrid.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => {
+                              updateData({ primaryColor: color });
+                              setShowPickerFor(null);
+                            }}
+                            className={`w-9 h-9 rounded-lg border transition-all ${
+                              data.primaryColor === color
+                                ? 'border-accent scale-110'
+                                : 'border-transparent hover:border-app-border-hover'
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-5 w-5 text-neutral-400 mb-1" />
-                      <span className="text-[10px] text-neutral-400 text-center px-2">
-                        {t('logoUpload')}
-                      </span>
-                    </>
-                  )}
-                </div>
-                <div className="pt-2">
-                  <p className="text-xs text-neutral-400">{t('logoMaxSize')}</p>
-                  {data.logoUrl && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="mt-2 text-xs text-neutral-500 underline hover:text-neutral-700"
-                    >
-                      {t('logoChange')}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
+                    )}
+                  </div>
 
-            {/* Description */}
-            <div>
-              <Label
-                htmlFor="description"
-                className="text-neutral-700 font-medium text-sm flex items-center gap-2 mb-2"
-              >
-                <Type className="h-4 w-4 text-neutral-400" />
-                {t('descriptionLabel')}
-              </Label>
-              <textarea
-                id="description"
-                placeholder={t('descriptionPlaceholder')}
-                value={data.description}
-                onChange={(e) => {
-                  if (e.target.value.length <= 500) {
-                    updateData({ description: e.target.value });
-                  }
-                }}
-                rows={3}
-                maxLength={500}
-                className="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded-xl resize-none text-sm"
-              />
-              <p className="text-xs text-neutral-400 mt-1 text-right">
-                {t('charCount', { count: data.description.length, max: 500 })}
-              </p>
-            </div>
-          </div>
-
-          {/* Right column: Presets, Custom Colors */}
-          <div className="space-y-6">
-            {/* Presets */}
-            <div>
-              <Label className="text-neutral-700 font-medium mb-2 block text-xs">
-                {t('colorPresetsLabel')}
-              </Label>
-              <div className="grid grid-cols-5 gap-1.5">
-                {colorPresets.map((preset) => {
-                  const isSelected = isPresetSelected(preset);
-                  return (
-                    <button
-                      key={preset.name}
-                      type="button"
-                      onClick={() => {
-                        updateData({
-                          primaryColor: preset.primary,
-                          secondaryColor: preset.secondary,
-                        });
-                      }}
-                      className={`flex flex-col items-center gap-0.5 p-1.5 rounded-lg border ${
-                        isSelected
-                          ? 'ring-2 ring-[#CCFF00] ring-offset-1 border-transparent'
-                          : 'border-neutral-200 hover:border-neutral-300'
-                      }`}
+                  {/* Secondary */}
+                  <div>
+                    <Label
+                      htmlFor="secondaryColor"
+                      className="text-xs font-medium text-app-text-secondary mb-1 block"
                     >
+                      {t('secondaryColor')}
+                    </Label>
+                    <div className="flex items-center gap-2">
                       <div
-                        className="w-7 h-7 rounded-full border border-neutral-200 flex items-center justify-center"
-                        style={{ backgroundColor: preset.secondary }}
-                      >
-                        <div
-                          className="w-3.5 h-3.5 rounded-full"
-                          style={{ backgroundColor: preset.primary }}
-                        />
+                        role="button"
+                        tabIndex={0}
+                        onClick={() =>
+                          setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
+                          }
+                        }}
+                        className="w-11 h-11 rounded-xl border border-app-border shrink-0 cursor-pointer hover:border-accent/40 transition-colors"
+                        style={{ backgroundColor: data.secondaryColor }}
+                      />
+                      <Input
+                        type="text"
+                        value={data.secondaryColor}
+                        onChange={(e) => updateData({ secondaryColor: e.target.value })}
+                        className="h-10 bg-app-elevated/50 border-app-border rounded-xl font-mono uppercase text-xs"
+                      />
+                    </div>
+                    {showPickerFor === 'secondary' && (
+                      <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
+                        {colorGrid.map((color) => (
+                          <button
+                            key={color}
+                            type="button"
+                            onClick={() => {
+                              updateData({ secondaryColor: color });
+                              setShowPickerFor(null);
+                            }}
+                            className={`w-9 h-9 rounded-lg border transition-all ${
+                              data.secondaryColor === color
+                                ? 'border-accent scale-110'
+                                : 'border-transparent hover:border-app-border-hover'
+                            }`}
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
                       </div>
-                      <span className="text-[8px] font-medium text-neutral-500 truncate w-full text-center">
-                        {preset.name}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Custom Colors */}
-            <div>
-              <Label className="text-neutral-700 font-medium mb-2 block text-xs">
-                {t('customColorsLabel')}
-                {!hasPresetMatch && (
-                  <span className="ml-1.5 text-[10px] text-neutral-400">(actif)</span>
-                )}
-              </Label>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label htmlFor="primaryColor" className="text-neutral-500 text-[10px] mb-1 block">
-                    {t('primaryColor')}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() =>
-                        setShowPickerFor(showPickerFor === 'primary' ? null : 'primary')
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setShowPickerFor(showPickerFor === 'primary' ? null : 'primary');
-                        }
-                      }}
-                      className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
-                      style={{ backgroundColor: data.primaryColor }}
-                    />
-                    <Input
-                      type="text"
-                      value={data.primaryColor}
-                      onChange={(e) => updateData({ primaryColor: e.target.value })}
-                      className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
-                    />
+                    )}
                   </div>
-                  {showPickerFor === 'primary' && (
-                    <div className="mt-2 grid grid-cols-5 gap-1.5">
-                      {colorGrid.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => {
-                            updateData({ primaryColor: color });
-                            setShowPickerFor(null);
-                          }}
-                          className={`w-8 h-8 rounded-lg border ${
-                            data.primaryColor === color
-                              ? 'ring-2 ring-[#CCFF00] ring-offset-1'
-                              : 'border-neutral-200'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <Label
-                    htmlFor="secondaryColor"
-                    className="text-neutral-500 text-[10px] mb-1 block"
-                  >
-                    {t('secondaryColor')}
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      onClick={() =>
-                        setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary')
-                      }
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setShowPickerFor(showPickerFor === 'secondary' ? null : 'secondary');
-                        }
-                      }}
-                      className="w-10 h-10 rounded-lg border border-neutral-200 shrink-0 cursor-pointer hover:ring-2 hover:ring-neutral-300"
-                      style={{ backgroundColor: data.secondaryColor }}
-                    />
-                    <Input
-                      type="text"
-                      value={data.secondaryColor}
-                      onChange={(e) => updateData({ secondaryColor: e.target.value })}
-                      className="h-9 bg-neutral-50 border-neutral-200 rounded-xl font-mono uppercase text-xs"
-                    />
-                  </div>
-                  {showPickerFor === 'secondary' && (
-                    <div className="mt-2 grid grid-cols-5 gap-1.5">
-                      {colorGrid.map((color) => (
-                        <button
-                          key={color}
-                          type="button"
-                          onClick={() => {
-                            updateData({ secondaryColor: color });
-                            setShowPickerFor(null);
-                          }}
-                          className={`w-8 h-8 rounded-lg border ${
-                            data.secondaryColor === color
-                              ? 'ring-2 ring-[#CCFF00] ring-offset-1'
-                              : 'border-neutral-200'
-                          }`}
-                          style={{ backgroundColor: color }}
-                        />
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </div>

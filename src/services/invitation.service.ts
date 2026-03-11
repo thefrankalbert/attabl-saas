@@ -215,6 +215,7 @@ export function createInvitationService(supabase: SupabaseClient) {
         .from('invitations')
         .update({ token, expires_at: expiresAt, status: 'pending' })
         .eq('id', invitationId)
+        .eq('status', 'pending')
         .select(
           'id, tenant_id, email, role, custom_permissions, invited_by, token, expires_at, status, created_at, accepted_at',
         )

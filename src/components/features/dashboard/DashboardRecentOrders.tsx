@@ -69,7 +69,7 @@ export default function DashboardRecentOrders({
                 {recentOrders.length}
               </span>
               {recentOrders.filter((o) => o.status === 'pending').length > 0 && (
-                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full text-[11px] font-bold">
+                <span className="flex items-center gap-1.5 px-2.5 py-1 bg-amber-500/10 text-amber-600 rounded-full text-[11px] font-bold">
                   <Clock className="w-3 h-3" />
                   {recentOrders.filter((o) => o.status === 'pending').length} {t('pendingLabel')}
                 </span>
@@ -125,7 +125,7 @@ export default function DashboardRecentOrders({
                         {order.status === 'pending' && (
                           <button
                             onClick={() => onStatusChange(order.id, 'preparing')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-xl hover:bg-blue-500/20 transition-colors"
                             title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
@@ -134,7 +134,7 @@ export default function DashboardRecentOrders({
                         {order.status === 'preparing' && (
                           <button
                             onClick={() => onStatusChange(order.id, 'ready')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-emerald-50 text-emerald-600 rounded-xl hover:bg-emerald-100 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500/20 transition-colors"
                             title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
@@ -211,14 +211,14 @@ export default function DashboardRecentOrders({
                     className={cn(
                       'p-3.5 rounded-xl border transition-colors',
                       isOut
-                        ? 'border-red-200 bg-red-50/50'
+                        ? 'border-red-500/20 bg-red-500/5'
                         : isLow
-                          ? 'border-amber-200 bg-amber-50/50'
+                          ? 'border-amber-500/20 bg-amber-500/5'
                           : 'border-app-border bg-app-bg/50',
                     )}
                   >
                     <div className="flex items-center justify-between">
-                      <p className="text-xs font-bold text-app-text truncate">{item.name}</p>
+                      <p className="text-xs font-bold text-app-text break-words">{item.name}</p>
                       <span className="text-[10px] text-app-text-muted font-semibold uppercase">
                         {item.unit}
                       </span>

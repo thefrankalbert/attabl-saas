@@ -5,8 +5,7 @@ import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { X, Check, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { compressImage, uploadToStorage } from '@/lib/image-compress';
-import { createClient } from '@/lib/supabase/client';
+import { compressImage } from '@/lib/image-compress';
 
 interface LogoCropperProps {
   imageSrc: string;
@@ -68,28 +67,29 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
     if (!croppedAreaPixels) return;
     setApplying(true);
     try {
-      // 1. Crop the image to a blob
       const croppedBlob = await getCroppedBlob(imageSrc, croppedAreaPixels);
-
-      // 2. Compress to max 512×512 JPEG
       const compressed = await compressImage(croppedBlob, {
         maxWidth: 512,
         maxHeight: 512,
         quality: 0.8,
         type: 'image/jpeg',
       });
-
-      // 3. Upload to Supabase Storage
-      const supabase = createClient();
-      const publicUrl = await uploadToStorage(compressed, 'logos', supabase);
-
-      onComplete(publicUrl);
+      // Upload via API route (uses admin client server-side to bypass RLS)
+      const formData = new FormData();
+      formData.append('file', compressed, 'logo.jpg');
+      formData.append('bucket', 'logos');
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: 'Upload failed' }));
+        throw new Error(err.error || 'Upload failed');
+      }
+      const { url } = await res.json();
+      onComplete(url);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Upload failed';
       if (onError) {
         onError(message);
       }
-      // Fallback: still try to return original (as data URL) so user isn't stuck
       onComplete(imageSrc);
     } finally {
       setApplying(false);
@@ -97,23 +97,23 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-app-card shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl bg-app-card shadow-2xl overflow-hidden border border-app-border">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-neutral-100">
-          <h3 className="font-semibold text-neutral-900">Recadrer le logo</h3>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
+          <h3 className="font-bold text-app-text">Recadrer le logo</h3>
           <button
             type="button"
             onClick={onCancel}
             disabled={applying}
-            className="p-1 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors"
+            className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Cropper Area */}
-        <div className="relative w-full h-72 bg-neutral-900">
+        <div className="relative w-full h-72 bg-black">
           <Cropper
             image={imageSrc}
             crop={crop}
@@ -128,12 +128,12 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
         </div>
 
         {/* Zoom Controls */}
-        <div className="px-5 py-4 border-b border-neutral-100">
+        <div className="px-5 py-4 border-b border-app-border">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
-              className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors"
             >
               <ZoomOut className="h-4 w-4" />
             </button>
@@ -144,12 +144,12 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               step={0.05}
               value={zoom}
               onChange={(e) => setZoom(Number(e.target.value))}
-              className="flex-1 accent-[#CCFF00]"
+              className="flex-1 accent-accent"
             />
             <button
               type="button"
               onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
-              className="p-1.5 rounded-lg border border-neutral-200 text-neutral-600 hover:bg-neutral-50"
+              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors"
             >
               <ZoomIn className="h-4 w-4" />
             </button>
@@ -161,7 +161,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
           <Button
             type="button"
             variant="outline"
-            className="flex-1 rounded-xl"
+            className="flex-1 h-11 rounded-xl border-app-border"
             onClick={onCancel}
             disabled={applying}
           >
@@ -169,7 +169,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
           </Button>
           <Button
             type="button"
-            className="flex-1 rounded-xl bg-[#CCFF00] text-black font-semibold hover:bg-[#b8e600]"
+            className="flex-1 h-11 rounded-xl bg-accent text-accent-text font-bold hover:bg-accent-hover"
             onClick={handleApply}
             disabled={applying}
           >

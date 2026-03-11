@@ -181,7 +181,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
                   'active:scale-[0.97] touch-manipulation min-h-[80px]',
                   tile.featured
                     ? 'bg-accent border-accent/20 hover:border-accent/40'
-                    : 'bg-accent/10 border-accent/15 hover:border-accent/25 hover:bg-accent/15',
+                    : 'bg-accent-muted border-accent/15 hover:border-accent/25 hover:bg-accent-muted',
                 )}
               >
                 <Icon
@@ -209,8 +209,8 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
       <div
         className={cn(
           'flex-1 grid gap-3 min-h-0 auto-rows-fr',
-          cols === 3 && 'grid-cols-3',
-          cols === 4 && 'grid-cols-3 sm:grid-cols-4',
+          cols === 3 && 'grid-cols-2 sm:grid-cols-3',
+          cols === 4 && 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
         )}
       >
         {regularTiles.map((tile) => {

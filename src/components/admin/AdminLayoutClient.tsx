@@ -3,12 +3,19 @@
 import { DeviceProvider, useDeviceContext } from '@/contexts/DeviceContext';
 import { AdminTopBar } from './AdminTopBar';
 import { AdminBottomNav } from './AdminBottomNav';
+import { AdminSidebar } from './AdminSidebar';
 import { cn } from '@/lib/utils';
 import { usePathname } from 'next/navigation';
-import { isAdminHome } from '@/lib/constants';
+import { isAdminHome, isImmersivePage } from '@/lib/constants';
 import type { AdminRole } from '@/types/admin.types';
 
 // ─── Inner Layout ───────────────────────────────────────
+
+interface TenantSwitchOption {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface AdminLayoutInnerProps {
   children: React.ReactNode;
@@ -19,8 +26,12 @@ interface AdminLayoutInnerProps {
     name: string;
     slug: string;
     logo_url?: string;
+    subscription_plan?: string;
   };
+  userName?: string;
+  userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
+  breadcrumbs?: React.ReactNode;
 }
 
 function AdminLayoutInner({
@@ -29,17 +40,32 @@ function AdminLayoutInner({
   basePath,
   role,
   tenant,
+  userName,
+  userTenants,
   notifications,
+  breadcrumbs,
 }: AdminLayoutInnerProps) {
   const { isMobile } = useDeviceContext();
   const pathname = usePathname();
   const isHome = isAdminHome(pathname, basePath);
+  const immersive = isImmersivePage(pathname);
 
   return (
-    <div className="h-dvh overflow-hidden flex flex-col bg-app-bg transition-colors duration-200">
-      <AdminTopBar tenant={tenant} basePath={basePath} notifications={notifications} />
+    <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200">
+      {/* Sidebar — desktop only, hidden on immersive pages */}
+      {!immersive && (
+        <AdminSidebar
+          basePath={basePath}
+          tenant={tenant}
+          userName={userName}
+          userTenants={userTenants}
+          className="hidden md:flex"
+        />
+      )}
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
+        <AdminTopBar basePath={basePath} notifications={notifications} breadcrumbs={breadcrumbs} />
+
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-2 focus:left-2 focus:rounded-md focus:bg-app-card focus:px-4 focus:py-2 focus:text-sm focus:font-medium"
@@ -49,7 +75,7 @@ function AdminLayoutInner({
 
         <main
           id="main-content"
-          className={cn('flex-1 min-h-0', 'overflow-hidden', isDevMode && 'pt-6')}
+          className={cn('flex-1 min-h-0', 'overflow-y-auto', isDevMode && 'pt-6')}
         >
           {children}
         </main>
@@ -71,8 +97,12 @@ interface AdminLayoutClientProps {
     name: string;
     slug: string;
     logo_url?: string;
+    subscription_plan?: string;
   };
+  userName?: string;
+  userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
+  breadcrumbs?: React.ReactNode;
 }
 
 export function AdminLayoutClient({
@@ -81,7 +111,10 @@ export function AdminLayoutClient({
   basePath,
   role,
   tenant,
+  userName,
+  userTenants,
   notifications,
+  breadcrumbs,
 }: AdminLayoutClientProps) {
   return (
     <DeviceProvider>
@@ -90,7 +123,10 @@ export function AdminLayoutClient({
         basePath={basePath}
         role={role}
         tenant={tenant}
+        userName={userName}
+        userTenants={userTenants}
         notifications={notifications}
+        breadcrumbs={breadcrumbs}
       >
         {children}
       </AdminLayoutInner>

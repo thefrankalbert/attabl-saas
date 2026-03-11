@@ -88,15 +88,31 @@ export function createCouponService(supabase: SupabaseClient) {
     },
 
     /**
-     * Increment coupon usage after successful order (atomic via RPC).
+     * Atomically validate and increment coupon usage.
+     * Returns true if the coupon was successfully claimed, false if limit reached.
+     * This prevents race conditions where two concurrent orders both pass the check.
      */
-    async incrementUsage(couponId: string): Promise<void> {
-      const { error } = await supabase.rpc('increment_coupon_usage', {
+    async claimUsage(couponId: string): Promise<boolean> {
+      const { data, error } = await supabase.rpc('claim_coupon_usage', {
         p_coupon_id: couponId,
       });
       if (error) {
-        // Non-blocking: log but don't fail the order
-        logger.error('Failed to increment coupon usage', error);
+        logger.error('Failed to claim coupon usage', error);
+        return false;
+      }
+      return data === true;
+    },
+
+    /**
+     * Rollback a previously claimed coupon usage by decrementing current_uses.
+     * Used when order creation fails after coupon was already claimed.
+     */
+    async unclaimUsage(couponId: string): Promise<void> {
+      const { error } = await supabase.rpc('unclaim_coupon_usage', {
+        p_coupon_id: couponId,
+      });
+      if (error) {
+        logger.error('Failed to unclaim coupon usage', { couponId, error });
       }
     },
 

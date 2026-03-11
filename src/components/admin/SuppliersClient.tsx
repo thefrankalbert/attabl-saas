@@ -109,7 +109,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'address',
         header: () => t('address'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] break-words block">
             {row.original.address || '\u2014'}
           </span>
         ),
@@ -124,7 +124,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
               className={cn(
                 'px-2 py-0.5 rounded-full text-xs font-medium',
                 row.original.is_active
-                  ? 'bg-green-500/10 text-green-500'
+                  ? 'bg-status-success-bg text-status-success'
                   : 'bg-app-bg text-app-text-secondary',
               )}
             >
@@ -182,7 +182,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(supplier.id)}
-                  className="text-xs text-red-600 hover:text-red-700"
+                  className="text-xs text-status-error hover:text-status-error"
                 >
                   <Trash2 className="w-3 h-3" />
                 </Button>
@@ -352,7 +352,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       {/* Row 1: Name + Status */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <p className="font-medium text-app-text truncate">{supplier.name}</p>
+                          <p className="font-medium text-app-text break-words">{supplier.name}</p>
                           {supplier.contact_name && (
                             <p className="text-xs text-app-text-secondary">
                               {supplier.contact_name}
@@ -363,7 +363,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                           className={cn(
                             'px-2 py-0.5 rounded-full text-xs font-medium shrink-0',
                             supplier.is_active
-                              ? 'bg-green-500/10 text-green-500'
+                              ? 'bg-status-success-bg text-status-success'
                               : 'bg-app-bg text-app-text-secondary',
                           )}
                         >
@@ -374,7 +374,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                       {/* Row 2: Contact info */}
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-app-text-secondary">
                         {supplier.phone && <span>{supplier.phone}</span>}
-                        {supplier.email && <span className="truncate">{supplier.email}</span>}
+                        {supplier.email && <span className="break-all">{supplier.email}</span>}
                       </div>
 
                       {/* Row 3: Actions */}

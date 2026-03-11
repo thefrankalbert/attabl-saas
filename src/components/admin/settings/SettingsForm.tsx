@@ -1,18 +1,6 @@
 'use client';
 
-import {
-  Loader2,
-  Save,
-  Store,
-  Palette,
-  MapPin,
-  Bell,
-  Receipt,
-  Globe,
-  Shield,
-  Link2,
-  Settings,
-} from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useSettingsData } from '@/hooks/useSettingsData';
@@ -48,15 +36,15 @@ interface SettingsFormProps {
   tenant: SettingsTenant;
 }
 
-const TAB_CONFIG: { key: SettingsTab; icon: React.ElementType; labelKey: string }[] = [
-  { key: 'identity', icon: Store, labelKey: 'tabIdentity' },
-  { key: 'branding', icon: Palette, labelKey: 'tabBranding' },
-  { key: 'billing', icon: Receipt, labelKey: 'tabBilling' },
-  { key: 'sounds', icon: Bell, labelKey: 'tabSounds' },
-  { key: 'security', icon: Shield, labelKey: 'tabSecurity' },
-  { key: 'contact', icon: MapPin, labelKey: 'tabContact' },
-  { key: 'domain', icon: Link2, labelKey: 'tabDomain' },
-  { key: 'language', icon: Globe, labelKey: 'tabLanguage' },
+const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
+  { key: 'identity', labelKey: 'tabIdentity' },
+  { key: 'branding', labelKey: 'tabBranding' },
+  { key: 'billing', labelKey: 'tabBilling' },
+  { key: 'sounds', labelKey: 'tabSounds' },
+  { key: 'security', labelKey: 'tabSecurity' },
+  { key: 'contact', labelKey: 'tabContact' },
+  { key: 'domain', labelKey: 'tabDomain' },
+  { key: 'language', labelKey: 'tabLanguage' },
 ];
 
 // ─── Main Component ────────────────────────────────────────
@@ -90,15 +78,14 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
           onValueChange={(v) => setActiveTab(v as SettingsTab)}
           className="flex flex-col flex-1 min-h-0"
         >
-          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
-            {TAB_CONFIG.map(({ key, icon: Icon, labelKey }) => (
+          <TabsList className="flex-shrink-0 h-auto w-full justify-start gap-0 overflow-x-auto scrollbar-hide rounded-none border-b border-app-border bg-transparent p-0">
+            {TAB_CONFIG.map(({ key, labelKey }) => (
               <TabsTrigger
                 key={key}
                 value={key}
-                className="flex items-center gap-1.5 sm:gap-2 whitespace-nowrap rounded-none border-b-2 border-transparent px-2.5 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
+                className="whitespace-nowrap rounded-none border-b-2 border-transparent px-3 sm:px-4 py-3 min-h-[44px] text-xs sm:text-sm font-medium text-app-text-secondary transition-colors hover:text-app-text data-[state=active]:border-accent data-[state=active]:bg-transparent data-[state=active]:text-app-text data-[state=active]:font-semibold data-[state=active]:shadow-none"
               >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">{t(labelKey)}</span>
+                {t(labelKey)}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -123,31 +110,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Sounds tab */}
             <TabsContent value="sounds" className="mt-0">
-              <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="p-2 bg-amber-500/10 rounded-lg">
-                    <Bell className="h-4 w-4 text-amber-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-semibold text-app-text">
-                      {t('notificationSounds')}
-                    </h2>
-                    <p className="text-xs text-app-text-secondary">
-                      {t('soundPlayedOnOrderReceived')}
-                    </p>
-                  </div>
-                </div>
-
-                <SoundSettings
-                  currentSoundId={selectedSoundId}
-                  onSoundChange={setSelectedSoundId}
-                  tenantId={tenant.id}
-                />
-              </div>
+              <SoundSettings
+                currentSoundId={selectedSoundId}
+                onSoundChange={setSelectedSoundId}
+                tenantId={tenant.id}
+              />
             </TabsContent>
 
             {/* Security tab */}
-            <SettingsSecurity form={form} t={t} />
+            <SettingsSecurity form={form} t={t} tenantSlug={tenant.slug} />
 
             {/* Contact tab */}
             <SettingsContact form={form} t={t} />
@@ -170,19 +141,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Language tab */}
             <TabsContent value="language" className="mt-0">
-              <div className="bg-app-card rounded-xl border border-app-border p-4 sm:p-6">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="p-2 bg-blue-500/10 rounded-lg">
-                    <Globe className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-semibold text-app-text">{t('languageSection')}</h2>
-                    <p className="text-sm text-app-text-secondary">{t('languageDescription')}</p>
-                  </div>
-                </div>
-
-                <LocaleSwitcher />
-              </div>
+              <LocaleSwitcher />
             </TabsContent>
           </div>
         </Tabs>

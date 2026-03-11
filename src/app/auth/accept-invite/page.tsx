@@ -52,7 +52,7 @@ function AcceptInviteForm() {
     return (
       <div className="w-full">
         <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-4 sm:p-6 md:p-8">
           <Alert
             variant="destructive"
             className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
@@ -76,7 +76,7 @@ function AcceptInviteForm() {
     return (
       <div className="w-full">
         <AttablLogo />
-        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8 text-center">
+        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-4 sm:p-6 md:p-8 text-center">
           <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-app-text mb-2">Invitation acceptee !</h2>
           <p className="text-app-text-secondary text-sm">Redirection vers le tableau de bord...</p>
@@ -130,7 +130,7 @@ function AcceptInviteForm() {
     <div className="w-full">
       <AttablLogo />
 
-      <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+      <div className="mt-10 bg-app-card rounded-xl border border-app-border p-4 sm:p-6 md:p-8">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-semibold tracking-tight text-app-text mb-2">
@@ -156,7 +156,7 @@ function AcceptInviteForm() {
               required
               minLength={2}
               maxLength={100}
-              className="h-10 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+              className="h-10 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
             />
           </div>
 
@@ -174,7 +174,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
               />
               <button
                 type="button"
@@ -203,7 +203,7 @@ function AcceptInviteForm() {
                 required
                 minLength={8}
                 maxLength={100}
-                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent rounded-md transition-all"
+                className="h-10 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-1 focus:ring-accent/30 rounded-md transition-all"
               />
               <button
                 type="button"

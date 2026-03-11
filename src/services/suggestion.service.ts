@@ -115,6 +115,9 @@ export async function generateAndSaveSuggestions(
   const generated = generateSuggestions(items as MenuItem[]);
   if (generated.length === 0) return 0;
 
+  // Clear existing suggestions before inserting new ones
+  await supabase.from('item_suggestions').delete().eq('tenant_id', tenantId);
+
   const rows = generated.map((s, i) => ({
     tenant_id: tenantId,
     menu_item_id: s.menu_item_id,

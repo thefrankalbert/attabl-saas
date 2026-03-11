@@ -130,10 +130,10 @@ export default function ClientMenuDetailPage({
   // ─── Table from localStorage ────────────────────────────
   useEffect(() => {
     if (!initialTable && typeof window !== 'undefined') {
-      const saved = localStorage.getItem('attabl_table');
+      const saved = localStorage.getItem(`attabl_${tenant.slug}_table`);
       if (saved) setTableNumber(saved);
     }
-  }, [initialTable]);
+  }, [initialTable, tenant.slug]);
 
   // ─── Scroll to section on mount ─────────────────────────
   useEffect(() => {
@@ -271,7 +271,7 @@ export default function ClientMenuDetailPage({
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
-    localStorage.setItem('attabl_table', table.table_number);
+    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),
@@ -291,7 +291,7 @@ export default function ClientMenuDetailPage({
         handleTableSelect(matchedTable);
       } else {
         setTableNumber(result.tableNumber);
-        localStorage.setItem('attabl_table', result.tableNumber);
+        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
           title: t('tableIdentified'),
           description: t('seatedAtTable', { table: result.tableNumber }),
@@ -321,7 +321,10 @@ export default function ClientMenuDetailPage({
 
   // ─── Render ────────────────────────────────────────────
   return (
-    <div className="flex-1 w-full min-h-screen pb-24">
+    <div
+      className="flex-1 w-full min-h-screen"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
       {/* ═══ STICKY HEADER — appears when scrolled past search bar ═══ */}
       {isSearchSticky && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
@@ -476,7 +479,11 @@ export default function ClientMenuDetailPage({
       </div>
 
       {/* ═══ SEARCH BAR ═══ */}
-      <div ref={searchBarRef} style={{ padding: '12px 16px', backgroundColor: '#ffffff' }}>
+      <div
+        ref={searchBarRef}
+        style={{ padding: '12px 16px 12px', backgroundColor: '#ffffff' }}
+        className="sm:px-6"
+      >
         <div style={{ position: 'relative' }}>
           <div
             style={{

@@ -45,8 +45,6 @@ export default function MenusClient({
     loading,
     searchQuery,
     setSearchQuery,
-    filteredStandalone,
-    menusByVenue,
     isLimitReached,
     maxMenus,
     createMenu,
@@ -56,7 +54,7 @@ export default function MenusClient({
     toggleActive,
     reorder,
     loadMenus,
-  } = useMenusData({ tenantId, initialMenus, venues });
+  } = useMenusData({ tenantId, initialMenus });
 
   // ─── Selection ────────────────────────────────────────
 
@@ -108,13 +106,12 @@ export default function MenusClient({
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-3">
-          {/* Header + Search + Actions — single row */}
+          {/* Search + Actions — single row */}
           <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-            <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
-              {t('title')}
-              <span className="text-sm font-normal text-app-text-muted ml-2">({menus.length})</span>
-            </h1>
-            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+            <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
+              {menus.length}
+            </span>
+            <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
               <Input
                 data-search-input
@@ -171,8 +168,8 @@ export default function MenusClient({
 
           {/* Limit warning */}
           {isLimitReached && (
-            <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-2">
-              <p className="text-xs text-amber-800 font-medium">
+            <div className="rounded-lg border border-status-warning/20 bg-status-warning-bg px-4 py-2">
+              <p className="text-xs text-status-warning font-medium">
                 {t('limitReached', { max: maxMenus })}{' '}
                 <Link
                   href={`/sites/${tenantSlug}/admin/subscription`}
@@ -190,9 +187,6 @@ export default function MenusClient({
           <MenusTable
             tenantSlug={tenantSlug}
             menus={menus}
-            venues={venues}
-            filteredStandalone={filteredStandalone}
-            menusByVenue={menusByVenue}
             searchQuery={searchQuery}
             loading={loading}
             selectedIds={selectedIds}

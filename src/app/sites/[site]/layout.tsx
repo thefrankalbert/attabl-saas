@@ -1,9 +1,26 @@
+import type { Metadata, Viewport } from 'next';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import { getCachedTenant } from '@/lib/cache';
 import { TenantLightMode } from '@/components/tenant/TenantLightMode';
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
+};
+
+export const metadata: Metadata = {
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+  },
+};
 
 // Inline script to immediately switch from dark to light theme
 // Runs before React hydration to prevent dark flash

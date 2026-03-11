@@ -24,6 +24,7 @@ import { cn } from '@/lib/utils';
 import AdsSlider from '@/components/tenant/AdsSlider';
 import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
+import FullscreenSplash from '@/components/tenant/FullscreenSplash';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import TablePicker from '@/components/tenant/TablePicker';
 import type { QRScanResult } from '@/components/tenant/QRScanner';
@@ -140,34 +141,20 @@ export default function ClientMenuPage({
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('attabl_table');
+      return localStorage.getItem(`attabl_${tenant.slug}_table`);
     }
     return null;
   });
   const [isSearchSticky, setIsSearchSticky] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // ─── Auto-open QR on first visit ──────────────────────
-  const scannerCheckRef = useRef(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || scannerCheckRef.current) return;
-    scannerCheckRef.current = true;
-
-    const savedTable = localStorage.getItem('attabl_table');
-    if (!initialTable && !savedTable) {
-      // Don't auto-open scanner in development — only in production
-      if (process.env.NODE_ENV === 'production') {
-        const timer = setTimeout(() => setIsQRScannerOpen(true), 600);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [initialTable]);
+  // QR scanner is only opened manually — the customer already scanned a QR code
+  // to reach this page, so auto-opening another scanner prompt makes no sense.
 
   // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {
     if (initialTable && typeof window !== 'undefined') {
-      localStorage.setItem('attabl_table', initialTable);
+      localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
       queueMicrotask(() => {
         toast({
           title: t('tableIdentified'),
@@ -197,7 +184,7 @@ export default function ClientMenuPage({
 
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
-    localStorage.setItem('attabl_table', table.table_number);
+    localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
       title: t('tableSelected'),
       description: t('seatedAtTable', { table: table.table_number }),
@@ -217,7 +204,7 @@ export default function ClientMenuPage({
         handleTableSelect(matchedTable);
       } else {
         setTableNumber(result.tableNumber);
-        localStorage.setItem('attabl_table', result.tableNumber);
+        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
           title: t('tableIdentified'),
           description: t('seatedAtTable', { table: result.tableNumber }),
@@ -239,7 +226,17 @@ export default function ClientMenuPage({
 
   // ─── Render ────────────────────────────────────────────
   return (
-    <div className="flex-1 w-full min-h-screen pb-24">
+    <div
+      className="flex-1 w-full min-h-screen"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+    >
+      {/* ═══ FULLSCREEN SPLASH — shown on QR code scan ═══ */}
+      <FullscreenSplash
+        tenantName={tenant.name}
+        logoUrl={tenant.logo_url}
+        primaryColor={tenant.primary_color || '#000000'}
+      />
+
       {/* ═══ STICKY HEADER — appears when scrolled past search bar ═══ */}
       {isSearchSticky && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
@@ -291,7 +288,7 @@ export default function ClientMenuPage({
                   alt={tenant.name}
                   width={260}
                   height={24}
-                  className="h-6 w-auto max-w-[260px] object-contain"
+                  className="h-6 w-auto max-w-[180px] sm:max-w-[260px] object-contain"
                   priority
                 />
               ) : (
@@ -536,10 +533,7 @@ export default function ClientMenuPage({
               {t('exploreFlavors')}
             </h2>
           </div>
-          <div
-            className="grid grid-cols-4 gap-3"
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '12px' }}
-          >
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-3" style={{ gap: '12px' }}>
             {categories.slice(0, 8).map((cat, idx) => (
               <button
                 key={cat.id}
@@ -558,8 +552,8 @@ export default function ClientMenuPage({
               >
                 <div
                   style={{
-                    width: '72px',
-                    height: '72px',
+                    width: 'clamp(56px, 16vw, 72px)',
+                    height: 'clamp(56px, 16vw, 72px)',
                     margin: '0 auto',
                     borderRadius: '50%',
                     backgroundColor: '#f9fafb',

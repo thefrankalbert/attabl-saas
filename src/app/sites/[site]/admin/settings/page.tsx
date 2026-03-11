@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { PushOptIn } from '@/components/admin/PushOptIn';
@@ -15,13 +15,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const supabase = await createClient();
-
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) notFound();
 

@@ -16,6 +16,7 @@ interface OrderData {
   order_number: string;
   table_number: string | null;
   total: number;
+  tip_amount: number;
   status: string;
   created_at: string;
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
@@ -51,7 +52,7 @@ function OrderConfirmedContent() {
     supabase
       .from('orders')
       .select(
-        'id, order_number, table_number, total, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
+        'id, order_number, table_number, total, tip_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
       )
       .eq('id', orderId)
       .eq('tenant_id', tenantId)
@@ -60,6 +61,7 @@ function OrderConfirmedContent() {
         if (!error && data) {
           const mapped: OrderData = {
             ...data,
+            tip_amount: data.tip_amount ?? 0,
             items: (data.order_items || []).map(
               (oi: {
                 item_name: string;
@@ -216,12 +218,20 @@ function OrderConfirmedContent() {
             ))}
           </div>
 
-          {/* Total */}
-          <div className="px-4 py-3 border-t border-neutral-200">
+          {/* Tip + Total */}
+          <div className="px-4 py-3 border-t border-neutral-200 space-y-2">
+            {order.tip_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-500">{t('tip')}</span>
+                <span className="text-emerald-600 font-medium">
+                  +{formatDisplayPrice(order.tip_amount)}
+                </span>
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <span className="text-base font-bold text-neutral-900">{t('total')}</span>
               <span className="text-xl font-black text-neutral-900">
-                {formatDisplayPrice(order.total)}
+                {formatDisplayPrice(order.total + order.tip_amount)}
               </span>
             </div>
           </div>

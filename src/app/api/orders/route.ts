@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
@@ -64,9 +65,13 @@ export async function POST(request: Request) {
       delivery_address,
       coupon_code,
       display_currency,
+      tip_amount,
     } = parseResult.data;
 
-    const { validatedTotal } = await orderService.validateOrderItems(tenantId, items);
+    const { validatedTotal, verifiedPrices } = await orderService.validateOrderItems(
+      tenantId,
+      items,
+    );
 
     // 4. Validate coupon if provided
     let discountAmount = 0;
@@ -85,8 +90,9 @@ export async function POST(request: Request) {
       couponResult = { couponId: validation.coupon?.id };
     }
 
-    // 5. Fetch tenant config for tax & service charge
-    const { data: tenant, error: tenantError } = await supabase
+    // 5. Fetch tenant config for tax & service charge (use admin client to bypass RLS)
+    const adminSupabase = createAdminClient();
+    const { data: tenant, error: tenantError } = await adminSupabase
       .from('tenants')
       .select(
         'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
@@ -110,29 +116,43 @@ export async function POST(request: Request) {
       discountAmount,
     );
 
-    // 7. Create order with all fields
-    const result = await orderService.createOrderWithItems({
-      tenantId,
-      items,
-      total: pricing.total,
-      tableNumber,
-      customerName,
-      customerPhone,
-      notes,
-      service_type,
-      room_number,
-      delivery_address,
-      subtotal: pricing.subtotal,
-      tax_amount: pricing.taxAmount,
-      service_charge_amount: pricing.serviceChargeAmount,
-      discount_amount: pricing.discountAmount,
-      coupon_id: couponResult?.couponId,
-      display_currency,
-    });
-
-    // 8. Increment coupon usage after successful order
+    // 7. Atomically claim coupon usage BEFORE order creation to prevent double-spend
     if (couponResult?.couponId) {
-      await couponService.incrementUsage(couponResult.couponId);
+      const claimed = await couponService.claimUsage(couponResult.couponId);
+      if (!claimed) {
+        return NextResponse.json({ error: t('invalidCoupon') }, { status: 400 });
+      }
+    }
+
+    // 8. Create order with all fields (rollback coupon usage on failure)
+    let result;
+    try {
+      result = await orderService.createOrderWithItems({
+        tenantId,
+        items,
+        total: pricing.total,
+        tableNumber,
+        customerName,
+        customerPhone,
+        notes,
+        service_type,
+        room_number,
+        delivery_address,
+        subtotal: pricing.subtotal,
+        tax_amount: pricing.taxAmount,
+        service_charge_amount: pricing.serviceChargeAmount,
+        discount_amount: pricing.discountAmount,
+        tip_amount: tip_amount ?? 0,
+        coupon_id: couponResult?.couponId,
+        display_currency,
+        verifiedPrices,
+      });
+    } catch (orderError) {
+      // Rollback coupon usage if order creation fails
+      if (couponResult?.couponId) {
+        await couponService.unclaimUsage(couponResult.couponId);
+      }
+      throw orderError;
     }
 
     // 9. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
@@ -176,8 +196,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Order ServiceError details', { code: error.code, details: error.details });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

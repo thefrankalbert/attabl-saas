@@ -37,8 +37,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, tenantSlug });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Invitation accept ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

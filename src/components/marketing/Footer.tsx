@@ -92,7 +92,7 @@ export default function Footer() {
         </div>
 
         {/* Link columns */}
-        <div className="grid grid-cols-2 gap-8 md:grid-cols-4 lg:gap-12">
+        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 md:grid-cols-4 lg:gap-8">
           {footerColumns.map((column) => (
             <div key={column.title}>
               <h3 className="mb-4 font-[family-name:var(--font-inter)] text-sm font-semibold text-white">

@@ -1,18 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import InvoiceHistoryClient from '@/components/admin/InvoiceHistoryClient';
 
 export default async function InvoicesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('id, name, stripe_customer_id, currency')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -22,10 +18,18 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
     );
   }
 
+  // stripe_customer_id is not in getCachedTenant — fetch it separately
+  const supabase = await createClient();
+  const { data: stripeInfo } = await supabase
+    .from('tenants')
+    .select('stripe_customer_id')
+    .eq('id', tenant.id)
+    .single();
+
   return (
     <InvoiceHistoryClient
       tenantId={tenant.id}
-      hasStripeCustomer={!!tenant.stripe_customer_id}
+      hasStripeCustomer={!!stripeInfo?.stripe_customer_id}
       currency={tenant.currency || 'XAF'}
     />
   );

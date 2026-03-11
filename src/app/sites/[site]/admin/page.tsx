@@ -1,25 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import DashboardClient from '@/components/admin/DashboardClient';
-import type { Order, DashboardStats, PopularItem } from '@/types/admin.types';
+import type { Order, DashboardStats } from '@/types/admin.types';
 import { AlertCircle } from 'lucide-react';
 
 export const revalidate = 60;
 
 export default async function AdminDashboard({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Récupérer le tenant
-  const { data: tenant, error: tenantError } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
-  if (tenantError || !tenant) {
+  if (!tenant) {
     return (
       <div className="p-8">
         <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
@@ -35,6 +31,23 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     );
   }
 
+  const supabase = await createClient();
+
+  // Get current user's name for greeting
+  const {
+    data: { user: authUser },
+  } = await supabase.auth.getUser();
+  let userName: string | undefined;
+  if (authUser) {
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('full_name')
+      .eq('user_id', authUser.id)
+      .eq('tenant_id', tenant.id)
+      .single();
+    userName = adminUser?.full_name || (authUser.user_metadata?.full_name as string);
+  }
+
   let initialStats: DashboardStats = {
     ordersToday: 0,
     revenueToday: 0,
@@ -42,7 +55,6 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     activeCards: 0,
   };
   let initialRecentOrders: Order[] = [];
-  let initialPopularItems: PopularItem[] = [];
 
   try {
     const today = new Date();
@@ -53,12 +65,12 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     yesterday.setHours(0, 0, 0, 0);
 
     // Requêtes parallèles pour optimiser la performance
-    const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, popularRes, yesterdayRes] =
+    const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, yesterdayRes] =
       await Promise.all([
         // Commandes du jour (pour stats)
         supabase
           .from('orders')
-          .select('id, total_price, total, status, created_at')
+          .select('id, total, tip_amount, status, created_at')
           .eq('tenant_id', tenant.id)
           .gte('created_at', today.toISOString()),
 
@@ -80,23 +92,17 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         supabase
           .from('orders')
           .select(
-            `id, table_number, status, total_price, total, created_at,
+            `id, table_number, status, total, tip_amount, created_at,
            order_items(id, quantity, price_at_order, menu_items(name))`,
           )
           .eq('tenant_id', tenant.id)
           .order('created_at', { ascending: false })
           .limit(8),
 
-        // Items pour calcul de popularité
-        supabase
-          .from('order_items')
-          .select('menu_item_id, quantity, menu_items(id, name, image_url)')
-          .not('menu_item_id', 'is', null),
-
         // Yesterday's orders for trend
         supabase
           .from('orders')
-          .select('id, total_price, total, status')
+          .select('id, total, tip_amount, status')
           .eq('tenant_id', tenant.id)
           .gte('created_at', yesterday.toISOString())
           .lt('created_at', today.toISOString()),
@@ -108,7 +114,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       ordersToday: ordersData.length,
       revenueToday: ordersData
         .filter((o) => o.status === 'delivered')
-        .reduce((sum, o) => sum + Number(o.total_price || o.total || 0), 0),
+        .reduce((sum, o) => sum + Number(o.total || 0) + Number(o.tip_amount || 0), 0),
       activeItems: itemsCountRes.count || 0,
       activeCards: venuesCountRes.count || 0,
     };
@@ -118,7 +124,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     const yesterdayRevenue = yesterdayOrders
       .filter((o: Record<string, unknown>) => o.status === 'delivered')
       .reduce(
-        (sum: number, o: Record<string, unknown>) => sum + Number(o.total_price || o.total || 0),
+        (sum: number, o: Record<string, unknown>) =>
+          sum + Number(o.total || 0) + Number(o.tip_amount || 0),
         0,
       );
     const yesterdayCount = yesterdayOrders.length;
@@ -140,7 +147,8 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       tenant_id: tenant.id,
       table_number: (order.table_number as string) || 'N/A',
       status: ((order.status as string) || 'pending') as Order['status'],
-      total_price: Number(order.total_price || order.total || 0),
+      total_price: Number(order.total || 0),
+      tip_amount: Number(order.tip_amount || 0),
       created_at: order.created_at as string,
       items: ((order.order_items as Array<Record<string, unknown>>) || []).map(
         (item: Record<string, unknown>) => ({
@@ -152,29 +160,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       ),
     }));
 
-    // Popular Items
-    const itemCounts: Record<string, PopularItem> = {};
-    ((popularRes.data as Array<Record<string, unknown>>) || []).forEach(
-      (item: Record<string, unknown>) => {
-        const menuItem = item.menu_items as Record<string, unknown> | null;
-        if (menuItem) {
-          const id = item.menu_item_id as string;
-          if (!itemCounts[id]) {
-            itemCounts[id] = {
-              id,
-              name: (menuItem.name as string) || '',
-              image_url: menuItem.image_url as string | undefined,
-              order_count: 0,
-            };
-          }
-          itemCounts[id].order_count += item.quantity as number;
-        }
-      },
-    );
-
-    initialPopularItems = Object.values(itemCounts)
-      .sort((a, b) => b.order_count - a.order_count)
-      .slice(0, 5);
+    // Popular items data is handled client-side by useDashboardStats
   } catch {
     // Fallback avec données vides (already initialized above)
   }
@@ -184,9 +170,10 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
       tenantId={tenant.id}
       tenantSlug={tenant.slug}
       tenantName={tenant.name}
+      userName={userName}
       initialStats={initialStats}
       initialRecentOrders={initialRecentOrders}
-      initialPopularItems={initialPopularItems}
+      initialPopularItems={[]}
       currency={tenant.currency}
       establishmentType={tenant.establishment_type ?? 'restaurant'}
     />

@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ChevronLeft } from 'lucide-react';
 import OrderDetails from '@/components/admin/OrderDetails';
 import type { Order } from '@/types/admin.types';
@@ -15,32 +14,31 @@ interface SingleOrderClientProps {
 export default function SingleOrderClient({ order: initialOrder }: SingleOrderClientProps) {
   const router = useRouter();
   const t = useTranslations('orders');
-  const tc = useTranslations('common');
+
+  const displayLabel = initialOrder.order_number || `#${initialOrder.id.slice(0, 8).toUpperCase()}`;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
-          <ChevronLeft className="w-4 h-4 mr-1" /> {tc('back')}
+    <div className="h-full flex flex-col overflow-hidden">
+      {/* Inline header — same line as breadcrumb text */}
+      <div className="flex items-center gap-2 mb-3 shrink-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="shrink-0 h-7 w-7 p-0"
+          onClick={() => router.back()}
+        >
+          <ChevronLeft className="w-4 h-4" />
         </Button>
-        <h1 className="text-xl font-bold">{t('orderDetails')}</h1>
+        <h1 className="text-sm font-semibold text-app-text break-words">
+          {t('orderDetails')} — {displayLabel}
+        </h1>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            {t('orderNumber')}
-            {initialOrder.id.slice(0, 8)}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <OrderDetails
-            order={initialOrder}
-            onClose={() => router.back()}
-            onUpdate={() => router.refresh()}
-          />
-        </CardContent>
-      </Card>
+      <OrderDetails
+        order={initialOrder}
+        onClose={() => router.back()}
+        onUpdate={() => router.refresh()}
+      />
     </div>
   );
 }

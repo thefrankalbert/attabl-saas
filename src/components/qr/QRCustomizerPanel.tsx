@@ -88,8 +88,8 @@ function SliderField({ label, value, unit, min, max, step, onChange }: SliderFie
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <Label className="text-xs text-gray-500">{label}</Label>
-        <span className="text-xs font-mono text-gray-400">
+        <Label className="text-xs text-app-text-muted">{label}</Label>
+        <span className="text-xs font-mono text-app-text-muted">
           {value}
           {unit}
         </span>
@@ -110,7 +110,7 @@ function SliderField({ label, value, unit, min, max, step, onChange }: SliderFie
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="space-y-4">
-      <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
+      <h3 className="text-sm font-semibold text-app-text">{title}</h3>
       {children}
     </div>
   );
@@ -176,7 +176,7 @@ export function QRCustomizerPanel({
   // ─── Render ─────────────────────────────────────────
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4">
+    <div className="bg-app-card rounded-xl border border-app-border p-4">
       <Tabs defaultValue="template">
         {/* Tab triggers */}
         <TabsList className="grid w-full grid-cols-5 mb-4">
@@ -218,11 +218,11 @@ export function QRCustomizerPanel({
                   className={`
                     relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-2 text-left
                     transition-all duration-150 cursor-pointer
-                    ${isSelected ? 'border-gray-900 bg-gray-50' : 'border-gray-200 hover:border-gray-400 bg-white'}
+                    ${isSelected ? 'border-accent bg-app-bg' : 'border-app-border hover:border-app-text-muted bg-app-card'}
                   `}
                 >
                   {isSelected && (
-                    <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-gray-900 flex items-center justify-center">
+                    <div className="absolute top-2 right-2 h-5 w-5 rounded-full bg-accent flex items-center justify-center">
                       <Check className="h-3 w-3 text-white" />
                     </div>
                   )}
@@ -234,8 +234,8 @@ export function QRCustomizerPanel({
                   >
                     {defaults.width}
                   </div>
-                  <span className="text-sm font-semibold text-gray-900">{defaults.name}</span>
-                  <span className="text-xs text-gray-500 leading-tight">
+                  <span className="text-sm font-semibold text-app-text">{defaults.name}</span>
+                  <span className="text-xs text-app-text-muted leading-tight">
                     {defaults.description}
                   </span>
                 </button>
@@ -287,8 +287,8 @@ export function QRCustomizerPanel({
                       px-3 py-2 rounded-lg text-xs font-medium border transition-all
                       ${
                         config.errorCorrection === value
-                          ? 'border-gray-900 bg-gray-900 text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+                          ? 'border-accent bg-accent text-white'
+                          : 'border-app-border bg-app-card text-app-text-secondary hover:border-app-text-muted'
                       }
                     `}
                   >
@@ -321,7 +321,7 @@ export function QRCustomizerPanel({
             <Section title="Logo dans le QR">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm text-gray-700">Activer le logo</Label>
+                  <Label className="text-sm text-app-text">Activer le logo</Label>
                   <Switch
                     checked={config.logo.enabled}
                     onCheckedChange={(checked) => updateLogo('enabled', checked)}
@@ -330,7 +330,7 @@ export function QRCustomizerPanel({
 
                 {config.logo.enabled && (
                   <div className="space-y-4 pl-1">
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-app-text-muted">
                       Utilisez votre logo ci-dessous ou uploadez une image
                     </p>
 
@@ -349,7 +349,7 @@ export function QRCustomizerPanel({
 
                     {/* File upload for custom logo */}
                     <div className="space-y-2">
-                      <Label className="text-xs text-gray-500">Importer une image</Label>
+                      <Label className="text-xs text-app-text-muted">Importer une image</Label>
                       <input
                         ref={logoFileInputRef}
                         type="file"
@@ -376,9 +376,9 @@ export function QRCustomizerPanel({
                             <img
                               src={config.logo.src}
                               alt="Aperçu du logo"
-                              className="h-10 w-10 rounded-lg object-contain bg-white border border-neutral-100"
+                              className="h-10 w-10 rounded-lg object-contain bg-app-card border border-neutral-100"
                             />
-                            <span className="text-xs text-gray-500 truncate flex-1">
+                            <span className="text-xs text-app-text-muted truncate flex-1">
                               {config.logo.src.startsWith('data:')
                                 ? 'Image importée'
                                 : config.logo.src}
@@ -386,7 +386,7 @@ export function QRCustomizerPanel({
                             <button
                               type="button"
                               onClick={() => updateLogo('src', '')}
-                              className="p-1 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                              className="p-1 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
                               aria-label="Supprimer le logo"
                             >
                               <X className="h-3.5 w-3.5" />
@@ -397,7 +397,7 @@ export function QRCustomizerPanel({
                     </div>
 
                     <div className="space-y-1">
-                      <Label className="text-xs text-gray-500">Ou entrer une URL</Label>
+                      <Label className="text-xs text-app-text-muted">Ou entrer une URL</Label>
                       <Input
                         type="url"
                         value={config.logo.src.startsWith('data:') ? '' : config.logo.src}
@@ -436,7 +436,7 @@ export function QRCustomizerPanel({
                     />
 
                     <div className="flex items-center justify-between">
-                      <Label className="text-xs text-gray-500">
+                      <Label className="text-xs text-app-text-muted">
                         D\u00e9couper le QR sous le logo
                       </Label>
                       <Switch
@@ -533,7 +533,7 @@ export function QRCustomizerPanel({
                 />
 
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-500">Ombre</Label>
+                  <Label className="text-xs text-app-text-muted">Ombre</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {SHADOW_OPTIONS.map(({ value, label }) => (
                       <button
@@ -544,8 +544,8 @@ export function QRCustomizerPanel({
                           px-2 py-1.5 rounded-lg text-xs font-medium border transition-all
                           ${
                             config.shadow === value
-                              ? 'border-gray-900 bg-gray-900 text-white'
-                              : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+                              ? 'border-accent bg-accent text-white'
+                              : 'border-app-border bg-app-card text-app-text-secondary hover:border-app-text-muted'
                           }
                         `}
                       >
@@ -565,7 +565,7 @@ export function QRCustomizerPanel({
           <Section title="Appel \u00e0 l'action">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Texte pr\u00e9d\u00e9fini</Label>
+                <Label className="text-xs text-app-text-muted">Texte pr\u00e9d\u00e9fini</Label>
                 <select
                   value={config.ctaPreset}
                   onChange={(e) => {
@@ -575,7 +575,7 @@ export function QRCustomizerPanel({
                       updateField('ctaText', CTA_PRESETS[preset]);
                     }
                   }}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                 >
                   {CTA_PRESET_ENTRIES.map(([key, text]) => (
                     <option key={key} value={key}>
@@ -588,7 +588,7 @@ export function QRCustomizerPanel({
 
               <FeatureGate feature="qrCustomCTA">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-500">Texte personnalis\u00e9</Label>
+                  <Label className="text-xs text-app-text-muted">Texte personnalis\u00e9</Label>
                   <Input
                     type="text"
                     value={config.ctaText}
@@ -608,13 +608,13 @@ export function QRCustomizerPanel({
           <FeatureGate feature="qrCustomCTA">
             <Section title="Description">
               <div className="space-y-2">
-                <Label className="text-xs text-gray-500">Description additionnelle</Label>
+                <Label className="text-xs text-app-text-muted">Description additionnelle</Label>
                 <textarea
                   value={config.descriptionText}
                   onChange={(e) => updateField('descriptionText', e.target.value)}
                   placeholder="Ajoutez une description..."
                   rows={3}
-                  className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900 resize-none"
+                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text placeholder:text-app-text-muted focus:outline-none focus:ring-1 focus:ring-accent/30 resize-none"
                 />
               </div>
             </Section>
@@ -625,7 +625,7 @@ export function QRCustomizerPanel({
             <Section title="Pied de page">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-500">Texte de pied de page</Label>
+                  <Label className="text-xs text-app-text-muted">Texte de pied de page</Label>
                   <Input
                     type="text"
                     value={config.footerText}
@@ -636,7 +636,7 @@ export function QRCustomizerPanel({
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm text-gray-700">
+                  <Label className="text-sm text-app-text">
                     Afficher &lsquo;Powered by Attabl&rsquo;
                   </Label>
                   <Switch
@@ -657,7 +657,7 @@ export function QRCustomizerPanel({
               <Section title="D\u00e9grad\u00e9">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm text-gray-700">Activer le d\u00e9grad\u00e9</Label>
+                    <Label className="text-sm text-app-text">Activer le d\u00e9grad\u00e9</Label>
                     <Switch
                       checked={config.gradient.enabled}
                       onCheckedChange={(checked) => updateGradient('enabled', checked)}
@@ -694,7 +694,7 @@ export function QRCustomizerPanel({
               <Section title="Image de fond">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm text-gray-700">Activer l&apos;image</Label>
+                    <Label className="text-sm text-app-text">Activer l&apos;image</Label>
                     <Switch
                       checked={config.backgroundImage.enabled}
                       onCheckedChange={(checked) => updateBackgroundImage('enabled', checked)}
@@ -704,7 +704,7 @@ export function QRCustomizerPanel({
                   {config.backgroundImage.enabled && (
                     <div className="space-y-4 pl-1">
                       <div className="space-y-1">
-                        <Label className="text-xs text-gray-500">URL de l&apos;image</Label>
+                        <Label className="text-xs text-app-text-muted">URL de l&apos;image</Label>
                         <Input
                           type="url"
                           value={config.backgroundImage.src}
@@ -730,11 +730,11 @@ export function QRCustomizerPanel({
               {/* Typography */}
               <Section title="Typographie">
                 <div className="space-y-2">
-                  <Label className="text-xs text-gray-500">Police</Label>
+                  <Label className="text-xs text-app-text-muted">Police</Label>
                   <select
                     value={config.fontFamily}
                     onChange={(e) => updateField('fontFamily', e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-gray-900"
+                    className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                   >
                     {FONT_OPTIONS.map((font) => (
                       <option key={font.value} value={font.value}>
@@ -748,7 +748,7 @@ export function QRCustomizerPanel({
               {/* White-label */}
               <Section title="White-label">
                 <div className="flex items-center justify-between">
-                  <Label className="text-sm text-gray-700">Masquer le branding Attabl</Label>
+                  <Label className="text-sm text-app-text">Masquer le branding Attabl</Label>
                   <Switch
                     checked={!config.showPoweredBy}
                     onCheckedChange={(checked) => updateField('showPoweredBy', !checked)}

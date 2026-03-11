@@ -75,16 +75,16 @@ export function DatePickerField({
               'absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center',
             month_grid: 'w-full border-collapse',
             weekdays: 'flex',
-            weekday: 'text-neutral-500 rounded-md w-9 font-normal text-[0.8rem]',
+            weekday: 'text-app-text-muted rounded-md w-9 font-normal text-[0.8rem]',
             week: 'flex w-full mt-2',
             day: 'h-9 w-9 text-center text-sm p-0 relative focus-within:relative focus-within:z-20',
             day_button:
-              'h-9 w-9 p-0 font-normal rounded-md hover:bg-neutral-100 inline-flex items-center justify-center touch-manipulation',
+              'h-9 w-9 p-0 font-normal rounded-md hover:bg-app-hover inline-flex items-center justify-center touch-manipulation',
             selected:
-              'bg-neutral-900 text-white hover:bg-neutral-900 hover:text-white focus:bg-neutral-900 focus:text-white rounded-md',
-            today: 'bg-neutral-100 text-neutral-900 rounded-md',
-            outside: 'text-neutral-300',
-            disabled: 'text-neutral-300',
+              'bg-accent text-accent-text hover:bg-accent hover:text-accent-text focus:bg-accent focus:text-accent-text rounded-md',
+            today: 'bg-app-elevated text-app-text rounded-md',
+            outside: 'text-app-text-muted/50',
+            disabled: 'text-app-text-muted/50',
           }}
         />
       </PopoverContent>

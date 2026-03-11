@@ -23,6 +23,7 @@ import type { OnboardingData } from '@/app/onboarding/page';
 interface LaunchStepProps {
   data: OnboardingData;
   updateData: (data: Partial<OnboardingData>) => void;
+  variant?: 'qr' | 'summary';
 }
 
 type LaunchTab = 'style' | 'text' | 'export';
@@ -67,7 +68,6 @@ function TemplateMiniPreview({
   const TemplateComponent = TEMPLATE_REGISTRY[templateId];
   const defaults = TEMPLATE_DEFAULTS[templateId];
 
-  // Calculate scale to fit within ~80px tall preview container
   const templateHeightPx = defaults.height * 3.78;
   const templateWidthPx = defaults.width * 3.78;
   const scale = Math.min(70 / templateHeightPx, 100 / templateWidthPx, 0.18);
@@ -97,10 +97,13 @@ function TemplateMiniPreview({
   );
 }
 
-export function LaunchStep({ data, updateData }: LaunchStepProps) {
+export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps) {
   const t = useTranslations('onboarding');
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<LaunchTab>('style');
+
+  const showQr = variant === 'qr';
+  const showSummary = variant === 'summary';
 
   const menuUrl =
     typeof window !== 'undefined'
@@ -133,29 +136,26 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
     { id: 'export', icon: Download, label: t('qrExportTab') },
   ];
 
-  // Build QRDesignConfig for the export tab
   const qrConfig = useMemo(() => onboardingDataToQRConfig(data), [data]);
 
   return (
     <div className="h-full flex flex-col">
-      {/* Title / Subtitle */}
-      <div className="shrink-0 mb-4">
-        <h1 className="text-2xl font-bold text-app-text mb-1">{t('launchTitle')}</h1>
-        <p className="text-app-text-secondary text-sm">{t('launchSubtitle')}</p>
-      </div>
-
       <div className="flex-1 min-h-0 overflow-y-auto" data-onboarding-scroll>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-10 gap-y-8 mt-2">
-          {/* Left Column: Summary & Menu URL */}
-          <div className="space-y-6">
-            {/* Summary Card */}
-            <div
-              className="p-4 rounded-xl bg-app-card mb-4"
-              style={{ border: `1px solid ${accentColor}20` }}
-            >
-              <div className="flex items-center gap-3 mb-4">
+        <div className="px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-lg font-bold text-app-text mb-1">
+              {showSummary ? t('launchTitle') : t('qrCodeTitle')}
+            </h1>
+            <p className="text-app-text-secondary text-sm">{t('launchSubtitle')}</p>
+          </div>
+
+          {/* Summary Card — Full width */}
+          {showSummary && (
+            <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
+              <div className="flex items-center gap-4 mb-5">
                 <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
                   style={{ backgroundColor: accentColor }}
                 >
                   {data.logoUrl ? (
@@ -165,11 +165,11 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                       className="w-full h-full rounded-xl object-cover"
                     />
                   ) : (
-                    <Layout className="h-6 w-6 text-white" />
+                    <Layout className="h-7 w-7 text-white" />
                   )}
                 </div>
                 <div>
-                  <h2 className="text-lg font-bold text-app-text">{data.tenantName}</h2>
+                  <h2 className="text-xl font-bold text-app-text">{data.tenantName}</h2>
                   <p className="text-app-text-secondary capitalize text-sm">
                     {data.establishmentType} &bull; {data.city || 'Non d\u00e9fini'}
                   </p>
@@ -177,18 +177,21 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
               </div>
 
               {/* Checklist */}
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                 {completedItems.map((item, i) => (
-                  <div key={i} className="flex items-center gap-2">
+                  <div key={i} className="flex items-center gap-3 py-1">
                     <div
-                      className="w-4 h-4 rounded-full flex items-center justify-center shrink-0"
+                      className="w-5 h-5 rounded-full flex items-center justify-center shrink-0"
                       style={
                         item.done
                           ? { backgroundColor: accentColor, color: '#fff' }
-                          : { backgroundColor: '#e5e5e5', color: '#a3a3a3' }
+                          : {
+                              backgroundColor: 'var(--app-elevated)',
+                              color: 'var(--app-text-muted)',
+                            }
                       }
                     >
-                      <Check className="h-2.5 w-2.5" />
+                      <Check className="h-3 w-3" />
                     </div>
                     <span
                       className={`text-sm ${item.done ? 'text-app-text' : 'text-app-text-muted'}`}
@@ -199,200 +202,225 @@ export function LaunchStep({ data, updateData }: LaunchStepProps) {
                 ))}
               </div>
             </div>
+          )}
 
-            {/* Menu URL */}
-            <div className="p-3 rounded-xl border border-app-border bg-app-elevated mb-4">
-              <p className="text-xs text-app-text-secondary mb-1.5">{t('menuUrl')}</p>
+          {/* Menu URL */}
+          {showSummary && (
+            <div className="mb-6 p-4 rounded-xl bg-app-elevated/40 border border-app-border">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-3">
+                Lien du menu
+              </p>
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-3 py-2 bg-app-card rounded-lg border border-app-border font-mono text-xs text-app-text truncate">
+                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text truncate">
                   {menuUrl}
                 </div>
                 <button
                   onClick={handleCopyUrl}
-                  className="p-2 bg-app-card rounded-lg border border-app-border hover:border-app-text-muted transition-colors"
+                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
                   title={t('copyUrl')}
                 >
                   {copied ? (
-                    <CheckCheck className="h-3.5 w-3.5 text-green-600" />
+                    <CheckCheck className="h-4 w-4 text-green-500" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 text-app-text-secondary" />
+                    <Copy className="h-4 w-4 text-app-text-secondary" />
                   )}
                 </button>
                 <a
                   href={menuUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-2 bg-app-card rounded-lg border border-app-border hover:border-app-text-muted transition-colors"
+                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
                 >
-                  <ExternalLink className="h-3.5 w-3.5 text-app-text-secondary" />
+                  <ExternalLink className="h-4 w-4 text-app-text-secondary" />
                 </a>
               </div>
               {copied && (
-                <p className="text-xs mt-1.5" style={{ color: accentColor }}>
+                <p className="text-xs mt-2 font-medium" style={{ color: accentColor }}>
                   {t('urlCopied')}
                 </p>
               )}
             </div>
-          </div>
+          )}
 
-          {/* Right Column: QR Customization */}
-          <div className="space-y-4 border-t lg:border-t-0 lg:border-l border-app-border lg:pl-10 pt-6 lg:pt-0">
-            {/* QR Customization Sub-tabs */}
-            <div className="flex gap-1 mb-4 border-b border-app-border pb-0">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 text-xs font-medium rounded-t-lg border-b-2 transition-colors ${
-                      isActive
-                        ? 'border-[#CCFF00] text-app-text bg-app-elevated'
-                        : 'border-transparent text-app-text-muted hover:text-app-text-secondary'
-                    }`}
-                  >
-                    <Icon className="h-3.5 w-3.5" />
-                    {tab.label}
-                  </button>
-                );
-              })}
+          {/* LaunchQR export for summary variant */}
+          {showSummary && (
+            <div className="mb-6">
+              <LaunchQR
+                config={qrConfig}
+                url={menuUrl}
+                tenantName={data.tenantName}
+                logoUrl={data.logoUrl || undefined}
+              />
             </div>
+          )}
 
-            {/* Style Tab */}
-            {activeTab === 'style' && (
-              <div className="space-y-4">
-                {/* Templates — Real mini-previews */}
-                <div>
-                  <p className="text-xs font-medium text-app-text-secondary mb-2">Template</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {TEMPLATES.map((tmpl) => {
-                      const isSelected = data.qrTemplate === tmpl.id;
-                      return (
-                        <button
-                          key={tmpl.id}
-                          type="button"
-                          onClick={() => updateData({ qrTemplate: tmpl.id })}
-                          className={`rounded-xl border text-center transition-all overflow-hidden ${
-                            isSelected
-                              ? 'border-[#CCFF00] ring-1 ring-[#CCFF00] bg-[#CCFF00]/5'
-                              : 'border-app-border hover:border-app-text-muted'
-                          }`}
-                        >
-                          {/* Mini template preview */}
-                          <div className="pt-2 px-1">
-                            <TemplateMiniPreview templateId={tmpl.id} data={data} />
-                          </div>
-                          <div className="py-1.5 border-t border-app-border">
-                            <span className="text-[11px] font-medium text-app-text-secondary">
-                              {t(tmpl.labelKey)}
-                            </span>
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+          {/* QR Customization */}
+          {showQr && (
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
+                QR Code
+              </p>
 
-                {/* QR Color Styles */}
-                <div>
-                  <p className="text-xs font-medium text-app-text-secondary mb-2">
-                    {t('qrCodeTitle')}
-                  </p>
-                  <div className="flex gap-2">
-                    {QR_STYLES.map((style) => {
-                      const isActive = data.qrStyle === style.id;
-                      const previewFg =
-                        style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
-                      return (
-                        <button
-                          key={style.id}
-                          type="button"
-                          onClick={() => updateData({ qrStyle: style.id })}
-                          className={`w-10 h-10 rounded-lg border-2 flex items-center justify-center ${
-                            isActive ? 'border-[#CCFF00]' : 'border-app-border'
-                          }`}
-                          style={{ backgroundColor: style.bg }}
-                        >
-                          <div
-                            className="w-4 h-4 rounded-sm"
-                            style={{ backgroundColor: previewFg }}
-                          />
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+              {/* Tab Pills */}
+              <div className="flex gap-1.5 mb-6 p-1 rounded-xl bg-app-elevated/40 border border-app-border inline-flex">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon;
+                  const isActive = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+                        isActive
+                          ? 'bg-accent text-accent-text shadow-sm'
+                          : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
+                      }`}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
               </div>
-            )}
 
-            {/* Text Tab */}
-            {activeTab === 'text' && (
-              <div className="space-y-4">
-                {/* CTA Presets */}
-                <div>
-                  <p className="text-xs font-medium text-app-text-secondary mb-2">
-                    {t('qrCtaLabel')}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mb-2">
-                    {CTA_PRESETS.map((preset) => {
-                      const isActive = data.qrCta === preset.value;
-                      return (
-                        <button
-                          key={preset.key}
-                          type="button"
-                          onClick={() => updateData({ qrCta: preset.value })}
-                          className={`px-3 py-1.5 rounded-full text-xs transition-all ${
-                            isActive
-                              ? 'bg-[#CCFF00] text-black font-medium'
-                              : 'bg-app-elevated text-app-text-secondary hover:bg-app-border'
-                          }`}
-                        >
-                          {t(preset.key)}
-                        </button>
-                      );
-                    })}
+              {/* Style Tab */}
+              {activeTab === 'style' && (
+                <div className="space-y-6">
+                  {/* Templates */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">Template</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {TEMPLATES.map((tmpl) => {
+                        const isSelected = data.qrTemplate === tmpl.id;
+                        return (
+                          <button
+                            key={tmpl.id}
+                            type="button"
+                            onClick={() => updateData({ qrTemplate: tmpl.id })}
+                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden ${
+                              isSelected
+                                ? 'border-accent bg-accent/5 shadow-sm shadow-accent/10'
+                                : 'border-app-border hover:border-app-border-hover'
+                            }`}
+                          >
+                            <div className="pt-3 px-2">
+                              <TemplateMiniPreview templateId={tmpl.id} data={data} />
+                            </div>
+                            <div className="py-2 border-t border-app-border">
+                              <span
+                                className={`text-xs font-semibold ${isSelected ? 'text-accent' : 'text-app-text-secondary'}`}
+                              >
+                                {t(tmpl.labelKey)}
+                              </span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <input
-                    type="text"
-                    value={data.qrCta}
-                    onChange={(e) => updateData({ qrCta: e.target.value })}
-                    placeholder={t('qrCtaLabel')}
-                    className="w-full px-3 py-2 text-sm border border-app-border rounded-xl bg-app-elevated text-app-text"
-                    maxLength={60}
+
+                  {/* QR Color Styles */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      {t('qrCodeTitle')}
+                    </p>
+                    <div className="flex gap-2.5">
+                      {QR_STYLES.map((style) => {
+                        const isActive = data.qrStyle === style.id;
+                        const previewFg =
+                          style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
+                        return (
+                          <button
+                            key={style.id}
+                            type="button"
+                            onClick={() => updateData({ qrStyle: style.id })}
+                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${
+                              isActive
+                                ? 'border-accent shadow-sm shadow-accent/20'
+                                : 'border-app-border hover:border-app-border-hover'
+                            }`}
+                            style={{ backgroundColor: style.bg }}
+                          >
+                            <div
+                              className="w-5 h-5 rounded-md"
+                              style={{ backgroundColor: previewFg }}
+                            />
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Text Tab */}
+              {activeTab === 'text' && (
+                <div className="space-y-6">
+                  {/* CTA Presets */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      {t('qrCtaLabel')}
+                    </p>
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {CTA_PRESETS.map((preset) => {
+                        const isActive = data.qrCta === preset.value;
+                        return (
+                          <button
+                            key={preset.key}
+                            type="button"
+                            onClick={() => updateData({ qrCta: preset.value })}
+                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                              isActive
+                                ? 'bg-accent text-accent-text'
+                                : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
+                            }`}
+                          >
+                            {t(preset.key)}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <input
+                      type="text"
+                      value={data.qrCta}
+                      onChange={(e) => updateData({ qrCta: e.target.value })}
+                      placeholder={t('qrCtaLabel')}
+                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                      maxLength={60}
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div>
+                    <p className="text-xs font-semibold text-app-text-secondary mb-3">
+                      {t('qrDescriptionLabel')}
+                    </p>
+                    <textarea
+                      value={data.qrDescription}
+                      onChange={(e) => updateData({ qrDescription: e.target.value })}
+                      placeholder={t('qrDescriptionLabel')}
+                      rows={2}
+                      maxLength={120}
+                      className="w-full px-4 py-2.5 text-sm border border-app-border rounded-xl bg-app-elevated/50 text-app-text resize-none focus:border-accent focus:ring-1 focus:ring-accent/30 transition-colors"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Export Tab */}
+              {activeTab === 'export' && (
+                <div>
+                  <LaunchQR
+                    config={qrConfig}
+                    url={menuUrl}
+                    tenantName={data.tenantName}
+                    logoUrl={data.logoUrl || undefined}
                   />
                 </div>
-
-                {/* Description */}
-                <div>
-                  <p className="text-xs font-medium text-app-text-secondary mb-2">
-                    {t('qrDescriptionLabel')}
-                  </p>
-                  <textarea
-                    value={data.qrDescription}
-                    onChange={(e) => updateData({ qrDescription: e.target.value })}
-                    placeholder={t('qrDescriptionLabel')}
-                    rows={2}
-                    maxLength={120}
-                    className="w-full px-3 py-2 text-sm border border-app-border rounded-xl bg-app-elevated text-app-text resize-none"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Export Tab — Full template preview + download */}
-            {activeTab === 'export' && (
-              <div>
-                <LaunchQR
-                  config={qrConfig}
-                  url={menuUrl}
-                  tenantName={data.tenantName}
-                  logoUrl={data.logoUrl || undefined}
-                />
-              </div>
-            )}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

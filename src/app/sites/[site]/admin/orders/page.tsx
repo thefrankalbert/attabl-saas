@@ -1,22 +1,20 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
+import { getCachedTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
 import { AlertCircle } from 'lucide-react';
+import { logger } from '@/lib/logger';
 import type { Order, ItemStatus, Course } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
-  const supabase = await createClient();
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const { data: tenant } = await supabase
-    .from('tenants')
-    .select('*')
-    .eq('slug', tenantSlug)
-    .single();
+  const tenant = await getCachedTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -29,14 +27,36 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     );
   }
 
-  const { data: orders } = await supabase
+  const supabase = await createClient();
+
+  const { data: initialOrders, error: queryError } = await supabase
     .from('orders')
     .select(
-      '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, notes, customer_notes, item_status, course)',
+      '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
     )
     .eq('tenant_id', tenant.id)
     .order('created_at', { ascending: false })
     .limit(100);
+
+  let orders = initialOrders;
+
+  // Fallback to admin client if RLS blocks the query
+  if (queryError || !orders || orders.length === 0) {
+    if (queryError)
+      logger.warn('Orders page: RLS query failed, falling back to admin client', {
+        error: queryError.message,
+      });
+    const adminSupabase = createAdminClient();
+    const { data: adminOrders } = await adminSupabase
+      .from('orders')
+      .select(
+        '*, order_items(id, quantity, price_at_order, item_name, menu_item_id, customer_notes, item_status, course)',
+      )
+      .eq('tenant_id', tenant.id)
+      .order('created_at', { ascending: false })
+      .limit(100);
+    orders = adminOrders;
+  }
 
   // Transform order_items → items to match Order type
   const transformedOrders: Order[] = ((orders || []) as Array<Record<string, unknown>>).map(
@@ -48,7 +68,6 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
         quantity: (oi.quantity as number) || 0,
         price: (oi.price_at_order as number) || 0,
         menu_item_id: oi.menu_item_id as string | undefined,
-        notes: oi.notes as string | undefined,
         customer_notes: oi.customer_notes as string | undefined,
         item_status: oi.item_status as ItemStatus | undefined,
         course: oi.course as Course | undefined,

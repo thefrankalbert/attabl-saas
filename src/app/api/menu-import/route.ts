@@ -78,7 +78,7 @@ export async function POST(request: Request) {
     const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
     const hasValidMimeType = ALLOWED_MIME_TYPES.includes(file.type);
 
-    if (!hasValidExtension && !hasValidMimeType) {
+    if (!hasValidExtension || !hasValidMimeType) {
       return NextResponse.json(
         { error: 'Format de fichier invalide. Seuls les fichiers .xlsx et .xls sont acceptés.' },
         { status: 400 },
@@ -94,6 +94,19 @@ export async function POST(request: Request) {
 
     if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+    }
+
+    // 7b. Verify user belongs to this tenant
+    const { data: membership } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+
+    if (!membership) {
+      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
     // 8. Get menu ID from FormData (required)
@@ -117,8 +130,14 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Excel import ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }
@@ -192,8 +211,14 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     if (error instanceof ServiceError) {
+      if (error.details) {
+        logger.error('Excel template ServiceError details', {
+          code: error.code,
+          details: error.details,
+        });
+      }
       return NextResponse.json(
-        { error: error.message, ...(error.details ? { details: error.details } : {}) },
+        { error: error.message },
         { status: serviceErrorToStatus(error.code) },
       );
     }

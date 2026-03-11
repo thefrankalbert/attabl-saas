@@ -135,7 +135,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                             </span>
                           </div>
                           <div className="text-sm text-app-text">
-                            {formatCurrency(order.total_price, currency)}
+                            {formatCurrency(order.total_price + (order.tip_amount || 0), currency)}
                             <span className="text-app-text-muted ml-2">
                               ({order.items?.length ?? 0}{' '}
                               {t('items', { count: order.items?.length ?? 0 })})
@@ -179,7 +179,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-app-text">
-                    {formatCurrency(order.total_price, currency)}
+                    {formatCurrency(order.total_price + (order.tip_amount || 0), currency)}
                   </span>
                   <button
                     onClick={() =>

@@ -91,7 +91,6 @@ export async function GET(request: Request) {
     );
   } catch (error: unknown) {
     logger.error('Verify checkout error', error);
-    const errorMessage = error instanceof Error ? error.message : 'Erreur serveur';
-    return NextResponse.json({ error: errorMessage }, { status: 500 });
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

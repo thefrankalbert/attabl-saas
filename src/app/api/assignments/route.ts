@@ -35,6 +35,16 @@ export async function GET(request: Request) {
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
 
+    // Verify user belongs to this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+
     const service = createAssignmentService(supabase);
     const assignments = await service.getActiveAssignments(tenant.id);
     return jsonWithCache(assignments, 'realtime');
@@ -75,6 +85,16 @@ export async function POST(request: Request) {
       .eq('slug', tenantSlug)
       .single();
     if (!tenant) return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+
+    // Verify user belongs to this tenant
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .single();
+    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
 
     const body = await request.json();
     const parsed = createAssignmentSchema.safeParse(body);

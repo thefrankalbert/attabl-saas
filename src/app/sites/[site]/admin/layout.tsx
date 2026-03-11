@@ -55,21 +55,9 @@ export default async function AdminLayout({
   const showOnboardingResume = tenant.onboarding_completed === false;
 
   let adminUser: AdminUser | null = null;
-  let isDevMode = false;
 
   if (authError || !user) {
-    if (process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true') {
-      isDevMode = true;
-      adminUser = {
-        id: 'dev',
-        user_id: 'dev',
-        tenant_id: tenant.id || 'dev',
-        role: 'owner',
-        name: 'Dev User',
-      };
-    } else {
-      redirect(`/login`);
-    }
+    redirect(`/login`);
   } else {
     const { data: adminData } = await supabase
       .from('admin_users')
@@ -78,43 +66,47 @@ export default async function AdminLayout({
       .eq('tenant_id', tenant.id)
       .single();
 
-    if (!adminData && process.env.NODE_ENV !== 'development') {
+    if (!adminData) {
       redirect(`/unauthorized`);
     }
 
-    adminUser = adminData || {
-      id: user.id,
-      user_id: user.id,
-      tenant_id: tenant.id || '',
-      role: 'admin' as const,
-      name: user.email,
-    };
+    adminUser = adminData;
   }
+
+  // Fetch all tenants managed by this user (for tenant switcher)
+  const { data: userTenantLinks } = await supabase
+    .from('admin_users')
+    .select('tenant_id, tenants(id, name, slug)')
+    .eq('user_id', user.id);
+
+  const userTenants = (userTenantLinks ?? [])
+    .map((link) => {
+      const t = link.tenants as unknown as { id: string; name: string; slug: string } | null;
+      return t ? { id: t.id, name: t.name, slug: t.slug } : null;
+    })
+    .filter((t): t is { id: string; name: string; slug: string } => t !== null);
 
   const userRole = (adminUser?.role ?? 'admin') as AdminRole;
 
   return (
     <div>
       {showOnboardingResume && <OnboardingResumeDialog />}
-      {/* Dev Mode Banner */}
-      {isDevMode && (
-        <div className="fixed top-0 left-0 right-0 bg-yellow-500 text-yellow-900 text-xs text-center py-1 z-50">
-          Mode développement - Authentification désactivée
-        </div>
-      )}
-
       <QueryProvider>
         <ThemeProvider>
           <AdminLayoutClient
-            isDevMode={isDevMode}
+            isDevMode={false}
             basePath={`/sites/${tenantSlug}/admin`}
             role={userRole}
             tenant={{
               name: tenant.name,
               slug: tenant.slug,
               logo_url: tenant.logo_url ?? undefined,
+              subscription_plan: tenant.subscription_plan ?? undefined,
             }}
+            userName={adminUser?.name || user.email || ''}
+            userTenants={userTenants}
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
+            breadcrumbs={<AdminBreadcrumbs />}
           >
             <PermissionsProvider role={userRole}>
               <OfflineIndicator />
@@ -136,14 +128,7 @@ export default async function AdminLayout({
                         : null
                     }
                   >
-                    <AdminContentWrapper
-                      chrome={
-                        <>
-                          <TrialBanner tenantSlug={tenantSlug} />
-                          <AdminBreadcrumbs />
-                        </>
-                      }
-                    >
+                    <AdminContentWrapper chrome={<TrialBanner tenantSlug={tenantSlug} />}>
                       {children}
                     </AdminContentWrapper>
                   </SubscriptionProvider>

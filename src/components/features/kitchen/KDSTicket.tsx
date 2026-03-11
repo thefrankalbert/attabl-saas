@@ -179,7 +179,7 @@ export default function KDSTicket({
       <div className={cn('px-3 py-2', cfg.headerBg, cfg.headerText)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="font-black text-sm truncate">
+            <span className="font-black text-sm break-words">
               {order.table_number || order.order_number}
             </span>
             {svc && (
@@ -242,7 +242,7 @@ export default function KDSTicket({
                   <span className="text-xs text-app-text-secondary font-bold tabular-nums shrink-0">
                     {item.quantity}x
                   </span>
-                  <span className="text-sm font-semibold text-white leading-tight truncate">
+                  <span className="text-sm font-semibold text-white leading-tight break-words">
                     {item.name}
                   </span>
                   {!isMock && item.menu_item_id && (
