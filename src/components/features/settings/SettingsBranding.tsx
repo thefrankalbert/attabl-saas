@@ -1,5 +1,8 @@
 'use client';
 
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { QrCode, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TabsContent } from '@/components/ui/tabs';
@@ -24,6 +27,10 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
   } = form;
   const watchedPrimaryColor = watch('primaryColor');
   const watchedSecondaryColor = watch('secondaryColor');
+
+  // Derive basePath from the current pathname (e.g. /sites/slug/admin/settings -> /sites/slug/admin)
+  const pathname = usePathname();
+  const basePath = pathname.replace(/\/settings.*$/, '');
 
   return (
     <TabsContent value="branding" className="mt-0">
@@ -90,6 +97,23 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* QR Codes link */}
+      <div className="mt-6 pt-6 border-t border-app-border">
+        <Link
+          href={`${basePath}/qr-codes`}
+          className="flex items-center gap-3 p-4 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors group"
+        >
+          <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center shrink-0">
+            <QrCode className="w-5 h-5 text-accent" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-app-text">{t('qrCodesTitle')}</p>
+            <p className="text-xs text-app-text-secondary">{t('qrCodesDescription')}</p>
+          </div>
+          <ExternalLink className="w-4 h-4 text-app-text-muted group-hover:text-app-text transition-colors shrink-0" />
+        </Link>
       </div>
     </TabsContent>
   );

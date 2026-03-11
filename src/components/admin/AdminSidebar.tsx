@@ -15,6 +15,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   QrCode,
+  CreditCard,
+  LifeBuoy,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
@@ -322,7 +324,7 @@ export function AdminSidebar({
               collapsed ? 'w-56' : 'w-[calc(var(--radix-popover-trigger-width)-16px)]',
             )}
           >
-            {/* Settings link */}
+            {/* Settings & Subscription links */}
             <div className="p-1.5">
               <Link
                 href={`${basePath}${SETTINGS_ITEM.path}`}
@@ -337,6 +339,26 @@ export function AdminSidebar({
                 <SETTINGS_ITEM.icon className="w-4 h-4 shrink-0" />
                 <span>{t(SETTINGS_ITEM.labelKey)}</span>
               </Link>
+              <Link
+                href={`${basePath}/subscription`}
+                onClick={() => setAccountPopoverOpen(false)}
+                className={cn(
+                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  isPathActive(pathname, basePath, '/subscription')
+                    ? 'text-accent bg-accent-muted'
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                )}
+              >
+                <CreditCard className="w-4 h-4 shrink-0" />
+                <span>{t('navSubscription')}</span>
+              </Link>
+              <a
+                href="mailto:support@attabl.com"
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
+              >
+                <LifeBuoy className="w-4 h-4 shrink-0" />
+                <span>{t('navSupport')}</span>
+              </a>
             </div>
 
             {/* Organization items moved to popover (Inventaire, Fiches techniques, Fournisseurs) */}

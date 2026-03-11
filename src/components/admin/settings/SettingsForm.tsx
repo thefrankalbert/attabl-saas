@@ -7,7 +7,6 @@ import { useSettingsData } from '@/hooks/useSettingsData';
 import type { SettingsTenant } from '@/hooks/useSettingsData';
 import { actionUpdateTenantSettings } from '@/app/actions/tenant-settings';
 import { SoundSettings } from './SoundSettings';
-import { LocaleSwitcher } from '@/components/shared/LocaleSwitcher';
 import { useTranslations } from 'next-intl';
 import RoleGuard from '@/components/admin/RoleGuard';
 import { useSessionState } from '@/hooks/useSessionState';
@@ -18,19 +17,10 @@ import SettingsBranding from '@/components/features/settings/SettingsBranding';
 import SettingsBilling from '@/components/features/settings/SettingsBilling';
 import SettingsSecurity from '@/components/features/settings/SettingsSecurity';
 import SettingsContact from '@/components/features/settings/SettingsContact';
-import SettingsDomain from '@/components/features/settings/SettingsDomain';
 
 // ─── Types ─────────────────────────────────────────────────
 
-type SettingsTab =
-  | 'identity'
-  | 'branding'
-  | 'billing'
-  | 'sounds'
-  | 'security'
-  | 'contact'
-  | 'domain'
-  | 'language';
+type SettingsTab = 'identity' | 'branding' | 'billing' | 'sounds' | 'security' | 'contact';
 
 interface SettingsFormProps {
   tenant: SettingsTenant;
@@ -43,8 +33,6 @@ const TAB_CONFIG: { key: SettingsTab; labelKey: string }[] = [
   { key: 'sounds', labelKey: 'tabSounds' },
   { key: 'security', labelKey: 'tabSecurity' },
   { key: 'contact', labelKey: 'tabContact' },
-  { key: 'domain', labelKey: 'tabDomain' },
-  { key: 'language', labelKey: 'tabLanguage' },
 ];
 
 // ─── Main Component ────────────────────────────────────────
@@ -92,7 +80,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
           </TabsList>
 
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-            {/* Identity tab */}
+            {/* Identity tab (includes domain + language) */}
             <SettingsIdentity
               form={form}
               tenant={tenant}
@@ -100,6 +88,15 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               uploading={uploading}
               saving={saving}
               onLogoUpload={handleLogoUpload}
+              onDomainSave={async (domain) => {
+                const formData = new FormData();
+                formData.append('name', form.getValues('name'));
+                formData.append('primaryColor', form.getValues('primaryColor'));
+                formData.append('secondaryColor', form.getValues('secondaryColor'));
+                formData.append('customDomain', domain || '');
+                const result = await actionUpdateTenantSettings(formData);
+                if (!result.success) throw new Error(result.error);
+              }}
               t={t}
             />
 
@@ -123,27 +120,6 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
 
             {/* Contact tab */}
             <SettingsContact form={form} t={t} />
-
-            {/* Domain tab */}
-            <SettingsDomain
-              currentDomain={tenant.custom_domain || null}
-              tenantSlug={tenant.slug}
-              onSave={async (domain) => {
-                const formData = new FormData();
-                // Pass required fields from current form values
-                formData.append('name', form.getValues('name'));
-                formData.append('primaryColor', form.getValues('primaryColor'));
-                formData.append('secondaryColor', form.getValues('secondaryColor'));
-                formData.append('customDomain', domain || '');
-                const result = await actionUpdateTenantSettings(formData);
-                if (!result.success) throw new Error(result.error);
-              }}
-            />
-
-            {/* Language tab */}
-            <TabsContent value="language" className="mt-0">
-              <LocaleSwitcher />
-            </TabsContent>
           </div>
         </Tabs>
 
