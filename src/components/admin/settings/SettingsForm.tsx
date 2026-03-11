@@ -62,6 +62,7 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     saving,
     selectedSoundId,
     setSelectedSoundId,
+    hasUnsavedChanges,
     handleLogoUpload,
     onSubmit,
     onValidationError,
@@ -146,32 +147,34 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
           </div>
         </Tabs>
 
-        {/* Actions - always visible */}
-        <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
-          <Button
-            type="submit"
-            variant="default"
-            disabled={saving || uploading}
-            className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {tc('saving')}
-              </>
-            ) : uploading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t('logoUploading')}
-              </>
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                {tc('saveChanges')}
-              </>
-            )}
-          </Button>
-        </div>
+        {/* Actions - visible only when there are unsaved changes */}
+        {(hasUnsavedChanges || saving || uploading) && (
+          <div className="shrink-0 flex justify-end gap-4 border-t border-app-border pt-4 mt-4">
+            <Button
+              type="submit"
+              variant="default"
+              disabled={saving || uploading}
+              className="min-w-[120px] sm:min-w-[150px] min-h-[44px]"
+            >
+              {saving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {tc('saving')}
+                </>
+              ) : uploading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {t('logoUploading')}
+                </>
+              ) : (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  {tc('saveChanges')}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </form>
     </RoleGuard>
   );
