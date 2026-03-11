@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
-import { Check, Loader2, ArrowLeft } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, Clock, ChefHat, BellRing, CircleCheck } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
+import { logger } from '@/lib/logger';
 
 // ─── Types ───────────────────────────────────────────────
 interface OrderData {
@@ -21,6 +22,9 @@ interface OrderData {
   created_at: string;
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
 }
+
+// ─── Status config ───────────────────────────────────────
+const STATUS_STEPS = ['pending', 'preparing', 'ready', 'delivered'] as const;
 
 // ─── Inner Content (needs Suspense for useSearchParams) ──
 function OrderConfirmedContent() {
@@ -43,7 +47,7 @@ function OrderConfirmedContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Fetch order details (one-time, no realtime)
+  // Fetch order details
   useEffect(() => {
     if (!orderId || !tenantId) return;
 
@@ -80,6 +84,43 @@ function OrderConfirmedContent() {
         }
         setLoading(false);
       });
+  }, [orderId, tenantId]);
+
+  // Realtime subscription for order status changes
+  useEffect(() => {
+    if (!orderId || !tenantId) return;
+
+    const supabase = supabaseRef.current;
+
+    const channel = supabase
+      .channel(`order-confirmed-${orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderId}`,
+        },
+        (payload) => {
+          const updated = payload.new as { id: string; status: string };
+          logger.info('Order status updated via realtime', {
+            orderId: updated.id,
+            status: updated.status,
+          });
+          setOrder((prev) => (prev ? { ...prev, status: updated.status } : prev));
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR') {
+          logger.error('Order confirmed realtime channel error');
+        }
+      });
+
+    return () => {
+      channel.unsubscribe();
+      supabase.removeChannel(channel);
+    };
   }, [orderId, tenantId]);
 
   // ─── Success animation overlay ─────────────────────────
@@ -170,22 +211,8 @@ function OrderConfirmedContent() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
-        {/* Success indicator */}
-        <div className="text-center py-4">
-          <div
-            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto"
-            style={{
-              backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 12%, transparent)',
-            }}
-          >
-            <Check
-              className="w-6 h-6"
-              style={{ color: 'var(--tenant-primary)' }}
-              strokeWidth={2.5}
-            />
-          </div>
-          <p className="mt-3 text-sm text-neutral-500">{t('orderBeingPrepared')}</p>
-        </div>
+        {/* Order status tracker */}
+        <OrderStatusTracker status={order.status} />
 
         {/* Order summary card — same style as cart */}
         <section className="bg-white rounded-xl border border-neutral-200 overflow-hidden">
@@ -251,6 +278,99 @@ function OrderConfirmedContent() {
 
       {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
     </main>
+  );
+}
+
+// ─── Order status tracker ────────────────────────────────
+
+function OrderStatusTracker({ status }: { status: string }) {
+  const t = useTranslations('tenant');
+
+  const steps = STATUS_STEPS.map((s) => {
+    const config: Record<string, { label: string; icon: React.ReactNode; activeColor: string }> = {
+      pending: {
+        label: t('statusPending'),
+        icon: <Clock className="w-4 h-4" />,
+        activeColor: 'var(--tenant-primary)',
+      },
+      preparing: {
+        label: t('statusInKitchen'),
+        icon: <ChefHat className="w-4 h-4" />,
+        activeColor: 'var(--tenant-primary)',
+      },
+      ready: {
+        label: t('statusReady'),
+        icon: <BellRing className="w-4 h-4" />,
+        activeColor: 'var(--tenant-primary)',
+      },
+      delivered: {
+        label: t('statusServed'),
+        icon: <CircleCheck className="w-4 h-4" />,
+        activeColor: 'var(--tenant-primary)',
+      },
+    };
+    return { key: s, ...config[s] };
+  });
+
+  const currentIndex = STATUS_STEPS.indexOf(status as (typeof STATUS_STEPS)[number]);
+  const isCancelled = status === 'cancelled';
+
+  if (isCancelled) {
+    return (
+      <div className="text-center py-6">
+        <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+          <Clock className="w-6 h-6 text-red-500" />
+        </div>
+        <p className="mt-3 text-sm font-medium text-red-600">{t('statusCancelled')}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-4">
+      <div className="flex items-center justify-between relative">
+        {/* Progress line */}
+        <div className="absolute top-5 left-[10%] right-[10%] h-0.5 bg-neutral-200" />
+        <div
+          className="absolute top-5 left-[10%] h-0.5 transition-all duration-700 ease-out"
+          style={{
+            backgroundColor: 'var(--tenant-primary)',
+            width: currentIndex <= 0 ? '0%' : `${(currentIndex / (STATUS_STEPS.length - 1)) * 80}%`,
+          }}
+        />
+
+        {steps.map((step, i) => {
+          const isActive = i <= currentIndex;
+          const isCurrent = i === currentIndex;
+          return (
+            <div key={step.key} className="flex flex-col items-center z-10 flex-1">
+              <div
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
+                  isActive ? 'text-white shadow-md' : 'bg-neutral-100 text-neutral-400'
+                } ${isCurrent ? 'scale-110 ring-4 ring-opacity-20' : ''}`}
+                style={
+                  isActive
+                    ? {
+                        backgroundColor: step.activeColor,
+                        ...(isCurrent ? { ringColor: step.activeColor } : {}),
+                      }
+                    : undefined
+                }
+              >
+                {step.icon}
+              </div>
+              <span
+                className={`text-[10px] mt-2 font-medium text-center leading-tight ${
+                  isActive ? 'text-neutral-900' : 'text-neutral-400'
+                }`}
+              >
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
