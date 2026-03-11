@@ -33,15 +33,23 @@ vi.mock('@/lib/rate-limit', () => ({
 
 // ─── Order service mock ────────────────────────────────────────
 const mockValidateTenant = vi.fn<() => Promise<{ id: string }>>();
-const mockValidateOrderItems = vi.fn<() => Promise<{ validatedTotal: number }>>();
+const mockValidateOrderItems = vi.fn<
+  () => Promise<{
+    validatedTotal: number;
+    verifiedPrices: Map<string, number>;
+    categoryIds: string[];
+  }>
+>();
 const mockCreateOrderWithItems =
   vi.fn<() => Promise<{ orderId: string; orderNumber: string; total: number }>>();
+const mockDeterminePreparationZone = vi.fn<() => Promise<string>>();
 
 vi.mock('@/services/order.service', () => ({
   createOrderService: vi.fn(() => ({
     validateTenant: mockValidateTenant,
     validateOrderItems: mockValidateOrderItems,
     createOrderWithItems: mockCreateOrderWithItems,
+    determinePreparationZone: mockDeterminePreparationZone,
   })),
 }));
 
@@ -182,7 +190,12 @@ describe('POST /api/orders', () => {
     mockValidateTenant.mockResolvedValue({ id: 'tenant-abc' });
 
     // Default: order items validation succeeds
-    mockValidateOrderItems.mockResolvedValue({ validatedTotal: 10000 });
+    mockValidateOrderItems.mockResolvedValue({
+      validatedTotal: 10000,
+      verifiedPrices: new Map(),
+      categoryIds: [],
+    });
+    mockDeterminePreparationZone.mockResolvedValue('kitchen');
 
     // Default: coupon validation (not used unless coupon_code provided)
     mockValidateCoupon.mockResolvedValue({

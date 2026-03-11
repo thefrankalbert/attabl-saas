@@ -1261,7 +1261,12 @@
     "categoryDeleted": "Catégorie supprimée",
     "loadingError": "Erreur lors du chargement",
     "saveError": "Erreur lors de la sauvegarde",
-    "deleteError": "Erreur lors de la suppression"
+    "deleteError": "Erreur lors de la suppression",
+    "preparationZone": "Zone de préparation",
+    "preparationZoneDesc": "Où les articles de cette catégorie sont préparés. Les commandes bar-only ne s'affichent pas en cuisine.",
+    "zoneKitchen": "Cuisine",
+    "zoneBar": "Bar",
+    "zoneBoth": "Les deux"
   },
   "items": {
     "title": "Plats & Articles",
@@ -1732,7 +1737,11 @@
     "aboutTitle": "À propos",
     "aboutAppDesc": "ATTABL est l'application de menu digital de {name}.",
     "aboutAppSubtext": "Explorez notre carte et commandez directement depuis votre table.",
-    "orderBeingPrepared": "Votre commande est en préparation"
+    "orderBeingPrepared": "Votre commande est en préparation",
+    "orderStatusSent": "Votre commande a été envoyée",
+    "orderStatusInKitchen": "Votre commande est en cuisine",
+    "orderStatusReady": "Votre commande est prête",
+    "orderStatusServed": "Votre commande a été servie"
   },
   "shared": {
     "fileMustBeImage": "Le fichier doit être une image",

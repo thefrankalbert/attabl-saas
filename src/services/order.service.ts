@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { OrderItemInput } from '@/lib/validations/order.schema';
-import type { ServiceType } from '@/types/admin.types';
+import type { ServiceType, OrderPreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -25,6 +25,7 @@ interface CreateOrderInput {
   server_id?: string;
   display_currency?: string;
   verifiedPrices?: Map<string, number>;
+  preparation_zone?: OrderPreparationZone;
 }
 
 interface CreateOrderResult {
@@ -74,11 +75,15 @@ export function createOrderService(supabase: SupabaseClient) {
     async validateOrderItems(
       tenantId: string,
       items: OrderItemInput[],
-    ): Promise<{ validatedTotal: number; verifiedPrices: Map<string, number> }> {
+    ): Promise<{
+      validatedTotal: number;
+      verifiedPrices: Map<string, number>;
+      categoryIds: string[];
+    }> {
       const itemIds = items.map((item) => item.id);
       const { data: menuItems, error: menuError } = await supabase
         .from('menu_items')
-        .select('id, name, price, is_available')
+        .select('id, name, price, is_available, category_id')
         .eq('tenant_id', tenantId)
         .in('id', itemIds);
 
@@ -191,7 +196,55 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Le total de la commande doit être supérieur à 0', 'VALIDATION');
       }
 
-      return { validatedTotal: calculatedTotal, verifiedPrices };
+      // Collect category IDs from validated items for preparation zone routing
+      const categoryIds = new Set<string>();
+      for (const item of items) {
+        const menuItem = menuItemsMap.get(item.id);
+        if (menuItem?.category_id) {
+          categoryIds.add(menuItem.category_id);
+        }
+      }
+
+      return {
+        validatedTotal: calculatedTotal,
+        verifiedPrices,
+        categoryIds: Array.from(categoryIds),
+      };
+    },
+
+    /**
+     * Determines the preparation zone for an order based on its item categories.
+     * - All items from 'bar' categories → 'bar'
+     * - All items from 'kitchen' categories → 'kitchen'
+     * - Mix of both (or any 'both' category) → 'mixed'
+     */
+    async determinePreparationZone(
+      tenantId: string,
+      categoryIds: string[],
+    ): Promise<OrderPreparationZone> {
+      if (categoryIds.length === 0) return 'kitchen';
+
+      const { data: categories } = await supabase
+        .from('categories')
+        .select('id, preparation_zone')
+        .eq('tenant_id', tenantId)
+        .in('id', categoryIds);
+
+      if (!categories || categories.length === 0) return 'kitchen';
+
+      const zones = new Set(
+        categories.map((c: { preparation_zone?: string }) => c.preparation_zone || 'kitchen'),
+      );
+
+      // If any category is 'both', the order is mixed
+      if (zones.has('both')) return 'mixed';
+      // If all categories are the same zone
+      if (zones.size === 1) {
+        const zone = zones.values().next().value as string;
+        return zone === 'bar' ? 'bar' : 'kitchen';
+      }
+      // Mix of 'kitchen' and 'bar'
+      return 'mixed';
     },
 
     /**
@@ -251,6 +304,7 @@ export function createOrderService(supabase: SupabaseClient) {
           coupon_id: input.coupon_id || null,
           server_id: input.server_id ?? null,
           display_currency: input.display_currency || null,
+          preparation_zone: input.preparation_zone || 'kitchen',
         })
         .select('id, order_number')
         .single();

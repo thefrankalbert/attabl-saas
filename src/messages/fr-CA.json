@@ -1731,7 +1731,11 @@
     "aboutTitle": "À propos",
     "aboutAppDesc": "ATTABL est l'application de menu digital de {name}.",
     "aboutAppSubtext": "Explorez notre carte et commandez directement depuis votre table.",
-    "orderBeingPrepared": "Votre commande est en préparation"
+    "orderBeingPrepared": "Votre commande est en préparation",
+    "orderStatusSent": "Votre commande a été envoyée",
+    "orderStatusInKitchen": "Votre commande est en cuisine",
+    "orderStatusReady": "Votre commande est prête",
+    "orderStatusServed": "Votre commande a été servie"
   },
   "shared": {
     "fileMustBeImage": "Le fichier doit être une image",
