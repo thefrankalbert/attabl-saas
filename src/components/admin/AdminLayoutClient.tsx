@@ -51,7 +51,7 @@ function AdminLayoutInner({
   const immersive = isImmersivePage(pathname);
 
   return (
-    <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200">
+    <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
       {/* Sidebar — desktop only, hidden on immersive pages */}
       {!immersive && (
         <AdminSidebar
