@@ -583,11 +583,6 @@ export default function TenantsPageClient() {
   }
 
   // ─── OWNER HUB MODE ────────────────────────────────────────
-  const displayRevenue =
-    chartPeriod === 'day' ? ownerGlobals.totalRevenueToday : ownerGlobals.totalRevenueMonth;
-  const displayOrders =
-    chartPeriod === 'day' ? ownerGlobals.totalOrdersToday : ownerGlobals.totalOrdersMonth;
-
   return (
     <div className="h-dvh flex flex-col bg-app-bg">
       {/* Header */}
@@ -729,33 +724,41 @@ export default function TenantsPageClient() {
                           <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--app-border)"
+                        vertical={false}
+                      />
                       <XAxis
                         dataKey="label"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
                         dy={4}
                         interval="preserveStartEnd"
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
                         tickFormatter={formatCompactCFA}
                         width={40}
                       />
                       <Tooltip
                         contentStyle={{
-                          background: '#111827',
-                          border: 'none',
+                          background: 'var(--app-elevated)',
+                          border: '1px solid var(--app-border)',
                           borderRadius: '10px',
                           fontSize: '11px',
-                          color: '#fff',
+                          color: 'var(--app-text)',
                           padding: '6px 10px',
                         }}
                         formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
-                        labelStyle={{ color: '#9ca3af', fontSize: '9px', marginBottom: '2px' }}
+                        labelStyle={{
+                          color: 'var(--app-text-muted)',
+                          fontSize: '9px',
+                          marginBottom: '2px',
+                        }}
                         cursor={{
                           stroke: 'var(--accent)',
                           strokeWidth: 1,
@@ -772,40 +775,48 @@ export default function TenantsPageClient() {
                         activeDot={{
                           r: 3,
                           fill: 'var(--accent)',
-                          stroke: '#fff',
+                          stroke: 'var(--app-card)',
                           strokeWidth: 2,
                         }}
                       />
                     </AreaChart>
                   ) : (
                     <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        stroke="var(--app-border)"
+                        vertical={false}
+                      />
                       <XAxis
                         dataKey="label"
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
                         dy={4}
                         interval="preserveStartEnd"
                       />
                       <YAxis
                         axisLine={false}
                         tickLine={false}
-                        tick={{ fontSize: 9, fill: '#9ca3af', fontWeight: 500 }}
+                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
                         width={25}
                         allowDecimals={false}
                       />
                       <Tooltip
                         contentStyle={{
-                          background: '#111827',
-                          border: 'none',
+                          background: 'var(--app-elevated)',
+                          border: '1px solid var(--app-border)',
                           borderRadius: '10px',
                           fontSize: '11px',
-                          color: '#fff',
+                          color: 'var(--app-text)',
                           padding: '6px 10px',
                         }}
                         formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
-                        labelStyle={{ color: '#9ca3af', fontSize: '9px', marginBottom: '2px' }}
+                        labelStyle={{
+                          color: 'var(--app-text-muted)',
+                          fontSize: '9px',
+                          marginBottom: '2px',
+                        }}
                         cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
                       />
                       <Bar
