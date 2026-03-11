@@ -36,9 +36,9 @@ export const STATUS_STYLES: Record<OrderStatus, StatusStyle> = {
     pulse: false,
   },
   preparing: {
-    bg: 'bg-status-warning-bg',
-    text: 'text-status-warning',
-    dot: 'bg-status-warning',
+    bg: 'bg-status-info-bg',
+    text: 'text-status-info',
+    dot: 'bg-status-info',
     pulse: true,
   },
   ready: {

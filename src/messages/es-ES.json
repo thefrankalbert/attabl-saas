@@ -1509,7 +1509,21 @@
     "allOrdersAssigned": "Todos los pedidos están asignados.",
     "items": "{count} artículo(s)",
     "claimOrder": "Reclamar",
-    "assignServer": "Asignar un camarero..."
+    "assignServer": "Asignar un camarero...",
+    "occupied": "Ocupada",
+    "vacant": "Vacante",
+    "onDuty": "En servicio",
+    "availableServers": "Disponibles",
+    "searchPlaceholder": "Buscar",
+    "avgDuration": "Duración media",
+    "fullCapacity": "Completo",
+    "readyOrders": "Pedidos listos",
+    "noReadyOrders": "No hay pedidos listos",
+    "noReadyOrdersDesc": "Los pedidos listos para servir aparecerán aquí.",
+    "markDelivered": "Entregado",
+    "tableLabel": "Mesa",
+    "itemsCount": "{count} artículo(s)",
+    "orderAge": "hace {minutes} min"
   },
   "stockHistory": {
     "title": "Historial de movimientos",
