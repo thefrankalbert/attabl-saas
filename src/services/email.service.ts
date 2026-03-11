@@ -1,5 +1,16 @@
 /**
  * Email Service — Wraps Resend SDK for transactional emails
+ *
+ * Anti-spam best practices applied:
+ * - Proper DOCTYPE + table-based layout for email clients
+ * - Plain-text alternative (text field) on every email
+ * - Preheader text for inbox preview
+ * - Reply-To header
+ * - Physical address in footer (CAN-SPAM / RGPD compliance)
+ * - Clean subject lines (no ALL CAPS, no emoji, no spammy words)
+ * - Minimal HTML, high text-to-HTML ratio
+ * - Inline styles only (no <style> blocks)
+ * - Single clear CTA
  */
 
 import { Resend } from 'resend';
@@ -30,12 +41,167 @@ function sanitizeUrl(url: string): string {
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
-const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Attabl <notifications@attabl.com>';
+const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'ATTABL <bonjour@attabl.com>';
+const REPLY_TO = 'support@attabl.com';
+
+const FOOTER_ADDRESS = 'ATTABL SAS — Douala, Cameroun';
+const FOOTER_TAGLINE = 'Menus digitaux pour restaurants et h\u00f4tels';
+
+/** Wraps email body content in a proper HTML document with table layout. */
+function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): string {
+  return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="fr">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATTABL</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <!--[if mso]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+  <!-- Preheader text (hidden, shown in inbox preview) -->
+  <div style="display:none;font-size:1px;color:#f4f4f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+    ${escapeHtml(opts.preheader)}
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+          ${opts.bodyContent}
+          <!-- Footer -->
+          <tr>
+            <td style="padding:24px 24px 16px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;line-height:1.5;color:#a1a1aa;">
+                ${FOOTER_TAGLINE}
+              </p>
+              <p style="margin:0;font-size:11px;line-height:1.5;color:#a1a1aa;">
+                ${FOOTER_ADDRESS}
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+  <!--[if mso]></td></tr></table><![endif]-->
+</body>
+</html>`;
+}
+
+// ---------------------------------------------------------------------------
+// Welcome / Confirmation Email
+// ---------------------------------------------------------------------------
 
 interface WelcomeConfirmationEmailData {
   restaurantName: string;
   confirmationUrl: string;
 }
+
+export async function sendWelcomeConfirmationEmail(
+  to: string,
+  data: WelcomeConfirmationEmailData,
+): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping confirmation email');
+    return false;
+  }
+
+  const safeRestaurantName = escapeHtml(data.restaurantName);
+  const safeUrl = sanitizeUrl(data.confirmationUrl);
+  const rawUrl = escapeHtml(data.confirmationUrl);
+
+  const subject = `Confirmez votre adresse email pour ${data.restaurantName}`;
+  const preheader = `Votre compte ATTABL pour ${data.restaurantName} est presque pret. Confirmez votre adresse pour commencer.`;
+
+  const bodyContent = `
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">ATTABL</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:32px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+              <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#18181b;">
+                Bienvenue, ${safeRestaurantName}
+              </p>
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">
+                Votre compte a bien ete cree sur ATTABL. Pour activer votre espace et commencer a configurer votre menu digital, veuillez confirmer votre adresse email.
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#3f3f46;">
+                Ce lien est valide pendant 24 heures.
+              </p>
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 28px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" fillcolor="#CCFF00"><center style="color:#000000;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmer mon adresse</center></v:roundrect><![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#CCFF00;color:#000000;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                      Confirmer mon adresse
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 16px;font-size:13px;line-height:1.5;color:#71717a;">
+                Si le bouton ne fonctionne pas, copiez ce lien dans votre navigateur :
+              </p>
+              <p style="margin:0;font-size:12px;line-height:1.4;color:#71717a;word-break:break-all;">
+                ${rawUrl}
+              </p>
+            </td>
+          </tr>
+          <!-- Bottom bar -->
+          <tr>
+            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;">
+                Si vous n'avez pas cree de compte sur ATTABL, ignorez simplement cet email.
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const text = `Bienvenue sur ATTABL, ${data.restaurantName}
+
+Votre compte a bien ete cree. Pour activer votre espace et commencer a configurer votre menu digital, confirmez votre adresse email en ouvrant le lien ci-dessous :
+
+${data.confirmationUrl}
+
+Ce lien est valide pendant 24 heures.
+
+Si vous n'avez pas cree de compte sur ATTABL, ignorez simplement cet email.
+
+---
+${FOOTER_TAGLINE}
+${FOOTER_ADDRESS}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      replyTo: REPLY_TO,
+      to: [to],
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error('Resend confirmation email error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send confirmation email', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Invitation Email
+// ---------------------------------------------------------------------------
 
 interface InvitationEmailData {
   restaurantName: string;
@@ -43,6 +209,123 @@ interface InvitationEmailData {
   role: string;
   inviteUrl: string;
 }
+
+export async function sendInvitationEmail(to: string, data: InvitationEmailData): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping invitation email');
+    return false;
+  }
+
+  const roleLabels: Record<string, string> = {
+    admin: 'Administrateur',
+    manager: 'Manager',
+    cashier: 'Caissier',
+    chef: 'Chef Cuisine',
+    waiter: 'Serveur',
+  };
+
+  const roleLabel = roleLabels[data.role] || data.role;
+  const safeRestaurantName = escapeHtml(data.restaurantName);
+  const safeUrl = sanitizeUrl(data.inviteUrl);
+  const safeRoleLabel = escapeHtml(roleLabel);
+
+  const subject = `Invitation a rejoindre ${data.restaurantName} sur ATTABL`;
+  const preheader = `${data.restaurantName} vous invite a rejoindre son equipe en tant que ${roleLabel}.`;
+
+  const logoRow = data.restaurantLogoUrl
+    ? `<img src="${sanitizeUrl(data.restaurantLogoUrl)}" alt="${safeRestaurantName}" width="48" height="48" style="display:block;margin:0 auto 12px;border-radius:8px;height:48px;width:48px;" />`
+    : '';
+
+  const bodyContent = `
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+              ${logoRow}
+              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${safeRestaurantName}</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:32px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+              <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#18181b;">
+                Vous avez ete invite
+              </p>
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">
+                <strong>${safeRestaurantName}</strong> vous invite a rejoindre son equipe sur ATTABL en tant que <strong>${safeRoleLabel}</strong>.
+              </p>
+              <p style="margin:0 0 28px;font-size:14px;line-height:1.5;color:#71717a;">
+                Cette invitation est valide pendant 72 heures.
+              </p>
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:4px 0 28px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" fillcolor="#CCFF00"><center style="color:#000000;font-family:sans-serif;font-size:15px;font-weight:bold;">Accepter l'invitation</center></v:roundrect><![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#CCFF00;color:#000000;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                      Accepter l'invitation
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">
+                Si vous n'avez pas demande cette invitation, ignorez simplement cet email.
+              </p>
+            </td>
+          </tr>
+          <!-- Bottom bar -->
+          <tr>
+            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
+                Envoye par ATTABL au nom de ${safeRestaurantName}
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const text = `Vous avez ete invite a rejoindre ${data.restaurantName} sur ATTABL
+
+${data.restaurantName} vous invite a rejoindre son equipe en tant que ${roleLabel}.
+
+Acceptez l'invitation en ouvrant le lien ci-dessous :
+
+${data.inviteUrl}
+
+Cette invitation est valide pendant 72 heures.
+
+Si vous n'avez pas demande cette invitation, ignorez simplement cet email.
+
+---
+${FOOTER_TAGLINE}
+${FOOTER_ADDRESS}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      replyTo: REPLY_TO,
+      to: [to],
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error('Resend invitation error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send invitation email', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Stock Alert Email
+// ---------------------------------------------------------------------------
 
 interface StockAlertItem {
   name: string;
@@ -72,64 +355,118 @@ export async function sendStockAlertEmail(
   const outOfStockItems = data.items.filter((i) => i.is_out);
   const lowStockItems = data.items.filter((i) => !i.is_out);
 
+  const safeTenantName = escapeHtml(data.tenantName);
+  const safeUrl = sanitizeUrl(data.dashboardUrl);
+
+  const subject =
+    outOfStockItems.length > 0
+      ? `Alerte stock : ${outOfStockItems.length} produit(s) en rupture — ${data.tenantName}`
+      : `Stock bas : ${lowStockItems.length} produit(s) sous le seuil — ${data.tenantName}`;
+
+  const preheader =
+    outOfStockItems.length > 0
+      ? `${outOfStockItems.length} produit(s) en rupture de stock necessitent votre attention.`
+      : `${lowStockItems.length} produit(s) sont en dessous du seuil d'alerte.`;
+
   const itemRows = data.items
     .map((item) => {
-      const status = item.is_out ? '🔴 Rupture' : '🟡 Stock bas';
+      const statusColor = item.is_out ? '#dc2626' : '#ca8a04';
+      const statusText = item.is_out ? 'Rupture' : 'Stock bas';
       return `<tr>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;font-weight:500">${escapeHtml(item.name)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.current_stock} ${escapeHtml(item.unit)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${item.min_stock_alert} ${escapeHtml(item.unit)}</td>
-        <td style="padding:8px 12px;border-bottom:1px solid #eee;text-align:center">${status}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;font-size:14px;color:#3f3f46;">${escapeHtml(item.name)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:14px;color:#3f3f46;">${item.current_stock} ${escapeHtml(item.unit)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:14px;color:#3f3f46;">${item.min_stock_alert} ${escapeHtml(item.unit)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:13px;font-weight:600;color:${statusColor};">${statusText}</td>
       </tr>`;
     })
     .join('');
 
-  const subject =
+  const summaryLine = [
     outOfStockItems.length > 0
-      ? `⚠️ ${escapeHtml(data.tenantName)} — ${outOfStockItems.length} produit(s) en rupture de stock`
-      : `📉 ${escapeHtml(data.tenantName)} — ${lowStockItems.length} produit(s) en stock bas`;
+      ? `<strong>${outOfStockItems.length}</strong> en rupture de stock`
+      : null,
+    lowStockItems.length > 0
+      ? `<strong>${lowStockItems.length}</strong> sous le seuil d'alerte`
+      : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-      <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0">
-        <h1 style="color:white;margin:0;font-size:20px">Alerte Stock — ${escapeHtml(data.tenantName)}</h1>
-      </div>
-      <div style="background:white;padding:24px;border:1px solid #e5e7eb;border-top:none">
-        <p style="color:#374151;margin:0 0 16px">
-          ${outOfStockItems.length > 0 ? `<strong>${outOfStockItems.length} produit(s)</strong> en rupture de stock.` : ''}
-          ${lowStockItems.length > 0 ? `<strong>${lowStockItems.length} produit(s)</strong> sous le seuil d'alerte.` : ''}
-        </p>
-        <table style="width:100%;border-collapse:collapse;font-size:14px">
-          <thead>
-            <tr style="background:#f9fafb">
-              <th style="padding:8px 12px;text-align:left;font-weight:600;color:#6b7280">Produit</th>
-              <th style="padding:8px 12px;text-align:center;font-weight:600;color:#6b7280">Stock actuel</th>
-              <th style="padding:8px 12px;text-align:center;font-weight:600;color:#6b7280">Seuil alerte</th>
-              <th style="padding:8px 12px;text-align:center;font-weight:600;color:#6b7280">Statut</th>
-            </tr>
-          </thead>
-          <tbody>${itemRows}</tbody>
-        </table>
-        <div style="margin-top:24px;text-align:center">
-          <a href="${sanitizeUrl(data.dashboardUrl)}" style="display:inline-block;background:#1f2937;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:500">
-            Voir l'inventaire
-          </a>
-        </div>
-      </div>
-      <div style="background:#f9fafb;padding:16px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
-        <p style="color:#9ca3af;font-size:12px;margin:0;text-align:center">
-          Cet email est envoyé automatiquement par Attabl. Vous ne recevrez pas plus d'une alerte par produit par heure.
-        </p>
-      </div>
-    </div>
-  `;
+  const bodyContent = `
+          <!-- Header -->
+          <tr>
+            <td style="background-color:#18181b;padding:24px;text-align:left;border-radius:8px 8px 0 0;">
+              <p style="margin:0;font-size:18px;font-weight:600;color:#ffffff;">Alerte stock — ${safeTenantName}</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="background-color:#ffffff;padding:28px 24px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#3f3f46;">
+                ${summaryLine}.
+              </p>
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e4e4e7;border-radius:6px;">
+                <thead>
+                  <tr style="background-color:#fafafa;">
+                    <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Produit</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Actuel</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Seuil</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Statut</th>
+                  </tr>
+                </thead>
+                <tbody>${itemRows}</tbody>
+              </table>
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:28px 0 4px;">
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
+                      Voir l'inventaire
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Bottom bar -->
+          <tr>
+            <td style="background-color:#fafafa;padding:16px 24px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
+                Alerte automatique ATTABL — maximum une alerte par produit par heure.
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const textItemList = data.items
+    .map(
+      (item) =>
+        `- ${item.name}: ${item.current_stock} ${item.unit} (seuil: ${item.min_stock_alert}) — ${item.is_out ? 'RUPTURE' : 'Stock bas'}`,
+    )
+    .join('\n');
+
+  const text = `Alerte stock — ${data.tenantName}
+
+${outOfStockItems.length > 0 ? `${outOfStockItems.length} produit(s) en rupture de stock.` : ''}
+${lowStockItems.length > 0 ? `${lowStockItems.length} produit(s) sous le seuil d'alerte.` : ''}
+
+${textItemList}
+
+Voir l'inventaire : ${data.dashboardUrl}
+
+---
+Alerte automatique ATTABL — maximum une alerte par produit par heure.
+${FOOTER_ADDRESS}`;
 
   try {
     const { error } = await resend.emails.send({
       from: FROM_EMAIL,
+      replyTo: REPLY_TO,
       to,
       subject,
       html,
+      text,
     });
 
     if (error) {
@@ -140,153 +477,6 @@ export async function sendStockAlertEmail(
     return true;
   } catch (err) {
     logger.error('Failed to send stock alert', err);
-    return false;
-  }
-}
-
-/**
- * Send an invitation email to join a restaurant team on ATTABL.
- *
- * Uses the ATTABL design charter: #CCFF00 CTA, dark header, clean white body.
- * The invitation link expires in 72 hours.
- */
-export async function sendInvitationEmail(to: string, data: InvitationEmailData): Promise<boolean> {
-  if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping invitation email');
-    return false;
-  }
-
-  const roleLabels: Record<string, string> = {
-    admin: 'Administrateur',
-    manager: 'Manager',
-    cashier: 'Caissier',
-    chef: 'Chef Cuisine',
-    waiter: 'Serveur',
-  };
-
-  const roleLabel = roleLabels[data.role] || data.role;
-
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-      <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0;text-align:center">
-        ${data.restaurantLogoUrl ? `<img src="${sanitizeUrl(data.restaurantLogoUrl)}" alt="" style="height:48px;margin-bottom:12px;border-radius:8px" />` : ''}
-        <h1 style="color:white;margin:0;font-size:22px">${escapeHtml(data.restaurantName)}</h1>
-      </div>
-      <div style="background:white;padding:32px 24px;border:1px solid #e5e7eb;border-top:none">
-        <h2 style="color:#111827;margin:0 0 16px;font-size:18px">Vous avez ete invite !</h2>
-        <p style="color:#374151;margin:0 0 8px;line-height:1.6">
-          Vous avez ete invite a rejoindre l'equipe de <strong>${escapeHtml(data.restaurantName)}</strong> sur ATTABL
-          en tant que <strong>${escapeHtml(roleLabel)}</strong>.
-        </p>
-        <p style="color:#6b7280;margin:0 0 24px;font-size:14px">
-          Cette invitation expire dans 72 heures.
-        </p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${sanitizeUrl(data.inviteUrl)}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
-            Accepter l'invitation
-          </a>
-        </div>
-        <p style="color:#9ca3af;font-size:13px;margin:0;text-align:center">
-          Si vous n'avez pas demande cette invitation, vous pouvez ignorer cet email.
-        </p>
-      </div>
-      <div style="background:#f9fafb;padding:16px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
-        <p style="color:#9ca3af;font-size:12px;margin:0;text-align:center">
-          Envoye par ATTABL — Menus digitaux pour restaurants et hotels
-        </p>
-      </div>
-    </div>
-  `;
-
-  try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [to],
-      subject: `Rejoignez l'equipe de ${escapeHtml(data.restaurantName)} sur ATTABL`,
-      html,
-    });
-
-    if (error) {
-      logger.error('Resend invitation error', error);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    logger.error('Failed to send invitation email', err);
-    return false;
-  }
-}
-
-/**
- * Send a welcome email with a confirmation link to verify the user's email address.
- *
- * Uses the ATTABL design charter: #CCFF00 CTA, dark header, clean white body.
- */
-export async function sendWelcomeConfirmationEmail(
-  to: string,
-  data: WelcomeConfirmationEmailData,
-): Promise<boolean> {
-  if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping confirmation email');
-    return false;
-  }
-
-  const html = `
-    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
-      <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0;text-align:center">
-        <h1 style="color:white;margin:0;font-size:24px;font-weight:700">ATTABL</h1>
-      </div>
-      <div style="background:white;padding:32px 24px;border:1px solid #e5e7eb;border-top:none">
-        <h2 style="color:#111827;margin:0 0 16px;font-size:20px">Bienvenue sur ATTABL !</h2>
-        <p style="color:#374151;margin:0 0 8px;line-height:1.6">
-          Votre compte pour <strong>${escapeHtml(data.restaurantName)}</strong> a bien été créé.
-        </p>
-        <p style="color:#374151;margin:0 0 24px;line-height:1.6">
-          Pour commencer à configurer votre menu digital, veuillez confirmer votre adresse email
-          en cliquant sur le bouton ci-dessous.
-        </p>
-        <div style="text-align:center;margin:32px 0">
-          <a href="${sanitizeUrl(data.confirmationUrl)}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
-            Confirmer mon email
-          </a>
-        </div>
-        <p style="color:#6b7280;font-size:13px;margin:0 0 8px;line-height:1.6">
-          Ce lien expire dans 24 heures. Si vous n'avez pas créé de compte sur ATTABL,
-          vous pouvez ignorer cet email.
-        </p>
-        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
-        <p style="color:#9ca3af;font-size:12px;margin:0;line-height:1.5">
-          Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
-        </p>
-        <p style="color:#6b7280;font-size:11px;word-break:break-all;margin:8px 0 0">
-          ${escapeHtml(data.confirmationUrl)}
-        </p>
-      </div>
-      <div style="background:#f9fafb;padding:16px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
-        <p style="color:#9ca3af;font-size:12px;margin:0;text-align:center">
-          Envoyé par ATTABL — Menus digitaux pour restaurants et hôtels
-        </p>
-      </div>
-    </div>
-  `;
-
-  try {
-    const { error } = await resend.emails.send({
-      from: FROM_EMAIL,
-      to: [to],
-      subject: 'Confirmez votre adresse email — ATTABL',
-      html,
-    });
-
-    if (error) {
-      logger.error('Resend confirmation email error', error);
-      return false;
-    }
-
-    return true;
-  } catch (err) {
-    logger.error('Failed to send confirmation email', err);
     return false;
   }
 }
