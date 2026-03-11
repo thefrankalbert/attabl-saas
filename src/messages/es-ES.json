@@ -1267,7 +1267,12 @@
     "categoryDeleted": "Categoría eliminada",
     "loadingError": "Error de carga",
     "saveError": "Error al guardar",
-    "deleteError": "Error al eliminar"
+    "deleteError": "Error al eliminar",
+    "preparationZone": "Zona de preparación",
+    "preparationZoneDesc": "Dónde se preparan los artículos de esta categoría. Los pedidos solo de bar no aparecerán en la cocina.",
+    "zoneKitchen": "Cocina",
+    "zoneBar": "Bar",
+    "zoneBoth": "Ambos"
   },
   "items": {
     "title": "Platos y Artículos",

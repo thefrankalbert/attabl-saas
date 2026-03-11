@@ -155,6 +155,8 @@ export interface Order {
   display_currency?: CurrencyCode;
   // ─── Coupon ────────────────────────────────────────────
   coupon_id?: string;
+  // ─── Preparation zone routing ────────────────────────
+  preparation_zone?: OrderPreparationZone;
   // Waiter assignment
   server_id?: string;
   cashier_id?: string;
@@ -187,6 +189,9 @@ export interface Menu {
 
 // ─── Categories ─────────────────────────────────────────────
 
+export type PreparationZone = 'kitchen' | 'bar' | 'both';
+export type OrderPreparationZone = 'kitchen' | 'bar' | 'mixed';
+
 export interface Category {
   id: string;
   tenant_id: string;
@@ -195,6 +200,7 @@ export interface Category {
   name_en?: string;
   display_order?: number;
   is_active?: boolean;
+  preparation_zone?: PreparationZone;
   created_at: string;
 }
 

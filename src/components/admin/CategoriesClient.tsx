@@ -2,7 +2,18 @@
 
 import { useState, useCallback, useId } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Loader2, Folder, GripVertical, Utensils, Edit2, Trash2 } from 'lucide-react';
+import {
+  Plus,
+  Loader2,
+  Folder,
+  GripVertical,
+  Utensils,
+  Edit2,
+  Trash2,
+  ChefHat,
+  Wine,
+  Shuffle,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -31,7 +42,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Category } from '@/types/admin.types';
+import type { Category, PreparationZone } from '@/types/admin.types';
 
 interface CategoriesClientProps {
   tenantId: string;
@@ -86,6 +97,23 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
       <div className="flex-1 min-w-0">
         <p className="font-medium text-app-text text-sm">{cat.name}</p>
       </div>
+      {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
+        <div
+          className={cn(
+            'flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide',
+            cat.preparation_zone === 'bar'
+              ? 'bg-purple-500/10 text-purple-400'
+              : 'bg-blue-500/10 text-blue-400',
+          )}
+        >
+          {cat.preparation_zone === 'bar' ? (
+            <Wine className="w-3 h-3" />
+          ) : (
+            <Shuffle className="w-3 h-3" />
+          )}
+          {cat.preparation_zone}
+        </div>
+      )}
       <div
         className="flex items-center gap-1.5 text-xs text-app-text-muted"
         title={`${cat.items_count || 0} plats`}
@@ -120,6 +148,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const [name, setName] = useState('');
   const [nameEn, setNameEn] = useState('');
   const [displayOrder, setDisplayOrder] = useState(0);
+  const [preparationZone, setPreparationZone] = useState<PreparationZone>('kitchen');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
@@ -199,6 +228,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     setName('');
     setNameEn('');
     setDisplayOrder(categories.length);
+    setPreparationZone('kitchen');
     setShowModal(true);
   };
 
@@ -207,6 +237,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     setName(cat.name);
     setNameEn(cat.name_en || '');
     setDisplayOrder(cat.display_order || 0);
+    setPreparationZone(cat.preparation_zone || 'kitchen');
     setShowModal(true);
   };
 
@@ -219,6 +250,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         name: name.trim(),
         name_en: nameEn.trim() || null,
         display_order: displayOrder,
+        preparation_zone: preparationZone,
         tenant_id: tenantId,
       };
       if (editingCategory) {
@@ -398,6 +430,35 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 min={0}
                 className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
               />
+            </div>
+            {/* Preparation zone selector */}
+            <div className="space-y-1.5">
+              <Label className="text-app-text">{t('preparationZone')}</Label>
+              <p className="text-xs text-app-text-muted">{t('preparationZoneDesc')}</p>
+              <div className="grid grid-cols-3 gap-2 pt-1">
+                {(
+                  [
+                    { value: 'kitchen', icon: ChefHat, label: t('zoneKitchen') },
+                    { value: 'bar', icon: Wine, label: t('zoneBar') },
+                    { value: 'both', icon: Shuffle, label: t('zoneBoth') },
+                  ] as const
+                ).map(({ value, icon: Icon, label }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setPreparationZone(value)}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 p-3 rounded-lg border text-xs font-medium transition-all',
+                      preparationZone === value
+                        ? 'border-accent bg-accent/10 text-accent'
+                        : 'border-app-border text-app-text-muted hover:border-app-text-secondary hover:text-app-text-secondary',
+                    )}
+                  >
+                    <Icon className="w-5 h-5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>

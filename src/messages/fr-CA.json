@@ -1260,7 +1260,12 @@
     "categoryDeleted": "Catégorie supprimée",
     "loadingError": "Erreur lors du chargement",
     "saveError": "Erreur lors de la sauvegarde",
-    "deleteError": "Erreur lors de la suppression"
+    "deleteError": "Erreur lors de la suppression",
+    "preparationZone": "Zone de préparation",
+    "preparationZoneDesc": "Où les articles de cette catégorie sont préparés. Les commandes bar-only ne s'affichent pas en cuisine.",
+    "zoneKitchen": "Cuisine",
+    "zoneBar": "Bar",
+    "zoneBoth": "Les deux"
   },
   "items": {
     "title": "Plats & Articles",
