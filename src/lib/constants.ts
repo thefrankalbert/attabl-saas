@@ -115,6 +115,29 @@ export const DEFAULT_CURRENCY_CODE: CurrencyCode = 'XAF';
 // Legacy compat
 export const DEFAULT_CURRENCY = CURRENCIES.XAF;
 
+// ─── Tenant URL Helper ──────────────────────────────────────
+/**
+ * Builds the public-facing URL for a tenant's client space.
+ *
+ * In production: https://{slug}.attabl.com
+ * In development: http://{slug}.localhost:3000
+ *
+ * The middleware rewrites subdomain requests to /sites/{slug}/… internally,
+ * but customers should always see the subdomain URL.
+ *
+ * Works on both server (reads process.env) and client (reads NEXT_PUBLIC_ vars).
+ */
+export function getTenantUrl(slug: string): string {
+  const appDomain =
+    process.env.NEXT_PUBLIC_APP_DOMAIN ||
+    (typeof window !== 'undefined' ? 'attabl.com' : 'attabl.com');
+  const isLocalDev = appDomain === 'localhost' || appDomain.startsWith('localhost:');
+  const protocol = isLocalDev ? 'http' : 'https';
+
+  // In dev: http://slug.localhost:3000 — in prod: https://slug.attabl.com
+  return `${protocol}://${slug}.${appDomain}`;
+}
+
 // App Configuration
 export const APP_CONFIG = {
   name: 'ATTABL',

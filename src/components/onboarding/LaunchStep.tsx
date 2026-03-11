@@ -18,6 +18,7 @@ import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
+import { getTenantUrl } from '@/lib/constants';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 interface LaunchStepProps {
@@ -105,10 +106,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
   const showQr = variant === 'qr';
   const showSummary = variant === 'summary';
 
-  const menuUrl =
-    typeof window !== 'undefined'
-      ? `${window.location.origin}/sites/${data.tenantSlug}`
-      : `https://attabl.com/sites/${data.tenantSlug}`;
+  const menuUrl = data.tenantSlug ? getTenantUrl(data.tenantSlug) : 'https://attabl.com';
 
   const completedItems = [
     { label: t('checkAccountCreated'), done: true },
