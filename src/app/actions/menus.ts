@@ -34,7 +34,7 @@ async function checkMenuPermissions(
 
   const { data: adminUser } = await supabase
     .from('admin_users')
-    .select('id, user_id, tenant_id, role, is_active, custom_permissions')
+    .select('id, user_id, tenant_id, role, is_active')
     .eq('user_id', user.id)
     .eq('tenant_id', tenantId)
     .eq('is_active', true)
