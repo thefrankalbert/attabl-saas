@@ -83,7 +83,7 @@ function AuthForm({ mode }: AuthFormProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            restaurantName: 'Mon Restaurant',
+            restaurantName: 'Mon Établissement',
             email,
             password,
             plan: 'essentiel',
@@ -125,7 +125,7 @@ function AuthForm({ mode }: AuthFormProps) {
           .eq('user_id', authData.user.id);
 
         if (!adminUsers || adminUsers.length === 0) {
-          throw new Error('Aucun restaurant associé à ce compte');
+          throw new Error('Aucun établissement associé à ce compte');
         }
 
         // Check if any tenant needs onboarding
