@@ -6,9 +6,10 @@ import { createClient } from '@/lib/supabase/client';
 import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
-import { Check, Loader2, ArrowLeft, ChefHat } from 'lucide-react';
+import { Check, Loader2, ArrowLeft, ChefHat, Bell, BellRing, X } from 'lucide-react';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
+import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 import { logger } from '@/lib/logger';
 
 // ─── Types ───────────────────────────────────────────────
@@ -37,14 +38,36 @@ function OrderConfirmedContent() {
   const [order, setOrder] = useState<OrderData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showSuccess, setShowSuccess] = useState(true);
+  const previousStatusRef = useRef<string | null>(null);
+
+  const {
+    requestPermission,
+    permissionState,
+    notifyOrderReady,
+    showReadyBanner,
+    dismissBanner,
+    readyOrderNumber,
+  } = useClientOrderNotification();
+
+  // Ref to avoid re-subscribing realtime channel when notifyOrderReady changes
+  const notifyOrderReadyRef = useRef(notifyOrderReady);
+  useEffect(() => {
+    notifyOrderReadyRef.current = notifyOrderReady;
+  });
 
   const menuPath = `/sites/${tenantSlug}/menu`;
 
-  // Brief success animation
+  // Brief success animation, then request notification permission
   useEffect(() => {
-    const timer = setTimeout(() => setShowSuccess(false), 2000);
+    const timer = setTimeout(() => {
+      setShowSuccess(false);
+      // Request permission after the animation — a subtle moment, not intrusive
+      if (permissionState === 'default') {
+        requestPermission();
+      }
+    }, 2000);
     return () => clearTimeout(timer);
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch order details
   useEffect(() => {
@@ -107,7 +130,19 @@ function OrderConfirmedContent() {
             orderId: updated.id,
             status: updated.status,
           });
-          setOrder((prev) => (prev ? { ...prev, status: updated.status } : prev));
+          setOrder((prev) => {
+            // Trigger notification only when transitioning TO "ready"
+            if (
+              updated.status === 'ready' &&
+              prev &&
+              prev.status !== 'ready' &&
+              previousStatusRef.current !== 'ready'
+            ) {
+              notifyOrderReadyRef.current(prev.order_number || prev.id.slice(0, 5));
+            }
+            previousStatusRef.current = updated.status;
+            return prev ? { ...prev, status: updated.status } : prev;
+          });
         },
       )
       .subscribe((status) => {
@@ -210,6 +245,40 @@ function OrderConfirmedContent() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+        {/* Order ready banner — prominent notification */}
+        {showReadyBanner && (
+          <div className="relative bg-emerald-500 text-white rounded-xl px-4 py-4 flex items-center gap-3 shadow-lg animate-pulse-once">
+            <BellRing className="w-6 h-6 shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
+              <p className="text-xs opacity-90">
+                {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
+              </p>
+            </div>
+            <button
+              onClick={dismissBanner}
+              className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+              aria-label="Dismiss"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Notification permission prompt — shown once if not yet decided */}
+        {!showReadyBanner &&
+          permissionState === 'default' &&
+          order.status !== 'ready' &&
+          order.status !== 'delivered' && (
+            <button
+              onClick={requestPermission}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors"
+            >
+              <Bell className="w-4 h-4 shrink-0" />
+              <span>{t('enableNotifications')}</span>
+            </button>
+          )}
+
         {/* Simple status message — no detailed tracking visible to customer */}
         <OrderStatusMessage status={order.status} />
 

@@ -640,8 +640,8 @@
     "tabSounds": "Sons",
     "tabSecurity": "Sécurité",
     "tabContact": "Contact",
-    "tabLanguage": "Langue",
-    "tabDomain": "Domaine",
+    "qrCodesTitle": "QR Codes",
+    "qrCodesDescription": "Personnalisez et telechargez vos QR codes pour vos tables et menus.",
     "domain": "Domaine",
     "customDomain": "Domaine personnalisé",
     "customDomainDesc": "Utilisez votre propre nom de domaine (ex : menu.votrerestaurant.com)",
@@ -732,6 +732,7 @@
     "navUsers": "Utilisateurs",
     "navSettings": "Paramètres",
     "navSubscription": "Abonnement",
+    "navSupport": "Support",
     "navInvoices": "Factures",
     "navAuditLogs": "Journal d'audit",
     "roleOwner": "Propriétaire",
@@ -1741,7 +1742,10 @@
     "orderStatusSent": "Votre commande a été envoyée",
     "orderStatusInKitchen": "Votre commande est en cuisine",
     "orderStatusReady": "Votre commande est prête",
-    "orderStatusServed": "Votre commande a été servie"
+    "orderStatusServed": "Votre commande a été servie",
+    "orderReadyNotifTitle": "Votre commande est prête !",
+    "orderReadyNotifBody": "Commande #{number} — prête à être récupérée",
+    "enableNotifications": "Activer les notifications pour savoir quand votre commande est prête"
   },
   "shared": {
     "fileMustBeImage": "Le fichier doit être une image",
