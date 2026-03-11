@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Loader2, Eye, EyeOff, Lock } from 'lucide-react';
+import { Loader2, Eye, EyeOff, Lock, MailCheck, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { motion } from 'framer-motion';
@@ -41,6 +41,8 @@ interface AuthFormProps {
 function AuthForm({ mode }: AuthFormProps) {
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
+  const isConfirmed = searchParams.get('confirmed') === 'true';
+  const urlError = searchParams.get('error') || '';
 
   const [loading, setLoading] = useState(false);
   const [oauthLoading, setOauthLoading] = useState<'google' | 'azure' | null>(null);
@@ -48,6 +50,8 @@ function AuthForm({ mode }: AuthFormProps) {
   const [email, setEmail] = useState(urlEmail);
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [resending, setResending] = useState(false);
 
   const supabase = createClient();
 
@@ -96,19 +100,8 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error(data.error || "Erreur lors de l'inscription");
         }
 
-        // Auto-login after successful signup
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-
-        if (signInError) {
-          logger.error('Auto-login failed after signup', signInError);
-          window.location.href = `/login?email=${encodeURIComponent(email)}&error=${encodeURIComponent(signInError.message)}`;
-          return;
-        }
-
-        window.location.href = '/onboarding';
+        // Account created — show confirmation message
+        setConfirmationSent(true);
       } else {
         // Login flow
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -147,6 +140,10 @@ function AuthForm({ mode }: AuthFormProps) {
       const errorMessage = err instanceof Error ? err.message : 'Erreur inconnue';
       if (errorMessage.includes('Invalid login credentials')) {
         setError('Email ou mot de passe incorrect.');
+      } else if (errorMessage.includes('Email not confirmed')) {
+        setError(
+          'Votre adresse email n\u2019a pas encore été confirmée. Vérifiez votre boîte mail et cliquez sur le lien de confirmation.',
+        );
       } else {
         setError(errorMessage);
       }
@@ -156,6 +153,104 @@ function AuthForm({ mode }: AuthFormProps) {
   };
 
   const isLogin = mode === 'login';
+
+  const handleResendConfirmation = useCallback(async () => {
+    if (resending || !email) return;
+    setResending(true);
+    try {
+      const response = await fetch('/api/resend-confirmation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Erreur lors de l'envoi");
+      }
+    } catch (err) {
+      logger.error('Failed to resend confirmation', err);
+    } finally {
+      setResending(false);
+    }
+  }, [email, resending]);
+
+  // Show confirmation sent screen after signup
+  if (confirmationSent) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="mx-auto w-full"
+      >
+        <Link href="/" className="flex items-center gap-2 mb-10 w-fit group">
+          <span className="text-xl font-bold tracking-tight text-app-text group-hover:text-accent transition-colors">
+            ATTABL
+          </span>
+        </Link>
+
+        <div className="text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
+            <MailCheck className="h-8 w-8 text-accent" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-app-text mb-3">
+            Vérifiez votre boîte mail
+          </h1>
+          <p className="text-app-text-secondary text-sm leading-relaxed mb-2">
+            Un email de confirmation a été envoyé à
+          </p>
+          <p className="text-app-text font-semibold text-sm mb-6">{email}</p>
+          <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
+            Cliquez sur le lien dans l&apos;email pour activer votre compte et accéder à la
+            configuration de votre établissement.
+          </p>
+
+          <div className="space-y-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleResendConfirmation}
+              disabled={resending}
+              className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all"
+            >
+              {resending ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Envoi en cours...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Renvoyer l&apos;email de confirmation
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-app-text-muted">
+              Vous ne trouvez pas l&apos;email ? Vérifiez vos spams ou{' '}
+              <button
+                type="button"
+                onClick={handleResendConfirmation}
+                className="text-accent hover:text-accent-hover font-medium transition-colors"
+              >
+                renvoyez-le
+              </button>
+              .
+            </p>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-app-border">
+            <Link
+              href="/login"
+              className="text-sm font-bold text-accent hover:text-accent-hover transition-colors"
+            >
+              Retour à la connexion
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -182,6 +277,38 @@ function AuthForm({ mode }: AuthFormProps) {
             : 'Créez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
         </p>
       </div>
+
+      {/* Email confirmed success banner */}
+      {isLogin && isConfirmed && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-xl">
+            <MailCheck className="h-4 w-4" />
+            <AlertDescription className="text-sm">
+              Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.
+            </AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
+
+      {/* URL error banner (e.g. expired confirmation link) */}
+      {isLogin && urlError && !error && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-4"
+        >
+          <Alert
+            variant="destructive"
+            className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
+          >
+            <AlertDescription className="text-sm">{urlError}</AlertDescription>
+          </Alert>
+        </motion.div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">

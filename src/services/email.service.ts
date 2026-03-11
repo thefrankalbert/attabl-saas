@@ -32,6 +32,11 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Attabl <notifications@attabl.com>';
 
+interface WelcomeConfirmationEmailData {
+  restaurantName: string;
+  confirmationUrl: string;
+}
+
 interface InvitationEmailData {
   restaurantName: string;
   restaurantLogoUrl?: string;
@@ -209,6 +214,79 @@ export async function sendInvitationEmail(to: string, data: InvitationEmailData)
     return true;
   } catch (err) {
     logger.error('Failed to send invitation email', err);
+    return false;
+  }
+}
+
+/**
+ * Send a welcome email with a confirmation link to verify the user's email address.
+ *
+ * Uses the ATTABL design charter: #CCFF00 CTA, dark header, clean white body.
+ */
+export async function sendWelcomeConfirmationEmail(
+  to: string,
+  data: WelcomeConfirmationEmailData,
+): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping confirmation email');
+    return false;
+  }
+
+  const html = `
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:600px;margin:0 auto">
+      <div style="background:#1f2937;padding:24px;border-radius:12px 12px 0 0;text-align:center">
+        <h1 style="color:white;margin:0;font-size:24px;font-weight:700">ATTABL</h1>
+      </div>
+      <div style="background:white;padding:32px 24px;border:1px solid #e5e7eb;border-top:none">
+        <h2 style="color:#111827;margin:0 0 16px;font-size:20px">Bienvenue sur ATTABL !</h2>
+        <p style="color:#374151;margin:0 0 8px;line-height:1.6">
+          Votre compte pour <strong>${escapeHtml(data.restaurantName)}</strong> a bien été créé.
+        </p>
+        <p style="color:#374151;margin:0 0 24px;line-height:1.6">
+          Pour commencer à configurer votre menu digital, veuillez confirmer votre adresse email
+          en cliquant sur le bouton ci-dessous.
+        </p>
+        <div style="text-align:center;margin:32px 0">
+          <a href="${sanitizeUrl(data.confirmationUrl)}" style="display:inline-block;background:#CCFF00;color:#000;padding:14px 32px;border-radius:10px;text-decoration:none;font-weight:700;font-size:16px">
+            Confirmer mon email
+          </a>
+        </div>
+        <p style="color:#6b7280;font-size:13px;margin:0 0 8px;line-height:1.6">
+          Ce lien expire dans 24 heures. Si vous n'avez pas créé de compte sur ATTABL,
+          vous pouvez ignorer cet email.
+        </p>
+        <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0" />
+        <p style="color:#9ca3af;font-size:12px;margin:0;line-height:1.5">
+          Si le bouton ne fonctionne pas, copiez et collez ce lien dans votre navigateur :
+        </p>
+        <p style="color:#6b7280;font-size:11px;word-break:break-all;margin:8px 0 0">
+          ${escapeHtml(data.confirmationUrl)}
+        </p>
+      </div>
+      <div style="background:#f9fafb;padding:16px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
+        <p style="color:#9ca3af;font-size:12px;margin:0;text-align:center">
+          Envoyé par ATTABL — Menus digitaux pour restaurants et hôtels
+        </p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      to: [to],
+      subject: 'Confirmez votre adresse email — ATTABL',
+      html,
+    });
+
+    if (error) {
+      logger.error('Resend confirmation email error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send confirmation email', err);
     return false;
   }
 }
