@@ -146,26 +146,26 @@ function MenuRow({
       </button>
 
       {/* Actions */}
-      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
+      <div className="flex items-center gap-1 shrink-0">
         <Button
           variant="ghost"
           size="sm"
           onClick={onAddChild}
           title={t('addSubMenu')}
-          className="h-8 w-8 p-0"
+          className="h-9 w-9 p-0"
         >
-          <Plus className="w-3.5 h-3.5" />
+          <Plus className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={onEdit} className="h-8 w-8 p-0">
-          <Edit2 className="w-3.5 h-3.5" />
+        <Button variant="ghost" size="sm" onClick={onEdit} className="h-9 w-9 p-0">
+          <Edit2 className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={onDelete}
-          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </div>

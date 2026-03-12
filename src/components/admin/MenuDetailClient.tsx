@@ -64,14 +64,14 @@ export default function MenuDetailClient({
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [catName, setCatName] = useState('');
   const [catNameEn, setCatNameEn] = useState('');
-  const [catOrder, setCatOrder] = useState(0);
+  const [catOrder, setCatOrder] = useState<number | string>(0);
   const [savingCategory, setSavingCategory] = useState(false);
 
   // Item edit modal state
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [itemFormName, setItemFormName] = useState('');
   const [itemFormDescription, setItemFormDescription] = useState('');
-  const [itemFormPrice, setItemFormPrice] = useState(0);
+  const [itemFormPrice, setItemFormPrice] = useState<number | string>(0);
   const [itemFormAvailable, setItemFormAvailable] = useState(true);
   const [itemFormImageUrl, setItemFormImageUrl] = useState('');
   const [savingItem, setSavingItem] = useState(false);
@@ -171,7 +171,7 @@ export default function MenuDetailClient({
       const payload = {
         name: catName.trim(),
         name_en: catNameEn.trim() || null,
-        display_order: catOrder,
+        display_order: Number(catOrder) || 0,
         tenant_id: tenantId,
         menu_id: menu.id,
       };
@@ -303,7 +303,7 @@ export default function MenuDetailClient({
       const payload = {
         name: itemFormName.trim(),
         description: itemFormDescription.trim() || undefined,
-        price: itemFormPrice,
+        price: Number(itemFormPrice) || 0,
         is_available: itemFormAvailable,
         image_url: itemFormImageUrl || null,
       };
@@ -433,10 +433,7 @@ export default function MenuDetailClient({
                           {t('dishCount', { count: catItems.length })}
                         </span>
                       </div>
-                      <div
-                        className="flex items-center gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                           variant="outline"
                           size="sm"
@@ -525,20 +522,20 @@ export default function MenuDetailClient({
                             {/* Action buttons */}
                             <button
                               onClick={() => openEditItemModal(item)}
-                              className="p-1.5 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
+                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('editItem')}
                             >
-                              <Edit2 className="w-3.5 h-3.5" />
+                              <Edit2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingModifiersItem(item);
                               }}
-                              className="p-1.5 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
+                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('manageModifiers')}
                             >
-                              <Settings2 className="w-3.5 h-3.5" />
+                              <Settings2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => toggleItemAvailable(item)}
@@ -607,7 +604,7 @@ export default function MenuDetailClient({
               id="cat-order"
               type="number"
               value={catOrder}
-              onChange={(e) => setCatOrder(Number(e.target.value))}
+              onChange={(e) => setCatOrder(e.target.value === '' ? '' : Number(e.target.value))}
               min={0}
             />
           </div>
@@ -655,7 +652,9 @@ export default function MenuDetailClient({
                 id="item-price"
                 type="number"
                 value={itemFormPrice}
-                onChange={(e) => setItemFormPrice(Number(e.target.value))}
+                onChange={(e) =>
+                  setItemFormPrice(e.target.value === '' ? '' : Number(e.target.value))
+                }
                 min={0}
               />
             </div>

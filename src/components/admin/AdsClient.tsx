@@ -28,7 +28,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [link, setLink] = useState('');
-  const [sortOrder, setSortOrder] = useState(1);
+  const [sortOrder, setSortOrder] = useState<number | string>(1);
   const [isActive, setIsActive] = useState(true);
   // keepExistingImage state reserved for future edit feature
 
@@ -81,7 +81,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           tenant_id: tenantId,
           image_url: publicUrl,
           link: link || null,
-          sort_order: sortOrder,
+          sort_order: Number(sortOrder) || 1,
           is_active: isActive,
         })
         .select()
@@ -275,7 +275,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
               type="number"
               min={1}
               value={sortOrder}
-              onChange={(e) => setSortOrder(parseInt(e.target.value) || 1)}
+              onChange={(e) => setSortOrder(e.target.value === '' ? '' : Number(e.target.value))}
             />
           </div>
 

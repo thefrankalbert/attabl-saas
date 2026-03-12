@@ -80,7 +80,7 @@ export default function ItemsClient({
   const [nameEn, setNameEn] = useState('');
   const [description, setDescription] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
-  const [price, setPrice] = useState(0);
+  const [price, setPrice] = useState<number | string>(0);
   const [categoryId, setCategoryId] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [isAvailable, setIsAvailable] = useState(true);
@@ -167,7 +167,7 @@ export default function ItemsClient({
         name_en: nameEn.trim() || null,
         description: description.trim() || null,
         description_en: descriptionEn.trim() || null,
-        price,
+        price: Number(price) || 0,
         prices: Object.keys(cleanPrices).length > 0 ? cleanPrices : null,
         category_id: categoryId,
         image_url: imageUrl.trim() || null,
@@ -198,6 +198,7 @@ export default function ItemsClient({
       setShowModal(false);
       loadItems();
       router.refresh();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -213,6 +214,7 @@ export default function ItemsClient({
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     }
@@ -228,6 +230,7 @@ export default function ItemsClient({
       if (error) throw error;
       loadItems();
       router.refresh();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -244,6 +247,7 @@ export default function ItemsClient({
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
       router.refresh();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -318,6 +322,7 @@ export default function ItemsClient({
                   setSelectedIds(new Set());
                   loadItems();
                   router.refresh();
+                  fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
                 }}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
               >
@@ -701,7 +706,7 @@ export default function ItemsClient({
                 <Input
                   type="number"
                   value={price}
-                  onChange={(e) => setPrice(Number(e.target.value))}
+                  onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
                   min={0}
                   className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
                   required

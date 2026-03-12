@@ -3,7 +3,7 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import CategoriesClient from '@/components/admin/CategoriesClient';
 import { AlertCircle } from 'lucide-react';
-import type { Category } from '@/types/admin.types';
+import type { Category, Menu } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,11 +27,19 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
 
   const supabase = await createClient();
 
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*, menu_items(id)')
-    .eq('tenant_id', tenant.id)
-    .order('display_order', { ascending: true });
+  const [{ data: categories }, { data: menus }] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('*, menu_items(id)')
+      .eq('tenant_id', tenant.id)
+      .order('display_order', { ascending: true }),
+    supabase
+      .from('menus')
+      .select('id, name')
+      .eq('tenant_id', tenant.id)
+      .eq('is_active', true)
+      .order('display_order', { ascending: true }),
+  ]);
 
   const formatted = (categories || []).map(
     (cat: Record<string, unknown>) =>
@@ -43,7 +51,11 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
 
   return (
     <div className="max-w-7xl mx-auto">
-      <CategoriesClient tenantId={tenant.id} initialCategories={formatted} />
+      <CategoriesClient
+        tenantId={tenant.id}
+        initialCategories={formatted}
+        menus={(menus || []) as Pick<Menu, 'id' | 'name'>[]}
+      />
     </div>
   );
 }

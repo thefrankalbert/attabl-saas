@@ -42,11 +42,12 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Category, PreparationZone } from '@/types/admin.types';
+import type { Category, Menu, PreparationZone } from '@/types/admin.types';
 
 interface CategoriesClientProps {
   tenantId: string;
   initialCategories: Category[];
+  menus: Pick<Menu, 'id' | 'name'>[];
 }
 
 type CategoryWithCount = Category & { items_count?: number };
@@ -121,24 +122,28 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <Utensils className="w-3 h-3" />
         <span className="font-medium tabular-nums">{cat.items_count || 0}</span>
       </div>
-      <div className="flex items-center gap-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-8 w-8 p-0">
-          <Edit2 className="w-3.5 h-3.5" />
+      <div className="flex items-center gap-1 shrink-0">
+        <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-9 w-9 p-0">
+          <Edit2 className="w-4 h-4" />
         </Button>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => onDelete(cat)}
-          className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+          className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
-          <Trash2 className="w-3.5 h-3.5" />
+          <Trash2 className="w-4 h-4" />
         </Button>
       </div>
     </div>
   );
 }
 
-export default function CategoriesClient({ tenantId, initialCategories }: CategoriesClientProps) {
+export default function CategoriesClient({
+  tenantId,
+  initialCategories,
+  menus,
+}: CategoriesClientProps) {
   const dndId = useId();
   const t = useTranslations('categories');
   const tc = useTranslations('common');
@@ -147,8 +152,9 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState('');
   const [nameEn, setNameEn] = useState('');
-  const [displayOrder, setDisplayOrder] = useState(0);
+  const [displayOrder, setDisplayOrder] = useState<number | string>(0);
   const [preparationZone, setPreparationZone] = useState<PreparationZone>('kitchen');
+  const [menuId, setMenuId] = useState<string>(menus[0]?.id || '');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
@@ -213,6 +219,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
         const results = await Promise.all(updatePromises);
         const error = results.find((r) => r.error)?.error;
         if (error) throw error;
+        fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
       } catch (err: unknown) {
         // Rollback on error
         queryClient.setQueryData(['categories', tenantId, true], previous);
@@ -229,6 +236,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     setNameEn('');
     setDisplayOrder(categories.length);
     setPreparationZone('kitchen');
+    setMenuId(menus[0]?.id || '');
     setShowModal(true);
   };
 
@@ -238,6 +246,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
     setNameEn(cat.name_en || '');
     setDisplayOrder(cat.display_order || 0);
     setPreparationZone(cat.preparation_zone || 'kitchen');
+    setMenuId(cat.menu_id || menus[0]?.id || '');
     setShowModal(true);
   };
 
@@ -249,9 +258,10 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       const payload = {
         name: name.trim(),
         name_en: nameEn.trim() || null,
-        display_order: displayOrder,
+        display_order: Number(displayOrder) || 0,
         preparation_zone: preparationZone,
         tenant_id: tenantId,
+        menu_id: menuId || null,
       };
       if (editingCategory) {
         const { error } = await supabase
@@ -267,6 +277,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       }
       setShowModal(false);
       loadCategories();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -288,6 +299,7 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
       if (error) throw error;
       toast({ title: t('categoryDeleted') });
       loadCategories();
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
     } catch {
       toast({ title: tc('deleteError'), variant: 'destructive' });
     }
@@ -426,11 +438,33 @@ export default function CategoriesClient({ tenantId, initialCategories }: Catego
                 id="cat-order"
                 type="number"
                 value={displayOrder}
-                onChange={(e) => setDisplayOrder(Number(e.target.value))}
+                onChange={(e) =>
+                  setDisplayOrder(e.target.value === '' ? '' : Number(e.target.value))
+                }
                 min={0}
                 className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
               />
             </div>
+            {/* Menu selector */}
+            {menus.length > 0 && (
+              <div className="space-y-1.5">
+                <Label htmlFor="cat-menu" className="text-app-text">
+                  {t('menu')}
+                </Label>
+                <select
+                  id="cat-menu"
+                  value={menuId}
+                  onChange={(e) => setMenuId(e.target.value)}
+                  className="w-full rounded-lg border border-app-border bg-transparent text-app-text px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent/30"
+                >
+                  {menus.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* Preparation zone selector */}
             <div className="space-y-1.5">
               <Label className="text-app-text">{t('preparationZone')}</Label>
