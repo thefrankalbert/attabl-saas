@@ -190,7 +190,18 @@ export function createOnboardingService(supabase: SupabaseClient) {
       tenantId: string,
       data: OnboardingCompleteData,
     ): Promise<{ slug?: string }> {
-      // 1. Final tenant update (includes name so the real name replaces the signup placeholder)
+      // Idempotency guard: if already completed, return early (prevents duplicates on retry)
+      const { data: existingTenant } = await supabase
+        .from('tenants')
+        .select('onboarding_completed, slug')
+        .eq('id', tenantId)
+        .single();
+
+      if (existingTenant?.onboarding_completed) {
+        return { slug: existingTenant.slug || data.tenantSlug };
+      }
+
+      // 1. Final tenant update + mark progress completed — in parallel
       const tenantUpdate: Record<string, unknown> = {
         establishment_type: data.establishmentType,
         address: data.address,
@@ -214,25 +225,26 @@ export function createOnboardingService(supabase: SupabaseClient) {
       if (data.language) {
         tenantUpdate.default_locale = data.language;
       }
-      const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
-      if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
 
-      // 2. Mark progress as completed (clear draft since onboarding is done)
-      await supabase.from('onboarding_progress').upsert(
-        {
-          tenant_id: tenantId,
-          step: 5,
-          completed: true,
-          completed_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          draft: null,
-        },
-        {
-          onConflict: 'tenant_id',
-        },
-      );
+      const now = new Date().toISOString();
+      const [tenantResult] = await Promise.all([
+        supabase.from('tenants').update(tenantUpdate).eq('id', tenantId),
+        supabase.from('onboarding_progress').upsert(
+          {
+            tenant_id: tenantId,
+            step: 5,
+            completed: true,
+            completed_at: now,
+            updated_at: now,
+            draft: null,
+          },
+          { onConflict: 'tenant_id' },
+        ),
+      ]);
 
-      // 3. Create zones and tables
+      if (tenantResult.error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
+
+      // 2. Get or create venue
       const tableService = createTableConfigService(supabase);
       let venueId: string | null = null;
 
@@ -253,7 +265,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
         venueId = newVenue?.id || null;
       }
 
-      if (venueId) {
+      // 3. Create zones/tables and categories/menu items — in parallel
+      const tablePromise = (async () => {
+        if (!venueId) return;
         if (data.tableZones && data.tableZones.length > 0 && data.tableConfigMode !== 'skip') {
           const zonesWithDefaults = data.tableZones.map((z) => ({
             ...z,
@@ -261,73 +275,80 @@ export function createOnboardingService(supabase: SupabaseClient) {
           }));
           await tableService.createZonesAndTables(tenantId, venueId, zonesWithDefaults);
         } else {
-          // Skip mode or no zones: create default 10 tables
           const tableCount = data.tableCount || 10;
           await tableService.createDefaultConfig(tenantId, venueId, tableCount);
         }
-      }
+      })();
 
-      // 4. Create categories and menu items if provided
-      if (data.menuItems && data.menuItems.length > 0 && data.menuItems.some((item) => item.name)) {
+      const menuPromise = (async () => {
+        if (
+          !data.menuItems ||
+          data.menuItems.length === 0 ||
+          !data.menuItems.some((item) => item.name)
+        )
+          return;
+
         const validItems = data.menuItems.filter((item) => item.name && item.name.trim());
+        if (validItems.length === 0) return;
 
-        if (validItems.length > 0) {
-          // Group items by category name so each category is created separately
-          const itemsByCategory = new Map<string, MenuItem[]>();
-          for (const item of validItems) {
-            const catName = item.category?.trim() || 'Menu';
-            const existing = itemsByCategory.get(catName) || [];
-            existing.push(item);
-            itemsByCategory.set(catName, existing);
-          }
-
-          let categorySortOrder = 1;
-          let itemDisplayOrder = 1;
-
-          for (const [categoryName, items] of itemsByCategory) {
-            const { data: category, error: catError } = await supabase
-              .from('categories')
-              .insert({
-                tenant_id: tenantId,
-                name: categoryName,
-                is_active: true,
-                sort_order: categorySortOrder,
-                display_order: categorySortOrder,
-              })
-              .select()
-              .single();
-
-            if (catError || !category) {
-              logger.error('Failed to create category during onboarding', catError, {
-                categoryName,
-                tenantId,
-              });
-              continue;
-            }
-
-            categorySortOrder++;
-
-            const { error: itemsError } = await supabase.from('menu_items').insert(
-              items.map((item) => ({
-                tenant_id: tenantId,
-                category_id: category.id,
-                name: item.name,
-                price: item.price || 0,
-                image_url: item.imageUrl || null,
-                is_available: true,
-                display_order: itemDisplayOrder++,
-              })),
-            );
-
-            if (itemsError) {
-              logger.error('Failed to create menu items during onboarding', itemsError, {
-                categoryName,
-                tenantId,
-              });
-            }
-          }
+        // Group items by category
+        const itemsByCategory = new Map<string, MenuItem[]>();
+        for (const item of validItems) {
+          const catName = item.category?.trim() || 'Menu';
+          const existing = itemsByCategory.get(catName) || [];
+          existing.push(item);
+          itemsByCategory.set(catName, existing);
         }
-      }
+
+        // Create all categories in parallel, then their items
+        let itemDisplayOrder = 1;
+        await Promise.all(
+          Array.from(itemsByCategory.entries()).map(
+            async ([categoryName, items], categoryIndex) => {
+              const { data: category, error: catError } = await supabase
+                .from('categories')
+                .insert({
+                  tenant_id: tenantId,
+                  name: categoryName,
+                  is_active: true,
+                  sort_order: categoryIndex + 1,
+                  display_order: categoryIndex + 1,
+                })
+                .select()
+                .single();
+
+              if (catError || !category) {
+                logger.error('Failed to create category during onboarding', catError, {
+                  categoryName,
+                  tenantId,
+                });
+                return;
+              }
+
+              const { error: itemsError } = await supabase.from('menu_items').insert(
+                items.map((item) => ({
+                  tenant_id: tenantId,
+                  category_id: category.id,
+                  name: item.name,
+                  price: item.price || 0,
+                  image_url: item.imageUrl || null,
+                  is_available: true,
+                  display_order: itemDisplayOrder++,
+                })),
+              );
+
+              if (itemsError) {
+                logger.error('Failed to create menu items during onboarding', itemsError, {
+                  categoryName,
+                  tenantId,
+                });
+              }
+            },
+          ),
+        );
+      })();
+
+      await Promise.all([tablePromise, menuPromise]);
 
       return { slug: data.tenantSlug };
     },

@@ -4,13 +4,13 @@ import { logger } from '@/lib/logger';
 import { createOnboardingService } from '@/services/onboarding.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { jsonWithCache } from '@/lib/cache-headers';
-import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
+import { onboardingStateLimiter, getClientIp } from '@/lib/rate-limit';
 
 export async function GET(request: Request) {
   try {
     // Rate limiting
     const ip = getClientIp(request);
-    const { success: allowed } = await onboardingLimiter.check(ip);
+    const { success: allowed } = await onboardingStateLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
