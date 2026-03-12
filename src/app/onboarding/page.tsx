@@ -320,29 +320,6 @@ export default function OnboardingPage() {
     setData((prev) => ({ ...prev, ...newData }));
   }, []);
 
-  // ─── Save current step ────────────────────────────────────────────────────
-
-  const saveStep = async () => {
-    try {
-      const draftPayload = {
-        ...data,
-        _phase: phase,
-        _subScreen: subScreen,
-      };
-      const res = await fetch('/api/onboarding/save', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ step: apiStep, data: draftPayload }),
-      });
-      if (!res.ok) {
-        toast({ title: t('saveError'), variant: 'destructive' });
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Unknown error';
-      toast({ title: t('saveError'), description: message, variant: 'destructive' });
-    }
-  };
-
   const scrollToTop = () => {
     document.querySelector('[data-onboarding-scroll]')?.scrollTo({ top: 0, behavior: 'instant' });
   };

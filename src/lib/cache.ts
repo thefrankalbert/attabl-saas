@@ -74,6 +74,33 @@ export async function getCachedTenant(slug: string) {
 }
 
 /**
+ * Fresh tenant config — bypasses all caching.
+ *
+ * Use this in admin pages (force-dynamic) where data must be 100% fresh
+ * (e.g., right after onboarding, settings changes, etc.).
+ * Public/client pages should continue using getCachedTenant.
+ */
+export async function getTenant(slug: string) {
+  try {
+    const supabase = createCacheClient();
+    const { data, error } = await supabase
+      .from('tenants')
+      .select(TENANT_SELECT)
+      .eq('slug', slug)
+      .single();
+
+    if (error) {
+      logger.error('getTenant: failed', error, { slug });
+      return null;
+    }
+    return data;
+  } catch (err) {
+    logger.error('getTenant: unexpected error', err, { slug });
+    return null;
+  }
+}
+
+/**
  * Cached tenant lookup by custom domain.
  * Used by middleware when the hostname doesn't match *.attabl.com
  */

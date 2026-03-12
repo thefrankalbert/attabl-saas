@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { notFound } from 'next/navigation';
 import SingleOrderClient from '@/components/admin/SingleOrderClient';
 import type { Order, ItemStatus, Course } from '@/types/admin.types';
@@ -14,7 +14,7 @@ export default async function SingleOrderPage({ params }: PageProps) {
   const { site, id } = await params;
 
   // Resolve tenant from site slug to scope the query
-  const tenant = await getCachedTenant(site);
+  const tenant = await getTenant(site);
 
   if (!tenant) {
     notFound();

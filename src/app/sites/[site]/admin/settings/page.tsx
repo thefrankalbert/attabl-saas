@@ -1,10 +1,10 @@
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SettingsForm } from '@/components/admin/settings/SettingsForm';
 import { PushOptIn } from '@/components/admin/PushOptIn';
 import { notFound } from 'next/navigation';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 interface SettingsPageProps {
   params: Promise<{ site: string }>;
@@ -15,7 +15,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) notFound();
 

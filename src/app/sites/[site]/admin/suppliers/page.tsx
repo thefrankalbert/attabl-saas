@@ -1,16 +1,16 @@
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { AlertCircle } from 'lucide-react';
 import SuppliersClient from '@/components/admin/SuppliersClient';
 
-export const revalidate = 120;
+export const dynamic = 'force-dynamic';
 
 export default async function SuppliersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { redirect } from 'next/navigation';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
 
@@ -17,7 +17,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   }
 
   // Resolve tenant from URL slug
-  const tenant = await getCachedTenant(site);
+  const tenant = await getTenant(site);
 
   if (!tenant) {
     redirect('/login');

@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
 import { AlertCircle } from 'lucide-react';
@@ -14,7 +14,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

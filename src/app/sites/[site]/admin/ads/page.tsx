@@ -1,18 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import AdsClient from '@/components/admin/AdsClient';
 import { AlertCircle } from 'lucide-react';
 import type { Ad } from '@/types/admin.types';
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function AdsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { redirect } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
@@ -19,7 +19,7 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
   }
 
   // Resolve tenant from URL slug
-  const tenant = await getCachedTenant(site);
+  const tenant = await getTenant(site);
 
   if (!tenant) {
     redirect('/login');

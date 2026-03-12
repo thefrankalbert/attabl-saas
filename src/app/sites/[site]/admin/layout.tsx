@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
@@ -18,6 +18,8 @@ import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
 import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialog';
 import { SoundProvider } from '@/contexts/SoundContext';
 import type { AdminRole } from '@/types/admin.types';
+
+export const dynamic = 'force-dynamic';
 
 interface AdminUser {
   id: string;
@@ -39,7 +41,7 @@ export default async function AdminLayout({
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  // Run tenant fetch (cached) + auth check in PARALLEL to cut latency
+  // Run tenant fetch + auth check in PARALLEL to cut latency
   const supabase = await createClient();
   const [
     tenant,
@@ -47,7 +49,7 @@ export default async function AdminLayout({
       data: { user },
       error: authError,
     },
-  ] = await Promise.all([getCachedTenant(tenantSlug), supabase.auth.getUser()]);
+  ] = await Promise.all([getTenant(tenantSlug), supabase.auth.getUser()]);
 
   if (!tenant) {
     redirect('/login');
