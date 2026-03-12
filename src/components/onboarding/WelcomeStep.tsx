@@ -20,62 +20,70 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
 
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 bg-app-bg relative overflow-hidden">
-      {/* Subtle radial glow behind content */}
+      {/* Warm ambient glow — two overlapping radials for depth */}
       <div
-        className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.07]"
+        className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
-          width: '800px',
-          height: '800px',
-          background: 'radial-gradient(circle, var(--app-accent) 0%, transparent 70%)',
+          width: '900px',
+          height: '600px',
+          background:
+            'radial-gradient(ellipse 60% 50% at 50% 50%, color-mix(in srgb, var(--app-accent) 8%, transparent) 0%, transparent 100%)',
+        }}
+      />
+      <div
+        className="pointer-events-none absolute bottom-0 left-1/2 -translate-x-1/2"
+        style={{
+          width: '600px',
+          height: '300px',
+          background:
+            'radial-gradient(ellipse 70% 60% at 50% 100%, color-mix(in srgb, var(--app-accent) 5%, transparent) 0%, transparent 100%)',
         }}
       />
 
-      <div className="relative z-10 flex flex-col items-center text-center max-w-lg animate-in fade-in slide-in-from-bottom-4 duration-700">
-        {/* Brand mark with decorative lines */}
-        <div className="flex items-center gap-4 mb-12">
-          <div className="h-px w-8 bg-app-border" />
-          <p className="text-[10px] font-bold uppercase tracking-[0.35em] text-app-text-muted">
+      {/* Main content */}
+      <div className="relative z-10 flex flex-col items-center text-center max-w-lg w-full">
+        {/* Branded header pill */}
+        <div className="inline-flex items-center gap-3 mb-10 opacity-0 animate-[fadeSlideIn_0.6s_0.1s_ease-out_forwards]">
+          <div className="h-px w-10 bg-gradient-to-r from-transparent to-app-border" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-app-text-muted">
             ATTABL
-          </p>
-          <div className="h-px w-8 bg-app-border" />
+          </span>
+          <div className="h-px w-10 bg-gradient-to-l from-transparent to-app-border" />
         </div>
 
-        {/* Headline — large, warm, commanding */}
-        <h1 className="text-3xl sm:text-4xl font-bold text-app-text mb-3 leading-tight tracking-tight">
+        {/* Headline */}
+        <h1 className="text-3xl sm:text-[2.5rem] font-bold text-app-text mb-4 leading-[1.15] tracking-tight opacity-0 animate-[fadeSlideIn_0.7s_0.2s_ease-out_forwards]">
           {t('welcomeTitle', { name: tenantName || '' })}
         </h1>
-        <p className="text-sm sm:text-base text-app-text-secondary mb-14 max-w-sm leading-relaxed">
+        <p className="text-sm sm:text-[15px] text-app-text-secondary mb-16 max-w-sm leading-relaxed opacity-0 animate-[fadeSlideIn_0.7s_0.35s_ease-out_forwards]">
           {t('studioSubtitle')}
         </p>
 
-        {/* Phase journey — horizontal with connecting line */}
-        <div className="w-full max-w-md mb-14">
-          <div className="relative flex items-start justify-between">
-            {/* Connecting line behind the icons */}
-            <div className="absolute top-5 left-[calc(16.67%)] right-[calc(16.67%)] h-px bg-app-border" />
-
+        {/* Phase journey — vertical card-style timeline */}
+        <div className="w-full max-w-sm mb-16 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
+          <div className="relative flex flex-col gap-0">
             {PHASES.map((phase, i) => {
               const Icon = phase.icon;
+              const isLast = i === PHASES.length - 1;
               return (
-                <div
-                  key={i}
-                  className="relative flex flex-col items-center gap-3 w-1/3 animate-in fade-in slide-in-from-bottom-2 duration-500"
-                  style={{ animationDelay: `${200 + i * 150}ms`, animationFillMode: 'both' }}
-                >
-                  {/* Numbered icon container */}
-                  <div className="relative">
-                    <div className="w-10 h-10 rounded-full bg-app-card border border-app-border flex items-center justify-center">
-                      <Icon className="h-4 w-4 text-accent" />
+                <div key={i} className="relative flex items-start gap-4">
+                  {/* Timeline spine */}
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 rounded-full border border-app-border bg-app-card flex items-center justify-center flex-shrink-0 relative">
+                      <Icon className="h-[18px] w-[18px] text-accent" strokeWidth={1.8} />
+                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-app-elevated border border-app-border flex items-center justify-center text-[8px] font-bold text-app-text-muted leading-none">
+                        {phase.num}
+                      </span>
                     </div>
-                    <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-app-elevated border border-app-border flex items-center justify-center text-[9px] font-bold text-app-text-muted">
-                      {phase.num}
-                    </span>
+                    {!isLast && <div className="w-px h-full min-h-[20px] bg-app-border" />}
                   </div>
 
-                  {/* Labels */}
-                  <div className="flex flex-col items-center gap-1">
-                    <p className="text-xs font-semibold text-app-text">{t(phase.label)}</p>
-                    <p className="text-[10px] text-app-text-muted leading-snug max-w-[120px]">
+                  {/* Phase content */}
+                  <div className={`pt-2 pb-6 ${isLast ? 'pb-0' : ''}`}>
+                    <p className="text-[13px] font-semibold text-app-text leading-none mb-1">
+                      {t(phase.label)}
+                    </p>
+                    <p className="text-[11px] text-app-text-muted leading-relaxed">
                       {t(phase.desc)}
                     </p>
                   </div>
@@ -85,27 +93,38 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           </div>
         </div>
 
-        {/* CTA — premium feel */}
-        <div
-          className="flex flex-col items-center gap-5 animate-in fade-in slide-in-from-bottom-2 duration-500"
-          style={{ animationDelay: '650ms', animationFillMode: 'both' }}
-        >
+        {/* CTA */}
+        <div className="flex flex-col items-center gap-5 opacity-0 animate-[fadeSlideIn_0.7s_0.65s_ease-out_forwards]">
           <Button
             variant="default"
             onClick={onStart}
-            className="h-12 rounded-full gap-2.5 text-sm font-bold px-10 active:scale-[0.97] transition-all"
+            className="h-12 rounded-full gap-2.5 text-sm font-bold px-10 active:scale-[0.97] transition-transform"
           >
             {t('welcomeCTA')}
             <ArrowRight className="h-4 w-4" />
           </Button>
 
-          {/* Trial pill */}
+          {/* Trial reminder */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-app-border bg-app-card/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            <span className="w-1.5 h-1.5 rounded-full bg-accent animate-pulse" />
             <p className="text-[10px] font-medium text-app-text-muted">{t('trialReminder')}</p>
           </div>
         </div>
       </div>
+
+      {/* Keyframe definition */}
+      <style>{`
+        @keyframes fadeSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
     </div>
   );
 }
