@@ -72,7 +72,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : undefined,
+    opacity: isDragging ? 0.5 : undefined,
     zIndex: isDragging ? 10 : undefined,
   };
 
@@ -81,7 +81,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        'flex items-center gap-4 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
+        'flex items-center gap-3 px-4 py-3 border-b border-app-border hover:bg-app-bg/50 transition-colors group',
         isDragging && 'bg-app-bg shadow-sm',
       )}
     >
@@ -123,7 +123,12 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
         <span className="font-medium tabular-nums">{cat.items_count || 0}</span>
       </div>
       <div className="flex items-center gap-1 shrink-0">
-        <Button variant="ghost" size="sm" onClick={() => onEdit(cat)} className="h-9 w-9 p-0">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => onEdit(cat)}
+          className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
+        >
           <Edit2 className="w-4 h-4" />
         </Button>
         <Button
@@ -309,30 +314,26 @@ export default function CategoriesClient({
   return (
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
-        <div className="shrink-0 flex items-center">
-          <div className="inline-flex items-center gap-2 border border-app-border rounded-lg px-1.5 py-1">
-            <span className="text-xs font-bold text-app-text-secondary tabular-nums px-1.5 shrink-0">
-              {categories.length}
-            </span>
-            <Button
-              onClick={openNewModal}
-              variant="default"
-              size="sm"
-              className="gap-1.5 h-7 rounded-md shrink-0"
-            >
-              <Plus className="w-3.5 h-3.5" /> {t('newCategory')}
+        <div className="shrink-0 flex items-center gap-3">
+          <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
+            {categories.length}
+          </span>
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            <Button onClick={openNewModal} variant="default" size="sm" className="gap-1.5 shrink-0">
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">{t('newCategory')}</span>
             </Button>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-2 sm:mt-4">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
           {/* List */}
           {loading ? (
-            <div className="space-y-3">
+            <div className="space-y-1">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="h-16 bg-app-card rounded-xl border border-app-border animate-pulse"
+                  className="h-12 bg-app-card border-b border-app-border animate-pulse"
                 />
               ))}
             </div>
@@ -348,16 +349,14 @@ export default function CategoriesClient({
                 items={categories.map((cat) => cat.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-                  {categories.map((cat) => (
-                    <SortableRow
-                      key={cat.id}
-                      cat={cat}
-                      onEdit={openEditModal}
-                      onDelete={handleDelete}
-                    />
-                  ))}
-                </div>
+                {categories.map((cat) => (
+                  <SortableRow
+                    key={cat.id}
+                    cat={cat}
+                    onEdit={openEditModal}
+                    onDelete={handleDelete}
+                  />
+                ))}
               </SortableContext>
               <DragOverlay>
                 {activeDragId
@@ -365,7 +364,7 @@ export default function CategoriesClient({
                       const cat = categories.find((c) => c.id === activeDragId);
                       if (!cat) return null;
                       return (
-                        <div className="flex items-center gap-4 px-4 py-3 bg-app-card rounded-xl border-2 border-accent shadow-sm">
+                        <div className="flex items-center gap-4 px-4 py-3 bg-app-bg border-b border-accent shadow-sm">
                           <GripVertical className="w-4 h-4 text-app-text-secondary" />
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-app-text text-sm">{cat.name}</p>
@@ -383,13 +382,13 @@ export default function CategoriesClient({
               </DragOverlay>
             </DndContext>
           ) : (
-            <div className="bg-app-card rounded-xl border border-app-border p-16 text-center">
-              <div className="w-16 h-16 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Folder className="w-8 h-8 text-app-text-muted" />
+            <div className="p-12 text-center">
+              <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
-              <h3 className="text-lg font-bold text-app-text">{t('noCategories')}</h3>
+              <h3 className="text-base font-bold text-app-text">{t('noCategories')}</h3>
               <p className="text-sm text-app-text-secondary mt-2">{t('noCategoriesDesc')}</p>
-              <Button onClick={openNewModal} variant="default" className="mt-6">
+              <Button onClick={openNewModal} variant="default" className="mt-4">
                 {t('createCategory')}
               </Button>
             </div>

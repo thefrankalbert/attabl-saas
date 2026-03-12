@@ -8,6 +8,7 @@ import {
   Plus,
   ArrowLeft,
   Folder,
+  FolderPlus,
   Utensils,
   Edit2,
   Trash2,
@@ -40,6 +41,7 @@ interface MenuDetailClientProps {
   tenantSlug: string;
   menu: Menu;
   categories: Category[];
+  availableCategories: Category[];
   items: MenuItem[];
 }
 
@@ -48,16 +50,24 @@ export default function MenuDetailClient({
   tenantSlug,
   menu: initialMenu,
   categories: initialCategories,
+  availableCategories: initialAvailableCategories,
   items: initialItems,
 }: MenuDetailClientProps) {
   const [menu, setMenu] = useState<Menu>(initialMenu);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [availableCategories, setAvailableCategories] = useState<Category[]>(
+    initialAvailableCategories,
+  );
   const [items, setItems] = useState<MenuItem[]>(initialItems);
   const [loading, setLoading] = useState(false);
   const [expandedCategories, setExpandedCategories] = useSessionState<Set<string>>(
     'menuDetail:expandedCategories',
     new Set(),
   );
+
+  // Assign existing category state
+  const [showAssignDropdown, setShowAssignDropdown] = useState(false);
+  const [assigningCategory, setAssigningCategory] = useState(false);
 
   // Category modal state
   const [showCategoryModal, setShowCategoryModal] = useState(false);
@@ -107,6 +117,14 @@ export default function MenuDetailClient({
         .eq('menu_id', menu.id)
         .order('display_order', { ascending: true });
       if (catData) setCategories(catData as Category[]);
+
+      const { data: availData } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .is('menu_id', null)
+        .order('name', { ascending: true });
+      if (availData) setAvailableCategories(availData as Category[]);
 
       const catIds = (catData || []).map((c: { id: string }) => c.id);
       if (catIds.length > 0) {
@@ -231,6 +249,27 @@ export default function MenuDetailClient({
       toast({
         title: newValue ? t('categoryVisible') : t('categoryHidden'),
       });
+    }
+  };
+
+  // ─── Assign existing category ─────────────────────────
+
+  const handleAssignCategory = async (cat: Category) => {
+    setAssigningCategory(true);
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .update({ menu_id: menu.id })
+        .eq('id', cat.id);
+      if (error) throw error;
+      toast({ title: t('categoryAssigned') });
+      setShowAssignDropdown(false);
+      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      loadData();
+    } catch {
+      toast({ title: t('saveError'), variant: 'destructive' });
+    } finally {
+      setAssigningCategory(false);
     }
   };
 
@@ -383,9 +422,49 @@ export default function MenuDetailClient({
               <Folder className="w-4 h-4 text-app-text-muted" />
               {t('categoriesCount', { count: categories.length })}
             </h2>
-            <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
-              <Plus className="w-4 h-4" /> {t('newCategory')}
-            </Button>
+            <div className="flex items-center gap-2">
+              {availableCategories.length > 0 && (
+                <div className="relative">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setShowAssignDropdown(!showAssignDropdown)}
+                    disabled={assigningCategory}
+                  >
+                    {assigningCategory ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <FolderPlus className="w-4 h-4" />
+                    )}
+                    {t('assignExisting')}
+                  </Button>
+                  {showAssignDropdown && (
+                    <>
+                      {/* Backdrop to close dropdown */}
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowAssignDropdown(false)}
+                      />
+                      <div className="absolute right-0 top-full mt-1 z-50 w-64 max-h-60 overflow-y-auto bg-app-card border border-app-border rounded-lg shadow-lg">
+                        {availableCategories.map((cat) => (
+                          <button
+                            key={cat.id}
+                            onClick={() => handleAssignCategory(cat)}
+                            className="w-full text-left px-3 py-2 text-sm text-app-text hover:bg-app-bg transition-colors first:rounded-t-lg last:rounded-b-lg"
+                          >
+                            {cat.name}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+              <Button onClick={openNewCategoryModal} size="sm" className="gap-2">
+                <Plus className="w-4 h-4" /> {t('newCategory')}
+              </Button>
+            </div>
           </div>
 
           {loading ? (

@@ -1375,6 +1375,8 @@
     "categoryDisplayOrder": "Display order",
     "categoryUpdated": "Category updated",
     "categoryCreated": "Category created",
+    "categoryAssigned": "Category added to this menu",
+    "assignExisting": "Add existing",
     "categoryDeleted": "Category deleted",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Import Excel",

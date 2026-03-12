@@ -1375,6 +1375,8 @@
     "categoryDisplayOrder": "Ordre d'affichage",
     "categoryUpdated": "Catégorie mise à jour",
     "categoryCreated": "Catégorie créée",
+    "categoryAssigned": "Catégorie ajoutée à cette carte",
+    "assignExisting": "Ajouter existante",
     "categoryDeleted": "Catégorie supprimée",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Importer Excel",

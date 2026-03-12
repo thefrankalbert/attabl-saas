@@ -1381,6 +1381,8 @@
     "categoryDisplayOrder": "Orden de visualización",
     "categoryUpdated": "Categoría actualizada",
     "categoryCreated": "Categoría creada",
+    "categoryAssigned": "Categoría añadida a este menú",
+    "assignExisting": "Añadir existente",
     "categoryDeleted": "Categoría eliminada",
     "priceFcfa": "{count} FCFA",
     "importExcel": "Importar Excel",

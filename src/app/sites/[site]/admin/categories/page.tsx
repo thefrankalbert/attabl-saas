@@ -50,7 +50,7 @@ export default async function CategoriesPage({ params }: { params: Promise<{ sit
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div>
       <CategoriesClient
         tenantId={tenant.id}
         initialCategories={formatted}
