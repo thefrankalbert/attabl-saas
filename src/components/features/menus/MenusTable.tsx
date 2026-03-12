@@ -109,60 +109,99 @@ function MenuRow({
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </button>
 
-      {/* Name */}
+      {/* Clickable area — entire name + status region navigates to menu detail */}
       <Link
         href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
-        className="flex-1 min-w-0 flex items-center gap-2"
+        className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer py-1"
       >
-        <span className="font-medium text-sm text-app-text hover:underline break-words">
-          {menu.name}
-        </span>
-        {childCount > 0 && (
-          <span className="text-xs text-app-text-muted shrink-0">
-            {t('subMenuCount', { count: childCount })}
+        <span className="flex-1 min-w-0 flex items-center gap-2">
+          <span className="font-medium text-sm text-app-text group-hover:underline break-words">
+            {menu.name}
           </span>
-        )}
+          {childCount > 0 && (
+            <span className="text-xs text-app-text-muted shrink-0">
+              {t('subMenuCount', { count: childCount })}
+            </span>
+          )}
+        </span>
+
+        {/* Active badge (inside link for visual context, non-interactive here) */}
+        <span
+          className={cn(
+            'px-2 py-0.5 rounded-full text-xs font-semibold border shrink-0 pointer-events-none',
+            menu.is_active
+              ? 'bg-status-success-bg text-status-success border-status-success/20'
+              : 'bg-app-bg text-app-text-secondary border-app-border',
+          )}
+        >
+          {menu.is_active ? (
+            <>
+              <ToggleRight className="w-3 h-3 inline mr-0.5" /> {t('active')}
+            </>
+          ) : (
+            <>
+              <ToggleLeft className="w-3 h-3 inline mr-0.5" /> {t('inactive')}
+            </>
+          )}
+        </span>
       </Link>
 
-      {/* Active toggle */}
-      <button
-        onClick={onToggle}
-        className={cn(
-          'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all shrink-0',
-          menu.is_active
-            ? 'bg-status-success-bg text-status-success border-status-success/20'
-            : 'bg-app-bg text-app-text-secondary border-app-border',
-        )}
-      >
-        {menu.is_active ? (
-          <>
-            <ToggleRight className="w-3 h-3 inline mr-0.5" /> {t('active')}
-          </>
-        ) : (
-          <>
-            <ToggleLeft className="w-3 h-3 inline mr-0.5" /> {t('inactive')}
-          </>
-        )}
-      </button>
-
-      {/* Actions */}
+      {/* Actions — stop propagation so clicks don't navigate */}
       <div className="flex items-center gap-1 shrink-0">
+        {/* Edit button — prominent, always visible */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={onAddChild}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onEdit();
+          }}
+          title={t('editMenuTitle')}
+          className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
+        >
+          <Edit2 className="w-4 h-4" />
+        </Button>
+        {/* Toggle active */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onToggle();
+          }}
+          title={menu.is_active ? t('active') : t('inactive')}
+          className="h-9 w-9 p-0"
+        >
+          {menu.is_active ? (
+            <ToggleRight className="w-4 h-4 text-status-success" />
+          ) : (
+            <ToggleLeft className="w-4 h-4 text-app-text-muted" />
+          )}
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onAddChild();
+          }}
           title={t('addSubMenu')}
           className="h-9 w-9 p-0"
         >
           <Plus className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={onEdit} className="h-9 w-9 p-0">
-          <Edit2 className="w-4 h-4" />
-        </Button>
         <Button
           variant="ghost"
           size="sm"
-          onClick={onDelete}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onDelete();
+          }}
+          title="Supprimer"
           className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
           <Trash2 className="w-4 h-4" />

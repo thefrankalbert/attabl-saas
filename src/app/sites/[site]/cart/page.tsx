@@ -739,7 +739,7 @@ export default function CartPage() {
                                 </button>
                               </div>
                             </div>
-                            <h3 className="text-[11px] font-bold text-app-text line-clamp-2 leading-tight mb-2 h-7">
+                            <h3 className="text-[11px] font-bold text-app-text leading-tight mb-2">
                               {getTranslatedContent(language, item.name, item.name_en)}
                             </h3>
                             <span

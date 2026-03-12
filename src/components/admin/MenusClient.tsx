@@ -127,12 +127,10 @@ export default function MenusClient({
                   onClick={handleDeleteSelected}
                   variant="outline"
                   size="sm"
+                  title="Supprimer"
                   className="gap-1.5 shrink-0 text-red-600 border-red-200 hover:bg-red-500/10 hover:text-red-700"
                 >
                   <Trash2 className="w-4 h-4" />
-                  <span className="hidden sm:inline">
-                    {t('deleteSelected', { count: selectedIds.size })}
-                  </span>
                 </Button>
               )}
               <Button

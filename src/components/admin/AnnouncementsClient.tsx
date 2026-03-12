@@ -234,6 +234,7 @@ export default function AnnouncementsClient({
                     variant="ghost"
                     size="sm"
                     className="h-8 w-8 p-0 text-status-error hover:text-status-error hover:bg-status-error-bg"
+                    title="Supprimer"
                     onClick={() => handleDelete(ann.id)}
                   >
                     <Trash2 className="w-3.5 h-3.5" />

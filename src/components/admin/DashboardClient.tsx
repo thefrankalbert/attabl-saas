@@ -306,7 +306,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       {/* Greeting + date + time */}
       <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-1 sm:gap-2">
         <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-app-text truncate max-w-[200px] sm:max-w-none">
+          <h1 className="text-base sm:text-lg font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
           </h1>
           <span className="text-[10px] sm:text-xs text-app-text-muted capitalize hidden sm:inline">
@@ -400,7 +400,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                       className="w-1.5 h-1.5 rounded-full shrink-0"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-[9px] text-app-text-muted truncate">{item.label}</span>
+                    <span className="text-[9px] text-app-text-muted">{item.label}</span>
                     <span className="text-[9px] font-bold text-app-text tabular-nums ml-auto shrink-0">
                       {item.value}
                     </span>
@@ -426,7 +426,7 @@ export default function DashboardClient(props: DashboardClientProps) {
             <div className="mb-3 shrink-0">
               {/* Segmented control row */}
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest whitespace-nowrap overflow-hidden text-ellipsis">
+                <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
                   {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
                 </p>
                 <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
@@ -456,7 +456,7 @@ export default function DashboardClient(props: DashboardClientProps) {
               </div>
               {/* Value + period */}
               <div className="flex items-baseline gap-1.5 sm:gap-2">
-                <span className="text-lg sm:text-xl font-black text-app-text tabular-nums truncate">
+                <span className="text-lg sm:text-xl font-black text-app-text tabular-nums">
                   {chartMode === 'revenue' ? fmtF(totalRevenue7d) : totalOrders7d}
                 </span>
                 <span className="text-[10px] text-app-text-muted shrink-0">{t('last7days')}</span>
@@ -515,21 +515,21 @@ export default function DashboardClient(props: DashboardClientProps) {
               className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <QrCode className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t('qrGenerator')}</span>
+              <span>{t('qrGenerator')}</span>
             </Link>
             <Link
               href={`${adminBase}/reports`}
               className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t('reportsLabel')}</span>
+              <span>{t('reportsLabel')}</span>
             </Link>
             <Link
               href={`${adminBase}/stock-history`}
               className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <Package className="w-3.5 h-3.5 shrink-0" />
-              <span className="truncate">{t('stockHistoryLabel')}</span>
+              <span>{t('stockHistoryLabel')}</span>
             </Link>
           </div>
         </div>

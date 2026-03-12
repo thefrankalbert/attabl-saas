@@ -182,6 +182,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   variant="ghost"
                   size="sm"
                   onClick={() => setDeleteConfirm(supplier.id)}
+                  title="Supprimer"
                   className="text-xs text-status-error hover:text-status-error"
                 >
                   <Trash2 className="w-3 h-3" />

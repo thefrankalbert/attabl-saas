@@ -459,6 +459,7 @@ export default function MenuDetailClient({
                           variant="outline"
                           size="sm"
                           onClick={() => handleDeleteCategory(cat)}
+                          title="Supprimer"
                           className="text-xs h-8 text-red-600 hover:text-red-700 hover:bg-red-500/10"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

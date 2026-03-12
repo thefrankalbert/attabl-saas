@@ -143,6 +143,7 @@ export default function POSCart({
         </div>
         <button
           onClick={onClearCart}
+          title="Supprimer"
           className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation"
         >
           <Trash2 className="w-3.5 h-3.5" />
@@ -213,9 +214,7 @@ export default function POSCart({
                   {/* Line 1: Name + line total */}
                   <div className="flex justify-between items-start gap-3">
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-app-text leading-tight line-clamp-1">
-                        {item.name}
-                      </p>
+                      <p className="text-sm font-medium text-app-text leading-tight">{item.name}</p>
                       {/* Modifiers + Notes inline */}
                       <div className="flex flex-wrap items-center gap-1.5 mt-1">
                         {item.selectedModifiers && item.selectedModifiers.length > 0 && (

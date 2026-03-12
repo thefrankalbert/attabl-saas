@@ -294,7 +294,7 @@ export function SoundSettings({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5">
                   <span
-                    className={`text-xs font-medium truncate ${isLocked ? 'text-app-text-muted' : 'text-app-text'}`}
+                    className={`text-xs font-medium ${isLocked ? 'text-app-text-muted' : 'text-app-text'}`}
                   >
                     {sound.name}
                   </span>
@@ -310,7 +310,7 @@ export function SoundSettings({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-app-text-secondary truncate">{sound.description}</p>
+                <p className="text-[11px] text-app-text-secondary">{sound.description}</p>
               </div>
 
               {/* Delete custom sound */}
@@ -328,6 +328,7 @@ export function SoundSettings({
                       handleDeleteCustomSound();
                     }
                   }}
+                  title="Supprimer"
                   className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
                 >
                   <Trash2 className="w-3 h-3" />

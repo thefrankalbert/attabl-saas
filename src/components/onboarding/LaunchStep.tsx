@@ -209,7 +209,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 Lien du menu
               </p>
               <div className="flex items-center gap-2">
-                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text truncate">
+                <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text break-all">
                   {menuUrl}
                 </div>
                 <button
