@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidateTag } from 'next/cache';
+import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { AdminRole } from '@/types/admin.types';
 import { createMenuSchema, updateMenuSchema } from '@/lib/validations/menu.schema';
 import { createMenuService } from '@/services/menu.service';
@@ -105,7 +106,7 @@ export async function actionCreateMenu(
       newData: parsed.data,
     });
 
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -159,7 +160,7 @@ export async function actionUpdateMenu(
       newData: parsed.data,
     });
 
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true, data: menu };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -194,7 +195,7 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
     });
     audit.log({ action: 'delete', entityType: 'menu', entityId: menuId });
 
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {
@@ -218,7 +219,7 @@ export async function actionReorderMenus(
     const menuService = createMenuService(supabase);
     await menuService.reorderMenus(tenantId, orderedIds);
 
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
     return { success: true };
   } catch (err) {
     if (err instanceof ServiceError) {

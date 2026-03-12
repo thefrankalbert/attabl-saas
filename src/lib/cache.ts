@@ -1,6 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 
 /**
  * Supabase client for use inside unstable_cache.
@@ -59,8 +60,8 @@ const getCachedTenantInner = unstable_cache(
     // Unreachable, but satisfies TS
     throw new Error('getCachedTenant: unexpected code path');
   },
-  ['tenant-config'],
-  { revalidate: 60, tags: ['tenant-config'] },
+  [CACHE_TAG_TENANT_CONFIG],
+  { revalidate: 60, tags: [CACHE_TAG_TENANT_CONFIG] },
 );
 
 /** Cached tenant config. Returns null on failure instead of crashing the page. */
@@ -117,7 +118,7 @@ export const getCachedTenantByDomain = unstable_cache(
     return data.slug;
   },
   ['tenant-domain'],
-  { revalidate: 300, tags: ['tenant-config'] },
+  { revalidate: 300, tags: [CACHE_TAG_TENANT_CONFIG] },
 );
 
 /**
@@ -147,6 +148,6 @@ export const getCachedMenuStructure = unstable_cache(
 
     return data ?? [];
   },
-  ['menus'],
-  { revalidate: 300, tags: ['menus'] },
+  [CACHE_TAG_MENUS],
+  { revalidate: 300, tags: [CACHE_TAG_MENUS] },
 );

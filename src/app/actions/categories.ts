@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { revalidateTag } from 'next/cache';
+import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { AdminRole } from '@/types/admin.types';
 
 type ActionResponse = {
@@ -59,7 +60,7 @@ export async function actionToggleCategoryActive(
     return { error: error.message };
   }
 
-  revalidateTag('menus', 'max');
+  revalidateTag(CACHE_TAG_MENUS, 'max');
 
   return { success: true };
 }

@@ -1,6 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
+import { CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
@@ -86,7 +87,7 @@ export async function actionUpdateTenantSettings(formData: FormData) {
     });
 
     // 4. Revalidate cached tenant config (used by site + admin layouts)
-    revalidateTag('tenant-config', 'max');
+    revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
 
     return { success: true };
   } catch (error) {
