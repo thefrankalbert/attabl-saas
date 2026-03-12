@@ -8,6 +8,7 @@ import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } 
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage, uploadToStorage } from '@/lib/image-compress';
 import { createClient } from '@/lib/supabase/client';
+import { getSegmentFamily } from '@/lib/segment-terms';
 
 interface MenuStepProps {
   data: OnboardingData;
@@ -69,6 +70,8 @@ function buildCategoriesFromData(menuItems: OnboardingData['menuItems']): Catego
 
 export function MenuStep({ data, updateData }: MenuStepProps) {
   const t = useTranslations('onboarding');
+  const tSeg = useTranslations('segment');
+  const family = getSegmentFamily(data.establishmentType);
   const [uploadingItemId, setUploadingItemId] = useState<string | null>(null);
   const [categories, setCategories] = useState<Category[]>(() =>
     buildCategoriesFromData(data.menuItems),
@@ -215,7 +218,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
           {/* Categories — Full width */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
-              Menu
+              {tSeg(`${family}.catalog`)}
             </p>
 
             <div className="space-y-4">

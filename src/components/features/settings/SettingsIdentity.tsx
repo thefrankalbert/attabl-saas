@@ -23,25 +23,21 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
 const ESTABLISHMENT_TYPES = [
-  { value: 'restaurant', label: 'Restaurant' },
-  { value: 'hotel', label: 'Hotel' },
-  { value: 'cafe', label: 'Cafe' },
-  { value: 'bar', label: 'Bar' },
-  { value: 'brasserie', label: 'Brasserie' },
-  { value: 'fast-food', label: 'Fast-food' },
-  { value: 'food-truck', label: 'Food truck' },
-  { value: 'other', label: 'Autre' },
-];
+  { value: 'restaurant', labelKey: 'typeRestaurant' },
+  { value: 'hotel', labelKey: 'typeHotel' },
+  { value: 'bar', labelKey: 'typeBar' },
+  { value: 'cafe', labelKey: 'typeCafe' },
+  { value: 'fastfood', labelKey: 'typeFastfood' },
+  { value: 'retail', labelKey: 'typeRetail' },
+  { value: 'boutique', labelKey: 'typeBoutique' },
+  { value: 'pharmacy', labelKey: 'typePharmacy' },
+  { value: 'salon', labelKey: 'typeSalon' },
+  { value: 'other', labelKey: 'typeOther' },
+] as const;
 
 const LOCALE_LABELS: Record<Locale, { label: string; flag: string }> = {
   'fr-FR': { label: 'Francais (France)', flag: 'FR' },
-  'fr-CA': { label: 'Francais (Canada)', flag: 'CA' },
   'en-US': { label: 'English (US)', flag: 'US' },
-  'en-GB': { label: 'English (UK)', flag: 'GB' },
-  'en-AU': { label: 'English (Australia)', flag: 'AU' },
-  'en-CA': { label: 'English (Canada)', flag: 'CA' },
-  'en-IE': { label: 'English (Ireland)', flag: 'IE' },
-  'es-ES': { label: 'Espanol (Espana)', flag: 'ES' },
 };
 
 // ─── Types ─────────────────────────────────────────────────
@@ -173,7 +169,7 @@ export default function SettingsIdentity({
                 <SelectContent>
                   {ESTABLISHMENT_TYPES.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      {t(type.labelKey)}
                     </SelectItem>
                   ))}
                 </SelectContent>

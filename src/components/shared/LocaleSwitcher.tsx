@@ -7,13 +7,7 @@ import { locales, type Locale } from '@/i18n/config';
 
 const localeLabels: Record<Locale, { label: string; flag: string }> = {
   'fr-FR': { label: 'Français (France)', flag: '🇫🇷' },
-  'fr-CA': { label: 'Français (Canada)', flag: '🇨🇦' },
   'en-US': { label: 'English (US)', flag: '🇺🇸' },
-  'en-GB': { label: 'English (UK)', flag: '🇬🇧' },
-  'en-AU': { label: 'English (Australia)', flag: '🇦🇺' },
-  'en-CA': { label: 'English (Canada)', flag: '🇨🇦' },
-  'en-IE': { label: 'English (Ireland)', flag: '🇮🇪' },
-  'es-ES': { label: 'Español (España)', flag: '🇪🇸' },
 };
 
 export function LocaleSwitcher() {

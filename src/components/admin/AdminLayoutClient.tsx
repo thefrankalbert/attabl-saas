@@ -30,6 +30,7 @@ interface AdminLayoutInnerProps {
     slug: string;
     logo_url?: string;
     subscription_plan?: string;
+    establishment_type?: string;
   };
   userName?: string;
   userTenants?: TenantSwitchOption[];
@@ -121,7 +122,13 @@ function AdminLayoutInner({
           {children}
         </main>
 
-        {isMobile && !isHome && <AdminBottomNav basePath={basePath} role={role} />}
+        {isMobile && !isHome && (
+          <AdminBottomNav
+            basePath={basePath}
+            role={role}
+            establishmentType={tenant.establishment_type}
+          />
+        )}
       </div>
     </div>
   );
@@ -139,6 +146,7 @@ interface AdminLayoutClientProps {
     slug: string;
     logo_url?: string;
     subscription_plan?: string;
+    establishment_type?: string;
   };
   userName?: string;
   userTenants?: TenantSwitchOption[];
