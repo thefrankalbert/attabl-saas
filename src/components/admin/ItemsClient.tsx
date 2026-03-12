@@ -17,6 +17,7 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { useMenuItems } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
@@ -93,6 +94,7 @@ export default function ItemsClient({
   const tc = useTranslations('common');
   const ta = useTranslations('allergens');
   const supabase = createClient();
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const closePanel = useCallback(() => setSelectedItem(null), []);
@@ -195,6 +197,7 @@ export default function ItemsClient({
       }
       setShowModal(false);
       loadItems();
+      router.refresh();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -209,6 +212,7 @@ export default function ItemsClient({
       if (error) throw error;
       toast({ title: t('itemDeleted') });
       loadItems();
+      router.refresh();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     }
@@ -223,6 +227,7 @@ export default function ItemsClient({
         .eq('tenant_id', tenantId);
       if (error) throw error;
       loadItems();
+      router.refresh();
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -238,6 +243,7 @@ export default function ItemsClient({
       if (error) throw error;
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
+      router.refresh();
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -311,6 +317,7 @@ export default function ItemsClient({
                   }
                   setSelectedIds(new Set());
                   loadItems();
+                  router.refresh();
                 }}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
               >

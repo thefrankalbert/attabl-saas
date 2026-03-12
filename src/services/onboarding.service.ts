@@ -190,7 +190,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       tenantId: string,
       data: OnboardingCompleteData,
     ): Promise<{ slug?: string }> {
-      // Idempotency guard: if already completed, return early (prevents duplicates on retry)
+      // Idempotency guard: check if onboarding data was fully created
       const { data: existingTenant } = await supabase
         .from('tenants')
         .select('onboarding_completed, slug')
@@ -198,7 +198,16 @@ export function createOnboardingService(supabase: SupabaseClient) {
         .single();
 
       if (existingTenant?.onboarding_completed) {
-        return { slug: existingTenant.slug || data.tenantSlug };
+        // Check if menu items were actually created
+        const { count: categoryCount } = await supabase
+          .from('categories')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId);
+
+        if (categoryCount && categoryCount > 0) {
+          return { slug: existingTenant.slug || data.tenantSlug };
+        }
+        // If onboarding_completed but no categories, fall through to create them
       }
 
       // 1. Final tenant update + mark progress completed — in parallel
@@ -227,7 +236,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       }
 
       const now = new Date().toISOString();
-      const [tenantResult] = await Promise.all([
+      const [tenantResult, progressResult] = await Promise.all([
         supabase.from('tenants').update(tenantUpdate).eq('id', tenantId),
         supabase.from('onboarding_progress').upsert(
           {
@@ -243,6 +252,10 @@ export function createOnboardingService(supabase: SupabaseClient) {
       ]);
 
       if (tenantResult.error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
+      if (progressResult.error) {
+        logger.error('Failed to update onboarding progress', progressResult.error);
+        // Non-blocking: progress tracking failure should not block completion
+      }
 
       // 2. Get or create venue
       const tableService = createTableConfigService(supabase);
@@ -291,6 +304,25 @@ export function createOnboardingService(supabase: SupabaseClient) {
         const validItems = data.menuItems.filter((item) => item.name && item.name.trim());
         if (validItems.length === 0) return;
 
+        // Create default menu for this tenant
+        const { data: defaultMenu, error: menuError } = await supabase
+          .from('menus')
+          .insert({
+            tenant_id: tenantId,
+            name: 'Carte Principale',
+            name_en: 'Main Menu',
+            is_active: true,
+            display_order: 1,
+          })
+          .select('id')
+          .single();
+
+        if (menuError) {
+          logger.error('Failed to create default menu during onboarding', menuError, { tenantId });
+        }
+
+        const menuId = defaultMenu?.id || null;
+
         // Group items by category
         const itemsByCategory = new Map<string, MenuItem[]>();
         for (const item of validItems) {
@@ -309,6 +341,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
                 .from('categories')
                 .insert({
                   tenant_id: tenantId,
+                  menu_id: menuId,
                   name: categoryName,
                   is_active: true,
                   sort_order: categoryIndex + 1,
