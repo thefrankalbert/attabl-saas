@@ -47,6 +47,7 @@ import { actionCheckCanAddMenuItem } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
 import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
+import { logger } from '@/lib/logger';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 interface ItemsClientProps {
@@ -162,13 +163,12 @@ export default function ItemsClient({
     setSaving(true);
     try {
       const cleanPrices = Object.fromEntries(Object.entries(prices).filter(([, v]) => v > 0));
-      const payload = {
+      const payload: Record<string, unknown> = {
         name: name.trim(),
         name_en: nameEn.trim() || null,
         description: description.trim() || null,
         description_en: descriptionEn.trim() || null,
         price: Number(price) || 0,
-        prices: Object.keys(cleanPrices).length > 0 ? cleanPrices : null,
         category_id: categoryId,
         image_url: imageUrl.trim() || null,
         is_available: isAvailable,
@@ -177,6 +177,14 @@ export default function ItemsClient({
         calories: calories === '' ? null : Number(calories),
         tenant_id: tenantId,
       };
+
+      // Only include the prices JSONB field when the tenant has secondary currencies.
+      // The column may not exist on DBs where the multi-currency migration was not
+      // applied — omitting it entirely avoids a PostgREST column-not-found error.
+      if (secondaryCurrencies.length > 0) {
+        payload.prices = Object.keys(cleanPrices).length > 0 ? cleanPrices : null;
+      }
+
       if (editingItem) {
         const { error } = await supabase
           .from('menu_items')
@@ -199,7 +207,11 @@ export default function ItemsClient({
       loadItems();
       router.refresh();
       fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
-    } catch {
+    } catch (err) {
+      logger.error('Failed to save menu item', err, {
+        tenantId,
+        editingItemId: editingItem?.id ?? null,
+      });
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
       setSaving(false);
