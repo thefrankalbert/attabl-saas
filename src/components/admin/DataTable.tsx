@@ -172,7 +172,7 @@ export function DataTable<TData>({
 
       {/* Pagination footer — fixed at bottom, outside scroll */}
       {pageCount > 1 && (
-        <div className="shrink-0 flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
+        <div className="shrink-0 flex flex-col @sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
           <p className="text-xs text-app-text-secondary">
             Page {currentPage} / {pageCount}
           </p>
@@ -182,7 +182,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
+              className="h-10 w-10 p-0 min-h-11 min-w-11"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -191,7 +191,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="h-10 w-10 p-0 min-h-[44px] min-w-[44px]"
+              className="h-10 w-10 p-0 min-h-11 min-w-11"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

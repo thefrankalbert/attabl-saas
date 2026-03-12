@@ -294,7 +294,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
           <>
             <div className="shrink-0 space-y-3">
               {/* Header — single line on desktop */}
-              <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Truck className="w-6 h-6" />
                   {t('title')}
@@ -303,7 +303,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
                   </span>
                 </h1>
 
-                <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+                <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input

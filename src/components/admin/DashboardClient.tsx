@@ -327,9 +327,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* ── Two-column: left (gauge + chart + shortcuts), right (orders from top) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 overflow-y-auto lg:overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col @lg:flex-row gap-3 overflow-y-auto @lg:overflow-hidden">
         {/* ── Left column ──────────────────────────────────── */}
-        <div className="shrink-0 lg:shrink lg:w-[50%] flex flex-col gap-2">
+        <div className="shrink-0 @lg:shrink @lg:w-[50%] flex flex-col gap-2">
           {/* Stats gauge — compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -535,7 +535,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* ── Right column — orders (full height, scrollable) ── */}
-        <div className="flex-1 min-h-[200px] lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
+        <div className="flex-1 min-h-[200px] @lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-app-border shrink-0">
             <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
               {t('recentOrders')}

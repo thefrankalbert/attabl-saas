@@ -39,7 +39,7 @@ export default function POSProductBrowser({
     <>
       {/* Header Filters */}
       <div className="p-3 sm:p-4 border-b border-app-border space-y-3 sm:space-y-4">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <div className="flex flex-col @sm:flex-row gap-3 sm:gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
             <Input
@@ -78,7 +78,7 @@ export default function POSProductBrowser({
       {/* Grid */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
         {items.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 @sm:grid-cols-3 @md:grid-cols-2 @lg:grid-cols-3 @xl:grid-cols-3 @2xl:grid-cols-4 gap-3">
             {items.map((item) => (
               <button
                 key={item.id}

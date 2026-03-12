@@ -38,7 +38,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
             const Icon = phase.icon;
             return (
               <div key={i} className="flex flex-col items-center gap-2.5 max-w-[100px]">
-                <div className="w-11 h-11 rounded-xl bg-app-elevated flex items-center justify-center">
+                <div className="w-11 h-11 rounded-xl bg-app-elevated border border-app-border/50 flex items-center justify-center">
                   <Icon className="h-5 w-5 text-app-text-secondary" />
                 </div>
                 <p className="text-xs font-semibold text-app-text">{t(phase.label)}</p>
@@ -52,7 +52,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
         <Button
           variant="default"
           onClick={onStart}
-          className="h-12 rounded-xl gap-2.5 text-sm font-bold px-10 shadow-lg shadow-accent/20 active:scale-[0.97] transition-all"
+          className="h-12 rounded-xl gap-2.5 text-sm font-bold px-10 active:scale-[0.97] transition-all"
         >
           {t('welcomeCTA')}
           <ArrowRight className="h-4 w-4" />

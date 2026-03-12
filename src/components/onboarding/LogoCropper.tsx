@@ -98,7 +98,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="w-full max-w-md rounded-2xl bg-app-card shadow-2xl overflow-hidden border border-app-border">
+      <div className="w-full max-w-md rounded-2xl bg-app-card overflow-hidden border border-app-border">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
           <h3 className="font-bold text-app-text">Recadrer le logo</h3>

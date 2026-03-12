@@ -102,7 +102,7 @@ export default function KitchenFilters({
             <button
               onClick={() => setShowMockData(!showMockData)}
               className={cn(
-                'px-2 py-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
+                'px-2 py-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-wide transition-colors',
                 showMockData
                   ? 'bg-white/10 text-white'
                   : 'text-app-text-muted hover:text-app-text-muted',
@@ -114,7 +114,7 @@ export default function KitchenFilters({
           <button
             onClick={toggleSound}
             className={cn(
-              'p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg transition-colors',
+              'p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg transition-colors',
               soundEnabled
                 ? 'bg-white/10 text-white'
                 : 'text-app-text-muted hover:text-app-text-muted',
@@ -124,14 +124,14 @@ export default function KitchenFilters({
           </button>
           <button
             onClick={toggleFullscreen}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
+            className="p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
           >
             {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
           </button>
           {!isFullscreen && (
             <button
               onClick={goBack}
-              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
+              className="p-2 min-h-11 min-w-11 flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text-muted transition-colors"
               title={t('backToDashboard')}
             >
               <ArrowLeft className="w-4 h-4" />
@@ -142,7 +142,7 @@ export default function KitchenFilters({
 
       {/* ━━━ MOBILE TAB BAR (chef view only) ━━━ */}
       {isChefView && (
-        <div className="flex md:hidden border-b border-white/[0.06] shrink-0">
+        <div className="flex @md:hidden border-b border-white/[0.06] shrink-0">
           {(Object.keys(columns) as Array<ColumnKey>).map((key) => {
             const col = columns[key];
             const count = columnOrders[key].length;

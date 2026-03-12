@@ -107,11 +107,11 @@ export default function MenusClient({
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-3">
           {/* Search + Actions — single row */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
               {menus.length}
             </span>
-            <div className="relative w-full lg:w-64 xl:w-72 shrink-0">
+            <div className="relative w-full @lg:w-64 @xl:w-72 shrink-0">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-app-text-muted" />
               <Input
                 data-search-input

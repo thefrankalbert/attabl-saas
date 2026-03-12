@@ -323,7 +323,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             {/* Fixed header area */}
             <div className="shrink-0 space-y-3">
               {/* Row 1: Title + Search + Filters + Add — all on one line (desktop) */}
-              <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+              <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 {/* Title */}
                 <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Package className="w-5 h-5" />
@@ -334,7 +334,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </h1>
 
                 {/* Search — compact */}
-                <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+                <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
                     data-search-input

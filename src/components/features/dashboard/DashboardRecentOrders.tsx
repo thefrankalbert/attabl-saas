@@ -54,11 +54,11 @@ export default function DashboardRecentOrders({
   if (!showOrders && !showStock) return null;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 min-h-0">
+    <div className="grid grid-cols-1 @md:grid-cols-3 gap-4 min-h-0">
       {/* Recent Orders */}
       {showOrders && (
         <div
-          className={`min-h-[300px] md:min-h-0 overflow-hidden rounded-2xl bg-app-card border border-app-border hover:border-app-border-hover transition-colors flex flex-col ${showStock ? 'col-span-1 md:col-span-2' : 'col-span-1 md:col-span-3'}`}
+          className={`min-h-[300px] @md:min-h-0 overflow-hidden rounded-2xl bg-app-card border border-app-border hover:border-app-border-hover transition-colors flex flex-col ${showStock ? 'col-span-1 @md:col-span-2' : 'col-span-1 @md:col-span-3'}`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-3">

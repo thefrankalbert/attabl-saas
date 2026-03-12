@@ -187,7 +187,7 @@ export default function AuditLogClient({
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 space-y-3">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
             <ScrollText className="w-6 h-6" />
             {t('title')}
@@ -207,7 +207,7 @@ export default function AuditLogClient({
         {/* Filters */}
         {showFilters && (
           <div className="bg-app-card rounded-xl border border-app-border p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterAction')}
@@ -293,7 +293,7 @@ export default function AuditLogClient({
           <>
             <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
               {/* Desktop table */}
-              <div className="hidden md:block overflow-x-auto">
+              <div className="hidden @md:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-app-border bg-app-bg/50">
@@ -347,7 +347,7 @@ export default function AuditLogClient({
               </div>
 
               {/* Mobile cards */}
-              <div className="md:hidden divide-y divide-app-border">
+              <div className="@md:hidden divide-y divide-app-border">
                 {logs.map((entry) => (
                   <div key={entry.id} className="p-4 space-y-1.5">
                     <div className="flex items-center justify-between">

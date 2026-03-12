@@ -266,7 +266,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         }}
                         className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all ${
                           isSelected
-                            ? 'border-accent bg-accent/5 shadow-sm'
+                            ? 'border-accent bg-accent/5'
                             : 'border-app-border hover:border-app-border-hover'
                         }`}
                       >

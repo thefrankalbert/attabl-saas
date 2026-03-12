@@ -42,7 +42,7 @@ export default function ContactPage() {
   return (
     <div className="flex h-screen w-full bg-app-bg">
       {/* Left — Form on white */}
-      <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-[55%] lg:px-20">
+      <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -171,7 +171,7 @@ export default function ContactPage() {
       </div>
 
       {/* Right — Dark panel (hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-[45%] items-center py-6 pr-6 pl-3">
+      <div className="hidden lg:flex lg:w-5/12 items-center py-6 pr-6 pl-3">
         <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[2rem]">
           <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />
           <div className="absolute inset-0 bg-[url('/images/restaurant-ambiance.jpg')] bg-cover bg-center opacity-20" />
@@ -204,9 +204,7 @@ export default function ContactPage() {
                 { stat: t('statTrialTime'), label: t('statTrialLabel') },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-4 text-left">
-                  <span className="min-w-[72px] text-2xl font-bold text-[#CCFF00]">
-                    {item.stat}
-                  </span>
+                  <span className="min-w-max text-2xl font-bold text-[#CCFF00]">{item.stat}</span>
                   <span className="text-sm text-white/60">{item.label}</span>
                 </div>
               ))}

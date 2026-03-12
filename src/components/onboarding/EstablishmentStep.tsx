@@ -74,7 +74,7 @@ function ToggleSwitch({
         }`}
       >
         <span
-          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-app-card shadow-sm transition-transform duration-200 ease-in-out ${
+          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-app-card border border-app-border/50 transition-transform duration-200 ease-in-out ${
             checked ? 'translate-x-6' : 'translate-x-1'
           }`}
         />

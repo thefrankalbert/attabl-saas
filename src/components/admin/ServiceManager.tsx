@@ -450,7 +450,7 @@ export default function ServiceManager({ tenantId }: Props) {
           <div className="h-8 w-40 bg-app-bg rounded-lg animate-pulse" />
         </div>
         <div className="flex-1 min-h-0 flex gap-4 mt-4">
-          <div className="hidden md:block md:w-56 lg:w-72 shrink-0">
+          <div className="hidden @md:block @md:w-56 @lg:w-72 shrink-0">
             <div className="h-full bg-app-card rounded-xl border border-app-border animate-pulse" />
           </div>
           <div className="flex-1 space-y-4">
@@ -459,7 +459,7 @@ export default function ServiceManager({ tenantId }: Props) {
                 <div key={i} className="h-9 w-28 bg-app-bg rounded-lg animate-pulse" />
               ))}
             </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 @sm:grid-cols-3 @lg:grid-cols-3 @xl:grid-cols-4 gap-4">
               {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
                 <div
                   key={i}
@@ -496,7 +496,7 @@ export default function ServiceManager({ tenantId }: Props) {
       {/* ═══ Content: Sidebar + Grid ═════════════════════════ */}
       <div className="flex-1 min-h-0 flex gap-4 mt-4 sm:mt-5">
         {/* ─── Left sidebar (desktop) ─────────────────────── */}
-        <aside className="hidden md:flex md:w-56 lg:w-72 shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
+        <aside className="hidden @md:flex @md:w-56 @lg:w-72 shrink-0 flex-col bg-app-card rounded-xl border border-app-border overflow-hidden">
           {/* Search */}
           <div className="p-3 border-b border-app-border">
             <div className="relative">
@@ -652,7 +652,7 @@ export default function ServiceManager({ tenantId }: Props) {
         {/* ─── Main content (zone tabs + table grid) ─────── */}
         <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Zone tabs row */}
-          <div className="shrink-0 flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <div className="shrink-0 flex flex-col @sm:flex-row @sm:items-center gap-3 mb-4">
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveZoneId(null)}
@@ -734,7 +734,7 @@ export default function ServiceManager({ tenantId }: Props) {
                     )}
 
                     {/* Visual table grid with chairs */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3">
+                    <div className="grid grid-cols-2 @sm:grid-cols-3 @lg:grid-cols-3 @xl:grid-cols-4 @2xl:grid-cols-5 gap-3">
                       {activeTables.map((table) => (
                         <VisualTable
                           key={table.id}
@@ -756,7 +756,7 @@ export default function ServiceManager({ tenantId }: Props) {
             )}
 
             {/* Mobile-only: ready orders + assignment summary */}
-            <div className="md:hidden space-y-4">
+            <div className="@md:hidden space-y-4">
               {/* Ready orders — mobile */}
               {readyOrders.length > 0 && (
                 <div className="bg-app-card rounded-xl border border-emerald-500/20 p-4">

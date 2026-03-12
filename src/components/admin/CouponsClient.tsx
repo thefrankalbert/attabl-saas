@@ -90,7 +90,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
     <div className="h-full flex flex-col overflow-hidden">
       {/* Header — single line on desktop */}
       <div className="shrink-0">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
             <Tag className="w-6 h-6" />
             {t('title')}
@@ -118,7 +118,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
         {coupons.length > 0 ? (
           <div className="grid gap-3">
             {/* Table Header (desktop) */}
-            <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
+            <div className="hidden @md:grid @md:grid-cols-[1fr_120px_120px_120px_100px_80px] gap-4 px-4 py-2 text-xs font-bold text-app-text-muted uppercase tracking-widest">
               <span>{t('codeField')}</span>
               <span>{t('type')}</span>
               <span>{t('valueColumn')}</span>
@@ -133,7 +133,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                 className="bg-app-card rounded-xl border border-app-border p-4 cursor-pointer hover:border-app-border-hover"
                 onClick={() => openEdit(coupon)}
               >
-                <div className="md:grid md:grid-cols-[1fr_120px_120px_120px_100px_80px] md:gap-4 md:items-center space-y-3 md:space-y-0">
+                <div className="@md:grid @md:grid-cols-[1fr_120px_120px_120px_100px_80px] @md:gap-4 @md:items-center space-y-3 @md:space-y-0">
                   {/* Code */}
                   <div className="flex items-center gap-2">
                     <Tag className="h-4 w-4 text-app-text-muted flex-shrink-0" />

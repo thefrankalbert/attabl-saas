@@ -62,7 +62,7 @@ function AfricaPresenceSection() {
 
         <div className="flex flex-col items-center">
           {/* Africa hex map */}
-          <svg viewBox="0 0 200 200" className="w-[320px] h-[320px]" aria-hidden="true">
+          <svg viewBox="0 0 200 200" className="w-80 h-80" aria-hidden="true">
             {AFRICA_HEX_GRID.map((hex, i) => (
               <polygon key={i} points={hexPoints(hex.x, hex.y, 5)} fill="#e5e7eb" opacity={0.5} />
             ))}
