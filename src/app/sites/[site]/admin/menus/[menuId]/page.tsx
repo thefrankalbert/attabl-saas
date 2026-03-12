@@ -38,6 +38,14 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
     .eq('menu_id', menuId)
     .order('display_order', { ascending: true });
 
+  // Fetch categories not assigned to this menu (unassigned or belonging to other menus)
+  const { data: availableCategories } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('tenant_id', tenant.id)
+    .is('menu_id', null)
+    .order('name', { ascending: true });
+
   const categoryIds = (categories || []).map((c: Category) => c.id);
 
   let items: MenuItem[] = [];
@@ -58,6 +66,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
         tenantSlug={tenant.slug}
         menu={menu}
         categories={categories || []}
+        availableCategories={availableCategories || []}
         items={items}
       />
     </div>

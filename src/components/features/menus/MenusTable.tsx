@@ -3,7 +3,16 @@
 import { useCallback, useId, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Plus, Folder, Edit2, Trash2, ToggleLeft, ToggleRight, GripVertical } from 'lucide-react';
+import {
+  Plus,
+  Folder,
+  Edit2,
+  Trash2,
+  ToggleLeft,
+  ToggleRight,
+  GripVertical,
+  ExternalLink,
+} from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -109,15 +118,10 @@ function MenuRow({
         <GripVertical className="w-4 h-4 text-app-text-muted" />
       </button>
 
-      {/* Clickable area — entire name + status region navigates to menu detail */}
-      <Link
-        href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}
-        className="flex-1 min-w-0 flex items-center gap-3 cursor-pointer py-1"
-      >
+      {/* Menu name + badge */}
+      <div className="flex-1 min-w-0 flex items-center gap-3 py-1">
         <span className="flex-1 min-w-0 flex items-center gap-2">
-          <span className="font-medium text-sm text-app-text group-hover:underline break-words">
-            {menu.name}
-          </span>
+          <span className="font-medium text-sm text-app-text break-words">{menu.name}</span>
           {childCount > 0 && (
             <span className="text-xs text-app-text-muted shrink-0">
               {t('subMenuCount', { count: childCount })}
@@ -125,10 +129,10 @@ function MenuRow({
           )}
         </span>
 
-        {/* Active badge (inside link for visual context, non-interactive here) */}
+        {/* Active badge */}
         <span
           className={cn(
-            'px-2 py-0.5 rounded-full text-xs font-semibold border shrink-0 pointer-events-none',
+            'px-2 py-0.5 rounded-full text-xs font-semibold border shrink-0',
             menu.is_active
               ? 'bg-status-success-bg text-status-success border-status-success/20'
               : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -144,21 +148,28 @@ function MenuRow({
             </>
           )}
         </span>
-      </Link>
+      </div>
 
-      {/* Actions — stop propagation so clicks don't navigate */}
+      {/* Actions */}
       <div className="flex items-center gap-1 shrink-0">
-        {/* Edit button — prominent, always visible */}
+        {/* Open menu detail */}
+        <Link href={`/sites/${tenantSlug}/admin/menus/${menu.id}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            title={t('viewMenu')}
+            className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </Button>
+        </Link>
+        {/* Edit menu name */}
         <Button
           variant="ghost"
           size="sm"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onEdit();
-          }}
+          onClick={onEdit}
           title={t('editMenuTitle')}
-          className="h-9 w-9 p-0 text-accent hover:text-accent hover:bg-accent/10"
+          className="h-9 w-9 p-0"
         >
           <Edit2 className="w-4 h-4" />
         </Button>
@@ -166,11 +177,7 @@ function MenuRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onToggle();
-          }}
+          onClick={onToggle}
           title={menu.is_active ? t('active') : t('inactive')}
           className="h-9 w-9 p-0"
         >
@@ -183,11 +190,7 @@ function MenuRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onAddChild();
-          }}
+          onClick={onAddChild}
           title={t('addSubMenu')}
           className="h-9 w-9 p-0"
         >
@@ -196,11 +199,7 @@ function MenuRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            onDelete();
-          }}
+          onClick={onDelete}
           title="Supprimer"
           className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
