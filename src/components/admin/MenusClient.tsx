@@ -10,17 +10,19 @@ import AdminModal from '@/components/admin/AdminModal';
 import { useMenusData } from '@/hooks/useMenusData';
 import type { MenuFormData } from '@/hooks/useMenusData';
 import MenuForm from '@/components/features/menus/MenuForm';
+import MenuCreationWizard from '@/components/features/menus/MenuCreationWizard';
 import MenuImportExcel from '@/components/features/menus/MenuImportExcel';
 import MenuImportPDF from '@/components/features/menus/MenuImportPDF';
 import MenusTable from '@/components/features/menus/MenusTable';
 import RoleGuard from '@/components/admin/RoleGuard';
-import type { Menu, Venue } from '@/types/admin.types';
+import type { Menu, Venue, CurrencyCode } from '@/types/admin.types';
 
 interface MenusClientProps {
   tenantId: string;
   tenantSlug: string;
   initialMenus: Menu[];
   venues: Venue[];
+  currency?: CurrencyCode;
 }
 
 export default function MenusClient({
@@ -28,11 +30,13 @@ export default function MenusClient({
   tenantSlug,
   initialMenus,
   venues,
+  currency = 'XAF',
 }: MenusClientProps) {
   const t = useTranslations('menus');
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showPdfImportModal, setShowPdfImportModal] = useState(false);
   const [editingMenu, setEditingMenu] = useState<Menu | null>(null);
@@ -76,9 +80,15 @@ export default function MenusClient({
   // ─── Modal openers ─────────────────────────────────────
 
   const openNewMenuModal = useCallback((parentId?: string) => {
-    setEditingMenu(null);
-    setParentMenuId(parentId || null);
-    setShowModal(true);
+    if (parentId) {
+      // Sub-menu: use the simple modal (no wizard)
+      setEditingMenu(null);
+      setParentMenuId(parentId);
+      setShowModal(true);
+    } else {
+      // Top-level menu: use the wizard
+      setShowWizard(true);
+    }
   }, []);
 
   const openEditMenuModal = useCallback((menu: Menu) => {
@@ -249,6 +259,19 @@ export default function MenusClient({
             />
           )}
         </AdminModal>
+
+        {/* Creation Wizard */}
+        <MenuCreationWizard
+          isOpen={showWizard}
+          onClose={() => setShowWizard(false)}
+          tenantId={tenantId}
+          tenantSlug={tenantSlug}
+          menus={menus}
+          venues={venues}
+          currency={currency}
+          onCreateMenu={createMenu}
+          onComplete={loadMenus}
+        />
       </div>
     </RoleGuard>
   );
