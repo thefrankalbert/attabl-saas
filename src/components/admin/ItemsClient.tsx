@@ -89,6 +89,7 @@ export default function ItemsClient({
   const [allergens, setAllergens] = useState<string[]>([]);
   const [calories, setCalories] = useState<number | ''>('');
   const [prices, setPrices] = useState<Record<string, number>>({});
+  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
 
   const { toast } = useToast();
   const t = useTranslations('items');
@@ -132,6 +133,7 @@ export default function ItemsClient({
     setAllergens([]);
     setCalories('');
     setPrices({});
+    setFormStep(1);
   };
 
   const openNewModal = () => {
@@ -154,6 +156,7 @@ export default function ItemsClient({
     setAllergens(item.allergens || []);
     setCalories(item.calories ?? '');
     setPrices((item.prices as Record<string, number>) || {});
+    setFormStep(1);
     setShowModal(true);
   };
 
@@ -668,179 +671,279 @@ export default function ItemsClient({
           title={editingItem ? t('editItemTitle') : t('newItemTitle')}
           size="lg"
         >
-          <form onSubmit={handleSubmit} className="space-y-5 pt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('nameFr')}</Label>
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                  required
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('nameEn')}</Label>
-                <Input
-                  value={nameEn}
-                  onChange={(e) => setNameEn(e.target.value)}
-                  placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                />
-              </div>
+          <form onSubmit={handleSubmit} className="pt-2">
+            {/* Step indicator */}
+            <div className="flex items-center gap-2 mb-6">
+              {([1, 2, 3] as const).map((step) => {
+                const isActive = formStep === step;
+                const isCompleted = formStep > step;
+                const labels = [t('stepBasicInfo'), t('stepPricing'), t('stepPhotoDetails')];
+                return (
+                  <button
+                    key={step}
+                    type="button"
+                    onClick={() => {
+                      // Allow navigating back to completed steps freely
+                      if (step < formStep) setFormStep(step);
+                    }}
+                    className={cn(
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                      isActive
+                        ? 'bg-accent/10 text-accent border-accent/30'
+                        : isCompleted
+                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 cursor-pointer'
+                          : 'bg-app-bg text-app-text-muted border-app-border cursor-default',
+                    )}
+                  >
+                    {isCompleted ? (
+                      <Check className="w-3 h-3" />
+                    ) : (
+                      <span
+                        className={cn(
+                          'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold',
+                          isActive ? 'bg-accent text-white' : 'bg-app-border text-app-text-muted',
+                        )}
+                      >
+                        {step}
+                      </span>
+                    )}
+                    <span className="hidden sm:inline">{labels[step - 1]}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('descriptionFr')}</Label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder={t('descriptionFrPlaceholder')}
-                  rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('descriptionEn')}</Label>
-                <Textarea
-                  value={descriptionEn}
-                  onChange={(e) => setDescriptionEn(e.target.value)}
-                  placeholder={t('descriptionEnPlaceholder')}
-                  rows={3}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('price')}</Label>
-                <Input
-                  type="number"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                  min={0}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                  required
-                />
-              </div>
-              {secondaryCurrencies.length > 0 && (
-                <div className="space-y-1.5 sm:col-span-2">
-                  <p className="text-xs text-app-text-muted">{t('optionalPriceHint')}</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {secondaryCurrencies.map((cur) => (
-                      <div key={cur} className="space-y-1">
-                        <Label className="text-app-text text-xs">
-                          {t('priceInCurrency', { currency: cur })}
-                        </Label>
-                        <Input
-                          type="number"
-                          value={prices[cur] ?? ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setPrices((prev) => {
-                              if (val === '' || Number(val) === 0) {
-                                const next = { ...prev };
-                                delete next[cur];
-                                return next;
-                              }
-                              return { ...prev, [cur]: Number(val) };
-                            });
-                          }}
-                          min={0}
-                          step={cur === 'XAF' ? 1 : 0.01}
-                          placeholder="0"
-                          className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
-                        />
-                      </div>
-                    ))}
+
+            {/* Step 1 — Basic Info */}
+            {formStep === 1 && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-app-text">{t('nameFr')}</Label>
+                    <Input
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder={t('nameFrPlaceholder')}
+                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-app-text">{t('nameEn')}</Label>
+                    <Input
+                      value={nameEn}
+                      onChange={(e) => setNameEn(e.target.value)}
+                      placeholder={t('nameEnPlaceholder')}
+                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                    />
                   </div>
                 </div>
-              )}
-              <div className="space-y-1.5">
-                <Label className="text-app-text">{t('category')}</Label>
-                <Select value={categoryId} onValueChange={setCategoryId}>
-                  <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30">
-                    <SelectValue placeholder={t('selectCategory')} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id}>
-                        {c.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-app-text">{t('descriptionFr')}</Label>
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder={t('descriptionFrPlaceholder')}
+                      rows={3}
+                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-app-text">{t('descriptionEn')}</Label>
+                    <Textarea
+                      value={descriptionEn}
+                      onChange={(e) => setDescriptionEn(e.target.value)}
+                      placeholder={t('descriptionEnPlaceholder')}
+                      rows={3}
+                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-app-text">{t('category')}</Label>
+                  <Select value={categoryId} onValueChange={setCategoryId}>
+                    <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30 w-full sm:w-64">
+                      <SelectValue placeholder={t('selectCategory')} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-app-text">{t('imageUrl')}</Label>
-              <ImageUpload
-                value={imageUrl}
-                onChange={(url) => setImageUrl(url)}
-                onRemove={() => setImageUrl('')}
-                bucket="menu-items"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-app-text flex items-center gap-1">
-                <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
-                {ta('title')}
-              </Label>
-              <div className="flex flex-wrap gap-1.5">
-                {ALLERGENS.map((a) => {
-                  const selected = allergens.includes(a);
-                  return (
-                    <button
-                      key={a}
-                      type="button"
-                      onClick={() =>
-                        setAllergens((prev) =>
-                          selected ? prev.filter((x) => x !== a) : [...prev, a],
-                        )
+            )}
+
+            {/* Step 2 — Pricing & Availability */}
+            {formStep === 2 && (
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label className="text-app-text">{t('price')}</Label>
+                  <Input
+                    type="number"
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
+                    min={0}
+                    className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
+                  />
+                </div>
+                {secondaryCurrencies.length > 0 && (
+                  <div className="space-y-1.5">
+                    <p className="text-xs text-app-text-muted">{t('optionalPriceHint')}</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {secondaryCurrencies.map((cur) => (
+                        <div key={cur} className="space-y-1">
+                          <Label className="text-app-text text-xs">
+                            {t('priceInCurrency', { currency: cur })}
+                          </Label>
+                          <Input
+                            type="number"
+                            value={prices[cur] ?? ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setPrices((prev) => {
+                                if (val === '' || Number(val) === 0) {
+                                  const next = { ...prev };
+                                  delete next[cur];
+                                  return next;
+                                }
+                                return { ...prev, [cur]: Number(val) };
+                              });
+                            }}
+                            min={0}
+                            step={cur === 'XAF' ? 1 : 0.01}
+                            placeholder="0"
+                            className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-center gap-6 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
+                    <Label className="text-sm text-app-text">{t('available')}</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
+                    <Label className="text-sm text-app-text">{t('featured')}</Label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3 — Photo & Details */}
+            {formStep === 3 && (
+              <div className="space-y-5">
+                <div className="space-y-1.5">
+                  <Label className="text-app-text">{t('imageUrl')}</Label>
+                  <ImageUpload
+                    value={imageUrl}
+                    onChange={(url) => setImageUrl(url)}
+                    onRemove={() => setImageUrl('')}
+                    bucket="menu-items"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-app-text flex items-center gap-1">
+                    <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
+                    {ta('title')}
+                  </Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {ALLERGENS.map((a) => {
+                      const selected = allergens.includes(a);
+                      return (
+                        <button
+                          key={a}
+                          type="button"
+                          onClick={() =>
+                            setAllergens((prev) =>
+                              selected ? prev.filter((x) => x !== a) : [...prev, a],
+                            )
+                          }
+                          className={cn(
+                            'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                            selected
+                              ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
+                              : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
+                          )}
+                        >
+                          {ta(a)}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-app-text">{ta('calories')}</Label>
+                  <Input
+                    type="number"
+                    value={calories}
+                    onChange={(e) =>
+                      setCalories(e.target.value === '' ? '' : Number(e.target.value))
+                    }
+                    min={0}
+                    placeholder={ta('caloriesPlaceholder')}
+                    className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Navigation buttons */}
+            <div className="flex justify-between gap-3 pt-5 mt-5 border-t border-app-border">
+              <div>
+                {formStep > 1 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => setFormStep((s) => (s - 1) as 1 | 2 | 3)}
+                  >
+                    {t('previous')}
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-3">
+                <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
+                  {t('cancel')}
+                </Button>
+                {formStep < 3 ? (
+                  <Button
+                    type="button"
+                    variant="default"
+                    onClick={() => {
+                      // Validation before advancing
+                      if (formStep === 1) {
+                        if (!name.trim()) {
+                          toast({ title: t('validationNameRequired'), variant: 'destructive' });
+                          return;
+                        }
+                        if (!categoryId) {
+                          toast({ title: t('validationCategoryRequired'), variant: 'destructive' });
+                          return;
+                        }
                       }
-                      className={cn(
-                        'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
-                        selected
-                          ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-                          : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
-                      )}
-                    >
-                      {ta(a)}
-                    </button>
-                  );
-                })}
+                      if (formStep === 2) {
+                        if (!price || Number(price) <= 0) {
+                          toast({ title: t('validationPriceRequired'), variant: 'destructive' });
+                          return;
+                        }
+                      }
+                      setFormStep((s) => (s + 1) as 1 | 2 | 3);
+                    }}
+                  >
+                    {t('next')}
+                  </Button>
+                ) : (
+                  <Button type="submit" disabled={saving} variant="default">
+                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                    {editingItem ? t('update') : t('create')}
+                  </Button>
+                )}
               </div>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-app-text">{ta('calories')}</Label>
-              <Input
-                type="number"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value === '' ? '' : Number(e.target.value))}
-                min={0}
-                placeholder={ta('caloriesPlaceholder')}
-                className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
-              />
-            </div>
-            <div className="flex items-center gap-6 pt-2">
-              <div className="flex items-center gap-2">
-                <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
-                <Label className="text-sm text-app-text">{t('available')}</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-                <Label className="text-sm text-app-text">{t('featured')}</Label>
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
-              <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
-                {t('cancel')}
-              </Button>
-              <Button type="submit" disabled={saving} variant="default">
-                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                {editingItem ? t('update') : t('create')}
-              </Button>
             </div>
           </form>
         </AdminModal>

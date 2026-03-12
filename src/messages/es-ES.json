@@ -1322,7 +1322,15 @@
     "deleteError": "Error al eliminar",
     "deleteConfirm": "¿Eliminar el plato '{name}'?",
     "details": "Detalles",
-    "noDescription": "Sin descripción"
+    "noDescription": "Sin descripción",
+    "stepBasicInfo": "Informaciones",
+    "stepPricing": "Precios",
+    "stepPhotoDetails": "Foto",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "validationNameRequired": "El nombre es obligatorio",
+    "validationCategoryRequired": "La categoría es obligatoria",
+    "validationPriceRequired": "El precio debe ser mayor que 0"
   },
   "menus": {
     "title": "Cartas y Menús",

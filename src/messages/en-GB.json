@@ -1315,7 +1315,15 @@
     "deleteError": "Error deleting",
     "deleteConfirm": "Delete dish '{name}'?",
     "details": "Details",
-    "noDescription": "No description"
+    "noDescription": "No description",
+    "stepBasicInfo": "Basic info",
+    "stepPricing": "Pricing",
+    "stepPhotoDetails": "Photo",
+    "next": "Next",
+    "previous": "Previous",
+    "validationNameRequired": "Name is required",
+    "validationCategoryRequired": "Category is required",
+    "validationPriceRequired": "Price must be greater than 0"
   },
   "menus": {
     "title": "Menus & Cards",

@@ -44,6 +44,7 @@ export default async function MenusPage({ params }: MenusPageProps) {
         tenantSlug={tenant.slug}
         initialMenus={menus || []}
         venues={venues || []}
+        currency={(tenant.currency as 'XAF' | 'EUR' | 'USD') || 'XAF'}
       />
     </div>
   );

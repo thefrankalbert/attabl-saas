@@ -38,7 +38,7 @@ export interface UseMenusDataReturn {
   setSearchQuery: (query: string) => void;
   isLimitReached: boolean;
   maxMenus: number;
-  createMenu: (data: MenuFormData) => Promise<void>;
+  createMenu: (data: MenuFormData) => Promise<Menu | null>;
   updateMenu: (menuId: string, data: MenuFormData) => Promise<void>;
   deleteMenu: (menu: Menu) => Promise<void>;
   deleteMultiple: (menuIds: string[]) => Promise<void>;
@@ -67,7 +67,7 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
 
   // ─── CRUD ───────────────────────────────────────────
 
-  const createMenu = async (data: MenuFormData) => {
+  const createMenu = async (data: MenuFormData): Promise<Menu | null> => {
     const result = await actionCreateMenu(tenantId, {
       name: data.name.trim(),
       name_en: data.name_en?.trim() || undefined,
@@ -84,6 +84,7 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
     }
     toast({ title: t('menuCreated') });
     loadMenus();
+    return (result.data as Menu) ?? null;
   };
 
   const updateMenu = async (menuId: string, data: MenuFormData) => {
