@@ -169,12 +169,15 @@ export function createSignupService(supabase: SupabaseClient) {
       }
 
       // 4. Create admin user (rollback: delete group + tenant + auth user if fails)
+      // Use email prefix as initial name — user sets real name during onboarding
+      const emailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
+      const initialName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) || input.email;
       try {
         await this.createAdminUser({
           tenantId: tenant.id,
           userId,
           email: input.email,
-          fullName: input.restaurantName,
+          fullName: initialName,
           phone: input.phone,
         });
       } catch (err) {
@@ -204,7 +207,6 @@ export function createSignupService(supabase: SupabaseClient) {
           const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
 
           await sendWelcomeConfirmationEmail(input.email, {
-            restaurantName: input.restaurantName,
             confirmationUrl,
           });
         }
@@ -248,12 +250,16 @@ export function createSignupService(supabase: SupabaseClient) {
       }
 
       // 3. Create admin user (rollback: delete group + tenant if fails)
+      // Use email prefix as initial name — user sets real name during onboarding
+      const oauthEmailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
+      const oauthInitialName =
+        oauthEmailPrefix.charAt(0).toUpperCase() + oauthEmailPrefix.slice(1) || input.email;
       try {
         await this.createAdminUser({
           tenantId: tenant.id,
           userId: input.userId,
           email: input.email,
-          fullName: input.restaurantName,
+          fullName: oauthInitialName,
           phone: input.phone,
         });
       } catch (err) {

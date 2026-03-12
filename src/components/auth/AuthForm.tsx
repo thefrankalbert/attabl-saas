@@ -322,7 +322,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <Input
             id="email"
             type="email"
-            placeholder="nom@attabl.com"
+            placeholder="vous@exemple.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -383,7 +383,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-xl shadow-sm transition-all active:scale-[0.98]"
+          className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-xl transition-all active:scale-[0.98]"
           disabled={loading}
         >
           {loading ? (

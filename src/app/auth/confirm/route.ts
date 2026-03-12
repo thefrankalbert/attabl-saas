@@ -75,7 +75,7 @@ export async function GET(request: Request) {
           const dashboardUrl = tenant ? `${appUrl}/sites/${tenant.slug}/admin` : `${appUrl}/login`;
 
           await sendWelcomeOnboardingEmail(userEmail, {
-            restaurantName: adminUser.full_name,
+            userName: adminUser.full_name,
             dashboardUrl,
             totalRestaurants: count || 0,
           });

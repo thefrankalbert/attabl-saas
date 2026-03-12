@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { logger } from '@/lib/logger';
 import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
@@ -61,6 +62,8 @@ export async function POST(request: Request) {
     // 5. Complete onboarding via service
     const onboardingService = createOnboardingService(supabase);
     const result = await onboardingService.completeOnboarding(adminUser.tenant_id, data);
+
+    revalidateTag('tenant-config', 'max');
 
     return NextResponse.json({
       success: true,
