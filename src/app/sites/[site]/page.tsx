@@ -7,6 +7,8 @@ import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
 import type { Announcement, MenuItem } from '@/types/admin.types';
 
+export const revalidate = 30;
+
 // ─── SEO Metadata ─────────────────────────────────────────
 export async function generateMetadata({
   params,

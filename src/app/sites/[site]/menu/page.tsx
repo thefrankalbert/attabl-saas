@@ -6,6 +6,8 @@ import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant } from '@/lib/cache';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
 
+export const revalidate = 30;
+
 // ─── SEO Metadata ─────────────────────────────────────────
 export async function generateMetadata({
   params,

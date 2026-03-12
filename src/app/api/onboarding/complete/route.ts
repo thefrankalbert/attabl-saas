@@ -64,6 +64,7 @@ export async function POST(request: Request) {
     const result = await onboardingService.completeOnboarding(adminUser.tenant_id, data);
 
     revalidateTag('tenant-config', 'max');
+    revalidateTag('menus', 'max');
 
     return NextResponse.json({
       success: true,
