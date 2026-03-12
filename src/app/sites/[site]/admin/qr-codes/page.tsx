@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 import { getTenantUrl } from '@/lib/constants';
@@ -10,7 +10,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Get tenant data
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

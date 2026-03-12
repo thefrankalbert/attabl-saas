@@ -1,9 +1,9 @@
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
-import dynamic from 'next/dynamic';
+import nextDynamic from 'next/dynamic';
 import { AlertCircle } from 'lucide-react';
 
-const ReportsClient = dynamic(() => import('@/components/admin/ReportsClient'), {
+const ReportsClient = nextDynamic(() => import('@/components/admin/ReportsClient'), {
   loading: () => (
     <div className="p-12 text-center text-app-text-secondary animate-pulse">
       Chargement des rapports...
@@ -11,14 +11,14 @@ const ReportsClient = dynamic(() => import('@/components/admin/ReportsClient'), 
   ),
 });
 
-export const revalidate = 300;
+export const dynamic = 'force-dynamic';
 
 export default async function ReportsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

@@ -1,4 +1,4 @@
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import POSClient from '@/components/admin/POSClient';
 import { AlertCircle } from 'lucide-react';
@@ -10,7 +10,7 @@ export default async function POSPage({ params }: { params: Promise<{ site: stri
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

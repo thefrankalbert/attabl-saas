@@ -1,11 +1,11 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { redirect, notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/admin/MenuDetailClient';
 import type { Category, MenuItem } from '@/types/admin.types';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 interface MenuDetailPageProps {
   params: Promise<{ site: string; menuId: string }>;
@@ -16,7 +16,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) redirect('/login');
 

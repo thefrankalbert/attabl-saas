@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import AuditLogClient from '@/components/admin/AuditLogClient';
 
@@ -8,7 +8,7 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

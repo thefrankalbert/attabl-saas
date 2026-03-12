@@ -1,7 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
+
+export const dynamic = 'force-dynamic';
 
 export default async function SubscriptionPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
@@ -9,7 +11,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
   // Récupérer le tenant et l'email du propriétaire (si possible)
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (
@@ -23,7 +25,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
 
   // Pour l'instant, on mock l'email s'il n'est pas dispo, le checkout demandera
   // En production, il faut récupérer l'email de l'utilisateur connecté via auth.users
-  // Fetch billing fields not included in getCachedTenant
+  // Fetch billing fields not included in getTenant
   const [
     {
       data: { user },

@@ -1,18 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import ItemsClient from '@/components/admin/ItemsClient';
 import { AlertCircle } from 'lucide-react';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function ItemsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (

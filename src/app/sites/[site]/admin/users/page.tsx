@@ -1,18 +1,18 @@
 import { createClient } from '@/lib/supabase/server';
-import { getCachedTenant } from '@/lib/cache';
+import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import UsersClient from '@/components/admin/UsersClient';
 import { AlertCircle } from 'lucide-react';
 import type { AdminUser, AdminRole } from '@/types/admin.types';
 
-export const revalidate = 120;
+export const dynamic = 'force-dynamic';
 
 export default async function UsersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
-  const tenant = await getCachedTenant(tenantSlug);
+  const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
     return (
