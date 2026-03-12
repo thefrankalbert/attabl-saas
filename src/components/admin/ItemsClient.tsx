@@ -325,17 +325,27 @@ export default function ItemsClient({
               <div className="flex-1" />
               <button
                 onClick={async () => {
-                  for (const id of selectedIds) {
+                  const targetAvailability = [...selectedIds].some((id) => {
                     const item = items.find((i) => i.id === id);
-                    if (item) {
-                      await supabase
+                    return item && !item.is_available;
+                  });
+                  const results = await Promise.all(
+                    [...selectedIds].map((id) => {
+                      const item = items.find((i) => i.id === id);
+                      if (!item) return Promise.resolve(null);
+                      return supabase
                         .from('menu_items')
-                        .update({ is_available: !item.is_available })
+                        .update({ is_available: targetAvailability })
                         .eq('id', item.id)
                         .eq('tenant_id', tenantId);
-                    }
+                    }),
+                  );
+                  const failed = results.filter((r) => r?.error);
+                  if (failed.length > 0) {
+                    toast({ title: tc('error'), variant: 'destructive' });
+                  } else {
+                    setSelectedIds(new Set());
                   }
-                  setSelectedIds(new Set());
                   loadItems();
                   router.refresh();
                   revalidateMenuCache();

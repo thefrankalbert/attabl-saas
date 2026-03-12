@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
+import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { excelImportLimiter, getClientIp } from '@/lib/rate-limit';
@@ -125,7 +126,7 @@ export async function POST(request: Request) {
     const importService = createExcelImportService(supabase);
     const result = await importService.importFromExcel(tenant.id, menuId, buffer);
 
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
 
     return NextResponse.json({
       success: true,

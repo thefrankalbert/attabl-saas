@@ -10,13 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils/currency';
 import { revalidateMenuCache } from '@/lib/revalidate';
-import type { Menu, Category, CurrencyCode } from '@/types/admin.types';
-
-export interface WizardItem {
-  id: string;
-  name: string;
-  price: number;
-}
+import type { Menu, Category, CurrencyCode, WizardItem } from '@/types/admin.types';
 
 interface WizardStepItemsProps {
   menu: Menu;

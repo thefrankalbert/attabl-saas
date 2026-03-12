@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
+import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
@@ -63,8 +64,8 @@ export async function POST(request: Request) {
     const onboardingService = createOnboardingService(supabase);
     const result = await onboardingService.completeOnboarding(adminUser.tenant_id, data);
 
-    revalidateTag('tenant-config', 'max');
-    revalidateTag('menus', 'max');
+    revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
+    revalidateTag(CACHE_TAG_MENUS, 'max');
 
     return NextResponse.json({
       success: true,

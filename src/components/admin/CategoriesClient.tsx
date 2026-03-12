@@ -216,13 +216,17 @@ export default function CategoriesClient({
 
       // Persist to database
       try {
-        const updatePromises = reordered.map((cat, i: number) =>
-          supabase
-            .from('categories')
-            .update({ display_order: i })
-            .eq('id', cat.id)
-            .eq('tenant_id', tenantId),
-        );
+        const previousIndexMap = new Map(previous.map((c, i) => [c.id, i]));
+        const updatePromises = reordered
+          .map((cat, i) => ({ cat, i }))
+          .filter(({ cat, i }) => previousIndexMap.get(cat.id) !== i)
+          .map(({ cat, i }) =>
+            supabase
+              .from('categories')
+              .update({ display_order: i })
+              .eq('id', cat.id)
+              .eq('tenant_id', tenantId),
+          );
         const results = await Promise.all(updatePromises);
         const error = results.find((r) => r.error)?.error;
         if (error) throw error;

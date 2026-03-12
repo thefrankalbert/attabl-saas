@@ -1,6 +1,14 @@
 // Types pour l'administration multi-tenant ATTABL SaaS
 // Adapté de BluTable avec support tenant_id
 
+// ─── Wizard types ────────────────────────────────────────────
+/** Lightweight item projection used by the menu creation wizard. */
+export interface WizardItem {
+  id: string;
+  name: string;
+  price: number;
+}
+
 // ─── Rôles d'administration ────────────────────────────────
 export type AdminRole = 'owner' | 'admin' | 'manager' | 'cashier' | 'chef' | 'waiter';
 
