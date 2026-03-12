@@ -49,6 +49,7 @@ import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 interface ItemsClientProps {
@@ -96,6 +97,7 @@ export default function ItemsClient({
   const t = useTranslations('items');
   const tc = useTranslations('common');
   const ta = useTranslations('allergens');
+  const seg = useSegmentTerms();
   const supabase = createClient();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -276,7 +278,7 @@ export default function ItemsClient({
           {/* Header — single row like inventory */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
-              {t('title')}
+              {seg.items}
               <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
             </h1>
 
@@ -312,7 +314,7 @@ export default function ItemsClient({
               variant="default"
               className="gap-2 h-9 lg:ml-auto shrink-0"
             >
-              <Plus className="w-4 h-4" /> {t('newItem')}
+              <Plus className="w-4 h-4" /> {seg.addItem}
             </Button>
           </div>
         </div>
@@ -509,7 +511,7 @@ export default function ItemsClient({
               <p className="text-sm font-medium text-app-text-secondary mb-1">{t('noItems')}</p>
               <p className="text-xs text-app-text-muted mb-4">{t('noItemsDesc')}</p>
               <Button onClick={openNewModal} size="sm">
-                <Plus className="w-4 h-4 mr-1" /> {t('addItem')}
+                <Plus className="w-4 h-4 mr-1" /> {seg.addItem}
               </Button>
             </div>
           )}

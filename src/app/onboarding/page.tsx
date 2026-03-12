@@ -25,6 +25,7 @@ import { PhonePreview } from '@/components/onboarding/PhonePreview';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
+import { getSegmentFeatures } from '@/lib/segment-features';
 
 // ─── Phase / sub-screen definitions ────────────────────────────────────────────
 
@@ -35,16 +36,6 @@ interface PhaseDefinition {
   icon: typeof Palette;
   subScreens: ScreenKey[];
 }
-
-const PHASES: PhaseDefinition[] = [
-  {
-    labelKey: 'phaseIdentity',
-    icon: Palette,
-    subScreens: ['establishment', 'branding', 'details'],
-  },
-  { labelKey: 'phaseMenu', icon: UtensilsCrossed, subScreens: ['tables', 'menu'] },
-  { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
-];
 
 /** Map screen key → old API step number for saving */
 const SCREEN_TO_API_STEP: Record<ScreenKey, number> = {
@@ -169,13 +160,29 @@ export default function OnboardingPage() {
 
   // ─── Derived values ────────────────────────────────────────────────────────
 
-  const currentPhase = phase >= 1 && phase <= 3 ? PHASES[phase - 1] : null;
+  // Compute adaptive phases based on establishment type
+  const segmentFeatures = getSegmentFeatures(data.establishmentType);
+  const phases: PhaseDefinition[] = [
+    {
+      labelKey: 'phaseIdentity',
+      icon: Palette,
+      subScreens: ['establishment', 'branding', 'details'],
+    },
+    {
+      labelKey: 'phaseMenu',
+      icon: UtensilsCrossed,
+      subScreens: segmentFeatures.showTables ? ['tables', 'menu'] : ['menu'],
+    },
+    { labelKey: 'phaseLaunch', icon: Rocket, subScreens: ['qr', 'summary'] },
+  ];
+
+  const currentPhase = phase >= 1 && phase <= 3 ? phases[phase - 1] : null;
   const screenKey: ScreenKey | null = currentPhase
     ? (currentPhase.subScreens[subScreen] ?? null)
     : null;
   const apiStep = screenKey ? SCREEN_TO_API_STEP[screenKey] : 0;
 
-  const isLastScreen = phase === 3 && subScreen === PHASES[2].subScreens.length - 1;
+  const isLastScreen = phase === 3 && subScreen === phases[2].subScreens.length - 1;
 
   // ─── Step completeness check (adapted for phases) ──────────────────────────
 
@@ -349,7 +356,7 @@ export default function OnboardingPage() {
     if (subScreen > 0) {
       setSubScreen((s) => s - 1);
     } else if (phase > 1) {
-      const prevPhase = PHASES[phase - 2];
+      const prevPhase = phases[phase - 2];
       setPhase((p) => p - 1);
       setSubScreen(prevPhase.subScreens.length - 1);
     }
@@ -500,7 +507,7 @@ export default function OnboardingPage() {
 
         {/* Center: 3 phase tabs */}
         <div className="flex-1 flex justify-center gap-1">
-          {PHASES.map((phaseDef, idx) => {
+          {phases.map((phaseDef, idx) => {
             const phaseNum = idx + 1;
             const isActive = phase === phaseNum;
             const isCompleted = phase > phaseNum;

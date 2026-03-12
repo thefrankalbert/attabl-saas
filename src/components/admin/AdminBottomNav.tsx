@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { NAV_GROUPS, BOTTOM_NAV_ITEMS } from '@/lib/layout/navigation-config';
 import { isImmersivePage } from '@/lib/constants';
+import { getHiddenNavGroupIds } from '@/lib/segment-features';
 import type { AdminRole } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
@@ -13,11 +14,12 @@ import type { AdminRole } from '@/types/admin.types';
 interface AdminBottomNavProps {
   basePath: string;
   role: AdminRole;
+  establishmentType?: string;
 }
 
 // ─── Component ──────────────────────────────────────────
 
-export function AdminBottomNav({ basePath, role }: AdminBottomNavProps) {
+export function AdminBottomNav({ basePath, role, establishmentType }: AdminBottomNavProps) {
   const pathname = usePathname();
   const t = useTranslations('sidebar');
 
@@ -26,9 +28,11 @@ export function AdminBottomNav({ basePath, role }: AdminBottomNavProps) {
 
   // Get the 5 bottom nav item IDs for this role
   const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;
+  const hiddenGroupIds = getHiddenNavGroupIds(establishmentType);
 
-  // Resolve each ID to its NavGroupConfig
+  // Resolve each ID to its NavGroupConfig, filtering out segment-hidden groups
   const items = itemIds
+    .filter((id) => !hiddenGroupIds.has(id))
     .map((id) => NAV_GROUPS.find((g) => g.id === id))
     .filter((g): g is (typeof NAV_GROUPS)[number] => g !== undefined);
 
