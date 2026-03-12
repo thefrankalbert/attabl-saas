@@ -6,10 +6,10 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import { Search, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import BottomNav from '@/components/tenant/BottomNav';
@@ -176,36 +176,33 @@ export default function ClientMenuDetailPage({
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  // ─── Realtime subscription ─────────────────────────────
-  useEffect(() => {
-    const supabase = createClient();
-    const channel = supabase
-      .channel(`menu_realtime_${tenant.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'menu_items',
-          filter: `tenant_id=eq.${tenant.id}`,
-        },
-        (payload) => {
-          const updated = payload.new as { id: string; is_available: boolean };
-          setDisabledItemIds((prev) => {
-            const next = new Set(prev);
-            if (!updated.is_available) next.add(updated.id);
-            else next.delete(updated.id);
-            return next;
-          });
-        },
-      )
-      .subscribe();
+  // ─── Realtime subscriptions ────────────────────────────
+  const handleRealtimeRefresh = useCallback(() => {
+    router.refresh();
+  }, [router]);
 
-    return () => {
-      channel.unsubscribe();
-      supabase.removeChannel(channel);
-    };
-  }, [tenant.id]);
+  useRealtimeSubscription<{ id: string; is_available: boolean }>({
+    channelName: `menu_items_realtime_${tenant.id}`,
+    table: 'menu_items',
+    filter: `tenant_id=eq.${tenant.id}`,
+    onUpdate: (record) => {
+      setDisabledItemIds((prev) => {
+        const next = new Set(prev);
+        if (!record.is_available) next.add(record.id);
+        else next.delete(record.id);
+        return next;
+      });
+    },
+    onInsert: handleRealtimeRefresh,
+    onDelete: handleRealtimeRefresh,
+  });
+
+  useRealtimeSubscription({
+    channelName: `categories_realtime_${tenant.id}`,
+    table: 'categories',
+    filter: `tenant_id=eq.${tenant.id}`,
+    onChange: handleRealtimeRefresh,
+  });
 
   // ─── Filtering logic ──────────────────────────────────
 

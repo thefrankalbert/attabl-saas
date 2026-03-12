@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { revalidateTag } from 'next/cache';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { pdfImportLimiter, getClientIp } from '@/lib/rate-limit';
@@ -170,6 +171,8 @@ export async function POST(request: Request) {
 
       const result = await importService.importItems(tenant.id, menuId, extraction.items);
 
+      revalidateTag('menus', 'max');
+
       return NextResponse.json({
         success: true,
         ...result,
@@ -198,6 +201,8 @@ export async function POST(request: Request) {
     const items = parsed.data as PdfExtractedItem[];
 
     const result = await importService.importItems(tenant.id, menuId, items);
+
+    revalidateTag('menus', 'max');
 
     return NextResponse.json({
       success: true,

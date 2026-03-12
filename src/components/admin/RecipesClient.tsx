@@ -29,7 +29,7 @@ interface RecipeLine {
   ingredient_id: string;
   ingredient_name: string;
   unit: string;
-  quantity_needed: number;
+  quantity_needed: number | string;
   notes: string;
 }
 
@@ -139,7 +139,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     ]);
   };
 
-  const updateLine = (index: number, field: string, value: string | number) => {
+  const updateLine = (index: number, field: string, value: string | number | '') => {
     setRecipeLines((prev) =>
       prev.map((line, i) => {
         if (i !== index) return line;
@@ -166,10 +166,10 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
     setSaving(true);
     try {
       const lines: RecipeLineInput[] = recipeLines
-        .filter((l) => l.quantity_needed > 0)
+        .filter((l) => Number(l.quantity_needed) > 0)
         .map((l) => ({
           ingredient_id: l.ingredient_id,
-          quantity_needed: l.quantity_needed,
+          quantity_needed: Number(l.quantity_needed) || 0,
           notes: l.notes || undefined,
         }));
 
@@ -342,7 +342,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                                     updateLine(
                                       idx,
                                       'quantity_needed',
-                                      parseFloat(e.target.value) || 0,
+                                      e.target.value === '' ? '' : parseFloat(e.target.value),
                                     )
                                   }
                                   className="h-8 text-sm flex-1"

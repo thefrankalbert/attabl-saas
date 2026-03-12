@@ -64,8 +64,8 @@ export function TablesClient({
   const [savingZone, setSavingZone] = useState(false);
 
   // Add tables form state
-  const [tableCount, setTableCount] = useState(1);
-  const [tableCapacity, setTableCapacity] = useState(4);
+  const [tableCount, setTableCount] = useState<number | string>(1);
+  const [tableCapacity, setTableCapacity] = useState<number | string>(4);
   const [savingTables, setSavingTables] = useState(false);
 
   // Inline editing state
@@ -209,7 +209,9 @@ export function TablesClient({
 
   const handleAddTables = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedZoneId || tableCount < 1) return;
+    const count = Math.max(1, Number(tableCount) || 1);
+    const capacity = Math.max(1, Number(tableCapacity) || 4);
+    if (!selectedZoneId || count < 1) return;
 
     setSavingTables(true);
 
@@ -229,14 +231,14 @@ export function TablesClient({
 
     const startNumber = existingNumbers.length > 0 ? existingNumbers[0] + 1 : 1;
 
-    const newTables = Array.from({ length: tableCount }, (_, i) => {
+    const newTables = Array.from({ length: count }, (_, i) => {
       const num = startNumber + i;
       const tableNumber = `${selectedZone.prefix}-${num}`;
       return {
         zone_id: selectedZoneId,
         table_number: tableNumber,
         display_name: tableNumber,
-        capacity: tableCapacity,
+        capacity,
         is_active: true,
       };
     });
@@ -247,7 +249,7 @@ export function TablesClient({
       logger.error('Failed to create tables', { error });
       toast({ title: t('errorCreateTables'), variant: 'destructive' });
     } else {
-      toast({ title: t('successCreateTables', { count: tableCount }) });
+      toast({ title: t('successCreateTables', { count }) });
       setShowAddTables(false);
       setTableCount(1);
       setTableCapacity(4);
@@ -697,7 +699,7 @@ export function TablesClient({
                 id="table-count"
                 type="number"
                 value={tableCount}
-                onChange={(e) => setTableCount(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                onChange={(e) => setTableCount(e.target.value === '' ? '' : Number(e.target.value))}
                 className="rounded-lg focus:ring-accent/30"
                 min={1}
                 max={50}
@@ -712,7 +714,9 @@ export function TablesClient({
                 id="table-capacity"
                 type="number"
                 value={tableCapacity}
-                onChange={(e) => setTableCapacity(Math.max(1, parseInt(e.target.value, 10) || 1))}
+                onChange={(e) =>
+                  setTableCapacity(e.target.value === '' ? '' : Number(e.target.value))
+                }
                 className="rounded-lg focus:ring-accent/30"
                 min={1}
                 max={50}
@@ -728,7 +732,8 @@ export function TablesClient({
               </span>{' '}
               {t('tableNamingTo')}{' '}
               <span className="font-mono font-medium text-app-text">
-                {selectedZone.prefix}-{(tables.length > 0 ? tables.length : 0) + tableCount}
+                {selectedZone.prefix}-
+                {(tables.length > 0 ? tables.length : 0) + (Number(tableCount) || 0)}
               </span>
             </div>
           )}

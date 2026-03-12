@@ -178,7 +178,7 @@ export async function actionDeleteMenu(tenantId: string, menuId: string): Promis
     supabase,
     user,
     role,
-  } = await checkMenuPermissions(tenantId, ['owner', 'admin']);
+  } = await checkMenuPermissions(tenantId, ['owner', 'admin', 'manager']);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 
   try {

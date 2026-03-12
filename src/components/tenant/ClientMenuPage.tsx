@@ -10,6 +10,7 @@ import { Search, ShoppingCart, Utensils, ChevronRight, Bell, Heart } from 'lucid
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
+import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import {
   Venue,
   Category,
@@ -176,6 +177,25 @@ export default function ClientMenuPage({
     window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
+
+  // ─── Realtime subscriptions ─────────────────────────────
+  const handleRealtimeChange = useCallback(() => {
+    router.refresh();
+  }, [router]);
+
+  useRealtimeSubscription({
+    channelName: `home_categories_${tenant.id}`,
+    table: 'categories',
+    filter: `tenant_id=eq.${tenant.id}`,
+    onChange: handleRealtimeChange,
+  });
+
+  useRealtimeSubscription({
+    channelName: `home_menu_items_${tenant.id}`,
+    table: 'menu_items',
+    filter: `tenant_id=eq.${tenant.id}`,
+    onChange: handleRealtimeChange,
+  });
 
   // ─── Handlers ──────────────────────────────────────────
 
