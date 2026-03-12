@@ -9,9 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { formatCurrency } from '@/lib/utils/currency';
+import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, CurrencyCode } from '@/types/admin.types';
 
-interface WizardItem {
+export interface WizardItem {
   id: string;
   name: string;
   price: number;
@@ -74,7 +75,7 @@ export default function WizardStepItems({
       setName('');
       setPrice('');
       setDescription('');
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -101,7 +102,7 @@ export default function WizardStepItems({
           {items.map((item) => (
             <div key={item.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-app-text truncate">{item.name}</p>
+                <p className="text-sm font-medium text-app-text">{item.name}</p>
               </div>
               <span className="text-sm font-medium text-app-text-secondary tabular-nums">
                 {formatCurrency(item.price, currency)}

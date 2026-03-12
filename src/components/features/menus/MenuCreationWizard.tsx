@@ -7,17 +7,12 @@ import AdminModal from '@/components/admin/AdminModal';
 import MenuForm from '@/components/features/menus/MenuForm';
 import WizardStepCategories from '@/components/features/menus/WizardStepCategories';
 import WizardStepItems from '@/components/features/menus/WizardStepItems';
+import type { WizardItem } from '@/components/features/menus/WizardStepItems';
 import { Button } from '@/components/ui/button';
 import type { MenuFormData } from '@/hooks/useMenusData';
 import type { Menu, Venue, Category, CurrencyCode } from '@/types/admin.types';
 
 type WizardStep = 'menu' | 'confirm' | 'categories' | 'items';
-
-interface WizardItem {
-  id: string;
-  name: string;
-  price: number;
-}
 
 interface MenuCreationWizardProps {
   isOpen: boolean;

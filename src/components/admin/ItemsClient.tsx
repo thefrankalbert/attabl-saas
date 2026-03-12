@@ -48,6 +48,7 @@ import RoleGuard from '@/components/admin/RoleGuard';
 import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
 import { logger } from '@/lib/logger';
+import { revalidateMenuCache } from '@/lib/revalidate';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 interface ItemsClientProps {
@@ -209,7 +210,7 @@ export default function ItemsClient({
       setShowModal(false);
       loadItems();
       router.refresh();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch (err) {
       logger.error('Failed to save menu item', err, {
         tenantId,
@@ -229,7 +230,7 @@ export default function ItemsClient({
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
     }
@@ -245,7 +246,7 @@ export default function ItemsClient({
       if (error) throw error;
       loadItems();
       router.refresh();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -262,7 +263,7 @@ export default function ItemsClient({
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
       router.refresh();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }
@@ -337,7 +338,7 @@ export default function ItemsClient({
                   setSelectedIds(new Set());
                   loadItems();
                   router.refresh();
-                  fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+                  revalidateMenuCache();
                 }}
                 className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
               >

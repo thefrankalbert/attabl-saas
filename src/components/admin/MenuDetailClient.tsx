@@ -34,6 +34,7 @@ import ImageUpload from '@/components/shared/ImageUpload';
 import { cn } from '@/lib/utils';
 import { actionUpdateMenu } from '@/app/actions/menus';
 import { actionToggleCategoryActive } from '@/app/actions/categories';
+import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
 
 interface MenuDetailClientProps {
@@ -264,7 +265,7 @@ export default function MenuDetailClient({
       if (error) throw error;
       toast({ title: t('categoryAssigned') });
       setShowAssignDropdown(false);
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
       loadData();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });

@@ -41,6 +41,7 @@ import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { revalidateMenuCache } from '@/lib/revalidate';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
 
@@ -225,7 +226,7 @@ export default function CategoriesClient({
         const results = await Promise.all(updatePromises);
         const error = results.find((r) => r.error)?.error;
         if (error) throw error;
-        fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+        revalidateMenuCache();
       } catch (err: unknown) {
         // Rollback on error
         queryClient.setQueryData(['categories', tenantId, true], previous);
@@ -283,7 +284,7 @@ export default function CategoriesClient({
       }
       setShowModal(false);
       loadCategories();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -305,7 +306,7 @@ export default function CategoriesClient({
       if (error) throw error;
       toast({ title: t('categoryDeleted') });
       loadCategories();
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: tc('deleteError'), variant: 'destructive' });
     }
