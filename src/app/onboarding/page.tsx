@@ -493,7 +493,7 @@ export default function OnboardingPage() {
           >
             <LayoutGrid className="w-4 h-4 text-app-text-muted" />
           </Link>
-          <span className="text-sm font-semibold text-app-text truncate max-w-28 hidden sm:inline">
+          <span className="text-sm font-semibold text-app-text hidden sm:inline">
             {data.tenantName || 'ATTABL'}
           </span>
         </div>

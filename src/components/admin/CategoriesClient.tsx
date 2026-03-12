@@ -130,6 +130,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
           variant="ghost"
           size="sm"
           onClick={() => onDelete(cat)}
+          title="Supprimer"
           className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
         >
           <Trash2 className="w-4 h-4" />

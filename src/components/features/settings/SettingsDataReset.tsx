@@ -137,7 +137,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                 <div className="text-sm font-medium text-app-text">
                   {t(`reset_${option.type}_title`)}
                 </div>
-                <div className="text-xs text-app-text-muted truncate">
+                <div className="text-xs text-app-text-muted">
                   {t(`reset_${option.type}_description`)}
                 </div>
               </div>

@@ -343,7 +343,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           const remaining = items.length - 3;
           return (
             <div className="max-w-[220px]">
-              <span className="text-app-text text-sm line-clamp-1">
+              <span className="text-app-text text-sm">
                 {summary}
                 {remaining > 0 && <span className="text-app-text-muted"> +{remaining}</span>}
               </span>
@@ -729,7 +729,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
 
                       {/* Row 2: Item names summary */}
                       {items.length > 0 && (
-                        <p className="text-xs text-app-text-secondary line-clamp-1">
+                        <p className="text-xs text-app-text-secondary">
                           {items
                             .slice(0, 3)
                             .map((i) => `${i.quantity}× ${i.name}`)

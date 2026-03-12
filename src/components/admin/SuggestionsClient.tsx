@@ -270,10 +270,10 @@ export default function SuggestionsClient({
                     variant="destructive"
                     size="sm"
                     className="gap-1.5"
+                    title="Supprimer"
                     onClick={handleBulkDelete}
                   >
                     <XCircle className="w-4 h-4" />
-                    {t('deleteSelected', { count: selectedIds.size })}
                   </Button>
                 )}
               </div>
@@ -360,6 +360,7 @@ export default function SuggestionsClient({
                           variant="ghost"
                           size="sm"
                           className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                          title="Supprimer"
                           onClick={() => handleDelete(suggestion.id)}
                         >
                           <Trash2 className="w-3.5 h-3.5" />

@@ -510,7 +510,7 @@ export default function TenantsPageClient() {
                         <Building2 className="h-4 w-4 text-app-text-muted" />
                       </div>
                       <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-app-text truncate">
+                        <h3 className="text-sm font-semibold text-app-text break-words">
                           {tenant.name}
                         </h3>
                         <p className="text-[10px] text-app-text-muted">{tenant.slug}.attabl.com</p>
@@ -874,7 +874,7 @@ export default function TenantsPageClient() {
                             </span>
                           </div>
                           {restaurants.length > 1 && (
-                            <p className="text-[9px] text-app-text-muted truncate">
+                            <p className="text-[9px] text-app-text-muted break-words">
                               {order.tenant_name}
                             </p>
                           )}
@@ -937,7 +937,7 @@ export default function TenantsPageClient() {
                         )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <h3 className="text-xs font-semibold text-app-text truncate">
+                            <h3 className="text-xs font-semibold text-app-text break-words">
                               {r.tenant_name}
                             </h3>
                             <span

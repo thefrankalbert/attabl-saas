@@ -166,9 +166,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
                       )}
                     </div>
                     {notification.body && (
-                      <p className="mt-0.5 text-xs text-app-text-muted line-clamp-2">
-                        {notification.body}
-                      </p>
+                      <p className="mt-0.5 text-xs text-app-text-muted">{notification.body}</p>
                     )}
                     <p className="mt-1 text-xs text-app-text-muted">
                       {formatTime(notification.created_at)}

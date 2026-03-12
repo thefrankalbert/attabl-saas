@@ -111,6 +111,7 @@ export default function ImageUpload({
             variant="destructive"
             size="icon"
             className="h-8 w-8"
+            title="Supprimer"
             disabled={disabled || isLoading}
           >
             <Trash className="h-4 w-4" />

@@ -98,7 +98,7 @@ export default function POSProductBrowser({
                   )}
                 </div>
                 <div className="flex-1 flex flex-col">
-                  <h3 className="font-semibold text-sm text-app-text leading-tight mb-1 line-clamp-2">
+                  <h3 className="font-semibold text-sm text-app-text leading-tight mb-1">
                     {item.name}
                   </h3>
                   <p className="text-xs font-bold text-app-text-secondary mt-auto">

@@ -378,7 +378,7 @@ export function QRCustomizerPanel({
                               alt="Aperçu du logo"
                               className="h-10 w-10 rounded-lg object-contain bg-app-card border border-neutral-100"
                             />
-                            <span className="text-xs text-app-text-muted truncate flex-1">
+                            <span className="text-xs text-app-text-muted break-all flex-1">
                               {config.logo.src.startsWith('data:')
                                 ? 'Image importée'
                                 : config.logo.src}
@@ -387,6 +387,7 @@ export function QRCustomizerPanel({
                               type="button"
                               onClick={() => updateLogo('src', '')}
                               className="p-1 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              title="Supprimer"
                               aria-label="Supprimer le logo"
                             >
                               <X className="h-3.5 w-3.5" />

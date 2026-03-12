@@ -440,6 +440,7 @@ export function TablesClient({
                             e.stopPropagation();
                             handleDeleteZone(zone);
                           }}
+                          title="Supprimer"
                           className="p-1 text-red-400 hover:text-red-600"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -522,6 +523,7 @@ export function TablesClient({
                         <button
                           type="button"
                           onClick={() => handleDeleteTable(table)}
+                          title="Supprimer"
                           className="p-1 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3.5 h-3.5" />

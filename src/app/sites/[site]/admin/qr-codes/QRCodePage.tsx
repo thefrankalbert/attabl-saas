@@ -513,7 +513,7 @@ function BatchQRPreview({
                 className="flex items-center gap-2 p-2 bg-app-bg rounded-xl text-xs"
               >
                 <Table2 className="w-3 h-3 text-app-text-muted shrink-0" />
-                <span className="text-app-text-secondary font-medium truncate">
+                <span className="text-app-text-secondary font-medium break-words">
                   {table.display_name}
                 </span>
               </div>

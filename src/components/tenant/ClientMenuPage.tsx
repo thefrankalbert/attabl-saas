@@ -386,7 +386,7 @@ export default function ClientMenuPage({
                 {getTranslatedContent(lang, announcement.title, announcement.title_en)}
               </h3>
               {announcement.description && (
-                <p className="text-xs text-white/80 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-white/80 leading-relaxed">
                   {getTranslatedContent(
                     lang,
                     announcement.description,
@@ -415,7 +415,7 @@ export default function ClientMenuPage({
                 <div className="w-16 h-16 rounded-full bg-[#F5F0E8] flex items-center justify-center group-hover:bg-[#EDE6D8] transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                   <span className="text-[26px] leading-none">{getCategoryEmoji(cat.name)}</span>
                 </div>
-                <span className="text-[11px] font-medium text-neutral-700 leading-tight text-center line-clamp-1">
+                <span className="text-[11px] font-medium text-neutral-700 leading-tight text-center">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
@@ -450,7 +450,7 @@ export default function ClientMenuPage({
               >
                 <Utensils className="w-6 h-6" style={{ color: primary }} />
               </div>
-              <span className="text-[11px] font-medium text-neutral-600 text-center w-15 line-clamp-1">
+              <span className="text-[11px] font-medium text-neutral-600 text-center w-15">
                 {t('allMenus')}
               </span>
             </button>
@@ -479,7 +479,7 @@ export default function ClientMenuPage({
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] font-medium text-neutral-600 text-center w-15 line-clamp-1">
+                <span className="text-[11px] font-medium text-neutral-600 text-center w-15">
                   {venue.name}
                 </span>
               </button>
@@ -522,7 +522,7 @@ export default function ClientMenuPage({
                   )}
                 </div>
                 <div className="p-2.5">
-                  <h3 className="text-[11px] font-semibold text-neutral-800 line-clamp-2 leading-tight mb-1">
+                  <h3 className="text-[11px] font-semibold text-neutral-800 leading-tight mb-1">
                     {item.name}
                   </h3>
                   <div className="flex items-center justify-between">
@@ -580,7 +580,7 @@ export default function ClientMenuPage({
                   </div>
                 </div>
                 <div className="p-3 pt-2.5">
-                  <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug line-clamp-2 mb-1.5">
+                  <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug mb-1.5">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
                   {/* Tags row — like screenshot category pills */}

@@ -328,9 +328,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                   </div>
                   <p className="text-sm font-medium text-app-text mt-1 break-words">{item.name}</p>
                   {item.description && (
-                    <p className="text-xs text-app-text-secondary mt-0.5 line-clamp-2">
-                      {item.description}
-                    </p>
+                    <p className="text-xs text-app-text-secondary mt-0.5">{item.description}</p>
                   )}
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
@@ -341,6 +339,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                     type="button"
                     onClick={() => removeItem(index)}
                     className="p-1 rounded-md text-app-text-muted hover:text-red-500 hover:bg-status-error/10 transition-colors"
+                    title="Supprimer"
                     aria-label="Remove"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
