@@ -11,6 +11,7 @@
  * - Minimal HTML, high text-to-HTML ratio
  * - Inline styles only (no <style> blocks)
  * - Single clear CTA
+ * - Light background, clean design (like Stripe/Linear) — avoids spam filters
  */
 
 import { Resend } from 'resend';
@@ -47,7 +48,10 @@ const REPLY_TO = 'support@attabl.com';
 const FOOTER_ADDRESS = 'ATTABL SAS — Douala, Cameroun';
 const FOOTER_TAGLINE = 'Menus digitaux pour restaurants et h\u00f4tels';
 
-/** Wraps email body content in a proper HTML document with table layout. */
+/**
+ * Wraps email body content in a proper HTML document with table layout.
+ * Uses a light, clean design similar to Stripe/Linear emails.
+ */
 function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): string {
   return `<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr">
@@ -56,24 +60,30 @@ function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): str
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ATTABL</title>
 </head>
-<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+<body style="margin:0;padding:0;background-color:#f9fafb;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
   <!--[if mso]><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
   <!-- Preheader text (hidden, shown in inbox preview) -->
-  <div style="display:none;font-size:1px;color:#f4f4f5;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
+  <div style="display:none;font-size:1px;color:#f9fafb;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;">
     ${escapeHtml(opts.preheader)}
   </div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f4f4f5;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f9fafb;">
     <tr>
-      <td align="center" style="padding:32px 16px;">
+      <td align="center" style="padding:40px 16px 32px;">
         <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%;">
+          <!-- Logo -->
+          <tr>
+            <td style="padding:0 0 32px;text-align:center;">
+              <p style="margin:0;font-size:18px;font-weight:700;color:#111827;letter-spacing:0.5px;">ATTABL</p>
+            </td>
+          </tr>
           ${opts.bodyContent}
           <!-- Footer -->
           <tr>
-            <td style="padding:24px 24px 16px;text-align:center;">
-              <p style="margin:0 0 4px;font-size:12px;line-height:1.5;color:#a1a1aa;">
+            <td style="padding:32px 24px 16px;text-align:center;">
+              <p style="margin:0 0 4px;font-size:12px;line-height:1.5;color:#9ca3af;">
                 ${FOOTER_TAGLINE}
               </p>
-              <p style="margin:0;font-size:11px;line-height:1.5;color:#a1a1aa;">
+              <p style="margin:0;font-size:11px;line-height:1.5;color:#9ca3af;">
                 ${FOOTER_ADDRESS}
               </p>
             </td>
@@ -90,11 +100,14 @@ function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): str
 // ---------------------------------------------------------------------------
 // Email 1 — Verification d'adresse (court, transactionnel)
 // Envoye immediatement apres inscription.
+// NOTE: At signup time, user only provided their email — no restaurant name yet.
+// This email addresses the user directly, not their establishment.
 // ---------------------------------------------------------------------------
 
 interface WelcomeConfirmationEmailData {
-  restaurantName: string;
   confirmationUrl: string;
+  /** @deprecated Use userEmail instead. Kept for backwards compat. */
+  restaurantName?: string;
 }
 
 export async function sendWelcomeConfirmationEmail(
@@ -106,77 +119,70 @@ export async function sendWelcomeConfirmationEmail(
     return false;
   }
 
-  const safeRestaurantName = escapeHtml(data.restaurantName);
   const safeUrl = sanitizeUrl(data.confirmationUrl);
   const rawUrl = escapeHtml(data.confirmationUrl);
 
-  const subject = `Confirmez votre adresse — ${data.restaurantName}`;
-  const preheader = `Un clic pour activer votre compte ATTABL pour ${data.restaurantName}.`;
+  const subject = 'Confirmez votre adresse email';
+  const preheader = 'Un clic pour activer votre compte ATTABL.';
 
   const bodyContent = `
-          <!-- Header -->
+          <!-- Body card -->
           <tr>
-            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
-              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">ATTABL</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="background-color:#ffffff;padding:36px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;text-align:center;">
-              <p style="margin:0 0 12px;font-size:20px;font-weight:600;color:#18181b;">
-                Confirmez votre adresse email
+            <td style="background-color:#ffffff;padding:40px 32px;border-radius:8px;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">
+                Bienvenue sur ATTABL
               </p>
-              <p style="margin:0 0 28px;font-size:15px;line-height:1.6;color:#3f3f46;">
-                ${safeRestaurantName}, appuyez sur le bouton ci-dessous pour activer votre compte.
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#4b5563;">
+                Merci pour votre inscription. Pour activer votre compte et commencer la configuration de votre etablissement, confirmez votre adresse email.
               </p>
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center" style="padding:4px 0 20px;">
-                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:260px;" arcsize="17%" fillcolor="#18181b"><center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmer mon adresse</center></v:roundrect><![endif]-->
+                  <td align="center" style="padding:0 0 28px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="14%" fillcolor="#111827"><center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:600;">Confirmer mon adresse</center></v:roundrect><![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#111827;color:#ffffff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
                       Confirmer mon adresse
                     </a>
                     <!--<![endif]-->
                   </td>
                 </tr>
               </table>
-              <p style="margin:0 0 24px;font-size:12px;color:#a1a1aa;">
+              <p style="margin:0 0 24px;font-size:13px;color:#9ca3af;">
                 Ce lien expire dans 24 heures.
               </p>
               <!-- Separator -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+                <tr><td style="border-top:1px solid #e5e7eb;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
               </table>
-              <p style="margin:20px 0 8px;font-size:12px;line-height:1.5;color:#a1a1aa;">
+              <p style="margin:20px 0 8px;font-size:12px;line-height:1.5;color:#9ca3af;">
                 Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :
               </p>
-              <p style="margin:0;font-size:11px;line-height:1.4;color:#a1a1aa;word-break:break-all;">
+              <p style="margin:0;font-size:11px;line-height:1.4;color:#9ca3af;word-break:break-all;">
                 ${rawUrl}
               </p>
             </td>
           </tr>
-          <!-- Bottom bar -->
+          <!-- Safety note -->
           <tr>
-            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
-                Vous n'avez pas cree de compte ? Ignorez cet email.
+            <td style="padding:16px 24px 0;text-align:center;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;">
+                Vous n'avez pas cree de compte ? Ignorez simplement cet email.
               </p>
             </td>
           </tr>`;
 
   const html = wrapHtmlDocument({ preheader, bodyContent });
 
-  const text = `Confirmez votre adresse email — ATTABL
+  const text = `Bienvenue sur ATTABL
 
-${data.restaurantName}, activez votre compte en ouvrant le lien ci-dessous :
+Merci pour votre inscription. Confirmez votre adresse email pour activer votre compte.
 
 ${data.confirmationUrl}
 
 Ce lien expire dans 24 heures.
 
-Vous n'avez pas cree de compte ? Ignorez cet email.
+Vous n'avez pas cree de compte ? Ignorez simplement cet email.
 
 ---
 ${FOOTER_TAGLINE}
@@ -205,11 +211,122 @@ ${FOOTER_ADDRESS}`;
 }
 
 // ---------------------------------------------------------------------------
-// Email 2 — Bienvenue + Onboarding (envoye apres verification)
+// Email — Password Reset
+// ---------------------------------------------------------------------------
+
+interface PasswordResetEmailData {
+  resetUrl: string;
+}
+
+export async function sendPasswordResetEmail(
+  to: string,
+  data: PasswordResetEmailData,
+): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping password reset email');
+    return false;
+  }
+
+  const safeUrl = sanitizeUrl(data.resetUrl);
+  const rawUrl = escapeHtml(data.resetUrl);
+
+  const subject = 'Reinitialiser votre mot de passe';
+  const preheader = 'Cliquez pour choisir un nouveau mot de passe ATTABL.';
+
+  const bodyContent = `
+          <!-- Body card -->
+          <tr>
+            <td style="background-color:#ffffff;padding:40px 32px;border-radius:8px;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">
+                Reinitialiser votre mot de passe
+              </p>
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#4b5563;">
+                Vous avez demande a reinitialiser votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.
+              </p>
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td align="center" style="padding:0 0 28px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:44px;v-text-anchor:middle;width:280px;" arcsize="14%" fillcolor="#111827"><center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:600;">Reinitialiser mon mot de passe</center></v:roundrect><![endif]-->
+                    <!--[if !mso]><!-->
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#111827;color:#ffffff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
+                      Reinitialiser mon mot de passe
+                    </a>
+                    <!--<![endif]-->
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:0 0 24px;font-size:13px;color:#9ca3af;">
+                Ce lien expire dans 1 heure.
+              </p>
+              <!-- Separator -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e5e7eb;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+              <p style="margin:20px 0 8px;font-size:12px;line-height:1.5;color:#9ca3af;">
+                Si le bouton ne fonctionne pas, copiez cette adresse dans votre navigateur :
+              </p>
+              <p style="margin:0;font-size:11px;line-height:1.4;color:#9ca3af;word-break:break-all;">
+                ${rawUrl}
+              </p>
+            </td>
+          </tr>
+          <!-- Safety note -->
+          <tr>
+            <td style="padding:16px 24px 0;text-align:center;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;">
+                Si vous n'avez pas fait cette demande, ignorez simplement cet email.
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const text = `Reinitialiser votre mot de passe
+
+Vous avez demande a reinitialiser votre mot de passe. Cliquez sur le lien ci-dessous pour en choisir un nouveau.
+
+${data.resetUrl}
+
+Ce lien expire dans 1 heure.
+
+Si vous n'avez pas fait cette demande, ignorez simplement cet email.
+
+---
+${FOOTER_TAGLINE}
+${FOOTER_ADDRESS}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      replyTo: REPLY_TO,
+      to: [to],
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error('Resend password reset email error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send password reset email', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Email 2 — Bienvenue + Onboarding (envoye apres verification email)
+// At this point, user confirmed their email. We use their name if available,
+// otherwise fall back to "Bonjour".
 // ---------------------------------------------------------------------------
 
 interface WelcomeOnboardingEmailData {
-  restaurantName: string;
+  userName?: string;
+  restaurantName?: string;
   dashboardUrl: string;
   totalRestaurants: number;
 }
@@ -223,169 +340,154 @@ export async function sendWelcomeOnboardingEmail(
     return false;
   }
 
-  const safeRestaurantName = escapeHtml(data.restaurantName);
+  // Use the user's name if available, otherwise just "Bonjour"
+  const greeting = data.userName ? escapeHtml(data.userName) : 'Bonjour';
   const safeUrl = sanitizeUrl(data.dashboardUrl);
 
-  const subject = `${data.restaurantName}, votre menu digital est pret`;
-  const preheader = `Creez votre premier menu en quelques minutes. ${data.restaurantName} est pret a accueillir ses clients.`;
+  const subject = 'Votre compte ATTABL est actif';
+  const preheader = 'Creez votre premier menu digital en quelques minutes.';
 
   const bodyContent = `
-          <!-- Header -->
+          <!-- Body card -->
           <tr>
-            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
-              <p style="margin:0;font-size:22px;font-weight:700;color:#ffffff;letter-spacing:0.5px;">ATTABL</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="background-color:#ffffff;padding:36px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
+            <td style="background-color:#ffffff;padding:40px 32px;border-radius:8px;border:1px solid #e5e7eb;">
               <!-- Badge -->
               <table role="presentation" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td style="background-color:#f0fdf4;color:#166534;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:5px 12px;border-radius:100px;">
+                  <td style="background-color:#ecfdf5;color:#065f46;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;padding:4px 10px;border-radius:100px;">
                     Compte active
                   </td>
                 </tr>
               </table>
               <!-- Titre -->
-              <p style="margin:20px 0 6px;font-size:22px;font-weight:700;color:#18181b;line-height:1.3;">
-                ${safeRestaurantName}, bienvenue sur ATTABL.
+              <p style="margin:20px 0 6px;font-size:20px;font-weight:600;color:#111827;line-height:1.3;">
+                ${greeting}, bienvenue sur ATTABL.
               </p>
-              <p style="margin:0 0 24px;font-size:16px;color:#71717a;line-height:1.4;">
-                Votre menu digital est pret a prendre vie.
+              <p style="margin:0 0 24px;font-size:15px;color:#6b7280;line-height:1.5;">
+                Votre compte est pret. Configurez votre etablissement et creez votre menu digital.
               </p>
               <!-- Corps -->
-              <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#3f3f46;">
-                A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services, sans appeler un graphiste ni relancer d'impression.
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#4b5563;">
+                A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services.
               </p>
-              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#3f3f46;">
-                Vos clients scannent un QR code, votre menu s'affiche. <strong style="color:#18181b;">Un plat en rupture ? Vous le retirez en 10 secondes.</strong> Un nouveau dessert ? Il est en ligne avant le coup de feu.
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#4b5563;">
+                Vos clients scannent un QR code, votre menu s'affiche. <strong style="color:#111827;">Un plat en rupture ? Retirez-le en 10 secondes.</strong> Un nouveau dessert ? Il est en ligne avant le coup de feu.
               </p>
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center" style="padding:4px 0 8px;">
-                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="17%" fillcolor="#18181b"><center style="color:#ffffff;font-family:sans-serif;font-size:15px;font-weight:bold;">Creer mon premier menu</center></v:roundrect><![endif]-->
+                  <td align="center" style="padding:0 0 8px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:44px;v-text-anchor:middle;width:260px;" arcsize="14%" fillcolor="#111827"><center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:600;">Configurer mon etablissement</center></v:roundrect><![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
-                      Creer mon premier menu
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#111827;color:#ffffff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
+                      Configurer mon etablissement
                     </a>
                     <!--<![endif]-->
                   </td>
                 </tr>
               </table>
-              <p style="margin:8px 0 0;font-size:12px;color:#a1a1aa;text-align:center;">
+              <p style="margin:8px 0 0;font-size:12px;color:#9ca3af;text-align:center;">
                 Prend environ 5 minutes
               </p>
             </td>
           </tr>
           <!-- Steps section -->
           <tr>
-            <td style="background-color:#ffffff;padding:0 28px 32px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
-              <!-- Separator -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
-              </table>
-              <p style="margin:24px 0 18px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#a1a1aa;">
-                Votre premier menu en 3 etapes
-              </p>
-              <!-- Step 1 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+            <td style="padding:24px 0 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#ffffff;border-radius:8px;border:1px solid #e5e7eb;">
                 <tr>
-                  <td width="32" valign="top" style="padding-right:12px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">1</td>
-                    </tr></table>
-                  </td>
-                  <td valign="top">
-                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Ajoutez vos plats et vos prix</p>
-                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Tapez-les directement ou importez votre carte existante. ~ 3 min</p>
+                  <td style="padding:28px 32px;">
+                    <p style="margin:0 0 20px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:#9ca3af;">
+                      En 3 etapes
+                    </p>
+                    <!-- Step 1 -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+                      <tr>
+                        <td width="32" valign="top" style="padding-right:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                            <td style="width:24px;height:24px;background-color:#f3f4f6;color:#6b7280;font-size:12px;font-weight:600;text-align:center;border-radius:50%;line-height:24px;">1</td>
+                          </tr></table>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#111827;">Decrivez votre etablissement</p>
+                          <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;">Nom, type, adresse et coordonnees.</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <!-- Step 2 -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+                      <tr>
+                        <td width="32" valign="top" style="padding-right:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                            <td style="width:24px;height:24px;background-color:#f3f4f6;color:#6b7280;font-size:12px;font-weight:600;text-align:center;border-radius:50%;line-height:24px;">2</td>
+                          </tr></table>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#111827;">Ajoutez votre menu</p>
+                          <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;">Plats, prix, photos et categories.</p>
+                        </td>
+                      </tr>
+                    </table>
+                    <!-- Step 3 -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="32" valign="top" style="padding-right:12px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                            <td style="width:24px;height:24px;background-color:#f3f4f6;color:#6b7280;font-size:12px;font-weight:600;text-align:center;border-radius:50%;line-height:24px;">3</td>
+                          </tr></table>
+                        </td>
+                        <td valign="top">
+                          <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#111827;">Generez votre QR code</p>
+                          <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;">Imprimez-le ou collez-le sur vos tables.</p>
+                        </td>
+                      </tr>
+                    </table>
                   </td>
                 </tr>
-              </table>
-              <!-- Step 2 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:16px;">
+                <!-- Social proof -->
                 <tr>
-                  <td width="32" valign="top" style="padding-right:12px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">2</td>
-                    </tr></table>
-                  </td>
-                  <td valign="top">
-                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Personnalisez le look</p>
-                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Ajoutez votre logo, choisissez vos couleurs, ajoutez des photos. ~ 2 min</p>
-                  </td>
-                </tr>
-              </table>
-              <!-- Step 3 -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:20px;">
-                <tr>
-                  <td width="32" valign="top" style="padding-right:12px;">
-                    <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
-                      <td style="width:28px;height:28px;background-color:#f0fdf4;color:#166534;font-size:13px;font-weight:700;text-align:center;border-radius:50%;line-height:28px;">3</td>
-                    </tr></table>
-                  </td>
-                  <td valign="top">
-                    <p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#18181b;">Recuperez votre QR code</p>
-                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.5;">Imprimez-le ou collez-le sur vos tables. ~ 30 sec</p>
-                  </td>
-                </tr>
-              </table>
-              <!-- Separator -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr><td style="border-top:1px solid #e4e4e7;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
-              </table>
-              <!-- Social proof -->
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-                <tr>
-                  <td style="background-color:#fafafa;padding:16px 20px;border-radius:8px;text-align:center;margin-top:20px;">
-                    <p style="margin:0;font-size:13px;color:#71717a;line-height:1.6;">
-                      <strong style="color:#3f3f46;">${data.totalRestaurants} restaurants et hotels</strong> utilisent ATTABL au quotidien pour garder leur carte toujours a jour.
+                  <td style="padding:0 32px 24px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr><td style="border-top:1px solid #e5e7eb;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+                    </table>
+                    <p style="margin:16px 0 0;font-size:13px;color:#6b7280;line-height:1.6;text-align:center;">
+                      Rejoint par <strong style="color:#111827;">${data.totalRestaurants}+ etablissements</strong> au quotidien.
                     </p>
                   </td>
                 </tr>
               </table>
-              <!-- Help -->
-              <p style="margin:24px 0 0;font-size:13px;color:#71717a;text-align:center;line-height:1.6;">
-                Besoin d'aide pour demarrer ?
-                <a href="mailto:support@attabl.com" style="color:#18181b;font-weight:600;text-decoration:none;border-bottom:1px solid #d4d4d8;">Ecrivez-nous</a>
-                — on repond en moins de 2 heures.
-              </p>
             </td>
           </tr>
-          <!-- Bottom bar -->
+          <!-- Help -->
           <tr>
-            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
-                <a href="https://attabl.com" style="color:#a1a1aa;text-decoration:underline;">attabl.com</a>
-                &nbsp;&middot;&nbsp;
-                <a href="https://attabl.com/confidentialite" style="color:#a1a1aa;text-decoration:underline;">Confidentialite</a>
-                &nbsp;&middot;&nbsp;
-                <a href="https://attabl.com/conditions" style="color:#a1a1aa;text-decoration:underline;">Conditions</a>
+            <td style="padding:20px 24px 0;text-align:center;">
+              <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
+                Besoin d'aide ?
+                <a href="mailto:support@attabl.com" style="color:#111827;font-weight:600;text-decoration:none;">Ecrivez-nous</a>
+                — on repond en moins de 2 heures.
               </p>
             </td>
           </tr>`;
 
   const html = wrapHtmlDocument({ preheader, bodyContent });
 
-  const text = `${data.restaurantName}, bienvenue sur ATTABL !
+  const text = `${greeting}, bienvenue sur ATTABL !
 
-Votre compte est active. Votre menu digital est pret a prendre vie.
+Votre compte est actif. Configurez votre etablissement et creez votre menu digital.
 
-A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services, sans appeler un graphiste ni relancer d'impression.
+A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel.
 
-Creez votre premier menu ici :
-${data.dashboardUrl}
+Commencez ici : ${data.dashboardUrl}
 
-VOTRE PREMIER MENU EN 3 ETAPES :
+EN 3 ETAPES :
 
-1. Ajoutez vos plats et vos prix (~3 min)
-2. Personnalisez le look (~2 min)
-3. Recuperez votre QR code (~30 sec)
+1. Decrivez votre etablissement (nom, type, adresse)
+2. Ajoutez votre menu (plats, prix, photos)
+3. Generez votre QR code
 
-${data.totalRestaurants} restaurants et hotels utilisent deja ATTABL.
+${data.totalRestaurants}+ etablissements utilisent deja ATTABL.
 
-Besoin d'aide ? Ecrivez-nous : support@attabl.com — on repond en moins de 2 heures.
+Besoin d'aide ? Ecrivez-nous : support@attabl.com
 
 ---
 ${FOOTER_TAGLINE}
@@ -443,56 +545,42 @@ export async function sendInvitationEmail(to: string, data: InvitationEmailData)
   const safeUrl = sanitizeUrl(data.inviteUrl);
   const safeRoleLabel = escapeHtml(roleLabel);
 
-  const subject = `Invitation a rejoindre ${data.restaurantName} sur ATTABL`;
-  const preheader = `${data.restaurantName} vous invite a rejoindre son equipe en tant que ${roleLabel}.`;
+  const subject = `Invitation : rejoignez ${data.restaurantName} sur ATTABL`;
+  const preheader = `${data.restaurantName} vous invite en tant que ${roleLabel}.`;
 
   const logoRow = data.restaurantLogoUrl
-    ? `<img src="${sanitizeUrl(data.restaurantLogoUrl)}" alt="${safeRestaurantName}" width="48" height="48" style="display:block;margin:0 auto 12px;border-radius:8px;height:48px;width:48px;" />`
+    ? `<img src="${sanitizeUrl(data.restaurantLogoUrl)}" alt="${safeRestaurantName}" width="40" height="40" style="display:block;margin:0 auto 12px;border-radius:8px;height:40px;width:40px;" />`
     : '';
 
   const bodyContent = `
-          <!-- Header -->
+          <!-- Body card -->
           <tr>
-            <td style="background-color:#18181b;padding:28px 24px;text-align:center;border-radius:8px 8px 0 0;">
+            <td style="background-color:#ffffff;padding:40px 32px;border-radius:8px;border:1px solid #e5e7eb;">
               ${logoRow}
-              <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${safeRestaurantName}</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="background-color:#ffffff;padding:32px 28px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
-              <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#18181b;">
+              <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">
                 Vous avez ete invite
               </p>
-              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#3f3f46;">
-                <strong>${safeRestaurantName}</strong> vous invite a rejoindre son equipe sur ATTABL en tant que <strong>${safeRoleLabel}</strong>.
+              <p style="margin:0 0 12px;font-size:15px;line-height:1.6;color:#4b5563;">
+                <strong style="color:#111827;">${safeRestaurantName}</strong> vous invite a rejoindre son equipe sur ATTABL en tant que <strong style="color:#111827;">${safeRoleLabel}</strong>.
               </p>
-              <p style="margin:0 0 28px;font-size:14px;line-height:1.5;color:#71717a;">
+              <p style="margin:0 0 28px;font-size:13px;line-height:1.5;color:#9ca3af;">
                 Cette invitation est valide pendant 72 heures.
               </p>
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center" style="padding:4px 0 28px;">
-                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:48px;v-text-anchor:middle;width:240px;" arcsize="17%" fillcolor="#CCFF00"><center style="color:#000000;font-family:sans-serif;font-size:15px;font-weight:bold;">Accepter l'invitation</center></v:roundrect><![endif]-->
+                  <td align="center" style="padding:0 0 24px;">
+                    <!--[if mso]><v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" href="${safeUrl}" style="height:44px;v-text-anchor:middle;width:240px;" arcsize="14%" fillcolor="#111827"><center style="color:#ffffff;font-family:sans-serif;font-size:14px;font-weight:600;">Accepter l'invitation</center></v:roundrect><![endif]-->
                     <!--[if !mso]><!-->
-                    <a href="${safeUrl}" style="display:inline-block;background-color:#CCFF00;color:#000000;padding:13px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;line-height:1.4;">
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#111827;color:#ffffff;padding:12px 28px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
                       Accepter l'invitation
                     </a>
                     <!--<![endif]-->
                   </td>
                 </tr>
               </table>
-              <p style="margin:0;font-size:13px;line-height:1.5;color:#71717a;">
+              <p style="margin:0;font-size:13px;line-height:1.5;color:#9ca3af;">
                 Si vous n'avez pas demande cette invitation, ignorez simplement cet email.
-              </p>
-            </td>
-          </tr>
-          <!-- Bottom bar -->
-          <tr>
-            <td style="background-color:#fafafa;padding:16px 28px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
-                Envoye par ATTABL au nom de ${safeRestaurantName}
               </p>
             </td>
           </tr>`;
@@ -574,23 +662,23 @@ export async function sendStockAlertEmail(
 
   const subject =
     outOfStockItems.length > 0
-      ? `Alerte stock : ${outOfStockItems.length} produit(s) en rupture — ${data.tenantName}`
-      : `Stock bas : ${lowStockItems.length} produit(s) sous le seuil — ${data.tenantName}`;
+      ? `Stock : ${outOfStockItems.length} produit(s) en rupture`
+      : `Stock : ${lowStockItems.length} produit(s) sous le seuil`;
 
   const preheader =
     outOfStockItems.length > 0
-      ? `${outOfStockItems.length} produit(s) en rupture de stock necessitent votre attention.`
-      : `${lowStockItems.length} produit(s) sont en dessous du seuil d'alerte.`;
+      ? `${outOfStockItems.length} produit(s) en rupture de stock.`
+      : `${lowStockItems.length} produit(s) en dessous du seuil d'alerte.`;
 
   const itemRows = data.items
     .map((item) => {
       const statusColor = item.is_out ? '#dc2626' : '#ca8a04';
       const statusText = item.is_out ? 'Rupture' : 'Stock bas';
       return `<tr>
-        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;font-size:14px;color:#3f3f46;">${escapeHtml(item.name)}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:14px;color:#3f3f46;">${item.current_stock} ${escapeHtml(item.unit)}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:14px;color:#3f3f46;">${item.min_stock_alert} ${escapeHtml(item.unit)}</td>
-        <td style="padding:10px 12px;border-bottom:1px solid #e4e4e7;text-align:center;font-size:13px;font-weight:600;color:${statusColor};">${statusText}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;font-size:14px;color:#4b5563;">${escapeHtml(item.name)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:14px;color:#4b5563;">${item.current_stock} ${escapeHtml(item.unit)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:14px;color:#4b5563;">${item.min_stock_alert} ${escapeHtml(item.unit)}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;font-size:13px;font-weight:600;color:${statusColor};">${statusText}</td>
       </tr>`;
     })
     .join('');
@@ -607,25 +695,25 @@ export async function sendStockAlertEmail(
     .join(', ');
 
   const bodyContent = `
-          <!-- Header -->
+          <!-- Body card -->
           <tr>
-            <td style="background-color:#18181b;padding:24px;text-align:left;border-radius:8px 8px 0 0;">
-              <p style="margin:0;font-size:18px;font-weight:600;color:#ffffff;">Alerte stock — ${safeTenantName}</p>
-            </td>
-          </tr>
-          <!-- Body -->
-          <tr>
-            <td style="background-color:#ffffff;padding:28px 24px;border-left:1px solid #e4e4e7;border-right:1px solid #e4e4e7;">
-              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#3f3f46;">
+            <td style="background-color:#ffffff;padding:32px;border-radius:8px;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">
+                ${safeTenantName}
+              </p>
+              <p style="margin:0 0 20px;font-size:18px;font-weight:600;color:#111827;">
+                Alerte stock
+              </p>
+              <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#4b5563;">
                 ${summaryLine}.
               </p>
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e4e4e7;border-radius:6px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #e5e7eb;border-radius:6px;">
                 <thead>
-                  <tr style="background-color:#fafafa;">
-                    <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Produit</th>
-                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Actuel</th>
-                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Seuil</th>
-                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#71717a;text-transform:uppercase;letter-spacing:0.5px;">Statut</th>
+                  <tr style="background-color:#f9fafb;">
+                    <th style="padding:10px 12px;text-align:left;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Produit</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Actuel</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Seuil</th>
+                    <th style="padding:10px 12px;text-align:center;font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.5px;">Statut</th>
                   </tr>
                 </thead>
                 <tbody>${itemRows}</tbody>
@@ -633,8 +721,8 @@ export async function sendStockAlertEmail(
               <!-- CTA Button -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td align="center" style="padding:28px 0 4px;">
-                    <a href="${safeUrl}" style="display:inline-block;background-color:#18181b;color:#ffffff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
+                  <td align="center" style="padding:24px 0 0;">
+                    <a href="${safeUrl}" style="display:inline-block;background-color:#111827;color:#ffffff;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:600;font-size:14px;line-height:1.4;">
                       Voir l'inventaire
                     </a>
                   </td>
@@ -642,11 +730,11 @@ export async function sendStockAlertEmail(
               </table>
             </td>
           </tr>
-          <!-- Bottom bar -->
+          <!-- Note -->
           <tr>
-            <td style="background-color:#fafafa;padding:16px 24px;border:1px solid #e4e4e7;border-top:none;border-radius:0 0 8px 8px;">
-              <p style="margin:0;font-size:12px;line-height:1.5;color:#a1a1aa;text-align:center;">
-                Alerte automatique ATTABL — maximum une alerte par produit par heure.
+            <td style="padding:16px 24px 0;text-align:center;">
+              <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;">
+                Alerte automatique — maximum une par produit par heure.
               </p>
             </td>
           </tr>`;
@@ -670,7 +758,7 @@ ${textItemList}
 Voir l'inventaire : ${data.dashboardUrl}
 
 ---
-Alerte automatique ATTABL — maximum une alerte par produit par heure.
+Alerte automatique — maximum une par produit par heure.
 ${FOOTER_ADDRESS}`;
 
   try {

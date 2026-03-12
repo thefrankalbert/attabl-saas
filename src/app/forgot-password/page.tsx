@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthLayout } from '@/components/auth/AuthLayout';
-import { createClient } from '@/lib/supabase/client';
 import { Loader2, ArrowLeft, MailCheck } from 'lucide-react';
 import Link from 'next/link';
 import { logger } from '@/lib/logger';
@@ -23,14 +22,16 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const supabase = createClient();
-      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?type=recovery`,
+      const response = await fetch('/api/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
 
-      if (resetError) {
-        logger.error('Password reset request failed', { error: resetError.message });
-        setError('Une erreur est survenue. Veuillez réessayer.');
+      if (!response.ok) {
+        const data = await response.json();
+        logger.error('Password reset request failed', { error: data.error });
+        setError(data.error || 'Une erreur est survenue. Veuillez réessayer.');
       } else {
         setSent(true);
       }

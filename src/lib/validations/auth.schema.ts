@@ -34,6 +34,11 @@ export const resendConfirmationSchema = z.object({
   email: z.string().email('Email invalide'),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().email('Email invalide'),
+});
+
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SignupOAuthInput = z.infer<typeof signupOAuthSchema>;
 export type ResendConfirmationInput = z.infer<typeof resendConfirmationSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

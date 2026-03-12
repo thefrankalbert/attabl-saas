@@ -85,23 +85,10 @@ export async function POST(request: Request) {
       });
     }
 
-    // Look up restaurant name from admin_users
-    const { data: adminUser } = await supabase
-      .from('admin_users')
-      .select('full_name')
-      .eq('user_id', user.id)
-      .single();
-
-    const restaurantName =
-      adminUser?.full_name ||
-      (user.user_metadata as Record<string, string>)?.restaurant_name ||
-      'Votre établissement';
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
     const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${linkData.properties.hashed_token}&type=signup`;
 
     await sendWelcomeConfirmationEmail(email, {
-      restaurantName,
       confirmationUrl,
     });
 

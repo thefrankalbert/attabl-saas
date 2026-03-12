@@ -144,6 +144,12 @@ export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingW
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));
 
+/** Forgot password: 3 requests / 10 minutes per IP */
+export const forgotPasswordLimiter = createLimiter(
+  'forgot-password',
+  Ratelimit.slidingWindow(3, '10 m'),
+);
+
 /** Resend confirmation email: 3 requests / 10 minutes per IP */
 export const resendConfirmationLimiter = createLimiter(
   'resend-confirmation',

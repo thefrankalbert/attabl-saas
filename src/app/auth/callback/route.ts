@@ -5,9 +5,29 @@ import { logger } from '@/lib/logger';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const tokenHash = requestUrl.searchParams.get('token_hash');
   const type = requestUrl.searchParams.get('type');
   const plan = requestUrl.searchParams.get('plan');
   const restaurantName = requestUrl.searchParams.get('restaurant_name');
+
+  // Handle token_hash-based recovery (custom password reset email flow)
+  if (tokenHash && type === 'recovery') {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'recovery',
+    });
+
+    if (error) {
+      logger.error('Recovery token verification failed', {
+        errorMessage: error.message,
+        errorCode: error.code,
+      });
+      return NextResponse.redirect(`${requestUrl.origin}/reset-password?error=invalid_token`);
+    }
+
+    return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
+  }
 
   if (code) {
     const supabase = await createClient();

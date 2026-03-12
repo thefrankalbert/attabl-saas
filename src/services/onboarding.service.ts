@@ -161,7 +161,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
       // Update or insert onboarding progress WITH full draft
       const progressData: Record<string, unknown> = {
         tenant_id: tenantId,
-        step: step + 1, // Next step
+        step: step,
         updated_at: new Date().toISOString(),
       };
 
@@ -210,6 +210,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
       }
       if (data.currency) {
         tenantUpdate.currency = data.currency;
+      }
+      if (data.language) {
+        tenantUpdate.default_locale = data.language;
       }
       const { error } = await supabase.from('tenants').update(tenantUpdate).eq('id', tenantId);
       if (error) throw new ServiceError('Failed to update tenant', 'INTERNAL');
@@ -399,9 +402,9 @@ export function createOnboardingService(supabase: SupabaseClient) {
         ...draft,
         // Ensure tenant table values win for fields that are written there directly,
         // unless the draft has a newer/different value
-        logoUrl: draft.logoUrl || baseData.logoUrl,
-        primaryColor: draft.primaryColor || baseData.primaryColor,
-        secondaryColor: draft.secondaryColor || baseData.secondaryColor,
+        logoUrl: draft.logoUrl ?? baseData.logoUrl,
+        primaryColor: draft.primaryColor ?? baseData.primaryColor,
+        secondaryColor: draft.secondaryColor ?? baseData.secondaryColor,
       };
 
       return {
