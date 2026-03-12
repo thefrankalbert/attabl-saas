@@ -242,7 +242,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 space-y-3">
         {/* Header — single line on desktop */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
             {t('titleClient')}
           </h1>
@@ -295,7 +295,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* KPI Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 @md:grid-cols-3 gap-3 sm:gap-4">
           {/* Revenue -- primary metric with lime accent */}
           <div className="p-6 bg-app-card border border-app-border rounded-xl">
             <div className="flex items-center gap-4">
@@ -395,7 +395,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
         <div className="space-y-6">
           {/* Chart & Top Items */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
             {/* Chart Section */}
             <div className="lg:col-span-2 bg-app-card border border-app-border rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
@@ -548,7 +548,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
             {categories.length === 0 ? (
               <p className="text-sm text-app-text-muted text-center py-8">{t('noCategories')}</p>
             ) : (
-              <div className="flex flex-col lg:flex-row items-center gap-6">
+              <div className="flex flex-col @lg:flex-row items-center gap-6">
                 <ResponsiveContainer width="100%" height={260}>
                   <PieChart>
                     <Pie

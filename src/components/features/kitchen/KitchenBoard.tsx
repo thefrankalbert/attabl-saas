@@ -61,7 +61,7 @@ export default function KitchenBoard({
     <div
       className={cn(
         'flex-1 grid overflow-hidden',
-        isChefView ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1',
+        isChefView ? 'grid-cols-1 @md:grid-cols-3' : 'grid-cols-1',
       )}
     >
       {visibleColumns.map((key, idx) => {
@@ -75,15 +75,15 @@ export default function KitchenBoard({
             className={cn(
               'flex-col overflow-hidden',
               col.colBg,
-              isChefView && idx < 2 && 'md:border-r border-white/[0.04]',
-              isChefView ? (isActive ? 'flex' : 'hidden md:flex') : 'flex',
+              isChefView && idx < 2 && '@md:border-r border-white/[0.04]',
+              isChefView ? (isActive ? 'flex' : 'hidden @md:flex') : 'flex',
             )}
           >
             {/* Column Header — hidden on mobile (tabs serve this role) */}
             <div
               className={cn(
                 'py-1.5 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/20',
-                isChefView ? 'hidden md:flex' : 'flex',
+                isChefView ? 'hidden @md:flex' : 'flex',
               )}
             >
               <div className={cn('w-2 h-2 rounded-full', col.dot)} />

@@ -120,7 +120,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
   return (
     <div className="relative flex items-center justify-center">
       {/* Phone frame */}
-      <div className="relative w-[260px] h-[520px] rounded-[2.5rem] border-2 border-app-border bg-app-card shadow-2xl shadow-black/20 overflow-hidden">
+      <div className="relative w-64 aspect-[1/2] rounded-[2.5rem] border-2 border-app-border bg-app-card overflow-hidden">
         {/* Notch */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-b-2xl z-10" />
 
@@ -142,7 +142,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                   <img
                     src={logoUrl}
                     alt={tenantName || 'Logo'}
-                    className="h-5 w-auto max-w-[140px] object-contain"
+                    className="h-5 w-auto max-w-35 object-contain"
                   />
                 ) : (
                   <span
@@ -399,7 +399,6 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             style={{
               bottom: '16px',
               backgroundColor: '#14b8a6',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
             }}
           >
             <div

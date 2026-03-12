@@ -73,7 +73,7 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
             <button
               key={item.label}
               onClick={item.onClick}
-              className={`relative flex flex-col items-center justify-center gap-1 px-3 py-2 min-w-[72px] bg-transparent border-none cursor-pointer ${
+              className={`relative flex flex-col items-center justify-center gap-1 px-3 py-2 flex-1 bg-transparent border-none cursor-pointer ${
                 item.isActive ? 'text-app-text' : 'text-app-text-muted'
               }`}
             >
@@ -89,7 +89,7 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
                 />
                 {/* Badge for cart */}
                 {'badge' in item && item.badge && (
-                  <span className="absolute -top-2 -right-2 z-20 bg-red-500 text-white text-[9px] font-bold h-4 min-w-[16px] px-1 flex items-center justify-center rounded-full border-2 border-app-card">
+                  <span className="absolute -top-2 -right-2 z-20 bg-red-500 text-white text-[9px] font-bold h-4 min-w-4 px-1 flex items-center justify-center rounded-full border-2 border-app-card">
                     {item.badge > 9 ? '9+' : item.badge}
                   </span>
                 )}

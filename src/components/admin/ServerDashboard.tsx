@@ -71,7 +71,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
         {myAssignments.length === 0 ? (
           <p className="text-sm text-app-text-secondary">{t('noTablesAssigned')}</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 @sm:grid-cols-2 @md:grid-cols-2 @lg:grid-cols-3 gap-3">
             {myAssignments.map((assignment) => {
               const tableOrders = myOrders.filter((o: Order) => o.table_id === assignment.table_id);
               const isExpanded = expandedTableId === assignment.table_id;
@@ -166,7 +166,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
         {unassignedOrders.length === 0 ? (
           <p className="text-sm text-app-text-secondary">{t('allOrdersAssigned')}</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 @sm:grid-cols-2 @md:grid-cols-2 @lg:grid-cols-3 gap-3">
             {unassignedOrders.map((order: Order) => (
               <div key={order.id} className="rounded-lg border border-app-border bg-app-card p-4">
                 <div className="flex items-center justify-between mb-2">

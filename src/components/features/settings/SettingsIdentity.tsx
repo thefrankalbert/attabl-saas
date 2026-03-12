@@ -143,7 +143,7 @@ export default function SettingsIdentity({
   return (
     <TabsContent value="identity" className="mt-0">
       <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 @md:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">{t('restaurantName')}</Label>
@@ -183,7 +183,7 @@ export default function SettingsIdentity({
 
           <div className="space-y-4">
             <Label>{t('logo')}</Label>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
+            <div className="flex flex-col @sm:flex-row items-start @sm:items-center gap-4 sm:gap-6">
               <div className="relative w-32 h-32 rounded-xl bg-app-elevated border-2 border-dashed border-app-border flex items-center justify-center overflow-hidden group hover:border-app-text-muted transition-colors">
                 {logoPreview ? (
                   <Image src={logoPreview} alt="Logo preview" fill className="object-contain p-2" />
@@ -224,7 +224,7 @@ export default function SettingsIdentity({
         {/* Slug (read-only display) */}
         <div className="space-y-2">
           <Label htmlFor="slug">{t('slug') ?? 'Slug'}</Label>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+          <div className="flex flex-col @sm:flex-row @sm:items-center gap-2">
             <span className="text-sm text-app-text-muted">https://</span>
             <Input
               id="slug"

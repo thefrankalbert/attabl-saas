@@ -248,7 +248,7 @@ export default function ItemsClient({
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
           {/* Header — single row like inventory */}
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {t('title')}
               <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
@@ -361,7 +361,7 @@ export default function ItemsClient({
                 <div
                   key={item.id}
                   onClick={() => setSelectedItem(item)}
-                  className="flex flex-wrap md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
+                  className="flex flex-wrap @md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
                   <input
                     type="checkbox"

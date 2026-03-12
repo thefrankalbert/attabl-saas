@@ -213,7 +213,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
         <>
           {/* Header + Filters — single line on desktop */}
           <div className="shrink-0 space-y-3">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+            <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
               <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
                 <BookOpenCheck className="w-6 h-6" />
                 {t('recipesTech')}
@@ -222,7 +222,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                 </span>
               </h1>
 
-              <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
                 <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                 <Input
                   data-search-input
@@ -251,7 +251,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
 
           {/* Layout: Items list + Recipe editor */}
           <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-            <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex flex-col @lg:flex-row gap-6">
               {/* Items List */}
               <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
                 <div className="max-h-[600px] overflow-y-auto divide-y divide-app-border">
@@ -302,7 +302,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
               </div>
 
               {/* Recipe Editor Panel */}
-              <div className="md:w-80 lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
+              <div className="@md:w-80 @lg:w-[28rem] bg-app-card rounded-xl border border-app-border overflow-hidden">
                 {selectedItemId && selectedItem ? (
                   <div className="flex flex-col h-full">
                     <div className="px-4 py-3 border-b border-app-border bg-app-bg">

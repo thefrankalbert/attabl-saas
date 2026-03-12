@@ -141,7 +141,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                     onClick={() => handleModeChange(id)}
                     className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
                       isActive
-                        ? 'border-accent bg-accent/10 shadow-sm shadow-accent/10'
+                        ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
                     }`}
                   >

@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const type = requestUrl.searchParams.get('type');
   const plan = requestUrl.searchParams.get('plan');
   const restaurantName = requestUrl.searchParams.get('restaurant_name');
 
@@ -27,6 +28,11 @@ export async function GET(request: Request) {
       return NextResponse.redirect(
         `${requestUrl.origin}/login?error=oauth_failed&reason=${encodeURIComponent(error.message)}`,
       );
+    }
+
+    // Password recovery flow — redirect to reset page
+    if (type === 'recovery' && session) {
+      return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
     }
 
     if (session?.user) {

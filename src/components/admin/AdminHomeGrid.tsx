@@ -165,10 +165,10 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
     regularTiles.length <= 6 ? 3 : regularTiles.length <= 8 ? 4 : regularTiles.length <= 12 ? 3 : 4;
 
   return (
-    <div className="flex-1 flex flex-col md:flex-row gap-3 min-h-0 overflow-hidden">
+    <div className="flex-1 flex flex-col @md:flex-row gap-3 min-h-0 overflow-hidden">
       {/* ━━━ Left: Featured tiles (POS + Kitchen) — full height ━━━ */}
       {featuredTiles.length > 0 && (
-        <div className="shrink-0 flex md:flex-col gap-3 md:w-52 lg:w-56">
+        <div className="shrink-0 flex @md:flex-col gap-3 @md:w-52 @lg:w-56">
           {featuredTiles.map((tile) => {
             const Icon = tile.icon;
             return (
@@ -209,8 +209,8 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
       <div
         className={cn(
           'flex-1 grid gap-3 min-h-0 auto-rows-fr',
-          cols === 3 && 'grid-cols-2 sm:grid-cols-3',
-          cols === 4 && 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4',
+          cols === 3 && 'grid-cols-2 @sm:grid-cols-3',
+          cols === 4 && 'grid-cols-2 @sm:grid-cols-3 @lg:grid-cols-4',
         )}
       >
         {regularTiles.map((tile) => {

@@ -263,7 +263,7 @@ export default function ClientMenuPage({
               <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
                 <ShoppingCart className="w-5 h-5 text-neutral-700" />
                 <span
-                  className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white"
+                  className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
                   style={{ backgroundColor: primary }}
                 >
                   {totalCartItems}
@@ -285,12 +285,12 @@ export default function ClientMenuPage({
                 alt={tenant.name}
                 width={52}
                 height={52}
-                className="h-[52px] w-[52px] rounded-full object-cover border-[2.5px] border-white shadow-md"
+                className="size-13 rounded-full object-cover border-[2.5px] border-white shadow-md"
                 priority
               />
             ) : (
               <div
-                className="h-[52px] w-[52px] rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
+                className="size-13 rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
                 style={{ backgroundColor: primary }}
               >
                 <span className="text-white text-xl font-bold">{tenant.name.charAt(0)}</span>
@@ -313,7 +313,7 @@ export default function ClientMenuPage({
           </div>
           {/* Bell icon — top right like screenshot */}
           <button className="w-10 h-10 rounded-full bg-white border border-neutral-100 shadow-sm flex items-center justify-center hover:bg-neutral-50 transition-colors">
-            <Bell className="w-[18px] h-[18px] text-neutral-600" />
+            <Bell className="size-4.5 text-neutral-600" />
           </button>
         </div>
       </div>
@@ -325,7 +325,7 @@ export default function ClientMenuPage({
           className="relative w-full"
         >
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="w-[18px] h-[18px] text-neutral-400" strokeWidth={1.8} />
+            <Search className="size-4.5 text-neutral-400" strokeWidth={1.8} />
           </div>
           <div className="w-full bg-white border border-neutral-200/80 rounded-xl py-3.5 pl-11 pr-5 text-[14px] text-neutral-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {t('searchMenu')}
@@ -425,12 +425,12 @@ export default function ClientMenuPage({
               className="flex flex-col items-center gap-1.5 flex-shrink-0"
             >
               <div
-                className="w-[60px] h-[60px] rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                className="size-15 rounded-full flex items-center justify-center border-2 border-white shadow-sm"
                 style={{ backgroundColor: `${primary}15` }}
               >
                 <Utensils className="w-6 h-6" style={{ color: primary }} />
               </div>
-              <span className="text-[11px] font-medium text-neutral-600 text-center w-[60px] line-clamp-1">
+              <span className="text-[11px] font-medium text-neutral-600 text-center w-15 line-clamp-1">
                 {t('allMenus')}
               </span>
             </button>
@@ -442,7 +442,7 @@ export default function ClientMenuPage({
                 }
                 className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <div className="w-[60px] h-[60px] rounded-full overflow-hidden border-2 border-white shadow-sm bg-neutral-100">
+                <div className="size-15 rounded-full overflow-hidden border-2 border-white shadow-sm bg-neutral-100">
                   {venue.image_url ? (
                     <Image
                       src={venue.image_url}
@@ -459,7 +459,7 @@ export default function ClientMenuPage({
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] font-medium text-neutral-600 text-center w-[60px] line-clamp-1">
+                <span className="text-[11px] font-medium text-neutral-600 text-center w-15 line-clamp-1">
                   {venue.name}
                 </span>
               </button>
@@ -486,9 +486,9 @@ export default function ClientMenuPage({
               <Link
                 key={item.id}
                 href={`/sites/${tenant.slug}/cart`}
-                className="flex-shrink-0 w-[120px] bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
+                className="flex-shrink-0 w-30 bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
               >
-                <div className="w-full h-[80px] bg-neutral-50 overflow-hidden flex items-center justify-center">
+                <div className="w-full h-20 bg-neutral-50 overflow-hidden flex items-center justify-center">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -598,14 +598,14 @@ export default function ClientMenuPage({
           className="w-full py-4 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity active:scale-[0.98]"
           style={{ backgroundColor: primary }}
         >
-          <Utensils className="w-[18px] h-[18px]" />
+          <Utensils className="size-4.5" />
           {t('seeFullMenu')}
         </button>
       </div>
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div className="fixed bottom-[72px] left-4 right-4 z-40 max-w-lg mx-auto">
+        <div className="fixed bottom-18 left-4 right-4 z-40 max-w-lg mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"

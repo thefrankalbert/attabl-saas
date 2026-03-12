@@ -3,8 +3,9 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright configuration for E2E tests.
  *
- * Setup only — a basic smoke test to verify the app loads.
- * More E2E tests will be added as features stabilize.
+ * Includes:
+ *   - Smoke tests (home.spec.ts)
+ *   - Responsive visual regression tests (responsive.spec.ts)
  */
 export default defineConfig({
   testDir: './tests/e2e',
@@ -16,6 +17,13 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3000',
     trace: 'on-first-retry',
+  },
+  /* Visual regression snapshot settings */
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.01,
+      animations: 'disabled',
+    },
   },
   projects: [
     {

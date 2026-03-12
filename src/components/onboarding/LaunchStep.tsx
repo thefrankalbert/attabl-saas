@@ -153,7 +153,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
             <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
               <div className="flex items-center gap-4 mb-5">
                 <div
-                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0 border border-app-border/50"
                   style={{ backgroundColor: accentColor }}
                 >
                   {data.logoUrl ? (
@@ -271,7 +271,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
                         isActive
-                          ? 'bg-accent text-accent-text shadow-sm'
+                          ? 'bg-accent text-accent-text'
                           : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
                       }`}
                     >
@@ -298,7 +298,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             onClick={() => updateData({ qrTemplate: tmpl.id })}
                             className={`rounded-xl border text-center transition-all duration-200 overflow-hidden ${
                               isSelected
-                                ? 'border-accent bg-accent/5 shadow-sm shadow-accent/10'
+                                ? 'border-accent bg-accent/5 '
                                 : 'border-app-border hover:border-app-border-hover'
                             }`}
                           >
@@ -335,7 +335,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                             onClick={() => updateData({ qrStyle: style.id })}
                             className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${
                               isActive
-                                ? 'border-accent shadow-sm shadow-accent/20'
+                                ? 'border-accent '
                                 : 'border-app-border hover:border-app-border-hover'
                             }`}
                             style={{ backgroundColor: style.bg }}

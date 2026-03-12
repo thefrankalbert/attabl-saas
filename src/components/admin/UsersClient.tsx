@@ -106,7 +106,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
     <RoleGuard permission="canManageUsers">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
               <UserPlus className="w-6 h-6" />
               {t('teamTitle')}

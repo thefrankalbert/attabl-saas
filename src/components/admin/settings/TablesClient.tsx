@@ -341,9 +341,9 @@ export function TablesClient({
       </div>
 
       {/* Main Layout */}
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div className="flex flex-col @lg:flex-row gap-6">
         {/* Left Panel: Zone List */}
-        <div className="w-full lg:w-72 flex-shrink-0">
+        <div className="w-full @lg:w-72 flex-shrink-0">
           <div className="bg-app-card rounded-xl border border-app-border p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-app-text">{t('zonesHeader')}</h2>
@@ -486,7 +486,7 @@ export function TablesClient({
 
               {/* Tables grid */}
               {tablesLoading ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 @sm:grid-cols-3 @md:grid-cols-4 gap-3">
                   {[1, 2, 3, 4].map((i) => (
                     <div
                       key={i}
@@ -495,7 +495,7 @@ export function TablesClient({
                   ))}
                 </div>
               ) : tables.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 @sm:grid-cols-3 @md:grid-cols-4 gap-3">
                   {tables.map((table) => (
                     <div
                       key={table.id}

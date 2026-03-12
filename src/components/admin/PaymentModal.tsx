@@ -175,9 +175,9 @@ export default function PaymentModal({
       </header>
 
       {/* ━━━ MAIN — 2 columns on md+, payment-only on mobile ━━━ */}
-      <div className="flex-1 min-h-0 flex flex-col md:grid md:grid-cols-2 overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col @md:grid @md:grid-cols-2 overflow-hidden">
         {/* ━━━ LEFT: Receipt (hidden on mobile) ━━━ */}
-        <div className="hidden md:flex flex-col border-r border-white/[0.06] overflow-y-auto p-5 lg:p-6">
+        <div className="hidden @md:flex flex-col border-r border-white/[0.06] overflow-y-auto p-5 lg:p-6">
           {/* Hero: Pay Amount */}
           <div className="mb-4">
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500 mb-1">
@@ -343,7 +343,7 @@ export default function PaymentModal({
         {/* ━━━ RIGHT: Payment Input (full width on mobile) ━━━ */}
         <div className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 lg:p-5">
           {/* Mobile: compact summary (hidden on desktop) */}
-          <div className="flex items-center justify-between mb-3 md:hidden shrink-0">
+          <div className="flex items-center justify-between mb-3 @md:hidden shrink-0">
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
               {t('amountToPay')}
             </p>
@@ -379,7 +379,7 @@ export default function PaymentModal({
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
-          <div className="flex gap-1.5 mb-3 md:hidden shrink-0">
+          <div className="flex gap-1.5 mb-3 @md:hidden shrink-0">
             <button
               type="button"
               onClick={() => {

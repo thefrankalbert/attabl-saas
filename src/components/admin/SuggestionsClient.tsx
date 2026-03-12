@@ -239,10 +239,10 @@ export default function SuggestionsClient({
       ) : (
         <>
           {/* Header + Search + Bulk actions */}
-          <div className="shrink-0 flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="shrink-0 flex flex-col @lg:flex-row @lg:items-center gap-3">
             <span className="text-sm text-app-text-muted tabular-nums">({suggestions.length})</span>
 
-            <div className="relative w-full lg:w-56 xl:w-64 shrink-0">
+            <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
               <Input
                 placeholder={t('searchDish')}

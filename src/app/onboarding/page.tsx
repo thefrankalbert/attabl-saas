@@ -469,7 +469,7 @@ export default function OnboardingPage() {
             </div>
           </div>
           <div className="hidden lg:flex w-80 items-center justify-center p-6">
-            <div className="w-56 h-[440px] rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
+            <div className="w-56 h-110 rounded-[2.5rem] bg-app-elevated/20 animate-pulse" />
           </div>
         </div>
       </div>
@@ -510,7 +510,7 @@ export default function OnboardingPage() {
           >
             <LayoutGrid className="w-4 h-4 text-app-text-muted" />
           </Link>
-          <span className="text-sm font-semibold text-app-text truncate max-w-[120px] hidden sm:inline">
+          <span className="text-sm font-semibold text-app-text truncate max-w-28 hidden sm:inline">
             {data.tenantName || 'ATTABL'}
           </span>
         </div>

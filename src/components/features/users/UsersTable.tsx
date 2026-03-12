@@ -84,7 +84,7 @@ export default function UsersTable({
                   {roleConfig.label}
                 </div>
 
-                <div className="hidden md:block text-xs text-app-text-muted">
+                <div className="hidden @md:block text-xs text-app-text-muted">
                   {user.last_login_at || user.last_login ? (
                     <span className="flex items-center gap-1">
                       <Activity className="w-3 h-3" />{' '}
