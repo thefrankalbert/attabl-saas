@@ -49,65 +49,67 @@ export function createTableConfigService(supabase: SupabaseClient) {
       venueId: string,
       zones: ZoneInput[],
     ): Promise<ZoneWithTables[]> {
-      const results: ZoneWithTables[] = [];
+      // 1. Bulk-insert all zones in a single query
+      const zoneInserts = zones.map((z) => ({
+        tenant_id: tenantId,
+        venue_id: venueId,
+        name: z.name,
+        prefix: z.prefix,
+      }));
 
-      for (const zoneInput of zones) {
-        // 1. Insert the zone
-        const { data: zone, error: zoneError } = await supabase
-          .from('zones')
-          .insert({
-            tenant_id: tenantId,
-            venue_id: venueId,
-            name: zoneInput.name,
-            prefix: zoneInput.prefix,
-          })
-          .select()
-          .single();
+      const { data: insertedZones, error: zonesError } = await supabase
+        .from('zones')
+        .insert(zoneInserts)
+        .select();
 
-        if (zoneError || !zone) {
-          throw new ServiceError(
-            `Erreur creation zone "${zoneInput.name}": ${zoneError?.message || 'Donnees manquantes'}`,
-            'INTERNAL',
-            zoneError,
-          );
-        }
+      if (zonesError || !insertedZones) {
+        throw new ServiceError(
+          `Erreur creation zones: ${zonesError?.message || 'Donnees manquantes'}`,
+          'INTERNAL',
+          zonesError,
+        );
+      }
 
-        const typedZone = zone as ZoneRow;
+      const typedZones = insertedZones as ZoneRow[];
 
-        // 2. Build table rows
+      // 2. Build all table rows for all zones in one batch
+      const allTableRows = typedZones.flatMap((zone, i) => {
+        const zoneInput = zones[i];
         const capacity = zoneInput.defaultCapacity ?? DEFAULT_CAPACITY;
-        const tableRows = Array.from({ length: zoneInput.tableCount }, (_, i) => {
-          const tableNumber = this.generateTableNumber(zoneInput.prefix, i + 1);
+        return Array.from({ length: zoneInput.tableCount }, (_, j) => {
+          const tableNumber = this.generateTableNumber(zoneInput.prefix, j + 1);
           return {
             tenant_id: tenantId,
-            zone_id: typedZone.id,
+            zone_id: zone.id,
             table_number: tableNumber,
             display_name: tableNumber,
             capacity,
             is_active: true,
           };
         });
+      });
 
-        // 3. Bulk insert tables
-        const { data: tables, error: tablesError } = await supabase
-          .from('tables')
-          .insert(tableRows)
-          .select();
+      // 3. Bulk-insert all tables in a single query
+      const { data: allTables, error: tablesError } = await supabase
+        .from('tables')
+        .insert(allTableRows)
+        .select();
 
-        if (tablesError || !tables) {
-          throw new ServiceError(
-            `Erreur creation tables pour zone "${zoneInput.name}": ${tablesError?.message || 'Donnees manquantes'}`,
-            'INTERNAL',
-            tablesError,
-          );
-        }
-
-        const typedTables = (Array.isArray(tables) ? tables : [tables]) as TableRow[];
-
-        results.push({ zone: typedZone, tables: typedTables });
+      if (tablesError || !allTables) {
+        throw new ServiceError(
+          `Erreur creation tables: ${tablesError?.message || 'Donnees manquantes'}`,
+          'INTERNAL',
+          tablesError,
+        );
       }
 
-      return results;
+      const typedTables = (Array.isArray(allTables) ? allTables : [allTables]) as TableRow[];
+
+      // 4. Group tables by zone_id for the return value
+      return typedZones.map((zone) => ({
+        zone,
+        tables: typedTables.filter((t) => t.zone_id === zone.id),
+      }));
     },
 
     /**

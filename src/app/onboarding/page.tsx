@@ -132,6 +132,7 @@ export default function OnboardingPage() {
   const [direction, setDirection] = useState<'forward' | 'backward'>('forward');
   const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const touchStartX = useRef(0);
+  const lastSavedPayload = useRef<string>('');
 
   const [data, setData] = useState<OnboardingData>({
     establishmentType: 'restaurant',
@@ -249,20 +250,24 @@ export default function OnboardingPage() {
     if (loading || phase === 0 || isLastScreen) return;
     setAutoSaveStatus('idle');
     const timer = setTimeout(async () => {
+      // Deduplicate: skip save if payload hasn't changed since last save
+      const draftPayload = {
+        ...data,
+        _phase: phase,
+        _subScreen: subScreen,
+      };
+      const payloadJson = JSON.stringify({ step: apiStep, data: draftPayload });
+      if (payloadJson === lastSavedPayload.current) return;
+
       setAutoSaveStatus('saving');
       try {
-        // Send full data with navigation position metadata for exact restoration
-        const draftPayload = {
-          ...data,
-          _phase: phase,
-          _subScreen: subScreen,
-        };
         const res = await fetch('/api/onboarding/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ step: apiStep, data: draftPayload }),
+          body: payloadJson,
         });
         if (res.ok) {
+          lastSavedPayload.current = payloadJson;
           setAutoSaveStatus('saved');
           setTimeout(() => setAutoSaveStatus('idle'), 2000);
         }
@@ -348,7 +353,8 @@ export default function OnboardingPage() {
     setError(null);
     setDirection('forward');
 
-    if (phase >= 1) saveStep();
+    // No explicit saveStep() here — the debounced auto-save handles persistence
+    // whenever data or navigation changes, avoiding double-save token waste.
 
     if (currentPhase && subScreen < currentPhase.subScreens.length - 1) {
       setSubScreen((s) => s + 1);

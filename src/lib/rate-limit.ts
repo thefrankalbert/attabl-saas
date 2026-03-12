@@ -96,8 +96,23 @@ export const verifyCheckoutLimiter = createLimiter(
   Ratelimit.slidingWindow(10, '1 m'),
 );
 
-/** Onboarding: 10 requests / minute per IP */
-export const onboardingLimiter = createLimiter('onboarding', Ratelimit.slidingWindow(10, '1 m'));
+/** Onboarding state (GET): loaded once on page open */
+export const onboardingStateLimiter = createLimiter(
+  'onboarding-state',
+  Ratelimit.slidingWindow(10, '10 m'),
+);
+
+/** Onboarding save (POST auto-save): fires every 2s on data change */
+export const onboardingSaveLimiter = createLimiter(
+  'onboarding-save',
+  Ratelimit.slidingWindow(60, '1 m'),
+);
+
+/** Onboarding complete (POST launch): one-shot final action */
+export const onboardingCompleteLimiter = createLimiter(
+  'onboarding-complete',
+  Ratelimit.slidingWindow(5, '10 m'),
+);
 
 /** Contact form: 3 requests / hour per IP */
 export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3, '1 h'));

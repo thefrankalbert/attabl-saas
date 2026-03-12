@@ -3,14 +3,14 @@ import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { logger } from '@/lib/logger';
 import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
-import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
+import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOnboardingService } from '@/services/onboarding.service';
 
 export async function POST(request: Request) {
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
-    const { success: allowed } = await onboardingLimiter.check(ip);
+    const { success: allowed } = await onboardingCompleteLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },

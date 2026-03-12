@@ -8,9 +8,10 @@ import { ServiceError } from '../errors';
 /**
  * Creates a configurable mock Supabase client for table-config tests.
  *
- * Zone inserts use `.insert().select().single()` (single zone at a time).
- * Table inserts use `.insert().select()` (bulk insert, no .single()).
- * Table lookups use `.select().eq().like().order().limit().single()`.
+ * After bulk refactor:
+ * - Zone inserts use `.insert(array).select()` (bulk, no .single())
+ * - Table inserts use `.insert(array).select()` (bulk, no .single())
+ * - Table lookups use `.select().eq().like().order().limit().single()`
  */
 interface MockChain {
   single: ReturnType<typeof vi.fn>;
@@ -34,12 +35,10 @@ function createMockSupabase() {
     const chain = getChain(table);
 
     return {
-      // insert().select().single() — zone inserts (single row)
-      // insert().select() — table inserts (bulk, resolves via bulkResult)
+      // insert().select() — bulk inserts for both zones and tables
+      // Also supports .single() for addTablesToZone lookup pattern
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockImplementation(() => {
-          // Return an object that supports both patterns:
-          // .single() for zones and direct await for bulk tables
           const bulkFn = chain.bulkResult as (...args: unknown[]) => {
             data: unknown;
             error: unknown;
@@ -123,40 +122,30 @@ describe('TableConfigService', () => {
   // ── createZonesAndTables ────────────────────────────────
 
   describe('createZonesAndTables()', () => {
-    it('should create zones and auto-numbered tables', async () => {
+    it('should bulk-create zones and auto-numbered tables', async () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      // Zone inserts return via .single()
-      supabase
-        ._getChain('zones')
-        .single.mockResolvedValueOnce({
-          data: { id: 'zone-a', name: 'Interieur', prefix: 'INT' },
-          error: null,
-        })
-        .mockResolvedValueOnce({
-          data: { id: 'zone-b', name: 'Terrasse', prefix: 'TER' },
-          error: null,
-        });
+      // Zones bulk insert returns all zones at once
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [
+          { id: 'zone-a', name: 'Interieur', prefix: 'INT' },
+          { id: 'zone-b', name: 'Terrasse', prefix: 'TER' },
+        ],
+        error: null,
+      });
 
-      // Table bulk inserts resolve via bulkResult (no .single())
-      supabase
-        ._getChain('tables')
-        .bulkResult.mockReturnValueOnce({
-          data: [
-            { id: 't1', table_number: 'INT-1' },
-            { id: 't2', table_number: 'INT-2' },
-          ],
-          error: null,
-        })
-        .mockReturnValueOnce({
-          data: [
-            { id: 't3', table_number: 'TER-1' },
-            { id: 't4', table_number: 'TER-2' },
-            { id: 't5', table_number: 'TER-3' },
-          ],
-          error: null,
-        });
+      // Tables bulk insert returns all tables at once
+      supabase._getChain('tables').bulkResult.mockReturnValueOnce({
+        data: [
+          { id: 't1', table_number: 'INT-1', zone_id: 'zone-a' },
+          { id: 't2', table_number: 'INT-2', zone_id: 'zone-a' },
+          { id: 't3', table_number: 'TER-1', zone_id: 'zone-b' },
+          { id: 't4', table_number: 'TER-2', zone_id: 'zone-b' },
+          { id: 't5', table_number: 'TER-3', zone_id: 'zone-b' },
+        ],
+        error: null,
+      });
 
       const zones = [
         { name: 'Interieur', prefix: 'INT', tableCount: 2, defaultCapacity: 4 },
@@ -170,14 +159,16 @@ describe('TableConfigService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0].zone.id).toBe('zone-a');
+      expect(result[0].tables).toHaveLength(2);
       expect(result[1].zone.id).toBe('zone-b');
+      expect(result[1].tables).toHaveLength(3);
     });
 
     it('should throw ServiceError when zone insert fails', async () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
         data: null,
         error: { message: 'Insert failed' },
       });
@@ -188,7 +179,7 @@ describe('TableConfigService', () => {
         ServiceError,
       );
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
         data: null,
         error: { message: 'Insert failed' },
       });
@@ -203,8 +194,8 @@ describe('TableConfigService', () => {
       const service = createTableConfigService(asSupabase(supabase));
 
       // Zone insert succeeds
-      supabase._getChain('zones').single.mockResolvedValueOnce({
-        data: { id: 'zone-a', name: 'Interieur', prefix: 'INT' },
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [{ id: 'zone-a', name: 'Interieur', prefix: 'INT' }],
         error: null,
       });
 
@@ -225,13 +216,13 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
-        data: { id: 'zone-a', name: 'Bar', prefix: 'BAR' },
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [{ id: 'zone-a', name: 'Bar', prefix: 'BAR' }],
         error: null,
       });
 
       supabase._getChain('tables').bulkResult.mockReturnValueOnce({
-        data: [{ id: 't1', table_number: 'BAR-1' }],
+        data: [{ id: 't1', table_number: 'BAR-1', zone_id: 'zone-a' }],
         error: null,
       });
 
@@ -254,16 +245,16 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
-        data: { id: 'zone-default', name: 'Salle principale', prefix: 'TAB' },
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [{ id: 'zone-default', name: 'Salle principale', prefix: 'TAB' }],
         error: null,
       });
 
       supabase._getChain('tables').bulkResult.mockReturnValueOnce({
         data: [
-          { id: 't1', table_number: 'TAB-1' },
-          { id: 't2', table_number: 'TAB-2' },
-          { id: 't3', table_number: 'TAB-3' },
+          { id: 't1', table_number: 'TAB-1', zone_id: 'zone-default' },
+          { id: 't2', table_number: 'TAB-2', zone_id: 'zone-default' },
+          { id: 't3', table_number: 'TAB-3', zone_id: 'zone-default' },
         ],
         error: null,
       });
@@ -281,14 +272,15 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
-        data: { id: 'zone-default', name: 'Salle principale', prefix: 'TAB' },
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
+        data: [{ id: 'zone-default', name: 'Salle principale', prefix: 'TAB' }],
         error: null,
       });
 
       const tablesData = Array.from({ length: 5 }, (_, i) => ({
         id: `t${i + 1}`,
         table_number: `TAB-${i + 1}`,
+        zone_id: 'zone-default',
       }));
 
       supabase._getChain('tables').bulkResult.mockReturnValueOnce({
@@ -305,7 +297,7 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
         data: null,
         error: { message: 'Zone insert failed' },
       });
@@ -314,7 +306,7 @@ describe('TableConfigService', () => {
         ServiceError,
       );
 
-      supabase._getChain('zones').single.mockResolvedValueOnce({
+      supabase._getChain('zones').bulkResult.mockReturnValueOnce({
         data: null,
         error: { message: 'Zone insert failed' },
       });

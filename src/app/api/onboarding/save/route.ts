@@ -2,14 +2,14 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
-import { onboardingLimiter, getClientIp } from '@/lib/rate-limit';
+import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOnboardingService } from '@/services/onboarding.service';
 
 export async function POST(request: Request) {
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
-    const { success: allowed } = await onboardingLimiter.check(ip);
+    const { success: allowed } = await onboardingSaveLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
         { error: 'Trop de requêtes. Réessayez plus tard.' },
