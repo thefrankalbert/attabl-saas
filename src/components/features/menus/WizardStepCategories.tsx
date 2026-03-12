@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, PreparationZone } from '@/types/admin.types';
 
 interface WizardStepCategoriesProps {
@@ -54,7 +55,7 @@ export default function WizardStepCategories({
       onCategoryCreated(data as Category);
       setName('');
       setPreparationZone('kitchen');
-      fetch('/api/revalidate-menu', { method: 'POST' }).catch(() => {});
+      revalidateMenuCache();
     } catch {
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -77,7 +78,7 @@ export default function WizardStepCategories({
           {categories.map((cat) => (
             <div key={cat.id} className="flex items-center gap-3 px-4 py-2.5">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-app-text truncate">{cat.name}</p>
+                <p className="text-sm font-medium text-app-text">{cat.name}</p>
               </div>
               {cat.preparation_zone && cat.preparation_zone !== 'kitchen' && (
                 <span
