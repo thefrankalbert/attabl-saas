@@ -1589,7 +1589,10 @@
     "columnNotes": "Notes",
     "noMovements": "No movements found",
     "loading": "Loading history...",
-    "loadingError": "Error loading history"
+    "loadingError": "Error loading history",
+    "statsAdditions": "In",
+    "statsRemovals": "Out",
+    "statsProducts": "Products"
   },
   "screenLock": {
     "lockingIn": "Locking in {time} — move your mouse to stay connected",
