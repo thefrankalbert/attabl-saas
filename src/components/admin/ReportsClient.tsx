@@ -250,7 +250,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 space-y-3">
-        {tabBar}
+        <AnalyseTabs />
 
         {/* Header — single line on desktop */}
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">

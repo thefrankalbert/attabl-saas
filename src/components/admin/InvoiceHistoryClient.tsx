@@ -6,6 +6,7 @@ import { Receipt, Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 interface StripeInvoice {
   id: string;
@@ -124,6 +125,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <AnalyseTabs />
       <div className="shrink-0">
         <h1 className="text-lg sm:text-2xl font-bold text-app-text flex items-center gap-2">
           <Receipt className="w-6 h-6" />
