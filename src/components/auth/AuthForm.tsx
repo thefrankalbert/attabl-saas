@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -52,6 +52,14 @@ function AuthForm({ mode }: AuthFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [confirmationSent, setConfirmationSent] = useState(false);
   const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const cooldownRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) clearInterval(cooldownRef.current);
+    };
+  }, []);
 
   const supabase = createClient();
 
@@ -153,7 +161,7 @@ function AuthForm({ mode }: AuthFormProps) {
   const isLogin = mode === 'login';
 
   const handleResendConfirmation = useCallback(async () => {
-    if (resending || !email) return;
+    if (resending || !email || resendCooldown > 0) return;
     setResending(true);
     try {
       const response = await fetch('/api/resend-confirmation', {
@@ -165,12 +173,24 @@ function AuthForm({ mode }: AuthFormProps) {
         const data = await response.json();
         throw new Error(data.error || "Erreur lors de l'envoi");
       }
+      // Start 60s cooldown
+      setResendCooldown(60);
+      cooldownRef.current = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            if (cooldownRef.current) clearInterval(cooldownRef.current);
+            cooldownRef.current = null;
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     } catch (err) {
       logger.error('Failed to resend confirmation', err);
     } finally {
       setResending(false);
     }
-  }, [email, resending]);
+  }, [email, resending, resendCooldown]);
 
   // Show confirmation sent screen after signup
   if (confirmationSent) {
@@ -208,7 +228,7 @@ function AuthForm({ mode }: AuthFormProps) {
               type="button"
               variant="outline"
               onClick={handleResendConfirmation}
-              disabled={resending}
+              disabled={resending || resendCooldown > 0}
               className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all"
             >
               {resending ? (
@@ -216,6 +236,8 @@ function AuthForm({ mode }: AuthFormProps) {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Envoi en cours...
                 </>
+              ) : resendCooldown > 0 ? (
+                <>Renvoyer dans {resendCooldown}s</>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
@@ -229,9 +251,10 @@ function AuthForm({ mode }: AuthFormProps) {
               <button
                 type="button"
                 onClick={handleResendConfirmation}
-                className="text-accent hover:text-accent-hover font-medium transition-colors"
+                disabled={resendCooldown > 0}
+                className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50"
               >
-                renvoyez-le
+                {resendCooldown > 0 ? `renvoyez-le (${resendCooldown}s)` : 'renvoyez-le'}
               </button>
               .
             </p>
