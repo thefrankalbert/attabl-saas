@@ -680,7 +680,10 @@ export default function ItemsClient({
         {/* Modal */}
         <AdminModal
           isOpen={showModal}
-          onClose={() => setShowModal(false)}
+          onClose={() => {
+            setShowModal(false);
+            resetForm();
+          }}
           title={editingItem ? t('editItemTitle') : t('newItemTitle')}
           size="lg"
         >
@@ -920,7 +923,14 @@ export default function ItemsClient({
                 )}
               </div>
               <div className="flex gap-3">
-                <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => {
+                    setShowModal(false);
+                    resetForm();
+                  }}
+                >
                   {t('cancel')}
                 </Button>
                 {formStep < 3 ? (
