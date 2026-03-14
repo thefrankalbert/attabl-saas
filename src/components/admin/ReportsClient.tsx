@@ -267,41 +267,36 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       <div className="shrink-0 space-y-4">
         <AnalyseTabs />
 
-        {/* ── Header row ── */}
-        <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-          <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
-            {t('titleClient')}
-          </h1>
-          <div className="flex items-center gap-2 @lg:ml-auto shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg border-app-border/50 text-xs h-8"
-              onClick={handleExportCSV}
-              disabled={exportingCsv}
-            >
-              {exportingCsv ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
-              )}
-              CSV
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              className="rounded-lg text-xs h-8"
-              onClick={handleExportPDF}
-              disabled={exporting}
-            >
-              {exporting ? (
-                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Download className="w-3.5 h-3.5 mr-1.5" />
-              )}
-              PDF
-            </Button>
-          </div>
+        {/* ── Export buttons ── */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-lg border-app-border/50 text-xs h-8"
+            onClick={handleExportCSV}
+            disabled={exportingCsv}
+          >
+            {exportingCsv ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            CSV
+          </Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="rounded-lg text-xs h-8"
+            onClick={handleExportPDF}
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
+            ) : (
+              <Download className="w-3.5 h-3.5 mr-1.5" />
+            )}
+            PDF
+          </Button>
         </div>
 
         {/* ── Period pills ── */}
