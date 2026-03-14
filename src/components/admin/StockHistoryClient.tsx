@@ -12,6 +12,7 @@ import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
 import { MOVEMENT_TYPE_LABELS } from '@/types/inventory.types';
 import RoleGuard from '@/components/admin/RoleGuard';
+import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 interface StockHistoryClientProps {
   tenantId: string;
@@ -154,12 +155,18 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
   );
 
   if (loading) {
-    return <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>;
+    return (
+      <div className="h-full flex flex-col">
+        <AnalyseTabs />
+        <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
+      </div>
+    );
   }
 
   return (
     <RoleGuard permission="canViewStocks">
       <div className="h-full flex flex-col overflow-hidden">
+        <AnalyseTabs />
         <div className="shrink-0 space-y-3">
           {/* Header — single line on desktop */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">

@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 const supabase = createClient();
 
@@ -187,6 +188,7 @@ export default function AuditLogClient({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
+      <AnalyseTabs />
       <div className="shrink-0 space-y-3">
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
