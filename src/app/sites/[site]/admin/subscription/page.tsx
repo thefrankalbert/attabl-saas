@@ -44,13 +44,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   };
 
   return (
-    <div className="max-w-7xl mx-auto py-8 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-app-text">Gestion de l&apos;abonnement</h1>
-        <p className="text-sm text-app-text-secondary mt-1">
-          Gérez votre plan et votre cycle de facturation
-        </p>
-      </div>
+    <div className="max-w-7xl mx-auto h-full">
       <SubscriptionManager tenant={tenantWithEmail} />
     </div>
   );

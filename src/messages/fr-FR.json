@@ -355,7 +355,9 @@
       "loading": "Chargement...",
       "upgradePremium": "Passer au Premium",
       "chooseEssentiel": "Choisir Essentiel",
-      "paymentError": "Une erreur est survenue lors de l'initialisation du paiement."
+      "paymentError": "Une erreur est survenue lors de l'initialisation du paiement.",
+      "tabMyPlan": "Mon plan",
+      "tabChangePlan": "Changer de plan"
     },
     "topbar": {
       "mySpaces": "Mes espaces",

@@ -17,7 +17,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto h-full">
       <ReportsClient tenantId={tenant.id} currency={tenant.currency || 'XAF'} />
     </div>
   );

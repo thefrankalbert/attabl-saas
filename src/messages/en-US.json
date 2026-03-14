@@ -355,7 +355,9 @@
       "loading": "Loading...",
       "upgradePremium": "Upgrade to Premium",
       "chooseEssentiel": "Choose Essentiel",
-      "paymentError": "An error occurred while initializing the payment."
+      "paymentError": "An error occurred while initializing the payment.",
+      "tabMyPlan": "My Plan",
+      "tabChangePlan": "Change Plan"
     },
     "topbar": {
       "mySpaces": "My spaces",
