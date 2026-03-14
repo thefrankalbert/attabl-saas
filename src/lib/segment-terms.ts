@@ -37,26 +37,40 @@ export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
 // ─── Term keys ──────────────────────────────────────────
 
 /** All available segment term keys */
-export type SegmentTermKey =
-  | 'item'
-  | 'items'
-  | 'addItem'
-  | 'searchItem'
-  | 'worker'
-  | 'workers'
-  | 'production'
-  | 'productionKds'
-  | 'catalog'
-  | 'catalogs'
-  | 'recipe'
-  | 'recipes'
-  | 'allLocations'
-  | 'emailPlaceholder'
-  | 'identityLabel'
-  | 'descPlaceholder'
-  | 'roleChef'
-  | 'roleWaiter'
-  | 'domainPlaceholder';
+const SEGMENT_TERM_KEYS = [
+  'item',
+  'items',
+  'addItem',
+  'searchItem',
+  'worker',
+  'workers',
+  'production',
+  'productionKds',
+  'catalog',
+  'catalogs',
+  'recipe',
+  'recipes',
+  'allLocations',
+  'emailPlaceholder',
+  'identityLabel',
+  'descPlaceholder',
+  'roleChef',
+  'roleWaiter',
+  'domainPlaceholder',
+] as const;
+
+export type SegmentTermKey = (typeof SEGMENT_TERM_KEYS)[number];
+
+/** Pre-computed term key maps per family (avoids re-allocating on every call) */
+const TERM_KEYS_BY_FAMILY: Record<
+  SegmentFamily,
+  Record<SegmentTermKey, string>
+> = Object.fromEntries(
+  (['food', 'hospitality', 'retail', 'services'] as const).map((family) => [
+    family,
+    Object.fromEntries(SEGMENT_TERM_KEYS.map((k) => [k, `${family}.${k}`])),
+  ]),
+) as Record<SegmentFamily, Record<SegmentTermKey, string>>;
 
 // ─── Public API ─────────────────────────────────────────
 
@@ -65,15 +79,7 @@ export type SegmentTermKey =
  * Falls back to 'food' for unknown types.
  */
 export function getSegmentFamily(type: string | undefined | null): SegmentFamily {
-  return SEGMENT_FAMILY[(type as EstablishmentSegment) ?? 'restaurant'] ?? 'food';
-}
-
-/**
- * Get the i18n namespace prefix for segment terms.
- * Usage: `t(\`segment.${getSegmentPrefix(type)}.item\`)`
- */
-export function getSegmentPrefix(type: string | undefined | null): SegmentFamily {
-  return getSegmentFamily(type);
+  return SEGMENT_FAMILY[(type ?? 'restaurant') as EstablishmentSegment] ?? 'food';
 }
 
 /**
@@ -86,26 +92,5 @@ export function getSegmentPrefix(type: string | undefined | null): SegmentFamily
 export function getSegmentTermKeys(
   type: string | undefined | null,
 ): Record<SegmentTermKey, string> {
-  const family = getSegmentFamily(type);
-  return {
-    item: `${family}.item`,
-    items: `${family}.items`,
-    addItem: `${family}.addItem`,
-    searchItem: `${family}.searchItem`,
-    worker: `${family}.worker`,
-    workers: `${family}.workers`,
-    production: `${family}.production`,
-    productionKds: `${family}.productionKds`,
-    catalog: `${family}.catalog`,
-    catalogs: `${family}.catalogs`,
-    recipe: `${family}.recipe`,
-    recipes: `${family}.recipes`,
-    allLocations: `${family}.allLocations`,
-    emailPlaceholder: `${family}.emailPlaceholder`,
-    identityLabel: `${family}.identityLabel`,
-    descPlaceholder: `${family}.descPlaceholder`,
-    roleChef: `${family}.roleChef`,
-    roleWaiter: `${family}.roleWaiter`,
-    domainPlaceholder: `${family}.domainPlaceholder`,
-  };
+  return TERM_KEYS_BY_FAMILY[getSegmentFamily(type)];
 }

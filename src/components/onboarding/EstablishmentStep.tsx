@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
+import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 const establishmentTypes = [
@@ -41,11 +42,6 @@ const establishmentTypes = [
   { id: 'salon', icon: Scissors, titleKey: 'typeSalon' },
   { id: 'other', icon: Building2, titleKey: 'typeOther' },
 ] as const;
-
-const localeLabels: Record<string, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Fran\u00e7ais (France)', flag: '\ud83c\uddeb\ud83c\uddf7' },
-  'en-US': { label: 'English (US)', flag: '\ud83c\uddfa\ud83c\uddf8' },
-};
 
 interface EstablishmentStepProps {
   data: OnboardingData;
@@ -330,7 +326,7 @@ export function EstablishmentStep({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(localeLabels).map(([code, { label, flag }]) => (
+                        {Object.entries(LOCALE_LABELS).map(([code, { label, flag }]) => (
                           <SelectItem key={code} value={code}>
                             <span className="inline-flex items-center gap-2">
                               <span>{flag}</span>

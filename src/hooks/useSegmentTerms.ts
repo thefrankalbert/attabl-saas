@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTenant } from '@/contexts/TenantContext';
 import { getSegmentTermKeys, type SegmentTermKey } from '@/lib/segment-terms';
@@ -14,11 +15,14 @@ import { getSegmentTermKeys, type SegmentTermKey } from '@/lib/segment-terms';
 export function useSegmentTerms(): Record<SegmentTermKey, string> {
   const { tenant } = useTenant();
   const t = useTranslations('segment');
-  const keys = getSegmentTermKeys(tenant?.establishment_type);
+  const establishmentType = tenant?.establishment_type;
 
-  const result = {} as Record<SegmentTermKey, string>;
-  for (const [key, i18nKey] of Object.entries(keys)) {
-    result[key as SegmentTermKey] = t(i18nKey);
-  }
-  return result;
+  return useMemo(() => {
+    const keys = getSegmentTermKeys(establishmentType);
+    const result = {} as Record<SegmentTermKey, string>;
+    for (const [key, i18nKey] of Object.entries(keys)) {
+      result[key as SegmentTermKey] = t(i18nKey);
+    }
+    return result;
+  }, [establishmentType, t]);
 }
