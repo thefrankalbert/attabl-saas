@@ -25,7 +25,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { isAdminHome, getTenantUrl } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import type { NavGroupConfig, NavItemConfig } from '@/lib/layout/navigation-config';
-import { getHiddenNavGroupIds, getHiddenNavItemPaths } from '@/lib/segment-features';
+import { getHiddenNav } from '@/lib/segment-features';
 import { getSegmentFamily } from '@/lib/segment-terms';
 
 // ─── Types ──────────────────────────────────────────────
@@ -111,8 +111,9 @@ export function AdminSidebar({
   const label = (key: string) => segmentLabelOverrides[key] ?? t(key);
 
   // Segment-based visibility: hide groups/items based on establishment type
-  const hiddenGroupIds = getHiddenNavGroupIds(tenant.establishment_type);
-  const hiddenItemPaths = getHiddenNavItemPaths(tenant.establishment_type);
+  const { groupIds: hiddenGroupIds, itemPaths: hiddenItemPaths } = getHiddenNav(
+    tenant.establishment_type,
+  );
 
   // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
   // Also filter out popover items and segment-hidden items from organization group

@@ -62,25 +62,28 @@ export function getSegmentFeatures(type: string | undefined | null): SegmentFeat
   return SEGMENT_FEATURES[getSegmentFamily(type)];
 }
 
-/**
- * Navigation group IDs that are conditionally hidden per segment.
- * Returns the set of nav group IDs to hide.
- */
-export function getHiddenNavGroupIds(type: string | undefined | null): Set<string> {
-  const features = getSegmentFeatures(type);
-  const hidden = new Set<string>();
-  if (!features.showKds) hidden.add('kitchen');
-  if (!features.showService) hidden.add('service');
-  return hidden;
+/** Navigation elements to hide, pre-computed per segment family */
+interface HiddenNav {
+  groupIds: Set<string>;
+  itemPaths: Set<string>;
 }
 
+const HIDDEN_NAV_BY_FAMILY: Record<SegmentFamily, HiddenNav> = Object.fromEntries(
+  (['food', 'hospitality', 'retail', 'services'] as const).map((family) => {
+    const f = SEGMENT_FEATURES[family];
+    const groupIds = new Set<string>();
+    const itemPaths = new Set<string>();
+    if (!f.showKds) groupIds.add('kitchen');
+    if (!f.showService) groupIds.add('service');
+    if (!f.showRecipes) itemPaths.add('/recipes');
+    return [family, { groupIds, itemPaths }];
+  }),
+) as Record<SegmentFamily, HiddenNav>;
+
 /**
- * Navigation item paths that are conditionally hidden per segment.
- * Returns the set of item paths to hide.
+ * Get hidden navigation group IDs and item paths for a given establishment type.
+ * Returns pre-computed Sets (no allocation per call).
  */
-export function getHiddenNavItemPaths(type: string | undefined | null): Set<string> {
-  const features = getSegmentFeatures(type);
-  const hidden = new Set<string>();
-  if (!features.showRecipes) hidden.add('/recipes');
-  return hidden;
+export function getHiddenNav(type: string | undefined | null): HiddenNav {
+  return HIDDEN_NAV_BY_FAMILY[getSegmentFamily(type)];
 }

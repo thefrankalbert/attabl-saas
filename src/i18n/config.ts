@@ -8,3 +8,8 @@ export const languageFallbacks: Record<string, Locale> = {
   fr: 'fr-FR',
   en: 'en-US',
 };
+
+export const LOCALE_LABELS: Record<Locale, { label: string; flag: string }> = {
+  'fr-FR': { label: 'Français (France)', flag: '🇫🇷' },
+  'en-US': { label: 'English (US)', flag: '🇺🇸' },
+};

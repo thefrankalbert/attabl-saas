@@ -6,7 +6,8 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { NAV_GROUPS, BOTTOM_NAV_ITEMS } from '@/lib/layout/navigation-config';
 import { isImmersivePage } from '@/lib/constants';
-import { getHiddenNavGroupIds } from '@/lib/segment-features';
+import { getHiddenNav } from '@/lib/segment-features';
+import { getSegmentFamily } from '@/lib/segment-terms';
 import type { AdminRole } from '@/types/admin.types';
 
 // ─── Types ──────────────────────────────────────────────
@@ -22,13 +23,23 @@ interface AdminBottomNavProps {
 export function AdminBottomNav({ basePath, role, establishmentType }: AdminBottomNavProps) {
   const pathname = usePathname();
   const t = useTranslations('sidebar');
+  const tSeg = useTranslations('segment');
 
   // Hide bottom nav on immersive pages (KDS, POS) — they need full screen
   if (isImmersivePage(pathname)) return null;
 
+  // Segment-aware label overrides (consistent with AdminSidebar)
+  const family = getSegmentFamily(establishmentType);
+  const segmentLabelOverrides: Record<string, string> = {
+    navDishes: tSeg(`${family}.items`),
+    navKitchen: tSeg(`${family}.productionKds`),
+    navRecipes: tSeg(`${family}.recipes`),
+  };
+  const resolveLabel = (key: string) => segmentLabelOverrides[key] ?? t(key);
+
   // Get the 5 bottom nav item IDs for this role
   const itemIds = BOTTOM_NAV_ITEMS[role] ?? BOTTOM_NAV_ITEMS.admin;
-  const hiddenGroupIds = getHiddenNavGroupIds(establishmentType);
+  const { groupIds: hiddenGroupIds } = getHiddenNav(establishmentType);
 
   // Resolve each ID to its NavGroupConfig, filtering out segment-hidden groups
   const items = itemIds
@@ -59,7 +70,7 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
               : group.items.some((item) => pathname.startsWith(`${basePath}${item.path}`));
 
           const Icon = group.icon;
-          const label = t(group.titleKey);
+          const label = resolveLabel(group.titleKey);
 
           return (
             <Link

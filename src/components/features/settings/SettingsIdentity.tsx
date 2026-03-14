@@ -18,7 +18,7 @@ import {
 import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { locales, type Locale } from '@/i18n/config';
+import { locales, LOCALE_LABELS } from '@/i18n/config';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
@@ -34,11 +34,6 @@ const ESTABLISHMENT_TYPES = [
   { value: 'salon', labelKey: 'typeSalon' },
   { value: 'other', labelKey: 'typeOther' },
 ] as const;
-
-const LOCALE_LABELS: Record<Locale, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Francais (France)', flag: 'FR' },
-  'en-US': { label: 'English (US)', flag: 'US' },
-};
 
 // ─── Types ─────────────────────────────────────────────────
 
