@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
-import { ScrollText, Loader2, ChevronLeft, ChevronRight, Filter, Search } from 'lucide-react';
+import { Loader2, ChevronLeft, ChevronRight, Filter, Search, ScrollText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
-
-const supabase = createClient();
 
 interface AuditLogEntry {
   id: string;
@@ -60,6 +58,7 @@ export default function AuditLogClient({
     (initialLogs as unknown as AuditLogEntry[]) || [],
   );
   const [loading, setLoading] = useState(!initialLogs);
+  const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useSessionState('auditLog:page', 0);
   const [totalCount, setTotalCount] = useState(initialCount || 0);
   const [showFilters, setShowFilters] = useState(false);
@@ -71,7 +70,9 @@ export default function AuditLogClient({
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
+    setError(null);
     try {
+      const supabase = createClient();
       let query = supabase
         .from('audit_log')
         .select('*', { count: 'exact' })
@@ -87,7 +88,7 @@ export default function AuditLogClient({
       setLogs((data as AuditLogEntry[]) || []);
       setTotalCount(count || 0);
     } catch {
-      // Non-critical — logs are informational
+      setError(t('loadError'));
     } finally {
       setLoading(false);
     }
@@ -191,16 +192,18 @@ export default function AuditLogClient({
       <AnalyseTabs />
       <div className="shrink-0 space-y-3">
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-          <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-            <ScrollText className="w-6 h-6" />
-            {t('title')}
-            <span className="text-base font-normal text-app-text-secondary">({totalCount})</span>
-          </h1>
+          <div className="flex items-center gap-3 shrink-0">
+            <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+            <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+              {totalCount}
+            </span>
+          </div>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
-            className={cn('lg:ml-auto shrink-0', showFilters && 'bg-app-bg')}
+            type="button"
+            className={cn('@lg:ml-auto shrink-0', showFilters && 'bg-app-bg')}
           >
             <Filter className="w-4 h-4 mr-1.5" />
             {t('filters')}
@@ -209,7 +212,7 @@ export default function AuditLogClient({
 
         {/* Filters */}
         {showFilters && (
-          <div className="bg-app-card rounded-xl border border-app-border p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
+          <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
             <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
               <div>
                 <label className="text-xs font-semibold text-app-text mb-1 block">
@@ -221,12 +224,17 @@ export default function AuditLogClient({
                     setFilterAction(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text"
+                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
                   <option value="">{tc('all')}</option>
                   {ACTIONS.map((a) => (
                     <option key={a} value={a}>
-                      {a}
+                      {t(
+                        `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
+                          | 'actionCreate'
+                          | 'actionUpdate'
+                          | 'actionDelete',
+                      ) || a}
                     </option>
                   ))}
                 </select>
@@ -241,12 +249,12 @@ export default function AuditLogClient({
                     setFilterEntity(e.target.value);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text"
+                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
                   <option value="">{tc('all')}</option>
                   {ENTITY_TYPES.map((e) => (
                     <option key={e} value={e}>
-                      {e}
+                      {entityLabel(e)}
                     </option>
                   ))}
                 </select>
@@ -278,14 +286,21 @@ export default function AuditLogClient({
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         {/* Log entries */}
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
           </div>
+        ) : error ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-red-600">{error}</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={fetchLogs}>
+              {t('retry')}
+            </Button>
+          </div>
         ) : logs.length === 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+          <div className="bg-app-card rounded-xl border border-app-border/60 p-12 text-center">
             <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
               <ScrollText className="w-7 h-7 text-app-text-muted" />
             </div>
@@ -294,12 +309,12 @@ export default function AuditLogClient({
           </div>
         ) : (
           <>
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+            <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
               {/* Desktop table */}
               <div className="hidden @md:block overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b border-app-border bg-app-bg/50">
+                    <tr className="border-b border-app-border/60 bg-app-bg/50">
                       <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colDate')}
                       </th>
@@ -321,7 +336,7 @@ export default function AuditLogClient({
                     {logs.map((entry) => (
                       <tr
                         key={entry.id}
-                        className="border-b border-app-border last:border-0 hover:bg-app-bg transition-colors"
+                        className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                       >
                         <td className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
                           {formatDate(entry.created_at)}
@@ -350,7 +365,7 @@ export default function AuditLogClient({
               </div>
 
               {/* Mobile cards */}
-              <div className="@md:hidden divide-y divide-app-border">
+              <div className="@md:hidden divide-y divide-app-border/60">
                 {logs.map((entry) => (
                   <div key={entry.id} className="p-4 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -368,7 +383,10 @@ export default function AuditLogClient({
                       {entry.user_email || '—'}
                       {entry.user_role && ` (${entry.user_role})`}
                     </div>
-                    {renderChanges(entry) && <div className="pt-1">{renderChanges(entry)}</div>}
+                    {(() => {
+                      const changes = renderChanges(entry);
+                      return changes ? <div className="pt-1">{changes}</div> : null;
+                    })()}
                   </div>
                 ))}
               </div>

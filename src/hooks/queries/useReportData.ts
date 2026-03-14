@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { createClient } from '@/lib/supabase/client';
 import { format, subDays, startOfDay, startOfMonth, subMonths, startOfYear } from 'date-fns';
+import { logger } from '@/lib/logger';
 
 type Period = 'today' | '7d' | '30d' | '90d' | 'thisMonth' | 'lastMonth' | 'thisYear';
 
@@ -135,13 +136,16 @@ export function useReportData(tenantId: string, period: Period) {
             p_end_date: prevEndDate,
           }),
         ]);
-      } catch {
-        return emptyDefaults;
+      } catch (err) {
+        logger.error('Failed to fetch report data', err);
+        throw err;
       }
 
-      // Return empty defaults on RPC failure instead of throwing
-      if (dailyRes.error || topRes.error || summaryRes.error) {
-        return emptyDefaults;
+      // Throw on RPC failure so React Query can surface the error
+      const rpcError = dailyRes.error || topRes.error || summaryRes.error;
+      if (rpcError) {
+        logger.error('RPC failure in report data', rpcError);
+        throw rpcError;
       }
 
       // Category breakdown via direct query (join orders for tenant scoping + date filter)

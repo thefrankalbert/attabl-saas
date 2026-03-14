@@ -1009,7 +1009,8 @@
     "last90Days": "90 derniers jours",
     "productRanking": "Classement des produits",
     "productName": "Produit",
-    "loadError": "Erreur lors du chargement des rapports"
+    "loadError": "Erreur lors du chargement des rapports",
+    "retry": "Réessayer"
   },
   "permissions": {
     "title": "Permissions par role",
@@ -2082,7 +2083,9 @@
     "entity_coupon": "Coupon",
     "entity_supplier": "Fournisseur",
     "more": "de plus",
-    "showing": "{from}–{to} sur {total}"
+    "showing": "{from}–{to} sur {total}",
+    "loadError": "Erreur lors du chargement du journal",
+    "retry": "Réessayer"
   },
   "invoices": {
     "title": "Historique des factures",
