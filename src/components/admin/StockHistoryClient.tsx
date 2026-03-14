@@ -158,54 +158,52 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     <RoleGuard permission="canViewStocks">
       <div className="h-full flex flex-col overflow-hidden">
         <AnalyseTabs />
-        {loading && (
-          <div className="p-8 text-center text-app-text-secondary animate-pulse">
-            {tc('loading')}
-          </div>
-        )}
-        <div className={loading ? 'hidden' : undefined}>
-          <div className="shrink-0 space-y-3">
-            {/* Header — single line on desktop */}
-            <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                <History className="w-6 h-6" />
-                {t('title')}
-                <span className="text-base font-normal text-app-text-secondary">
-                  ({filtered.length})
-                </span>
-              </h1>
+        <div className="shrink-0 space-y-3">
+          {/* Header — single line on desktop */}
+          <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
+            <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+              <History className="w-6 h-6" />
+              {t('title')}
+              <span className="text-base font-normal text-app-text-secondary">
+                ({filtered.length})
+              </span>
+            </h1>
 
-              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                <Input
-                  placeholder={t('searchPlaceholder')}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
+            <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+              <Input
+                placeholder={t('searchPlaceholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
 
-              <div className="flex items-center gap-2 overflow-x-auto shrink-0">
-                {movementFilters.map((f) => (
-                  <button
-                    key={f.value}
-                    onClick={() => setFilterType(f.value)}
-                    className={cn(
-                      'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                      filterType === f.value
-                        ? 'bg-app-text text-accent-text'
-                        : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
-                    )}
-                  >
-                    {f.label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center gap-2 overflow-x-auto shrink-0">
+              {movementFilters.map((f) => (
+                <button
+                  key={f.value}
+                  onClick={() => setFilterType(f.value)}
+                  className={cn(
+                    'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
+                    filterType === f.value
+                      ? 'bg-app-text text-accent-text'
+                      : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
+                  )}
+                >
+                  {f.label}
+                </button>
+              ))}
             </div>
           </div>
+        </div>
 
-          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-            {/* Table / Cards */}
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+          {loading ? (
+            <div className="p-8 text-center text-app-text-secondary animate-pulse">
+              {tc('loading')}
+            </div>
+          ) : (
             <ResponsiveDataTable
               columns={columns}
               data={filtered}
@@ -266,7 +264,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 },
               }}
             />
-          </div>
+          )}
         </div>
       </div>
     </RoleGuard>
