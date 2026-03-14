@@ -32,12 +32,8 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // Also check if we already have a session (user came via redirect)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSessionReady(true);
-      }
-    });
+    // The PASSWORD_RECOVERY event from onAuthStateChange handles session detection.
+    // No getSession() fallback — prevents any active session from unlocking the form.
 
     return () => subscription.unsubscribe();
   }, []);
@@ -63,8 +59,10 @@ export default function ResetPasswordPage() {
       const { error: updateError } = await supabase.auth.updateUser({ password });
 
       if (updateError) {
-        logger.error('Password update failed', { error: updateError.message });
-        if (updateError.message.includes('same')) {
+        const code = (updateError as { code?: string }).code;
+        const msg = updateError.message?.toLowerCase() ?? '';
+        logger.error('Password update failed', { error: updateError.message, code });
+        if (code === 'same_password' || msg.includes('same') || msg.includes('different')) {
           setError('Le nouveau mot de passe doit être différent de l\u2019ancien.');
         } else {
           setError('Erreur lors de la mise à jour du mot de passe. Veuillez réessayer.');

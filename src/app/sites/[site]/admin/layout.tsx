@@ -109,6 +109,7 @@ export default async function AdminLayout({
                 slug: tenant.slug,
                 logo_url: tenant.logo_url ?? undefined,
                 subscription_plan: tenant.subscription_plan ?? undefined,
+                establishment_type: tenant.establishment_type ?? undefined,
               }}
               userName={adminUser?.name || user.email || ''}
               userTenants={userTenants}

@@ -18,6 +18,7 @@ import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
 import { TEMPLATE_DEFAULTS } from '@/types/qr-design.types';
 import { onboardingDataToQRConfig } from '@/components/onboarding/utils/qr-config-bridge';
+import { getSegmentFeatures } from '@/lib/segment-features';
 import { getTenantUrl } from '@/lib/constants';
 import type { OnboardingData } from '@/app/onboarding/page';
 
@@ -108,10 +109,13 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
 
   const menuUrl = data.tenantSlug ? getTenantUrl(data.tenantSlug) : 'https://attabl.com';
 
+  const features = getSegmentFeatures(data.establishmentType);
   const completedItems = [
     { label: t('checkAccountCreated'), done: true },
     { label: t('checkIdentityConfigured'), done: !!data.establishmentType },
-    { label: t('checkTablesConfigured'), done: data.tableConfigMode !== 'skip' },
+    ...(features.showTables
+      ? [{ label: t('checkTablesConfigured'), done: data.tableConfigMode !== 'skip' }]
+      : []),
     { label: t('checkBrandingCustomized'), done: !!data.primaryColor },
     { label: t('checkMenuInitialized'), done: data.menuOption !== 'skip' },
   ];
