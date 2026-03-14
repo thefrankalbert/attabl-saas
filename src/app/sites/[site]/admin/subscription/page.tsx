@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import { SubscriptionManager } from '@/components/tenant/SubscriptionManager';
+import TenantNotFound from '@/components/admin/TenantNotFound';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,11 +15,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-app-text-secondary">Restaurant non trouvé</h2>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   const supabase = await createClient();

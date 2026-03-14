@@ -70,7 +70,9 @@
     "notFoundTitle": "Page introuvable",
     "notFoundDescription": "Cette page n'existe pas ou a été déplacée. Vérifiez l'URL ou revenez à l'accueil.",
     "lessThanHour": "Moins d'une heure",
-    "expired": "Expiré"
+    "expired": "Expiré",
+    "tenantNotFound": "Établissement non trouvé",
+    "tenantNotFoundDesc": "Cet établissement n'existe pas ou vous n'y avez pas accès."
   },
   "checkout": {
     "successTitle": "Paiement réussi !",

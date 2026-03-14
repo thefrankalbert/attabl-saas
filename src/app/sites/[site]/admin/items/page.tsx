@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { getTenant } from '@/lib/cache';
 import ItemsClient from '@/components/admin/ItemsClient';
-import { AlertCircle } from 'lucide-react';
+import TenantNotFound from '@/components/admin/TenantNotFound';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -15,14 +15,7 @@ export default async function ItemsPage({ params }: { params: Promise<{ site: st
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-yellow-600">Tenant non trouvé</p>
-        </div>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   const supabase = await createClient();

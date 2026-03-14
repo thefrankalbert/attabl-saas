@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import InvoiceHistoryClient from '@/components/admin/InvoiceHistoryClient';
+import TenantNotFound from '@/components/admin/TenantNotFound';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,11 +14,7 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold text-app-text-secondary">Restaurant not found</h2>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   // stripe_customer_id is not in getTenant — fetch it separately

@@ -3,6 +3,8 @@ import { getTenant } from '@/lib/cache';
 import { redirect } from 'next/navigation';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function TablesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const supabase = await createClient();

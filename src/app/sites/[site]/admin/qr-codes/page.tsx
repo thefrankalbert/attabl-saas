@@ -4,6 +4,8 @@ import { headers } from 'next/headers';
 import { QRCodePage } from './QRCodePage';
 import { getTenantUrl } from '@/lib/constants';
 
+export const dynamic = 'force-dynamic';
+
 export default async function QRCodesPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
