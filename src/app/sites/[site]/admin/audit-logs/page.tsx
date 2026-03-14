@@ -3,6 +3,8 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import AuditLogClient from '@/components/admin/AuditLogClient';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AuditLogsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
