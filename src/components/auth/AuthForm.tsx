@@ -141,9 +141,7 @@ function AuthForm({ mode }: AuthFormProps) {
       if (errorMessage.includes('Invalid login credentials')) {
         setError('Email ou mot de passe incorrect.');
       } else if (errorMessage.includes('Email not confirmed')) {
-        setError(
-          'Votre adresse email n\u2019a pas encore été confirmée. Vérifiez votre boîte mail et cliquez sur le lien de confirmation.',
-        );
+        setError('email_not_confirmed');
       } else {
         setError(errorMessage);
       }
@@ -376,7 +374,23 @@ function AuthForm({ mode }: AuthFormProps) {
               variant="destructive"
               className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
             >
-              <AlertDescription className="text-sm">{error}</AlertDescription>
+              <AlertDescription className="text-sm">
+                {error === 'email_not_confirmed' ? (
+                  <span>
+                    Votre adresse email n&apos;a pas encore été confirmée.{' '}
+                    <button
+                      type="button"
+                      onClick={handleResendConfirmation}
+                      disabled={resending}
+                      className="font-bold underline hover:no-underline"
+                    >
+                      {resending ? 'Envoi...' : 'Renvoyer le lien'}
+                    </button>
+                  </span>
+                ) : (
+                  error
+                )}
+              </AlertDescription>
             </Alert>
           </motion.div>
         )}

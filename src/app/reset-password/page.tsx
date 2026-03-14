@@ -32,12 +32,8 @@ export default function ResetPasswordPage() {
       }
     });
 
-    // Also check if we already have a session (user came via redirect)
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSessionReady(true);
-      }
-    });
+    // The PASSWORD_RECOVERY event from onAuthStateChange handles session detection.
+    // No getSession() fallback — prevents any active session from unlocking the form.
 
     return () => subscription.unsubscribe();
   }, []);
