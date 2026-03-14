@@ -4,7 +4,6 @@ import { logger } from '@/lib/logger';
 import { resendConfirmationSchema } from '@/lib/validations/auth.schema';
 import { resendConfirmationLimiter, getClientIp } from '@/lib/rate-limit';
 import { sendWelcomeConfirmationEmail } from '@/services/email.service';
-import type { GenerateLinkParams } from '@supabase/auth-js';
 
 /**
  * POST /api/resend-confirmation
@@ -65,10 +64,13 @@ export async function POST(request: Request) {
     //    (consistent with /auth/confirm which expects type=signup)
     //    Omit password to avoid empty-password mismatch — the API accepts it
     //    for existing users even though the TS types mark it as required.
+    // password is required by TS types for type:'signup' but the Supabase API
+    // accepts an empty string for existing users (it won't update their password).
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'signup',
       email,
-    } as GenerateLinkParams);
+      password: '',
+    });
 
     if (linkError || !linkData?.properties?.hashed_token) {
       logger.error('Failed to generate confirmation link for resend', { error: linkError });

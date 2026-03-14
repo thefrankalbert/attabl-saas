@@ -4,7 +4,6 @@ import { logger } from '@/lib/logger';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
 import { forgotPasswordLimiter, getClientIp } from '@/lib/rate-limit';
 import { sendPasswordResetEmail } from '@/services/email.service';
-import type { GenerateLinkParams } from '@supabase/auth-js';
 
 /**
  * POST /api/forgot-password
@@ -66,11 +65,14 @@ export async function POST(request: Request) {
         email,
       });
 
+      // password is required by TS types for type:'signup' but the Supabase API
+      // accepts an empty string for existing users (it won't update their password).
       const { data: confirmLinkData, error: confirmError } = await supabase.auth.admin.generateLink(
         {
           type: 'signup',
           email,
-        } as GenerateLinkParams,
+          password: '',
+        },
       );
 
       if (!confirmError && confirmLinkData?.properties?.hashed_token) {
