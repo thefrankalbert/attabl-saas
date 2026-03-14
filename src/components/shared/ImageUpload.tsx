@@ -31,9 +31,10 @@ export default function ImageUpload({
 
     setError(null);
 
-    // Validation du type
-    if (!file.type.startsWith('image/')) {
-      setError('Le fichier doit être une image');
+    // Validation du type — only allow safe, web-optimized formats
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('Format non supporté. Utilisez JPG, PNG ou WebP.');
       return;
     }
 
@@ -141,7 +142,7 @@ export default function ImageUpload({
           type="file"
           ref={fileInputRef}
           className="hidden"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           onChange={onFileSelect}
           disabled={disabled || isLoading}
         />
