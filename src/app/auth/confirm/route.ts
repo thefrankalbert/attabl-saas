@@ -36,7 +36,7 @@ export async function GET(request: Request) {
 
       const isExpired = error.message.includes('expired') || error.message.includes('invalid');
       const errorMessage = isExpired
-        ? 'Le lien de confirmation a expiré. Veuillez vous reconnecter pour recevoir un nouveau lien.'
+        ? 'Le lien de confirmation a expiré. Cliquez sur "Renvoyer le lien" ci-dessous.'
         : 'Erreur lors de la confirmation. Veuillez réessayer.';
 
       return NextResponse.redirect(
