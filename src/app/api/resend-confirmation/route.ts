@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { resendConfirmationSchema } from '@/lib/validations/auth.schema';
 import { resendConfirmationLimiter, getClientIp } from '@/lib/rate-limit';
 import { sendWelcomeConfirmationEmail } from '@/services/email.service';
+import type { GenerateLinkParams } from '@supabase/auth-js';
 
 /**
  * POST /api/resend-confirmation
@@ -45,26 +46,29 @@ export async function POST(request: Request) {
     const SAFE_MSG =
       'Si un compte existe avec cet email, un nouveau lien de confirmation a été envoyé.';
 
-    // 3. Find user by email (O(1) lookup, not listUsers)
-    const { data: userData } = await supabase.auth.admin.getUserByEmail(email);
+    // 3. Find user by email
+    const { data: userList } = await supabase.auth.admin.listUsers();
+    const user = userList?.users?.find((u) => u.email === email);
 
-    if (!userData?.user) {
+    if (!user) {
       logger.info('Resend confirmation requested for unknown email', { email });
       return NextResponse.json({ success: true, message: SAFE_MSG });
     }
 
     // Already confirmed — no need to resend
-    if (userData.user.email_confirmed_at) {
+    if (user.email_confirmed_at) {
       logger.info('Resend confirmation requested for already-confirmed email', { email });
       return NextResponse.json({ success: true, message: SAFE_MSG });
     }
 
     // 4. Generate a fresh confirmation link using type: 'signup'
     //    (consistent with /auth/confirm which expects type=signup)
+    //    Omit password to avoid empty-password mismatch — the API accepts it
+    //    for existing users even though the TS types mark it as required.
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'signup',
       email,
-    });
+    } as GenerateLinkParams);
 
     if (linkError || !linkData?.properties?.hashed_token) {
       logger.error('Failed to generate confirmation link for resend', { error: linkError });
