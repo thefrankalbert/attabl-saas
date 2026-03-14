@@ -4,6 +4,7 @@ import { logger } from '@/lib/logger';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
 import { forgotPasswordLimiter, getClientIp } from '@/lib/rate-limit';
 import { sendPasswordResetEmail } from '@/services/email.service';
+import type { GenerateLinkParams } from '@supabase/auth-js';
 
 /**
  * POST /api/forgot-password
@@ -49,14 +50,47 @@ export async function POST(request: Request) {
     // 3. Generate recovery link via admin API
     const supabase = createAdminClient();
 
+    // Check if user exists and whether their email is confirmed
+    const { data: userList } = await supabase.auth.admin.listUsers();
+    const foundUser = userList?.users?.find((u) => u.email === email);
+
+    if (!foundUser) {
+      logger.info('Forgot password: user not found', { email });
+      return successResponse;
+    }
+
+    // If email is NOT confirmed, send a confirmation link instead of a recovery link.
+    // This prevents the password-reset flow from being used to bypass email verification.
+    if (!foundUser.email_confirmed_at) {
+      logger.info('Forgot password: email not confirmed, sending confirmation instead', {
+        email,
+      });
+
+      const { data: confirmLinkData, error: confirmError } = await supabase.auth.admin.generateLink(
+        {
+          type: 'signup',
+          email,
+        } as GenerateLinkParams,
+      );
+
+      if (!confirmError && confirmLinkData?.properties?.hashed_token) {
+        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
+        const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${confirmLinkData.properties.hashed_token}&type=signup`;
+
+        const { sendWelcomeConfirmationEmail } = await import('@/services/email.service');
+        await sendWelcomeConfirmationEmail(email, { confirmationUrl });
+      }
+
+      return successResponse;
+    }
+
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
       email,
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      // Log the error but return success to prevent enumeration
-      logger.info('Forgot password: generateLink failed or user not found', {
+      logger.info('Forgot password: generateLink failed', {
         email,
         error: linkError?.message,
       });
