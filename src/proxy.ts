@@ -138,6 +138,31 @@ export async function proxy(request: NextRequest) {
       });
       return redirectResponse;
     }
+
+    // Block users whose email is not yet confirmed (prevents password-reset bypass).
+    // Skip for OAuth users (Google/Azure) — their email is verified by the provider.
+    // Allow /reset-password and /auth/* paths so the reset flow itself still works.
+    if (
+      user &&
+      !devBypass &&
+      !user.email_confirmed_at &&
+      user.app_metadata?.provider === 'email' &&
+      !pathname.startsWith('/reset-password') &&
+      !pathname.startsWith('/auth/') &&
+      !pathname.startsWith('/onboarding')
+    ) {
+      const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
+      const loginUrl = new URL('/login', mainDomain);
+      loginUrl.searchParams.set(
+        'error',
+        'Votre email n\u2019a pas encore été confirmé. Vérifiez votre boîte mail.',
+      );
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      sessionResponse.cookies.getAll().forEach((cookie) => {
+        redirectResponse.cookies.set(cookie.name, cookie.value);
+      });
+      return redirectResponse;
+    }
   }
 
   // 6. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header

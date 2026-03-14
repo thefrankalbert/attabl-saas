@@ -3,18 +3,7 @@
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { Globe } from 'lucide-react';
-import { locales, type Locale } from '@/i18n/config';
-
-const localeLabels: Record<Locale, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Français (France)', flag: '🇫🇷' },
-  'fr-CA': { label: 'Français (Canada)', flag: '🇨🇦' },
-  'en-US': { label: 'English (US)', flag: '🇺🇸' },
-  'en-GB': { label: 'English (UK)', flag: '🇬🇧' },
-  'en-AU': { label: 'English (Australia)', flag: '🇦🇺' },
-  'en-CA': { label: 'English (Canada)', flag: '🇨🇦' },
-  'en-IE': { label: 'English (Ireland)', flag: '🇮🇪' },
-  'es-ES': { label: 'Español (España)', flag: '🇪🇸' },
-};
+import { locales, LOCALE_LABELS } from '@/i18n/config';
 
 export function LocaleSwitcher() {
   const locale = useLocale();
@@ -35,7 +24,7 @@ export function LocaleSwitcher() {
         className="w-full h-9 pl-8 pr-3 text-xs bg-transparent border border-neutral-200 text-neutral-600 hover:bg-neutral-50 rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-1 focus:ring-ring transition-colors"
       >
         {locales.map((loc) => {
-          const info = localeLabels[loc];
+          const info = LOCALE_LABELS[loc];
           return (
             <option key={loc} value={loc}>
               {info.flag} {info.label}

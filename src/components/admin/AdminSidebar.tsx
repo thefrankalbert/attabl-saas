@@ -25,6 +25,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { isAdminHome, getTenantUrl } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import type { NavGroupConfig, NavItemConfig } from '@/lib/layout/navigation-config';
+import { getHiddenNav } from '@/lib/segment-features';
+import { getSegmentFamily } from '@/lib/segment-terms';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ interface AdminSidebarProps {
     slug: string;
     logo_url?: string;
     subscription_plan?: string;
+    establishment_type?: string;
   };
   userName?: string;
   userTenants?: TenantSwitchOption[];
@@ -91,16 +94,39 @@ export function AdminSidebar({
   const pathname = usePathname();
   const router = useRouter();
   const t = useTranslations('sidebar');
+  const tSeg = useTranslations('segment');
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const collapsed = controlledCollapsed ?? internalCollapsed;
   const handleToggleCollapsed = onToggleCollapsed ?? (() => setInternalCollapsed((prev) => !prev));
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
+  // Segment-aware label overrides: nav keys → segment term keys
+  const family = getSegmentFamily(tenant.establishment_type);
+  const segmentLabelOverrides: Record<string, string> = {
+    navDishes: tSeg(`${family}.items`),
+    navKitchen: tSeg(`${family}.productionKds`),
+    navRecipes: tSeg(`${family}.recipes`),
+  };
+  /** Resolve a sidebar label key, using segment override if available */
+  const label = (key: string) => segmentLabelOverrides[key] ?? t(key);
+
+  // Segment-based visibility: hide groups/items based on establishment type
+  const { groupIds: hiddenGroupIds, itemPaths: hiddenItemPaths } = getHiddenNav(
+    tenant.establishment_type,
+  );
+
   // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
-  // Also filter out popover items from organization group
-  const nonAnalyseGroups = NAV_GROUPS.filter((g) => g.id !== ANALYSE_GROUP_ID).map((g) => {
+  // Also filter out popover items and segment-hidden items from organization group
+  const nonAnalyseGroups = NAV_GROUPS.filter(
+    (g) => g.id !== ANALYSE_GROUP_ID && !hiddenGroupIds.has(g.id),
+  ).map((g) => {
     if (g.id === 'organization') {
-      return { ...g, items: g.items.filter((item) => !POPOVER_ITEM_PATHS.has(item.path)) };
+      return {
+        ...g,
+        items: g.items.filter(
+          (item) => !POPOVER_ITEM_PATHS.has(item.path) && !hiddenItemPaths.has(item.path),
+        ),
+      };
     }
     return g;
   });
@@ -257,7 +283,7 @@ export function AdminSidebar({
             basePath={basePath}
             pathname={pathname}
             collapsed={collapsed}
-            t={t}
+            label={label}
             showSeparator={index > 0 && group.items.length > 0}
           />
         ))}
@@ -397,7 +423,7 @@ export function AdminSidebar({
                         )}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
-                        <span>{t(item.labelKey)}</span>
+                        <span>{label(item.labelKey)}</span>
                       </Link>
                     );
                   })}
@@ -432,7 +458,7 @@ export function AdminSidebar({
                         )}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
-                        <span>{t(item.labelKey)}</span>
+                        <span>{label(item.labelKey)}</span>
                       </Link>
                     );
                   })}
@@ -466,7 +492,8 @@ interface SidebarGroupProps {
   basePath: string;
   pathname: string;
   collapsed: boolean;
-  t: ReturnType<typeof useTranslations>;
+  /** Segment-aware label resolver (overrides sidebar t for segment-specific keys) */
+  label: (key: string) => string;
   showSeparator?: boolean;
 }
 
@@ -475,7 +502,7 @@ function SidebarGroup({
   basePath,
   pathname,
   collapsed,
-  t,
+  label,
   showSeparator,
 }: SidebarGroupProps) {
   // Direct link groups (no sub-items) — render as a single link
@@ -494,10 +521,10 @@ function SidebarGroup({
             : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
           collapsed ? 'justify-center px-0' : 'gap-3 px-3',
         )}
-        title={collapsed ? t(group.titleKey) : undefined}
+        title={collapsed ? label(group.titleKey) : undefined}
       >
         <Icon className="w-4 h-4 shrink-0" />
-        {!collapsed && <span className="truncate">{t(group.titleKey)}</span>}
+        {!collapsed && <span className="truncate">{label(group.titleKey)}</span>}
       </Link>
     );
   }
@@ -523,7 +550,7 @@ function SidebarGroup({
                     ? 'text-accent bg-accent-muted'
                     : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
                 )}
-                title={t(item.labelKey)}
+                title={label(item.labelKey)}
               >
                 <Icon className="w-4 h-4 shrink-0" />
               </Link>
@@ -557,7 +584,7 @@ function SidebarGroup({
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
-              <span className="truncate">{t(item.labelKey)}</span>
+              <span className="truncate">{label(item.labelKey)}</span>
             </Link>
           );
         })}

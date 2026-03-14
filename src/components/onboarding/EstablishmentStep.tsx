@@ -7,11 +7,15 @@ import {
   Building2,
   Coffee,
   Flame,
+  Heart,
   Hotel,
   MapPin,
   Minus,
   Phone,
   Plus,
+  Scissors,
+  ShoppingCart,
+  Store,
   UtensilsCrossed,
   Wine,
 } from 'lucide-react';
@@ -23,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTranslations } from 'next-intl';
+import { LOCALE_LABELS } from '@/i18n/config';
 import type { OnboardingData } from '@/app/onboarding/page';
 
 const establishmentTypes = [
@@ -31,19 +36,12 @@ const establishmentTypes = [
   { id: 'bar', icon: Wine, titleKey: 'typeBar' },
   { id: 'cafe', icon: Coffee, titleKey: 'typeCafe' },
   { id: 'fastfood', icon: Flame, titleKey: 'typeFastfood' },
+  { id: 'retail', icon: ShoppingCart, titleKey: 'typeRetail' },
+  { id: 'boutique', icon: Store, titleKey: 'typeBoutique' },
+  { id: 'pharmacy', icon: Heart, titleKey: 'typePharmacy' },
+  { id: 'salon', icon: Scissors, titleKey: 'typeSalon' },
   { id: 'other', icon: Building2, titleKey: 'typeOther' },
 ] as const;
-
-const localeLabels: Record<string, { label: string; flag: string }> = {
-  'fr-FR': { label: 'Fran\u00e7ais (France)', flag: '\ud83c\uddeb\ud83c\uddf7' },
-  'fr-CA': { label: 'Fran\u00e7ais (Canada)', flag: '\ud83c\udde8\ud83c\udde6' },
-  'en-US': { label: 'English (US)', flag: '\ud83c\uddfa\ud83c\uddf8' },
-  'en-GB': { label: 'English (UK)', flag: '\ud83c\uddec\ud83c\udde7' },
-  'en-AU': { label: 'English (Australia)', flag: '\ud83c\udde6\ud83c\uddfa' },
-  'en-CA': { label: 'English (Canada)', flag: '\ud83c\udde8\ud83c\udde6' },
-  'en-IE': { label: 'English (Ireland)', flag: '\ud83c\uddee\ud83c\uddea' },
-  'es-ES': { label: 'Espa\u00f1ol (Espa\u00f1a)', flag: '\ud83c\uddea\ud83c\uddf8' },
-};
 
 interface EstablishmentStepProps {
   data: OnboardingData;
@@ -184,7 +182,7 @@ export function EstablishmentStep({
               <Label className="text-xs font-semibold text-app-text mb-2 block">
                 {t('stepEstablishment')}
               </Label>
-              <div className="grid grid-cols-3 sm:grid-cols-6 gap-1.5">
+              <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
                 {establishmentTypes.map((type) => {
                   const Icon = type.icon;
                   const isSelected = data.establishmentType === type.id;
@@ -328,7 +326,7 @@ export function EstablishmentStep({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(localeLabels).map(([code, { label, flag }]) => (
+                        {Object.entries(LOCALE_LABELS).map(([code, { label, flag }]) => (
                           <SelectItem key={code} value={code}>
                             <span className="inline-flex items-center gap-2">
                               <span>{flag}</span>
@@ -483,6 +481,35 @@ export function EstablishmentStep({
                             onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
                           />
                         </div>
+                      )}
+
+                      {(data.establishmentType === 'retail' ||
+                        data.establishmentType === 'boutique' ||
+                        data.establishmentType === 'pharmacy') && (
+                        <div className="space-y-3">
+                          <NumberStepper
+                            label={t('registerCount')}
+                            value={data.registerCount ?? 1}
+                            min={1}
+                            max={100}
+                            onChange={(val) => updateData({ registerCount: val })}
+                          />
+                          <ToggleSwitch
+                            label={t('hasDelivery')}
+                            checked={!!data.hasDelivery}
+                            onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
+                          />
+                        </div>
+                      )}
+
+                      {data.establishmentType === 'salon' && (
+                        <NumberStepper
+                          label={t('totalCapacity')}
+                          value={data.totalCapacity ?? 1}
+                          min={1}
+                          max={100}
+                          onChange={(val) => updateData({ totalCapacity: val })}
+                        />
                       )}
 
                       {data.establishmentType === 'other' && (
