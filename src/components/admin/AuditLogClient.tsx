@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
+const supabase = createClient();
+
 interface AuditLogEntry {
   id: string;
   created_at: string;
@@ -52,7 +54,6 @@ export default function AuditLogClient({
 }: AuditLogClientProps) {
   const t = useTranslations('auditLog');
   const tc = useTranslations('common');
-  const supabase = createClient();
 
   const [logs, setLogs] = useState<AuditLogEntry[]>(
     (initialLogs as unknown as AuditLogEntry[]) || [],
@@ -89,7 +90,7 @@ export default function AuditLogClient({
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId, page, filterAction, filterEntity, searchEmail]);
+  }, [tenantId, page, filterAction, filterEntity, searchEmail]);
 
   useEffect(() => {
     fetchLogs();

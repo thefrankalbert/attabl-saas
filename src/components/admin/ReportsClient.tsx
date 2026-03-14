@@ -9,7 +9,6 @@ import {
   DollarSign,
   ShoppingBag,
   CreditCard,
-  ChevronRight,
   ArrowUp,
   ArrowDown,
   BarChart3,
@@ -31,6 +30,8 @@ import { useSessionState } from '@/hooks/useSessionState';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
+import { cn } from '@/lib/utils';
+import AnalyseTabs from '@/components/admin/AnalyseTabs';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
@@ -227,20 +228,30 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 text-center">
-        <BarChart3 className="w-12 h-12 text-app-text-muted mb-4" />
-        <h2 className="text-lg font-semibold text-app-text">{t('noDataTitle')}</h2>
-        <p className="text-sm text-app-text-secondary mt-1">{t('noDataDescription')}</p>
+      <div className="h-full flex flex-col">
+        <AnalyseTabs />
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <BarChart3 className="w-12 h-12 text-app-text-muted mb-4" />
+          <h2 className="text-lg font-semibold text-app-text">{t('noDataTitle')}</h2>
+          <p className="text-sm text-app-text-secondary mt-1">{t('noDataDescription')}</p>
+        </div>
       </div>
     );
   }
 
   if (loading)
-    return <div className="p-12 text-center text-app-text-secondary">{t('loadingReports')}</div>;
+    return (
+      <div className="h-full flex flex-col">
+        <AnalyseTabs />
+        <div className="p-12 text-center text-app-text-secondary">{t('loadingReports')}</div>
+      </div>
+    );
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
       <div className="shrink-0 space-y-3">
+        {tabBar}
+
         {/* Header — single line on desktop */}
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
@@ -299,7 +310,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           {/* Revenue -- primary metric with lime accent */}
           <div className="p-6 bg-app-card border border-app-border rounded-xl">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-accent/20 text-accent-text rounded-xl">
+              <div className="p-3 bg-accent/15 text-accent rounded-xl">
                 <DollarSign className="w-6 h-6" />
               </div>
               <div className="flex-1 min-w-0">
@@ -395,9 +406,9 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
         <div className="space-y-6">
           {/* Chart & Top Items */}
-          <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3 sm:gap-4 @lg:gap-6">
             {/* Chart Section */}
-            <div className="lg:col-span-2 bg-app-card border border-app-border rounded-xl p-6">
+            <div className="@lg:col-span-2 bg-app-card border border-app-border rounded-xl p-6">
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-lg font-bold">{t('revenueEvolution')}</h3>
                 <span className="text-xs text-app-text-muted">{periodDisplayLabel}</span>
@@ -486,13 +497,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                 )}
               </div>
 
-              <Button
-                variant="ghost"
-                className="w-full mt-6 text-xs rounded-xl"
-                onClick={() => toast({ title: t('comingSoon') })}
-              >
-                {t('viewAllRanking')} <ChevronRight className="w-3 h-3 ml-1" />
-              </Button>
+              {/* Full ranking is in the table below */}
             </div>
           </div>
 

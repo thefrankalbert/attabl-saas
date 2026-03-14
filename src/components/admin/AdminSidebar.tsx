@@ -431,39 +431,23 @@ export function AdminSidebar({
               </>
             )}
 
-            {/* Analyse items */}
-            {analyseGroup && analyseGroup.items.length > 0 && (
-              <>
-                <div className="px-4 pt-2 pb-1">
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted">
-                    {t(analyseGroup.titleKey)}
-                  </p>
-                </div>
-                <div className="p-1.5 pt-0">
-                  {analyseGroup.items.map((item) => {
-                    const href = `${basePath}${item.path}`;
-                    const active = isPathActive(pathname, basePath, item.path);
-                    const Icon = item.icon;
-
-                    return (
-                      <Link
-                        key={item.path}
-                        href={href}
-                        onClick={() => setAccountPopoverOpen(false)}
-                        className={cn(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
-                          active
-                            ? 'text-accent bg-accent-muted'
-                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-                        )}
-                      >
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span>{label(item.labelKey)}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
-              </>
+            {/* Analyse — single link to reports page (sub-features are tabs there) */}
+            {analyseGroup && (
+              <div className="p-1.5 pt-0 border-t border-app-border mt-1">
+                <Link
+                  href={`${basePath}/reports`}
+                  onClick={() => setAccountPopoverOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    analyseGroup.items.some((item) => isPathActive(pathname, basePath, item.path))
+                      ? 'text-accent bg-accent-muted'
+                      : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                  )}
+                >
+                  <analyseGroup.icon className="w-4 h-4 shrink-0" />
+                  <span>{t('groupAnalyse')}</span>
+                </Link>
+              </div>
             )}
 
             {/* Logout */}

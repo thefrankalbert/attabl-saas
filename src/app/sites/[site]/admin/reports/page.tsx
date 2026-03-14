@@ -1,15 +1,7 @@
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
-import nextDynamic from 'next/dynamic';
 import { AlertCircle } from 'lucide-react';
-
-const ReportsClient = nextDynamic(() => import('@/components/admin/ReportsClient'), {
-  loading: () => (
-    <div className="p-12 text-center text-app-text-secondary animate-pulse">
-      Chargement des rapports...
-    </div>
-  ),
-});
+import ReportsClient from '@/components/admin/ReportsClient';
 
 export const dynamic = 'force-dynamic';
 

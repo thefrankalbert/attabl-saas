@@ -512,24 +512,24 @@ export default function DashboardClient(props: DashboardClientProps) {
           <div className="flex gap-1.5 mt-auto">
             <Link
               href={`${adminBase}/qr-codes`}
-              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <QrCode className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('qrGenerator')}</span>
+              <span className="truncate">{t('qrGenerator')}</span>
             </Link>
             <Link
               href={`${adminBase}/reports`}
-              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <BarChart3 className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('reportsLabel')}</span>
+              <span className="truncate">{t('reportsLabel')}</span>
             </Link>
             <Link
               href={`${adminBase}/stock-history`}
-              className="flex-1 flex items-center justify-center gap-1 sm:gap-1.5 px-1.5 sm:px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[10px] sm:text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2.5 py-2 border border-app-border rounded-lg text-app-text-secondary text-[11px] font-semibold hover:bg-app-hover transition-colors min-w-0"
             >
               <Package className="w-3.5 h-3.5 shrink-0" />
-              <span>{t('stockHistoryLabel')}</span>
+              <span className="truncate">{t('stockHistoryLabel')}</span>
             </Link>
           </div>
         </div>
