@@ -62,6 +62,14 @@ const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: '90d', labelKey: 'last90Days' },
 ];
 
+// ─── CSV sanitizer (prevent formula injection) ──────────
+
+function csvCell(value: string): string {
+  const escaped = String(value).replace(/"/g, '""');
+  const safe = /^[=+\-@\t\r]/.test(escaped) ? `'${escaped}` : escaped;
+  return `"${safe}"`;
+}
+
 // ─── Trend badge ────────────────────────────────────────
 
 function TrendBadge({ value }: { value: number }) {
@@ -198,14 +206,14 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       rows.push(`${t('top5Products')}`);
       rows.push(`#,Name,${t('salesCount', { count: 0 })},${t('revenueLabel')}`);
       topItems.forEach((item, i) =>
-        rows.push(`${i + 1},"${item.name}",${item.quantity},${item.revenue}`),
+        rows.push(`${i + 1},${csvCell(item.name)},${item.quantity},${item.revenue}`),
       );
       if (categories.length > 0) {
         rows.push('');
         rows.push(t('categoryBreakdown'));
         rows.push(`Category,${t('revenueLabel')},%`);
         categories.forEach((cat) =>
-          rows.push(`"${cat.category}",${cat.revenue},${cat.percentage}%`),
+          rows.push(`${csvCell(cat.category)},${cat.revenue},${cat.percentage}%`),
         );
       }
 
