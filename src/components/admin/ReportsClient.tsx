@@ -9,9 +9,11 @@ import {
   DollarSign,
   ShoppingBag,
   CreditCard,
-  ArrowUp,
-  ArrowDown,
+  ArrowUpRight,
+  ArrowDownRight,
   BarChart3,
+  TrendingUp,
+  Users,
 } from 'lucide-react';
 import {
   BarChart,
@@ -36,6 +38,10 @@ import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 
+import { CHART_PALETTE } from '@/lib/design-tokens';
+
+// ─── Types ──────────────────────────────────────────────
+
 interface ReportsClientProps {
   tenantId: string;
   currency?: CurrencyCode;
@@ -49,9 +55,6 @@ interface DailyStats {
   orders: number;
 }
 
-import { CHART_PALETTE } from '@/lib/design-tokens';
-
-/** Pill-style period options for the tab selector */
 const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: 'today', labelKey: 'periodToday' },
   { value: '7d', labelKey: 'last7Days' },
@@ -59,16 +62,37 @@ const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: '90d', labelKey: 'last90Days' },
 ];
 
+// ─── Trend badge ────────────────────────────────────────
+
+function TrendBadge({ value }: { value: number }) {
+  if (value === 0) return null;
+  const isUp = value > 0;
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[10px] font-bold tabular-nums',
+        isUp
+          ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+          : 'bg-red-500/10 text-red-600 dark:text-red-400',
+      )}
+    >
+      {isUp ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+      {Math.abs(value)}%
+    </span>
+  );
+}
+
+// ─── Component ──────────────────────────────────────────
+
 export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsClientProps) {
   const t = useTranslations('reports');
-  const fmt = (amount: number) => formatCurrency(amount, currency);
+  const fmt = useCallback((amount: number) => formatCurrency(amount, currency), [currency]);
   const [period, setPeriod] = useSessionState<Period>('reports:period', '7d');
   const [exporting, setExporting] = useState(false);
   const [exportingCsv, setExportingCsv] = useState(false);
 
   const { toast } = useToast();
 
-  // TanStack Query for report data
   const { data: reportData, isLoading: loading, error } = useReportData(tenantId, period);
 
   const dailyStats = reportData?.dailyStats ?? [];
@@ -84,46 +108,38 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     }
   }, [error, toast, t]);
 
-  /** Compute a human-readable label for the active period */
   const periodDisplayLabel = useMemo(() => {
-    switch (period) {
-      case 'today':
-        return t('periodToday');
-      case '7d':
-        return t('last7Days');
-      case '30d':
-        return t('last30Days');
-      case '90d':
-        return t('last90Days');
-      case 'thisMonth':
-        return t('thisMonth');
-      case 'lastMonth':
-        return t('lastMonth');
-      case 'thisYear':
-        return t('thisYear');
-      default:
-        return t('last7Days');
-    }
+    const map: Record<Period, string> = {
+      today: t('periodToday'),
+      '7d': t('last7Days'),
+      '30d': t('last30Days'),
+      '90d': t('last90Days'),
+      thisMonth: t('thisMonth'),
+      lastMonth: t('lastMonth'),
+      thisYear: t('thisYear'),
+    };
+    return map[period] ?? t('last7Days');
   }, [period, t]);
 
-  /** Compute percentage change between current and previous period */
-  const trendPercent = useCallback((current: number, previous: number): number => {
-    if (previous === 0) return current > 0 ? 100 : 0;
-    return Math.round(((current - previous) / previous) * 100);
-  }, []);
+  const revenueTrend = useMemo(() => {
+    const prev = previousSummary.revenue;
+    if (prev === 0) return summary.revenue > 0 ? 100 : 0;
+    return Math.round(((summary.revenue - prev) / prev) * 100);
+  }, [summary.revenue, previousSummary.revenue]);
 
-  const revenueTrend = useMemo(
-    () => trendPercent(summary.revenue, previousSummary.revenue),
-    [summary.revenue, previousSummary.revenue, trendPercent],
-  );
-  const ordersTrend = useMemo(
-    () => trendPercent(summary.orders, previousSummary.orders),
-    [summary.orders, previousSummary.orders, trendPercent],
-  );
-  const basketTrend = useMemo(
-    () => trendPercent(summary.avgBasket, previousSummary.avgBasket),
-    [summary.avgBasket, previousSummary.avgBasket, trendPercent],
-  );
+  const ordersTrend = useMemo(() => {
+    const prev = previousSummary.orders;
+    if (prev === 0) return summary.orders > 0 ? 100 : 0;
+    return Math.round(((summary.orders - prev) / prev) * 100);
+  }, [summary.orders, previousSummary.orders]);
+
+  const basketTrend = useMemo(() => {
+    const prev = previousSummary.avgBasket;
+    if (prev === 0) return summary.avgBasket > 0 ? 100 : 0;
+    return Math.round(((summary.avgBasket - prev) / prev) * 100);
+  }, [summary.avgBasket, previousSummary.avgBasket]);
+
+  // ── Export handlers ─────────────────────────────────────
 
   const handleExportPDF = async () => {
     setExporting(true);
@@ -131,14 +147,12 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       const { jsPDF } = await import('jspdf');
       const doc = new jsPDF();
 
-      // Title
       doc.setFontSize(20);
       doc.text(t('activityReport'), 20, 20);
       doc.setFontSize(10);
       doc.text(t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') }), 20, 28);
       doc.text(t('periodLabel', { period: periodDisplayLabel }), 20, 34);
 
-      // Summary
       doc.setFillColor(245, 245, 245);
       doc.rect(20, 45, 170, 30, 'F');
       doc.setFontSize(12);
@@ -146,7 +160,6 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       doc.text(`${t('orders')} : ${summary.orders}`, 100, 65);
       doc.text(`${t('averageBasket')} : ${fmt(summary.avgBasket)}`, 150, 65);
 
-      // Top Items
       doc.setFontSize(14);
       doc.text(t('top5Products'), 20, 90);
 
@@ -173,39 +186,27 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     setExportingCsv(true);
     try {
       const rows: string[] = [];
-
-      // Summary header
       rows.push(`${t('activityReport')} — ${periodDisplayLabel}`);
       rows.push(`${t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}`);
       rows.push('');
-
-      // Summary row
       rows.push(`${t('revenueLabel')},${t('orders')},${t('averageBasket')}`);
       rows.push(`${summary.revenue},${summary.orders},${summary.avgBasket}`);
       rows.push('');
-
-      // Daily stats
       rows.push(`Date,${t('revenueLabel')},${t('orders')}`);
-      dailyStats.forEach((d) => {
-        rows.push(`${d.date},${d.revenue},${d.orders}`);
-      });
+      dailyStats.forEach((d) => rows.push(`${d.date},${d.revenue},${d.orders}`));
       rows.push('');
-
-      // Top items
       rows.push(`${t('top5Products')}`);
       rows.push(`#,Name,${t('salesCount', { count: 0 })},${t('revenueLabel')}`);
-      topItems.forEach((item, i) => {
-        rows.push(`${i + 1},"${item.name}",${item.quantity},${item.revenue}`);
-      });
-
-      // Category breakdown
+      topItems.forEach((item, i) =>
+        rows.push(`${i + 1},"${item.name}",${item.quantity},${item.revenue}`),
+      );
       if (categories.length > 0) {
         rows.push('');
         rows.push(t('categoryBreakdown'));
         rows.push(`Category,${t('revenueLabel')},%`);
-        categories.forEach((cat) => {
-          rows.push(`"${cat.category}",${cat.revenue},${cat.percentage}%`);
-        });
+        categories.forEach((cat) =>
+          rows.push(`"${cat.category}",${cat.revenue},${cat.percentage}%`),
+        );
       }
 
       const csvContent = rows.join('\n');
@@ -216,7 +217,6 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
       link.download = `rapport_${format(new Date(), 'yyyyMMdd')}.csv`;
       link.click();
       URL.revokeObjectURL(url);
-
       toast({ title: t('csvDownloaded') });
     } catch (err: unknown) {
       logger.error('Failed to export CSV report', err);
@@ -226,13 +226,15 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     }
   };
 
+  // ── Render ──────────────────────────────────────────────
+
   if (error) {
     return (
       <div className="h-full flex flex-col">
         <AnalyseTabs />
         <div className="flex flex-col items-center justify-center py-20 text-center">
-          <BarChart3 className="w-12 h-12 text-app-text-muted mb-4" />
-          <h2 className="text-lg font-semibold text-app-text">{t('noDataTitle')}</h2>
+          <BarChart3 className="w-10 h-10 text-app-text-muted mb-3" />
+          <h2 className="text-base font-semibold text-app-text">{t('noDataTitle')}</h2>
           <p className="text-sm text-app-text-secondary mt-1">{t('noDataDescription')}</p>
         </div>
       </div>
@@ -243,182 +245,146 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     return (
       <div className="h-full flex flex-col">
         <AnalyseTabs />
-        <div className="p-12 text-center text-app-text-secondary">{t('loadingReports')}</div>
+        <div className="flex flex-col items-center justify-center py-16 gap-3">
+          <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
+          <p className="text-sm text-app-text-muted">{t('loadingReports')}</p>
+        </div>
       </div>
     );
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      <div className="shrink-0 space-y-3">
+      <div className="shrink-0 space-y-4">
         <AnalyseTabs />
 
-        {/* Header — single line on desktop */}
+        {/* ── Header row ── */}
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-          <h1 className="text-2xl font-bold text-app-text tracking-tight shrink-0">
+          <h1 className="text-xl font-bold text-app-text tracking-tight shrink-0">
             {t('titleClient')}
           </h1>
-          <div className="flex items-center gap-2 lg:ml-auto shrink-0">
+          <div className="flex items-center gap-2 @lg:ml-auto shrink-0">
             <Button
               variant="outline"
-              className="rounded-xl border-app-border"
+              size="sm"
+              className="rounded-lg border-app-border/50 text-xs h-8"
               onClick={handleExportCSV}
               disabled={exportingCsv}
             >
               {exportingCsv ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
               ) : (
-                <FileSpreadsheet className="w-4 h-4 mr-2" />
+                <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" />
               )}
-              {t('exportCsv')}
+              CSV
             </Button>
             <Button
               variant="default"
-              className="rounded-xl"
+              size="sm"
+              className="rounded-lg text-xs h-8"
               onClick={handleExportPDF}
               disabled={exporting}
             >
               {exporting ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
               ) : (
-                <Download className="w-4 h-4 mr-2" />
+                <Download className="w-3.5 h-3.5 mr-1.5" />
               )}
-              {t('exportPdf')}
+              PDF
             </Button>
           </div>
         </div>
 
-        {/* Pill-style period selector */}
-        <div className="flex items-center gap-1 bg-app-bg p-1 rounded-xl w-fit border border-app-border">
+        {/* ── Period pills ── */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
             <button
               key={pill.value}
               type="button"
               onClick={() => setPeriod(pill.value)}
-              className={`px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+              className={cn(
+                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
                 period === pill.value
-                  ? 'bg-accent text-accent-text'
-                  : 'text-app-text-secondary hover:text-app-text hover:bg-app-card'
-              }`}
+                  ? 'bg-app-text text-app-bg border-app-text shadow-sm'
+                  : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
+              )}
             >
               {t(pill.labelKey)}
             </button>
           ))}
         </div>
 
-        {/* KPI Summary Cards */}
-        <div className="grid grid-cols-1 @md:grid-cols-3 gap-3 sm:gap-4">
-          {/* Revenue -- primary metric with lime accent */}
-          <div className="p-6 bg-app-card border border-app-border rounded-xl">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-accent/15 text-accent rounded-xl">
-                <DollarSign className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                  {t('revenueLabel')}
-                </p>
-                <div className="flex items-end gap-2">
-                  <p className="text-3xl font-bold text-app-text">{fmt(summary.revenue)}</p>
-                  {revenueTrend !== 0 && (
-                    <span
-                      className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        revenueTrend > 0 ? 'text-status-success' : 'text-status-error'
-                      }`}
-                    >
-                      {revenueTrend > 0 ? (
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      )}
-                      {Math.abs(revenueTrend)}%
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
-              </div>
+        {/* ── KPI Cards ── */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Revenue */}
+          <div className="px-3 py-2.5 bg-accent/5 border border-accent/10 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-4 h-4 text-accent shrink-0" />
+              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                {t('revenueLabel')}
+              </p>
+            </div>
+            <div className="flex items-end gap-2">
+              <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
+                {fmt(summary.revenue)}
+              </p>
+              <TrendBadge value={revenueTrend} />
             </div>
           </div>
           {/* Orders */}
-          <div className="p-6 bg-app-card border border-app-border rounded-xl">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-app-bg text-app-text-secondary rounded-xl">
-                <ShoppingBag className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                  {t('orders')}
-                </p>
-                <div className="flex items-end gap-2">
-                  <p className="text-3xl font-bold text-app-text">{summary.orders}</p>
-                  {ordersTrend !== 0 && (
-                    <span
-                      className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        ordersTrend > 0 ? 'text-status-success' : 'text-status-error'
-                      }`}
-                    >
-                      {ordersTrend > 0 ? (
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      )}
-                      {Math.abs(ordersTrend)}%
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
-              </div>
+          <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <ShoppingBag className="w-4 h-4 text-app-text-muted shrink-0" />
+              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                {t('orders')}
+              </p>
+            </div>
+            <div className="flex items-end gap-2">
+              <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
+                {summary.orders}
+              </p>
+              <TrendBadge value={ordersTrend} />
             </div>
           </div>
           {/* Average Basket */}
-          <div className="p-6 bg-app-card border border-app-border rounded-xl">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-app-bg text-app-text-secondary rounded-xl">
-                <CreditCard className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                  {t('averageBasket')}
-                </p>
-                <div className="flex items-end gap-2">
-                  <p className="text-3xl font-bold text-app-text">{fmt(summary.avgBasket)}</p>
-                  {basketTrend !== 0 && (
-                    <span
-                      className={`inline-flex items-center gap-0.5 text-xs font-semibold mb-1 ${
-                        basketTrend > 0 ? 'text-status-success' : 'text-status-error'
-                      }`}
-                    >
-                      {basketTrend > 0 ? (
-                        <ArrowUp className="w-3.5 h-3.5" />
-                      ) : (
-                        <ArrowDown className="w-3.5 h-3.5" />
-                      )}
-                      {Math.abs(basketTrend)}%
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-app-text-muted mt-0.5">{t('vsLastPeriod')}</p>
-              </div>
+          <div className="px-3 py-2.5 bg-app-elevated border border-app-border/50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <CreditCard className="w-4 h-4 text-app-text-muted shrink-0" />
+              <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
+                {t('averageBasket')}
+              </p>
+            </div>
+            <div className="flex items-end gap-2">
+              <p className="text-lg font-bold text-app-text tabular-nums leading-tight">
+                {fmt(summary.avgBasket)}
+              </p>
+              <TrendBadge value={basketTrend} />
             </div>
           </div>
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-        <div className="space-y-6">
+      {/* ── Scrollable content ── */}
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
+        <div className="space-y-4">
           {/* Chart & Top Items */}
-          <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3 sm:gap-4 @lg:gap-6">
-            {/* Chart Section */}
-            <div className="@lg:col-span-2 bg-app-card border border-app-border rounded-xl p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold">{t('revenueEvolution')}</h3>
-                <span className="text-xs text-app-text-muted">{periodDisplayLabel}</span>
+          <div className="grid grid-cols-1 @lg:grid-cols-3 gap-3">
+            {/* Revenue chart */}
+            <div className="@lg:col-span-2 bg-app-card border border-app-border/60 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-app-text-muted" />
+                  <h3 className="text-sm font-bold text-app-text">{t('revenueEvolution')}</h3>
+                </div>
+                <span className="text-[10px] font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md">
+                  {periodDisplayLabel}
+                </span>
               </div>
               {dailyStats.length === 0 ? (
-                <div className="h-64 flex items-center justify-center">
+                <div className="h-52 flex items-center justify-center">
                   <p className="text-sm text-app-text-muted">{t('noData')}</p>
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height={300}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart
                     data={dailyStats.map((d) => ({
                       ...d,
@@ -437,7 +403,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                       axisLine={false}
                       tickLine={false}
                       tickFormatter={(v: number) => fmt(v)}
-                      width={70}
+                      width={65}
                     />
                     <Tooltip
                       contentStyle={{
@@ -445,6 +411,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         border: '1px solid var(--app-border)',
                         borderRadius: '8px',
                         color: 'var(--app-text)',
+                        fontSize: 12,
                       }}
                       labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
                       formatter={(
@@ -461,64 +428,67 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                       dataKey="revenue"
                       fill="var(--accent)"
                       radius={[4, 4, 0, 0]}
-                      maxBarSize={48}
+                      maxBarSize={40}
                     />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
 
-            {/* Top Items Section */}
-            <div className="bg-app-card border border-app-border rounded-xl p-6">
-              <h3 className="text-lg font-bold mb-6">{t('top5Products')}</h3>
-              <div className="space-y-4">
+            {/* Top 5 products */}
+            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+              <h3 className="text-sm font-bold text-app-text mb-4">{t('top5Products')}</h3>
+              <div className="space-y-3">
                 {topItems.map((item, index) => (
                   <div key={item.id} className="flex items-center justify-between group">
-                    <div className="flex items-center gap-3 overflow-hidden">
-                      <span className="flex-shrink-0 w-6 h-6 flex items-center justify-center bg-app-bg rounded-full text-xs font-bold text-app-text-secondary">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={cn(
+                          'flex-shrink-0 w-6 h-6 flex items-center justify-center rounded-md text-[10px] font-bold',
+                          index === 0
+                            ? 'bg-accent/15 text-accent'
+                            : 'bg-app-elevated text-app-text-muted',
+                        )}
+                      >
                         {index + 1}
                       </span>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-app-text break-words group-hover:text-app-text-secondary transition-colors">
-                          {item.name}
-                        </p>
-                        <p className="text-xs text-app-text-muted">
+                        <p className="text-sm font-medium text-app-text truncate">{item.name}</p>
+                        <p className="text-[10px] text-app-text-muted">
                           {t('salesCount', { count: item.quantity })}
                         </p>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-app-text tabular-nums">
+                    <span className="text-xs font-bold text-app-text tabular-nums shrink-0 ml-2">
                       {fmt(item.revenue)}
                     </span>
                   </div>
                 ))}
                 {topItems.length === 0 && (
-                  <p className="text-sm text-app-text-muted text-center py-8">{t('noData')}</p>
+                  <p className="text-sm text-app-text-muted text-center py-6">{t('noData')}</p>
                 )}
               </div>
-
-              {/* Full ranking is in the table below */}
             </div>
           </div>
 
           {/* Product Ranking Table */}
           {topItems.length > 0 && (
-            <div className="bg-app-card border border-app-border rounded-xl p-6">
-              <h3 className="text-lg font-bold mb-6">{t('productRanking')}</h3>
+            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+              <h3 className="text-sm font-bold text-app-text mb-3">{t('productRanking')}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-app-border">
-                      <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
+                    <tr className="border-b border-app-border/60">
+                      <th className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                         #
                       </th>
-                      <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
+                      <th className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                         {t('productName')}
                       </th>
-                      <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
+                      <th className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                         {t('ordersCount')}
                       </th>
-                      <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
+                      <th className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
                         {t('revenueLabel')}
                       </th>
                     </tr>
@@ -527,16 +497,18 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     {topItems.map((item, index) => (
                       <tr
                         key={item.id}
-                        className="border-b border-app-border hover:bg-app-bg transition-colors"
+                        className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
                       >
-                        <td className="py-3 px-2 tabular-nums text-app-text-secondary font-bold">
+                        <td className="py-2.5 px-2 tabular-nums text-app-text-muted font-bold text-xs">
                           {index + 1}
                         </td>
-                        <td className="py-3 px-2 font-medium text-app-text">{item.name}</td>
-                        <td className="py-3 px-2 text-right tabular-nums text-app-text">
+                        <td className="py-2.5 px-2 font-medium text-app-text text-sm">
+                          {item.name}
+                        </td>
+                        <td className="py-2.5 px-2 text-right tabular-nums text-app-text-secondary text-sm">
                           {item.quantity}
                         </td>
-                        <td className="py-3 px-2 text-right tabular-nums text-app-text">
+                        <td className="py-2.5 px-2 text-right tabular-nums text-app-text font-semibold text-sm">
                           {fmt(item.revenue)}
                         </td>
                       </tr>
@@ -547,14 +519,15 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
             </div>
           )}
 
-          {/* Category Breakdown */}
-          <div className="bg-app-card border border-app-border rounded-xl p-6">
-            <h3 className="text-lg font-bold mb-6">{t('categoryBreakdown')}</h3>
-            {categories.length === 0 ? (
-              <p className="text-sm text-app-text-muted text-center py-8">{t('noCategories')}</p>
-            ) : (
-              <div className="flex flex-col @lg:flex-row items-center gap-6">
-                <ResponsiveContainer width="100%" height={260}>
+          {/* Category Breakdown + Server Performance side by side */}
+          <div className="grid grid-cols-1 @lg:grid-cols-2 gap-3">
+            {/* Category Breakdown */}
+            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+              <h3 className="text-sm font-bold text-app-text mb-4">{t('categoryBreakdown')}</h3>
+              {categories.length === 0 ? (
+                <p className="text-sm text-app-text-muted text-center py-6">{t('noCategories')}</p>
+              ) : (
+                <ResponsiveContainer width="100%" height={220}>
                   <PieChart>
                     <Pie
                       data={categories.map((cat) => ({
@@ -566,8 +539,8 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                       nameKey="name"
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={90}
+                      innerRadius={50}
+                      outerRadius={80}
                       paddingAngle={2}
                       strokeWidth={0}
                     >
@@ -584,6 +557,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         border: '1px solid var(--app-border)',
                         borderRadius: '8px',
                         color: 'var(--app-text)',
+                        fontSize: 12,
                       }}
                       formatter={(value: number | undefined, name: string | undefined) => [
                         fmt(value ?? 0),
@@ -593,106 +567,114 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                     <Legend
                       verticalAlign="bottom"
                       iconType="circle"
-                      iconSize={8}
+                      iconSize={6}
                       formatter={(value: string) => (
-                        <span className="text-xs text-app-text-secondary">{value}</span>
+                        <span className="text-[11px] text-app-text-secondary">{value}</span>
                       )}
                     />
                   </PieChart>
                 </ResponsiveContainer>
+              )}
+            </div>
+
+            {/* Server Performance */}
+            <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Users className="w-4 h-4 text-app-text-muted" />
+                <h3 className="text-sm font-bold text-app-text">{t('serverPerformance')}</h3>
               </div>
-            )}
-          </div>
+              {serverStats.length === 0 ? (
+                <p className="text-sm text-app-text-muted text-center py-6">{t('noServerData')}</p>
+              ) : (
+                <div className="space-y-4">
+                  <ResponsiveContainer width="100%" height={Math.max(serverStats.length * 40, 100)}>
+                    <BarChart
+                      data={serverStats}
+                      layout="vertical"
+                      margin={{ top: 0, right: 10, bottom: 0, left: 0 }}
+                    >
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
+                        axisLine={{ stroke: 'var(--app-border)' }}
+                        tickLine={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="serverName"
+                        tick={{ fontSize: 11, fill: 'var(--app-text-secondary)' }}
+                        axisLine={false}
+                        tickLine={false}
+                        width={100}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          background: 'var(--app-elevated)',
+                          border: '1px solid var(--app-border)',
+                          borderRadius: '8px',
+                          color: 'var(--app-text)',
+                          fontSize: 12,
+                        }}
+                        labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
+                        formatter={(value: number | undefined) => [
+                          `${value ?? 0}`,
+                          t('ordersCount'),
+                        ]}
+                      />
+                      <Bar
+                        dataKey="orders"
+                        fill="var(--accent)"
+                        radius={[0, 4, 4, 0]}
+                        maxBarSize={28}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
 
-          {/* Server Performance */}
-          <div className="bg-app-card border border-app-border rounded-xl p-6">
-            <h3 className="text-lg font-bold mb-6">{t('serverPerformance')}</h3>
-            {serverStats.length === 0 ? (
-              <p className="text-sm text-app-text-muted text-center py-8">{t('noServerData')}</p>
-            ) : (
-              <div className="space-y-6">
-                {/* Horizontal bar chart -- orders per server */}
-                <ResponsiveContainer width="100%" height={Math.max(serverStats.length * 48, 120)}>
-                  <BarChart
-                    data={serverStats}
-                    layout="vertical"
-                    margin={{ top: 5, right: 30, bottom: 5, left: 5 }}
-                  >
-                    <XAxis
-                      type="number"
-                      tick={{ fontSize: 10, fill: 'var(--app-text-muted)' }}
-                      axisLine={{ stroke: 'var(--app-border)' }}
-                      tickLine={false}
-                    />
-                    <YAxis
-                      type="category"
-                      dataKey="serverName"
-                      tick={{ fontSize: 12, fill: 'var(--app-text-secondary)' }}
-                      axisLine={false}
-                      tickLine={false}
-                      width={120}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        background: 'var(--app-elevated)',
-                        border: '1px solid var(--app-border)',
-                        borderRadius: '8px',
-                        color: 'var(--app-text)',
-                      }}
-                      labelStyle={{ color: 'var(--app-text-muted)', fontSize: 11 }}
-                      formatter={(value: number | undefined) => [`${value ?? 0}`, t('ordersCount')]}
-                    />
-                    <Bar
-                      dataKey="orders"
-                      fill="var(--accent)"
-                      radius={[0, 4, 4, 0]}
-                      maxBarSize={32}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-
-                {/* Summary table */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-app-border">
-                        <th className="text-left py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                          {t('serverName')}
-                        </th>
-                        <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                          {t('ordersCount')}
-                        </th>
-                        <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                          {t('revenueLabel')}
-                        </th>
-                        <th className="text-right py-3 px-2 text-xs font-medium uppercase tracking-wide text-app-text-muted">
-                          {t('avgOrderValue')}
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {serverStats.map((s) => (
-                        <tr
-                          key={s.serverName}
-                          className="border-b border-app-border hover:bg-app-bg transition-colors"
-                        >
-                          <td className="py-3 px-2 font-medium text-app-text">{s.serverName}</td>
-                          <td className="py-3 px-2 text-right tabular-nums text-app-text">
-                            {s.orders}
-                          </td>
-                          <td className="py-3 px-2 text-right tabular-nums text-app-text">
-                            {fmt(s.revenue)}
-                          </td>
-                          <td className="py-3 px-2 text-right tabular-nums text-app-text">
-                            {fmt(s.avgOrder)}
-                          </td>
+                  {/* Compact server table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-app-border/60">
+                          <th className="text-left py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                            {t('serverName')}
+                          </th>
+                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                            {t('ordersCount')}
+                          </th>
+                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                            {t('revenueLabel')}
+                          </th>
+                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                            {t('avgOrderValue')}
+                          </th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody>
+                        {serverStats.map((s) => (
+                          <tr
+                            key={s.serverName}
+                            className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
+                          >
+                            <td className="py-2 px-2 font-medium text-app-text text-sm">
+                              {s.serverName}
+                            </td>
+                            <td className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                              {s.orders}
+                            </td>
+                            <td className="py-2 px-2 text-right tabular-nums text-app-text font-semibold">
+                              {fmt(s.revenue)}
+                            </td>
+                            <td className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                              {fmt(s.avgOrder)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
