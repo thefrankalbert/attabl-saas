@@ -3,7 +3,7 @@ import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import DashboardClient from '@/components/admin/DashboardClient';
 import type { Order, DashboardStats } from '@/types/admin.types';
-import { AlertCircle } from 'lucide-react';
+import TenantNotFound from '@/components/admin/TenantNotFound';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,19 +16,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="font-medium text-yellow-600">Configuration requise</p>
-            <p className="text-sm text-yellow-600 mt-1">
-              Le tenant &quot;{tenantSlug}&quot; n&apos;est pas encore configuré.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   const supabase = await createClient();

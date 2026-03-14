@@ -3,7 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
-import { AlertCircle } from 'lucide-react';
+import TenantNotFound from '@/components/admin/TenantNotFound';
 import { logger } from '@/lib/logger';
 import type { Order, ItemStatus, Course } from '@/types/admin.types';
 
@@ -17,14 +17,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   const tenant = await getTenant(tenantSlug);
 
   if (!tenant) {
-    return (
-      <div className="p-8">
-        <div className="flex items-start gap-3 p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl">
-          <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-yellow-600">Tenant non trouvé</p>
-        </div>
-      </div>
-    );
+    return <TenantNotFound />;
   }
 
   const supabase = await createClient();

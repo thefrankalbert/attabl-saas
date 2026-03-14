@@ -5,6 +5,8 @@ import { ShieldCheck } from 'lucide-react';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
 import type { PermissionMap } from '@/types/permission.types';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PermissionsPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const supabase = await createClient();
