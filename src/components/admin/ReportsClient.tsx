@@ -101,7 +101,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
 
   const { toast } = useToast();
 
-  const { data: reportData, isLoading: loading, error } = useReportData(tenantId, period);
+  const { data: reportData, isLoading: loading, error, refetch } = useReportData(tenantId, period);
 
   const dailyStats = reportData?.dailyStats ?? [];
   const topItems = reportData?.topItems ?? [];
@@ -242,8 +242,10 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         <AnalyseTabs />
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BarChart3 className="w-10 h-10 text-app-text-muted mb-3" />
-          <h2 className="text-base font-semibold text-app-text">{t('noDataTitle')}</h2>
-          <p className="text-sm text-app-text-secondary mt-1">{t('noDataDescription')}</p>
+          <p className="text-sm text-red-600">{t('loadError')}</p>
+          <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
+            {t('retry')}
+          </Button>
         </div>
       </div>
     );

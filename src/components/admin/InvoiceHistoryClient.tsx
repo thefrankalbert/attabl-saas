@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
-import { Receipt, Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
+import { Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -30,6 +30,7 @@ interface InvoiceHistoryClientProps {
 
 export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHistoryClientProps) {
   const t = useTranslations('invoices');
+  const locale = useLocale();
   const [invoices, setInvoices] = useState<StripeInvoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -56,7 +57,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
   }, [fetchInvoices]);
 
   const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString(undefined, {
+    return new Date(timestamp * 1000).toLocaleDateString(locale, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -127,14 +128,15 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
     <div className="h-full flex flex-col overflow-hidden">
       <AnalyseTabs />
       <div className="shrink-0">
-        <h1 className="text-lg sm:text-2xl font-bold text-app-text flex items-center gap-2">
-          <Receipt className="w-6 h-6" />
-          {t('title')}
-          <span className="text-base font-normal text-app-text-secondary">({invoices.length})</span>
-        </h1>
+        <div className="flex items-center gap-3 shrink-0">
+          <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+          <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
+            {invoices.length}
+          </span>
+        </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4">
         {loading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
@@ -147,7 +149,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
             </Button>
           </div>
         ) : !hasStripeCustomer || invoices.length === 0 ? (
-          <div className="bg-app-card rounded-xl border border-app-border p-12 text-center">
+          <div className="bg-app-card rounded-xl border border-app-border/60 p-12 text-center">
             <div className="w-14 h-14 bg-app-bg rounded-xl flex items-center justify-center mx-auto mb-4">
               <FileX2 className="w-7 h-7 text-app-text-muted" />
             </div>
@@ -155,12 +157,12 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
             <p className="text-sm text-app-text-secondary mt-2">{t('emptyDesc')}</p>
           </div>
         ) : (
-          <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+          <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
             {/* Desktop table */}
             <div className="hidden @md:block overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-app-border bg-app-bg/50">
+                  <tr className="border-b border-app-border/60 bg-app-bg/50">
                     <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colNumber')}
                     </th>
@@ -185,7 +187,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                   {invoices.map((inv) => (
                     <tr
                       key={inv.id}
-                      className="border-b border-app-border last:border-0 hover:bg-app-bg transition-colors"
+                      className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                     >
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-app-text">

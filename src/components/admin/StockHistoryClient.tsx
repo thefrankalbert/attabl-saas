@@ -13,6 +13,7 @@ import {
   ClipboardList,
   Loader2,
   Box,
+  BarChart3,
 } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
 import { Input } from '@/components/ui/input';
@@ -26,38 +27,38 @@ import AnalyseTabs from '@/components/admin/AnalyseTabs';
 // ─── Movement type visual config ─────────────────────────
 const MOVEMENT_STYLES: Record<
   MovementType,
-  { label: string; icon: typeof Package; bg: string; text: string; dot: string }
+  { labelKey: string; icon: typeof Package; bg: string; text: string; dot: string }
 > = {
   order_destock: {
-    label: 'Commande',
+    labelKey: 'filterOrders',
     icon: ClipboardList,
     bg: 'bg-blue-500/10',
     text: 'text-blue-600 dark:text-blue-400',
     dot: 'bg-blue-500',
   },
   manual_add: {
-    label: 'Ajout',
+    labelKey: 'filterAdditions',
     icon: Package,
     bg: 'bg-emerald-500/10',
     text: 'text-emerald-600 dark:text-emerald-400',
     dot: 'bg-emerald-500',
   },
   manual_remove: {
-    label: 'Retrait',
+    labelKey: 'filterWithdrawals',
     icon: Package,
     bg: 'bg-red-500/10',
     text: 'text-red-600 dark:text-red-400',
     dot: 'bg-red-500',
   },
   adjustment: {
-    label: 'Ajustement',
+    labelKey: 'filterAdjustments',
     icon: RefreshCw,
     bg: 'bg-amber-500/10',
     text: 'text-amber-600 dark:text-amber-400',
     dot: 'bg-amber-500',
   },
   opening: {
-    label: 'Ouverture',
+    labelKey: 'filterOpening',
     icon: Truck,
     bg: 'bg-violet-500/10',
     text: 'text-violet-600 dark:text-violet-400',
@@ -94,7 +95,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     'all',
   );
 
-  const { data: movements = [], isLoading: loading } = useStockMovements(tenantId);
+  const { data: movements = [], isLoading: loading, error } = useStockMovements(tenantId);
 
   const filtered = useMemo(
     () =>
@@ -196,7 +197,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               )}
             >
               <span className={cn('w-1.5 h-1.5 rounded-full', style?.dot)} />
-              {style?.label || row.original.movement_type}
+              {style?.labelKey ? t(style.labelKey) : row.original.movement_type}
             </span>
           );
         },
@@ -359,6 +360,11 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               <Loader2 className="w-6 h-6 text-app-text-muted animate-spin" />
               <p className="text-sm text-app-text-muted">{tc('loading')}</p>
             </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+              <BarChart3 className="w-10 h-10 text-app-text-muted" />
+              <p className="text-sm text-red-600">{t('loadingError')}</p>
+            </div>
           ) : (
             <ResponsiveDataTable
               columns={columns}
@@ -395,7 +401,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                                 )}
                               >
                                 <span className={cn('w-1 h-1 rounded-full', style?.dot)} />
-                                {style?.label}
+                                {style?.labelKey ? t(style.labelKey) : ''}
                               </span>
                               {movement.ingredient?.unit && (
                                 <span className="text-[10px] text-app-text-muted">

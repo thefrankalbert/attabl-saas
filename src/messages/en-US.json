@@ -1009,7 +1009,8 @@
     "last90Days": "Last 90 days",
     "productRanking": "Product Ranking",
     "productName": "Product",
-    "loadError": "Error loading reports"
+    "loadError": "Error loading reports",
+    "retry": "Retry"
   },
   "permissions": {
     "title": "Permissions by Role",
@@ -2082,7 +2083,9 @@
     "entity_coupon": "Coupon",
     "entity_supplier": "Supplier",
     "more": "more",
-    "showing": "{from}–{to} of {total}"
+    "showing": "{from}–{to} of {total}",
+    "loadError": "Error loading audit log",
+    "retry": "Retry"
   },
   "invoices": {
     "title": "Invoice History",
