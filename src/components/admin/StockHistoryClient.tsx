@@ -158,115 +158,116 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     <RoleGuard permission="canViewStocks">
       <div className="h-full flex flex-col overflow-hidden">
         <AnalyseTabs />
-        {loading ? (
-          <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
-        ) : (
-          <>
-            <div className="shrink-0 space-y-3">
-              {/* Header — single line on desktop */}
-              <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-                <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
-                  <History className="w-6 h-6" />
-                  {t('title')}
-                  <span className="text-base font-normal text-app-text-secondary">
-                    ({filtered.length})
-                  </span>
-                </h1>
+        {loading && (
+          <div className="p-8 text-center text-app-text-secondary animate-pulse">
+            {tc('loading')}
+          </div>
+        )}
+        <div className={loading ? 'hidden' : undefined}>
+          <div className="shrink-0 space-y-3">
+            {/* Header — single line on desktop */}
+            <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
+              <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <History className="w-6 h-6" />
+                {t('title')}
+                <span className="text-base font-normal text-app-text-secondary">
+                  ({filtered.length})
+                </span>
+              </h1>
 
-                <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
-                  <Input
-                    placeholder={t('searchPlaceholder')}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
+              <div className="relative w-full @lg:w-56 @xl:w-64 shrink-0">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
+                <Input
+                  placeholder={t('searchPlaceholder')}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
 
-                <div className="flex items-center gap-2 overflow-x-auto shrink-0">
-                  {movementFilters.map((f) => (
-                    <button
-                      key={f.value}
-                      onClick={() => setFilterType(f.value)}
-                      className={cn(
-                        'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
-                        filterType === f.value
-                          ? 'bg-app-text text-accent-text'
-                          : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
-                      )}
-                    >
-                      {f.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2 overflow-x-auto shrink-0">
+                {movementFilters.map((f) => (
+                  <button
+                    key={f.value}
+                    onClick={() => setFilterType(f.value)}
+                    className={cn(
+                      'px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap transition-colors',
+                      filterType === f.value
+                        ? 'bg-app-text text-accent-text'
+                        : 'bg-app-bg text-app-text-secondary hover:bg-app-elevated',
+                    )}
+                  >
+                    {f.label}
+                  </button>
+                ))}
               </div>
             </div>
+          </div>
 
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
-              {/* Table / Cards */}
-              <ResponsiveDataTable
-                columns={columns}
-                data={filtered}
-                emptyMessage={t('noMovements')}
-                storageKey="stockHistory"
-                mobileConfig={{
-                  renderCard: (movement) => {
-                    const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
-                    const isPositive = movement.quantity > 0;
-                    return (
-                      <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
-                        {/* Row 1: Ingredient + Date */}
-                        <div className="flex items-start justify-between gap-2">
-                          <span className="font-medium text-app-text break-words">
-                            {movement.ingredient?.name || '\u2014'}
-                            {movement.ingredient?.unit && (
-                              <span className="text-app-text-muted ml-1 text-xs">
-                                ({movement.ingredient.unit})
-                              </span>
-                            )}
-                          </span>
-                          <span className="text-xs text-app-text-muted whitespace-nowrap shrink-0">
-                            {formatDate(movement.created_at)}
-                          </span>
-                        </div>
-
-                        {/* Row 2: Type + Quantity */}
-                        <div className="flex items-center justify-between">
-                          <span
-                            className={cn(
-                              'text-xs font-medium',
-                              typeInfo?.color || 'text-app-text-secondary',
-                            )}
-                          >
-                            {typeInfo?.label || movement.movement_type}
-                          </span>
-                          <span
-                            className={cn(
-                              'font-mono font-bold',
-                              isPositive ? 'text-status-success' : 'text-status-error',
-                            )}
-                          >
-                            {isPositive ? '+' : ''}
-                            {movement.quantity}
-                          </span>
-                        </div>
-
-                        {/* Row 3: Supplier + Notes */}
-                        {(movement.supplier?.name || movement.notes) && (
-                          <div className="text-xs text-app-text-secondary break-words">
-                            {movement.supplier?.name && <span>{movement.supplier.name}</span>}
-                            {movement.supplier?.name && movement.notes && <span> — </span>}
-                            {movement.notes && <span>{movement.notes}</span>}
-                          </div>
-                        )}
+          <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+            {/* Table / Cards */}
+            <ResponsiveDataTable
+              columns={columns}
+              data={filtered}
+              emptyMessage={t('noMovements')}
+              storageKey="stockHistory"
+              mobileConfig={{
+                renderCard: (movement) => {
+                  const typeInfo = MOVEMENT_TYPE_LABELS[movement.movement_type];
+                  const isPositive = movement.quantity > 0;
+                  return (
+                    <div className="bg-app-card border border-app-border rounded-xl p-4 space-y-2">
+                      {/* Row 1: Ingredient + Date */}
+                      <div className="flex items-start justify-between gap-2">
+                        <span className="font-medium text-app-text break-words">
+                          {movement.ingredient?.name || '\u2014'}
+                          {movement.ingredient?.unit && (
+                            <span className="text-app-text-muted ml-1 text-xs">
+                              ({movement.ingredient.unit})
+                            </span>
+                          )}
+                        </span>
+                        <span className="text-xs text-app-text-muted whitespace-nowrap shrink-0">
+                          {formatDate(movement.created_at)}
+                        </span>
                       </div>
-                    );
-                  },
-                }}
-              />
-            </div>
-          </>
-        )}
+
+                      {/* Row 2: Type + Quantity */}
+                      <div className="flex items-center justify-between">
+                        <span
+                          className={cn(
+                            'text-xs font-medium',
+                            typeInfo?.color || 'text-app-text-secondary',
+                          )}
+                        >
+                          {typeInfo?.label || movement.movement_type}
+                        </span>
+                        <span
+                          className={cn(
+                            'font-mono font-bold',
+                            isPositive ? 'text-status-success' : 'text-status-error',
+                          )}
+                        >
+                          {isPositive ? '+' : ''}
+                          {movement.quantity}
+                        </span>
+                      </div>
+
+                      {/* Row 3: Supplier + Notes */}
+                      {(movement.supplier?.name || movement.notes) && (
+                        <div className="text-xs text-app-text-secondary break-words">
+                          {movement.supplier?.name && <span>{movement.supplier.name}</span>}
+                          {movement.supplier?.name && movement.notes && <span> — </span>}
+                          {movement.notes && <span>{movement.notes}</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                },
+              }}
+            />
+          </div>
+        </div>
       </div>
     </RoleGuard>
   );
