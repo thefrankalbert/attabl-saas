@@ -8,6 +8,7 @@ import { useOrders } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,6 +61,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
+  const seg = useSegmentTerms();
   const tk = useTranslations('kitchen');
   const ts = useTranslations('shortcuts');
 
@@ -517,7 +519,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                 <TabsTrigger value="all">{t('tabAll')}</TabsTrigger>
                 <TabsTrigger value="active">{t('tabInProgress')}</TabsTrigger>
                 <TabsTrigger value="pending">{t('tabPending')}</TabsTrigger>
-                <TabsTrigger value="preparing">{t('tabInKitchen')}</TabsTrigger>
+                <TabsTrigger value="preparing">{seg.inProduction}</TabsTrigger>
                 <TabsTrigger value="ready">{t('tabReady')}</TabsTrigger>
                 <TabsTrigger value="delivered">{t('tabCompleted')}</TabsTrigger>
               </TabsList>

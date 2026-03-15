@@ -19,6 +19,7 @@ import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { locales, LOCALE_LABELS } from '@/i18n/config';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
@@ -71,6 +72,7 @@ export default function SettingsIdentity({
   const { toast } = useToast();
   const locale = useLocale();
   const router = useRouter();
+  const seg = useSegmentTerms();
 
   // Domain state
   const [domain, setDomain] = useState(tenant.custom_domain || '');
@@ -137,7 +139,7 @@ export default function SettingsIdentity({
         <div className="grid grid-cols-1 @md:grid-cols-2 gap-4 sm:gap-6">
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">{t('restaurantName')}</Label>
+              <Label htmlFor="name">{seg.identityLabel}</Label>
               <Input id="name" {...register('name')} className="min-h-[44px]" />
               {errors.name && <p className="text-xs text-status-error">{errors.name.message}</p>}
             </div>
@@ -147,7 +149,7 @@ export default function SettingsIdentity({
               <Textarea
                 id="description"
                 {...register('description')}
-                placeholder={t('descriptionPlaceholder')}
+                placeholder={seg.descPlaceholder}
                 className="resize-none h-24 min-h-[44px]"
               />
             </div>
@@ -253,7 +255,7 @@ export default function SettingsIdentity({
                 setDomain(e.target.value);
                 setVerified(false);
               }}
-              placeholder={t('customDomainPlaceholder')}
+              placeholder={seg.domainPlaceholder}
               className="flex-1 min-h-[44px]"
             />
             <Button

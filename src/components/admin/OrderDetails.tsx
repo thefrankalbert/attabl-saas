@@ -23,6 +23,7 @@ import { STATUS_STYLES } from '@/lib/design-tokens';
 import { formatCurrency } from '@/lib/utils/currency';
 import { printReceipt } from '@/lib/printing/receipt';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import PaymentModal from './PaymentModal';
 
 interface OrderDetailsProps {
@@ -45,6 +46,7 @@ export default function OrderDetails({
   const t = useTranslations('orders');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
+  const seg = useSegmentTerms();
   const locale = useLocale();
   const { toast } = useToast();
   const supabase = createClient();
@@ -72,7 +74,7 @@ export default function OrderDetails({
 
   const handlePrintKitchen = () => {
     printKitchenTicket(order);
-    toast({ title: t('kitchenTicketPrinted') });
+    toast({ title: seg.productionTicketPrinted });
   };
 
   const handlePrintReceipt = () => {
@@ -349,7 +351,7 @@ export default function OrderDetails({
                 onClick={handlePrintKitchen}
                 className="h-8 text-xs"
               >
-                <Printer className="w-3.5 h-3.5 mr-1.5" /> {t('printKitchenTicket')}
+                <Printer className="w-3.5 h-3.5 mr-1.5" /> {seg.printProductionTicket}
               </Button>
               <Button
                 variant="secondary"

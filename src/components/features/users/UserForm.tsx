@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { buildRoleConfig } from '@/lib/role-config';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { AdminRole } from '@/types/admin.types';
 import type { ModalTab, CreateUserFormData } from '@/hooks/useUsersData';
 
@@ -56,6 +57,7 @@ export default function UserForm({
   onClose,
 }: UserFormProps) {
   const t = useTranslations('users');
+  const seg = useSegmentTerms();
 
   const ROLE_CONFIG = buildRoleConfig(t);
 
@@ -105,7 +107,7 @@ export default function UserForm({
               <Input
                 className="pl-9"
                 type="email"
-                placeholder={t('emailPlaceholder')}
+                placeholder={seg.emailPlaceholder}
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
               />
@@ -171,7 +173,7 @@ export default function UserForm({
               <Input
                 className="pl-9"
                 type="email"
-                placeholder={t('emailPlaceholder')}
+                placeholder={seg.emailPlaceholder}
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />

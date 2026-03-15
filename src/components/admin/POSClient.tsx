@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
@@ -22,6 +23,7 @@ interface POSClientProps {
 export default function POSClient({ tenantId }: POSClientProps) {
   const t = useTranslations('pos');
   const tc = useTranslations('common');
+  const seg = useSegmentTerms();
   const { isMobile } = useDevice();
   const [mobileView, setMobileView] = useState<'products' | 'cart'>('products');
   const [showPaymentModal, setShowPaymentModal] = useState(false);
@@ -171,11 +173,11 @@ export default function POSClient({ tenantId }: POSClientProps) {
         {pos.editingNotes && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
             <div className="bg-app-card rounded-xl border border-app-border p-6 w-full max-w-sm animate-in zoom-in-95">
-              <h3 className="font-bold text-lg text-app-text mb-4">{t('kitchenNoteTitle')}</h3>
+              <h3 className="font-bold text-lg text-app-text mb-4">{seg.productionNoteTitle}</h3>
               <textarea
                 autoFocus
                 className="w-full h-32 p-3 border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none"
-                placeholder={t('kitchenNotePlaceholder')}
+                placeholder={seg.productionNotePlaceholder}
                 value={pos.notesText}
                 onChange={(e) => pos.setNotesText(e.target.value)}
               />
