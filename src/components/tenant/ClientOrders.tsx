@@ -13,6 +13,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import { useCart } from '@/contexts/CartContext';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 
 // ─── Types ──────────────────────────────────────────────
@@ -77,6 +78,7 @@ export default function ClientOrders({
   const supabaseRef = useRef(createClient());
   const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const t = useTranslations('tenant');
+  const seg = useSegmentTerms();
   const { notifyOrderReady, showReadyBanner, dismissBanner, readyOrderNumber } =
     useClientOrderNotification();
   const locale = useLocale();
@@ -431,7 +433,7 @@ export default function ClientOrders({
                     {!canEdit && order.status === 'preparing' && (
                       <div className="px-4 pb-4">
                         <div className="w-full h-10 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2">
-                          {t('statusInKitchen')}
+                          {seg.inProduction}
                         </div>
                       </div>
                     )}
@@ -450,6 +452,7 @@ export default function ClientOrders({
 
 function BadgeStatus({ status }: { status: string }) {
   const t = useTranslations('tenant');
+  const seg = useSegmentTerms();
 
   const styles: Record<string, string> = {
     pending: 'bg-amber-50 text-amber-700',
@@ -461,23 +464,23 @@ function BadgeStatus({ status }: { status: string }) {
     cancelled: 'bg-red-50 text-red-600',
   };
 
-  const labelKeys: Record<string, string> = {
-    pending: 'statusPending',
-    confirmed: 'statusConfirmed',
-    preparing: 'statusInKitchen',
-    ready: 'statusReady',
-    delivered: 'statusDelivered',
-    served: 'statusServed',
-    cancelled: 'statusCancelled',
+  const labels: Record<string, string> = {
+    pending: t('statusPending'),
+    confirmed: t('statusConfirmed'),
+    preparing: seg.inProduction,
+    ready: t('statusReady'),
+    delivered: t('statusDelivered'),
+    served: t('statusServed'),
+    cancelled: t('statusCancelled'),
   };
 
-  const labelKey = labelKeys[status] || 'statusPending';
+  const label = labels[status] || t('statusPending');
 
   return (
     <span
       className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${styles[status] || styles.pending}`}
     >
-      {t(labelKey)}
+      {label}
     </span>
   );
 }

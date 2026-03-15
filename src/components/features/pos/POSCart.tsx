@@ -21,6 +21,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { ServiceType, CurrencyCode, Zone, Table } from '@/types/admin.types';
 import type { CartItem } from '@/hooks/usePOSData';
@@ -80,6 +81,7 @@ export default function POSCart({
 }: POSCartProps) {
   const t = useTranslations('pos');
   const tc = useTranslations('common');
+  const seg = useSegmentTerms();
 
   // ─── Table Picker Dialog ────────────────────────────────
   const [showTablePicker, setShowTablePicker] = useState(false);
@@ -264,7 +266,7 @@ export default function POSCart({
                       onClick={() => onEditNotes(itemKey, item.notes || '')}
                       className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 flex items-center transition-colors touch-manipulation"
                     >
-                      {item.notes ? tc('edit') : t('kitchenNote')}
+                      {item.notes ? tc('edit') : seg.productionNote}
                     </button>
                   </div>
                 </div>
@@ -305,7 +307,7 @@ export default function POSCart({
             className="col-span-2 h-10 rounded-xl gap-1.5"
             disabled={cart.length === 0}
             onClick={onPrintOrder}
-            title={t('sentToKitchen')}
+            title={seg.sentToProduction}
           >
             <Printer className="w-4 h-4" />
             <span className="hidden lg:inline text-xs">{t('printShort')}</span>

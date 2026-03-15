@@ -24,6 +24,7 @@
     "searchPlaceholder": "Rechercher",
     "all": "Tout",
     "filter": "Filtrer",
+    "retry": "Réessayer",
     "noResults": "Aucun résultat",
     "name": "Nom",
     "unit": "Unité",
@@ -659,7 +660,7 @@
     "qrCodesDescription": "Personnalisez et telechargez vos QR codes pour vos tables et menus.",
     "domain": "Domaine",
     "customDomain": "Domaine personnalisé",
-    "customDomainDesc": "Utilisez votre propre nom de domaine (ex : menu.votrerestaurant.com)",
+    "customDomainDesc": "Utilisez votre propre nom de domaine pour votre établissement",
     "customDomainPlaceholder": "menu.votrerestaurant.com",
     "domainVerifying": "Vérification DNS en cours...",
     "domainVerified": "Domaine vérifié et actif",
@@ -2256,7 +2257,15 @@
       "descPlaceholder": "Cuisine locale et authentique...",
       "roleChef": "Chef cuisinier",
       "roleWaiter": "Serveur",
-      "domainPlaceholder": "menu.monrestaurant.com"
+      "domainPlaceholder": "menu.monrestaurant.com",
+      "inProduction": "En cuisine",
+      "productionNote": "Note cuisine",
+      "productionNoteTitle": "Note pour la cuisine",
+      "productionNotePlaceholder": "Ex: Sans oignon, bien cuit...",
+      "sentToProduction": "Envoyé en cuisine !",
+      "printProductionTicket": "Ticket Cuisine",
+      "productionTicketPrinted": "Impression ticket cuisine lancée",
+      "productionZone": "Cuisine"
     },
     "hospitality": {
       "item": "Plat",
@@ -2277,7 +2286,15 @@
       "descPlaceholder": "Hôtel de charme au cœur de la ville...",
       "roleChef": "Chef cuisinier",
       "roleWaiter": "Réceptionniste",
-      "domainPlaceholder": "menu.monhotel.com"
+      "domainPlaceholder": "menu.monhotel.com",
+      "inProduction": "En cuisine",
+      "productionNote": "Note cuisine",
+      "productionNoteTitle": "Note pour la cuisine",
+      "productionNotePlaceholder": "Ex: Sans oignon, bien cuit...",
+      "sentToProduction": "Envoyé en cuisine !",
+      "printProductionTicket": "Ticket Cuisine",
+      "productionTicketPrinted": "Impression ticket cuisine lancée",
+      "productionZone": "Cuisine"
     },
     "retail": {
       "item": "Article",
@@ -2298,7 +2315,15 @@
       "descPlaceholder": "Décrivez votre boutique...",
       "roleChef": "Resp. stock",
       "roleWaiter": "Vendeur",
-      "domainPlaceholder": "shop.maboutique.com"
+      "domainPlaceholder": "shop.maboutique.com",
+      "inProduction": "En préparation",
+      "productionNote": "Note préparation",
+      "productionNoteTitle": "Note pour la préparation",
+      "productionNotePlaceholder": "Ex: Emballage cadeau, fragile...",
+      "sentToProduction": "Envoyé en préparation !",
+      "printProductionTicket": "Ticket Préparation",
+      "productionTicketPrinted": "Impression ticket préparation lancée",
+      "productionZone": "Préparation"
     },
     "services": {
       "item": "Prestation",
@@ -2319,7 +2344,15 @@
       "descPlaceholder": "Salon de coiffure et beauté...",
       "roleChef": "Resp. technique",
       "roleWaiter": "Coiffeur / Esthéticien",
-      "domainPlaceholder": "rdv.monsalon.com"
+      "domainPlaceholder": "rdv.monsalon.com",
+      "inProduction": "En atelier",
+      "productionNote": "Note atelier",
+      "productionNoteTitle": "Note pour l'atelier",
+      "productionNotePlaceholder": "Ex: Allergie, préférence...",
+      "sentToProduction": "Envoyé à l'atelier !",
+      "printProductionTicket": "Ticket Atelier",
+      "productionTicketPrinted": "Impression ticket atelier lancée",
+      "productionZone": "Atelier"
     }
   }
 }

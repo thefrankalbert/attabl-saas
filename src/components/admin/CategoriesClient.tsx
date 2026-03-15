@@ -42,6 +42,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
 
@@ -154,6 +155,7 @@ export default function CategoriesClient({
   const dndId = useId();
   const t = useTranslations('categories');
   const tc = useTranslations('common');
+  const seg = useSegmentTerms();
   const [showModal, setShowModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState<CategoryWithCount | null>(null);
   const [saving, setSaving] = useState(false);
@@ -477,7 +479,7 @@ export default function CategoriesClient({
               <div className="grid grid-cols-3 gap-2 pt-1">
                 {(
                   [
-                    { value: 'kitchen', icon: ChefHat, label: t('zoneKitchen') },
+                    { value: 'kitchen', icon: ChefHat, label: seg.productionZone },
                     { value: 'bar', icon: Wine, label: t('zoneBar') },
                     { value: 'both', icon: Shuffle, label: t('zoneBoth') },
                   ] as const

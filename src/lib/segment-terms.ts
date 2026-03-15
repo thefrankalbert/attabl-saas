@@ -57,6 +57,14 @@ const SEGMENT_TERM_KEYS = [
   'roleChef',
   'roleWaiter',
   'domainPlaceholder',
+  'inProduction',
+  'productionNote',
+  'productionNoteTitle',
+  'productionNotePlaceholder',
+  'sentToProduction',
+  'printProductionTicket',
+  'productionTicketPrinted',
+  'productionZone',
 ] as const;
 
 export type SegmentTermKey = (typeof SEGMENT_TERM_KEYS)[number];

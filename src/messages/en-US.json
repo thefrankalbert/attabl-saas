@@ -24,6 +24,7 @@
     "searchPlaceholder": "Search",
     "all": "All",
     "filter": "Filter",
+    "retry": "Retry",
     "noResults": "No results",
     "name": "Name",
     "unit": "Unit",
@@ -659,7 +660,7 @@
     "qrCodesDescription": "Customize and download your QR codes for tables and menus.",
     "domain": "Domain",
     "customDomain": "Custom Domain",
-    "customDomainDesc": "Use your own domain name (e.g., menu.yourrestaurant.com)",
+    "customDomainDesc": "Use your own domain name for your business",
     "customDomainPlaceholder": "menu.yourrestaurant.com",
     "domainVerifying": "Verifying DNS...",
     "domainVerified": "Domain verified and active",
@@ -2256,7 +2257,15 @@
       "descPlaceholder": "Local and authentic cuisine...",
       "roleChef": "Head chef",
       "roleWaiter": "Waiter",
-      "domainPlaceholder": "menu.myrestaurant.com"
+      "domainPlaceholder": "menu.myrestaurant.com",
+      "inProduction": "In kitchen",
+      "productionNote": "Kitchen note",
+      "productionNoteTitle": "Note for kitchen",
+      "productionNotePlaceholder": "E.g.: No onion, well done...",
+      "sentToProduction": "Sent to kitchen!",
+      "printProductionTicket": "Kitchen Ticket",
+      "productionTicketPrinted": "Kitchen ticket printing started",
+      "productionZone": "Kitchen"
     },
     "hospitality": {
       "item": "Dish",
@@ -2277,7 +2286,15 @@
       "descPlaceholder": "Charming hotel in the heart of the city...",
       "roleChef": "Head chef",
       "roleWaiter": "Receptionist",
-      "domainPlaceholder": "menu.myhotel.com"
+      "domainPlaceholder": "menu.myhotel.com",
+      "inProduction": "In kitchen",
+      "productionNote": "Kitchen note",
+      "productionNoteTitle": "Note for kitchen",
+      "productionNotePlaceholder": "E.g.: No onion, well done...",
+      "sentToProduction": "Sent to kitchen!",
+      "printProductionTicket": "Kitchen Ticket",
+      "productionTicketPrinted": "Kitchen ticket printing started",
+      "productionZone": "Kitchen"
     },
     "retail": {
       "item": "Product",
@@ -2298,7 +2315,15 @@
       "descPlaceholder": "Describe your store...",
       "roleChef": "Stock manager",
       "roleWaiter": "Sales associate",
-      "domainPlaceholder": "shop.mystore.com"
+      "domainPlaceholder": "shop.mystore.com",
+      "inProduction": "In preparation",
+      "productionNote": "Preparation note",
+      "productionNoteTitle": "Note for preparation",
+      "productionNotePlaceholder": "E.g.: Gift wrap, fragile...",
+      "sentToProduction": "Sent to preparation!",
+      "printProductionTicket": "Preparation Ticket",
+      "productionTicketPrinted": "Preparation ticket printing started",
+      "productionZone": "Preparation"
     },
     "services": {
       "item": "Service",
@@ -2319,7 +2344,15 @@
       "descPlaceholder": "Hair and beauty salon...",
       "roleChef": "Technical manager",
       "roleWaiter": "Stylist / Beautician",
-      "domainPlaceholder": "book.mysalon.com"
+      "domainPlaceholder": "book.mysalon.com",
+      "inProduction": "In workshop",
+      "productionNote": "Workshop note",
+      "productionNoteTitle": "Note for workshop",
+      "productionNotePlaceholder": "E.g.: Allergy, preference...",
+      "sentToProduction": "Sent to workshop!",
+      "printProductionTicket": "Workshop Ticket",
+      "productionTicketPrinted": "Workshop ticket printing started",
+      "productionZone": "Workshop"
     }
   }
 }
