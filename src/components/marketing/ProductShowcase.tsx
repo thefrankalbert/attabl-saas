@@ -45,7 +45,7 @@ const products = [
 
 export default function ProductShowcase() {
   return (
-    <section className="bg-[#FAFAF9] py-24">
+    <section className="bg-[#FAFAF9] py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Section header */}
         <motion.div
@@ -110,7 +110,7 @@ export default function ProductShowcase() {
               <p
                 className={`leading-relaxed ${
                   product.dark ? 'text-white/50' : 'text-neutral-600'
-                } ${product.span === 2 ? 'max-w-xl text-lg' : 'max-w-md'}`}
+                } ${product.span === 2 ? 'max-w-xl text-base sm:text-lg' : 'max-w-md'}`}
               >
                 {product.description}
               </p>

@@ -151,24 +151,27 @@ export default function SegmentsSection() {
   const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
-    <section className="bg-white py-24">
+    <section className="bg-white py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <h2 className="mb-4 text-center text-3xl font-bold text-neutral-900 font-[family-name:var(--font-sora)] sm:text-4xl">
           Quel que soit votre commerce, ATTABL parle votre langue
         </h2>
-        <p className="mx-auto mb-12 max-w-2xl text-center text-lg text-neutral-500">
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-neutral-500 sm:mb-12 sm:text-lg">
           Une plateforme unique qui s&apos;adapte a votre secteur d&apos;activite.
         </p>
 
         {/* Pill tab bar */}
         <div className="mb-12 flex justify-center">
-          <div className="inline-flex overflow-x-auto rounded-full bg-neutral-100 p-1">
+          <div
+            className="inline-flex overflow-x-auto rounded-full bg-neutral-100 p-1"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all ${
+                className={`min-h-[44px] cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all ${
                   activeTab === tab.id
                     ? 'bg-[#0A0A0F] text-white shadow-sm'
                     : 'text-neutral-500 hover:text-neutral-700'
@@ -199,7 +202,7 @@ export default function SegmentsSection() {
             <div className="flex flex-col justify-center lg:col-span-2">
               {/* Big stat */}
               <div className="mb-6">
-                <span className="font-[family-name:var(--font-sora)] text-5xl font-bold text-[#CCFF00]">
+                <span className="font-[family-name:var(--font-sora)] text-4xl font-bold text-[#CCFF00] sm:text-5xl">
                   {currentTab.stat}
                 </span>
                 <p className="mt-1 text-sm text-neutral-500">{currentTab.statLabel}</p>
@@ -223,7 +226,7 @@ export default function SegmentsSection() {
 
               <Link
                 href={currentTab.cta.href}
-                className="mt-8 inline-flex w-fit items-center rounded-full bg-[#0A0A0F] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#0A0A0F]/90 hover:shadow-lg"
+                className="mt-8 inline-flex min-h-[44px] w-fit items-center rounded-full bg-[#0A0A0F] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#0A0A0F]/90 hover:shadow-lg"
               >
                 {currentTab.cta.label}
               </Link>

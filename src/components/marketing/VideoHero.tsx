@@ -82,7 +82,7 @@ export default function VideoHero() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-[family-name:var(--font-sora)] text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl"
+            className="font-[family-name:var(--font-sora)] text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-7xl"
           >
             <span className="block lg:inline">Lancez</span>
             <span className="text-[#CCFF00]">.</span> <span className="block lg:inline">Gérez</span>
@@ -112,7 +112,7 @@ export default function VideoHero() {
               <button
                 key={key}
                 onClick={() => setActiveSegment(key)}
-                className={`flex cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm backdrop-blur-sm transition-all duration-300 ${
+                className={`flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm backdrop-blur-sm transition-all duration-300 ${
                   activeSegment === key
                     ? 'bg-[#CCFF00] font-semibold text-[#0A0A0F] shadow-[0_0_20px_rgba(204,255,0,0.3)]'
                     : 'border border-white/10 text-white/60 hover:border-white/25 hover:text-white/80'
@@ -133,7 +133,7 @@ export default function VideoHero() {
           >
             <Link
               href="/signup"
-              className="rounded-full bg-[#CCFF00] px-8 py-4 font-bold text-[#0A0A0F] shadow-[0_0_30px_rgba(204,255,0,0.2)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(204,255,0,0.3)]"
+              className="min-h-[44px] rounded-full bg-[#CCFF00] px-8 py-4 font-bold text-[#0A0A0F] shadow-[0_0_30px_rgba(204,255,0,0.2)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_40px_rgba(204,255,0,0.3)]"
             >
               Démarrer gratuitement
             </Link>
@@ -275,9 +275,9 @@ export default function VideoHero() {
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`px-6 py-8 text-center ${
-                i < stats.length - 1 ? 'border-r border-white/[0.06]' : ''
-              }`}
+              className={`px-4 py-6 text-center sm:px-6 sm:py-8 ${
+                i % 2 === 0 ? 'border-r border-white/[0.06]' : 'sm:border-r sm:border-white/[0.06]'
+              } ${i >= 2 ? 'border-t border-white/[0.06] sm:border-t-0' : ''} ${i === stats.length - 1 ? 'sm:border-r-0' : ''}`}
             >
               <stat.icon className="mx-auto mb-2 h-4 w-4 text-[#CCFF00]/60" />
               <p className="text-2xl font-bold text-white sm:text-3xl">{stat.value}</p>
