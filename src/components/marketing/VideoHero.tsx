@@ -11,7 +11,7 @@ const segments: { key: Segment; label: string; icon: React.ElementType }[] = [
   { key: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
   { key: 'boutique', label: 'Boutique', icon: Store },
   { key: 'salon', label: 'Salon', icon: Scissors },
-  { key: 'hotel', label: 'H\u00f4tel', icon: Hotel },
+  { key: 'hotel', label: 'Hôtel', icon: Hotel },
 ];
 
 const dashboardKPIs: Record<Segment, { label: string; value: string }[]> = {
@@ -35,7 +35,7 @@ const dashboardKPIs: Record<Segment, { label: string; value: string }[]> = {
   ],
   hotel: [
     { label: 'Revenu', value: '5 120 000 F' },
-    { label: 'R\u00e9servations', value: '63' },
+    { label: 'Réservations', value: '63' },
     { label: 'Clients', value: '189' },
     { label: 'Panier moy.', value: '81 300 F' },
   ],
@@ -50,9 +50,9 @@ const dashboardBars: Record<Segment, number[]> = {
 
 const tableRows: Record<Segment, { name: string; value: string }[]> = {
   restaurant: [
-    { name: 'Poulet brais\u00e9', value: '24 500 F' },
-    { name: 'Ndol\u00e9 complet', value: '18 200 F' },
-    { name: 'Poisson grill\u00e9', value: '31 800 F' },
+    { name: 'Poulet braisé', value: '24 500 F' },
+    { name: 'Ndolé complet', value: '18 200 F' },
+    { name: 'Poisson grillé', value: '31 800 F' },
   ],
   boutique: [
     { name: 'Robe wax', value: '15 000 F' },
@@ -67,7 +67,7 @@ const tableRows: Record<Segment, { name: string; value: string }[]> = {
   hotel: [
     { name: 'Suite junior', value: '85 000 F' },
     { name: 'Chambre double', value: '45 000 F' },
-    { name: 'Petit-d\u00e9jeuner', value: '12 500 F' },
+    { name: 'Petit-déjeuner', value: '12 500 F' },
   ],
 };
 
@@ -98,13 +98,13 @@ export default function VideoHero() {
               href="/signup"
               className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800"
             >
-              D\u00e9marrer gratuitement
+              Démarrer gratuitement
             </Link>
             <Link
               href="/contact"
               className="rounded-lg border border-neutral-300 px-8 py-4 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
             >
-              Contacter l&apos;\u00e9quipe
+              Contacter l&apos;équipe
             </Link>
           </div>
 

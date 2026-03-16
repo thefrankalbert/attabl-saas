@@ -6,27 +6,27 @@ import Link from 'next/link';
 
 const updates = [
   {
-    date: 'F\u00e9vrier 2026',
+    date: 'Février 2026',
     tag: 'Nouveau',
-    title: 'Syst\u00e8me de permissions par r\u00f4le',
+    title: 'Système de permissions par rôle',
     description:
-      '6 r\u00f4les (propri\u00e9taire, admin, manager, caissier, chef, serveur) avec des permissions granulaires. Chaque \u00e9quipier voit exactement ce dont il a besoin.',
+      '6 rôles (propriétaire, admin, manager, caissier, chef, serveur) avec des permissions granulaires. Chaque équipier voit exactement ce dont il a besoin.',
     icon: Shield,
   },
   {
-    date: 'F\u00e9vrier 2026',
+    date: 'Février 2026',
     tag: 'Nouveau',
     title: 'Internationalisation (8 locales)',
     description:
-      "Interface disponible en fran\u00e7ais, anglais (US, GB, CA, AU, IE) et espagnol. Changez la langue de l'interface en un clic.",
+      "Interface disponible en français, anglais (US, GB, CA, AU, IE) et espagnol. Changez la langue de l'interface en un clic.",
     icon: Globe,
   },
   {
-    date: 'F\u00e9vrier 2026',
-    tag: 'Am\u00e9lioration',
-    title: 'Verrouillage automatique par inactivit\u00e9',
+    date: 'Février 2026',
+    tag: 'Amélioration',
+    title: 'Verrouillage automatique par inactivité',
     description:
-      "Prot\u00e9gez les donn\u00e9es sensibles : l'\u00e9cran se verrouille apr\u00e8s une p\u00e9riode d'inactivit\u00e9 configurable.",
+      "Protégez les données sensibles : l'écran se verrouille après une période d'inactivité configurable.",
     icon: Shield,
   },
   {
@@ -34,7 +34,7 @@ const updates = [
     tag: 'Nouveau',
     title: 'Alertes de stock par email',
     description:
-      'Recevez un email automatique quand un ingr\u00e9dient passe sous le seuil critique. Int\u00e9gration Resend.',
+      'Recevez un email automatique quand un ingrédient passe sous le seuil critique. Intégration Resend.',
     icon: Zap,
   },
   {
@@ -42,31 +42,30 @@ const updates = [
     tag: 'Nouveau',
     title: 'Module fournisseurs',
     description:
-      'G\u00e9rez vos fournisseurs, contacts et r\u00e9f\u00e9rences produits directement depuis le dashboard.',
+      'Gérez vos fournisseurs, contacts et références produits directement depuis le dashboard.',
     icon: BarChart3,
   },
   {
     date: 'Janvier 2026',
-    tag: 'Am\u00e9lioration',
+    tag: 'Amélioration',
     title: 'Historique des mouvements de stock',
     description:
-      "Tra\u00e7abilit\u00e9 compl\u00e8te : chaque entr\u00e9e, sortie et ajustement est enregistr\u00e9 avec l'auteur et la raison.",
+      "Traçabilité complète : chaque entrée, sortie et ajustement est enregistré avec l'auteur et la raison.",
     icon: BarChart3,
   },
   {
-    date: 'D\u00e9cembre 2025',
+    date: 'Décembre 2025',
     tag: 'Nouveau',
-    title: 'Landing page redesign\u00e9e',
+    title: 'Landing page redesignée',
     description:
-      'Nouvelle identit\u00e9 visuelle avec vid\u00e9o hero, mega-menu, pages par segment et animations Framer Motion.',
+      'Nouvelle identité visuelle avec vidéo hero, mega-menu, pages par segment et animations Framer Motion.',
     icon: Sparkles,
   },
   {
-    date: 'D\u00e9cembre 2025',
+    date: 'Décembre 2025',
     tag: 'Nouveau',
-    title: 'QR Code personnalis\u00e9 premium',
-    description:
-      '6 templates de QR codes avec pr\u00e9visualisation en temps r\u00e9el et export PDF.',
+    title: 'QR Code personnalisé premium',
+    description: '6 templates de QR codes avec prévisualisation en temps réel et export PDF.',
     icon: Smartphone,
   },
 ];
@@ -83,7 +82,7 @@ export default function NouveautesPage() {
             transition={{ duration: 0.6 }}
             className="mb-6 text-4xl font-bold text-neutral-900 sm:text-5xl"
           >
-            Nouveaut\u00e9s
+            Nouveautés
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -91,7 +90,7 @@ export default function NouveautesPage() {
             transition={{ duration: 0.6, delay: 0.1 }}
             className="text-lg text-neutral-600 sm:text-xl"
           >
-            Les derni\u00e8res fonctionnalit\u00e9s et am\u00e9liorations d&apos;Attabl.
+            Les dernières fonctionnalités et améliorations d&apos;Attabl.
           </motion.p>
         </div>
       </section>
@@ -139,9 +138,7 @@ export default function NouveautesPage() {
       {/* CTA */}
       <section className="bg-white py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold text-neutral-900 sm:text-4xl">
-            Pr&ecirc;t &agrave; essayer ?
-          </h2>
+          <h2 className="mb-6 text-3xl font-bold text-neutral-900 sm:text-4xl">Prêt à essayer ?</h2>
           <p className="mb-10 text-lg text-neutral-600">14 jours gratuits. Sans carte bancaire.</p>
           <Link
             href="/signup"
