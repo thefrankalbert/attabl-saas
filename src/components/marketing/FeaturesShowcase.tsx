@@ -1,53 +1,107 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { Banknote, BarChart3, CreditCard, Package, QrCode, Users } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const features = [
+interface Feature {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
+
+const vendreFeatures: Feature[] = [
   {
-    title: 'Menu digital intelligent',
-    description: 'QR code, bilingue, modifiers — votre menu accessible partout, tout le temps.',
+    icon: QrCode,
+    title: 'Catalogue Digital',
+    description:
+      'QR code, commandes en ligne, vitrine digitale. Présentez vos produits et services avec style.',
   },
   {
-    title: 'Analytics en temps réel',
-    description: 'Revenus, best-sellers, tendances — pilotez votre activité avec précision.',
+    icon: CreditCard,
+    title: 'Point de Vente',
+    description:
+      'POS tactile, multi-méthodes de paiement. Cash, carte, mobile money — tout en un écran.',
   },
   {
-    title: 'Stock automatisé',
-    description: 'Chaque commande déduit vos ingrédients. Fini les ruptures imprévues.',
-  },
-  {
-    title: 'Multi-devises',
-    description: 'XAF, EUR, USD — facturez dans la devise locale de vos clients.',
+    icon: Banknote,
+    title: 'Paiements',
+    description:
+      '3 devises (XAF, EUR, USD), mobile money, réconciliation automatique. Encaissez sans friction.',
   },
 ];
 
+const gererFeatures: Feature[] = [
+  {
+    icon: BarChart3,
+    title: 'Analytics & IA',
+    description:
+      'Tableaux de bord, tendances, alertes proactives. Des insights, pas des données brutes.',
+  },
+  {
+    icon: Package,
+    title: 'Stock',
+    description:
+      'Inventaire temps réel, fournisseurs, réapprovisionnement automatique. Zéro rupture.',
+  },
+  {
+    icon: Users,
+    title: 'Équipe',
+    description: 'Rôles, shifts, performance par employé. Gérez votre équipe, pas des tableurs.',
+  },
+];
+
+function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
+  const Icon = feature.icon;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.1 }}
+      viewport={{ once: true }}
+      className="bg-white p-6 rounded-xl border border-neutral-200 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+    >
+      <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/10 flex items-center justify-center mb-4">
+        <Icon className="w-5 h-5 text-[#CCFF00]" />
+      </div>
+      <h3 className="text-lg font-semibold text-neutral-900 mb-2">{feature.title}</h3>
+      <p className="text-sm text-neutral-600 leading-relaxed">{feature.description}</p>
+    </motion.div>
+  );
+}
+
 export default function FeaturesShowcase() {
   return (
-    <section className="py-24 bg-white">
+    <section className="bg-neutral-50 py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
-            Tout ce qu&apos;il faut pour réussir
-          </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Une plateforme complète qui grandit avec vous.
+        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 text-center mb-4">
+          Un écosystème complet, pas juste un outil
+        </h2>
+        <p className="text-lg text-neutral-500 text-center mb-16">
+          Tout ce dont vous avez besoin pour vendre et gérer votre activité.
+        </p>
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C3AED] mb-6">
+            VENDRE
           </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {vendreFeatures.map((feature, idx) => (
+              <FeatureCard key={feature.title} feature={feature} index={idx} />
+            ))}
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {features.map((feature, idx) => (
-            <motion.div
-              key={feature.title}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              viewport={{ once: true }}
-              className="bg-neutral-50 p-8 rounded-2xl border border-neutral-200 transition-all duration-300 hover:border-neutral-400 hover:shadow-sm"
-            >
-              <h3 className="text-xl font-semibold text-neutral-900 mb-3">{feature.title}</h3>
-              <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
-            </motion.div>
-          ))}
+        <div className="mt-12">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C3AED] mb-6">
+            GÉRER
+          </p>
+          <div className="grid md:grid-cols-3 gap-6">
+            {gererFeatures.map((feature, idx) => (
+              <FeatureCard key={feature.title} feature={feature} index={idx} />
+            ))}
+          </div>
         </div>
       </div>
     </section>
