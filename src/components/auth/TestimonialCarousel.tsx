@@ -25,10 +25,10 @@ const testimonials: Testimonial[] = [
   {
     quote:
       'On a divisé par deux les erreurs en salle. Les serveurs adorent le suivi en temps réel.',
-    highlight: '-50% d\u2019erreurs',
+    highlight: "-50% d'erreurs",
     name: 'Thomas K.',
     role: 'Directeur F&B',
-    establishment: 'Hôtel Résidence, N\u2019Djaména',
+    establishment: "Hôtel Résidence, N'Djaména",
     initials: 'TK',
   },
   {
@@ -84,23 +84,23 @@ export function TestimonialCarousel() {
             {/* Stars */}
             <div className="flex items-center gap-0.5 mb-2">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-3 h-3 fill-accent text-accent" />
+                <Star key={i} className="w-3 h-3 fill-[#CCFF00] text-[#CCFF00]" />
               ))}
             </div>
 
             {/* Quote */}
-            <blockquote className="text-[13px] text-app-text-secondary leading-relaxed mb-3">
+            <blockquote className="text-[13px] text-neutral-300 italic leading-relaxed mb-3">
               &ldquo;{t.quote}&rdquo;
             </blockquote>
 
             {/* Author */}
             <div className="flex items-center gap-2.5">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-accent-muted border border-accent/20 text-accent text-[10px] font-bold shrink-0">
+              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-white/10 border border-white/20 text-[#CCFF00] text-[10px] font-bold shrink-0">
                 {t.initials}
               </div>
               <div>
-                <div className="text-xs font-semibold text-app-text">{t.name}</div>
-                <div className="text-[10px] text-app-text-muted">
+                <div className="text-xs font-semibold text-white">{t.name}</div>
+                <div className="text-[10px] text-neutral-500">
                   {t.role}, {t.establishment}
                 </div>
               </div>
@@ -118,9 +118,7 @@ export function TestimonialCarousel() {
             onClick={() => setCurrent(i)}
             aria-label={`Témoignage ${i + 1}`}
             className={`h-1 rounded-full transition-all duration-300 ${
-              i === current
-                ? 'bg-accent w-5'
-                : 'bg-app-text-muted/20 hover:bg-app-text-muted/40 w-1'
+              i === current ? 'bg-[#CCFF00] w-5' : 'bg-white/20 hover:bg-white/40 w-1'
             }`}
           />
         ))}
