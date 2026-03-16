@@ -14,10 +14,10 @@ import {
   PLAN_NAMES,
 } from '@/lib/plans/features';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types ---
 
 interface SubscriptionContextType {
-  /** The stored plan (essentiel, premium, enterprise) */
+  /** The stored plan (starter, pro, business, enterprise) */
   plan: SubscriptionPlan;
   /** The effective plan considering trial status */
   effectivePlan: SubscriptionPlan;
@@ -29,13 +29,17 @@ interface SubscriptionContextType {
   canAccess: (feature: FeatureKey) => boolean;
   /** Check if a numeric limit is reached */
   isLimitReached: (
-    limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
+    limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxStaff' | 'maxCategories',
     currentCount: number,
   ) => boolean;
   /** Whether the tenant is in active trial */
   isInTrial: boolean;
   /** Days remaining in trial (0 if not in trial) */
   daysRemaining: number;
+  /** Whether the account is frozen (trial expired, no plan chosen) */
+  isFrozen: boolean;
+  /** Whether payment has failed (grace period) */
+  isPastDue: boolean;
   /** Whether subscription is in a usable state */
   isUsable: boolean;
   /** Human-readable plan name */
@@ -44,11 +48,11 @@ interface SubscriptionContextType {
   effectivePlanName: string;
 }
 
-// ─── Context ────────────────────────────────────────────
+// --- Context ---
 
 const SubscriptionContext = createContext<SubscriptionContextType | null>(null);
 
-// ─── Provider ───────────────────────────────────────────
+// --- Provider ---
 
 interface SubscriptionProviderProps {
   children: ReactNode;
@@ -57,7 +61,7 @@ interface SubscriptionProviderProps {
 
 export function SubscriptionProvider({ children, tenant }: SubscriptionProviderProps) {
   const value = useMemo<SubscriptionContextType>(() => {
-    const plan = (tenant?.subscription_plan || 'essentiel') as SubscriptionPlan;
+    const plan = (tenant?.subscription_plan || 'starter') as SubscriptionPlan;
     const status = (tenant?.subscription_status || null) as SubscriptionStatus | null;
     const trialEndsAt = tenant?.trial_ends_at || null;
 
@@ -78,13 +82,21 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
         return true;
       },
       isLimitReached: (
-        limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds',
+        limitKey:
+          | 'maxAdmins'
+          | 'maxVenues'
+          | 'maxMenus'
+          | 'maxItems'
+          | 'maxStaff'
+          | 'maxCategories',
         currentCount: number,
       ) => {
         return currentCount >= limits[limitKey];
       },
       isInTrial: inTrial,
       daysRemaining,
+      isFrozen: status === 'frozen',
+      isPastDue: status === 'past_due',
       isUsable: isSubscriptionUsable(status),
       planName: PLAN_NAMES[plan],
       effectivePlanName: PLAN_NAMES[effectivePlan],
@@ -94,24 +106,26 @@ export function SubscriptionProvider({ children, tenant }: SubscriptionProviderP
   return <SubscriptionContext.Provider value={value}>{children}</SubscriptionContext.Provider>;
 }
 
-// ─── Hook ───────────────────────────────────────────────
+// --- Hook ---
 
 export function useSubscription(): SubscriptionContextType {
   const context = useContext(SubscriptionContext);
   if (!context) {
     // Provide safe defaults when used outside provider (e.g., client-facing pages)
     return {
-      plan: 'essentiel',
-      effectivePlan: 'essentiel',
+      plan: 'starter',
+      effectivePlan: 'starter',
       status: null,
-      limits: getPlanLimits('essentiel'),
+      limits: getPlanLimits('starter'),
       canAccess: () => true,
       isLimitReached: () => false,
       isInTrial: false,
       daysRemaining: 0,
+      isFrozen: false,
+      isPastDue: false,
       isUsable: true,
-      planName: 'Essentiel',
-      effectivePlanName: 'Essentiel',
+      planName: 'Starter',
+      effectivePlanName: 'Starter',
     };
   }
   return context;

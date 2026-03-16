@@ -35,10 +35,10 @@ export default function Header() {
   return (
     <>
       {/* Header */}
-      <header className="fixed left-0 right-0 top-0 z-50 bg-white border-b border-neutral-200">
+      <header className="fixed left-0 right-0 top-0 z-50 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800">
         <div className="flex w-full items-center px-4 py-4 sm:px-6 lg:px-8">
           {/* Logo */}
-          <Link href="/" className="text-2xl font-bold text-neutral-900">
+          <Link href="/" className="text-2xl font-bold text-neutral-900 dark:text-white">
             Attabl
           </Link>
 
@@ -50,7 +50,7 @@ export default function Header() {
               onClick={() =>
                 setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
               }
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Solutions
             </button>
@@ -58,25 +58,25 @@ export default function Header() {
               type="button"
               onMouseEnter={() => setActiveMegaMenu('features')}
               onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Fonctionnalités
             </button>
             <Link
               href="/pricing"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Tarifs
             </Link>
             <Link
               href="/nouveautes"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Nouveautés
             </Link>
             <Link
               href="/blog"
-              className="text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
               Blog
             </Link>
@@ -84,7 +84,7 @@ export default function Header() {
 
           {/* Actions */}
           <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors" />
+            <ThemeToggle className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
             <Link
               href="/login"
               className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors lg:block"
@@ -93,7 +93,7 @@ export default function Header() {
             </Link>
             <Link
               href="/signup"
-              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 transition-colors lg:block"
+              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors lg:block"
             >
               Démarrer
             </Link>
@@ -102,7 +102,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-neutral-700 hover:bg-neutral-50 transition-colors lg:hidden"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors lg:hidden"
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -114,7 +114,7 @@ export default function Header() {
       {activeMegaMenu && (
         <div
           onMouseLeave={() => setActiveMegaMenu(null)}
-          className="fixed left-0 right-0 top-0 z-40 bg-white border-b border-neutral-200 pt-[65px]"
+          className="fixed left-0 right-0 top-0 z-40 bg-white dark:bg-neutral-950 border-b border-neutral-200 dark:border-neutral-800 pt-[65px]"
         >
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             {activeMegaMenu === 'solutions' && (
@@ -124,12 +124,14 @@ export default function Header() {
                     key={seg.href}
                     href={seg.href}
                     onClick={() => setActiveMegaMenu(null)}
-                    className="group rounded-lg p-4 hover:bg-neutral-50 transition-colors"
+                    className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-neutral-900 group-hover:text-neutral-700">
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
                       {seg.label}
                     </span>
-                    <p className="text-sm text-neutral-500 mt-1">{seg.description}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                      {seg.description}
+                    </p>
                   </Link>
                 ))}
               </div>
@@ -141,18 +143,20 @@ export default function Header() {
                     key={feat.href}
                     href={feat.href}
                     onClick={() => setActiveMegaMenu(null)}
-                    className="group rounded-lg p-4 hover:bg-neutral-50 transition-colors"
+                    className="group rounded-lg p-4 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                   >
-                    <span className="text-sm font-semibold text-neutral-900 group-hover:text-neutral-700">
+                    <span className="text-sm font-semibold text-neutral-900 dark:text-white group-hover:text-neutral-700 dark:group-hover:text-neutral-300">
                       {feat.label}
                     </span>
-                    <p className="text-sm text-neutral-500 mt-1">{feat.description}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                      {feat.description}
+                    </p>
                   </Link>
                 ))}
                 <Link
                   href="/features"
                   onClick={() => setActiveMegaMenu(null)}
-                  className="rounded-lg p-4 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 transition-colors"
+                  className="rounded-lg p-4 text-sm font-semibold text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
                   Toutes les fonctionnalités &rarr;
                 </Link>
@@ -164,10 +168,10 @@ export default function Header() {
 
       {/* Mobile Menu */}
       {mobileOpen && (
-        <div className="fixed inset-0 z-40 bg-white lg:hidden">
+        <div className="fixed inset-0 z-40 bg-white dark:bg-neutral-950 lg:hidden">
           <div className="flex h-full flex-col overflow-y-auto px-4 py-20 pb-[env(safe-area-inset-bottom,20px)] sm:px-6">
             <div className="space-y-1">
-              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400">
+              <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
                 Solutions
               </p>
               {segments.map((seg) => (
@@ -175,7 +179,7 @@ export default function Header() {
                   key={seg.href}
                   href={seg.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                  className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
                 >
                   {seg.label}
                 </Link>
@@ -185,48 +189,48 @@ export default function Header() {
               <Link
                 href="/features"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Fonctionnalités
               </Link>
               <Link
                 href="/pricing"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Tarifs
               </Link>
               <Link
                 href="/nouveautes"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Nouveautés
               </Link>
               <Link
                 href="/blog"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Blog
               </Link>
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
-                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Se connecter
               </Link>
             </div>
             <div className="mt-auto pt-6 space-y-4">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm text-neutral-500">Apparence</span>
-                <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors" />
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">Apparence</span>
+                <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors" />
               </div>
               <Link
                 href="/signup"
                 onClick={() => setMobileOpen(false)}
-                className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800 transition-colors"
+                className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
               >
                 Démarrer gratuitement
               </Link>

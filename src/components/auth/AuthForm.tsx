@@ -90,15 +90,15 @@ function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
-        // Signup flow - restaurant name is collected during onboarding
+        // Signup flow — restaurant name is collected during onboarding
         const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            restaurantName: 'Mon activité',
+            restaurantName: 'Mon Établissement',
             email,
             password,
-            plan: 'essentiel',
+            plan: 'starter',
           }),
         });
 
@@ -108,7 +108,7 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error(data.error || "Erreur lors de l'inscription");
         }
 
-        // Account created - show confirmation message
+        // Account created — show confirmation message
         setConfirmationSent(true);
       } else {
         // Login flow
@@ -119,7 +119,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         if (authError) throw new Error(authError.message);
 
-        // Login flow - query all admin_users (supports multi-restaurant)
+        // Login flow — query all admin_users (supports multi-restaurant)
         const { data: adminUsers } = await supabase
           .from('admin_users')
           .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
@@ -140,7 +140,7 @@ function AuthForm({ mode }: AuthFormProps) {
           return;
         }
 
-        // All users land on the tenant hub - single or multi
+        // All users land on the tenant hub — single or multi
         window.location.href = '/admin/tenants';
       }
     } catch (err) {
@@ -202,23 +202,23 @@ function AuthForm({ mode }: AuthFormProps) {
         className="mx-auto w-full"
       >
         <Link href="/" className="flex items-center gap-2 mb-10 w-fit group">
-          <span className="text-xl font-bold tracking-tight text-neutral-900 group-hover:text-neutral-700 transition-colors">
+          <span className="text-xl font-bold tracking-tight text-app-text group-hover:text-accent transition-colors">
             ATTABL
           </span>
         </Link>
 
         <div className="text-center">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100">
-            <MailCheck className="h-8 w-8 text-neutral-900" />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
+            <MailCheck className="h-8 w-8 text-accent" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-3">
+          <h1 className="text-2xl font-bold tracking-tight text-app-text mb-3">
             Vérifiez votre boîte mail
           </h1>
-          <p className="text-neutral-600 text-sm leading-relaxed mb-2">
+          <p className="text-app-text-secondary text-sm leading-relaxed mb-2">
             Un email de confirmation a été envoyé à
           </p>
-          <p className="text-neutral-900 font-semibold text-sm mb-6">{email}</p>
-          <p className="text-neutral-600 text-sm leading-relaxed mb-8">
+          <p className="text-app-text font-semibold text-sm mb-6">{email}</p>
+          <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
             Cliquez sur le lien dans l&apos;email pour activer votre compte et accéder à la
             configuration de votre établissement.
           </p>
@@ -229,7 +229,7 @@ function AuthForm({ mode }: AuthFormProps) {
               variant="outline"
               onClick={handleResendConfirmation}
               disabled={resending || resendCooldown > 0}
-              className="w-full h-11 rounded-xl border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-all"
+              className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all"
             >
               {resending ? (
                 <>
@@ -246,13 +246,13 @@ function AuthForm({ mode }: AuthFormProps) {
               )}
             </Button>
 
-            <p className="text-xs text-neutral-500">
+            <p className="text-xs text-app-text-muted">
               Vous ne trouvez pas l&apos;email ? Vérifiez vos spams ou{' '}
               <button
                 type="button"
                 onClick={handleResendConfirmation}
                 disabled={resendCooldown > 0}
-                className="text-neutral-900 hover:text-neutral-700 font-medium transition-colors disabled:opacity-50"
+                className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50"
               >
                 {resendCooldown > 0 ? `renvoyez-le (${resendCooldown}s)` : 'renvoyez-le'}
               </button>
@@ -260,10 +260,10 @@ function AuthForm({ mode }: AuthFormProps) {
             </p>
           </div>
 
-          <div className="mt-8 pt-6 border-t border-neutral-200">
+          <div className="mt-8 pt-6 border-t border-app-border">
             <Link
               href="/login"
-              className="text-sm font-bold text-neutral-900 hover:underline transition-colors"
+              className="text-sm font-bold text-accent hover:text-accent-hover transition-colors"
             >
               Retour à la connexion
             </Link>
@@ -282,20 +282,22 @@ function AuthForm({ mode }: AuthFormProps) {
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 mb-10 w-fit group">
-        <span className="text-xl font-bold tracking-tight text-neutral-900 group-hover:text-neutral-700 transition-colors">
+        <span className="text-xl font-bold tracking-tight text-app-text group-hover:text-accent transition-colors">
           ATTABL
         </span>
       </Link>
 
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 mb-2">
-          {isLogin ? 'Votre établissement vous attend.' : 'Lancez votre menu digital'}
+        <h1 className="text-2xl font-bold tracking-tight text-app-text mb-2">
+          {isLogin
+            ? 'Votre établissement vous attend.'
+            : 'Créez votre compte en 2 minutes. 14 jours gratuits.'}
         </h1>
-        <p className="text-neutral-600 text-sm leading-relaxed">
+        <p className="text-app-text-secondary text-sm leading-relaxed">
           {isLogin
             ? "Commandes, stock, chiffre d'affaires. Tout est là."
-            : 'Créez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
+            : 'Aucune carte bancaire requise. Annulez quand vous voulez.'}
         </p>
       </div>
 
@@ -306,7 +308,7 @@ function AuthForm({ mode }: AuthFormProps) {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <Alert className="bg-app-status-success-bg text-status-success border-status-success/20 rounded-xl">
+          <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-xl">
             <MailCheck className="h-4 w-4" />
             <AlertDescription className="text-sm">
               Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.
@@ -336,7 +338,7 @@ function AuthForm({ mode }: AuthFormProps) {
         <div className="space-y-1.5">
           <Label
             htmlFor="email"
-            className="text-neutral-600 font-medium text-xs uppercase tracking-widest"
+            className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
           >
             Email
           </Label>
@@ -347,7 +349,7 @@ function AuthForm({ mode }: AuthFormProps) {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="h-11 bg-neutral-50 border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition-all rounded-xl text-sm"
+            className="h-11 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
           />
         </div>
 
@@ -355,14 +357,14 @@ function AuthForm({ mode }: AuthFormProps) {
           <div className="flex items-center justify-between">
             <Label
               htmlFor="password"
-              className="text-neutral-600 font-medium text-xs uppercase tracking-widest"
+              className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
             >
               Mot de passe
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-xs text-neutral-500 hover:text-neutral-900 font-medium transition-colors"
+                className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
               >
                 Oublié ?
               </Link>
@@ -377,12 +379,12 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-11 pr-12 bg-neutral-50 border-neutral-200 text-neutral-900 placeholder:text-neutral-400 focus:ring-2 focus:ring-neutral-900/10 focus:border-neutral-400 transition-all rounded-xl text-sm"
+              className="h-11 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 transition-colors p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors p-1"
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
@@ -420,7 +422,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         <Button
           type="submit"
-          className="w-full h-11 bg-neutral-900 hover:bg-neutral-800 text-white text-sm font-bold rounded-xl transition-all active:scale-[0.98]"
+          className="w-full h-11 bg-accent hover:bg-accent-hover text-accent-text text-sm font-bold rounded-xl transition-all active:scale-[0.98]"
           disabled={loading}
         >
           {loading ? (
@@ -437,7 +439,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
         {/* Trust signal for signup */}
         {!isLogin && (
-          <p className="text-center text-xs text-neutral-500">
+          <p className="text-center text-xs text-app-text-muted">
             14 jours gratuits - aucun engagement
           </p>
         )}
@@ -446,10 +448,10 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Divider */}
       <div className="relative my-6">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-neutral-200" />
+          <div className="w-full border-t border-app-border" />
         </div>
         <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-medium">
-          <span className="bg-white px-4 text-neutral-400">ou</span>
+          <span className="bg-app-bg px-4 text-app-text-muted">ou</span>
         </div>
       </div>
 
@@ -460,7 +462,7 @@ function AuthForm({ mode }: AuthFormProps) {
           variant="outline"
           onClick={() => handleOAuthLogin('google')}
           disabled={oauthLoading !== null}
-          className="w-full h-11 rounded-xl border-neutral-200 bg-neutral-50 hover:bg-neutral-100 text-neutral-900 font-medium transition-all active:scale-[0.98]"
+          className="w-full h-11 rounded-xl border-app-border bg-app-elevated hover:bg-app-hover text-app-text font-medium transition-all active:scale-[0.98]"
         >
           {oauthLoading === 'google' ? (
             <Loader2 className="mr-3 h-5 w-5 animate-spin" />
@@ -472,17 +474,17 @@ function AuthForm({ mode }: AuthFormProps) {
       </div>
 
       {/* Trust badge */}
-      <div className="flex items-center justify-center gap-1.5 mt-6 text-neutral-400">
+      <div className="flex items-center justify-center gap-1.5 mt-6 text-app-text-muted">
         <Lock className="w-3 h-3" />
         <span className="text-[10px]">Connexion sécurisée &middot; Données chiffrées</span>
       </div>
 
       {/* Footer Link */}
-      <p className="mt-4 text-center text-sm text-neutral-500">
+      <p className="mt-4 text-center text-sm text-app-text-muted">
         {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}
-          className="font-bold text-neutral-900 hover:underline transition-colors"
+          className="font-bold text-accent hover:text-accent-hover transition-colors"
         >
           {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
         </Link>

@@ -96,7 +96,7 @@ describe('restaurant-group.service', () => {
         name: 'Le Radisson',
         slug: 'le-radisson',
         type: 'hotel',
-        plan: 'premium',
+        plan: 'pro',
       });
       expect(result.tenantId).toBe('tenant-xyz');
       expect(result.slug).toBe('le-radisson');
@@ -113,7 +113,7 @@ describe('restaurant-group.service', () => {
           name: 'Le Radisson',
           slug: 'le-radisson',
           type: 'hotel',
-          plan: 'premium',
+          plan: 'pro',
         }),
       ).rejects.toThrow('Tenant insert failed');
     });

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Hotels — Room Service & Restauration digitale',
+  title: 'Attabl pour les Hôtels - Room service & multi-venues',
   description:
     'Room service digital, QR code en chambre, gestion multi-espaces restaurant/bar/piscine pour hotels et resorts.',
 };

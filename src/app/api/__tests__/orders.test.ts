@@ -212,7 +212,7 @@ describe('POST /api/orders', () => {
         service_charge_rate: 0,
         enable_tax: false,
         enable_service_charge: false,
-        subscription_plan: 'essentiel',
+        subscription_plan: 'starter',
         subscription_status: 'active',
         trial_ends_at: null,
       },
