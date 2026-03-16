@@ -7,10 +7,10 @@ export const revalidate = 3600; // ISR: regenerate every hour
 export const metadata: Metadata = {
   title: {
     template: '%s | ATTABL',
-    default: 'ATTABL — Menu Digital & Gestion pour Restaurants',
+    default: 'ATTABL — Menu Digital & Gestion pour Professionnels',
   },
   description:
-    'La plateforme tout-en-un pour digitaliser votre restaurant, hotel ou bar. Menu QR code, commandes, stock, analytics en temps reel.',
+    'La plateforme tout-en-un pour digitaliser votre activité. Menu digital, commandes, stock, analytics — en temps réel.',
   openGraph: {
     siteName: 'ATTABL',
     type: 'website',

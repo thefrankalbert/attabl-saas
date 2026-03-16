@@ -23,6 +23,16 @@ const industries = [
     subtitle: 'Boissons',
     href: '/bars-cafes',
   },
+  {
+    title: 'Commerces',
+    subtitle: 'Retail',
+    href: '/retail',
+  },
+  {
+    title: 'Salons',
+    subtitle: 'Beauté',
+    href: '/salons',
+  },
 ];
 
 export default function IndustrySection() {
