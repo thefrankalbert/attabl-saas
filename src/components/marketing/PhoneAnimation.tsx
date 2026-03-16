@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 
 const timelineSteps = [
   {
@@ -10,6 +11,10 @@ const timelineSteps = [
     message:
       'Stock de cafe bas. Commande fournisseur suggeree : 5kg Arabica chez votre fournisseur habituel.',
     insight: 'ATTABL AI anticipe vos besoins avant que vous ne les ressentiez.',
+    action: 'Commander',
+    barHeights: [40, 65, 30, 80, 55, 45],
+    highlightBar: 3,
+    statLabel: 'Consommation cafe — 7 derniers jours',
   },
   {
     time: '13h',
@@ -17,6 +22,10 @@ const timelineSteps = [
     message:
       'Temps de preparation moyen : 8 min. 2 commandes en retard — reallocation suggeree vers le poste 2.',
     insight: 'En plein rush, ATTABL AI optimise vos operations en temps reel.',
+    action: 'Reallouer',
+    barHeights: [90, 85, 70, 95, 80, 88],
+    highlightBar: 3,
+    statLabel: 'Charge cuisine — temps reel',
   },
   {
     time: '21h',
@@ -24,6 +33,10 @@ const timelineSteps = [
     message:
       'Journee record ! +15% vs mardi dernier. Votre top 3 : Burger Classic, Salade Cesar, Jus Gingembre.',
     insight: 'ATTABL AI transforme vos donnees en decisions rentables.',
+    action: 'Voir le rapport',
+    barHeights: [50, 60, 75, 55, 85, 100],
+    highlightBar: 5,
+    statLabel: "Revenus par heure — aujourd'hui",
   },
 ];
 
@@ -58,10 +71,19 @@ export default function PhoneAnimation() {
   const step = timelineSteps[activeStep];
 
   return (
-    <section className="bg-[#1A1A2E] py-24">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] to-[#0C1117] py-24">
+      {/* Subtle glow behind content */}
+      <div
+        className="pointer-events-none absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 30%, rgba(204,255,0,0.04) 0%, transparent 50%)',
+        }}
+      />
+
+      <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Title */}
-        <h2 className="mb-4 text-center text-3xl font-bold text-white sm:text-4xl">
+        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-white sm:text-4xl">
           Votre copilote business, de l&apos;ouverture a la fermeture
         </h2>
 
@@ -82,14 +104,14 @@ export default function PhoneAnimation() {
                 aria-label={`${s.time} — ${s.label}`}
               >
                 <div
-                  className={
+                  className={`rounded-full transition-all duration-300 ${
                     i === activeStep
-                      ? 'h-4 w-4 rounded-full bg-[#CCFF00] shadow-[0_0_12px_rgba(204,255,0,0.5)]'
-                      : 'h-3 w-3 cursor-pointer rounded-full bg-white/20 hover:bg-white/40'
-                  }
+                      ? 'h-5 w-5 bg-[#CCFF00] ring-4 ring-[#CCFF00]/20 shadow-[0_0_12px_rgba(204,255,0,0.5)]'
+                      : 'h-3 w-3 cursor-pointer bg-white/20 hover:bg-white/40'
+                  }`}
                 />
                 <span
-                  className={`mt-2 text-xs ${
+                  className={`mt-2 text-sm transition-colors duration-300 ${
                     i === activeStep ? 'font-bold text-[#CCFF00]' : 'text-white/40'
                   }`}
                 >
@@ -98,7 +120,9 @@ export default function PhoneAnimation() {
               </button>
 
               {/* Connector line (not after last) */}
-              {i < timelineSteps.length - 1 && <div className="h-px w-16 bg-white/20 sm:w-24" />}
+              {i < timelineSteps.length - 1 && (
+                <div className="h-0.5 w-16 bg-gradient-to-r from-white/10 to-white/10 sm:w-24" />
+              )}
             </div>
           ))}
         </div>
@@ -113,20 +137,56 @@ export default function PhoneAnimation() {
             transition={{ duration: 0.3 }}
             className="mx-auto grid max-w-5xl gap-8 px-4 lg:grid-cols-2 lg:gap-12"
           >
-            {/* Left column — text */}
+            {/* Left column — AI message card */}
             <div>
               <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#CCFF00]">
                 {step.label}
               </p>
-              <div className="rounded-xl border border-white/10 bg-white/5 p-6">
-                <p className="text-sm leading-relaxed text-white/80">{step.message}</p>
+
+              {/* AI notification card */}
+              <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur">
+                {/* AI avatar + label */}
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#CCFF00]">
+                    <Sparkles className="h-4 w-4 text-black" />
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#CCFF00]">
+                    ATTABL AI
+                  </span>
+                </div>
+
+                {/* Message text */}
+                <p className="mt-3 text-sm leading-relaxed text-white/80">{step.message}</p>
+
+                {/* Action button */}
+                <span className="mt-4 inline-block rounded-full bg-[#CCFF00]/10 px-3 py-1.5 text-xs font-medium text-[#CCFF00]">
+                  {step.action} &rarr;
+                </span>
               </div>
-              <p className="mt-6 text-sm italic text-white/50">{step.insight}</p>
+
+              {/* Insight text */}
+              <p className="mt-4 text-sm italic text-white/40">{step.insight}</p>
             </div>
 
-            {/* Right column — placeholder visual */}
-            <div className="flex items-center justify-center rounded-2xl border border-white/10 bg-gradient-to-br from-[#CCFF00]/5 to-[#CCFF00]/10 aspect-video">
-              <span className="text-sm text-white/30">Illustration {step.time}</span>
+            {/* Right column — Mini dashboard */}
+            <div className="flex items-center justify-center">
+              <div className="w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+                {/* Mini bar chart */}
+                <div className="flex items-end justify-between gap-2" style={{ height: 120 }}>
+                  {step.barHeights.map((height, i) => (
+                    <div
+                      key={i}
+                      className={`flex-1 rounded-t transition-all duration-500 ${
+                        i === step.highlightBar ? 'bg-[#CCFF00]' : 'bg-white/10'
+                      }`}
+                      style={{ height: `${height}%` }}
+                    />
+                  ))}
+                </div>
+
+                {/* Stat label */}
+                <p className="mt-3 text-[10px] text-white/20">{step.statLabel}</p>
+              </div>
             </div>
           </motion.div>
         </AnimatePresence>
