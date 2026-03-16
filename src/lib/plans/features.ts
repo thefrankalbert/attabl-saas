@@ -1,5 +1,5 @@
 /**
- * Feature Gating — Centralized plan limits & access control
+ * Feature Gating - Centralized plan limits & access control
  *
  * This is the SINGLE SOURCE OF TRUTH for what each plan can do.
  * Used by both server-side checks and client-side SubscriptionContext.
@@ -7,143 +7,141 @@
 
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
-// ─── Plan Limits Definition ─────────────────────────────
+// --- Plan Limits Definition ---
 
 export interface PlanLimits {
   // Quantitative limits
-  maxAdmins: number;
   maxVenues: number;
+  maxAdmins: number;
+  maxStaff: number;
   maxMenus: number;
   maxItems: number;
-  maxSounds: number;
+  maxCategories: number;
   // Feature flags
-  customSoundUpload: boolean;
-  advancedStats: boolean;
-  whatsappSupport: boolean;
-  tableOrdering: boolean;
-  qrCodes: boolean;
-  realtimeKDS: boolean;
-  customBranding: boolean;
-  multiLanguage: boolean;
-  // QR Customizer flags
-  qrCustomColors: boolean;
-  qrLogoEmbed: boolean;
-  qrCustomCTA: boolean;
-  qrSizeAdjust: boolean;
-  qrPremiumTemplates: boolean;
-  qrAdvancedExport: boolean;
-  qrEnterpriseDesign: boolean;
-  // Inventory flags
-  inventoryTracking: boolean;
-  maxIngredients: number;
-  ruptureWorkflow: boolean;
-  patronDashboard: boolean;
-  stockAlerts: boolean;
-  waiterSuggestions: boolean;
-  autoSuggestions: boolean;
+  canAccessPOS: boolean;
+  canAccessKDS: boolean;
+  canAccessTables: boolean;
+  canAccessService: boolean;
+  canAccessInventory: boolean;
+  canAccessRecipes: boolean;
+  canAccessSuppliers: boolean;
+  canAccessMultiCurrency: boolean;
+  canAccessReports: boolean;
+  canAccessTeamManagement: boolean;
+  canAccessQrCustomization: boolean;
+  canAccessTips: boolean;
+  canAccessRoomService: boolean;
+  canAccessDelivery: boolean;
+  canAccessAIAnalytics: boolean;
 }
 
 export type FeatureKey = keyof PlanLimits;
 
 export const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
-  essentiel: {
-    maxAdmins: 2,
+  starter: {
     maxVenues: 1,
+    maxAdmins: 1,
+    maxStaff: 3,
     maxMenus: 2,
-    maxItems: 100,
-    maxSounds: 3,
-    customSoundUpload: false,
-    advancedStats: false,
-    whatsappSupport: false,
-    tableOrdering: true,
-    qrCodes: true,
-    realtimeKDS: true,
-    customBranding: true,
-    multiLanguage: false,
-    qrCustomColors: false,
-    qrLogoEmbed: false,
-    qrCustomCTA: false,
-    qrSizeAdjust: false,
-    qrPremiumTemplates: false,
-    qrAdvancedExport: false,
-    qrEnterpriseDesign: false,
-    inventoryTracking: false,
-    maxIngredients: 0,
-    ruptureWorkflow: false,
-    patronDashboard: false,
-    stockAlerts: false,
-    waiterSuggestions: false,
-    autoSuggestions: false,
+    maxItems: 50,
+    maxCategories: 10,
+    canAccessPOS: true,
+    canAccessKDS: false,
+    canAccessTables: false,
+    canAccessService: false,
+    canAccessInventory: false,
+    canAccessRecipes: false,
+    canAccessSuppliers: false,
+    canAccessMultiCurrency: false,
+    canAccessReports: false,
+    canAccessTeamManagement: false,
+    canAccessQrCustomization: false,
+    canAccessTips: false,
+    canAccessRoomService: false,
+    canAccessDelivery: false,
+    canAccessAIAnalytics: false,
   },
-  premium: {
-    maxAdmins: 5,
-    maxVenues: 3,
+  pro: {
+    maxVenues: 1,
+    maxAdmins: 1,
+    maxStaff: 10,
     maxMenus: 10,
     maxItems: 500,
-    maxSounds: 10,
-    customSoundUpload: true,
-    advancedStats: true,
-    whatsappSupport: true,
-    tableOrdering: true,
-    qrCodes: true,
-    realtimeKDS: true,
-    customBranding: true,
-    multiLanguage: true,
-    qrCustomColors: true,
-    qrLogoEmbed: true,
-    qrCustomCTA: true,
-    qrSizeAdjust: true,
-    qrPremiumTemplates: true,
-    qrAdvancedExport: true,
-    qrEnterpriseDesign: false,
-    inventoryTracking: true,
-    maxIngredients: 200,
-    ruptureWorkflow: true,
-    patronDashboard: true,
-    stockAlerts: true,
-    waiterSuggestions: false,
-    autoSuggestions: true,
+    maxCategories: 50,
+    canAccessPOS: true,
+    canAccessKDS: true,
+    canAccessTables: true,
+    canAccessService: true,
+    canAccessInventory: true,
+    canAccessRecipes: true,
+    canAccessSuppliers: true,
+    canAccessMultiCurrency: true,
+    canAccessReports: true,
+    canAccessTeamManagement: true,
+    canAccessQrCustomization: true,
+    canAccessTips: true,
+    canAccessRoomService: false,
+    canAccessDelivery: false,
+    canAccessAIAnalytics: false,
   },
-  enterprise: {
+  business: {
+    maxVenues: 10,
     maxAdmins: 99,
-    maxVenues: 99,
+    maxStaff: 999,
     maxMenus: 99,
     maxItems: 9999,
-    maxSounds: 10,
-    customSoundUpload: true,
-    advancedStats: true,
-    whatsappSupport: true,
-    tableOrdering: true,
-    qrCodes: true,
-    realtimeKDS: true,
-    customBranding: true,
-    multiLanguage: true,
-    qrCustomColors: true,
-    qrLogoEmbed: true,
-    qrCustomCTA: true,
-    qrSizeAdjust: true,
-    qrPremiumTemplates: true,
-    qrAdvancedExport: true,
-    qrEnterpriseDesign: true,
-    inventoryTracking: true,
-    maxIngredients: 9999,
-    ruptureWorkflow: true,
-    patronDashboard: true,
-    stockAlerts: true,
-    waiterSuggestions: true,
-    autoSuggestions: true,
+    maxCategories: 999,
+    canAccessPOS: true,
+    canAccessKDS: true,
+    canAccessTables: true,
+    canAccessService: true,
+    canAccessInventory: true,
+    canAccessRecipes: true,
+    canAccessSuppliers: true,
+    canAccessMultiCurrency: true,
+    canAccessReports: true,
+    canAccessTeamManagement: true,
+    canAccessQrCustomization: true,
+    canAccessTips: true,
+    canAccessRoomService: true,
+    canAccessDelivery: true,
+    canAccessAIAnalytics: true,
+  },
+  enterprise: {
+    maxVenues: 999,
+    maxAdmins: 999,
+    maxStaff: 999,
+    maxMenus: 99,
+    maxItems: 9999,
+    maxCategories: 999,
+    canAccessPOS: true,
+    canAccessKDS: true,
+    canAccessTables: true,
+    canAccessService: true,
+    canAccessInventory: true,
+    canAccessRecipes: true,
+    canAccessSuppliers: true,
+    canAccessMultiCurrency: true,
+    canAccessReports: true,
+    canAccessTeamManagement: true,
+    canAccessQrCustomization: true,
+    canAccessTips: true,
+    canAccessRoomService: true,
+    canAccessDelivery: true,
+    canAccessAIAnalytics: true,
   },
 };
 
-// ─── Human-readable plan names ──────────────────────────
+// --- Human-readable plan names ---
 
 export const PLAN_NAMES: Record<SubscriptionPlan, string> = {
-  essentiel: 'Essentiel',
-  premium: 'Premium',
+  starter: 'Starter',
+  pro: 'Pro',
+  business: 'Business',
   enterprise: 'Enterprise',
 };
 
-// ─── Helper Functions ───────────────────────────────────
+// --- Helper Functions ---
 
 /**
  * Check if a trial period is still active
@@ -158,22 +156,22 @@ export function isTrialActive(
 }
 
 /**
- * Get the effective plan (trial users get Premium access)
+ * Get the effective plan (trial users get Pro access)
  */
 export function getEffectivePlan(
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
   trialEndsAt?: string | null,
 ): SubscriptionPlan {
-  // During active trial → Premium access
+  // During active trial - Pro access
   if (isTrialActive(status, trialEndsAt)) {
-    return 'premium';
+    return 'pro';
   }
 
-  // Cancelled/paused → still use their last plan (grace period)
-  // past_due → still use their plan (Stripe handles retries)
-  // Fallback to 'essentiel' if plan is missing or not recognized (e.g. DB default 'starter')
-  return plan && plan in PLAN_LIMITS ? plan : 'essentiel';
+  // Cancelled/paused - still use their last plan (grace period)
+  // past_due - still use their plan (Stripe handles retries)
+  // Fallback to 'starter' if plan is missing or not recognized
+  return plan && plan in PLAN_LIMITS ? plan : 'starter';
 }
 
 /**
@@ -194,27 +192,21 @@ export function getPlanLimits(
 export function canAccessFeature(
   feature: keyof Pick<
     PlanLimits,
-    | 'customSoundUpload'
-    | 'advancedStats'
-    | 'whatsappSupport'
-    | 'tableOrdering'
-    | 'qrCodes'
-    | 'realtimeKDS'
-    | 'customBranding'
-    | 'multiLanguage'
-    | 'qrCustomColors'
-    | 'qrLogoEmbed'
-    | 'qrCustomCTA'
-    | 'qrSizeAdjust'
-    | 'qrPremiumTemplates'
-    | 'qrAdvancedExport'
-    | 'qrEnterpriseDesign'
-    | 'inventoryTracking'
-    | 'ruptureWorkflow'
-    | 'patronDashboard'
-    | 'stockAlerts'
-    | 'waiterSuggestions'
-    | 'autoSuggestions'
+    | 'canAccessPOS'
+    | 'canAccessKDS'
+    | 'canAccessTables'
+    | 'canAccessService'
+    | 'canAccessInventory'
+    | 'canAccessRecipes'
+    | 'canAccessSuppliers'
+    | 'canAccessMultiCurrency'
+    | 'canAccessReports'
+    | 'canAccessTeamManagement'
+    | 'canAccessQrCustomization'
+    | 'canAccessTips'
+    | 'canAccessRoomService'
+    | 'canAccessDelivery'
+    | 'canAccessAIAnalytics'
   >,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,
@@ -228,7 +220,7 @@ export function canAccessFeature(
  * Check if a numeric limit has been reached
  */
 export function hasReachedLimit(
-  limitKey: 'maxAdmins' | 'maxVenues' | 'maxMenus' | 'maxItems' | 'maxSounds' | 'maxIngredients',
+  limitKey: 'maxVenues' | 'maxAdmins' | 'maxStaff' | 'maxMenus' | 'maxItems' | 'maxCategories',
   currentCount: number,
   plan?: SubscriptionPlan | null,
   status?: SubscriptionStatus | null,

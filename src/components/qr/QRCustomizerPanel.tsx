@@ -246,7 +246,7 @@ export function QRCustomizerPanel({
               }
 
               return (
-                <FeatureGate key={id} feature="qrPremiumTemplates">
+                <FeatureGate key={id} feature="canAccessQrCustomization">
                   {card}
                 </FeatureGate>
               );
@@ -257,7 +257,7 @@ export function QRCustomizerPanel({
         {/* ────────────────────────── Tab 2: QR Code ─────────────────────────── */}
         <TabsContent value="qrcode" className="space-y-6">
           {/* QR colors */}
-          <FeatureGate feature="qrCustomColors">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Couleur des modules">
               <div className="space-y-4">
                 <ColorPicker
@@ -275,7 +275,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
 
           {/* Error correction */}
-          <FeatureGate feature="qrCustomColors">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Correction d'erreur">
               <div className="grid grid-cols-2 gap-2">
                 {ERROR_CORRECTION_LEVELS.map(({ value, label }) => (
@@ -302,7 +302,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
 
           {/* QR margin (quiet zone) */}
-          <FeatureGate feature="qrSizeAdjust">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Marge du QR">
               <SliderField
                 label="Zone calme"
@@ -317,7 +317,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
 
           {/* Logo in QR */}
-          <FeatureGate feature="qrLogoEmbed">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Logo dans le QR">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
@@ -476,7 +476,7 @@ export function QRCustomizerPanel({
           </Section>
 
           {/* Dimensions */}
-          <FeatureGate feature="qrSizeAdjust">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Dimensions">
               <div className="space-y-4">
                 <SliderField
@@ -511,7 +511,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
 
           {/* Style */}
-          <FeatureGate feature="qrSizeAdjust">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Style">
               <div className="space-y-4">
                 <SliderField
@@ -587,7 +587,7 @@ export function QRCustomizerPanel({
                 </select>
               </div>
 
-              <FeatureGate feature="qrCustomCTA">
+              <FeatureGate feature="canAccessQrCustomization">
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Texte personnalis\u00e9</Label>
                   <Input
@@ -606,7 +606,7 @@ export function QRCustomizerPanel({
           </Section>
 
           {/* Description */}
-          <FeatureGate feature="qrCustomCTA">
+          <FeatureGate feature="canAccessQrCustomization">
             <Section title="Description">
               <div className="space-y-2">
                 <Label className="text-xs text-app-text-muted">Description additionnelle</Label>
@@ -622,7 +622,7 @@ export function QRCustomizerPanel({
           </FeatureGate>
 
           {/* Footer */}
-          <FeatureGate feature="qrEnterpriseDesign" planRequired="enterprise">
+          <FeatureGate feature="canAccessQrCustomization" planRequired="enterprise">
             <Section title="Pied de page">
               <div className="space-y-4">
                 <div className="space-y-2">
@@ -652,7 +652,7 @@ export function QRCustomizerPanel({
 
         {/* ────────────────────────── Tab 5: Advanced ────────────────────────── */}
         <TabsContent value="advanced" className="space-y-6">
-          <FeatureGate feature="qrEnterpriseDesign" planRequired="enterprise">
+          <FeatureGate feature="canAccessQrCustomization" planRequired="enterprise">
             <div className="space-y-6">
               {/* Gradient */}
               <Section title="D\u00e9grad\u00e9">

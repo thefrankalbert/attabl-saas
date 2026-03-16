@@ -157,7 +157,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
         </Button>
 
         {/* PNG — premium */}
-        <FeatureGate feature="qrAdvancedExport">
+        <FeatureGate feature="canAccessQrCustomization">
           <Button
             variant="outline"
             onClick={downloadPNG}
@@ -174,7 +174,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
         </FeatureGate>
 
         {/* SVG — premium */}
-        <FeatureGate feature="qrAdvancedExport">
+        <FeatureGate feature="canAccessQrCustomization">
           <Button
             variant="outline"
             onClick={downloadSVG}

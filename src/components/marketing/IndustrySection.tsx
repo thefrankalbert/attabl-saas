@@ -5,7 +5,7 @@ import { Store, Globe, Shield, ShoppingBag } from 'lucide-react';
 
 const counters = [
   { target: 2400, prefix: '+', suffix: '', label: 'établissements accompagnés', Icon: Store },
-  { target: 12, prefix: '', suffix: '', label: 'pays couverts', Icon: Globe },
+  { target: 5, prefix: '', suffix: '', label: 'pays couverts', Icon: Globe },
   { target: 98.7, prefix: '', suffix: '%', label: 'de disponibilité', Icon: Shield },
   { target: 1.2, prefix: '+', suffix: 'M', label: 'de commandes traitées', Icon: ShoppingBag },
 ];

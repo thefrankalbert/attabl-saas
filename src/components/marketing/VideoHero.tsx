@@ -21,14 +21,14 @@ export default function VideoHero() {
   const [activeSegment, setActiveSegment] = useState<Segment>('restaurant');
 
   return (
-    <section className="bg-white py-20 lg:py-28">
+    <section className="bg-white dark:bg-neutral-950 py-20 lg:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Centered text */}
         <div className="text-center">
-          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 sm:text-6xl lg:text-7xl">
+          <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
             Petit comptoir ou grande enseigne. Marquez votre territoire.
           </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500">
+          <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500 dark:text-neutral-400">
             Menu, commandes, stocks, finances - tout piloté depuis un seul outil.
           </p>
 
@@ -36,13 +36,13 @@ export default function VideoHero() {
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/signup"
-              className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800"
+              className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
               Commencer
             </Link>
             <Link
               href="/contact"
-              className="rounded-lg border border-neutral-300 px-8 py-4 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
+              className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-8 py-4 text-base font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
             >
               Contacter l{"'"}équipe
             </Link>
@@ -56,8 +56,8 @@ export default function VideoHero() {
                 onClick={() => setActiveSegment(key)}
                 className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                   activeSegment === key
-                    ? 'bg-neutral-900 text-white'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'
                 }`}
               >
                 <Icon className="h-4 w-4" />

@@ -4,7 +4,7 @@
    Child pages must NOT set viewport heights (100dvh, 100vh).
    Use h-full to fill the parent flex container. */
 
-@custom-variant dark (&:is(.dark *));
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   /* ===== DUAL-THEME TOKEN SYSTEM ===== */

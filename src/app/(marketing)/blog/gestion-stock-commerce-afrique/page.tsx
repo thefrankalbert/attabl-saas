@@ -19,7 +19,7 @@ export default function ArticleStockPage() {
         <div className="mb-12">
           <Link
             href="/blog"
-            className="text-sm text-neutral-400 transition-colors hover:text-neutral-600"
+            className="text-sm text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
           >
             &larr; Retour au blog
           </Link>
@@ -27,19 +27,19 @@ export default function ArticleStockPage() {
 
         <header className="mb-12">
           <div className="mb-4 flex items-center gap-3 text-sm text-neutral-400">
-            <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-900">
+            <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
               Gestion
             </span>
             <span>12 mars 2026</span>
             <span>&middot;</span>
             <span>8 min de lecture</span>
           </div>
-          <h1 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-neutral-900 sm:text-4xl">
+          <h1 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-neutral-900 dark:text-white sm:text-4xl">
             Gestion de stock en restauration : le guide complet pour les professionnels
           </h1>
         </header>
 
-        <div className="prose prose-neutral prose-lg max-w-none [&>h2]:font-[family-name:var(--font-sora)] [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-12 [&>h2]:mb-4 [&>p]:text-neutral-600 [&>p]:leading-relaxed [&>p]:mb-6 [&>ul]:text-neutral-600 [&>ul]:mb-6 [&>ul>li]:mb-2">
+        <div className="prose prose-neutral dark:prose-invert prose-lg max-w-none [&>h2]:font-[family-name:var(--font-sora)] [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-12 [&>h2]:mb-4 [&>p]:text-neutral-600 dark:[&>p]:text-neutral-400 [&>p]:leading-relaxed [&>p]:mb-6 [&>ul]:text-neutral-600 dark:[&>ul]:text-neutral-400 [&>ul]:mb-6 [&>ul>li]:mb-2">
           <p>
             La gestion de stock est le nerf de la guerre pour tout restaurant ou hôtel en Afrique.
             Qu&apos;il s&apos;agisse d&apos;un restaurant à Douala, d&apos;un hôtel à Abidjan ou
@@ -114,8 +114,8 @@ export default function ArticleStockPage() {
           </p>
         </div>
 
-        <div className="mt-16 border-t border-neutral-200 pt-12">
-          <p className="mb-4 text-sm text-neutral-500">
+        <div className="mt-16 border-t border-neutral-200 dark:border-neutral-800 pt-12">
+          <p className="mb-4 text-sm text-neutral-500 dark:text-neutral-400">
             Prêt à digitaliser vos stocks en cuisine ?
           </p>
           <Link

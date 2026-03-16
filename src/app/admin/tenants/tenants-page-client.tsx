@@ -349,7 +349,9 @@ export default function TenantsPageClient() {
     () => ({
       total: tenants.length,
       active: tenants.filter((t) => t.is_active).length,
-      premium: tenants.filter((t) => t.subscription_plan?.toLowerCase() === 'premium').length,
+      paid: tenants.filter((t) =>
+        ['pro', 'business', 'enterprise'].includes(t.subscription_plan?.toLowerCase() || ''),
+      ).length,
       trial: tenants.filter((t) => t.subscription_status?.toLowerCase() === 'trial').length,
     }),
     [tenants],
@@ -454,7 +456,7 @@ export default function TenantsPageClient() {
                 {
                   icon: Crown,
                   label: 'Premium',
-                  value: stats.premium,
+                  value: stats.paid,
                   color: 'text-amber-500',
                   bg: 'bg-amber-500/10',
                 },

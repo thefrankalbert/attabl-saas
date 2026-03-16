@@ -10,6 +10,16 @@
       "source": "benjitaylor/agentation",
       "sourceType": "github",
       "computedHash": "4a543f93d3edc770a684aa554321ca113debc74b276e1cdc4b8a5a8c44932ab7"
+    },
+    "tailwind-theme-builder": {
+      "source": "jezweb/claude-skills",
+      "sourceType": "github",
+      "computedHash": "fd84027a0d97134a73054d010f3ebc0352de7d6f24567086444aa7884c24bcde"
+    },
+    "tailwindcss-responsive-darkmode": {
+      "source": "josiahsiegel/claude-plugin-marketplace",
+      "sourceType": "github",
+      "computedHash": "241ce71de38b259d7b5b877b123958abb6a1a029036160e6c1a9383a48aa4fb9"
     }
   }
 }

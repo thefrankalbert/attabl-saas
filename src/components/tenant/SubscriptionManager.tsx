@@ -2,13 +2,14 @@
 
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Crown, Zap, Check, Loader2, Shield } from 'lucide-react';
+import { Crown, Zap, Building2, Check, Loader2, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
-import { PLAN_LIMITS } from '@/lib/plans/features';
+import { PLAN_LIMITS, PLAN_NAMES } from '@/lib/plans/features';
+import { PLAN_AMOUNTS } from '@/lib/stripe/server';
 import { logger } from '@/lib/logger';
-import type { PricingPlan, BillingInterval } from '@/components/shared/PricingCard';
+import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
 interface Tenant {
   id: string;
@@ -23,21 +24,32 @@ interface SubscriptionManagerProps {
   tenant: Tenant;
 }
 
-const ESSENTIEL_FEATURE_KEYS = [
+type SelfServicePlan = Exclude<SubscriptionPlan, 'enterprise'>;
+
+const STARTER_FEATURE_KEYS = [
   'feature1Space',
   'featureUnlimitedMenu',
-  'feature2Admins',
+  'featureBasicPOS',
   'featureEmailSupport',
   'featureHdPhotos',
 ] as const;
 
-const PREMIUM_FEATURE_KEYS = [
-  'feature3Spaces',
+const PRO_FEATURE_KEYS = [
+  'feature1Space',
   'featureTableOrder',
-  'feature5Admins',
-  'featureMultiLang',
-  'featureWhatsappSupport',
+  'featureFullPOS',
+  'featureKDS',
+  'featureInventory',
   'featureAdvancedStats',
+] as const;
+
+const BUSINESS_FEATURE_KEYS = [
+  'feature10Spaces',
+  'featureAllProFeatures',
+  'featureRoomService',
+  'featureDelivery',
+  'featureAIAnalytics',
+  'featureUnlimitedStaff',
 ] as const;
 
 type SubTab = 'plan' | 'upgrade';
@@ -52,16 +64,16 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
   );
   const [isLoading, setIsLoading] = useState<string | null>(null);
 
-  const currentPlan = tenant.subscription_plan as PricingPlan;
+  const currentPlan = (tenant.subscription_plan || 'starter') as SubscriptionPlan;
 
   // Use centralized plan limits from features.ts
-  const planLimits = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.essentiel;
+  const planLimits = PLAN_LIMITS[currentPlan] || PLAN_LIMITS.starter;
   const limits = {
     admins: planLimits.maxAdmins,
     venues: planLimits.maxVenues,
   };
 
-  const handleUpgrade = async (plan: PricingPlan, interval: BillingInterval) => {
+  const handleUpgrade = async (plan: SelfServicePlan, interval: BillingInterval) => {
     try {
       setIsLoading(plan);
 
@@ -73,8 +85,6 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
         body: JSON.stringify({
           plan,
           billingInterval: interval,
-          tenantId: tenant.id,
-          email: tenant.email,
         }),
       });
 
@@ -108,6 +118,8 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
         return 'bg-status-warning-bg text-status-warning';
       case 'cancelled':
         return 'bg-status-error-bg text-status-error';
+      case 'frozen':
+        return 'bg-status-error-bg text-status-error';
       default:
         return 'bg-app-elevated text-app-text-secondary';
     }
@@ -123,31 +135,33 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
         return t('subscription.statusPastDue');
       case 'cancelled':
         return t('subscription.statusCancelled');
+      case 'frozen':
+        return t('subscription.statusFrozen');
       default:
         return status;
     }
   };
 
-  // Pricing calculation
-  const getPrice = (plan: PricingPlan) => {
-    const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
-    const annualDiscountRate = 0.15;
-    if (billingInterval === 'yearly') {
-      return Math.round(baseMonthlyPrice * (1 - annualDiscountRate));
-    }
-    return baseMonthlyPrice;
-  };
-
-  const getYearlyTotal = (plan: PricingPlan) => {
-    const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
-    const annualDiscountRate = 0.15;
-    return Math.round(baseMonthlyPrice * 12 * (1 - annualDiscountRate));
+  const getPrice = (plan: SelfServicePlan) => {
+    return PLAN_AMOUNTS[plan][billingInterval];
   };
 
   const tabs = [
     { id: 'plan' as const, label: t('subscription.tabMyPlan') },
     { id: 'upgrade' as const, label: t('subscription.tabChangePlan') },
   ];
+
+  const PLAN_ICON_MAP: Record<SelfServicePlan, typeof Zap> = {
+    starter: Zap,
+    pro: Crown,
+    business: Building2,
+  };
+
+  const PLAN_FEATURES_MAP: Record<SelfServicePlan, readonly string[]> = {
+    starter: STARTER_FEATURE_KEYS,
+    pro: PRO_FEATURE_KEYS,
+    business: BUSINESS_FEATURE_KEYS,
+  };
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
@@ -189,7 +203,9 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                 <div className="flex justify-between items-center">
                   <div>
                     <p className="text-sm text-app-text-secondary">{t('subscription.plan')}</p>
-                    <p className="text-2xl font-bold text-app-text capitalize">{currentPlan}</p>
+                    <p className="text-2xl font-bold text-app-text">
+                      {PLAN_NAMES[currentPlan] || currentPlan}
+                    </p>
                   </div>
                   <span
                     className={cn(
@@ -282,21 +298,19 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                 >
                   {t('subscription.yearly')}{' '}
                   <span className="text-[10px] bg-status-success-bg text-status-success px-1.5 rounded-full">
-                    -15%
+                    -20%
                   </span>
                 </button>
               </div>
             </div>
 
             {/* Plan comparison cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(['essentiel', 'premium'] as const).map((plan) => {
-                const featureKeys =
-                  plan === 'essentiel' ? ESSENTIEL_FEATURE_KEYS : PREMIUM_FEATURE_KEYS;
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {(['starter', 'pro', 'business'] as const).map((plan) => {
+                const featureKeys = PLAN_FEATURES_MAP[plan];
                 const isCurrent = currentPlan === plan;
                 const price = getPrice(plan);
-                const yearlyTotal = getYearlyTotal(plan);
-                const PlanIcon = plan === 'premium' ? Crown : Zap;
+                const PlanIcon = PLAN_ICON_MAP[plan];
 
                 return (
                   <div
@@ -315,17 +329,8 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                       )}
                       <div className="flex items-center gap-2">
                         <PlanIcon className="h-5 w-5 text-app-text-secondary" />
-                        <h3 className="text-xl font-semibold text-app-text">
-                          {plan === 'essentiel'
-                            ? t('subscription.essentielName')
-                            : t('subscription.premiumName')}
-                        </h3>
+                        <h3 className="text-xl font-semibold text-app-text">{PLAN_NAMES[plan]}</h3>
                       </div>
-                      <p className="text-sm text-app-text-secondary mt-1">
-                        {plan === 'essentiel'
-                          ? t('subscription.essentielDesc')
-                          : t('subscription.premiumDesc')}
-                      </p>
                     </div>
 
                     {/* Price */}
@@ -338,13 +343,6 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                           {t('subscription.perMonth')}
                         </span>
                       </div>
-                      {billingInterval === 'yearly' && (
-                        <p className="text-xs text-app-text-secondary mt-1">
-                          {t('subscription.billedYearly', {
-                            total: yearlyTotal.toLocaleString(locale),
-                          })}
-                        </p>
-                      )}
                     </div>
 
                     {/* Feature checklist */}
@@ -365,7 +363,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                         'w-full h-11 rounded-lg font-semibold text-sm transition-colors',
                         isCurrent
                           ? 'bg-app-elevated text-app-text-muted cursor-not-allowed'
-                          : plan === 'premium'
+                          : plan === 'pro'
                             ? 'bg-app-text text-app-bg hover:bg-app-text/90'
                             : 'bg-app-card text-app-text border border-app-border/60 hover:bg-app-elevated',
                       )}
@@ -374,10 +372,8 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : isCurrent ? (
                         t('subscription.currentPlan')
-                      ) : plan === 'premium' ? (
-                        t('subscription.upgradePremium')
                       ) : (
-                        t('subscription.chooseEssentiel')
+                        t('subscription.choosePlan')
                       )}
                     </Button>
                   </div>

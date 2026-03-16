@@ -3,15 +3,32 @@ import { headers } from 'next/headers';
 import Stripe from 'stripe';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { logger } from '@/lib/logger';
+import { getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
+import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 /**
+ * Detect billing interval from Stripe subscription item.
+ */
+function detectBillingInterval(subscription: Stripe.Subscription): BillingInterval {
+  const item = subscription.items?.data?.[0];
+  if (!item?.plan) return 'monthly';
+
+  const interval = item.plan.interval;
+  const intervalCount = item.plan.interval_count;
+
+  if (interval === 'year') return 'yearly';
+  if (interval === 'month' && intervalCount === 6) return 'semiannual';
+  return 'monthly';
+}
+
+/**
  * Mappe le statut Stripe vers le statut interne du tenant.
  */
-function mapStripeStatus(stripeStatus: string): 'trial' | 'active' | 'past_due' | 'cancelled' {
+function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
   switch (stripeStatus) {
     case 'trialing':
       return 'trial';
@@ -52,11 +69,8 @@ export async function POST(request: Request) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
         const tenantId = session.metadata?.tenant_id;
-        const plan = session.metadata?.plan as 'essentiel' | 'premium' | undefined;
-        const billingInterval = session.metadata?.billing_interval as
-          | 'monthly'
-          | 'yearly'
-          | undefined;
+        const plan = session.metadata?.plan;
+        const billingInterval = session.metadata?.billing_interval;
         const customerId = session.customer as string;
         const subscriptionId = session.subscription as string;
 
@@ -77,7 +91,7 @@ export async function POST(request: Request) {
           }
 
           // Récupérer le vrai statut de l'abonnement Stripe
-          let mappedStatus: 'trial' | 'active' | 'past_due' | 'cancelled' = 'active';
+          let mappedStatus: SubscriptionStatus = 'active';
           if (subscriptionId) {
             try {
               const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -140,7 +154,7 @@ export async function POST(request: Request) {
         // Récupérer le tenant
         const { data: tenant, error: tenantError } = await supabase
           .from('tenants')
-          .select('id, subscription_status')
+          .select('id, subscription_status, subscription_plan, billing_interval')
           .eq('stripe_customer_id', customerId)
           .single();
 
@@ -156,18 +170,37 @@ export async function POST(request: Request) {
         // Mapper le statut Stripe vers le statut interne
         const mappedStatus = mapStripeStatus(subscription.status);
 
-        // Idempotency: skip if tenant already has the expected status
-        if (tenant.subscription_status === mappedStatus) {
-          logger.info('customer.subscription.updated already reflects current state, skipping', {
-            tenantId: tenant.id,
-            mappedStatus,
-          });
-          break;
-        }
-
         const updateData: Record<string, unknown> = {
           subscription_status: mappedStatus,
         };
+
+        // Detect plan/interval change via price ID
+        const currentPriceId = subscription.items?.data?.[0]?.price?.id;
+        if (currentPriceId) {
+          const detectedPlan = getPlanFromPriceId(currentPriceId);
+          const detectedInterval = getIntervalFromPriceId(currentPriceId);
+
+          if (detectedPlan && detectedPlan !== tenant.subscription_plan) {
+            updateData.subscription_plan = detectedPlan;
+            logger.info('Plan change detected', {
+              tenantId: tenant.id,
+              oldPlan: tenant.subscription_plan,
+              newPlan: detectedPlan,
+            });
+          }
+
+          if (detectedInterval && detectedInterval !== tenant.billing_interval) {
+            updateData.billing_interval = detectedInterval;
+          }
+        }
+
+        // Fallback: detect billing interval from Stripe subscription interval
+        if (!updateData.billing_interval) {
+          const detectedInterval = detectBillingInterval(subscription);
+          if (detectedInterval !== tenant.billing_interval) {
+            updateData.billing_interval = detectedInterval;
+          }
+        }
 
         if (currentPeriodStart) {
           updateData.subscription_current_period_start = new Date(
@@ -205,7 +238,7 @@ export async function POST(request: Request) {
         const subscription = event.data.object as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
-        // Suspendre le tenant
+        // Geler le tenant
         const { data: tenant, error: tenantDeleteError } = await supabase
           .from('tenants')
           .select('id, subscription_status')
@@ -217,8 +250,8 @@ export async function POST(request: Request) {
           break;
         }
 
-        // Idempotency: skip if tenant is already cancelled
-        if (tenant.subscription_status === 'cancelled') {
+        // Idempotency: skip if tenant is already frozen
+        if (tenant.subscription_status === 'frozen') {
           logger.info('customer.subscription.deleted already processed, skipping', {
             tenantId: tenant.id,
           });
@@ -228,7 +261,7 @@ export async function POST(request: Request) {
         const { error: updateError } = await supabase
           .from('tenants')
           .update({
-            subscription_status: 'cancelled',
+            subscription_status: 'frozen',
             is_active: false,
           })
           .eq('id', tenant.id);
@@ -240,7 +273,40 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
         }
 
-        logger.warn('Tenant suspended — subscription cancelled', { tenantId: tenant.id });
+        logger.warn('Tenant frozen — subscription deleted', { tenantId: tenant.id });
+        break;
+      }
+
+      case 'customer.subscription.trial_will_end': {
+        // Stripe sends this 3 days before trial ends
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        const { data: tenant, error: tenantError } = await supabase
+          .from('tenants')
+          .select('id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (tenantError || !tenant) {
+          logger.warn('Trial will end: tenant not found', { customerId });
+          break;
+        }
+
+        // Mark trial warning so UI can display urgent banner
+        const { error: updateError } = await supabase
+          .from('tenants')
+          .update({ trial_warning_sent: true })
+          .eq('id', tenant.id);
+
+        if (updateError) {
+          logger.error('DB update failed for trial_will_end', updateError, {
+            tenantId: tenant.id,
+          });
+          break;
+        }
+
+        logger.info('Trial ending soon, warning sent', { tenantId: tenant.id });
         break;
       }
 
@@ -283,6 +349,19 @@ export async function POST(request: Request) {
         }
 
         logger.warn('Payment failed for tenant', { tenantId: tenant.id });
+        break;
+      }
+
+      case 'invoice.payment_action_required': {
+        // 3D Secure or other payment action required
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        logger.info('Payment action required', {
+          customerId,
+          invoiceId: invoice.id,
+          hostedInvoiceUrl: invoice.hosted_invoice_url,
+        });
         break;
       }
 

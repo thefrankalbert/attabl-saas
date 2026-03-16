@@ -91,7 +91,7 @@ describe('SignupService', () => {
       expect(result).toHaveProperty('tenantId');
     });
 
-    it('should use default plan "essentiel" when no plan specified', async () => {
+    it('should use default plan "starter" when no plan specified', async () => {
       const supabase = createMockSupabase();
       const service = createSignupService(supabase);
 

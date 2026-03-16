@@ -40,10 +40,10 @@ export default function BlogPage() {
   return (
     <section className="py-20 lg:py-28">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h1 className="font-[family-name:var(--font-sora)] text-4xl font-bold text-neutral-900 sm:text-5xl mb-4">
+        <h1 className="font-[family-name:var(--font-sora)] text-4xl font-bold text-neutral-900 dark:text-white sm:text-5xl mb-4">
           Blog
         </h1>
-        <p className="text-lg text-neutral-500 mb-16">
+        <p className="text-lg text-neutral-500 dark:text-neutral-400 mb-16">
           Conseils pratiques et ressources pour digitaliser votre restaurant en Afrique.
         </p>
 
@@ -52,18 +52,20 @@ export default function BlogPage() {
             <article key={article.slug} className="group">
               <Link href={`/blog/${article.slug}`} className="block">
                 <div className="mb-3 flex items-center gap-3 text-sm text-neutral-400">
-                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-900">
+                  <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
                     {article.category}
                   </span>
                   <span>{article.date}</span>
                   <span>&middot;</span>
                   <span>{article.readTime} de lecture</span>
                 </div>
-                <h2 className="mb-2 text-2xl font-bold text-neutral-900 transition-colors group-hover:text-[#0A0A0F]/70">
+                <h2 className="mb-2 text-2xl font-bold text-neutral-900 dark:text-white transition-colors group-hover:text-[#0A0A0F]/70 dark:group-hover:text-neutral-400">
                   {article.title}
                 </h2>
-                <p className="leading-relaxed text-neutral-600">{article.excerpt}</p>
-                <span className="mt-4 inline-block text-sm font-semibold text-neutral-900 group-hover:underline">
+                <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {article.excerpt}
+                </p>
+                <span className="mt-4 inline-block text-sm font-semibold text-neutral-900 dark:text-white group-hover:underline">
                   Lire l&apos;article &rarr;
                 </span>
               </Link>

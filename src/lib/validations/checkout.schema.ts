@@ -6,10 +6,10 @@ import { z } from 'zod';
  */
 
 export const createCheckoutSchema = z.object({
-  plan: z.enum(['essentiel', 'premium'], {
-    error: 'Plan invalide. Choisissez essentiel ou premium.',
+  plan: z.enum(['starter', 'pro', 'business'], {
+    error: 'Plan invalide. Choisissez starter, pro ou business.',
   }),
-  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
+  billingInterval: z.enum(['monthly', 'semiannual', 'yearly']).optional().default('monthly'),
   tenantId: z.string().uuid('Tenant ID invalide'),
   email: z.string().email('Email invalide'),
 });
@@ -21,10 +21,10 @@ export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>;
  * Used in /api/create-checkout-session route.
  */
 export const checkoutBodySchema = z.object({
-  plan: z.enum(['essentiel', 'premium'], {
-    error: 'Plan invalide. Choisissez essentiel ou premium.',
+  plan: z.enum(['starter', 'pro', 'business'], {
+    error: 'Plan invalide. Choisissez starter, pro ou business.',
   }),
-  billingInterval: z.enum(['monthly', 'yearly']).optional().default('monthly'),
+  billingInterval: z.enum(['monthly', 'semiannual', 'yearly']).optional().default('monthly'),
 });
 
 export type CheckoutBodyInput = z.infer<typeof checkoutBodySchema>;

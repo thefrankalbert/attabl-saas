@@ -33,7 +33,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
 
       if ((count || 0) >= limits.maxAdmins) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxAdmins} administrateur(s) maximum pour votre plan ${tenant.subscription_plan || 'essentiel'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxAdmins} administrateur(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -61,7 +61,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
 
       if ((count || 0) >= limits.maxItems) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'essentiel'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -89,7 +89,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
 
       if ((count || 0) >= limits.maxVenues) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxVenues} établissement(s) maximum pour votre plan ${tenant.subscription_plan || 'essentiel'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxVenues} établissement(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }
@@ -117,7 +117,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
 
       if ((count || 0) >= limits.maxMenus) {
         throw new ServiceError(
-          `Limite atteinte : ${limits.maxMenus} carte(s) maximum pour votre plan ${tenant.subscription_plan || 'essentiel'}. Passez au plan supérieur pour en ajouter plus.`,
+          `Limite atteinte : ${limits.maxMenus} carte(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan supérieur pour en ajouter plus.`,
           'VALIDATION',
         );
       }

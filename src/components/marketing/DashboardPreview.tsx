@@ -348,16 +348,18 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
   return (
     <div
       className={cn(
-        'overflow-hidden rounded-2xl border border-neutral-200 shadow-2xl shadow-neutral-900/10',
+        'overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800 shadow-2xl shadow-neutral-900/10 dark:shadow-black/30',
         className,
       )}
     >
       {/* Window Chrome */}
-      <div className="flex items-center gap-1.5 border-b border-neutral-200 bg-neutral-100 px-3 py-2">
+      <div className="flex items-center gap-1.5 border-b border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-800 px-3 py-2">
         <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-        <span className="ml-2 text-[9px] font-medium text-neutral-400">app.attabl.com</span>
+        <span className="ml-2 text-[9px] font-medium text-neutral-400 dark:text-neutral-500">
+          app.attabl.com
+        </span>
       </div>
 
       {/* App Shell */}
