@@ -29,6 +29,7 @@ tests/e2e/.auth/
 
 # claude code worktrees
 .claude/worktrees/
+.worktrees/
 
 # debug
 npm-debug.log*
