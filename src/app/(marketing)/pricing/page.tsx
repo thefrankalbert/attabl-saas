@@ -57,7 +57,8 @@ function AfricaPresenceSection() {
           Déjà présent en Afrique
         </h2>
         <p className="text-neutral-600 text-center mb-10">
-          ATTABL accompagne les restaurateurs et hôteliers à travers le continent.
+          ATTABL accompagne les entrepreneurs à travers le continent africain. De N&apos;Djamena à
+          Abidjan, de Douala à Dakar.
         </p>
 
         <div className="flex flex-col items-center">
@@ -104,6 +105,7 @@ const plans = [
       '1 établissement',
       'Rapports basiques',
     ],
+    idealFor: 'restaurants, cafés, boutiques, salons',
   },
   {
     name: 'Premium',
@@ -119,6 +121,7 @@ const plans = [
       'Rapports avancés',
       'Multi-établissements',
     ],
+    idealFor: 'hôtels, chaînes, multi-sites',
   },
   {
     name: 'Enterprise',
@@ -131,6 +134,7 @@ const plans = [
       'Intégrations sur mesure',
       'Formation équipe',
     ],
+    idealFor: 'franchises, grands groupes, collectivités',
   },
 ];
 
@@ -197,6 +201,11 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
+                {plan.idealFor && (
+                  <p className="text-xs text-neutral-500 mt-4 pt-4 border-t border-neutral-100">
+                    Idéal pour : {plan.idealFor}
+                  </p>
+                )}
               </motion.div>
             ))}
           </div>
@@ -225,6 +234,10 @@ export default function PricingPage() {
               {
                 q: 'Y a-t-il un engagement ?',
                 a: 'Non, vous pouvez annuler à tout moment.',
+              },
+              {
+                q: "Est-ce qu'ATTABL fonctionne pour mon type de commerce ?",
+                a: "Oui ! ATTABL est conçu pour tous types de commerces : restaurants, hôtels, bars, cafés, boulangeries, food trucks, boutiques, épiceries, pharmacies, salons de coiffure et instituts de beauté. Notre système de terminologie contextuelle adapte automatiquement l'interface à votre secteur d'activité.",
               },
             ].map((faq) => (
               <div key={faq.q}>
