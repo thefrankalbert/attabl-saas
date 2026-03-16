@@ -11,7 +11,7 @@ import CTASection from '@/components/marketing/CTASection';
 export const revalidate = 3600; // ISR: regenerate every hour
 
 export const metadata: Metadata = {
-  title: 'Attabl — Menu digital & gestion pour restaurants',
+  title: 'Attabl — Menu digital & gestion pour professionnels',
   description:
     'La plateforme tout-en-un pour digitaliser votre établissement. Menu, commandes, stock, analytics — en temps réel.',
   openGraph: {

@@ -34,6 +34,21 @@ const segments = [
     description: 'Artisanat et précision',
     href: '/boulangeries',
   },
+  {
+    title: 'Commerces',
+    description: 'Catalogue et gestion de stock',
+    href: '/retail',
+  },
+  {
+    title: 'Salons',
+    description: 'Coiffure, beauté et bien-être',
+    href: '/salons',
+  },
+  {
+    title: 'Pharmacies',
+    description: 'Officine connectée',
+    href: '/pharmacies',
+  },
 ];
 
 export default function SegmentsSection() {
