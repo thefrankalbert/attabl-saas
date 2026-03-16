@@ -10,141 +10,148 @@ const tabs = [
     id: 'food',
     label: 'Restauration',
     subSegments: 'Restaurants, cafes, bars, food trucks, boulangeries',
-    stat: '67%',
-    statLabel: 'de nos utilisateurs sont dans la restauration',
     features: [
-      'Menu QR code',
-      'Kitchen Display (KDS)',
-      'Gestion de tables',
+      'Menu QR code avec commande en ligne',
+      'Kitchen Display (KDS) temps reel',
+      'Gestion de tables et salle',
       'Commandes en salle et a emporter',
     ],
     cta: { label: 'Decouvrir pour la restauration', href: '/restaurants' },
-    accentColor: '#4ade80',
-    uiRows: ['Poulet Braise', 'Ndole Special', 'Jus de Gingembre'],
-    uiPrices: ['4 500', '3 800', '1 200'],
-    uiStatus: ['En cours', 'Pret', 'Nouveau'],
+    uiTitle: 'Commandes du jour',
+    uiRows: [
+      { name: 'Poulet Braise', price: '4 500 FCFA', status: 'En cours' },
+      { name: 'Ndole Special', price: '3 800 FCFA', status: 'Pret' },
+      { name: 'Jus de Gingembre', price: '1 200 FCFA', status: 'Nouveau' },
+      { name: 'Poisson Grille', price: '5 200 FCFA', status: 'En cours' },
+    ],
+    uiChart: [40, 65, 45, 80, 55, 70, 90, 60],
   },
   {
     id: 'retail',
     label: 'Commerce & Retail',
     subSegments: 'Boutiques, marches, pharmacies, epiceries',
-    stat: '3x',
-    statLabel: 'plus rapide que la gestion manuelle',
     features: [
-      'Catalogue digital',
-      'Point de vente (POS)',
-      'Gestion de stock',
-      'Suivi fournisseurs',
+      'Catalogue digital avec photos',
+      'Point de vente (POS) tactile',
+      'Gestion de stock en temps reel',
+      'Suivi fournisseurs et reapprovisionnement',
     ],
     cta: { label: 'Decouvrir pour le commerce', href: '/retail' },
-    accentColor: '#a78bfa',
-    uiRows: ['T-Shirt Wax', 'Sac en cuir', 'Bracelet perles'],
-    uiPrices: ['12 000', '25 000', '3 500'],
-    uiStatus: ['En stock', 'Bas', 'En stock'],
+    uiTitle: 'Inventaire',
+    uiRows: [
+      { name: 'T-Shirt Wax', price: '12 000 FCFA', status: 'En stock' },
+      { name: 'Sac en cuir', price: '25 000 FCFA', status: 'Bas' },
+      { name: 'Bracelet perles', price: '3 500 FCFA', status: 'En stock' },
+      { name: 'Sandales cuir', price: '18 000 FCFA', status: 'En stock' },
+    ],
+    uiChart: [55, 70, 60, 45, 80, 65, 75, 50],
   },
   {
     id: 'hospitality',
     label: 'Hotellerie',
     subSegments: 'Hotels, resorts, auberges',
-    stat: '12',
-    statLabel: 'pays couverts en Afrique',
     features: [
       'Room service digital',
       'Multi-points de vente',
-      'Gestion par etage',
-      'Multi-devises',
+      'Gestion par etage et zone',
+      'Multi-devises (XAF, EUR, USD)',
     ],
     cta: { label: "Decouvrir pour l'hotellerie", href: '/hotels' },
-    accentColor: '#60a5fa',
-    uiRows: ['Chambre 204', 'Suite Royale', 'Pool Bar'],
-    uiPrices: ['45 000', '120 000', '8 500'],
-    uiStatus: ['Actif', 'Occupe', 'Ouvert'],
+    uiTitle: 'Room Service',
+    uiRows: [
+      { name: 'Chambre 204', price: '45 000 FCFA', status: 'Actif' },
+      { name: 'Suite Royale', price: '120 000 FCFA', status: 'Occupe' },
+      { name: 'Pool Bar', price: '8 500 FCFA', status: 'Ouvert' },
+      { name: 'Chambre 312', price: '55 000 FCFA', status: 'Actif' },
+    ],
+    uiChart: [70, 85, 60, 90, 75, 80, 65, 55],
   },
   {
     id: 'services',
     label: 'Services',
     subSegments: 'Salons de coiffure, instituts de beaute, coworking',
-    stat: '24/7',
-    statLabel: 'reservations et encaissement simplifies',
-    features: ['Catalogue de prestations', 'Planning equipe', 'Encaissement', 'Programme fidelite'],
+    features: [
+      'Catalogue de prestations',
+      'Planning equipe et reservations',
+      'Encaissement multi-methodes',
+      'Programme fidelite clients',
+    ],
     cta: { label: 'Decouvrir pour les services', href: '/salons' },
-    accentColor: '#f472b6',
-    uiRows: ['Tresses africaines', 'Manucure gel', 'Massage detente'],
-    uiPrices: ['15 000', '8 000', '12 000'],
-    uiStatus: ['13h00', '14h30', '16h00'],
+    uiTitle: 'Rendez-vous',
+    uiRows: [
+      { name: 'Tresses africaines', price: '15 000 FCFA', status: '13h00' },
+      { name: 'Manucure gel', price: '8 000 FCFA', status: '14h30' },
+      { name: 'Massage detente', price: '12 000 FCFA', status: '16h00' },
+      { name: 'Coupe homme', price: '3 000 FCFA', status: '17h00' },
+    ],
+    uiChart: [50, 60, 75, 85, 70, 55, 80, 65],
   },
 ];
 
 function FakeAppUI({ tab }: { tab: (typeof tabs)[0] }) {
+  const maxChart = Math.max(...tab.uiChart);
+
   return (
-    <div className="rounded-xl border border-app-border bg-app-card p-4 sm:p-6">
-      {/* Top bar */}
-      <div className="mb-4 flex items-center justify-between sm:mb-6">
-        <div className="flex items-center gap-2">
-          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tab.accentColor }} />
-          <span className="text-xs font-medium text-app-text-muted sm:text-sm">{tab.label}</span>
-        </div>
-        <div className="flex gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
-          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
-          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
-        </div>
-      </div>
-
-      {/* Table header */}
-      <div className="mb-2 grid grid-cols-3 border-b border-app-border pb-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
-          Nom
-        </span>
-        <span className="text-center text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
-          Prix FCFA
-        </span>
-        <span className="text-right text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
-          Statut
-        </span>
-      </div>
-
-      {/* Table rows */}
-      {tab.uiRows.map((row, i) => (
-        <div
-          key={row}
-          className="grid grid-cols-3 items-center border-b border-app-border/50 py-2.5 sm:py-3"
-        >
-          <div className="flex items-center gap-2">
-            <div
-              className="h-1.5 w-1.5 rounded-full opacity-60"
-              style={{ backgroundColor: tab.accentColor }}
-            />
-            <span className="truncate text-xs text-app-text-secondary sm:text-sm">{row}</span>
+    <div className="rounded-2xl border border-neutral-200 bg-white p-1 shadow-lg">
+      <div className="rounded-xl bg-white p-4 sm:p-6">
+        {/* Top nav bar */}
+        <div className="mb-5 flex items-center justify-between border-b border-neutral-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900">
+              <span className="text-xs font-bold text-white">A</span>
+            </div>
+            <span className="text-sm font-semibold text-neutral-900">{tab.uiTitle}</span>
           </div>
-          <span className="text-center text-xs tabular-nums text-app-text-muted sm:text-sm">
-            {tab.uiPrices[i]}
-          </span>
-          <span
-            className="text-right text-[10px] font-medium sm:text-xs"
-            style={{ color: tab.accentColor }}
-          >
-            {tab.uiStatus[i]}
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="h-2 w-2 rounded-full bg-green-500" />
+            <span className="text-xs text-neutral-500">En ligne</span>
+          </div>
         </div>
-      ))}
 
-      {/* Mini chart bar */}
-      <div className="mt-4 flex items-end gap-1 sm:mt-6">
-        {[40, 65, 45, 80, 55, 70, 90, 60, 75, 50, 85, 68].map((h, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-t"
-            style={{
-              height: `${h * 0.4}px`,
-              backgroundColor: i === 6 ? tab.accentColor : 'rgba(255,255,255,0.08)',
-            }}
-          />
-        ))}
-      </div>
-      <div className="mt-1.5 flex justify-between">
-        <span className="text-[9px] text-app-text-muted/50 sm:text-[10px]">Jan</span>
-        <span className="text-[9px] text-app-text-muted/50 sm:text-[10px]">Dec</span>
+        {/* List items */}
+        <div className="space-y-0">
+          {tab.uiRows.map((row, i) => (
+            <div
+              key={row.name}
+              className={`flex items-center justify-between py-3 ${
+                i < tab.uiRows.length - 1 ? 'border-b border-neutral-100' : ''
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-100">
+                  <span className="text-xs font-medium text-neutral-600">{row.name.charAt(0)}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-neutral-900">{row.name}</p>
+                  <p className="text-xs text-neutral-500">{row.price}</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs font-medium text-neutral-700">
+                {row.status}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Mini chart */}
+        <div className="mt-5 rounded-lg bg-neutral-50 p-4">
+          <div className="mb-3 flex items-center justify-between">
+            <span className="text-xs font-medium text-neutral-700">Activite</span>
+            <span className="text-xs text-neutral-400">7 derniers jours</span>
+          </div>
+          <div className="flex items-end gap-1.5">
+            {tab.uiChart.map((h, i) => (
+              <div
+                key={i}
+                className="flex-1 rounded-t"
+                style={{
+                  height: `${(h / maxChart) * 48}px`,
+                  backgroundColor: h === Math.max(...tab.uiChart) ? '#171717' : '#e5e5e5',
+                }}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -156,30 +163,27 @@ export default function SegmentsSection() {
   const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
-    <section className="bg-app-elevated/50 py-16 sm:py-24">
+    <section className="bg-white py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-app-text sm:text-4xl">
-          Quel que soit votre commerce, ATTABL parle votre langue
+        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 sm:text-4xl">
+          Quel que soit votre commerce, ATTABL s&apos;adapte
         </h2>
-        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-app-text-secondary sm:mb-12">
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-neutral-500 sm:mb-12">
           Une plateforme unique qui s&apos;adapte a votre secteur d&apos;activite.
         </p>
 
         {/* Pill tab bar */}
         <div className="mb-12 flex justify-center">
-          <div
-            className="inline-flex overflow-x-auto rounded-xl bg-app-bg p-1"
-            style={{ WebkitOverflowScrolling: 'touch' }}
-          >
+          <div className="inline-flex rounded-full bg-neutral-100 p-1">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`min-h-[44px] cursor-pointer whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
+                className={`cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-accent text-accent-text shadow-sm'
-                    : 'text-app-text-muted hover:text-app-text-secondary'
+                    ? 'bg-white text-neutral-900 shadow-sm'
+                    : 'text-neutral-500 hover:text-neutral-700'
                 }`}
               >
                 {tab.label}
@@ -192,46 +196,33 @@ export default function SegmentsSection() {
         <AnimatePresence mode="wait">
           <motion.div
             key={currentTab.id}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            transition={{ duration: 0.3 }}
-            className="mt-10 grid gap-6 lg:grid-cols-5 lg:gap-10"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="mt-12 grid items-center gap-12 lg:grid-cols-2"
           >
             {/* Left -- Fake app UI */}
-            <div className="lg:col-span-3">
+            <div>
               <FakeAppUI tab={currentTab} />
             </div>
 
             {/* Right -- Details */}
-            <div className="flex flex-col justify-center lg:col-span-2">
-              {/* Big stat */}
-              <div className="mb-6">
-                <span className="font-[family-name:var(--font-sora)] text-4xl font-bold text-accent sm:text-5xl">
-                  {currentTab.stat}
-                </span>
-                <p className="mt-1 text-sm italic text-app-text-secondary">
-                  {currentTab.statLabel}
-                </p>
-              </div>
-
-              <p className="mb-4 text-sm text-app-text-secondary">
-                <span className="font-medium text-app-text">Sous-segments : </span>
-                {currentTab.subSegments}
-              </p>
+            <div className="flex flex-col justify-center">
+              <p className="mb-6 text-sm text-neutral-500">{currentTab.subSegments}</p>
 
               <ul className="space-y-3">
                 {currentTab.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2.5">
-                    <Check className="h-4 w-4 shrink-0 text-accent" />
-                    <span className="text-sm text-app-text-secondary">{feature}</span>
+                    <Check className="h-4 w-4 shrink-0 text-green-600" />
+                    <span className="text-sm text-neutral-600">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <Link
                 href={currentTab.cta.href}
-                className="mt-8 inline-flex min-h-[44px] w-fit items-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-accent-text transition-colors hover:bg-accent-hover"
+                className="mt-8 inline-flex w-fit items-center rounded-lg bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
               >
                 {currentTab.cta.label}
               </Link>
