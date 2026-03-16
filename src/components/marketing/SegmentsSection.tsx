@@ -1,104 +1,145 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Check } from 'lucide-react';
 
-const segments = [
+const tabs = [
   {
-    title: 'Restaurants',
-    description: 'Gastronomie et service à table',
-    href: '/restaurants',
+    id: 'food',
+    label: 'Restauration',
+    subSegments: 'Restaurants, cafés, bars, food trucks, boulangeries',
+    stat: '67% de nos utilisateurs sont dans la restauration',
+    features: [
+      'Menu QR code',
+      'Kitchen Display (KDS)',
+      'Gestion de tables',
+      'Commandes en salle et à emporter',
+    ],
+    cta: { label: 'Découvrir pour la restauration', href: '/restaurants' },
+    gradient: 'from-amber-500/20 to-orange-500/20',
   },
   {
-    title: 'Hôtels',
-    description: 'Room service et multi-venues',
-    href: '/hotels',
+    id: 'retail',
+    label: 'Commerce & Retail',
+    subSegments: 'Boutiques, marchés, pharmacies, épiceries',
+    stat: 'Gestion de stock intégrée, adaptée au commerce africain',
+    features: [
+      'Catalogue digital',
+      'Point de vente (POS)',
+      'Gestion de stock',
+      'Suivi fournisseurs',
+    ],
+    cta: { label: 'Découvrir pour le commerce', href: '/retail' },
+    gradient: 'from-purple-500/20 to-pink-500/20',
   },
   {
-    title: 'Quick-Service',
-    description: 'Rapidité et efficacité',
-    href: '/quick-service',
+    id: 'hospitality',
+    label: 'Hôtellerie',
+    subSegments: 'Hôtels, resorts, auberges',
+    stat: 'Multi-venue, multi-devise, multi-langue',
+    features: [
+      'Room service digital',
+      'Multi-points de vente',
+      'Gestion par étage',
+      'Multi-devises',
+    ],
+    cta: { label: "Découvrir pour l'hôtellerie", href: '/hotels' },
+    gradient: 'from-blue-500/20 to-cyan-500/20',
   },
   {
-    title: 'Bars & Cafés',
-    description: 'Comptoir et terrasse',
-    href: '/bars-cafes',
-  },
-  {
-    title: 'Food Trucks',
-    description: 'Mobile et connecté',
-    href: '/food-trucks',
-  },
-  {
-    title: 'Boulangeries',
-    description: 'Artisanat et précision',
-    href: '/boulangeries',
-  },
-  {
-    title: 'Commerces',
-    description: 'Catalogue et gestion de stock',
-    href: '/retail',
-  },
-  {
-    title: 'Salons',
-    description: 'Coiffure, beauté et bien-être',
-    href: '/salons',
-  },
-  {
-    title: 'Pharmacies',
-    description: 'Officine connectée',
-    href: '/pharmacies',
+    id: 'services',
+    label: 'Services',
+    subSegments: 'Salons de coiffure, instituts de beauté, coworking',
+    stat: 'Rendez-vous et encaissement simplifiés',
+    features: ['Catalogue de prestations', 'Planning équipe', 'Encaissement', 'Programme fidélité'],
+    cta: { label: 'Découvrir pour les services', href: '/salons' },
+    gradient: 'from-rose-500/20 to-fuchsia-500/20',
   },
 ];
 
 export default function SegmentsSection() {
-  return (
-    <section className="py-24 bg-white">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
-            Conçu pour votre activité
-          </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Que vous gériez un food truck ou un palace, Attabl s&apos;adapte à vos besoins.
-          </p>
-        </div>
+  const [activeTab, setActiveTab] = useState('food');
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {segments.map((segment, idx) => (
-            <motion.div
-              key={segment.href}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              viewport={{ once: true }}
+  const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
+
+  return (
+    <section className="bg-white py-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <h2 className="mb-4 text-center text-3xl font-bold text-neutral-900 sm:text-4xl">
+          Quel que soit votre commerce, ATTABL parle votre langue
+        </h2>
+        <p className="mb-12 text-center text-lg text-neutral-500">
+          Une plateforme unique qui s&apos;adapte à votre secteur d&apos;activité.
+        </p>
+
+        {/* Tab bar */}
+        <div className="flex overflow-x-auto border-b border-neutral-200 flex-nowrap">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`cursor-pointer whitespace-nowrap px-6 py-3 text-sm font-medium transition-colors ${
+                activeTab === tab.id
+                  ? 'border-b-[3px] border-[#CCFF00] font-bold text-neutral-900'
+                  : 'text-neutral-400 hover:text-neutral-600'
+              }`}
             >
-              <Link
-                href={segment.href}
-                className="group block bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-lg transition-all"
-              >
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">{segment.title}</h3>
-                <p className="text-neutral-600 text-sm">{segment.description}</p>
-                <div className="mt-4 inline-flex items-center text-sm font-medium text-neutral-900 group-hover:gap-2 transition-all">
-                  En savoir plus
-                  <svg
-                    className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </div>
-              </Link>
-            </motion.div>
+              {tab.label}
+            </button>
           ))}
         </div>
+
+        {/* Tab content */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentTab.id}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-12 grid gap-8 lg:grid-cols-5 lg:gap-12"
+          >
+            {/* Left — Screenshot placeholder */}
+            <div className="lg:col-span-3">
+              <div
+                className={`flex aspect-video items-center justify-center rounded-2xl bg-gradient-to-br ${currentTab.gradient}`}
+              >
+                <span className="text-lg font-semibold text-neutral-700">{currentTab.label}</span>
+              </div>
+            </div>
+
+            {/* Right — Details */}
+            <div className="lg:col-span-2">
+              <p className="mb-4 text-sm text-neutral-500">
+                <span className="font-medium">Sous-segments : </span>
+                {currentTab.subSegments}
+              </p>
+
+              <p className="mb-6 text-lg font-semibold italic text-neutral-800">
+                &laquo;&nbsp;{currentTab.stat}&nbsp;&raquo;
+              </p>
+
+              <ul className="space-y-3">
+                {currentTab.features.map((feature) => (
+                  <li key={feature} className="flex items-center gap-2">
+                    <Check className="h-4 w-4 shrink-0 text-[#CCFF00]" />
+                    <span className="text-sm text-neutral-700">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <Link
+                href={currentTab.cta.href}
+                className="mt-6 inline-flex items-center rounded-full border-2 border-neutral-900 px-6 py-3 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+              >
+                {currentTab.cta.label}
+              </Link>
+            </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </section>
   );
