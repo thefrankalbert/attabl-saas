@@ -13,7 +13,7 @@ const segments: { key: Segment; label: string; icon: React.ElementType }[] = [
   { key: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
   { key: 'boutique', label: 'Boutique', icon: Store },
   { key: 'salon', label: 'Salon', icon: Scissors },
-  { key: 'hotel', label: 'H\u00f4tel', icon: Hotel },
+  { key: 'hotel', label: 'Hôtel', icon: Hotel },
 ];
 
 export default function VideoHero() {
@@ -25,26 +25,26 @@ export default function VideoHero() {
         {/* Centered text */}
         <div className="text-center">
           <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 sm:text-6xl lg:text-7xl">
-            Tout ce qu&apos;il faut pour piloter votre commerce
+            Tout ce qu{"'"}il faut pour piloter votre commerce
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500">
-            Menu digital, stock, caisse, analytics — une plateforme unique pour les entrepreneurs
+            Menu digital, stock, caisse, analytics - une plateforme unique pour les entrepreneurs
             africains.
           </p>
 
           {/* CTA row */}
-          <div className="mt-10 flex justify-center gap-4">
+          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
               href="/signup"
               className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800"
             >
-              D\u00e9marrer gratuitement
+              Démarrer gratuitement
             </Link>
             <Link
               href="/contact"
               className="rounded-lg border border-neutral-300 px-8 py-4 text-base font-semibold text-neutral-900 transition-colors hover:bg-neutral-50"
             >
-              Contacter l&apos;\u00e9quipe
+              Contacter l{"'"}équipe
             </Link>
           </div>
 
