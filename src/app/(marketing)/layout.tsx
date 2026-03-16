@@ -20,14 +20,10 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <link rel="preload" href="/videos/hero-poster.jpg" as="image" />
-      <link rel="preload" href="/videos/hero.mp4" as="video" type="video/mp4" />
-      <div className="min-h-screen bg-white">
-        <Header />
-        <main>{children}</main>
-        <Footer />
-      </div>
-    </>
+    <div className="min-h-screen bg-white">
+      <Header />
+      <main>{children}</main>
+      <Footer />
+    </div>
   );
 }
