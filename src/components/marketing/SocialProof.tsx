@@ -104,19 +104,23 @@ export default function SocialProof() {
           </AnimatePresence>
 
           {/* Navigation dots */}
-          <div className="mt-8 flex justify-center gap-3">
+          <div className="mt-8 flex justify-center gap-1">
             {testimonials.map((_, index) => (
               <button
                 key={index}
                 type="button"
                 aria-label={`Temoignage ${index + 1}`}
                 onClick={() => goTo(index)}
-                className={`h-3 w-3 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full transition-all duration-300 ${
-                  index === activeIndex
-                    ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]'
-                    : 'cursor-pointer bg-neutral-300 hover:bg-neutral-400'
-                }`}
-              />
+                className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
+              >
+                <span
+                  className={`block h-3 w-3 rounded-full transition-all duration-300 ${
+                    index === activeIndex
+                      ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]'
+                      : 'bg-neutral-300 hover:bg-neutral-400'
+                  }`}
+                />
+              </button>
             ))}
           </div>
         </div>
