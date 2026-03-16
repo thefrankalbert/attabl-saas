@@ -3,36 +3,35 @@
 const products = [
   {
     verb: 'PILOTER',
-    title: 'Dashboard temps r\u00e9el',
+    title: 'Dashboard temps réel',
     description:
-      "Suivez votre chiffre d'affaires, vos tendances et vos top produits en un coup d'\u0153il.",
+      "Suivez votre chiffre d'affaires, vos tendances et vos top produits en un coup d'oeil.",
     span: 2,
     hero: true,
   },
   {
     verb: 'VENDRE',
     title: 'Catalogue & commandes digitales',
-    description: 'Menu QR, catalogue en ligne, commandes — vos clients ach\u00e8tent en autonomie.',
+    description: 'Menu QR, catalogue en ligne, commandes — vos clients achètent en autonomie.',
     span: 1,
   },
   {
-    verb: 'PR\u00c9PARER',
+    verb: 'PRÉPARER',
     title: 'Routage intelligent des commandes',
-    description:
-      'Chaque commande est rout\u00e9e automatiquement vers la bonne \u00e9quipe. Z\u00e9ro oubli.',
+    description: 'Chaque commande est routée automatiquement vers la bonne équipe. Zéro oubli.',
     span: 1,
   },
   {
     verb: 'ENCAISSER',
-    title: 'POS multi-m\u00e9thodes',
+    title: 'POS multi-méthodes',
     description: 'Cash, carte, mobile money — encaissez comme vos clients le souhaitent.',
     span: 1,
   },
   {
-    verb: 'G\u00c9RER',
+    verb: 'GÉRER',
     title: 'Stock, fournisseurs, alertes',
     description:
-      'Suivi en temps r\u00e9el, alertes de r\u00e9approvisionnement. Ne manquez plus jamais de stock.',
+      'Suivi en temps réel, alertes de réapprovisionnement. Ne manquez plus jamais de stock.',
     span: 1,
   },
 ];
@@ -47,7 +46,7 @@ export default function ProductShowcase() {
             Cinq modules. Un seul outil.
           </h2>
           <p className="mx-auto mt-4 max-w-lg text-neutral-500">
-            Du premier client au centi\u00e8me, ATTABL grandit avec vous.
+            Du premier client au centième, ATTABL grandit avec vous.
           </p>
         </div>
 
