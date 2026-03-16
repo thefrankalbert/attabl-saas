@@ -10,38 +10,33 @@ interface Feature {
 const features: Feature[] = [
   {
     icon: QrCode,
-    title: 'Catalogue Digital',
-    description:
-      'QR code, commandes en ligne, vitrine digitale. Presentez vos produits et services avec style.',
+    title: 'Menu QR Digital',
+    description: 'Vos clients scannent et commandent. Bilingue, avec photos et modificateurs.',
   },
   {
     icon: CreditCard,
     title: 'Point de Vente',
-    description:
-      'POS tactile, multi-methodes de paiement. Cash, carte, mobile money -- tout en un ecran.',
+    description: 'Encaissement tactile. Cash, carte, mobile money - tout en un écran.',
   },
   {
     icon: Banknote,
     title: 'Paiements',
-    description:
-      '3 devises (XAF, EUR, USD), mobile money, reconciliation automatique. Encaissez sans friction.',
+    description: 'XAF, EUR, USD. Mobile money. Réconciliation automatique.',
   },
   {
     icon: BarChart3,
     title: 'Analytics & IA',
-    description:
-      'Tableaux de bord, tendances, alertes proactives. Des insights, pas des donnees brutes.',
+    description: 'Tendances, alertes, suggestions. Des insights, pas des tableurs.',
   },
   {
     icon: Package,
-    title: 'Stock',
-    description:
-      'Inventaire temps reel, fournisseurs, reapprovisionnement automatique. Zero rupture.',
+    title: 'Stock & Ingrédients',
+    description: 'Inventaire temps réel. Chaque commande déduit automatiquement.',
   },
   {
     icon: Users,
-    title: 'Equipe',
-    description: 'Roles, shifts, performance par employe. Gerez votre equipe, pas des tableurs.',
+    title: 'Équipe & Service',
+    description: 'Rôles, shifts, performance. Gérez votre brigade, pas de la paperasse.',
   },
 ];
 
@@ -50,10 +45,10 @@ export default function FeaturesShowcase() {
     <section className="bg-neutral-50 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 sm:text-4xl">
-          Un ecosysteme complet
+          Pas juste un outil. Un écosystème.
         </h2>
         <p className="mb-16 text-center text-base text-neutral-500">
-          Tout pour vendre et gerer votre activite.
+          Tout pour vendre et gérer votre activité.
         </p>
 
         <div className="grid gap-6 md:grid-cols-3">

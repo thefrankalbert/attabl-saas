@@ -21,11 +21,7 @@ const footerColumns = [
       { label: 'Hôtels', href: '/hotels' },
       { label: 'Quick-Service', href: '/quick-service' },
       { label: 'Bars & Cafés', href: '/bars-cafes' },
-      { label: 'Food Trucks', href: '/food-trucks' },
-      { label: 'Boulangeries', href: '/boulangeries' },
-      { label: 'Commerces', href: '/retail' },
-      { label: 'Salons', href: '/salons' },
-      { label: 'Pharmacies', href: '/pharmacies' },
+      { label: 'Fast-Food', href: '/fast-food' },
     ],
   },
   {

@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-type Segment = 'restaurant' | 'boutique' | 'salon' | 'hotel';
+type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
 
 interface DashboardPreviewProps {
   segment: Segment;
@@ -13,9 +13,10 @@ interface DashboardPreviewProps {
 
 const greetings: Record<Segment, string> = {
   restaurant: 'Bon après-midi, Le Jardin',
-  boutique: 'Bon après-midi, Sahel Mode',
-  salon: 'Bon après-midi, Salon Elegance',
   hotel: 'Bon après-midi, Prestige Hotel',
+  quickservice: 'Bon après-midi, Chez Mama',
+  bar: 'Bon après-midi, Le Zinc',
+  fastfood: 'Bon après-midi, Flame Burger',
 };
 
 const gaugeData: Record<Segment, { label: string; value: string; color: string }[]> = {
@@ -25,38 +26,46 @@ const gaugeData: Record<Segment, { label: string; value: string; color: string }
     { label: 'Articles', value: '48', color: '#f97316' },
     { label: 'Tables', value: '24', color: '#a78bfa' },
   ],
-  boutique: [
-    { label: 'Ventes', value: '1.2M', color: '#4ade80' },
-    { label: 'Transactions', value: '89', color: '#60a5fa' },
-    { label: 'Produits', value: '234', color: '#f97316' },
-    { label: 'Clients', value: '67', color: '#a78bfa' },
-  ],
-  salon: [
-    { label: 'Revenu', value: '380K', color: '#4ade80' },
-    { label: 'RDV', value: '42', color: '#60a5fa' },
-    { label: 'Prestations', value: '18', color: '#f97316' },
-    { label: 'Coiffeurs', value: '6', color: '#a78bfa' },
-  ],
   hotel: [
     { label: 'Revenu', value: '2.8M', color: '#4ade80' },
     { label: 'Check-ins', value: '31', color: '#60a5fa' },
     { label: 'Chambres', value: '42', color: '#f97316' },
     { label: 'Occup.', value: '87%', color: '#a78bfa' },
   ],
+  quickservice: [
+    { label: 'Revenu', value: '1.2M', color: '#4ade80' },
+    { label: 'Commandes', value: '312', color: '#60a5fa' },
+    { label: 'Articles', value: '24', color: '#f97316' },
+    { label: 'Temps moy.', value: '4min', color: '#a78bfa' },
+  ],
+  bar: [
+    { label: 'Revenu', value: '680K', color: '#4ade80' },
+    { label: 'Commandes', value: '189', color: '#60a5fa' },
+    { label: 'Cocktails', value: '35', color: '#f97316' },
+    { label: 'Tables', value: '18', color: '#a78bfa' },
+  ],
+  fastfood: [
+    { label: 'Revenu', value: '2.1M', color: '#4ade80' },
+    { label: 'Commandes', value: '487', color: '#60a5fa' },
+    { label: 'Articles', value: '18', color: '#f97316' },
+    { label: 'Drive', value: '156', color: '#a78bfa' },
+  ],
 };
 
 const chartValues: Record<Segment, { total: string; points: number[] }> = {
   restaurant: { total: '2 450 000 F', points: [30, 45, 38, 55, 42, 68, 52] },
-  boutique: { total: '1 840 000 F', points: [50, 42, 65, 48, 55, 70, 38] },
-  salon: { total: '980 000 F', points: [25, 35, 40, 30, 55, 45, 50] },
   hotel: { total: '5 120 000 F', points: [60, 55, 70, 50, 75, 65, 80] },
+  quickservice: { total: '3 680 000 F', points: [45, 60, 55, 70, 65, 80, 72] },
+  bar: { total: '1 540 000 F', points: [35, 50, 45, 55, 60, 48, 65] },
+  fastfood: { total: '4 920 000 F', points: [55, 70, 60, 85, 75, 90, 80] },
 };
 
 const avgBasket: Record<Segment, { value: string; points: number[] }> = {
   restaurant: { value: '13 100 F', points: [40, 50, 45, 55, 48, 52, 50] },
-  boutique: { value: '15 500 F', points: [55, 48, 60, 52, 58, 50, 55] },
-  salon: { value: '10 400 F', points: [35, 42, 38, 45, 40, 48, 42] },
   hotel: { value: '81 300 F', points: [70, 65, 75, 68, 72, 70, 78] },
+  quickservice: { value: '5 200 F', points: [45, 50, 48, 52, 55, 50, 53] },
+  bar: { value: '8 700 F', points: [38, 45, 42, 50, 48, 52, 46] },
+  fastfood: { value: '4 800 F', points: [42, 48, 45, 50, 52, 48, 55] },
 };
 
 const orderData: Record<
@@ -104,74 +113,6 @@ const orderData: Record<
       status: 'success',
     },
   ],
-  boutique: [
-    {
-      table: '#301',
-      id: '#B301',
-      items: '1x Robe wax',
-      price: '15 000 F',
-      time: '5 min',
-      status: 'success',
-    },
-    {
-      table: '#302',
-      id: '#B302',
-      items: '2x Sac cuir',
-      price: '45 000 F',
-      time: '12 min',
-      status: 'success',
-    },
-    {
-      table: '#303',
-      id: '#B303',
-      items: '3x Bijoux argent',
-      price: '26 700 F',
-      time: '25 min',
-      status: 'info',
-    },
-    {
-      table: '#304',
-      id: '#B304',
-      items: '1x Chaussures',
-      price: '18 500 F',
-      time: '1h',
-      status: 'success',
-    },
-  ],
-  salon: [
-    {
-      table: 'Marie',
-      id: '#S01',
-      items: 'Coupe + Coloration',
-      price: '15 000 F',
-      time: '3 min',
-      status: 'info',
-    },
-    {
-      table: 'Aisha',
-      id: '#S02',
-      items: 'Tresses',
-      price: '12 000 F',
-      time: '10 min',
-      status: 'warning',
-    },
-    {
-      table: 'Paul',
-      id: '#S03',
-      items: 'Coupe homme',
-      price: '3 500 F',
-      time: '20 min',
-      status: 'success',
-    },
-    {
-      table: 'Fatou',
-      id: '#S04',
-      items: 'Soin cheveux',
-      price: '8 000 F',
-      time: '35 min',
-      status: 'success',
-    },
-  ],
   hotel: [
     {
       table: 'Ch.201',
@@ -203,6 +144,108 @@ const orderData: Record<
       items: 'Chambre simple',
       price: '32 000 F',
       time: '1h',
+      status: 'warning',
+    },
+  ],
+  quickservice: [
+    {
+      table: 'Cmd',
+      id: '#Q501',
+      items: '2x Burger, 1x Frites',
+      price: '8 500 F',
+      time: '1 min',
+      status: 'success',
+    },
+    {
+      table: 'Cmd',
+      id: '#Q502',
+      items: '1x Wrap poulet',
+      price: '4 200 F',
+      time: '3 min',
+      status: 'info',
+    },
+    {
+      table: 'Cmd',
+      id: '#Q503',
+      items: '3x Tacos, 2x Jus',
+      price: '12 800 F',
+      time: '5 min',
+      status: 'warning',
+    },
+    {
+      table: 'Cmd',
+      id: '#Q504',
+      items: '1x Salade, 1x Smoothie',
+      price: '6 500 F',
+      time: '7 min',
+      status: 'success',
+    },
+  ],
+  bar: [
+    {
+      table: 'T3',
+      id: '#B01',
+      items: '2x Mojito, 1x Biere',
+      price: '12 500 F',
+      time: '2 min',
+      status: 'success',
+    },
+    {
+      table: 'T8',
+      id: '#B02',
+      items: '1x Whisky, 1x Tapas',
+      price: '9 800 F',
+      time: '5 min',
+      status: 'info',
+    },
+    {
+      table: 'Bar',
+      id: '#B03',
+      items: '3x Cocktail maison',
+      price: '15 000 F',
+      time: '8 min',
+      status: 'success',
+    },
+    {
+      table: 'T5',
+      id: '#B04',
+      items: '2x Café, 1x Pâtisserie',
+      price: '4 200 F',
+      time: '12 min',
+      status: 'warning',
+    },
+  ],
+  fastfood: [
+    {
+      table: 'Borne',
+      id: '#F12',
+      items: '3x Menu Classic',
+      price: '13 500 F',
+      time: '1 min',
+      status: 'success',
+    },
+    {
+      table: 'Drive',
+      id: '#F13',
+      items: '2x Menu XL, 1x Sundae',
+      price: '16 200 F',
+      time: '3 min',
+      status: 'info',
+    },
+    {
+      table: 'Borne',
+      id: '#F14',
+      items: '1x Nuggets, 2x Frites',
+      price: '7 800 F',
+      time: '4 min',
+      status: 'success',
+    },
+    {
+      table: 'Drive',
+      id: '#F15',
+      items: '4x Menu Enfant',
+      price: '18 000 F',
+      time: '6 min',
       status: 'warning',
     },
   ],

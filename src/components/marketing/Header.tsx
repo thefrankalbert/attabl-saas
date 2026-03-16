@@ -9,9 +9,7 @@ const segments = [
   { label: 'Hôtels', href: '/hotels', description: 'Room service et multi-venues' },
   { label: 'Quick-Service', href: '/quick-service', description: 'Rapidité et efficacité' },
   { label: 'Bars & Cafés', href: '/bars-cafes', description: 'Comptoir et terrasse' },
-  { label: 'Food Trucks', href: '/food-trucks', description: 'Mobile et connecté' },
-  { label: 'Boulangeries', href: '/boulangeries', description: 'Artisanat et précision' },
-  { label: 'Dark Kitchens', href: '/dark-kitchens', description: 'Optimisé pour la livraison' },
+  { label: 'Fast-Food', href: '/fast-food', description: 'Vitesse et volume optimisés' },
 ];
 
 const features = [

@@ -2,18 +2,19 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { UtensilsCrossed, Store, Scissors, Hotel } from 'lucide-react';
+import { UtensilsCrossed, Hotel, Zap, Wine, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import DashboardPreview from './DashboardPreview';
 
-type Segment = 'restaurant' | 'boutique' | 'salon' | 'hotel';
+type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
 
 const segments: { key: Segment; label: string; icon: React.ElementType }[] = [
   { key: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
-  { key: 'boutique', label: 'Boutique', icon: Store },
-  { key: 'salon', label: 'Salon', icon: Scissors },
   { key: 'hotel', label: 'Hôtel', icon: Hotel },
+  { key: 'quickservice', label: 'Quick-Service', icon: Zap },
+  { key: 'bar', label: 'Bar & Café', icon: Wine },
+  { key: 'fastfood', label: 'Fast-Food', icon: Flame },
 ];
 
 export default function VideoHero() {
@@ -25,11 +26,10 @@ export default function VideoHero() {
         {/* Centered text */}
         <div className="text-center">
           <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 sm:text-6xl lg:text-7xl">
-            Tout ce qu{"'"}il faut pour piloter votre commerce
+            Petit comptoir ou grande enseigne. Marquez votre territoire.
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500">
-            Menu digital, stock, caisse, analytics - une plateforme unique pour les entrepreneurs
-            africains.
+            Menu, commandes, stocks, finances - tout piloté depuis un seul outil.
           </p>
 
           {/* CTA row */}
@@ -38,7 +38,7 @@ export default function VideoHero() {
               href="/signup"
               className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800"
             >
-              Démarrer gratuitement
+              Commencer
             </Link>
             <Link
               href="/contact"
