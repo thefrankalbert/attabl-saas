@@ -1,103 +1,88 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 // ─── Africa Presence Map ──────────────────────────────────
-const PRESENCE_COUNTRIES = [
-  { name: 'Cameroun', cx: 108, cy: 102, color: '#4ade80' },
-  { name: 'Tchad', cx: 118, cy: 78, color: '#60a5fa' },
-  { name: 'Burkina Faso', cx: 72, cy: 86, color: '#f97316' },
-] as const;
-
-function hexPoints(cx: number, cy: number, r: number): string {
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
-  }).join(' ');
-}
-
-const AFRICA_HEX_GRID = (() => {
-  const rows: Array<[number, number, number]> = [
-    [4, 7, 12],
-    [5, 6, 13],
-    [6, 5, 14],
-    [7, 5, 14],
-    [8, 4, 14],
-    [9, 4, 14],
-    [10, 5, 13],
-    [11, 5, 13],
-    [12, 6, 13],
-    [13, 7, 13],
-    [14, 7, 12],
-    [15, 8, 12],
-    [16, 8, 12],
-    [17, 9, 12],
-    [18, 9, 11],
-    [19, 10, 11],
-    [20, 10, 11],
-  ];
-  const hexes: Array<{ x: number; y: number }> = [];
-  const spacing = 11;
-  for (const [row, colStart, colEnd] of rows) {
-    const offsetX = row % 2 === 0 ? 0 : spacing / 2;
-    for (let col = colStart; col <= colEnd; col++) {
-      hexes.push({ x: col * spacing + offsetX, y: row * (spacing * 0.866) });
-    }
-  }
-  return hexes;
-})();
+const COVERED_COUNTRIES = [
+  { name: 'Sénégal', x: 18, y: 35 },
+  { name: 'Mali', x: 28, y: 32 },
+  { name: 'Guinée', x: 20, y: 40 },
+  { name: 'Burkina Faso', x: 32, y: 38 },
+  { name: 'Niger', x: 40, y: 30 },
+  { name: 'Bénin', x: 36, y: 44 },
+  { name: 'Togo', x: 34, y: 44 },
+  { name: "Côte d'Ivoire", x: 26, y: 44 },
+  { name: 'Cameroun', x: 42, y: 48 },
+  { name: 'Gabon', x: 42, y: 55 },
+  { name: 'Congo', x: 48, y: 55 },
+  { name: 'Tchad', x: 48, y: 35 },
+];
 
 function AfricaPresenceSection() {
   return (
-    <section className="py-16 bg-white">
+    <section className="bg-[#1A1A2E] py-20">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2 text-center">
-          Déjà présent en Afrique
+        <h2 className="text-3xl font-bold text-white text-center mb-4">
+          Présent dans toute l&apos;Afrique
         </h2>
-        <p className="text-neutral-600 text-center mb-10">
-          ATTABL accompagne les entrepreneurs à travers le continent africain. De N&apos;Djamena à
-          Abidjan, de Douala à Dakar.
-        </p>
+        <p className="text-white/60 text-center mb-12">12 pays couverts et en expansion</p>
 
-        <div className="flex flex-col items-center">
-          {/* Africa hex map */}
-          <svg viewBox="0 0 200 200" className="w-80 h-80" aria-hidden="true">
-            {AFRICA_HEX_GRID.map((hex, i) => (
-              <polygon key={i} points={hexPoints(hex.x, hex.y, 5)} fill="#e5e7eb" opacity={0.5} />
-            ))}
-            {PRESENCE_COUNTRIES.map((c) => (
-              <g key={c.name}>
-                <circle cx={c.cx} cy={c.cy} r={12} fill={c.color} opacity={0.15} />
-                <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.3} />
-                <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} opacity={0.7} />
+        <div className="max-w-lg mx-auto">
+          <svg viewBox="0 0 100 100" className="w-full" aria-label="Carte de présence en Afrique">
+            {/* Simplified Africa silhouette */}
+            <path
+              d="M30,8 Q38,5 45,8 Q52,10 55,15 Q58,12 62,14 Q65,18 63,22 Q68,25 65,30 Q62,28 58,30 Q60,35 58,40 Q62,42 60,48 Q58,52 60,58 Q62,62 58,68 Q55,72 52,78 Q48,82 45,85 Q42,88 38,90 Q35,92 32,90 Q28,88 30,82 Q28,78 25,75 Q22,72 20,68 Q18,62 16,55 Q14,48 15,42 Q14,38 16,34 Q15,30 18,26 Q16,22 18,18 Q20,14 24,12 Q27,10 30,8Z"
+              className="fill-white/5 stroke-white/10"
+              strokeWidth="0.5"
+            />
+
+            {/* Country dots with pulse animation */}
+            {COVERED_COUNTRIES.map((country) => (
+              <g key={country.name}>
+                <circle cx={country.x} cy={country.y} r="3.5" className="fill-[#CCFF00]/20">
+                  <animate attributeName="r" values="3.5;5;3.5" dur="3s" repeatCount="indefinite" />
+                  <animate
+                    attributeName="opacity"
+                    values="0.3;0.1;0.3"
+                    dur="3s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <circle
+                  cx={country.x}
+                  cy={country.y}
+                  r="2"
+                  className="fill-[#CCFF00] cursor-pointer hover:fill-[#CCFF00]/80 transition-colors"
+                >
+                  <title>{country.name}</title>
+                </circle>
               </g>
             ))}
           </svg>
+        </div>
 
-          {/* Legend */}
-          <div className="flex items-center gap-6 mt-4">
-            {PRESENCE_COUNTRIES.map((c) => (
-              <div key={c.name} className="flex items-center gap-2">
-                <span
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: c.color }}
-                />
-                <span className="text-sm font-medium text-neutral-700">{c.name}</span>
-              </div>
-            ))}
-          </div>
+        {/* Country names list */}
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-8">
+          {COVERED_COUNTRIES.map((country) => (
+            <span key={country.name} className="text-sm text-white/60">
+              {country.name}
+            </span>
+          ))}
         </div>
       </div>
     </section>
   );
 }
 
+// ─── Pricing Plans ──────────────────────────────────
 const plans = [
   {
     name: 'Essentiel',
-    price: '49',
+    priceMonthly: 49,
+    priceAnnual: Math.round(49 * 0.8),
     description: 'Pour démarrer',
     features: [
       'Menu digital & QR code',
@@ -109,7 +94,8 @@ const plans = [
   },
   {
     name: 'Premium',
-    price: '99',
+    priceMonthly: 99,
+    priceAnnual: Math.round(99 * 0.8),
     popular: true,
     description: 'Le plus populaire',
     features: [
@@ -125,7 +111,8 @@ const plans = [
   },
   {
     name: 'Enterprise',
-    price: 'Sur mesure',
+    priceMonthly: null,
+    priceAnnual: null,
     description: 'Pour les groupes',
     features: [
       'Tout Premium +',
@@ -139,6 +126,8 @@ const plans = [
 ];
 
 export default function PricingPage() {
+  const [annual, setAnnual] = useState(false);
+
   return (
     <>
       {/* Hero */}
@@ -156,58 +145,97 @@ export default function PricingPage() {
       {/* Pricing cards */}
       <section className="py-20 bg-neutral-50">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-            {plans.map((plan, idx) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className={`bg-white p-8 rounded-2xl ${
-                  plan.popular ? 'border-2 border-primary shadow-lg' : 'border border-neutral-200'
+          {/* Billing toggle */}
+          <div className="flex items-center justify-center gap-3 mb-12">
+            <span
+              className={`text-sm font-medium ${!annual ? 'font-bold text-neutral-900' : 'text-neutral-500'}`}
+            >
+              Mensuel
+            </span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={annual}
+              onClick={() => setAnnual(!annual)}
+              className={`relative w-14 h-7 rounded-full transition-colors cursor-pointer ${
+                annual ? 'bg-[#CCFF00]' : 'bg-neutral-200'
+              }`}
+            >
+              <span
+                className={`absolute top-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
+                  annual ? 'translate-x-7' : 'left-0.5'
                 }`}
-              >
-                {plan.popular && (
-                  <div className="mb-4 inline-block rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
-                    Populaire
-                  </div>
-                )}
-                <h3 className="text-2xl font-bold text-neutral-900 mb-2">{plan.name}</h3>
-                <p className="text-sm text-neutral-600 mb-6">{plan.description}</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-neutral-900">
-                    {typeof plan.price === 'string' && plan.price.includes('Sur')
-                      ? plan.price
-                      : `${plan.price}€`}
-                  </span>
-                  {!plan.price.includes('Sur') && <span className="text-neutral-600">/mois</span>}
-                </div>
-                <Link
-                  href="/signup"
-                  className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors mb-6 ${
-                    plan.popular
-                      ? 'bg-black text-white hover:bg-neutral-900'
-                      : 'border-2 border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white'
+              />
+            </button>
+            <span
+              className={`text-sm font-medium ${annual ? 'font-bold text-neutral-900' : 'text-neutral-500'}`}
+            >
+              Annuel
+            </span>
+            <span className="text-xs bg-[#CCFF00]/10 text-[#CCFF00] px-2 py-0.5 rounded-full font-semibold">
+              -20%
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+            {plans.map((plan, idx) => {
+              const price = annual ? plan.priceAnnual : plan.priceMonthly;
+              const isCustom = price === null;
+
+              return (
+                <motion.div
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  viewport={{ once: true }}
+                  className={`bg-white p-8 rounded-2xl ${
+                    plan.popular ? 'border-2 border-primary shadow-lg' : 'border border-neutral-200'
                   }`}
                 >
-                  Commencer
-                </Link>
-                <ul className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-neutral-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                {plan.idealFor && (
-                  <p className="text-xs text-neutral-500 mt-4 pt-4 border-t border-neutral-100">
-                    Idéal pour : {plan.idealFor}
-                  </p>
-                )}
-              </motion.div>
-            ))}
+                  {plan.popular && (
+                    <div className="mb-4 inline-block rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
+                      Populaire
+                    </div>
+                  )}
+                  <h3 className="text-2xl font-bold text-neutral-900 mb-2">{plan.name}</h3>
+                  <p className="text-sm text-neutral-600 mb-6">{plan.description}</p>
+                  <div className="mb-6">
+                    <span className="text-4xl font-bold text-neutral-900">
+                      {isCustom ? 'Sur mesure' : `${price}\u20AC`}
+                    </span>
+                    {!isCustom && (
+                      <span className="text-neutral-600">
+                        /mois{annual ? ' (facturé annuellement)' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <Link
+                    href="/signup"
+                    className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors mb-6 ${
+                      plan.popular
+                        ? 'bg-black text-white hover:bg-neutral-900'
+                        : 'border-2 border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white'
+                    }`}
+                  >
+                    Commencer
+                  </Link>
+                  <ul className="space-y-3">
+                    {plan.features.map((feature) => (
+                      <li key={feature} className="flex items-start gap-3">
+                        <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        <span className="text-sm text-neutral-700">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  {plan.idealFor && (
+                    <p className="text-xs text-neutral-500 mt-4 pt-4 border-t border-neutral-100">
+                      Idéal pour : {plan.idealFor}
+                    </p>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
       </section>
