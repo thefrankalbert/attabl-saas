@@ -1,24 +1,20 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import Link from 'next/link';
+
+import { AnimatedShinyText } from '@/components/ui/animated-shiny-text';
+import { BlurFade } from '@/components/ui/blur-fade';
+import { Particles } from '@/components/ui/particles';
 
 export default function CTASection() {
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] via-[#0A0A0F] to-[#111118] py-16 sm:py-20 lg:py-24">
-      {/* Decorative grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03] pointer-events-none"
-        style={{
-          backgroundImage:
-            'linear-gradient(rgba(204,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(204,255,0,0.3) 1px, transparent 1px)',
-          backgroundSize: '60px 60px',
-        }}
-      />
+    <section className="relative overflow-hidden bg-[#0A0A0F] py-16 sm:py-20 lg:py-24">
+      {/* Ambient particles */}
+      <Particles className="absolute inset-0" quantity={30} color="#CCFF00" size={0.4} />
 
       {/* Radial glow */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
             'radial-gradient(circle at 50% 40%, rgba(204,255,0,0.08) 0%, transparent 50%)',
@@ -26,23 +22,21 @@ export default function CTASection() {
       />
 
       <div className="relative z-10 mx-auto max-w-[700px] px-4 text-center">
-        <motion.h2
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl"
-        >
-          Votre commerce mérite mieux qu&apos;un <span className="text-[#CCFF00]">carnet</span> et
-          une <span className="text-[#CCFF00]">calculette</span>.
-        </motion.h2>
+        {/* Shiny badge */}
+        <div className="mb-8 inline-block rounded-full border border-white/10 px-4 py-1.5">
+          <AnimatedShinyText className="text-sm text-white/60">
+            ✨ Plateforme #1 en Afrique
+          </AnimatedShinyText>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
-        >
+        <BlurFade inView>
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
+            Votre commerce mérite mieux qu&apos;un <span className="text-[#CCFF00]">carnet</span> et
+            une <span className="text-[#CCFF00]">calculette</span>.
+          </h2>
+        </BlurFade>
+
+        <BlurFade inView delay={0.1}>
           <p className="mx-auto mt-6 max-w-lg text-base text-white/50 sm:text-lg">
             ATTABL est la plateforme commerce #1 en Afrique. Créez votre compte en 2 minutes et
             commencez à vendre aujourd&apos;hui.
@@ -68,7 +62,7 @@ export default function CTASection() {
             WhatsApp 24/7 <span className="mx-1 text-white/15">·</span> Disponible en français et en
             anglais
           </p>
-        </motion.div>
+        </BlurFade>
       </div>
     </section>
   );
