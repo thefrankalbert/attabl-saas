@@ -202,7 +202,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className={`inline-flex items-center justify-center rounded-lg p-2 transition-colors lg:hidden ${
+              className={`inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 transition-colors lg:hidden ${
                 scrolled || menuOpen
                   ? 'text-neutral-700 hover:bg-neutral-50'
                   : 'text-white hover:bg-white/10'

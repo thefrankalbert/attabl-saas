@@ -83,11 +83,11 @@ export default function Footer() {
               placeholder="Votre email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 rounded-lg border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:border-[#CCFF00] focus:outline-none focus:ring-1 focus:ring-[#CCFF00]"
+              className="min-h-[44px] flex-1 rounded-lg border border-white/10 bg-zinc-900 px-4 py-3 text-sm text-white placeholder:text-neutral-500 focus:border-[#CCFF00] focus:outline-none focus:ring-1 focus:ring-[#CCFF00]"
             />
             <button
               type="submit"
-              className="shrink-0 inline-flex items-center gap-2 rounded-lg bg-[#CCFF00] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#b3e600]"
+              className="shrink-0 inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-[#CCFF00] px-5 py-3 text-sm font-semibold text-black transition-colors hover:bg-[#b3e600]"
             >
               <Send className="h-4 w-4" />
               {submitted ? 'Merci !' : "S'abonner"}
