@@ -71,7 +71,7 @@ export default function PhoneAnimation() {
   const step = timelineSteps[activeStep];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] to-[#0C1117] py-24">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] to-[#0C1117] py-16 sm:py-20 lg:py-24">
       {/* Subtle glow behind content */}
       <div
         className="pointer-events-none absolute inset-0"
@@ -88,7 +88,7 @@ export default function PhoneAnimation() {
         </h2>
 
         {/* Subtitle */}
-        <p className="mx-auto mb-16 max-w-2xl text-center text-lg text-white/60">
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-white/60 sm:mb-16 sm:text-lg">
           ATTABL AI analyse votre activite et vous suggere les bonnes decisions, tout au long de la
           journee.
         </p>
@@ -100,7 +100,7 @@ export default function PhoneAnimation() {
               {/* Step button */}
               <button
                 onClick={() => handleStepClick(i)}
-                className="flex flex-col items-center"
+                className="flex min-h-[44px] min-w-[44px] flex-col items-center justify-center"
                 aria-label={`${s.time} — ${s.label}`}
               >
                 <div

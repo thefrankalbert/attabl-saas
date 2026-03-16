@@ -99,7 +99,7 @@ function CounterItem({
       <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-[#CCFF00]/10">
         <Icon className="h-5 w-5 text-[#CCFF00]" />
       </div>
-      <p className="font-[family-name:var(--font-sora)] text-5xl font-bold tabular-nums text-white lg:text-6xl">
+      <p className="font-[family-name:var(--font-sora)] text-3xl font-bold tabular-nums text-white sm:text-5xl lg:text-6xl">
         <span className="drop-shadow-[0_0_20px_rgba(204,255,0,0.15)]">
           {counter.prefix}
           {displayValue}
@@ -118,7 +118,7 @@ export default function IndustrySection() {
   return (
     <section
       ref={sectionRef}
-      className="relative overflow-hidden bg-[#0C1117] py-24"
+      className="relative overflow-hidden bg-[#0C1117] py-16 sm:py-20 lg:py-24"
       style={{
         backgroundImage:
           'linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)',
@@ -132,7 +132,7 @@ export default function IndustrySection() {
         <h2 className="mb-4 text-center text-3xl font-bold text-white font-[family-name:var(--font-sora)] sm:text-4xl">
           ATTABL en chiffres
         </h2>
-        <p className="mx-auto mb-16 max-w-md text-center text-neutral-400">
+        <p className="mx-auto mb-10 max-w-md text-center text-neutral-400 sm:mb-16">
           Des resultats concrets pour les commerces africains.
         </p>
         <div className="mx-auto grid max-w-5xl grid-cols-2 gap-4 px-4 sm:gap-6 lg:grid-cols-4 lg:gap-8">

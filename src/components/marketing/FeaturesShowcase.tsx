@@ -106,12 +106,12 @@ function RowLabel({ label }: { label: string }) {
 
 export default function FeaturesShowcase() {
   return (
-    <section className="bg-[#FAFAF9] py-24">
+    <section className="bg-[#FAFAF9] py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <h2 className="mb-4 text-center text-3xl font-bold text-neutral-900 font-[family-name:var(--font-sora)] sm:text-4xl">
           Un ecosysteme complet, pas juste un outil
         </h2>
-        <p className="mb-16 text-center text-lg text-neutral-500">
+        <p className="mb-10 text-center text-base text-neutral-500 sm:mb-16 sm:text-lg">
           Tout ce dont vous avez besoin pour vendre et gerer votre activite.
         </p>
 

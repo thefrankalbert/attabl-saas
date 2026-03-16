@@ -52,9 +52,9 @@ export default function SocialProof() {
   const testimonial = testimonials[activeIndex];
 
   return (
-    <section className="bg-white py-24">
+    <section className="bg-white py-16 sm:py-20 lg:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="mb-16 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 sm:text-4xl">
+        <h2 className="mb-10 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 sm:mb-16 sm:text-4xl">
           Ils nous font confiance
         </h2>
 
@@ -80,14 +80,14 @@ export default function SocialProof() {
                 </p>
 
                 {/* Author section */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                   {/* Avatar with initials */}
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#CCFF00]/10 font-bold text-[#CCFF00]">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#CCFF00]/10 font-bold text-[#CCFF00]">
                     {testimonial.initials}
                   </div>
 
                   {/* Name and business */}
-                  <div className="text-left">
+                  <div className="min-w-0 text-left">
                     <div className="font-bold text-neutral-900">{testimonial.author}</div>
                     <div className="text-sm text-neutral-500">
                       {testimonial.business} &mdash; {testimonial.city}
@@ -111,7 +111,7 @@ export default function SocialProof() {
                 type="button"
                 aria-label={`Temoignage ${index + 1}`}
                 onClick={() => goTo(index)}
-                className={`h-3 w-3 rounded-full transition-all duration-300 ${
+                className={`h-3 w-3 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full transition-all duration-300 ${
                   index === activeIndex
                     ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]'
                     : 'cursor-pointer bg-neutral-300 hover:bg-neutral-400'

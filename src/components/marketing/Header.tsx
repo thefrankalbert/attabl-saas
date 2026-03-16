@@ -127,6 +127,16 @@ export default function Header() {
               >
                 Nouveautés
               </Link>
+              <Link
+                href="/blog"
+                className={`text-base font-semibold transition-colors ${
+                  menuOpen
+                    ? 'text-neutral-900 hover:text-neutral-600'
+                    : 'text-white hover:text-white/80'
+                }`}
+              >
+                Blog
+              </Link>
             </nav>
           )}
 
