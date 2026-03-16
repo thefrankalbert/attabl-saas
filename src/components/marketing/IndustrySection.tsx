@@ -1,64 +1,121 @@
 'use client';
 
-import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
+import { useInView } from 'framer-motion';
+import { Globe, Shield, ShoppingBag, Store } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const industries = [
+interface CounterData {
+  target: number;
+  prefix: string;
+  suffix: string;
+  label: string;
+  icon: LucideIcon;
+  decimals: number;
+}
+
+const counters: CounterData[] = [
   {
-    title: 'Restaurants',
-    subtitle: 'Gastronomie',
-    href: '/restaurants',
+    target: 2400,
+    prefix: '+',
+    suffix: '',
+    label: 'commerces accompagn\u00e9s',
+    icon: Store,
+    decimals: 0,
   },
   {
-    title: 'Hôtels',
-    subtitle: 'Hôtellerie',
-    href: '/hotels',
+    target: 12,
+    prefix: '',
+    suffix: '',
+    label: 'pays couverts en Afrique',
+    icon: Globe,
+    decimals: 0,
   },
   {
-    title: 'Quick Service',
-    subtitle: 'Service rapide',
-    href: '/quick-service',
+    target: 98.7,
+    prefix: '',
+    suffix: '%',
+    label: 'de disponibilit\u00e9 plateforme',
+    icon: Shield,
+    decimals: 1,
   },
   {
-    title: 'Bars & Cafés',
-    subtitle: 'Boissons',
-    href: '/bars-cafes',
-  },
-  {
-    title: 'Commerces',
-    subtitle: 'Retail',
-    href: '/retail',
-  },
-  {
-    title: 'Salons',
-    subtitle: 'Beauté',
-    href: '/salons',
+    target: 1.2,
+    prefix: '+',
+    suffix: 'M',
+    label: 'de commandes trait\u00e9es',
+    icon: ShoppingBag,
+    decimals: 1,
   },
 ];
 
-export default function IndustrySection() {
-  return (
-    <section className="relative bg-black py-16 text-white md:py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <p className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
-          CONÇU POUR TOUS LES SECTEURS
-        </p>
-        <h2 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-          Développez votre activité
-        </h2>
+function useCountUp(
+  target: number,
+  decimals: number,
+  duration: number,
+  delay: number,
+  inView: boolean,
+): string {
+  const [value, setValue] = useState(0);
 
-        <div className="mt-16 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {industries.map((industry, idx) => (
-            <Link
-              key={idx}
-              href={industry.href}
-              className="group rounded-2xl border border-white/10 bg-zinc-900 p-8 transition-all duration-300 hover:-translate-y-1 hover:border-[#CCFF00]/40"
-            >
-              <h3 className="text-2xl font-bold text-white">{industry.title}</h3>
-              <p className="mt-2 text-sm text-neutral-400">{industry.subtitle}</p>
-            </Link>
-          ))}
-        </div>
+  useEffect(() => {
+    if (!inView) return;
+    const timeout = setTimeout(() => {
+      const start = performance.now();
+      const animate = (now: number) => {
+        const elapsed = now - start;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        setValue(eased * target);
+        if (progress < 1) requestAnimationFrame(animate);
+      };
+      requestAnimationFrame(animate);
+    }, delay);
+    return () => clearTimeout(timeout);
+  }, [inView, target, duration, delay]);
+
+  return decimals > 0 ? value.toFixed(decimals) : Math.floor(value).toLocaleString('fr-FR');
+}
+
+export default function IndustrySection() {
+  const sectionRef = useRef<HTMLElement>(null);
+  const isInView = useInView(sectionRef, { once: true, amount: 0.3 });
+
+  return (
+    <section ref={sectionRef} className="bg-[#1A1A2E] py-24">
+      <h2 className="mb-16 text-center text-3xl font-bold text-white sm:text-4xl">
+        ATTABL en chiffres
+      </h2>
+      <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-4 lg:grid-cols-4">
+        {counters.map((counter, idx) => (
+          <CounterItem key={counter.label} counter={counter} index={idx} inView={isInView} />
+        ))}
       </div>
     </section>
+  );
+}
+
+function CounterItem({
+  counter,
+  index,
+  inView,
+}: {
+  counter: CounterData;
+  index: number;
+  inView: boolean;
+}) {
+  const displayValue = useCountUp(counter.target, counter.decimals, 2000, index * 200, inView);
+  const Icon = counter.icon;
+
+  return (
+    <div className="text-center">
+      <Icon className="mx-auto mb-4 h-8 w-8 text-[#CCFF00]" />
+      <p className="text-4xl font-bold tabular-nums text-white sm:text-5xl">
+        {counter.prefix}
+        {displayValue}
+        {counter.suffix}
+      </p>
+      <p className="mt-2 text-sm text-gray-400">{counter.label}</p>
+    </div>
   );
 }
