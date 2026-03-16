@@ -1,17 +1,17 @@
 import Link from 'next/link';
-import { Heart, Package, TrendingUp } from 'lucide-react';
+import { MonitorCheck, Smartphone, Users } from 'lucide-react';
 
-export default function PharmaciesPage() {
+export default function FastFoodPage() {
   return (
     <>
       {/* Hero */}
       <section className="py-20 lg:py-28 bg-white">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 tracking-tight">
-            La pharmacie connectée
+            La vitesse au service du goût
           </h1>
           <p className="text-lg sm:text-xl text-neutral-500 max-w-2xl mx-auto mt-6">
-            Catalogue produits, stocks, fournisseurs.
+            {'Écran cuisine, bornes, drive — gérez le rush sans compromis.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <Link
@@ -36,22 +36,22 @@ export default function PharmaciesPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
-                icon: Heart,
-                title: 'Catalogue santé',
+                icon: MonitorCheck,
+                title: 'Écran cuisine KDS',
                 description:
-                  'Référencez vos produits pharmaceutiques et parapharmaceutiques avec fiches détaillées, prix et disponibilité en temps réel.',
+                  'Affichez les commandes en temps réel sur vos écrans cuisine. Priorisez automatiquement, suivez les temps de préparation et éliminez les tickets papier.',
               },
               {
-                icon: Package,
-                title: 'Gestion des stocks',
+                icon: Smartphone,
+                title: 'Bornes de commande',
                 description:
-                  'Alertes de rupture automatiques, suivi des dates de péremption et historique complet des mouvements de stock.',
+                  'Laissez vos clients commander en autonomie via QR code ou borne tactile. Réduisez les files et augmentez le panier moyen avec des suggestions intelligentes.',
               },
               {
-                icon: TrendingUp,
-                title: 'Pilotage par les données',
+                icon: Users,
+                title: 'Gestion des files',
                 description:
-                  'Analysez vos ventes par catégorie, optimisez vos commandes fournisseurs et identifiez les tendances de consommation.',
+                  'Numéros de commande, notifications automatiques, suivi en temps réel. Vos clients savent exactement quand leur commande est prête.',
               },
             ].map((feature) => (
               <div
@@ -73,7 +73,7 @@ export default function PharmaciesPage() {
       <section className="py-20 bg-white">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl font-bold text-neutral-900">
-            Prêt à digitaliser votre officine ?
+            {'Prêt à digitaliser votre fast-food ?'}
           </h2>
           <p className="text-lg text-neutral-500 mt-4">
             Essai gratuit 14 jours. Sans carte bancaire.

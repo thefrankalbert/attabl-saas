@@ -4,34 +4,32 @@ const products = [
   {
     verb: 'PILOTER',
     title: 'Dashboard temps réel',
-    description:
-      "Suivez votre chiffre d'affaires, vos tendances et vos top produits en un coup d'oeil.",
+    description: "Chiffre d'affaires, tendances, top plats - tout en un coup d'oeil.",
     span: 2,
     hero: true,
   },
   {
     verb: 'VENDRE',
-    title: 'Catalogue & commandes digitales',
-    description: 'Menu QR, catalogue en ligne, commandes — vos clients achètent en autonomie.',
+    title: 'Menu QR & commandes',
+    description: 'Vos clients scannent, consultent, commandent. Bilingue, avec photos.',
     span: 1,
   },
   {
     verb: 'PRÉPARER',
-    title: 'Routage intelligent des commandes',
-    description: 'Chaque commande est routée automatiquement vers la bonne équipe. Zéro oubli.',
+    title: 'Cuisine connectée (KDS)',
+    description: 'Chaque commande arrive en cuisine en temps réel. Zéro papier, zéro oubli.',
     span: 1,
   },
   {
     verb: 'ENCAISSER',
-    title: 'POS multi-méthodes',
-    description: 'Cash, carte, mobile money — encaissez comme vos clients le souhaitent.',
+    title: 'POS multi-devises',
+    description: 'Cash, carte, mobile money - encaissez comme vos clients veulent.',
     span: 1,
   },
   {
     verb: 'GÉRER',
-    title: 'Stock, fournisseurs, alertes',
-    description:
-      'Suivi en temps réel, alertes de réapprovisionnement. Ne manquez plus jamais de stock.',
+    title: 'Stock & fournisseurs',
+    description: 'Chaque commande déduit vos ingrédients. Alertes de réappro automatiques.',
     span: 1,
   },
 ];
