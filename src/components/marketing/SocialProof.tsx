@@ -55,10 +55,10 @@ export default function SocialProof() {
   const testimonial = testimonials[activeIndex];
 
   return (
-    <section className="bg-white py-16 sm:py-20 lg:py-24">
+    <section className="bg-app-elevated/30 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <BlurFade inView>
-          <h2 className="mb-10 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 sm:mb-16 sm:text-4xl">
+          <h2 className="mb-10 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-app-text sm:mb-16 sm:text-4xl">
             Ils nous font confiance
           </h2>
         </BlurFade>
@@ -74,34 +74,34 @@ export default function SocialProof() {
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3 }}
               >
-                <div className="relative mx-auto rounded-3xl border border-neutral-100 bg-[#FAFAF9] p-8 sm:p-12">
+                <div className="relative mx-auto rounded-2xl border border-app-border bg-app-card p-6 sm:p-10">
                   {/* Decorative opening quote */}
-                  <span className="absolute -left-2 -top-4 select-none font-serif text-[80px] leading-none text-[#CCFF00]/20">
+                  <span className="absolute -top-2 left-4 select-none font-serif text-6xl text-accent/20">
                     &ldquo;
                   </span>
 
                   {/* Quote text */}
-                  <p className="mb-8 text-lg leading-relaxed text-neutral-800 sm:text-xl">
+                  <p className="mb-8 text-base leading-relaxed text-app-text sm:text-lg">
                     {testimonial.quote}
                   </p>
 
                   {/* Author section */}
                   <div className="flex flex-wrap items-center gap-4">
                     {/* Avatar with initials */}
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#CCFF00]/10 font-bold text-[#CCFF00]">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent-muted font-bold text-accent">
                       {testimonial.initials}
                     </div>
 
                     {/* Name and business */}
                     <div className="min-w-0 text-left">
-                      <div className="font-bold text-neutral-900">{testimonial.author}</div>
-                      <div className="text-sm text-neutral-500">
+                      <div className="font-semibold text-app-text">{testimonial.author}</div>
+                      <div className="text-sm text-app-text-secondary">
                         {testimonial.business} &mdash; {testimonial.city}
                       </div>
                     </div>
 
                     {/* Segment badge */}
-                    <span className="ml-auto rounded-full bg-[#0A0A0F] px-3 py-1 text-[10px] uppercase tracking-wider text-white">
+                    <span className="ml-auto rounded-full bg-accent-muted px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-accent">
                       {testimonial.segment}
                     </span>
                   </div>
@@ -120,10 +120,8 @@ export default function SocialProof() {
                   className="flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center"
                 >
                   <span
-                    className={`block h-3 w-3 rounded-full transition-all duration-300 ${
-                      index === activeIndex
-                        ? 'bg-[#CCFF00] shadow-[0_0_8px_rgba(204,255,0,0.4)]'
-                        : 'bg-neutral-300 hover:bg-neutral-400'
+                    className={`block rounded-full transition-all duration-300 ${
+                      index === activeIndex ? 'h-2.5 w-2.5 bg-accent' : 'h-2 w-2 bg-app-border'
                     }`}
                   />
                 </button>
@@ -133,14 +131,14 @@ export default function SocialProof() {
         </BlurFade>
 
         {/* Media logos marquee */}
-        <div className="mt-16 border-t border-neutral-100 pt-12">
+        <div className="mt-16 border-t border-app-border pt-12">
           <Marquee pauseOnHover className="[--duration:30s]">
             {mediaLogos.map((logo) => (
               <div
                 key={logo}
-                className="mx-4 flex items-center rounded-xl border border-neutral-200 px-6 py-3"
+                className="mx-4 flex items-center rounded-xl border border-app-border px-5 py-2.5"
               >
-                <span className="text-sm font-semibold text-neutral-400">{logo}</span>
+                <span className="text-sm font-medium text-app-text-muted">{logo}</span>
               </div>
             ))}
           </Marquee>

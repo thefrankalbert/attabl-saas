@@ -8,59 +8,49 @@ import { Particles } from '@/components/ui/particles';
 
 export default function CTASection() {
   return (
-    <section className="relative overflow-hidden bg-[#0A0A0F] py-16 sm:py-20 lg:py-24">
+    <section className="relative overflow-hidden bg-app-card py-16 sm:py-24">
       {/* Ambient particles */}
-      <Particles className="absolute inset-0" quantity={30} color="#CCFF00" size={0.4} />
-
-      {/* Radial glow */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 40%, rgba(204,255,0,0.08) 0%, transparent 50%)',
-        }}
-      />
+      <Particles className="absolute inset-0" quantity={25} color="#4ade80" size={0.4} />
 
       <div className="relative z-10 mx-auto max-w-[700px] px-4 text-center">
         {/* Shiny badge */}
-        <div className="mb-8 inline-block rounded-full border border-white/10 px-4 py-1.5">
-          <AnimatedShinyText className="text-sm text-white/60">
-            ✨ Plateforme #1 en Afrique
+        <div className="mb-6 inline-flex rounded-full border border-app-border px-3 py-1">
+          <AnimatedShinyText className="text-xs text-app-text-muted">
+            Plateforme #1 en Afrique
           </AnimatedShinyText>
         </div>
 
         <BlurFade inView>
-          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-white sm:text-4xl lg:text-5xl">
-            Votre commerce mérite mieux qu&apos;un <span className="text-[#CCFF00]">carnet</span> et
-            une <span className="text-[#CCFF00]">calculette</span>.
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-app-text sm:text-4xl lg:text-5xl">
+            Votre commerce merite mieux qu&apos;un <span className="text-accent">carnet</span> et
+            une <span className="text-accent">calculette</span>.
           </h2>
         </BlurFade>
 
         <BlurFade inView delay={0.1}>
-          <p className="mx-auto mt-6 max-w-lg text-base text-white/50 sm:text-lg">
-            ATTABL est la plateforme commerce #1 en Afrique. Créez votre compte en 2 minutes et
-            commencez à vendre aujourd&apos;hui.
+          <p className="mx-auto mt-6 max-w-lg text-base text-app-text-secondary sm:text-lg">
+            ATTABL est la plateforme commerce #1 en Afrique. Creez votre compte en 2 minutes et
+            commencez a vendre aujourd&apos;hui.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/signup"
-              className="min-h-[44px] rounded-full bg-[#CCFF00] px-8 py-4 font-bold text-[#0A0A0F] shadow-[0_4px_30px_rgba(204,255,0,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_40px_rgba(204,255,0,0.4)]"
+              className="min-h-[44px] rounded-xl bg-accent px-8 py-4 font-bold text-accent-text shadow-sm transition-colors hover:bg-accent-hover"
             >
-              Créer mon compte gratuit
+              Creer mon compte gratuit
             </Link>
             <Link
               href="/contact"
-              className="min-h-[44px] rounded-full border border-white/15 px-8 py-4 text-white transition-colors hover:bg-white/5"
+              className="min-h-[44px] rounded-xl border border-app-border px-8 py-4 text-app-text transition-colors hover:bg-app-hover"
             >
-              Parler à un conseiller
+              Parler a un conseiller
             </Link>
           </div>
 
-          <p className="mt-8 text-sm tracking-wide text-white/30">
-            Utilisé par 2 400+ commerces <span className="mx-1 text-white/15">·</span> Support
-            WhatsApp 24/7 <span className="mx-1 text-white/15">·</span> Disponible en français et en
-            anglais
+          <p className="mt-8 text-xs tracking-wide text-app-text-muted">
+            Utilise par 2 400+ commerces <span className="mx-1">·</span> Support WhatsApp 24/7{' '}
+            <span className="mx-1">·</span> Disponible en francais et en anglais
           </p>
         </BlurFade>
       </div>

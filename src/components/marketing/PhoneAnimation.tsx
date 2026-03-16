@@ -71,24 +71,15 @@ export default function PhoneAnimation() {
   const step = timelineSteps[activeStep];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] to-[#0C1117] py-16 sm:py-20 lg:py-24">
-      {/* Subtle glow behind content */}
-      <div
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(circle at 50% 30%, rgba(204,255,0,0.04) 0%, transparent 50%)',
-        }}
-      />
-
+    <section className="relative overflow-hidden bg-app-bg py-16 sm:py-24">
       <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Title */}
-        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-white sm:text-4xl">
+        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-app-text sm:text-4xl">
           Votre copilote business, de l&apos;ouverture a la fermeture
         </h2>
 
         {/* Subtitle */}
-        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-white/60 sm:mb-16 sm:text-lg">
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-app-text-secondary sm:mb-16 sm:text-lg">
           ATTABL AI analyse votre activite et vous suggere les bonnes decisions, tout au long de la
           journee.
         </p>
@@ -106,13 +97,13 @@ export default function PhoneAnimation() {
                 <div
                   className={`rounded-full transition-all duration-300 ${
                     i === activeStep
-                      ? 'h-5 w-5 bg-[#CCFF00] ring-4 ring-[#CCFF00]/20 shadow-[0_0_12px_rgba(204,255,0,0.5)]'
-                      : 'h-3 w-3 cursor-pointer bg-white/20 hover:bg-white/40'
+                      ? 'h-4 w-4 bg-accent ring-4 ring-accent/20'
+                      : 'h-3 w-3 cursor-pointer bg-app-border hover:bg-app-border-hover'
                   }`}
                 />
                 <span
                   className={`mt-2 text-sm transition-colors duration-300 ${
-                    i === activeStep ? 'font-bold text-[#CCFF00]' : 'text-white/40'
+                    i === activeStep ? 'font-semibold text-accent' : 'text-app-text-muted'
                   }`}
                 >
                   {s.time}
@@ -120,9 +111,7 @@ export default function PhoneAnimation() {
               </button>
 
               {/* Connector line (not after last) */}
-              {i < timelineSteps.length - 1 && (
-                <div className="h-0.5 w-16 bg-gradient-to-r from-white/10 to-white/10 sm:w-24" />
-              )}
+              {i < timelineSteps.length - 1 && <div className="h-0.5 w-16 bg-app-border sm:w-20" />}
             </div>
           ))}
         </div>
@@ -139,45 +128,47 @@ export default function PhoneAnimation() {
           >
             {/* Left column — AI message card */}
             <div>
-              <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-[#CCFF00]">
+              <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-accent">
                 {step.label}
               </p>
 
               {/* AI notification card */}
-              <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-br from-white/[0.06] to-white/[0.02] p-6 backdrop-blur">
+              <div className="rounded-xl border border-app-border bg-app-card p-5">
                 {/* AI avatar + label */}
                 <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#CCFF00]">
-                    <Sparkles className="h-4 w-4 text-black" />
+                  <div className="flex h-7 w-7 items-center justify-center rounded-full bg-accent">
+                    <Sparkles className="h-3.5 w-3.5 text-accent-text" />
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#CCFF00]">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-accent">
                     ATTABL AI
                   </span>
                 </div>
 
                 {/* Message text */}
-                <p className="mt-3 text-sm leading-relaxed text-white/80">{step.message}</p>
+                <p className="mt-3 text-sm leading-relaxed text-app-text-secondary">
+                  {step.message}
+                </p>
 
-                {/* Action button */}
-                <span className="mt-4 inline-block rounded-full bg-[#CCFF00]/10 px-3 py-1.5 text-xs font-medium text-[#CCFF00]">
+                {/* Action pill */}
+                <span className="mt-3 inline-block rounded-full bg-accent-muted px-3 py-1 text-xs font-medium text-accent">
                   {step.action} &rarr;
                 </span>
               </div>
 
               {/* Insight text */}
-              <p className="mt-4 text-sm italic text-white/40">{step.insight}</p>
+              <p className="mt-4 text-sm italic text-app-text-muted">{step.insight}</p>
             </div>
 
             {/* Right column — Mini dashboard */}
             <div className="flex items-center justify-center">
-              <div className="w-full rounded-2xl border border-white/[0.06] bg-white/[0.03] p-5">
+              <div className="w-full rounded-xl border border-app-border bg-app-card p-4">
                 {/* Mini bar chart */}
                 <div className="flex items-end justify-between gap-2" style={{ height: 120 }}>
                   {step.barHeights.map((height, i) => (
                     <div
                       key={i}
                       className={`flex-1 rounded-t transition-all duration-500 ${
-                        i === step.highlightBar ? 'bg-[#CCFF00]' : 'bg-white/10'
+                        i === step.highlightBar ? 'bg-accent' : 'bg-app-border'
                       }`}
                       style={{ height: `${height}%` }}
                     />
@@ -185,7 +176,7 @@ export default function PhoneAnimation() {
                 </div>
 
                 {/* Stat label */}
-                <p className="mt-3 text-[10px] text-white/20">{step.statLabel}</p>
+                <p className="mt-3 text-[10px] text-app-text-muted">{step.statLabel}</p>
               </div>
             </div>
           </motion.div>

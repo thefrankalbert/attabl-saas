@@ -19,8 +19,7 @@ const tabs = [
       'Commandes en salle et a emporter',
     ],
     cta: { label: 'Decouvrir pour la restauration', href: '/restaurants' },
-    accent: 'bg-amber-400',
-    accentText: 'text-amber-400',
+    accentColor: '#4ade80',
     uiRows: ['Poulet Braise', 'Ndole Special', 'Jus de Gingembre'],
     uiPrices: ['4 500', '3 800', '1 200'],
     uiStatus: ['En cours', 'Pret', 'Nouveau'],
@@ -38,8 +37,7 @@ const tabs = [
       'Suivi fournisseurs',
     ],
     cta: { label: 'Decouvrir pour le commerce', href: '/retail' },
-    accent: 'bg-purple-400',
-    accentText: 'text-purple-400',
+    accentColor: '#a78bfa',
     uiRows: ['T-Shirt Wax', 'Sac en cuir', 'Bracelet perles'],
     uiPrices: ['12 000', '25 000', '3 500'],
     uiStatus: ['En stock', 'Bas', 'En stock'],
@@ -57,8 +55,7 @@ const tabs = [
       'Multi-devises',
     ],
     cta: { label: "Decouvrir pour l'hotellerie", href: '/hotels' },
-    accent: 'bg-blue-400',
-    accentText: 'text-blue-400',
+    accentColor: '#60a5fa',
     uiRows: ['Chambre 204', 'Suite Royale', 'Pool Bar'],
     uiPrices: ['45 000', '120 000', '8 500'],
     uiStatus: ['Actif', 'Occupe', 'Ouvert'],
@@ -71,8 +68,7 @@ const tabs = [
     statLabel: 'reservations et encaissement simplifies',
     features: ['Catalogue de prestations', 'Planning equipe', 'Encaissement', 'Programme fidelite'],
     cta: { label: 'Decouvrir pour les services', href: '/salons' },
-    accent: 'bg-rose-400',
-    accentText: 'text-rose-400',
+    accentColor: '#f472b6',
     uiRows: ['Tresses africaines', 'Manucure gel', 'Massage detente'],
     uiPrices: ['15 000', '8 000', '12 000'],
     uiStatus: ['13h00', '14h30', '16h00'],
@@ -81,29 +77,29 @@ const tabs = [
 
 function FakeAppUI({ tab }: { tab: (typeof tabs)[0] }) {
   return (
-    <div className="rounded-2xl bg-[#0A0A0F] p-4 sm:p-6">
+    <div className="rounded-xl border border-app-border bg-app-card p-4 sm:p-6">
       {/* Top bar */}
       <div className="mb-4 flex items-center justify-between sm:mb-6">
         <div className="flex items-center gap-2">
-          <div className={`h-2.5 w-2.5 rounded-full ${tab.accent}`} />
-          <span className="text-xs font-medium text-white/60 sm:text-sm">{tab.label}</span>
+          <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: tab.accentColor }} />
+          <span className="text-xs font-medium text-app-text-muted sm:text-sm">{tab.label}</span>
         </div>
         <div className="flex gap-1.5">
-          <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
-          <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
-          <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
+          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
+          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
+          <div className="h-1.5 w-1.5 rounded-full bg-app-text-muted/40" />
         </div>
       </div>
 
       {/* Table header */}
-      <div className="mb-2 grid grid-cols-3 border-b border-white/[0.06] pb-2">
-        <span className="text-[10px] font-medium uppercase tracking-wider text-white/30 sm:text-xs">
+      <div className="mb-2 grid grid-cols-3 border-b border-app-border pb-2">
+        <span className="text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
           Nom
         </span>
-        <span className="text-center text-[10px] font-medium uppercase tracking-wider text-white/30 sm:text-xs">
+        <span className="text-center text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
           Prix FCFA
         </span>
-        <span className="text-right text-[10px] font-medium uppercase tracking-wider text-white/30 sm:text-xs">
+        <span className="text-right text-[10px] font-medium uppercase tracking-wider text-app-text-muted sm:text-xs">
           Statut
         </span>
       </div>
@@ -112,16 +108,22 @@ function FakeAppUI({ tab }: { tab: (typeof tabs)[0] }) {
       {tab.uiRows.map((row, i) => (
         <div
           key={row}
-          className="grid grid-cols-3 items-center border-b border-white/[0.04] py-2.5 sm:py-3"
+          className="grid grid-cols-3 items-center border-b border-app-border/50 py-2.5 sm:py-3"
         >
           <div className="flex items-center gap-2">
-            <div className={`h-1.5 w-1.5 rounded-full ${tab.accent} opacity-60`} />
-            <span className="truncate text-xs text-white/70 sm:text-sm">{row}</span>
+            <div
+              className="h-1.5 w-1.5 rounded-full opacity-60"
+              style={{ backgroundColor: tab.accentColor }}
+            />
+            <span className="truncate text-xs text-app-text-secondary sm:text-sm">{row}</span>
           </div>
-          <span className="text-center text-xs tabular-nums text-white/50 sm:text-sm">
+          <span className="text-center text-xs tabular-nums text-app-text-muted sm:text-sm">
             {tab.uiPrices[i]}
           </span>
-          <span className={`text-right text-[10px] font-medium sm:text-xs ${tab.accentText}`}>
+          <span
+            className="text-right text-[10px] font-medium sm:text-xs"
+            style={{ color: tab.accentColor }}
+          >
             {tab.uiStatus[i]}
           </span>
         </div>
@@ -132,14 +134,17 @@ function FakeAppUI({ tab }: { tab: (typeof tabs)[0] }) {
         {[40, 65, 45, 80, 55, 70, 90, 60, 75, 50, 85, 68].map((h, i) => (
           <div
             key={i}
-            className={`flex-1 rounded-t ${i === 6 ? tab.accent : 'bg-white/[0.08]'}`}
-            style={{ height: `${h * 0.4}px` }}
+            className="flex-1 rounded-t"
+            style={{
+              height: `${h * 0.4}px`,
+              backgroundColor: i === 6 ? tab.accentColor : 'rgba(255,255,255,0.08)',
+            }}
           />
         ))}
       </div>
       <div className="mt-1.5 flex justify-between">
-        <span className="text-[9px] text-white/20 sm:text-[10px]">Jan</span>
-        <span className="text-[9px] text-white/20 sm:text-[10px]">Dec</span>
+        <span className="text-[9px] text-app-text-muted/50 sm:text-[10px]">Jan</span>
+        <span className="text-[9px] text-app-text-muted/50 sm:text-[10px]">Dec</span>
       </div>
     </div>
   );
@@ -151,30 +156,30 @@ export default function SegmentsSection() {
   const currentTab = tabs.find((t) => t.id === activeTab) ?? tabs[0];
 
   return (
-    <section className="bg-white py-16 sm:py-20 lg:py-24">
+    <section className="bg-app-elevated/50 py-16 sm:py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <h2 className="mb-4 text-center text-3xl font-bold text-neutral-900 font-[family-name:var(--font-sora)] sm:text-4xl">
+        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-app-text sm:text-4xl">
           Quel que soit votre commerce, ATTABL parle votre langue
         </h2>
-        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-neutral-500 sm:mb-12 sm:text-lg">
+        <p className="mx-auto mb-10 max-w-2xl text-center text-base text-app-text-secondary sm:mb-12">
           Une plateforme unique qui s&apos;adapte a votre secteur d&apos;activite.
         </p>
 
         {/* Pill tab bar */}
         <div className="mb-12 flex justify-center">
           <div
-            className="inline-flex overflow-x-auto rounded-full bg-neutral-100 p-1"
+            className="inline-flex overflow-x-auto rounded-xl bg-app-bg p-1"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`min-h-[44px] cursor-pointer whitespace-nowrap rounded-full px-5 py-2 text-sm font-medium transition-all ${
+                className={`min-h-[44px] cursor-pointer whitespace-nowrap rounded-lg px-4 py-2 text-sm font-medium transition-all ${
                   activeTab === tab.id
-                    ? 'bg-[#0A0A0F] text-white shadow-sm'
-                    : 'text-neutral-500 hover:text-neutral-700'
+                    ? 'bg-accent text-accent-text shadow-sm'
+                    : 'text-app-text-muted hover:text-app-text-secondary'
                 }`}
               >
                 {tab.label}
@@ -191,7 +196,7 @@ export default function SegmentsSection() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.3 }}
-            className="grid gap-8 lg:grid-cols-5 lg:gap-12"
+            className="mt-10 grid gap-6 lg:grid-cols-5 lg:gap-10"
           >
             {/* Left -- Fake app UI */}
             <div className="lg:col-span-3">
@@ -202,31 +207,31 @@ export default function SegmentsSection() {
             <div className="flex flex-col justify-center lg:col-span-2">
               {/* Big stat */}
               <div className="mb-6">
-                <span className="font-[family-name:var(--font-sora)] text-4xl font-bold text-[#CCFF00] sm:text-5xl">
+                <span className="font-[family-name:var(--font-sora)] text-4xl font-bold text-accent sm:text-5xl">
                   {currentTab.stat}
                 </span>
-                <p className="mt-1 text-sm text-neutral-500">{currentTab.statLabel}</p>
+                <p className="mt-1 text-sm italic text-app-text-secondary">
+                  {currentTab.statLabel}
+                </p>
               </div>
 
-              <p className="mb-4 text-sm text-neutral-500">
-                <span className="font-medium text-neutral-700">Sous-segments : </span>
+              <p className="mb-4 text-sm text-app-text-secondary">
+                <span className="font-medium text-app-text">Sous-segments : </span>
                 {currentTab.subSegments}
               </p>
 
               <ul className="space-y-3">
                 {currentTab.features.map((feature) => (
                   <li key={feature} className="flex items-center gap-2.5">
-                    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#CCFF00]/15">
-                      <Check className="h-3 w-3 text-[#0A0A0F]" />
-                    </div>
-                    <span className="text-sm text-neutral-700">{feature}</span>
+                    <Check className="h-4 w-4 shrink-0 text-accent" />
+                    <span className="text-sm text-app-text-secondary">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               <Link
                 href={currentTab.cta.href}
-                className="mt-8 inline-flex min-h-[44px] w-fit items-center rounded-full bg-[#0A0A0F] px-6 py-3 text-sm font-semibold text-white transition-all hover:bg-[#0A0A0F]/90 hover:shadow-lg"
+                className="mt-8 inline-flex min-h-[44px] w-fit items-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-accent-text transition-colors hover:bg-accent-hover"
               >
                 {currentTab.cta.label}
               </Link>
