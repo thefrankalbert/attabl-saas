@@ -2,13 +2,24 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { UtensilsCrossed, Store, Scissors, Hotel, Globe, Coins, Cloud } from 'lucide-react';
+import {
+  UtensilsCrossed,
+  Store,
+  Scissors,
+  Hotel,
+  TrendingUp,
+  ShoppingBag,
+  BarChart3,
+  Zap,
+  Globe,
+  Coins,
+  Cloud,
+} from 'lucide-react';
 import { Particles } from '@/components/ui/particles';
 import { BlurFade } from '@/components/ui/blur-fade';
 import { BorderBeam } from '@/components/ui/border-beam';
 import { NumberTicker } from '@/components/ui/number-ticker';
 import { WordRotate } from '@/components/ui/word-rotate';
-import { TrendingUp, ShoppingBag, Users, BarChart3 } from 'lucide-react';
 
 type Segment = 'restaurant' | 'boutique' | 'salon' | 'hotel';
 
@@ -16,28 +27,96 @@ const segments: { key: Segment; label: string; icon: React.ElementType }[] = [
   { key: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
   { key: 'boutique', label: 'Boutique', icon: Store },
   { key: 'salon', label: 'Salon', icon: Scissors },
-  { key: 'hotel', label: 'Hôtel', icon: Hotel },
+  { key: 'hotel', label: 'H\u00f4tel', icon: Hotel },
 ];
 
 const dashboardKPIs: Record<
   Segment,
-  { revenue: string; orders: string; clients: string; avg: string }
+  {
+    label1: string;
+    val1: string;
+    label2: string;
+    val2: string;
+    label3: string;
+    val3: string;
+    label4: string;
+    val4: string;
+  }
 > = {
-  restaurant: { revenue: '2 450 000', orders: '187', clients: '1 243', avg: '13 100' },
-  boutique: { revenue: '1 870 000', orders: '312', clients: '2 891', avg: '5 990' },
-  salon: { revenue: '980 000', orders: '94', clients: '421', avg: '10 400' },
-  hotel: { revenue: '5 120 000', orders: '63', clients: '189', avg: '81 300' },
+  restaurant: {
+    label1: 'Revenu',
+    val1: '2 450 000 F',
+    label2: 'Commandes',
+    val2: '152',
+    label3: 'Clients',
+    val3: '1 243',
+    label4: 'Panier moy.',
+    val4: '13 100 F',
+  },
+  boutique: {
+    label1: 'Revenu',
+    val1: '1 870 000 F',
+    label2: 'Ventes',
+    val2: '89',
+    label3: 'Clients',
+    val3: '2 891',
+    label4: 'Panier moy.',
+    val4: '5 990 F',
+  },
+  salon: {
+    label1: 'Revenu',
+    val1: '980 000 F',
+    label2: 'RDV',
+    val2: '94',
+    label3: 'Clients',
+    val3: '421',
+    label4: 'Panier moy.',
+    val4: '10 400 F',
+  },
+  hotel: {
+    label1: 'Revenu',
+    val1: '5 120 000 F',
+    label2: 'R\u00e9servations',
+    val2: '63',
+    label3: 'Clients',
+    val3: '189',
+    label4: 'Panier moy.',
+    val4: '81 300 F',
+  },
 };
 
 const dashboardBars: Record<Segment, number[]> = {
-  restaurant: [85, 62, 94, 48, 71],
-  boutique: [70, 88, 55, 92, 60],
-  salon: [45, 78, 65, 82, 50],
-  hotel: [92, 55, 78, 40, 88],
+  restaurant: [60, 45, 80, 55, 95, 70, 50],
+  boutique: [70, 88, 55, 92, 60, 75, 40],
+  salon: [45, 78, 65, 82, 50, 60, 70],
+  hotel: [92, 55, 78, 40, 88, 65, 72],
+};
+
+const tableRows: Record<Segment, { name: string; color: string; value: string }[]> = {
+  restaurant: [
+    { name: 'Poulet brais\u00e9', color: 'bg-accent', value: '24 500 F' },
+    { name: 'Ndol\u00e9 complet', color: 'bg-accent-400', value: '18 200 F' },
+    { name: 'Poisson grill\u00e9', color: 'bg-accent-600', value: '31 800 F' },
+  ],
+  boutique: [
+    { name: 'Robe wax', color: 'bg-accent', value: '15 000 F' },
+    { name: 'Sac en cuir', color: 'bg-accent-400', value: '22 500 F' },
+    { name: 'Bijoux argent', color: 'bg-accent-600', value: '8 900 F' },
+  ],
+  salon: [
+    { name: 'Coupe homme', color: 'bg-accent', value: '3 500 F' },
+    { name: 'Tresses', color: 'bg-accent-400', value: '12 000 F' },
+    { name: 'Soin cheveux', color: 'bg-accent-600', value: '8 000 F' },
+  ],
+  hotel: [
+    { name: 'Suite junior', color: 'bg-accent', value: '85 000 F' },
+    { name: 'Chambre double', color: 'bg-accent-400', value: '45 000 F' },
+    { name: 'Petit-d\u00e9jeuner', color: 'bg-accent-600', value: '12 500 F' },
+  ],
 };
 
 const stats = [
-  { numValue: 2400, prefix: '+', suffix: '', label: 'commerces actifs', icon: Store, delay: 0.5 },
+  { numValue: 2400, prefix: '+', suffix: '', label: 'commerces', icon: Store, delay: 0.5 },
   { numValue: 12, prefix: '', suffix: '', label: 'pays', icon: Globe, delay: 0.7 },
   { numValue: 3, prefix: '', suffix: '', label: 'devises', icon: Coins, delay: 0.9 },
   { numValue: 100, prefix: '', suffix: '%', label: 'cloud', icon: Cloud, delay: 1.1 },
@@ -45,208 +124,169 @@ const stats = [
 
 export default function VideoHero() {
   const [activeSegment, setActiveSegment] = useState<Segment>('restaurant');
+  const kpis = dashboardKPIs[activeSegment];
+  const bars = dashboardBars[activeSegment];
+  const rows = tableRows[activeSegment];
 
   return (
-    <section className="relative min-h-screen w-full bg-[#0A0A0F] overflow-hidden">
+    <section className="relative flex min-h-screen flex-col overflow-hidden bg-app-bg">
       {/* Particles background */}
-      <Particles className="absolute inset-0" color="#CCFF00" quantity={50} size={0.6} />
+      <Particles className="absolute inset-0" quantity={40} color="#4ade80" size={0.5} />
 
-      {/* Radial glow behind title */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse at 30% 50%, rgba(204,255,0,0.06) 0%, transparent 60%)',
-        }}
-      />
-
-      {/* Hero grid */}
-      <div className="relative z-10 mx-auto grid max-w-7xl items-center gap-12 px-4 pb-16 pt-24 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:px-8 lg:pt-32">
-        {/* Left column — text */}
-        <div className="text-center lg:text-left">
-          <BlurFade delay={0.2}>
-            <h1 className="font-[family-name:var(--font-sora)] text-5xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
-              <span className="block">La plateforme pour</span>
-              <WordRotate words={['lancer', 'gérer', 'développer']} className="text-[#CCFF00]" />
-              <span className="block">votre commerce</span>
-            </h1>
-          </BlurFade>
-
-          <BlurFade delay={0.4}>
-            <p className="mx-auto mt-8 max-w-lg text-lg leading-relaxed text-white/50 lg:mx-0">
-              Tout-en-un pour les entrepreneurs africains. Menu digital, stock, POS, analytics.
-            </p>
-          </BlurFade>
-
-          {/* Segment pills */}
-          <div className="mt-8 flex flex-wrap justify-center gap-2 lg:justify-start">
-            {segments.map(({ key, label, icon: Icon }, i) => (
-              <BlurFade key={key} delay={0.5 + i * 0.1}>
-                <button
-                  onClick={() => setActiveSegment(key)}
-                  className={`flex min-h-[44px] cursor-pointer items-center gap-2 rounded-full px-5 py-2.5 text-sm backdrop-blur-sm transition-all duration-300 ${
-                    activeSegment === key
-                      ? 'bg-[#CCFF00] font-semibold text-[#0A0A0F] shadow-[0_0_20px_rgba(204,255,0,0.3)]'
-                      : 'border border-white/10 text-white/60 hover:border-white/25 hover:text-white/80'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {label}
-                </button>
-              </BlurFade>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <BlurFade delay={0.9}>
-            <div className="mt-10 flex justify-center lg:justify-start">
-              <Link
-                href="/signup"
-                className="min-h-[44px] rounded-full bg-[#CCFF00] px-8 py-4 font-bold text-[#0A0A0F] shadow-[0_0_30px_rgba(204,255,0,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_0_50px_rgba(204,255,0,0.4)]"
-              >
-                Démarrer gratuitement
-              </Link>
-            </div>
-          </BlurFade>
-        </div>
-
-        {/* Right column — fake dashboard */}
-        <BlurFade delay={0.4} direction="left">
-          <div className="relative rounded-2xl border border-white/[0.08] bg-white/[0.02] p-6 overflow-hidden">
-            {/* Dashboard header */}
-            <div className="mb-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-2 w-2 rounded-full bg-[#CCFF00]" />
-                <span className="text-xs font-medium text-white/40">
-                  {segments.find((s) => s.key === activeSegment)?.label} — Tableau de bord
-                </span>
-              </div>
-              <div className="flex gap-1.5">
-                <div className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                <div className="h-2.5 w-2.5 rounded-full bg-white/10" />
-                <div className="h-2.5 w-2.5 rounded-full bg-white/10" />
-              </div>
-            </div>
-
-            {/* KPI row */}
-            <div className="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-              {[
-                {
-                  label: 'Revenu',
-                  value: dashboardKPIs[activeSegment].revenue,
-                  icon: TrendingUp,
-                  suffix: ' F',
-                },
-                {
-                  label: 'Commandes',
-                  value: dashboardKPIs[activeSegment].orders,
-                  icon: ShoppingBag,
-                },
-                { label: 'Clients', value: dashboardKPIs[activeSegment].clients, icon: Users },
-                {
-                  label: 'Panier moy.',
-                  value: dashboardKPIs[activeSegment].avg,
-                  icon: BarChart3,
-                  suffix: ' F',
-                },
-              ].map((kpi) => (
-                <div
-                  key={kpi.label}
-                  className="rounded-lg border border-white/[0.04] bg-white/[0.02] p-3"
-                >
-                  <div className="mb-1 flex items-center gap-1.5">
-                    <kpi.icon className="h-3 w-3 text-white/20" />
-                    <span className="text-[10px] text-white/30">{kpi.label}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-white/80">
-                    {kpi.value}
-                    {kpi.suffix && <span className="text-white/30">{kpi.suffix}</span>}
-                  </p>
+      {/* Main content */}
+      <div className="flex flex-1 items-center">
+        <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-16">
+            {/* Left column — text */}
+            <BlurFade delay={0.1} inView>
+              <div>
+                {/* Badge */}
+                <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-app-border px-3 py-1">
+                  <Zap className="h-3 w-3 text-accent" />
+                  <span className="text-xs text-app-text-muted">
+                    Plateforme commerce pour l&apos;Afrique
+                  </span>
                 </div>
-              ))}
-            </div>
 
-            {/* Chart — horizontal bars */}
-            <div className="mb-6 rounded-lg border border-white/[0.04] bg-white/[0.02] p-4">
-              <p className="mb-3 text-[10px] font-medium uppercase tracking-widest text-white/25">
-                Ventes par jour
-              </p>
-              <div className="space-y-2">
-                {['Lun', 'Mar', 'Mer', 'Jeu', 'Ven'].map((day, i) => (
-                  <div key={day} className="flex items-center gap-3">
-                    <span className="w-7 text-[10px] text-white/25">{day}</span>
-                    <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-white/[0.04]">
-                      <div
-                        className={`absolute inset-y-0 left-0 rounded-full transition-all duration-700 ${
-                          i === 2 ? 'bg-[#CCFF00]' : 'bg-[#CCFF00]/20'
-                        }`}
-                        style={{ width: `${dashboardBars[activeSegment][i]}%` }}
-                      />
-                    </div>
-                    <span className="w-8 text-right text-[10px] text-white/20">
-                      {dashboardBars[activeSegment][i]}%
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                {/* Title */}
+                <h1 className="font-[family-name:var(--font-sora)] text-4xl font-extrabold leading-[1.1] tracking-tight text-app-text sm:text-5xl lg:text-6xl">
+                  <span className="block">La plateforme pour</span>
+                  <WordRotate
+                    words={['lancer', 'g\u00e9rer', 'd\u00e9velopper']}
+                    className="text-accent"
+                  />
+                  <span className="block">votre commerce</span>
+                </h1>
 
-            {/* Table rows */}
-            <div className="rounded-lg border border-white/[0.04] bg-white/[0.02] p-4">
-              <p className="mb-3 text-[10px] font-medium uppercase tracking-widest text-white/25">
-                Commandes récentes
-              </p>
-              <div className="space-y-2">
-                {[
-                  { id: '#1247', status: 'Complétée', amount: '24 500 F' },
-                  { id: '#1246', status: 'En cours', amount: '18 200 F' },
-                  { id: '#1245', status: 'Complétée', amount: '31 800 F' },
-                ].map((row) => (
-                  <div
-                    key={row.id}
-                    className="flex items-center justify-between border-b border-white/[0.03] pb-2 last:border-0 last:pb-0"
-                  >
-                    <span className="text-xs font-mono text-white/40">{row.id}</span>
-                    <span
-                      className={`text-[10px] ${
-                        row.status === 'En cours' ? 'text-[#CCFF00]/60' : 'text-white/25'
+                {/* Subtitle */}
+                <p className="mt-6 max-w-md text-base leading-relaxed text-app-text-secondary sm:text-lg">
+                  Tout-en-un pour les entrepreneurs africains. Menu digital, stock, POS, analytics.
+                </p>
+
+                {/* Segment pills */}
+                <div className="mt-8 flex flex-wrap gap-2">
+                  {segments.map(({ key, label, icon: Icon }) => (
+                    <button
+                      key={key}
+                      onClick={() => setActiveSegment(key)}
+                      className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm transition-all ${
+                        activeSegment === key
+                          ? 'bg-accent font-semibold text-accent-text shadow-sm'
+                          : 'border border-app-border text-app-text-muted hover:border-app-border-hover hover:text-app-text-secondary'
                       }`}
                     >
-                      {row.status}
-                    </span>
-                    <span className="text-xs text-white/50">{row.amount}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                      <Icon className="h-4 w-4" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
 
-            {/* Animated border beam */}
-            <BorderBeam size={200} duration={8} colorFrom="#CCFF00" colorTo="#7C3AED" />
+                {/* CTA */}
+                <div className="mt-8">
+                  <Link
+                    href="/signup"
+                    className="inline-flex items-center rounded-xl bg-accent px-8 py-4 font-bold text-accent-text shadow-sm transition-colors hover:bg-accent-hover"
+                  >
+                    D\u00e9marrer gratuitement
+                  </Link>
+                </div>
+              </div>
+            </BlurFade>
+
+            {/* Right column — fake dashboard */}
+            <BlurFade delay={0.3} inView>
+              <div className="relative overflow-hidden rounded-xl border border-app-border bg-app-card p-4 sm:p-6">
+                <BorderBeam size={200} duration={10} colorFrom="#4ade80" colorTo="#a78bfa" />
+
+                {/* Top bar */}
+                <div className="mb-4 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-accent" />
+                    <span className="text-[10px] text-app-text-muted">
+                      {segments.find((s) => s.key === activeSegment)?.label} &mdash; Tableau de bord
+                    </span>
+                  </div>
+                  <div className="flex gap-1">
+                    <div className="h-2 w-2 rounded-full bg-app-hover" />
+                    <div className="h-2 w-2 rounded-full bg-app-hover" />
+                    <div className="h-2 w-2 rounded-full bg-app-hover" />
+                  </div>
+                </div>
+
+                {/* KPI cards */}
+                <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  {[
+                    { label: kpis.label1, value: kpis.val1, icon: TrendingUp },
+                    { label: kpis.label2, value: kpis.val2, icon: ShoppingBag },
+                    { label: kpis.label3, value: kpis.val3, icon: BarChart3 },
+                    { label: kpis.label4, value: kpis.val4, icon: BarChart3 },
+                  ].map((kpi) => (
+                    <div key={kpi.label} className="rounded-lg bg-app-elevated p-3">
+                      <p className="text-lg font-bold tabular-nums text-app-text">{kpi.value}</p>
+                      <p className="mt-0.5 text-[10px] text-app-text-muted">{kpi.label}</p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Chart area */}
+                <div className="mb-3 rounded-lg bg-app-elevated p-3">
+                  <div className="flex h-20 items-end gap-1">
+                    {bars.map((height, i) => (
+                      <div
+                        key={i}
+                        className={`flex-1 rounded-sm ${i === 4 ? 'bg-accent' : 'bg-app-hover'}`}
+                        style={{ height: `${height}%` }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Table area */}
+                <div className="rounded-lg bg-app-elevated p-3">
+                  {rows.map((row, i) => (
+                    <div
+                      key={row.name}
+                      className={`flex items-center justify-between py-2 ${
+                        i < rows.length - 1 ? 'border-b border-app-border' : ''
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className={`h-1.5 w-1.5 rounded-full ${row.color}`} />
+                        <span className="text-xs text-app-text-secondary">{row.name}</span>
+                      </div>
+                      <span className="text-xs font-medium tabular-nums text-app-text">
+                        {row.value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </BlurFade>
           </div>
-        </BlurFade>
+        </div>
       </div>
 
       {/* Stats banner */}
-      <div className="relative z-10 border-t border-white/[0.06]">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 sm:grid-cols-4">
+      <div className="mt-auto border-t border-app-border">
+        <div className="mx-auto grid w-full max-w-7xl grid-cols-2 sm:grid-cols-4">
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`px-4 py-6 text-center sm:px-6 sm:py-8 ${
-                i % 2 === 0 ? 'border-r border-white/[0.06]' : 'sm:border-r sm:border-white/[0.06]'
-              } ${i >= 2 ? 'border-t border-white/[0.06] sm:border-t-0' : ''} ${i === stats.length - 1 ? 'sm:border-r-0' : ''}`}
+              className={`px-4 py-6 text-center sm:px-6 ${
+                i < stats.length - 1 ? 'border-r border-app-border' : ''
+              }`}
             >
-              <stat.icon className="mx-auto mb-2 h-4 w-4 text-[#CCFF00]/60" />
-              <p className="text-2xl font-bold text-white sm:text-3xl">
+              <stat.icon className="mx-auto mb-2 h-4 w-4 text-accent" />
+              <p className="text-xl font-bold text-app-text sm:text-2xl">
                 {stat.prefix}
                 <NumberTicker
                   value={stat.numValue}
                   delay={stat.delay}
-                  className="text-2xl font-bold text-white sm:text-3xl"
+                  className="text-xl font-bold text-app-text sm:text-2xl"
                 />
                 {stat.suffix}
               </p>
-              <p className="mt-1 text-xs text-white/40 sm:text-sm">{stat.label}</p>
+              <p className="mt-1 text-[11px] text-app-text-muted">{stat.label}</p>
             </div>
           ))}
         </div>
