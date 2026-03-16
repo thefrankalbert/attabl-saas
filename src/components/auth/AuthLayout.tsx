@@ -36,10 +36,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               transition={{ duration: 0.6, ease: 'easeOut' }}
               className="shrink-0 text-center mb-6"
             >
-              <h2
-                className="text-[1.5rem] lg:text-[1.75rem] text-app-text leading-[1.2] mb-3"
-                style={{ fontFamily: 'var(--font-dm-serif-display)' }}
-              >
+              <h2 className="text-[1.5rem] lg:text-[1.75rem] text-app-text leading-[1.2] mb-3 font-bold">
                 Vos clients vivent une
                 <br />
                 <span className="text-accent">expérience 5 étoiles.</span>
@@ -50,22 +47,19 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
             {/* ── Impact numbers ──────────────────────────── */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.15, ease: 'easeOut' }}
               className="shrink-0 mb-6"
             >
               <div className="grid grid-cols-3 gap-3">
                 {[
                   { value: '+35%', label: 'de commandes', sub: 'en moyenne' },
-                  { value: '-50%', label: 'd\u2019erreurs', sub: 'en salle' },
+                  { value: '-50%', label: "d'erreurs", sub: 'en salle' },
                   { value: '10 min', label: 'pour lancer', sub: 'votre menu' },
-                ].map((stat, i) => (
-                  <motion.div
+                ].map((stat) => (
+                  <div
                     key={stat.value}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
                     className="text-center p-3 rounded-xl bg-app-elevated/50 border border-app-border"
                   >
                     <div className="text-lg lg:text-xl font-black text-accent tabular-nums leading-none mb-1">
@@ -75,7 +69,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                       {stat.label}
                     </div>
                     <div className="text-[9px] text-app-text-muted leading-tight">{stat.sub}</div>
-                  </motion.div>
+                  </div>
                 ))}
               </div>
             </motion.div>
@@ -153,20 +147,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                       table: 'Table 4',
                       total: '32 500 FCFA',
                       status: 'En cours',
-                      cls: 'bg-amber-400/20 text-amber-300',
+                      cls: 'bg-app-status-warning-bg text-status-warning',
                     },
                     {
                       table: 'Table 7',
                       total: '78 000 FCFA',
                       status: 'Servi',
-                      cls: 'bg-emerald-400/20 text-emerald-300',
+                      cls: 'bg-app-status-success-bg text-status-success',
                     },
                   ].map((order, i) => (
-                    <motion.div
+                    <div
                       key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.9 + i * 0.1, duration: 0.3 }}
                       className="flex items-center gap-2 bg-app-hover/40 rounded-lg px-2.5 py-1.5"
                     >
                       <span className="text-[10px] font-semibold text-app-text-secondary w-12 shrink-0">
@@ -180,7 +171,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                       >
                         {order.status}
                       </span>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
               </div>
