@@ -1,6 +1,8 @@
-import { createClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { logger } from '@/lib/logger';
+import type { CookieOptions } from '@supabase/ssr';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -10,9 +12,43 @@ export async function GET(request: Request) {
   const plan = requestUrl.searchParams.get('plan');
   const restaurantName = requestUrl.searchParams.get('restaurant_name');
 
+  // Accumulate cookies to apply to the final redirect response
+  const cookiesToSet: Array<{ name: string; value: string; options: CookieOptions }> = [];
+  const cookieStore = await cookies();
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
+            options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
+            options.sameSite = 'lax';
+          }
+          cookiesToSet.push({ name, value, options });
+        },
+        remove(name: string, options: CookieOptions) {
+          cookiesToSet.push({ name, value: '', options: { ...options, maxAge: 0 } });
+        },
+      },
+    },
+  );
+
+  // Helper: create redirect response with accumulated cookies
+  function redirectWithCookies(url: string): NextResponse {
+    const response = NextResponse.redirect(url);
+    for (const { name, value, options } of cookiesToSet) {
+      response.cookies.set({ name, value, ...options });
+    }
+    return response;
+  }
+
   // Handle token_hash-based recovery (custom password reset email flow)
   if (tokenHash && type === 'recovery') {
-    const supabase = await createClient();
     const { error } = await supabase.auth.verifyOtp({
       token_hash: tokenHash,
       type: 'recovery',
@@ -23,15 +59,13 @@ export async function GET(request: Request) {
         errorMessage: error.message,
         errorCode: error.code,
       });
-      return NextResponse.redirect(`${requestUrl.origin}/reset-password?error=invalid_token`);
+      return redirectWithCookies(`${requestUrl.origin}/reset-password?error=invalid_token`);
     }
 
-    return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
+    return redirectWithCookies(`${requestUrl.origin}/reset-password`);
   }
 
   if (code) {
-    const supabase = await createClient();
-
     const {
       data: { session },
       error,
@@ -45,14 +79,14 @@ export async function GET(request: Request) {
         origin: requestUrl.origin,
         hasCode: !!code,
       });
-      return NextResponse.redirect(
+      return redirectWithCookies(
         `${requestUrl.origin}/login?error=oauth_failed&reason=${encodeURIComponent(error.message)}`,
       );
     }
 
-    // Password recovery flow — redirect to reset page
+    // Password recovery flow
     if (type === 'recovery' && session) {
-      return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
+      return redirectWithCookies(`${requestUrl.origin}/reset-password`);
     }
 
     if (session?.user) {
@@ -64,7 +98,7 @@ export async function GET(request: Request) {
         .single();
 
       if (existingAdmin) {
-        // Track login: update last_login_at, increment login_count, create session
+        // Track login
         try {
           const userAgent = request.headers.get('user-agent') || '';
           const forwardedFor = request.headers.get('x-forwarded-for');
@@ -91,17 +125,16 @@ export async function GET(request: Request) {
 
         // Check if onboarding is pending
         if (tenantsData?.onboarding_completed === false) {
-          return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+          return redirectWithCookies(`${requestUrl.origin}/onboarding`);
         }
 
         // All authenticated users land on the tenant hub
-        return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
+        return redirectWithCookies(`${requestUrl.origin}/admin/tenants`);
       }
 
-      // User has no tenant — need to create one via OAuth signup
-      // Use provided plan/restaurantName or defaults
+      // User has no tenant - need to create one via OAuth signup
       const signupPlan = plan || 'essentiel';
-      const signupName = restaurantName || 'Mon Établissement';
+      const signupName = restaurantName || 'Mon activité';
 
       // Call signup API to create tenant
       const signupResponse = await fetch(`${requestUrl.origin}/api/signup-oauth`, {
@@ -118,24 +151,23 @@ export async function GET(request: Request) {
       const signupData = await signupResponse.json();
 
       if (signupResponse.ok && signupData.slug) {
-        return NextResponse.redirect(`${requestUrl.origin}/onboarding`);
+        return redirectWithCookies(`${requestUrl.origin}/onboarding`);
       } else {
-        // If user already exists error (duplicate), try to find their tenant again
         if (signupData.error?.includes('already') || signupData.error?.includes('existe')) {
-          logger.warn('OAuth user exists but has no tenant — redirecting to signup', {
+          logger.warn('OAuth user exists but has no tenant - redirecting to signup', {
             userId: session.user.id,
             email: session.user.email,
           });
         } else {
           logger.error('Signup OAuth API error', { error: signupData.error });
         }
-        return NextResponse.redirect(
-          `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur création compte')}&email=${encodeURIComponent(session.user.email || '')}`,
+        return redirectWithCookies(
+          `${requestUrl.origin}/signup?error=${encodeURIComponent(signupData.error || 'Erreur lors de la creation du compte')}&email=${encodeURIComponent(session.user.email || '')}`,
         );
       }
     }
   }
 
   // Default redirect to login
-  return NextResponse.redirect(`${requestUrl.origin}/login`);
+  return redirectWithCookies(`${requestUrl.origin}/login`);
 }
