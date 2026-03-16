@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 const segments = [
   { label: 'Restaurants', href: '/restaurants', description: 'Gastronomie et service à table' },
@@ -82,7 +83,8 @@ export default function Header() {
           </nav>
 
           {/* Actions */}
-          <div className="ml-auto flex items-center gap-4">
+          <div className="ml-auto flex items-center gap-3">
+            <ThemeToggle className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors" />
             <Link
               href="/login"
               className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors lg:block"
@@ -216,7 +218,11 @@ export default function Header() {
                 Se connecter
               </Link>
             </div>
-            <div className="mt-auto pt-6">
+            <div className="mt-auto pt-6 space-y-4">
+              <div className="flex items-center justify-between px-4 py-2">
+                <span className="text-sm text-neutral-500">Apparence</span>
+                <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors" />
+              </div>
               <Link
                 href="/signup"
                 onClick={() => setMobileOpen(false)}
