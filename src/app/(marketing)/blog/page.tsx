@@ -2,8 +2,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Blog — Conseils pour Entrepreneurs Africains',
-  description: 'Guides pratiques pour digitaliser votre commerce en Afrique.',
+  title: 'Blog - Conseils pour la Restauration en Afrique',
+  description: 'Guides pratiques pour digitaliser votre restaurant ou hôtel en Afrique.',
 };
 
 const articles = [
@@ -17,11 +17,11 @@ const articles = [
     readTime: '8 min',
   },
   {
-    slug: 'digitaliser-boutique-catalogue-en-ligne',
-    title: 'Comment digitaliser votre boutique avec un catalogue en ligne',
+    slug: 'menu-qr-code-restaurant',
+    title: 'Menu QR code : pourquoi chaque restaurant devrait en avoir un',
     excerpt:
-      'Du catalogue papier au catalogue digital : étapes pratiques pour les boutiques, épiceries et commerces de détail.',
-    category: 'Digital',
+      'Du papier au digital : comment le menu QR transforme l{"\'"}expérience client et simplifie la gestion.',
+    category: 'Restauration',
     date: '8 mars 2026',
     readTime: '6 min',
   },
@@ -44,7 +44,7 @@ export default function BlogPage() {
           Blog
         </h1>
         <p className="text-lg text-neutral-500 mb-16">
-          Conseils pratiques et ressources pour digitaliser votre activité en Afrique.
+          Conseils pratiques et ressources pour digitaliser votre restaurant en Afrique.
         </p>
 
         <div className="space-y-12">
