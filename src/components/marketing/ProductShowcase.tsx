@@ -1,91 +1,86 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const products = [
   {
-    title: 'Dashboard en temps réel',
-    description: 'Suivez vos ventes, commandes et performances en direct',
-    category: 'ANALYTICS',
+    verb: 'PILOTER',
+    title: 'Dashboard temps r\u00e9el',
+    description:
+      "Suivez votre chiffre d'affaires, vos tendances et vos top produits en un coup d'\u0153il.",
+    span: 2,
+    gradient: 'from-[#CCFF00]/5 to-[#CCFF00]/10',
   },
   {
-    title: 'Menu Digital QR Code',
-    description: 'Menu bilingue avec photos et modificateurs personnalisables',
-    category: 'MENU',
+    verb: 'VENDRE',
+    title: 'Catalogue & commandes digitales',
+    description:
+      'Menu QR, catalogue en ligne, commandes \u2014 vos clients ach\u00e8tent en autonomie.',
+    span: 1,
+    gradient: 'from-purple-500/5 to-purple-500/10',
   },
   {
-    title: 'Cuisine connectée (KDS)',
-    description: 'Kitchen Display System pour optimiser votre production',
-    category: 'KITCHEN',
+    verb: 'PR\u00c9PARER',
+    title: 'Routage intelligent des commandes',
+    description:
+      'Chaque commande est rout\u00e9e automatiquement vers la bonne \u00e9quipe. Z\u00e9ro oubli.',
+    span: 1,
+    gradient: 'from-blue-500/5 to-blue-500/10',
   },
   {
-    title: 'Point de vente (POS)',
-    description: 'Encaissement rapide avec gestion multi-devises',
-    category: 'POINT OF SALE',
+    verb: 'ENCAISSER',
+    title: 'POS multi-m\u00e9thodes',
+    description: 'Cash, carte, mobile money \u2014 encaissez comme vos clients le souhaitent.',
+    span: 1,
+    gradient: 'from-amber-500/5 to-amber-500/10',
+  },
+  {
+    verb: 'G\u00c9RER',
+    title: 'Stock, fournisseurs, alertes',
+    description:
+      'Suivi en temps r\u00e9el, alertes de r\u00e9approvisionnement. Ne manquez plus jamais de stock.',
+    span: 1,
+    gradient: 'from-emerald-500/5 to-emerald-500/10',
   },
 ];
 
 export default function ProductShowcase() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const next = () => setActiveIndex((prev) => (prev + 1) % products.length);
-  const prev = () => setActiveIndex((prev) => (prev - 1 + products.length) % products.length);
-
   return (
-    <section className="relative bg-white py-16 md:py-24 lg:py-32">
+    <section className="bg-white py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
-          {/* Left: Product preview */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100">
-            <div className="flex h-full items-center justify-center">
-              <p className="text-3xl font-bold text-neutral-300 sm:text-4xl md:text-6xl">
-                {products[activeIndex].category}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          {products.map((product, idx) => (
+            <motion.div
+              key={product.verb}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.5, delay: idx * 0.1 }}
+              className={`overflow-hidden rounded-2xl border border-neutral-200 bg-gradient-to-br ${product.gradient} p-8 ${
+                product.span === 2
+                  ? 'min-h-[200px] md:col-span-2 md:min-h-[280px]'
+                  : 'min-h-[200px]'
+              }`}
+            >
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#CCFF00]">
+                {product.verb}
               </p>
-            </div>
-          </div>
-
-          {/* Right: Product info & navigation */}
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-              {products[activeIndex].category}
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl lg:text-5xl">
-              {products[activeIndex].title}
-            </h2>
-            <p className="mt-6 text-xl text-neutral-600">{products[activeIndex].description}</p>
-
-            <div className="mt-8 flex items-center gap-4">
-              <Link
-                href="/features"
-                className="text-base font-semibold text-lime-700 underline decoration-2 underline-offset-4 transition-colors hover:text-lime-800"
+              <h3
+                className={`mb-3 font-bold text-neutral-900 ${
+                  product.span === 2 ? 'text-2xl sm:text-3xl' : 'text-xl sm:text-2xl'
+                }`}
               >
-                En savoir plus
-              </Link>
-            </div>
-
-            {/* Navigation */}
-            <div className="mt-12 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={prev}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-neutral-900 text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
+                {product.title}
+              </h3>
+              <p
+                className={`text-neutral-600 leading-relaxed ${
+                  product.span === 2 ? 'max-w-xl text-lg' : 'max-w-md'
+                }`}
               >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-neutral-900 text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-              <span className="ml-4 text-sm text-neutral-600">
-                {activeIndex + 1} / {products.length}
-              </span>
-            </div>
-          </div>
+                {product.description}
+              </p>
+            </motion.div>
+          ))}
         </div>
       </div>
     </section>
