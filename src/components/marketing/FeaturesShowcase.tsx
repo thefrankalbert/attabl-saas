@@ -8,6 +8,9 @@ interface Feature {
   icon: LucideIcon;
   title: string;
   description: string;
+  iconBg: string;
+  iconColor: string;
+  accentBar: string;
 }
 
 const vendreFeatures: Feature[] = [
@@ -15,19 +18,28 @@ const vendreFeatures: Feature[] = [
     icon: QrCode,
     title: 'Catalogue Digital',
     description:
-      'QR code, commandes en ligne, vitrine digitale. Présentez vos produits et services avec style.',
+      'QR code, commandes en ligne, vitrine digitale. Presentez vos produits et services avec style.',
+    iconBg: 'bg-[#CCFF00]/10',
+    iconColor: 'text-[#CCFF00]',
+    accentBar: 'bg-[#CCFF00]',
   },
   {
     icon: CreditCard,
     title: 'Point de Vente',
     description:
-      'POS tactile, multi-méthodes de paiement. Cash, carte, mobile money — tout en un écran.',
+      'POS tactile, multi-methodes de paiement. Cash, carte, mobile money -- tout en un ecran.',
+    iconBg: 'bg-purple-500/10',
+    iconColor: 'text-purple-500',
+    accentBar: 'bg-purple-500',
   },
   {
     icon: Banknote,
     title: 'Paiements',
     description:
-      '3 devises (XAF, EUR, USD), mobile money, réconciliation automatique. Encaissez sans friction.',
+      '3 devises (XAF, EUR, USD), mobile money, reconciliation automatique. Encaissez sans friction.',
+    iconBg: 'bg-amber-500/10',
+    iconColor: 'text-amber-500',
+    accentBar: 'bg-amber-500',
   },
 ];
 
@@ -36,18 +48,27 @@ const gererFeatures: Feature[] = [
     icon: BarChart3,
     title: 'Analytics & IA',
     description:
-      'Tableaux de bord, tendances, alertes proactives. Des insights, pas des données brutes.',
+      'Tableaux de bord, tendances, alertes proactives. Des insights, pas des donnees brutes.',
+    iconBg: 'bg-blue-500/10',
+    iconColor: 'text-blue-500',
+    accentBar: 'bg-blue-500',
   },
   {
     icon: Package,
     title: 'Stock',
     description:
-      'Inventaire temps réel, fournisseurs, réapprovisionnement automatique. Zéro rupture.',
+      'Inventaire temps reel, fournisseurs, reapprovisionnement automatique. Zero rupture.',
+    iconBg: 'bg-emerald-500/10',
+    iconColor: 'text-emerald-500',
+    accentBar: 'bg-emerald-500',
   },
   {
     icon: Users,
-    title: 'Équipe',
-    description: 'Rôles, shifts, performance par employé. Gérez votre équipe, pas des tableurs.',
+    title: 'Equipe',
+    description: 'Roles, shifts, performance par employe. Gerez votre equipe, pas des tableurs.',
+    iconBg: 'bg-rose-500/10',
+    iconColor: 'text-rose-500',
+    accentBar: 'bg-rose-500',
   },
 ];
 
@@ -60,33 +81,43 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
       viewport={{ once: true }}
-      className="bg-white p-6 rounded-xl border border-neutral-200 hover:scale-[1.02] hover:shadow-lg transition-all duration-200"
+      className="rounded-xl border border-neutral-200 bg-white p-6 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
     >
-      <div className="w-10 h-10 rounded-lg bg-[#CCFF00]/10 flex items-center justify-center mb-4">
-        <Icon className="w-5 h-5 text-[#CCFF00]" />
+      <div
+        className={`mb-4 flex h-12 w-12 items-center justify-center rounded-xl ${feature.iconBg}`}
+      >
+        <Icon className={`h-6 w-6 ${feature.iconColor}`} />
       </div>
-      <h3 className="text-lg font-semibold text-neutral-900 mb-2">{feature.title}</h3>
-      <p className="text-sm text-neutral-600 leading-relaxed">{feature.description}</p>
+      <h3 className="mb-2 text-lg font-semibold text-neutral-900">{feature.title}</h3>
+      <p className="text-sm leading-relaxed text-neutral-600">{feature.description}</p>
+      <div className={`mt-4 h-0.5 w-8 rounded-full ${feature.accentBar}`} />
     </motion.div>
+  );
+}
+
+function RowLabel({ label }: { label: string }) {
+  return (
+    <div className="mb-6 flex items-center gap-4">
+      <p className="text-xs font-semibold uppercase tracking-widest text-neutral-900">{label}</p>
+      <div className="h-px flex-1 bg-neutral-200" />
+    </div>
   );
 }
 
 export default function FeaturesShowcase() {
   return (
-    <section className="bg-neutral-50 py-24">
+    <section className="bg-[#FAFAF9] py-24">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 text-center mb-4">
-          Un écosystème complet, pas juste un outil
+        <h2 className="mb-4 text-center text-3xl font-bold text-neutral-900 font-[family-name:var(--font-sora)] sm:text-4xl">
+          Un ecosysteme complet, pas juste un outil
         </h2>
-        <p className="text-lg text-neutral-500 text-center mb-16">
-          Tout ce dont vous avez besoin pour vendre et gérer votre activité.
+        <p className="mb-16 text-center text-lg text-neutral-500">
+          Tout ce dont vous avez besoin pour vendre et gerer votre activite.
         </p>
 
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C3AED] mb-6">
-            VENDRE
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <RowLabel label="VENDRE" />
+          <div className="grid gap-6 md:grid-cols-3">
             {vendreFeatures.map((feature, idx) => (
               <FeatureCard key={feature.title} feature={feature} index={idx} />
             ))}
@@ -94,10 +125,8 @@ export default function FeaturesShowcase() {
         </div>
 
         <div className="mt-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C3AED] mb-6">
-            GÉRER
-          </p>
-          <div className="grid md:grid-cols-3 gap-6">
+          <RowLabel label="GERER" />
+          <div className="grid gap-6 md:grid-cols-3">
             {gererFeatures.map((feature, idx) => (
               <FeatureCard key={feature.title} feature={feature} index={idx} />
             ))}

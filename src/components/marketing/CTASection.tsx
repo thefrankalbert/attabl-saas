@@ -5,17 +5,36 @@ import Link from 'next/link';
 
 export default function CTASection() {
   return (
-    <section className="bg-[#1A1A2E] py-24">
-      <div className="max-w-[700px] mx-auto text-center px-4">
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A0A0F] via-[#0A0A0F] to-[#111118] py-24">
+      {/* Decorative grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.03] pointer-events-none"
+        style={{
+          backgroundImage:
+            'linear-gradient(rgba(204,255,0,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(204,255,0,0.3) 1px, transparent 1px)',
+          backgroundSize: '60px 60px',
+        }}
+      />
+
+      {/* Radial glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(circle at 50% 40%, rgba(204,255,0,0.08) 0%, transparent 50%)',
+        }}
+      />
+
+      <div className="relative z-10 mx-auto max-w-[700px] px-4 text-center">
         <motion.h2
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="text-3xl sm:text-4xl font-bold text-white leading-tight"
+          className="font-[family-name:var(--font-sora)] text-4xl font-bold leading-tight text-white sm:text-5xl"
         >
-          Votre commerce m&eacute;rite mieux qu&apos;un <em className="italic">carnet</em> et une{' '}
-          <em className="italic">calculette</em>.
+          Votre commerce mérite mieux qu&apos;un <span className="text-[#CCFF00]">carnet</span> et
+          une <span className="text-[#CCFF00]">calculette</span>.
         </motion.h2>
 
         <motion.div
@@ -24,29 +43,30 @@ export default function CTASection() {
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
         >
-          <p className="text-lg text-white/60 mt-6 max-w-lg mx-auto">
-            ATTABL est la plateforme commerce #1 en Afrique. Cr&eacute;ez votre compte en 2 minutes
-            et commencez &agrave; vendre aujourd&apos;hui.
+          <p className="mx-auto mt-6 max-w-lg text-lg text-white/50">
+            ATTABL est la plateforme commerce #1 en Afrique. Créez votre compte en 2 minutes et
+            commencez à vendre aujourd&apos;hui.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
+          <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/signup"
-              className="bg-[#CCFF00] text-[#1A1A2E] font-bold rounded-full px-8 py-4 hover:scale-105 transition-transform"
+              className="rounded-full bg-[#CCFF00] px-8 py-4 font-bold text-[#0A0A0F] shadow-[0_4px_30px_rgba(204,255,0,0.3)] transition-all duration-300 hover:scale-105 hover:shadow-[0_4px_40px_rgba(204,255,0,0.4)]"
             >
-              Cr&eacute;er mon compte gratuit
+              Créer mon compte gratuit
             </Link>
             <Link
               href="/contact"
-              className="border border-white text-white rounded-full px-8 py-4 hover:bg-white/10 transition-colors"
+              className="rounded-full border border-white/15 px-8 py-4 text-white transition-colors hover:bg-white/5"
             >
-              Parler &agrave; un conseiller
+              Parler à un conseiller
             </Link>
           </div>
 
-          <p className="text-sm text-gray-400 mt-8">
-            Utilis&eacute; par 2 400+ commerces &bull; Support WhatsApp 24/7 &bull; Disponible en
-            fran&ccedil;ais et en anglais
+          <p className="mt-8 text-sm tracking-wide text-white/30">
+            Utilisé par 2 400+ commerces <span className="mx-1 text-white/15">·</span> Support
+            WhatsApp 24/7 <span className="mx-1 text-white/15">·</span> Disponible en français et en
+            anglais
           </p>
         </motion.div>
       </div>
