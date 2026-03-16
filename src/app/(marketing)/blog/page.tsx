@@ -52,7 +52,7 @@ export default function BlogPage() {
             <article key={article.slug} className="group">
               <Link href={`/blog/${article.slug}`} className="block">
                 <div className="mb-3 flex items-center gap-3 text-sm text-neutral-400">
-                  <span className="rounded-full bg-[#CCFF00]/10 px-2.5 py-0.5 text-xs font-medium text-[#0A0A0F]">
+                  <span className="rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-900">
                     {article.category}
                   </span>
                   <span>{article.date}</span>
