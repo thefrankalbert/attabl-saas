@@ -95,7 +95,7 @@ function AuthForm({ mode }: AuthFormProps) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            restaurantName: 'Mon Établissement',
+            restaurantName: 'Mon activité',
             email,
             password,
             plan: 'essentiel',
@@ -306,7 +306,7 @@ function AuthForm({ mode }: AuthFormProps) {
           animate={{ opacity: 1, y: 0 }}
           className="mb-4"
         >
-          <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-xl">
+          <Alert className="bg-app-status-success-bg text-status-success border-status-success/20 rounded-xl">
             <MailCheck className="h-4 w-4" />
             <AlertDescription className="text-sm">
               Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.
