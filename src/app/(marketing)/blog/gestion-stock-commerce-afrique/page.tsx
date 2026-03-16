@@ -2,12 +2,12 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Gestion de stock en Afrique : le guide complet',
+  title: 'Gestion de stock en restauration : le guide complet',
   description:
-    'Comment digitaliser la gestion de vos stocks pour éviter les ruptures et optimiser vos commandes fournisseurs. Guide pratique pour commerçants africains.',
+    'Comment digitaliser la gestion de vos stocks en cuisine pour éviter les ruptures et optimiser vos commandes fournisseurs. Guide pratique pour restaurants et hôtels en Afrique.',
   openGraph: {
-    title: 'Gestion de stock en Afrique : le guide complet',
-    description: 'Guide pratique pour digitaliser vos stocks en Afrique.',
+    title: 'Gestion de stock en restauration : le guide complet',
+    description: 'Guide pratique pour digitaliser vos stocks en restauration en Afrique.',
     type: 'article',
   },
 };
@@ -35,42 +35,42 @@ export default function ArticleStockPage() {
             <span>8 min de lecture</span>
           </div>
           <h1 className="font-[family-name:var(--font-sora)] text-3xl font-bold leading-tight text-neutral-900 sm:text-4xl">
-            Gestion de stock en Afrique : le guide complet pour les commerçants
+            Gestion de stock en restauration : le guide complet pour les professionnels
           </h1>
         </header>
 
         <div className="prose prose-neutral prose-lg max-w-none [&>h2]:font-[family-name:var(--font-sora)] [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-12 [&>h2]:mb-4 [&>p]:text-neutral-600 [&>p]:leading-relaxed [&>p]:mb-6 [&>ul]:text-neutral-600 [&>ul]:mb-6 [&>ul>li]:mb-2">
           <p>
-            La gestion de stock est le nerf de la guerre pour tout commerce en Afrique. Qu&apos;il
-            s&apos;agisse d&apos;une épicerie à Douala, d&apos;une pharmacie à Abidjan ou d&apos;une
-            boutique de mode à Dakar, les ruptures de stock représentent une perte de chiffre
-            d&apos;affaires directe et une atteinte à la fidélité client.
+            La gestion de stock est le nerf de la guerre pour tout restaurant ou hôtel en Afrique.
+            Qu&apos;il s&apos;agisse d&apos;un restaurant à Douala, d&apos;un hôtel à Abidjan ou
+            d&apos;un service traiteur à Dakar, les ruptures de stock en cuisine représentent une
+            perte de chiffre d&apos;affaires directe et une atteinte à la satisfaction client.
           </p>
 
-          <h2>Pourquoi la gestion de stock est critique en Afrique</h2>
+          <h2>Pourquoi la gestion de stock est critique en restauration</h2>
           <p>
             En Afrique, les délais de réapprovisionnement sont souvent plus longs et plus
             imprévisibles qu&apos;ailleurs. Les chaînes logistiques sont complexes, les fournisseurs
             multiples, et les fluctuations de prix fréquentes. Sans un suivi rigoureux, les
-            commerçants se retrouvent avec soit trop de stock (capital immobilisé), soit pas assez
-            (ventes perdues).
+            restaurateurs se retrouvent avec soit trop de stock (gaspillage alimentaire), soit pas
+            assez (plats indisponibles).
           </p>
           <ul>
             <li>
-              <strong>Ruptures fréquentes</strong> — 34% des commerces africains déclarent perdre
-              des ventes chaque semaine à cause de ruptures
+              <strong>Ruptures fréquentes</strong> - 34% des restaurants africains déclarent retirer
+              des plats de la carte chaque semaine à cause de ruptures
             </li>
             <li>
-              <strong>Capital immobilisé</strong> — Le sur-stockage coûte en moyenne 15-20% de la
-              valeur du stock en frais de stockage
+              <strong>Gaspillage alimentaire</strong> - Le sur-stockage en cuisine coûte en moyenne
+              15-20% du budget ingrédients en pertes
             </li>
             <li>
-              <strong>Manque de visibilité</strong> — Sans outil digital, il est impossible de
+              <strong>Manque de visibilité</strong> - Sans outil digital, il est impossible de
               connaître son stock exact en temps réel
             </li>
           </ul>
 
-          <h2>Les étapes pour digitaliser vos stocks</h2>
+          <h2>Les étapes pour digitaliser vos stocks en cuisine</h2>
           <p>
             La transition du cahier papier vers un outil digital ne se fait pas en un jour. Voici
             les étapes clés pour une migration réussie.
@@ -78,24 +78,24 @@ export default function ArticleStockPage() {
 
           <h2>1. Inventaire initial</h2>
           <p>
-            Commencez par un inventaire complet de tous vos produits. Notez pour chaque article : le
-            nom, la référence fournisseur, le prix d&apos;achat, le prix de vente, et la quantité en
-            stock. C&apos;est la base de votre catalogue digital.
+            Commencez par un inventaire complet de tous vos ingrédients et produits. Notez pour
+            chaque article : le nom, la référence fournisseur, le prix d&apos;achat, l&apos;unité de
+            mesure et la quantité en stock. C&apos;est la base de votre gestion digitale.
           </p>
 
           <h2>2. Choisissez un outil adapté</h2>
           <p>
-            Un bon outil de gestion de stock pour l&apos;Afrique doit supporter plusieurs devises
-            (XAF, EUR, USD), fonctionner sur mobile (pas toujours un ordinateur à portée de main),
-            et proposer des alertes de réapprovisionnement automatiques. ATTABL offre toutes ces
-            fonctionnalités nativement.
+            Un bon outil de gestion de stock pour la restauration en Afrique doit supporter
+            plusieurs devises (XAF, EUR, USD), fonctionner sur mobile (même en cuisine), et proposer
+            des alertes de réapprovisionnement automatiques. ATTABL offre toutes ces fonctionnalités
+            nativement.
           </p>
 
           <h2>3. Configurez vos alertes</h2>
           <p>
-            Définissez des seuils d&apos;alerte pour chaque produit. Quand le stock descend en
+            Définissez des seuils d&apos;alerte pour chaque ingrédient. Quand le stock descend en
             dessous du seuil, l&apos;outil vous prévient automatiquement. Plus besoin de vérifier
-            manuellement.
+            manuellement le frigo chaque matin.
           </p>
 
           <h2>4. Suivez vos fournisseurs</h2>
@@ -108,14 +108,16 @@ export default function ArticleStockPage() {
           <h2>Conclusion</h2>
           <p>
             La digitalisation de la gestion de stock n&apos;est plus un luxe réservé aux grandes
-            enseignes. Des outils comme ATTABL permettent à tout commerce — de la petite épicerie de
-            quartier au réseau de pharmacies — de suivre ses stocks en temps réel, de prévenir les
-            ruptures et d&apos;optimiser ses achats.
+            chaînes hôtelières. Des outils comme ATTABL permettent à tout restaurant - du petit
+            maquis de quartier au restaurant gastronomique - de suivre ses stocks en temps réel, de
+            prévenir les ruptures et d&apos;optimiser ses achats.
           </p>
         </div>
 
         <div className="mt-16 border-t border-neutral-200 pt-12">
-          <p className="mb-4 text-sm text-neutral-500">Prêt à digitaliser vos stocks ?</p>
+          <p className="mb-4 text-sm text-neutral-500">
+            Prêt à digitaliser vos stocks en cuisine ?
+          </p>
           <Link
             href="/signup"
             className="inline-flex items-center rounded-lg bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
