@@ -142,7 +142,7 @@ export function useReportData(tenantId: string, period: Period) {
       }
 
       // Throw on RPC failure so React Query can surface the error
-      const rpcError = dailyRes.error || topRes.error || summaryRes.error;
+      const rpcError = dailyRes.error || topRes.error || summaryRes.error || prevSummaryRes.error;
       if (rpcError) {
         logger.error('RPC failure in report data', rpcError);
         throw rpcError;

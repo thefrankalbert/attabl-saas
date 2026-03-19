@@ -141,7 +141,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-status-error">{error}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={fetchInvoices}>
               {t('retry')}
             </Button>
