@@ -16,6 +16,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 import { useStockMovements } from '@/hooks/queries';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -95,7 +96,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
     'all',
   );
 
-  const { data: movements = [], isLoading: loading, error } = useStockMovements(tenantId);
+  const { data: movements = [], isLoading: loading, error, refetch } = useStockMovements(tenantId);
 
   const filtered = useMemo(
     () =>
@@ -363,7 +364,10 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           ) : error ? (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <BarChart3 className="w-10 h-10 text-app-text-muted" />
-              <p className="text-sm text-red-600">{t('loadingError')}</p>
+              <p className="text-sm text-status-error">{t('loadingError')}</p>
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                {tc('retry')}
+              </Button>
             </div>
           ) : (
             <ResponsiveDataTable

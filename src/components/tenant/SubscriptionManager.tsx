@@ -129,9 +129,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
   };
 
   // Pricing calculation
+  const annualDiscountRate = 0.15;
+
   const getPrice = (plan: PricingPlan) => {
     const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
-    const annualDiscountRate = 0.15;
     if (billingInterval === 'yearly') {
       return Math.round(baseMonthlyPrice * (1 - annualDiscountRate));
     }
@@ -140,7 +141,6 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
 
   const getYearlyTotal = (plan: PricingPlan) => {
     const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
-    const annualDiscountRate = 0.15;
     return Math.round(baseMonthlyPrice * 12 * (1 - annualDiscountRate));
   };
 
@@ -282,7 +282,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                 >
                   {t('subscription.yearly')}{' '}
                   <span className="text-[10px] bg-status-success-bg text-status-success px-1.5 rounded-full">
-                    -15%
+                    -{Math.round(annualDiscountRate * 100)}%
                   </span>
                 </button>
               </div>
