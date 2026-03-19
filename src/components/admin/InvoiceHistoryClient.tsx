@@ -23,9 +23,7 @@ interface StripeInvoice {
 }
 
 interface InvoiceHistoryClientProps {
-  tenantId: string;
   hasStripeCustomer: boolean;
-  currency: string;
 }
 
 export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHistoryClientProps) {
@@ -84,7 +82,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
       'vuv',
     ];
     const divisor = zeroDecimal.includes(currency.toLowerCase()) ? 1 : 100;
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(locale, {
       style: 'currency',
       currency: currency.toUpperCase(),
       minimumFractionDigits: 0,
@@ -143,7 +141,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-status-error">{error}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={fetchInvoices}>
               {t('retry')}
             </Button>

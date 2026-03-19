@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Download,
@@ -36,6 +36,7 @@ import { cn } from '@/lib/utils';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
+import { csvCell } from '@/lib/utils/csv';
 import type { CurrencyCode } from '@/types/admin.types';
 
 import { CHART_PALETTE } from '@/lib/design-tokens';
@@ -61,14 +62,6 @@ const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: '30d', labelKey: 'last30Days' },
   { value: '90d', labelKey: 'last90Days' },
 ];
-
-// ─── CSV sanitizer (prevent formula injection) ──────────
-
-function csvCell(value: string): string {
-  const escaped = String(value).replace(/"/g, '""');
-  const safe = /^[=+\-@\t\r]/.test(escaped) ? `'${escaped}` : escaped;
-  return `"${safe}"`;
-}
 
 // ─── Trend badge ────────────────────────────────────────
 
@@ -109,12 +102,6 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
   const serverStats = reportData?.serverStats ?? [];
   const summary = reportData?.summary ?? { revenue: 0, orders: 0, avgBasket: 0 };
   const previousSummary = reportData?.previousSummary ?? { revenue: 0, orders: 0, avgBasket: 0 };
-
-  useEffect(() => {
-    if (error) {
-      toast({ title: t('loadError'), variant: 'destructive' });
-    }
-  }, [error, toast, t]);
 
   const periodDisplayLabel = useMemo(() => {
     const map: Record<Period, string> = {
@@ -242,7 +229,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         <AnalyseTabs />
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <BarChart3 className="w-10 h-10 text-app-text-muted mb-3" />
-          <p className="text-sm text-red-600">{t('loadError')}</p>
+          <p className="text-sm text-status-error">{t('loadError')}</p>
           <Button variant="outline" size="sm" className="mt-4" onClick={() => refetch()}>
             {t('retry')}
           </Button>
