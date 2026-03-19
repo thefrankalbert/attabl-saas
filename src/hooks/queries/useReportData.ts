@@ -142,30 +142,32 @@ export function useReportData(tenantId: string, period: Period) {
       }
 
       // Throw on RPC failure so React Query can surface the error
-      const rpcError = dailyRes.error || topRes.error || summaryRes.error;
+      const rpcError = dailyRes.error || topRes.error || summaryRes.error || prevSummaryRes.error;
       if (rpcError) {
         logger.error('RPC failure in report data', rpcError);
         throw rpcError;
       }
 
-      // Category breakdown via direct query (join orders for tenant scoping + date filter)
-      const categoryRes = await supabase
-        .from('order_items')
-        .select(
-          'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
-        )
-        .eq('orders.tenant_id', tenantId)
-        .gte('orders.created_at', startDate)
-        .lte('orders.created_at', endDate + 'T23:59:59');
-
-      // Fetch server performance stats (separate query, non-blocking)
-      const serverRes = await supabase
-        .from('orders')
-        .select('server_id, total, tip_amount, server:admin_users!orders_server_id_fkey(full_name)')
-        .eq('tenant_id', tenantId)
-        .gte('created_at', startDate)
-        .lte('created_at', endDate + 'T23:59:59')
-        .not('server_id', 'is', null);
+      // Category breakdown + server stats — run in parallel (both independent)
+      const [categoryRes, serverRes] = await Promise.all([
+        supabase
+          .from('order_items')
+          .select(
+            'quantity, price_at_order, menu_items!inner(categories!inner(name)), orders!inner(tenant_id, created_at)',
+          )
+          .eq('orders.tenant_id', tenantId)
+          .gte('orders.created_at', startDate)
+          .lte('orders.created_at', endDate + 'T23:59:59'),
+        supabase
+          .from('orders')
+          .select(
+            'server_id, total, tip_amount, server:admin_users!orders_server_id_fkey(full_name)',
+          )
+          .eq('tenant_id', tenantId)
+          .gte('created_at', startDate)
+          .lte('created_at', endDate + 'T23:59:59')
+          .not('server_id', 'is', null),
+      ]);
 
       // Process daily stats (RPC returns: day, revenue, order_count)
       const rawDaily = (dailyRes.data || []) as {

@@ -171,6 +171,26 @@ Les routes attrapent `ServiceError` et le convertissent en reponse HTTP via `ser
 - Les Server Actions protegees doivent deriver le tenant_id de la session, pas l'accepter en parametre
 - Rate limiting sur TOUS les endpoints publics (anti brute-force, anti spam)
 
+## Typographie dans le code
+
+REGLE STRICTE : Ne JAMAIS utiliser de caracteres Unicode speciaux dans le code, les fichiers i18n, ou les textes affiches a l'utilisateur. Utiliser uniquement des caracteres ASCII standards :
+
+- INTERDIT : `—` (em dash U+2014) → UTILISER : `-` ou `-`
+- INTERDIT : `–` (en dash U+2013) → UTILISER : `-`
+- INTERDIT : `…` (ellipsis U+2026) → UTILISER : `...`
+- INTERDIT : `'` `'` (smart quotes U+2018/U+2019) → UTILISER : `'`
+- INTERDIT : `"` `"` (smart quotes U+201C/U+201D) → UTILISER : `"`
+- INTERDIT : `«` `»` (guillemets francais U+00AB/U+00BB) → UTILISER : `"`
+
+Cette regle s'applique a :
+
+- Tous les fichiers src/messages/\*.json (i18n)
+- Tous les textes dans les composants React (JSX)
+- Tous les schemas Zod (messages d'erreur)
+- Tous les commentaires dans le code
+
+SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx, .pdf) peuvent utiliser la typographie riche.
+
 ## Documentation supplementaire
 
 - `agent_docs/architecture.md` : Details sur l'architecture en couches

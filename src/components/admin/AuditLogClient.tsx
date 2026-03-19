@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Loader2, ChevronLeft, ChevronRight, Filter, Search, ScrollText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useSessionState } from '@/hooks/useSessionState';
@@ -53,6 +53,7 @@ export default function AuditLogClient({
 }: AuditLogClientProps) {
   const t = useTranslations('auditLog');
   const tc = useTranslations('common');
+  const locale = useLocale();
 
   const [logs, setLogs] = useState<AuditLogEntry[]>(
     (initialLogs as unknown as AuditLogEntry[]) || [],
@@ -103,9 +104,9 @@ export default function AuditLogClient({
   const formatDate = (iso: string) => {
     const d = new Date(iso);
     return (
-      d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) +
+      d.toLocaleDateString(locale, { month: 'short', day: 'numeric', year: 'numeric' }) +
       ' ' +
-      d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+      d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })
     );
   };
 
@@ -294,7 +295,7 @@ export default function AuditLogClient({
           </div>
         ) : error ? (
           <div className="text-center py-12">
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-status-error">{error}</p>
             <Button variant="outline" size="sm" className="mt-4" onClick={fetchLogs}>
               {t('retry')}
             </Button>
