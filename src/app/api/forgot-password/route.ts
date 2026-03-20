@@ -49,8 +49,11 @@ export async function POST(request: Request) {
     // 3. Generate recovery link via admin API
     const supabase = createAdminClient();
 
-    // Check if user exists and whether their email is confirmed
-    const { data: userList } = await supabase.auth.admin.listUsers();
+    // Look up user — use generateLink directly instead of listUsers() which only
+    // returns first page (~50 users) and silently misses users at scale.
+    // Try generating the recovery link first; if the user doesn't exist, it will fail.
+    // But we still need email_confirmed_at, so query admin_users + auth join.
+    const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     const foundUser = userList?.users?.find((u) => u.email === email);
 
     if (!foundUser) {

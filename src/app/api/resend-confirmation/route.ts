@@ -45,8 +45,8 @@ export async function POST(request: Request) {
     const SAFE_MSG =
       'Si un compte existe avec cet email, un nouveau lien de confirmation a été envoyé.';
 
-    // 3. Find user by email
-    const { data: userList } = await supabase.auth.admin.listUsers();
+    // 3. Find user by email (perPage: 1000 to avoid silent pagination cutoff at ~50 users)
+    const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
     const user = userList?.users?.find((u) => u.email === email);
 
     if (!user) {
