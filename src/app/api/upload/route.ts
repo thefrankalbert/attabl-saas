@@ -13,6 +13,18 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  // Verify tenant membership — reject orphaned/unlinked accounts
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('tenant_id')
+    .eq('user_id', user.id)
+    .limit(1)
+    .single();
+
+  if (!adminUser) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+  }
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
@@ -40,7 +52,8 @@ export async function POST(request: Request) {
     }
 
     const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-    const fileName = `${crypto.randomUUID()}_${Date.now()}.${ext}`;
+    // Scope uploads to tenant directory for isolation
+    const fileName = `${adminUser.tenant_id}/${crypto.randomUUID()}_${Date.now()}.${ext}`;
 
     // Use admin client to bypass RLS
     const admin = createAdminClient();
