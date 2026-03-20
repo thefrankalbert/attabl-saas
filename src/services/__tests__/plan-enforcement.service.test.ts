@@ -38,7 +38,7 @@ function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
     id: 'tenant-1',
     name: 'Test Restaurant',
     slug: 'test-restaurant',
-    subscription_plan: 'essentiel',
+    subscription_plan: 'starter',
     subscription_status: 'active',
     trial_ends_at: null,
     ...overrides,
@@ -48,28 +48,28 @@ function makeTenant(overrides: Partial<Tenant> = {}): Tenant {
 describe('canAddAdmin', () => {
   it('allows when under limit', async () => {
     const supabase = createMockSupabase({
-      admin_users: { count: 1, error: null },
+      admin_users: { count: 0, error: null },
     });
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddAdmin(makeTenant())).resolves.toBeUndefined();
   });
 
-  it('throws VALIDATION when limit reached (essentiel = 2)', async () => {
+  it('throws VALIDATION when limit reached (starter = 1)', async () => {
     const supabase = createMockSupabase({
-      admin_users: { count: 2, error: null },
+      admin_users: { count: 1, error: null },
     });
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddAdmin(makeTenant())).rejects.toThrow(ServiceError);
   });
 
-  it('uses premium limits during active trial', async () => {
+  it('uses pro limits during active trial', async () => {
     const trialTenant = makeTenant({
       subscription_status: 'trial',
       trial_ends_at: new Date(Date.now() + 86400000).toISOString(),
     });
-    // Premium allows 5 admins, so 3 should be fine
+    // Pro allows 1 admin, so 0 should be fine
     const supabase = createMockSupabase({
-      admin_users: { count: 3, error: null },
+      admin_users: { count: 0, error: null },
     });
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddAdmin(trialTenant)).resolves.toBeUndefined();
@@ -85,9 +85,9 @@ describe('canAddAdmin', () => {
 });
 
 describe('canAddMenuItem', () => {
-  it('throws when item limit reached (essentiel = 100)', async () => {
+  it('throws when item limit reached (starter = 50)', async () => {
     const supabase = createMockSupabase({
-      menu_items: { count: 100, error: null },
+      menu_items: { count: 50, error: null },
     });
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddMenuItem(makeTenant())).rejects.toThrow(ServiceError);
@@ -95,7 +95,7 @@ describe('canAddMenuItem', () => {
 
   it('allows when under limit', async () => {
     const supabase = createMockSupabase({
-      menu_items: { count: 50, error: null },
+      menu_items: { count: 25, error: null },
     });
     const service = createPlanEnforcementService(supabase);
     await expect(service.canAddMenuItem(makeTenant())).resolves.toBeUndefined();
@@ -103,7 +103,7 @@ describe('canAddMenuItem', () => {
 });
 
 describe('canAddVenue', () => {
-  it('throws when venue limit reached (essentiel = 1)', async () => {
+  it('throws when venue limit reached (starter = 1)', async () => {
     const supabase = createMockSupabase({
       venues: { count: 1, error: null },
     });
@@ -113,7 +113,7 @@ describe('canAddVenue', () => {
 });
 
 describe('canAddMenu', () => {
-  it('throws when menu limit reached (essentiel = 2)', async () => {
+  it('throws when menu limit reached (starter = 2)', async () => {
     const supabase = createMockSupabase({
       menus: { count: 2, error: null },
     });

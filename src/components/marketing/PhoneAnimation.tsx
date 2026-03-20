@@ -1,52 +1,119 @@
 'use client';
 
-export default function PhoneAnimation() {
-  return (
-    <section className="relative bg-black py-16 md:py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
-          {/* Left: Text content */}
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-neutral-400">
-              ATTABL AI
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold leading-tight text-white sm:text-4xl lg:text-5xl">
-              Prenez des décisions intelligentes, rapidement
-            </h2>
-            <p className="mt-6 text-xl text-neutral-400">
-              Interrogez Attabl AI sur votre activité pour obtenir des insights immédiats.
-            </p>
-            <button className="mt-8 rounded-lg border-2 border-white/20 px-6 py-3 text-base font-semibold text-white transition-colors hover:bg-[#CCFF00] hover:text-black hover:border-[#CCFF00]">
-              En savoir plus
-            </button>
-          </div>
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-          {/* Right: Phone mockup */}
-          <div className="relative flex justify-center">
-            <div className="relative aspect-[1/2] w-full max-w-[300px] overflow-hidden rounded-[3rem] border-8 border-neutral-800 bg-black shadow-2xl shadow-[#CCFF00]/5">
-              <div className="absolute left-1/2 top-0 h-6 w-32 -translate-x-1/2 rounded-b-2xl bg-neutral-800" />
-              <div className="flex h-full flex-col items-center justify-center p-8">
-                <div className="h-full w-full rounded-2xl bg-gradient-to-br from-[#CCFF00]/10 to-[#CCFF00]/5 p-6">
-                  <div className="flex h-full flex-col justify-between">
-                    <div className="text-2xl font-bold text-[#CCFF00]">Attabl AI</div>
-                    <div className="space-y-4">
-                      <div className="rounded-2xl bg-white/10 p-4">
-                        <p className="text-sm text-white">
-                          Quelles sont mes meilleures ventes aujourd&apos;hui ?
-                        </p>
-                      </div>
-                      <div className="rounded-2xl bg-[#CCFF00]/20 p-4">
-                        <p className="text-sm text-white">
-                          Vos 3 plats les plus vendus : Pizza Margherita (47), Burger Classic (38),
-                          Salade César (29)
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+const steps = [
+  {
+    time: '08h',
+    label: 'Matin',
+    message: 'Stock de café bas. Commande fournisseur suggérée.',
+    insight: 'Anticipe vos besoins',
+  },
+  {
+    time: '13h',
+    label: 'Rush',
+    message: 'Temps de préparation moyen : 8 min. 2 commandes en retard.',
+    insight: 'Optimise en temps réel',
+  },
+  {
+    time: '21h',
+    label: 'Clôture',
+    message: 'Journée record ! +15% vs mardi. Top 3 : Burger, Salade, Jus.',
+    insight: 'Transforme les données en décisions',
+  },
+];
+
+export default function PhoneAnimation() {
+  const [activeStep, setActiveStep] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  const handleClick = useCallback((index: number) => {
+    setActiveStep(index);
+    setPaused(true);
+  }, []);
+
+  useEffect(() => {
+    if (paused) {
+      const resumeTimer = setTimeout(() => setPaused(false), 8000);
+      return () => clearTimeout(resumeTimer);
+    }
+
+    const interval = setInterval(() => {
+      setActiveStep((prev) => (prev + 1) % steps.length);
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [paused]);
+
+  const current = steps[activeStep];
+
+  return (
+    <section className="bg-neutral-950 py-20 sm:py-28">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 className="text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-white sm:text-4xl">
+          Votre copilote, de l{"'"}ouverture à la fermeture.
+        </h2>
+
+        {/* Timeline nav */}
+        <div className="mx-auto mt-14 flex max-w-md items-center justify-between">
+          {steps.map((step, i) => (
+            <button
+              key={step.time}
+              onClick={() => handleClick(i)}
+              className="group relative flex flex-col items-center"
+            >
+              {/* Connector line (left) */}
+              {i > 0 && (
+                <span className="absolute right-1/2 top-[7px] h-px w-[calc(100%+3rem)] sm:w-[calc(100%+5rem)] bg-white/10" />
+              )}
+
+              {/* Dot */}
+              <span
+                className={`relative z-10 rounded-full transition-all duration-300 ${
+                  i === activeStep
+                    ? 'h-4 w-4 bg-[#CCFF00] shadow-[0_0_12px_rgba(204,255,0,0.4)]'
+                    : 'h-3 w-3 bg-white/20 group-hover:bg-white/40'
+                }`}
+              />
+
+              {/* Time label */}
+              <span
+                className={`mt-3 text-xs font-semibold transition-colors duration-300 ${
+                  i === activeStep ? 'text-[#CCFF00]' : 'text-white/40'
+                }`}
+              >
+                {step.time} - {step.label}
+              </span>
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="mt-12">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeStep}
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ duration: 0.35 }}
+              className="grid gap-6 md:grid-cols-2"
+            >
+              {/* Left: message card + insight */}
+              <div>
+                <div className="rounded-xl border border-white/10 bg-white/5 p-5">
+                  <p className="text-sm leading-relaxed text-white/80">{current.message}</p>
                 </div>
+                <p className="mt-4 text-xs font-medium text-[#CCFF00]">{current.insight}</p>
               </div>
-            </div>
-          </div>
+
+              {/* Right: placeholder mockup */}
+              <div className="hidden rounded-xl border border-white/10 bg-white/5 md:flex md:min-h-[120px] md:items-center md:justify-center">
+                <span className="text-xs text-white/20">Aperçu</span>
+              </div>
+            </motion.div>
+          </AnimatePresence>
         </div>
       </div>
     </section>

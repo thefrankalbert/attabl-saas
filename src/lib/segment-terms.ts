@@ -7,19 +7,9 @@
 
 // ─── Types ──────────────────────────────────────────────
 
-export type EstablishmentSegment =
-  | 'restaurant'
-  | 'hotel'
-  | 'bar'
-  | 'cafe'
-  | 'fastfood'
-  | 'retail'
-  | 'boutique'
-  | 'pharmacy'
-  | 'salon'
-  | 'other';
+export type EstablishmentSegment = 'restaurant' | 'hotel' | 'bar' | 'cafe' | 'fastfood';
 
-export type SegmentFamily = 'food' | 'hospitality' | 'retail' | 'services';
+export type SegmentFamily = 'food' | 'hospitality';
 
 export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   restaurant: 'food',
@@ -27,11 +17,6 @@ export const SEGMENT_FAMILY: Record<EstablishmentSegment, SegmentFamily> = {
   bar: 'food',
   cafe: 'food',
   fastfood: 'food',
-  retail: 'retail',
-  boutique: 'retail',
-  pharmacy: 'retail',
-  salon: 'services',
-  other: 'retail',
 };
 
 // ─── Term keys ──────────────────────────────────────────
@@ -74,7 +59,7 @@ const TERM_KEYS_BY_FAMILY: Record<
   SegmentFamily,
   Record<SegmentTermKey, string>
 > = Object.fromEntries(
-  (['food', 'hospitality', 'retail', 'services'] as const).map((family) => [
+  (['food', 'hospitality'] as const).map((family) => [
     family,
     Object.fromEntries(SEGMENT_TERM_KEYS.map((k) => [k, `${family}.${k}`])),
   ]),

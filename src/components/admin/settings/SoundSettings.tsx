@@ -47,8 +47,9 @@ export function SoundSettings({
   const localPreviewRef = useRef<HTMLAudioElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const isPremium = effectivePlan === 'premium' || effectivePlan === 'enterprise';
-  const canUpload = canAccess('customSoundUpload');
+  const isPremium =
+    effectivePlan === 'pro' || effectivePlan === 'business' || effectivePlan === 'enterprise';
+  const canUpload = isPremium;
 
   // Sync local state when parent prop changes (e.g. after save + revalidation)
   useEffect(() => {

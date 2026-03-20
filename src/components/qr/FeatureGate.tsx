@@ -10,7 +10,7 @@ import { Lock, Crown } from 'lucide-react';
 interface FeatureGateProps {
   feature: FeatureKey;
   children: ReactNode;
-  planRequired?: 'premium' | 'enterprise';
+  planRequired?: 'pro' | 'business' | 'enterprise';
 }
 
 // ─── Component ─────────────────────────────────────────
@@ -41,7 +41,7 @@ export function FeatureGate({ feature, children, planRequired }: FeatureGateProp
         ) : (
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-100/80 text-amber-700 backdrop-blur-sm">
             <Lock className="h-3.5 w-3.5" />
-            Premium
+            Pro
           </span>
         )}
       </div>

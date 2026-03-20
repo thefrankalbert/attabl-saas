@@ -1,6 +1,8 @@
 // Types pour l'administration multi-tenant ATTABL SaaS
 // Adapté de BluTable avec support tenant_id
 
+import type { SubscriptionPlan, SubscriptionStatus, BillingInterval } from '@/types/billing';
+
 // ─── Wizard types ────────────────────────────────────────────
 /** Lightweight item projection used by the menu creation wizard. */
 export interface WizardItem {
@@ -70,12 +72,12 @@ export interface Tenant {
   is_active: boolean;
   created_at: string;
   // ─── Subscription fields ──────────────────────────────
-  subscription_plan?: 'essentiel' | 'premium' | 'enterprise';
-  subscription_status?: 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused';
+  subscription_plan?: SubscriptionPlan;
+  subscription_status?: SubscriptionStatus;
   trial_ends_at?: string;
   stripe_customer_id?: string;
   stripe_subscription_id?: string;
-  billing_interval?: 'monthly' | 'yearly';
+  billing_interval?: BillingInterval;
   // ─── Business config ──────────────────────────────────
   currency?: CurrencyCode;
   supported_currencies?: CurrencyCode[];

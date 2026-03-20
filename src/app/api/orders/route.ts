@@ -177,7 +177,7 @@ export async function POST(request: Request) {
 
     // 10. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
-      'inventoryTracking',
+      'canAccessInventory',
       tenant?.subscription_plan as SubscriptionPlan | null,
       tenant?.subscription_status as SubscriptionStatus | null,
       tenant?.trial_ends_at as string | null,
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
         .then(() => {
           // 11. Check stock alerts after destock (non-blocking)
           const hasAlerts = canAccessFeature(
-            'stockAlerts',
+            'canAccessInventory',
             tenant?.subscription_plan as SubscriptionPlan | null,
             tenant?.subscription_status as SubscriptionStatus | null,
             tenant?.trial_ends_at as string | null,

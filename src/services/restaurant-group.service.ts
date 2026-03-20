@@ -77,7 +77,7 @@ export function createRestaurantGroupService(supabase: SupabaseClient) {
           slug: input.slug,
           name: input.name,
           group_id: input.groupId,
-          subscription_plan: input.plan === 'trial' ? 'essentiel' : input.plan,
+          subscription_plan: input.plan === 'trial' ? 'starter' : input.plan,
           subscription_status: input.plan === 'trial' ? 'trial' : 'pending',
           trial_ends_at: input.plan === 'trial' ? trialEndsAt.toISOString() : null,
           is_active: true,

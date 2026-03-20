@@ -150,7 +150,7 @@ export function createSignupService(supabase: SupabaseClient) {
         tenant = await this.createTenantWithTrial({
           slug,
           name: input.restaurantName,
-          plan: input.plan || 'essentiel',
+          plan: input.plan || 'starter',
         });
       } catch (err) {
         await supabase.auth.admin.deleteUser(userId);
@@ -235,7 +235,7 @@ export function createSignupService(supabase: SupabaseClient) {
       const tenant = await this.createTenantWithTrial({
         slug,
         name: input.restaurantName,
-        plan: input.plan || 'essentiel',
+        plan: input.plan || 'starter',
       });
 
       // 2b. Create restaurant group and link tenant

@@ -16,7 +16,7 @@ export const signupSchema = z.object({
     .min(8, 'Le mot de passe doit contenir au moins 8 caractères')
     .max(100, 'Le mot de passe ne doit pas dépasser 100 caractères'),
   phone: z.string().max(20).optional(),
-  plan: z.enum(['essentiel', 'premium']).optional(),
+  plan: z.enum(['starter', 'pro', 'business']).optional(),
 });
 
 export const signupOAuthSchema = z.object({
@@ -27,7 +27,7 @@ export const signupOAuthSchema = z.object({
     .min(2, 'Le nom du restaurant doit contenir au moins 2 caractères')
     .max(100, 'Le nom du restaurant ne doit pas dépasser 100 caractères'),
   phone: z.string().max(20).optional(),
-  plan: z.enum(['essentiel', 'premium']).optional(),
+  plan: z.enum(['starter', 'pro', 'business']).optional(),
 });
 
 export const resendConfirmationSchema = z.object({

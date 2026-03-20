@@ -1,104 +1,93 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
 import { Utensils, MonitorCheck, BookOpen } from 'lucide-react';
 
 export default function RestaurantsPage() {
   return (
     <>
-      {/* Hero moderne */}
-      <section className="py-20 lg:py-28 bg-white">
+      {/* Hero */}
+      <section className="py-20 lg:py-28 bg-white dark:bg-neutral-950">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-neutral-900 mb-6"
-          >
-            La précision au service de l&apos;excellence
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg sm:text-xl text-neutral-600 max-w-2xl mx-auto mb-10"
-          >
-            Une solution complète pour orchestrer votre service gastronomique avec élégance.
-          </motion.p>
-          <Link
-            href="/signup"
-            className="inline-flex items-center justify-center bg-black text-white px-8 py-4 rounded-lg text-base font-semibold hover:bg-neutral-900 transition-colors"
-          >
-            Commencer gratuitement
-          </Link>
+          <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl lg:text-6xl font-bold text-neutral-900 dark:text-white tracking-tight">
+            Votre salle. Votre cuisine. Tout connecté.
+          </h1>
+          <p className="text-lg sm:text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mt-6">
+            {"De la commande à l'assiette, plus rien ne se perd."}
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
+            <Link
+              href="/signup"
+              className="bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors"
+            >
+              Démarrer gratuitement
+            </Link>
+            <Link
+              href="/pricing"
+              className="border border-neutral-300 dark:border-neutral-700 text-neutral-900 dark:text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+            >
+              Voir les tarifs
+            </Link>
+          </div>
         </div>
       </section>
 
-      {/* Features - 3 cards spacieuses */}
-      <section className="py-20 bg-neutral-50">
+      {/* Features - 3 cards */}
+      <section className="py-20 bg-neutral-50 dark:bg-neutral-900">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
               {
                 icon: Utensils,
-                title: 'Menus hiérarchiques',
+                title: 'Votre carte, numérisée',
                 description:
-                  'Organisez vos cartes par catégories, sous-catégories et variantes. Gérez les allergènes et compositions en toute simplicité.',
+                  'Catégories, sous-catégories, allergènes, photos. Vos clients consultent tout depuis leur téléphone.',
               },
               {
                 icon: MonitorCheck,
-                title: 'KDS par course',
+                title: 'La cuisine voit tout',
                 description:
-                  'Synchronisez la cuisine avec le rythme du service. Entrées, plats, desserts : chaque station reçoit ses préparations au bon moment.',
+                  'Entrées, plats, desserts - chaque station reçoit ses commandes au bon moment. Plus besoin de crier.',
               },
               {
                 icon: BookOpen,
-                title: 'Fiches techniques',
+                title: 'Vos recettes, vos marges',
                 description:
-                  'Définissez les recettes, proportions et coûts matière. Contrôlez votre rentabilité plat par plat avec précision.',
+                  'Ingrédients, proportions, coût matière. Vous savez exactement combien vous gagnez par plat.',
               },
-            ].map((feature, idx) => (
-              <motion.div
+            ].map((feature) => (
+              <div
                 key={feature.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className="bg-white p-8 rounded-2xl border border-neutral-200"
+                className="bg-white dark:bg-neutral-800 rounded-xl border border-neutral-200 dark:border-neutral-700 p-8"
               >
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
-                  <feature.icon className="h-6 w-6 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-neutral-100 dark:bg-neutral-700 flex items-center justify-center mb-5">
+                  <feature.icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                 </div>
-                <h3 className="text-xl font-semibold text-neutral-900 mb-3">{feature.title}</h3>
-                <p className="text-neutral-600 leading-relaxed">{feature.description}</p>
-              </motion.div>
+                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-3">
+                  {feature.title}
+                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400 leading-relaxed">
+                  {feature.description}
+                </p>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-white">
+      {/* CTA */}
+      <section className="py-20 bg-white dark:bg-neutral-950">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-6">
-            Prêt à digitaliser votre établissement ?
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white">
+            Votre restaurant mérite un service sans faille.
           </h2>
-          <p className="text-lg text-neutral-600 mb-10">14 jours gratuits. Sans carte bancaire.</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              href="/signup"
-              className="inline-flex items-center justify-center bg-black text-white px-8 py-4 rounded-lg text-base font-semibold hover:bg-neutral-900 transition-colors"
-            >
-              Commencer gratuitement
-            </Link>
-            <Link
-              href="/pricing"
-              className="inline-flex items-center justify-center border-2 border-neutral-900 text-neutral-900 px-8 py-4 rounded-lg text-base font-semibold hover:bg-neutral-900 hover:text-white transition-colors"
-            >
-              Voir les tarifs
-            </Link>
-          </div>
+          <p className="text-lg text-neutral-500 dark:text-neutral-400 mt-4">
+            Essayez gratuitement.
+          </p>
+          <Link
+            href="/signup"
+            className="inline-block bg-neutral-900 text-white rounded-lg px-8 py-4 text-base font-semibold hover:bg-neutral-800 transition-colors mt-8"
+          >
+            Démarrer gratuitement
+          </Link>
         </div>
       </section>
     </>

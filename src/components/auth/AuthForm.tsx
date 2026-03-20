@@ -98,7 +98,7 @@ function AuthForm({ mode }: AuthFormProps) {
             restaurantName: 'Mon Établissement',
             email,
             password,
-            plan: 'essentiel',
+            plan: 'starter',
           }),
         });
 
@@ -290,12 +290,14 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-app-text mb-2">
-          {isLogin ? 'Votre établissement vous attend.' : 'Lancez votre menu digital'}
+          {isLogin
+            ? 'Votre établissement vous attend.'
+            : 'Créez votre compte en 2 minutes. 14 jours gratuits.'}
         </h1>
         <p className="text-app-text-secondary text-sm leading-relaxed">
           {isLogin
-            ? 'Commandes, stock, chiffre d\u2019affaires. Tout est là.'
-            : 'Créez votre compte en 30 secondes. 14 jours offerts, aucune carte requise.'}
+            ? "Commandes, stock, chiffre d'affaires. Tout est là."
+            : 'Aucune carte bancaire requise. Annulez quand vous voulez.'}
         </p>
       </div>
 
@@ -438,7 +440,7 @@ function AuthForm({ mode }: AuthFormProps) {
         {/* Trust signal for signup */}
         {!isLogin && (
           <p className="text-center text-xs text-app-text-muted">
-            14 jours gratuits &mdash; aucun engagement
+            14 jours gratuits - aucun engagement
           </p>
         )}
       </form>

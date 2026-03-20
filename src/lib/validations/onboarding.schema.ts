@@ -37,7 +37,7 @@ const tableZoneSchema = z.object({
 export const onboardingCompleteSchema = z.object({
   data: z.object({
     tenantName: z.string().max(200).optional(),
-    establishmentType: z.string().max(50).optional(),
+    establishmentType: z.enum(['restaurant', 'hotel', 'bar', 'cafe', 'fastfood']).optional(),
     address: z.string().max(200).optional(),
     city: z.string().max(100).optional(),
     country: z.string().max(100).optional(),
