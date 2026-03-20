@@ -10,7 +10,7 @@ export const ESTABLISHMENT_TYPES = [
   'quick-service',
 ] as const;
 
-export const PLAN_OPTIONS = ['trial', 'essentiel', 'premium'] as const;
+export const PLAN_OPTIONS = ['trial', 'starter', 'pro', 'business'] as const;
 
 export const createRestaurantStep1Schema = z.object({
   name: z.string().min(2, 'Minimum 2 caractères').max(100, 'Maximum 100 caractères'),

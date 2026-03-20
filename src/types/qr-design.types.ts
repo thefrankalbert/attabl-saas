@@ -86,7 +86,7 @@ export interface QRTemplateDefault {
   orientation: 'portrait' | 'landscape';
   name: string;
   description: string;
-  planRequired: 'essentiel' | 'premium';
+  planRequired: 'starter' | 'pro';
 }
 
 export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
@@ -97,7 +97,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'landscape',
     name: 'Standard',
     description: 'Format carré 10×10 cm',
-    planRequired: 'essentiel',
+    planRequired: 'starter',
   },
   chevalet: {
     width: 105,
@@ -106,7 +106,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'portrait',
     name: 'Chevalet',
     description: 'A6 vertical, pour les tables',
-    planRequired: 'essentiel',
+    planRequired: 'starter',
   },
   carte: {
     width: 85,
@@ -115,7 +115,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'landscape',
     name: 'Carte',
     description: 'Format carte de visite',
-    planRequired: 'essentiel',
+    planRequired: 'starter',
   },
   minimal: {
     width: 100,
@@ -124,7 +124,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'landscape',
     name: 'Minimal',
     description: 'Ultra-clean, sans fioritures',
-    planRequired: 'premium',
+    planRequired: 'pro',
   },
   elegant: {
     width: 105,
@@ -133,7 +133,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'portrait',
     name: 'Élégant',
     description: 'Bordure ornementale, style serif',
-    planRequired: 'premium',
+    planRequired: 'pro',
   },
   neon: {
     width: 100,
@@ -142,7 +142,7 @@ export const TEMPLATE_DEFAULTS: Record<QRTemplateId, QRTemplateDefault> = {
     orientation: 'portrait',
     name: 'Néon',
     description: 'Fond sombre, accent vif',
-    planRequired: 'premium',
+    planRequired: 'pro',
   },
 } as const;
 

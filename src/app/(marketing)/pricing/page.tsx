@@ -1,236 +1,528 @@
 'use client';
 
+import { Fragment, useState } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Minus, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
-// ─── Africa Presence Map ──────────────────────────────────
-const PRESENCE_COUNTRIES = [
-  { name: 'Cameroun', cx: 108, cy: 102, color: '#4ade80' },
-  { name: 'Tchad', cx: 118, cy: 78, color: '#60a5fa' },
-  { name: 'Burkina Faso', cx: 72, cy: 86, color: '#f97316' },
-] as const;
+// ─── Types ──────────────────────────────────
+type BillingPeriod = 'monthly' | 'yearly';
 
-function hexPoints(cx: number, cy: number, r: number): string {
-  return Array.from({ length: 6 }, (_, i) => {
-    const angle = (Math.PI / 3) * i - Math.PI / 6;
-    return `${cx + r * Math.cos(angle)},${cy + r * Math.sin(angle)}`;
-  }).join(' ');
+interface Plan {
+  name: string;
+  priceMonthly: number | null;
+  priceYearly: number | null;
+  subtitle: string;
+  description: string;
+  cta: string;
+  ctaHref: string;
+  popular?: boolean;
+  trialPlan?: boolean;
+  highlights: string[];
 }
 
-const AFRICA_HEX_GRID = (() => {
-  const rows: Array<[number, number, number]> = [
-    [4, 7, 12],
-    [5, 6, 13],
-    [6, 5, 14],
-    [7, 5, 14],
-    [8, 4, 14],
-    [9, 4, 14],
-    [10, 5, 13],
-    [11, 5, 13],
-    [12, 6, 13],
-    [13, 7, 13],
-    [14, 7, 12],
-    [15, 8, 12],
-    [16, 8, 12],
-    [17, 9, 12],
-    [18, 9, 11],
-    [19, 10, 11],
-    [20, 10, 11],
-  ];
-  const hexes: Array<{ x: number; y: number }> = [];
-  const spacing = 11;
-  for (const [row, colStart, colEnd] of rows) {
-    const offsetX = row % 2 === 0 ? 0 : spacing / 2;
-    for (let col = colStart; col <= colEnd; col++) {
-      hexes.push({ x: col * spacing + offsetX, y: row * (spacing * 0.866) });
-    }
-  }
-  return hexes;
-})();
-
-function AfricaPresenceSection() {
-  return (
-    <section className="py-16 bg-white">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2 text-center">
-          Déjà présent en Afrique
-        </h2>
-        <p className="text-neutral-600 text-center mb-10">
-          ATTABL accompagne les restaurateurs et hôteliers à travers le continent.
-        </p>
-
-        <div className="flex flex-col items-center">
-          {/* Africa hex map */}
-          <svg viewBox="0 0 200 200" className="w-80 h-80" aria-hidden="true">
-            {AFRICA_HEX_GRID.map((hex, i) => (
-              <polygon key={i} points={hexPoints(hex.x, hex.y, 5)} fill="#e5e7eb" opacity={0.5} />
-            ))}
-            {PRESENCE_COUNTRIES.map((c) => (
-              <g key={c.name}>
-                <circle cx={c.cx} cy={c.cy} r={12} fill={c.color} opacity={0.15} />
-                <circle cx={c.cx} cy={c.cy} r={6} fill={c.color} opacity={0.3} />
-                <circle cx={c.cx} cy={c.cy} r={3} fill={c.color} opacity={0.7} />
-              </g>
-            ))}
-          </svg>
-
-          {/* Legend */}
-          <div className="flex items-center gap-6 mt-4">
-            {PRESENCE_COUNTRIES.map((c) => (
-              <div key={c.name} className="flex items-center gap-2">
-                <span
-                  className="w-3 h-3 rounded-full shrink-0"
-                  style={{ backgroundColor: c.color }}
-                />
-                <span className="text-sm font-medium text-neutral-700">{c.name}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const plans = [
+// ─── Plans ──────────────────────────────────
+const plans: Plan[] = [
   {
-    name: 'Essentiel',
-    price: '49',
-    description: 'Pour démarrer',
-    features: [
-      'Menu digital & QR code',
-      'Commandes dine-in + takeaway',
-      '1 établissement',
-      'Rapports basiques',
-    ],
+    name: 'STARTER',
+    priceMonthly: 39000,
+    priceYearly: 31200,
+    subtitle: 'Pour demarrer',
+    description: 'Pour digitaliser votre menu et vos commandes.',
+    cta: 'Commencer',
+    ctaHref: '/signup',
+    highlights: ['Menu QR bilingue', 'POS basique', '1 admin, 3 staff', 'Support email'],
   },
   {
-    name: 'Premium',
-    price: '99',
+    name: 'PRO',
+    priceMonthly: 79000,
+    priceYearly: 63200,
+    subtitle: 'Le plus populaire',
+    description: 'Pilotez votre restaurant comme un pro.',
+    cta: 'Essayer gratuitement',
+    ctaHref: '/signup',
     popular: true,
-    description: 'Le plus populaire',
-    features: [
-      'Tout Essentiel +',
-      'Stock & recettes automatisés',
-      'KDS cuisine',
-      'Multi-devises',
-      'Delivery + room service',
-      'Rapports avancés',
-      'Multi-établissements',
+    trialPlan: true,
+    highlights: ['Tout STARTER +', 'KDS, tables, stock', 'Multi-devises', 'Support WhatsApp 24h'],
+  },
+  {
+    name: 'BUSINESS',
+    priceMonthly: 149000,
+    priceYearly: 119200,
+    subtitle: 'Multi-sites',
+    description: 'Gérez un hôtel ou une chaîne, tout au même endroit.',
+    cta: 'Commencer',
+    ctaHref: '/signup',
+    highlights: [
+      'Tout PRO +',
+      "Jusqu'a 10 sites",
+      'Room service, delivery',
+      'Support prioritaire 4h',
     ],
   },
   {
-    name: 'Enterprise',
-    price: 'Sur mesure',
-    description: 'Pour les groupes',
+    name: 'ENTERPRISE',
+    priceMonthly: null,
+    priceYearly: null,
+    subtitle: 'Sur mesure',
+    description: 'Solution sur mesure pour les grands groupes.',
+    cta: 'Contactez-nous',
+    ctaHref: '/contact',
+    highlights: ['Tout BUSINESS +', 'Sites illimites', 'SLA 99.9%', 'Account manager'],
+  },
+];
+
+const formatPrice = (price: number): string => {
+  return new Intl.NumberFormat('fr-FR').format(price);
+};
+
+// ─── Feature Comparison Grid ──────────────────────────────────
+interface FeatureRow {
+  label: string;
+  starter: boolean | string;
+  pro: boolean | string;
+  business: boolean | string;
+  enterprise: boolean | string;
+}
+
+const featureCategories: { title: string; features: FeatureRow[] }[] = [
+  {
+    title: 'Menu & Commandes',
     features: [
-      'Tout Premium +',
-      'Support dédié',
-      'SLA garanti',
-      'Intégrations sur mesure',
-      'Formation équipe',
+      {
+        label: 'Menu QR digital bilingue',
+        starter: true,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+      { label: 'Commandes sur place', starter: true, pro: true, business: true, enterprise: true },
+      { label: 'Commandes a emporter', starter: true, pro: true, business: true, enterprise: true },
+      { label: 'Commandes delivery', starter: false, pro: false, business: true, enterprise: true },
+      {
+        label: 'Room service digital',
+        starter: false,
+        pro: false,
+        business: true,
+        enterprise: true,
+      },
+    ],
+  },
+  {
+    title: 'Encaissement',
+    features: [
+      { label: 'POS (cash + carte)', starter: true, pro: true, business: true, enterprise: true },
+      { label: 'Mobile money', starter: false, pro: true, business: true, enterprise: true },
+      {
+        label: 'Multi-devises (XAF, EUR, USD)',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+      { label: 'Pourboires integres', starter: false, pro: true, business: true, enterprise: true },
+      {
+        label: 'Reconciliation automatique',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+    ],
+  },
+  {
+    title: 'Cuisine & Production',
+    features: [
+      { label: 'KDS (ecran cuisine)', starter: false, pro: true, business: true, enterprise: true },
+      { label: 'Gestion des tables', starter: false, pro: true, business: true, enterprise: true },
+      {
+        label: 'Assignation serveurs',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+    ],
+  },
+  {
+    title: 'Stock & Fournisseurs',
+    features: [
+      { label: 'Gestion de stock', starter: false, pro: true, business: true, enterprise: true },
+      {
+        label: 'Fiches techniques (cout matiere)',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+      { label: 'Suivi fournisseurs', starter: false, pro: true, business: true, enterprise: true },
+      {
+        label: 'Alertes reapprovisionnement',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+    ],
+  },
+  {
+    title: 'Analytics & Rapports',
+    features: [
+      {
+        label: 'Dashboard (CA, commandes)',
+        starter: true,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+      { label: 'Rapports de vente', starter: false, pro: true, business: true, enterprise: true },
+      { label: 'Best-sellers', starter: false, pro: true, business: true, enterprise: true },
+      { label: 'Analytics IA', starter: false, pro: false, business: true, enterprise: true },
+      {
+        label: 'Rapports multi-sites',
+        starter: false,
+        pro: false,
+        business: true,
+        enterprise: true,
+      },
+    ],
+  },
+  {
+    title: 'Equipe & Organisation',
+    features: [
+      {
+        label: 'Gestion equipe (roles, permissions)',
+        starter: false,
+        pro: true,
+        business: true,
+        enterprise: true,
+      },
+      { label: 'Etablissements', starter: '1', pro: '1', business: '10', enterprise: 'Illimite' },
+      { label: 'Admins', starter: '1', pro: '1', business: 'Illimite', enterprise: 'Illimite' },
+      { label: 'Staff', starter: '3', pro: '10', business: 'Illimite', enterprise: 'Illimite' },
+    ],
+  },
+  {
+    title: 'Support',
+    features: [
+      { label: 'Support email', starter: true, pro: true, business: true, enterprise: true },
+      {
+        label: 'Support WhatsApp',
+        starter: false,
+        pro: '24h',
+        business: '4h prioritaire',
+        enterprise: '1h telephone',
+      },
+      { label: 'Account manager', starter: false, pro: false, business: false, enterprise: true },
+      { label: 'SLA garanti', starter: false, pro: false, business: false, enterprise: '99.9%' },
+      {
+        label: 'Integrations API sur mesure',
+        starter: false,
+        pro: false,
+        business: false,
+        enterprise: true,
+      },
     ],
   },
 ];
 
+// ─── FAQ ──────────────────────────────────
+const faqs = [
+  {
+    q: "Comment fonctionne l'essai gratuit ?",
+    a: "14 jours d'acces complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables.",
+  },
+  {
+    q: 'Que se passe-t-il apres les 14 jours ?',
+    a: 'Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le controle.',
+  },
+  {
+    q: 'Puis-je changer de plan ?',
+    a: 'Oui, a tout moment. Montee en gamme immediate. Retour en arriere a la fin de la periode en cours.',
+  },
+  {
+    q: 'Y a-t-il un engagement ?',
+    a: 'Mensuel = sans engagement. Annuel = -20%.',
+  },
+  {
+    q: 'Comment je paie ?',
+    a: 'Par carte bancaire (Visa, Mastercard) via Stripe. Paiement securise.',
+  },
+  {
+    q: 'Je dois acheter du materiel ?',
+    a: 'Non. ATTABL est un logiciel. Utilisez votre telephone, tablette ou ordinateur existant.',
+  },
+  {
+    q: 'Combien de menus je peux creer ?',
+    a: 'Illimite sur tous les plans.',
+  },
+  {
+    q: "Et si j'ai plusieurs restaurants ?",
+    a: "Plan BUSINESS (jusqu'a 10 sites) ou ENTERPRISE (illimite).",
+  },
+];
+
+// ─── FAQ Accordion Item ──────────────────────────────────
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <div className="border-b border-neutral-200 dark:border-neutral-800">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-5 text-left cursor-pointer"
+      >
+        <span className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
+          {q}
+        </span>
+        <ChevronDown
+          className={cn(
+            'w-5 h-5 text-neutral-400 shrink-0 transition-transform',
+            open && 'rotate-180',
+          )}
+        />
+      </button>
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-200',
+          open ? 'max-h-40 pb-5' : 'max-h-0',
+        )}
+      >
+        <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">{a}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Feature Cell ──────────────────────────────────
+function FeatureCell({ value }: { value: boolean | string }) {
+  if (value === true) return <Check className="w-4 h-4 text-green-600 mx-auto" />;
+  if (value === false)
+    return <Minus className="w-4 h-4 text-neutral-300 dark:text-neutral-600 mx-auto" />;
+  return <span className="text-xs font-medium text-neutral-900 dark:text-white">{value}</span>;
+}
+
+// ─── Page ──────────────────────────────────
 export default function PricingPage() {
+  const [period, setPeriod] = useState<BillingPeriod>('monthly');
+
   return (
     <>
-      {/* Hero */}
-      <section className="py-20 lg:py-28 bg-white">
-        <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-6">
-            Des tarifs simples et transparents
-          </h1>
-          <p className="text-lg sm:text-xl text-neutral-600 mb-4">
-            14 jours gratuits sur tous les plans. Sans carte bancaire.
-          </p>
-        </div>
-      </section>
-
-      {/* Pricing cards */}
-      <section className="py-20 bg-neutral-50">
+      {/* Hero + Plan Cards */}
+      <section className="bg-white dark:bg-neutral-950 py-20 lg:py-28">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8">
-            {plans.map((plan, idx) => (
-              <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                viewport={{ once: true }}
-                className={`bg-white p-8 rounded-2xl ${
-                  plan.popular ? 'border-2 border-primary shadow-lg' : 'border border-neutral-200'
-                }`}
-              >
-                {plan.popular && (
-                  <div className="mb-4 inline-block rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white">
-                    Populaire
-                  </div>
+          <div className="text-center">
+            <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white">
+              Un prix clair. Pas de surprise.
+            </h1>
+            <p className="text-lg text-neutral-500 dark:text-neutral-400 mt-4">
+              {"14 jours d'essai gratuit sur le plan PRO. Sans carte bancaire."}
+            </p>
+
+            {/* Billing toggle */}
+            <div className="inline-flex bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 mt-8">
+              <button
+                type="button"
+                onClick={() => setPeriod('monthly')}
+                className={cn(
+                  'px-5 py-2 text-sm font-medium cursor-pointer transition-all rounded-full',
+                  period === 'monthly'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                    : 'text-neutral-500 dark:text-neutral-400',
                 )}
-                <h3 className="text-2xl font-bold text-neutral-900 mb-2">{plan.name}</h3>
-                <p className="text-sm text-neutral-600 mb-6">{plan.description}</p>
-                <div className="mb-6">
-                  <span className="text-4xl font-bold text-neutral-900">
-                    {typeof plan.price === 'string' && plan.price.includes('Sur')
-                      ? plan.price
-                      : `${plan.price}€`}
-                  </span>
-                  {!plan.price.includes('Sur') && <span className="text-neutral-600">/mois</span>}
+              >
+                Mensuel
+              </button>
+              <button
+                type="button"
+                onClick={() => setPeriod('yearly')}
+                className={cn(
+                  'px-5 py-2 text-sm font-medium cursor-pointer transition-all rounded-full',
+                  period === 'yearly'
+                    ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
+                    : 'text-neutral-500 dark:text-neutral-400',
+                )}
+              >
+                Annuel
+                <span className="ml-1.5 text-xs text-green-600 font-semibold">-20%</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Plan cards — badge floats above the card */}
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+            {plans.map((plan) => {
+              const price = period === 'yearly' ? plan.priceYearly : plan.priceMonthly;
+              const isCustom = price === null;
+
+              return (
+                <div key={plan.name} className="relative">
+                  {/* Badge floats ABOVE the card */}
+                  {plan.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
+                      <span className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wider whitespace-nowrap">
+                        Le plus populaire
+                      </span>
+                    </div>
+                  )}
+
+                  <div
+                    className={cn(
+                      'bg-white dark:bg-neutral-800 rounded-2xl p-6 sm:p-8 flex flex-col h-full',
+                      plan.popular
+                        ? 'ring-2 ring-neutral-900 dark:ring-white border border-transparent'
+                        : 'border border-neutral-200 dark:border-neutral-700',
+                    )}
+                  >
+                    {/* Plan name + description */}
+                    <div className="mb-5">
+                      <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
+                        {plan.name}
+                      </h3>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
+                        {plan.description}
+                      </p>
+                    </div>
+
+                    {/* Price */}
+                    <div className="mb-6">
+                      {isCustom ? (
+                        <span className="text-3xl font-bold text-neutral-900 dark:text-white">
+                          Sur mesure
+                        </span>
+                      ) : (
+                        <>
+                          <span className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tabular-nums">
+                            {formatPrice(price)}
+                          </span>
+                          <span className="text-sm text-neutral-500 dark:text-neutral-400 block mt-1">
+                            XAF/mois
+                          </span>
+                          {period === 'yearly' && plan.priceMonthly && (
+                            <span className="text-xs text-neutral-400 dark:text-neutral-500 line-through block mt-0.5">
+                              {formatPrice(plan.priceMonthly)} XAF/mois
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* CTA */}
+                    <Link
+                      href={plan.ctaHref}
+                      className={cn(
+                        'block w-full text-center rounded-lg py-3 text-sm font-semibold transition-colors',
+                        plan.popular
+                          ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100'
+                          : 'bg-neutral-900 text-white hover:bg-neutral-800',
+                      )}
+                    >
+                      {plan.cta}
+                    </Link>
+                    {plan.trialPlan && (
+                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 text-center mt-2">
+                        {"Plan de l'essai gratuit 14 jours"}
+                      </p>
+                    )}
+
+                    {/* Highlights — short list */}
+                    <ul className="mt-6 space-y-2.5 flex-1">
+                      {plan.highlights.map((h) => (
+                        <li key={h} className="flex items-start gap-2">
+                          <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                          <span className="text-neutral-600 dark:text-neutral-400 text-sm">
+                            {h}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <Link
-                  href="/signup"
-                  className={`block w-full text-center px-6 py-3 rounded-lg font-semibold transition-colors mb-6 ${
-                    plan.popular
-                      ? 'bg-black text-white hover:bg-neutral-900'
-                      : 'border-2 border-neutral-900 text-neutral-900 hover:bg-neutral-900 hover:text-white'
-                  }`}
-                >
-                  Commencer
-                </Link>
-                <ul className="space-y-3">
-                  {plan.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                      <span className="text-sm text-neutral-700">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Africa presence */}
-      <AfricaPresenceSection />
-
-      {/* FAQ */}
-      <section className="py-20 bg-neutral-50">
-        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 mb-12 text-center">
-            Questions fréquentes
+      {/* Feature Comparison Grid */}
+      <section className="bg-neutral-50 dark:bg-neutral-900 py-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white text-center mb-12">
+            Comparatif complet des fonctionnalites
           </h2>
-          <div className="space-y-8">
-            {[
-              {
-                q: "Comment fonctionne l'essai gratuit ?",
-                a: "14 jours d'accès complet à toutes les fonctionnalités Premium, sans carte bancaire requise.",
-              },
-              {
-                q: 'Puis-je changer de plan ?',
-                a: 'Oui, à tout moment depuis votre tableau de bord.',
-              },
-              {
-                q: 'Y a-t-il un engagement ?',
-                a: 'Non, vous pouvez annuler à tout moment.',
-              },
-            ].map((faq) => (
-              <div key={faq.q}>
-                <h3 className="text-lg font-semibold text-neutral-900 mb-2">{faq.q}</h3>
-                <p className="text-neutral-600">{faq.a}</p>
-              </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[640px]">
+              {/* Header */}
+              <thead>
+                <tr className="border-b-2 border-neutral-200 dark:border-neutral-700">
+                  <th className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
+                    Fonctionnalite
+                  </th>
+                  {['STARTER', 'PRO', 'BUSINESS', 'ENTERPRISE'].map((name) => (
+                    <th
+                      key={name}
+                      className="text-center py-4 px-2 text-sm font-bold text-neutral-900 dark:text-white w-[15%]"
+                    >
+                      {name}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+
+              <tbody>
+                {featureCategories.map((cat) => (
+                  <Fragment key={cat.title}>
+                    {/* Category header */}
+                    <tr>
+                      <td
+                        colSpan={5}
+                        className="pt-8 pb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
+                      >
+                        {cat.title}
+                      </td>
+                    </tr>
+                    {/* Feature rows */}
+                    {cat.features.map((f) => (
+                      <tr
+                        key={f.label}
+                        className="border-b border-neutral-100 dark:border-neutral-800"
+                      >
+                        <td className="py-3 pr-4 text-sm text-neutral-700 dark:text-neutral-300">
+                          {f.label}
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <FeatureCell value={f.starter} />
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <FeatureCell value={f.pro} />
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <FeatureCell value={f.business} />
+                        </td>
+                        <td className="py-3 px-2 text-center">
+                          <FeatureCell value={f.enterprise} />
+                        </td>
+                      </tr>
+                    ))}
+                  </Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      {/* FAQ Accordion */}
+      <section className="bg-white dark:bg-neutral-950 py-20">
+        <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+          <h2 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-8 text-center">
+            Questions frequentes
+          </h2>
+          <div>
+            {faqs.map((faq) => (
+              <FaqItem key={faq.q} q={faq.q} a={faq.a} />
             ))}
           </div>
         </div>

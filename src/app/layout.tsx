@@ -36,9 +36,9 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://attabl.com'),
-  title: 'ATTABL - Menu Digital & Commandes pour Restaurants et Hôtels',
+  title: 'Attabl - Menu digital & gestion pour la restauration',
   description:
-    'Plateforme SaaS de commande digitale pour restaurants et hôtels. Menu QR Code, Room Service, Dashboard temps réel.',
+    "La plateforme tout-en-un pour la restauration et l'hôtellerie en Afrique. Menu, commandes, stock, analytics en temps réel.",
   manifest: '/manifest.json',
   alternates: {
     canonical: '/',

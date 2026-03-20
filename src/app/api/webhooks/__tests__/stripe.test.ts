@@ -41,6 +41,12 @@ vi.mock('@/lib/logger', () => ({
   },
 }));
 
+vi.mock('@/lib/stripe/server', () => ({
+  STRIPE_PRICES: {},
+  getPlanFromPriceId: vi.fn().mockReturnValue(null),
+  getIntervalFromPriceId: vi.fn().mockReturnValue(null),
+}));
+
 // Import after mocks are set up
 import { POST } from '../../webhooks/stripe/route';
 import { logger } from '@/lib/logger';
@@ -165,7 +171,7 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
       const event = makeStripeEvent('checkout.session.completed', {
         metadata: {
           tenant_id: 'tenant-abc',
-          plan: 'premium',
+          plan: 'pro',
           billing_interval: 'yearly',
         },
         customer: 'cus_456',
@@ -184,7 +190,7 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
         stripe_customer_id: 'cus_456',
         stripe_subscription_id: 'sub_789',
         subscription_status: 'active',
-        subscription_plan: 'premium',
+        subscription_plan: 'pro',
         billing_interval: 'yearly',
       });
 
@@ -220,6 +226,7 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
 
       expect(chain.updateFn).toHaveBeenCalledWith({
         subscription_status: 'active',
+        billing_interval: 'monthly',
         subscription_current_period_start: new Date(periodStart * 1000).toISOString(),
         subscription_current_period_end: new Date(periodEnd * 1000).toISOString(),
       });
@@ -232,7 +239,7 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
   // =========================================================================
 
   describe('customer.subscription.deleted', () => {
-    it('suspends tenant by setting cancelled status and is_active false', async () => {
+    it('freezes tenant by setting frozen status and is_active false', async () => {
       const chain = setupSupabaseChain({
         selectResult: { data: { id: 'tenant-del' }, error: null },
       });
@@ -247,11 +254,11 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
       expect(response.status).toBe(200);
 
       expect(chain.updateFn).toHaveBeenCalledWith({
-        subscription_status: 'cancelled',
+        subscription_status: 'frozen',
         is_active: false,
       });
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-del');
-      expect(logger.warn).toHaveBeenCalledWith('Tenant suspended — subscription cancelled', {
+      expect(logger.warn).toHaveBeenCalledWith('Tenant frozen — subscription deleted', {
         tenantId: 'tenant-del',
       });
     });

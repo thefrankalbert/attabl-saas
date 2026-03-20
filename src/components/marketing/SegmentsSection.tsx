@@ -1,103 +1,86 @@
-'use client';
-
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { UtensilsCrossed, Hotel, Zap, Wine, Flame } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const segments = [
+interface SegmentCard {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  href: string;
+}
+
+const segmentCards: SegmentCard[] = [
   {
+    icon: UtensilsCrossed,
     title: 'Restaurants',
-    description: 'Gastronomie et service à table',
+    description: 'Gérez votre salle, vos menus et votre cuisine depuis un seul écran.',
     href: '/restaurants',
   },
   {
+    icon: Hotel,
     title: 'Hôtels',
-    description: 'Room service et multi-venues',
+    description: 'Room service, restaurant, bar piscine - tout unifié, multilingue.',
     href: '/hotels',
   },
   {
+    icon: Zap,
     title: 'Quick-Service',
-    description: 'Rapidité et efficacité',
+    description: 'Comptoir, drive, commandes express. Chaque seconde compte.',
     href: '/quick-service',
   },
   {
+    icon: Wine,
     title: 'Bars & Cafés',
-    description: 'Comptoir et terrasse',
+    description: 'Carte cocktails, service terrasse, suivi des boissons en temps réel.',
     href: '/bars-cafes',
   },
   {
-    title: 'Food Trucks',
-    description: 'Mobile et connecté',
-    href: '/food-trucks',
-  },
-  {
-    title: 'Boulangeries',
-    description: 'Artisanat et précision',
-    href: '/boulangeries',
-  },
-  {
-    title: 'Commerces',
-    description: 'Catalogue et gestion de stock',
-    href: '/retail',
-  },
-  {
-    title: 'Salons',
-    description: 'Coiffure, beauté et bien-être',
-    href: '/salons',
-  },
-  {
-    title: 'Pharmacies',
-    description: 'Officine connectée',
-    href: '/pharmacies',
+    icon: Flame,
+    title: 'Fast-Food',
+    description: 'Écran cuisine, bornes, multi-sites. La vitesse sans le chaos.',
+    href: '/fast-food',
   },
 ];
 
 export default function SegmentsSection() {
   return (
-    <section className="py-24 bg-white">
+    <section className="bg-white dark:bg-neutral-950 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-4">
-            Conçu pour votre activité
-          </h2>
-          <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-            Que vous gériez un food truck ou un palace, Attabl s&apos;adapte à vos besoins.
-          </p>
-        </div>
+        {/* Header */}
+        <h2 className="mb-4 text-center font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
+          Un outil. Votre métier.
+        </h2>
+        <p className="mx-auto mb-12 max-w-2xl text-center text-base text-neutral-500 dark:text-neutral-400">
+          Du comptoir au palace, Attabl parle votre langue.
+        </p>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {segments.map((segment, idx) => (
-            <motion.div
-              key={segment.href}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: idx * 0.1 }}
-              viewport={{ once: true }}
-            >
-              <Link
-                href={segment.href}
-                className="group block bg-white border border-neutral-200 rounded-2xl p-8 hover:border-neutral-900 hover:shadow-lg transition-all"
+        {/* 5-card grid */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          {segmentCards.map((card) => {
+            const Icon = card.icon;
+            return (
+              <div
+                key={card.title}
+                className="rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900 p-6 transition-shadow hover:shadow-md"
               >
-                <h3 className="text-xl font-semibold text-neutral-900 mb-2">{segment.title}</h3>
-                <p className="text-neutral-600 text-sm">{segment.description}</p>
-                <div className="mt-4 inline-flex items-center text-sm font-medium text-neutral-900 group-hover:gap-2 transition-all">
-                  En savoir plus
-                  <svg
-                    className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                  <Icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                 </div>
-              </Link>
-            </motion.div>
-          ))}
+                <h3 className="mb-2 text-base font-semibold text-neutral-900 dark:text-white">
+                  {card.title}
+                </h3>
+                <p className="mb-4 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {card.description}
+                </p>
+                <Link
+                  href={card.href}
+                  className="text-sm font-medium text-neutral-900 dark:text-white hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors"
+                >
+                  En savoir plus &rarr;
+                </Link>
+              </div>
+            );
+          })}
         </div>
       </div>
     </section>

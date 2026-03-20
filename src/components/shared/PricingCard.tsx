@@ -3,9 +3,12 @@
 import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
+import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/server';
+import { PLAN_NAMES } from '@/lib/plans/features';
 
-export type PricingPlan = 'essentiel' | 'premium';
-export type BillingInterval = 'monthly' | 'yearly';
+export type PricingPlan = Exclude<SubscriptionPlan, 'enterprise'>;
+export type { BillingInterval };
 
 interface PricingCardProps {
   plan: PricingPlan;
@@ -15,33 +18,44 @@ interface PricingCardProps {
   isLoading?: boolean;
 }
 
-// ... imports
-
-const PLAN_DETAILS = {
-  essentiel: {
-    name: 'Essentiel',
+const PLAN_DETAILS: Record<
+  PricingPlan,
+  { description: string; features: string[]; highlight: boolean }
+> = {
+  starter: {
     description: 'Pour démarrer',
     features: [
       '1 espace restaurant',
-      'Menu digital illimité',
-      '2 comptes admin',
+      '2 menus, 50 articles',
+      'POS basique',
       'Support par email',
       'Photos HD',
     ],
     highlight: false,
   },
-  premium: {
-    name: 'Prime',
+  pro: {
     description: 'Le plus populaire',
     features: [
-      '3 espaces (Restaurant, Bar...)',
-      'Commande à table & Room Service',
-      '5 comptes admin',
-      'Multi-langues (FR/EN)',
-      'Support prioritaire WhatsApp',
+      '10 menus, 500 articles',
+      'POS complet + KDS',
+      'Commande à table',
+      'Inventaire & recettes',
       'Statistiques avancées',
+      'Multi-devises',
     ],
     highlight: true,
+  },
+  business: {
+    description: 'Multi-établissements',
+    features: [
+      "Jusqu'à 10 établissements",
+      'Toutes les fonctions Pro',
+      'Room Service & Livraison',
+      'Analytics IA',
+      'Staff illimité',
+      'Support prioritaire',
+    ],
+    highlight: false,
   },
 };
 
@@ -53,22 +67,8 @@ export function PricingCard({
   isLoading,
 }: PricingCardProps) {
   const details = PLAN_DETAILS[plan];
-
-  // Base Monthly Price (Essential updated to 39,800)
-  const baseMonthlyPrice = plan === 'essentiel' ? 39800 : 79800;
-
-  // Calculate Annual Styling
-  // 15% Discount on Yearly
-  const annualDiscountRate = 0.15;
-  const yearlyTotalRaw = baseMonthlyPrice * 12;
-  const yearlyTotalDiscounted = yearlyTotalRaw * (1 - annualDiscountRate);
-  const monthlyEquivalentYearly = yearlyTotalDiscounted / 12;
-
-  const displayPrice = billingInterval === 'monthly' ? baseMonthlyPrice : monthlyEquivalentYearly;
-  // Round to nearest 100 or keep precise? Usually prices are clean.
-  // 39800 * 12 * 0.85 / 12 = 33830. Let's keep it exact integers.
-  const displayPriceRounded = Math.round(displayPrice);
-  const yearlyTotalRounded = Math.round(yearlyTotalDiscounted);
+  const displayPrice = PLAN_AMOUNTS[plan][billingInterval];
+  const yearlyTotal = PLAN_TOTALS[plan].yearly;
 
   return (
     <motion.div
@@ -103,7 +103,7 @@ export function PricingCard({
                   : 'text-black dark:text-neutral-300'
               }`}
             >
-              {details.name}
+              {PLAN_NAMES[plan]}
             </h3>
 
             <div className="flex items-baseline gap-1">
@@ -112,17 +112,17 @@ export function PricingCard({
                   details.highlight ? 'text-black dark:text-white' : 'text-black dark:text-white'
                 }`}
               >
-                {displayPriceRounded.toLocaleString('fr-FR')}
+                {displayPrice.toLocaleString('fr-FR')}
               </span>
               <span className="text-neutral-500 font-medium">/mois</span>
             </div>
             {billingInterval === 'yearly' && (
               <div className="mt-2 text-xs font-bold">
                 <span className="text-green-600 dark:text-[#CCFF00] bg-green-50 dark:bg-[#CCFF00]/10 px-2 py-0.5 rounded">
-                  -15% appliqué
+                  -20% appliqué
                 </span>
                 <span className="text-neutral-400 block mt-1">
-                  Facturé {yearlyTotalRounded.toLocaleString('fr-FR')} F/an
+                  Facturé {yearlyTotal.toLocaleString('fr-FR')} F/an
                 </span>
               </div>
             )}
@@ -158,8 +158,8 @@ export function PricingCard({
               : isLoading
                 ? 'Chargement...'
                 : details.highlight
-                  ? 'Passer au Premium'
-                  : 'Commencer gratuitement'}
+                  ? 'Passer au Pro'
+                  : 'Choisir ce plan'}
           </Button>
         </div>
       </div>

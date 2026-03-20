@@ -60,7 +60,7 @@ export async function POST(request: Request) {
 
     // Feature gate
     const hasAlerts = canAccessFeature(
-      'stockAlerts',
+      'canAccessInventory',
       tenant.subscription_plan as SubscriptionPlan | null,
       tenant.subscription_status as SubscriptionStatus | null,
       tenant.trial_ends_at as string | null,
