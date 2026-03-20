@@ -1,91 +1,112 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-
 const products = [
   {
-    title: 'Dashboard en temps réel',
-    description: 'Suivez vos ventes, commandes et performances en direct',
-    category: 'ANALYTICS',
+    verb: 'PILOTER',
+    title: 'Votre chiffre, en direct',
+    description:
+      'Recettes du jour, top plats, tendances de la semaine. Vous savez exactement où vous en êtes, à chaque instant.',
+    span: 2,
+    hero: true,
   },
   {
-    title: 'Menu Digital QR Code',
-    description: 'Menu bilingue avec photos et modificateurs personnalisables',
-    category: 'MENU',
+    verb: 'VENDRE',
+    title: 'Votre menu, sans papier',
+    description:
+      'Le client scanne, consulte, commande. Bilingue, avec photos. Fini les menus plastifiés qui trainent.',
+    span: 1,
   },
   {
-    title: 'Cuisine connectée (KDS)',
-    description: 'Kitchen Display System pour optimiser votre production',
-    category: 'KITCHEN',
+    verb: 'PRÉPARER',
+    title: 'Zéro oubli en cuisine',
+    description:
+      "Chaque commande arrive sur l'écran de la cuisine en temps réel. Plus besoin de crier entre la salle et les fourneaux.",
+    span: 1,
   },
   {
-    title: 'Point de vente (POS)',
-    description: 'Encaissement rapide avec gestion multi-devises',
-    category: 'POINT OF SALE',
+    verb: 'ENCAISSER',
+    title: 'Cash, carte ou mobile money',
+    description: 'Encaissez comme vos clients paient. XAF, EUR, USD. Réconciliation automatique.',
+    span: 1,
+  },
+  {
+    verb: 'GÉRER',
+    title: 'Stock sous contrôle',
+    description:
+      'Chaque plat vendu déduit les ingrédients. Alertes quand le stock est bas. Fini les surprises à la livraison.',
+    span: 1,
   },
 ];
 
 export default function ProductShowcase() {
-  const [activeIndex, setActiveIndex] = useState(0);
-
-  const next = () => setActiveIndex((prev) => (prev + 1) % products.length);
-  const prev = () => setActiveIndex((prev) => (prev - 1 + products.length) % products.length);
-
   return (
-    <section className="relative bg-white py-16 md:py-24 lg:py-32">
+    <section className="bg-neutral-50 dark:bg-neutral-900 py-20 sm:py-28">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-2 lg:items-center lg:gap-16">
-          {/* Left: Product preview */}
-          <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-neutral-100">
-            <div className="flex h-full items-center justify-center">
-              <p className="text-3xl font-bold text-neutral-300 sm:text-4xl md:text-6xl">
-                {products[activeIndex].category}
+        {/* Section header */}
+        <div className="mb-16 text-center">
+          <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
+            Cinq modules. Un seul outil.
+          </h2>
+          <p className="mx-auto mt-4 max-w-lg text-neutral-500 dark:text-neutral-400">
+            Du premier client au centième, ATTABL grandit avec vous.
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {products.map((product) => (
+            <div
+              key={product.verb}
+              className={`rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8 transition-shadow hover:shadow-lg ${
+                product.span === 2 ? 'md:col-span-2' : ''
+              }`}
+            >
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500">
+                {product.verb}
               </p>
-            </div>
-          </div>
+              <h3 className="mb-2 text-xl font-bold text-neutral-900 dark:text-white">
+                {product.title}
+              </h3>
+              <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                {product.description}
+              </p>
 
-          {/* Right: Product info & navigation */}
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wider text-neutral-500">
-              {products[activeIndex].category}
-            </p>
-            <h2 className="mt-4 text-3xl font-semibold leading-tight text-neutral-900 sm:text-4xl lg:text-5xl">
-              {products[activeIndex].title}
-            </h2>
-            <p className="mt-6 text-xl text-neutral-600">{products[activeIndex].description}</p>
-
-            <div className="mt-8 flex items-center gap-4">
-              <Link
-                href="/features"
-                className="text-base font-semibold text-lime-700 underline decoration-2 underline-offset-4 transition-colors hover:text-lime-800"
-              >
-                En savoir plus
-              </Link>
+              {/* Mini mockup for hero card */}
+              {product.hero && (
+                <div className="mt-6 flex gap-4">
+                  {/* Mini bar chart 1 */}
+                  <div className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4">
+                    <p className="mb-2 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                      Revenu mensuel
+                    </p>
+                    <div className="flex h-16 items-end gap-1">
+                      {[40, 65, 50, 80, 70, 90, 75].map((h, i) => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-sm ${i === 5 ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-200 dark:bg-neutral-700'}`}
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  {/* Mini bar chart 2 */}
+                  <div className="flex-1 rounded-xl bg-neutral-50 dark:bg-neutral-900 p-4">
+                    <p className="mb-2 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
+                      Commandes / jour
+                    </p>
+                    <div className="flex h-16 items-end gap-1">
+                      {[55, 70, 85, 60, 95, 45, 80].map((h, i) => (
+                        <div
+                          key={i}
+                          className={`flex-1 rounded-sm ${i === 4 ? 'bg-neutral-900 dark:bg-white' : 'bg-neutral-200 dark:bg-neutral-700'}`}
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-
-            {/* Navigation */}
-            <div className="mt-12 flex items-center gap-4">
-              <button
-                type="button"
-                onClick={prev}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-neutral-900 text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                type="button"
-                onClick={next}
-                className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-neutral-900 text-neutral-900 transition-colors hover:bg-neutral-900 hover:text-white"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-              <span className="ml-4 text-sm text-neutral-600">
-                {activeIndex + 1} / {products.length}
-              </span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

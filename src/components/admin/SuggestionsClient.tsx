@@ -66,7 +66,7 @@ export default function SuggestionsClient({
   const supabase = createClient();
   const [generating, setGenerating] = useState(false);
   const canAutoGenerate = canAccessFeature(
-    'autoSuggestions',
+    'canAccessAIAnalytics',
     subscriptionPlan,
     subscriptionStatus,
     trialEndsAt,

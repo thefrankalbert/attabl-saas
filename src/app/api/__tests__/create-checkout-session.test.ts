@@ -153,7 +153,7 @@ describe('POST /api/create-checkout-session', () => {
   it('returns 429 when rate limited', async () => {
     mockRateLimitBlocked();
 
-    const response = await POST(buildRequest({ plan: 'essentiel' }));
+    const response = await POST(buildRequest({ plan: 'starter' }));
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(429);
@@ -169,7 +169,7 @@ describe('POST /api/create-checkout-session', () => {
     });
     vi.mocked(createClient).mockResolvedValue(mockSupabase as never);
 
-    const response = await POST(buildRequest({ plan: 'essentiel' }));
+    const response = await POST(buildRequest({ plan: 'starter' }));
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(401);
@@ -182,7 +182,7 @@ describe('POST /api/create-checkout-session', () => {
       adminUser: { data: null, error: { message: 'No rows found' } },
     });
 
-    const response = await POST(buildRequest({ plan: 'essentiel' }));
+    const response = await POST(buildRequest({ plan: 'starter' }));
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(404);
@@ -193,7 +193,7 @@ describe('POST /api/create-checkout-session', () => {
   it('returns 400 when body has invalid fields', async () => {
     setupAuthenticatedMocks();
 
-    const response = await POST(buildRequest({ plan: 'essentiel', billingInterval: 'weekly' }));
+    const response = await POST(buildRequest({ plan: 'starter', billingInterval: 'weekly' }));
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(400);
@@ -201,7 +201,7 @@ describe('POST /api/create-checkout-session', () => {
   });
 
   // 5. Invalid plan -> 400
-  it('returns 400 when plan is not essentiel or premium', async () => {
+  it('returns 400 when plan is not starter, pro, or business', async () => {
     setupAuthenticatedMocks();
 
     const response = await POST(buildRequest({ plan: 'enterprise' }));
@@ -220,7 +220,7 @@ describe('POST /api/create-checkout-session', () => {
       url: 'https://checkout.stripe.com/pay/cs_test_session_123',
     } as never);
 
-    const response = await POST(buildRequest({ plan: 'premium', billingInterval: 'yearly' }));
+    const response = await POST(buildRequest({ plan: 'pro', billingInterval: 'yearly' }));
     const json = (await response.json()) as { sessionId: string; url: string };
 
     expect(response.status).toBe(200);
@@ -236,7 +236,7 @@ describe('POST /api/create-checkout-session', () => {
       new Error('Stripe connection failed'),
     );
 
-    const response = await POST(buildRequest({ plan: 'essentiel' }));
+    const response = await POST(buildRequest({ plan: 'starter' }));
     const json = (await response.json()) as { error: string };
 
     expect(response.status).toBe(500);

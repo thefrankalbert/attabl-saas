@@ -5,7 +5,7 @@ import { getTenant } from '@/lib/cache';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
-import { TrialBanner } from '@/components/admin/TrialBanner';
+import { SubscriptionBanners } from '@/components/admin/SubscriptionBanners';
 import { AdminIdleWrapper } from '@/components/admin/AdminIdleWrapper';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
@@ -138,7 +138,7 @@ export default async function AdminLayout({
                           : null
                       }
                     >
-                      <AdminContentWrapper chrome={<TrialBanner tenantSlug={tenantSlug} />}>
+                      <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
                         {children}
                       </AdminContentWrapper>
                     </SubscriptionProvider>

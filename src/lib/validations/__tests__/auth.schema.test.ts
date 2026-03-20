@@ -43,13 +43,18 @@ describe('signupSchema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('should accept optional plan "essentiel"', () => {
-    const result = signupSchema.safeParse({ ...validInput, plan: 'essentiel' });
+  it('should accept optional plan "starter"', () => {
+    const result = signupSchema.safeParse({ ...validInput, plan: 'starter' });
     expect(result.success).toBe(true);
   });
 
-  it('should accept optional plan "premium"', () => {
-    const result = signupSchema.safeParse({ ...validInput, plan: 'premium' });
+  it('should accept optional plan "pro"', () => {
+    const result = signupSchema.safeParse({ ...validInput, plan: 'pro' });
+    expect(result.success).toBe(true);
+  });
+
+  it('should accept optional plan "business"', () => {
+    const result = signupSchema.safeParse({ ...validInput, plan: 'business' });
     expect(result.success).toBe(true);
   });
 

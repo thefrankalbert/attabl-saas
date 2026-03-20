@@ -1,7 +1,13 @@
 // Types pour les plans et intervalles de facturation
-export type SubscriptionPlan = 'essentiel' | 'premium' | 'enterprise';
-export type BillingInterval = 'monthly' | 'yearly';
-export type SubscriptionStatus = 'trial' | 'active' | 'past_due' | 'cancelled' | 'paused';
+export type SubscriptionPlan = 'starter' | 'pro' | 'business' | 'enterprise';
+export type BillingInterval = 'monthly' | 'semiannual' | 'yearly';
+export type SubscriptionStatus =
+  | 'trial'
+  | 'active'
+  | 'past_due'
+  | 'cancelled'
+  | 'paused'
+  | 'frozen';
 
 // Type pour les requêtes de création de checkout
 export interface CreateCheckoutRequest {
