@@ -11,13 +11,12 @@ import CTASection from '@/components/marketing/CTASection';
 export const revalidate = 3600; // ISR: regenerate every hour
 
 export const metadata: Metadata = {
-  title: 'Attabl — Menu digital & gestion pour professionnels',
+  title: 'Attabl - Menu digital & gestion pour la restauration',
   description:
-    'La plateforme tout-en-un pour digitaliser votre établissement. Menu, commandes, stock, analytics — en temps réel.',
+    "La plateforme tout-en-un pour la restauration et l'hôtellerie. Menu, commandes, stock, analytics en temps réel.",
   openGraph: {
-    title: 'Attabl — Votre établissement. Votre menu. Votre contrôle.',
-    description:
-      "Menu digital, commandes, stock — tout ce qu'il faut pour gérer votre activité avec précision.",
+    title: 'Attabl - Petit comptoir ou grande enseigne',
+    description: 'Menu, commandes, stock - tout piloté depuis un seul outil.',
     type: 'website',
   },
 };

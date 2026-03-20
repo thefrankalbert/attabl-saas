@@ -4,18 +4,13 @@ import { useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Building2,
   Coffee,
   Flame,
-  Heart,
   Hotel,
   MapPin,
   Minus,
   Phone,
   Plus,
-  Scissors,
-  ShoppingCart,
-  Store,
   UtensilsCrossed,
   Wine,
 } from 'lucide-react';
@@ -36,11 +31,6 @@ const establishmentTypes = [
   { id: 'bar', icon: Wine, titleKey: 'typeBar' },
   { id: 'cafe', icon: Coffee, titleKey: 'typeCafe' },
   { id: 'fastfood', icon: Flame, titleKey: 'typeFastfood' },
-  { id: 'retail', icon: ShoppingCart, titleKey: 'typeRetail' },
-  { id: 'boutique', icon: Store, titleKey: 'typeBoutique' },
-  { id: 'pharmacy', icon: Heart, titleKey: 'typePharmacy' },
-  { id: 'salon', icon: Scissors, titleKey: 'typeSalon' },
-  { id: 'other', icon: Building2, titleKey: 'typeOther' },
 ] as const;
 
 interface EstablishmentStepProps {
@@ -481,45 +471,6 @@ export function EstablishmentStep({
                             onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
                           />
                         </div>
-                      )}
-
-                      {(data.establishmentType === 'retail' ||
-                        data.establishmentType === 'boutique' ||
-                        data.establishmentType === 'pharmacy') && (
-                        <div className="space-y-3">
-                          <NumberStepper
-                            label={t('registerCount')}
-                            value={data.registerCount ?? 1}
-                            min={1}
-                            max={100}
-                            onChange={(val) => updateData({ registerCount: val })}
-                          />
-                          <ToggleSwitch
-                            label={t('hasDelivery')}
-                            checked={!!data.hasDelivery}
-                            onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
-                          />
-                        </div>
-                      )}
-
-                      {data.establishmentType === 'salon' && (
-                        <NumberStepper
-                          label={t('totalCapacity')}
-                          value={data.totalCapacity ?? 1}
-                          min={1}
-                          max={100}
-                          onChange={(val) => updateData({ totalCapacity: val })}
-                        />
-                      )}
-
-                      {data.establishmentType === 'other' && (
-                        <NumberStepper
-                          label={t('tableCountLabel')}
-                          value={data.tableCount}
-                          min={1}
-                          max={500}
-                          onChange={(val) => updateData({ tableCount: val })}
-                        />
                       )}
                     </div>
                   )}

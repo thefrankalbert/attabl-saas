@@ -100,7 +100,7 @@ export async function GET(request: Request) {
 
       // User has no tenant — need to create one via OAuth signup
       // Use provided plan/restaurantName or defaults
-      const signupPlan = plan || 'essentiel';
+      const signupPlan = plan || 'starter';
       const signupName = restaurantName || 'Mon Établissement';
 
       // Call signup API to create tenant

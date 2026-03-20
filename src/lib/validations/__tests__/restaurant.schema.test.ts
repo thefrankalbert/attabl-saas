@@ -69,13 +69,18 @@ describe('createRestaurantStep2Schema', () => {
     expect(result.success).toBe(true);
   });
 
-  it('accepts essentiel plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'essentiel' });
+  it('accepts starter plan', () => {
+    const result = createRestaurantStep2Schema.safeParse({ plan: 'starter' });
     expect(result.success).toBe(true);
   });
 
-  it('accepts premium plan', () => {
-    const result = createRestaurantStep2Schema.safeParse({ plan: 'premium' });
+  it('accepts pro plan', () => {
+    const result = createRestaurantStep2Schema.safeParse({ plan: 'pro' });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts business plan', () => {
+    const result = createRestaurantStep2Schema.safeParse({ plan: 'business' });
     expect(result.success).toBe(true);
   });
 
@@ -91,7 +96,7 @@ describe('createRestaurantSchema (merged)', () => {
       name: 'Le Radisson',
       type: 'hotel',
       slug: 'le-radisson',
-      plan: 'premium',
+      plan: 'pro',
     });
     expect(result.success).toBe(true);
   });

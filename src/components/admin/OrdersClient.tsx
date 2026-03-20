@@ -88,7 +88,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressTriggered = useRef(false);
   const { plan } = useSubscription();
-  const isPremium = plan === 'premium';
+  const isPremium = plan === 'pro' || plan === 'business' || plan === 'enterprise';
 
   const handleSoundPointerDown = useCallback(() => {
     longPressTriggered.current = false;
