@@ -54,6 +54,9 @@ function isPublicMainDomainPath(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  // SECURITY: Strip any client-injected x-tenant-slug — only the proxy should set this
+  request.headers.delete('x-tenant-slug');
+
   // 1. Extract subdomain and pathname early for routing decisions
   const hostname = request.headers.get('host') || '';
   const subdomain = extractSubdomain(hostname);
