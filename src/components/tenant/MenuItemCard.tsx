@@ -320,13 +320,8 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   color: 'var(--tenant-primary)',
                   background: 'none',
                   border: 'none',
@@ -351,13 +346,8 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                   color: 'var(--tenant-primary)',
                   background: 'none',
                   border: 'none',

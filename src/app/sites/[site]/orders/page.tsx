@@ -42,7 +42,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
         </div>
       </header>
 
-      <main className="max-w-lg mx-auto pt-4 pb-28">
+      <main className="max-w-lg mx-auto px-4 pt-4 pb-28">
         <ClientOrders
           tenantSlug={tenantSlug}
           tenantId={tenant.id}

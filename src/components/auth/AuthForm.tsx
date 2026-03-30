@@ -278,7 +278,7 @@ function AuthForm({ mode }: AuthFormProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="mx-auto w-full"
+      className="mx-auto w-full overflow-y-auto"
     >
       {/* Logo */}
       <Link href="/" className="flex items-center gap-2 mb-10 w-fit group">
@@ -364,7 +364,7 @@ function AuthForm({ mode }: AuthFormProps) {
             {isLogin && (
               <Link
                 href="/forgot-password"
-                className="text-xs text-accent hover:text-accent-hover font-medium transition-colors"
+                className="text-xs text-accent hover:text-accent-hover font-medium transition-colors whitespace-nowrap"
               >
                 Oublié ?
               </Link>
@@ -379,7 +379,7 @@ function AuthForm({ mode }: AuthFormProps) {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={isLogin ? undefined : 8}
-              className="h-11 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
+              className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
             />
             <button
               type="button"
