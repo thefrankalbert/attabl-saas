@@ -132,6 +132,7 @@ export default function CategoryNav({ categories, visible = true }: CategoryNavP
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
+              className="whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]"
               style={{
                 whiteSpace: 'nowrap',
                 padding: '8px 16px',

@@ -142,7 +142,7 @@ export default function InstallPrompt({
 
   return (
     <div
-      className="fixed left-4 right-4 max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
+      className="fixed left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
       style={{
         bottom: hasFloatingCart
           ? 'calc(140px + env(safe-area-inset-bottom, 0px))'

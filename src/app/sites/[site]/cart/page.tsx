@@ -638,7 +638,8 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => removeFromCart(itemKey)}
-                        className="p-1 text-app-text-muted/40 hover:text-red-500 transition-colors"
+                        className="p-2.5 text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        aria-label="Supprimer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
