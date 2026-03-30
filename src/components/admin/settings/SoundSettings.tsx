@@ -311,7 +311,7 @@ export function SoundSettings({
                     </span>
                   )}
                 </div>
-                <p className="text-[11px] text-app-text-secondary">{sound.description}</p>
+                <p className="text-[11px] text-app-text-secondary truncate">{sound.description}</p>
               </div>
 
               {/* Delete custom sound */}

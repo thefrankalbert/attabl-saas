@@ -75,7 +75,7 @@ export async function getCachedTenant(slug: string) {
 }
 
 /**
- * Fresh tenant config — bypasses all caching.
+ * Fresh tenant config - bypasses all caching.
  *
  * Use this in admin pages (force-dynamic) where data must be 100% fresh
  * (e.g., right after onboarding, settings changes, etc.).

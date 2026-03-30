@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     const { success: allowed } = await domainVerifyLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { error: 'Trop de requetes. Reessayez plus tard.' },
         { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     } = await supabase.auth.getUser();
 
     if (!user) {
-      return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+      return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
     // 2. Parse and validate input

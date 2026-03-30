@@ -345,7 +345,7 @@ export function TablesClient({
       {/* Main Layout */}
       <div className="flex flex-col @lg:flex-row gap-6">
         {/* Left Panel: Zone List */}
-        <div className="w-full @lg:w-72 flex-shrink-0">
+        <div className="w-full lg:w-72 flex-shrink-0">
           <div className="bg-app-card rounded-xl border border-app-border p-4">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-sm font-semibold text-app-text">{t('zonesHeader')}</h2>
@@ -382,7 +382,7 @@ export function TablesClient({
                       <Input
                         value={editingZoneName}
                         onChange={(e) => setEditingZoneName(e.target.value)}
-                        className="h-7 text-sm rounded-lg focus:ring-accent/30"
+                        className="h-7 text-sm rounded-lg focus:ring-accent"
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveZoneName(zone.id);
                           if (e.key === 'Escape') setEditingZoneId(null);
@@ -569,7 +569,7 @@ export function TablesClient({
                           onChange={(e) =>
                             handleUpdateCapacity(table, parseInt(e.target.value, 10))
                           }
-                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-1 focus:ring-accent/30 focus:outline-none"
+                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-accent focus:outline-none"
                         >
                           {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
                             <option key={n} value={n}>
@@ -585,7 +585,7 @@ export function TablesClient({
                           type="checkbox"
                           checked={table.is_active}
                           onChange={() => handleToggleActive(table)}
-                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent/30"
+                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent"
                         />
                         <span className="text-xs text-app-text-secondary">
                           {table.is_active ? t('active') : t('inactive')}
@@ -644,7 +644,7 @@ export function TablesClient({
               value={zoneName}
               onChange={(e) => setZoneName(e.target.value)}
               placeholder={t('zoneNamePlaceholder')}
-              className="rounded-lg focus:ring-accent/30"
+              className="rounded-lg focus:ring-accent"
               required
             />
           </div>
@@ -657,7 +657,7 @@ export function TablesClient({
               value={zonePrefix}
               onChange={(e) => setZonePrefix(e.target.value)}
               placeholder={t('zonePrefixPlaceholder')}
-              className="rounded-lg focus:ring-accent/30"
+              className="rounded-lg focus:ring-accent"
               required
               maxLength={5}
             />

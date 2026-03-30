@@ -258,7 +258,7 @@ describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
         is_active: false,
       });
       expect(chain.eqAfterUpdate).toHaveBeenCalledWith('id', 'tenant-del');
-      expect(logger.warn).toHaveBeenCalledWith('Tenant frozen — subscription deleted', {
+      expect(logger.warn).toHaveBeenCalledWith('Tenant frozen - subscription deleted', {
         tenantId: 'tenant-del',
       });
     });

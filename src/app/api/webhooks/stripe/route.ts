@@ -273,7 +273,7 @@ export async function POST(request: Request) {
           return NextResponse.json({ error: 'DB update failed' }, { status: 500 });
         }
 
-        logger.warn('Tenant frozen — subscription deleted', { tenantId: tenant.id });
+        logger.warn('Tenant frozen - subscription deleted', { tenantId: tenant.id });
         break;
       }
 

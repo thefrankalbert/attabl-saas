@@ -90,7 +90,7 @@ function SortableRow({ cat, onEdit, onDelete }: SortableRowProps) {
       <button
         type="button"
         ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none shrink-0"
+        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none p-1 -m-1 rounded hover:bg-app-bg transition-colors"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
@@ -420,7 +420,7 @@ export default function CategoriesClient({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder={t('nameFrPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                   required
                 />
               </div>
@@ -433,7 +433,7 @@ export default function CategoriesClient({
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   placeholder={t('nameEnPlaceholder')}
-                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
+                  className="rounded-lg border border-app-border text-app-text focus-visible:ring-accent"
                 />
               </div>
             </div>

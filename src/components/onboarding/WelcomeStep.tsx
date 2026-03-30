@@ -20,7 +20,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
 
   return (
     <div className="h-full flex flex-col items-center justify-center px-6 bg-background relative overflow-hidden">
-      {/* Warm ambient glow — two overlapping radials for depth */}
+      {/* Warm ambient glow -- two overlapping radials for depth */}
       <div
         className="pointer-events-none absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2"
         style={{
@@ -59,7 +59,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
           {t('studioSubtitle')}
         </p>
 
-        {/* Phase journey — vertical card-style timeline */}
+        {/* Phase journey -- vertical card-style timeline */}
         <div className="w-full max-w-sm mb-16 opacity-0 animate-[fadeSlideIn_0.7s_0.5s_ease-out_forwards]">
           <div className="relative flex flex-col gap-0">
             {PHASES.map((phase, i) => {
