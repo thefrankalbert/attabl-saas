@@ -37,6 +37,20 @@ const SEGMENT_FEATURES: Record<SegmentFamily, SegmentFeatureFlags> = {
     showRecipes: true,
     showQrCodes: true,
   },
+  retail: {
+    showKds: false,
+    showTables: false,
+    showService: false,
+    showRecipes: true,
+    showQrCodes: true,
+  },
+  services: {
+    showKds: false,
+    showTables: false,
+    showService: false,
+    showRecipes: false,
+    showQrCodes: false,
+  },
 };
 
 // ─── Public API ─────────────────────────────────────────
@@ -55,7 +69,7 @@ interface HiddenNav {
 }
 
 const HIDDEN_NAV_BY_FAMILY: Record<SegmentFamily, HiddenNav> = Object.fromEntries(
-  (['food', 'hospitality'] as const).map((family) => {
+  (['food', 'hospitality', 'retail', 'services'] as const).map((family) => {
     const f = SEGMENT_FEATURES[family];
     const groupIds = new Set<string>();
     const itemPaths = new Set<string>();
