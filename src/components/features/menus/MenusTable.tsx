@@ -282,7 +282,7 @@ export default function MenusTable({
         </div>
       )}
 
-      {/* Single SortableContext for all menus — flat list */}
+      {/* Single SortableContext for all menus -- flat list */}
       {allFilteredMenus.length > 0 && (
         <SortableContext
           items={allFilteredMenus.map((m) => m.id)}

@@ -41,7 +41,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
       .single();
-    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    if (!adminUser) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
 
     const { id } = await params;
     const service = createAssignmentService(supabase);

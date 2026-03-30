@@ -220,7 +220,7 @@ export default function OrderDetails({
                         )}
                     </div>
                   </div>
-                  <p className="font-medium text-xs text-app-text shrink-0 ml-2">
+                  <p className="font-medium text-sm text-app-text">
                     {fmt(item.price * item.quantity)}
                   </p>
                 </div>
@@ -365,6 +365,14 @@ export default function OrderDetails({
             </div>
           </div>
         </div>
+
+        {/* Warnings */}
+        {order.status !== 'ready' && order.status !== 'delivered' && (
+          <div className="flex items-center gap-2 p-4 border border-amber-500/20 bg-amber-500/10 text-amber-500 rounded-xl text-xs">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            {t('warningReadyBeforeCheckout')}
+          </div>
+        )}
       </div>
 
       {showPayment && (

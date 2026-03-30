@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useDevice } from '@/hooks/useDevice';
 import { usePOSData } from '@/hooks/usePOSData';
@@ -62,6 +62,8 @@ export default function POSClient({ tenantId }: POSClientProps) {
   useContextualShortcuts(shortcuts);
 
   const router = useRouter();
+  const pathname = usePathname();
+  const basePath = pathname.replace(/\/pos$/, '');
 
   if (pos.loading) return <div className="p-8 text-center text-app-text-muted">{t('loading')}</div>;
 
@@ -114,7 +116,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
         </div>
 
         {/* Main layout — flat surfaces separated by border lines, no boxed cards */}
-        <div className="flex-1 flex flex-col @md:flex-row overflow-hidden min-h-0">
+        <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
           {/* Products Section — flat surface, no card border */}
           <div
             className={cn(
@@ -147,6 +149,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               currency={pos.currency}
               total={pos.total}
               orderNumber={pos.orderNumber}
+              basePath={basePath}
               serviceType={pos.serviceType}
               setServiceType={pos.setServiceType}
               selectedTable={pos.selectedTable}
@@ -169,7 +172,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           </div>
         </div>
 
-        {/* Note Modal — flat design */}
+        {/* Note Modal -- flat design */}
         {pos.editingNotes && (
           <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
             <div className="bg-app-card rounded-xl border border-app-border p-6 w-full max-w-sm animate-in zoom-in-95">

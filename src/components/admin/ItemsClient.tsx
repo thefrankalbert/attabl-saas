@@ -565,6 +565,12 @@ export default function ItemsClient({
                   <p className="text-sm font-semibold text-app-text">{selectedItem.name}</p>
                 </div>
 
+                {/* Name EN */}
+                <div className="space-y-1">
+                  <p className="text-xs text-app-text-muted font-medium">{t('nameEn')}</p>
+                  <p className="text-sm text-app-text">{selectedItem.name_en || '-'}</p>
+                </div>
+
                 {/* Description */}
                 <div className="space-y-1">
                   <p className="text-xs text-app-text-muted font-medium">{t('descriptionFr')}</p>

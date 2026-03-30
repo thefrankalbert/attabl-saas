@@ -116,7 +116,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
           </div>
         )}
 
-        {/* Data Reset — Danger Zone (owner/admin only) */}
+        {/* Data Reset -- Danger Zone (owner/admin only) */}
         <SettingsDataReset tenantSlug={tenantSlug} />
       </div>
     </TabsContent>

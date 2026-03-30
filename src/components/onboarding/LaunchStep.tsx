@@ -152,7 +152,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
             <p className="text-app-text-secondary text-sm">{t('launchSubtitle')}</p>
           </div>
 
-          {/* Summary Card — Full width */}
+          {/* Summary Card -- Full width */}
           {showSummary && (
             <div className="mb-6 p-5 rounded-xl bg-app-elevated/40 border border-app-border">
               <div className="flex items-center gap-4 mb-5">

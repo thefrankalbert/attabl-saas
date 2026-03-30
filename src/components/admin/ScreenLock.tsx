@@ -139,7 +139,7 @@ export function ScreenLock({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 className="mb-8"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent-muted ring-1 ring-accent/20">
+                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
                   <Lock className="h-9 w-9 text-accent" />
                 </div>
               </motion.div>
@@ -193,7 +193,7 @@ export function ScreenLock({
                         }}
                         required
                         autoFocus
-                        className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:border-accent/50 focus:ring-accent/20 rounded-lg"
+                        className="h-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
                       />
                       <button
                         type="button"

@@ -241,7 +241,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorFn: (row) => row.supplier?.name ?? '',
         header: () => t('columnSupplier'),
         cell: ({ row }) => (
-          <span className="text-sm text-app-text-secondary">
+          <span className="text-app-text-secondary whitespace-nowrap">
             {row.original.supplier?.name || '\u2014'}
           </span>
         ),
@@ -251,7 +251,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorKey: 'notes',
         header: () => t('columnNotes'),
         cell: ({ row }) => (
-          <span className="text-sm text-app-text-muted max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-[200px] truncate block">
             {row.original.notes || '\u2014'}
           </span>
         ),

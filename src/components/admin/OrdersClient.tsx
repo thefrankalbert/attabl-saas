@@ -297,64 +297,6 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             )}
           </div>
         ),
-      },
-      {
-        accessorFn: (row: Order) => row.server?.full_name ?? '—',
-        id: 'server',
-        header: ({ column }) => <SortableHeader column={column}>{t('serverLabel')}</SortableHeader>,
-        cell: ({ getValue }) => (
-          <span className="text-sm text-app-text-muted">{getValue() as string}</span>
-        ),
-      },
-      {
-        accessorKey: 'created_at',
-        header: ({ column }) => <SortableHeader column={column}>{t('dateColumn')}</SortableHeader>,
-        cell: ({ row }) => (
-          <span className="text-app-text-secondary text-xs whitespace-nowrap">
-            {new Date(row.original.created_at).toLocaleTimeString([], {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </span>
-        ),
-      },
-      {
-        accessorKey: 'status',
-        header: () => tc('status'),
-        cell: ({ row }) => {
-          const config = statusConfig[row.original.status];
-          return (
-            <span
-              className={cn('px-2 py-1 rounded-full text-xs font-bold', config.bg, config.text)}
-            >
-              {config.label}
-            </span>
-          );
-        },
-        enableSorting: false,
-      },
-      {
-        id: 'items_count',
-        header: () => t('orderDetails'),
-        cell: ({ row }) => {
-          const items = row.original.items || [];
-          const summary = items
-            .slice(0, 3)
-            .map((i) => `${i.quantity}× ${i.name}`)
-            .join(', ');
-          const remaining = items.length - 3;
-          return (
-            <div className="max-w-[220px]">
-              <span className="text-app-text text-sm">
-                {summary}
-                {remaining > 0 && <span className="text-app-text-muted"> +{remaining}</span>}
-              </span>
-              <span className="text-app-text-muted text-xs block">
-                {items.reduce((sum, i) => sum + i.quantity, 0)} {tc('items')}
-              </span>
-            </div>
-          );
-        },
         enableSorting: false,
       },
       {

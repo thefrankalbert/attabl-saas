@@ -78,6 +78,7 @@ function renderCart(overrides: Record<string, unknown> = {}) {
     currency: 'XAF' as CurrencyCode,
     total: 0,
     orderNumber: 42,
+    basePath: '/sites/test/admin',
     serviceType: 'dine_in' as ServiceType,
     selectedTable: '',
     roomNumber: '',
