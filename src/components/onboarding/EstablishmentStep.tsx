@@ -1,8 +1,10 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Coffee,
   Flame,
@@ -49,39 +51,23 @@ interface EstablishmentStepProps {
   variant?: 'identity' | 'details';
 }
 
-/** Compact toggle switch component */
-function ToggleSwitch({
+function LabeledSwitch({
   label,
   checked,
-  onChange,
+  onCheckedChange,
 }: {
   label: string;
   checked: boolean;
-  onChange: () => void;
+  onCheckedChange: (checked: boolean) => void;
 }) {
   return (
     <div className="flex items-center justify-between py-2">
       <Label className="text-sm font-medium text-app-text-secondary">{label}</Label>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        onClick={onChange}
-        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ${
-          checked ? 'bg-accent' : 'bg-app-elevated'
-        }`}
-      >
-        <span
-          className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-app-card border border-app-border/50 transition-transform duration-200 ease-in-out ${
-            checked ? 'translate-x-6' : 'translate-x-1'
-          }`}
-        />
-      </button>
+      <Switch checked={checked} onCheckedChange={onCheckedChange} />
     </div>
   );
 }
 
-/** Compact stepper for numeric values */
 function NumberStepper({
   label,
   value,
@@ -98,19 +84,18 @@ function NumberStepper({
   return (
     <div className="py-1">
       <Label className="text-sm font-medium text-app-text-secondary mb-2 block">{label}</Label>
-      <div className="rounded-xl border border-app-border bg-app-elevated/50 inline-flex items-center h-11">
-        <button
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          size="icon"
           type="button"
-          onClick={() => value > min && onChange(value - 1)}
+          onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
-          className="px-3.5 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed rounded-l-xl hover:bg-app-hover transition-colors"
         >
           <Minus className="h-4 w-4" />
-        </button>
-        <input
+        </Button>
+        <Input
           type="number"
-          min={min}
-          max={max}
           value={value}
           onChange={(e) => {
             const val = parseInt(e.target.value, 10);
@@ -118,16 +103,19 @@ function NumberStepper({
               onChange(val);
             }
           }}
-          className="w-16 text-center text-sm font-semibold text-app-text border-x border-app-border bg-transparent focus:outline-none h-full [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-20 text-center [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          min={min}
+          max={max}
         />
-        <button
+        <Button
+          variant="outline"
+          size="icon"
           type="button"
-          onClick={() => value < max && onChange(value + 1)}
+          onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}
-          className="px-3.5 h-full flex items-center justify-center text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed rounded-r-xl hover:bg-app-hover transition-colors"
         >
           <Plus className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -424,10 +412,12 @@ export function EstablishmentStep({
                               ))}
                             </div>
                           </div>
-                          <ToggleSwitch
+                          <LabeledSwitch
                             label={t('hasRestaurant')}
                             checked={!!data.hasRestaurant}
-                            onChange={() => updateData({ hasRestaurant: !data.hasRestaurant })}
+                            onCheckedChange={() =>
+                              updateData({ hasRestaurant: !data.hasRestaurant })
+                            }
                           />
                         </div>
                       )}
@@ -441,10 +431,10 @@ export function EstablishmentStep({
                             max={500}
                             onChange={(val) => updateData({ tableCount: val })}
                           />
-                          <ToggleSwitch
+                          <LabeledSwitch
                             label={t('hasTerrace')}
                             checked={!!data.hasTerrace}
-                            onChange={() => updateData({ hasTerrace: !data.hasTerrace })}
+                            onCheckedChange={() => updateData({ hasTerrace: !data.hasTerrace })}
                           />
                         </div>
                       )}
@@ -458,10 +448,10 @@ export function EstablishmentStep({
                             max={500}
                             onChange={(val) => updateData({ tableCount: val })}
                           />
-                          <ToggleSwitch
+                          <LabeledSwitch
                             label={t('hasWifi')}
                             checked={!!data.hasWifi}
-                            onChange={() => updateData({ hasWifi: !data.hasWifi })}
+                            onCheckedChange={() => updateData({ hasWifi: !data.hasWifi })}
                           />
                         </div>
                       )}
@@ -475,10 +465,10 @@ export function EstablishmentStep({
                             max={100}
                             onChange={(val) => updateData({ registerCount: val })}
                           />
-                          <ToggleSwitch
+                          <LabeledSwitch
                             label={t('hasDelivery')}
                             checked={!!data.hasDelivery}
-                            onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
+                            onCheckedChange={() => updateData({ hasDelivery: !data.hasDelivery })}
                           />
                         </div>
                       )}
@@ -494,10 +484,10 @@ export function EstablishmentStep({
                             max={100}
                             onChange={(val) => updateData({ registerCount: val })}
                           />
-                          <ToggleSwitch
+                          <LabeledSwitch
                             label={t('hasDelivery')}
                             checked={!!data.hasDelivery}
-                            onChange={() => updateData({ hasDelivery: !data.hasDelivery })}
+                            onCheckedChange={() => updateData({ hasDelivery: !data.hasDelivery })}
                           />
                         </div>
                       )}

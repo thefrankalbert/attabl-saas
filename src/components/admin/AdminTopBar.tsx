@@ -55,7 +55,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
   if (isImmersivePage(pathname)) return null;
 
   return (
-    <header className="shrink-0 h-12 bg-app-bg flex items-center px-3 sm:px-6 lg:px-8 transition-colors duration-200 relative z-50 overflow-hidden">
+    <header className="shrink-0 h-12 bg-app-bg flex items-center px-3 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 transition-colors duration-200 relative z-50 overflow-hidden">
       {/* Breadcrumbs — left side */}
       <div className="flex-1 min-w-0 overflow-hidden">{breadcrumbs}</div>
       <div className="flex items-center gap-1 shrink-0">
@@ -63,7 +63,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
         <button
           type="button"
           onClick={toggleFullscreen}
-          className="w-8 h-8 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary transition-colors touch-manipulation"
+          className="w-10 h-10 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text-secondary transition-colors touch-manipulation"
           title={isFullscreen ? t('topbar.exitFullscreen') : t('topbar.fullscreen')}
         >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}

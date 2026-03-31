@@ -44,7 +44,7 @@ export default async function SubscriptionPage({ params }: { params: Promise<{ s
   };
 
   return (
-    <div className="max-w-7xl mx-auto h-full">
+    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto h-full">
       <SubscriptionManager tenant={tenantWithEmail} />
     </div>
   );

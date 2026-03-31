@@ -6,6 +6,11 @@ import {
   Mail,
   LifeBuoy,
   ExternalLink,
+  Laptop,
+  QrCode,
+  Users,
+  Package,
+  BarChart3,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { SupportFAQ } from '@/components/admin/support/SupportFAQ';
@@ -13,26 +18,56 @@ import { SupportFAQ } from '@/components/admin/support/SupportFAQ';
 const QUICK_LINKS = [
   {
     icon: BookOpen,
-    title: 'Guide de d\u00e9marrage',
+    title: 'Guide de demarrage',
     description: 'Premiers pas avec ATTABL : configuration, menu et QR codes.',
     href: '#',
   },
   {
     icon: UtensilsCrossed,
     title: 'Gestion du menu',
-    description: 'Cat\u00e9gories, articles, options, variantes et photos.',
+    description: 'Categories, articles, options, variantes de prix et photos.',
     href: '#',
   },
   {
     icon: ClipboardList,
     title: 'Commandes & KDS',
-    description: '\u00c9cran cuisine, routage des commandes et suivi en temps r\u00e9el.',
+    description: 'Ecran cuisine, routage des commandes, mode service et suivi en temps reel.',
+    href: '#',
+  },
+  {
+    icon: Laptop,
+    title: 'Caisse (POS)',
+    description: 'Point de vente integre, prise de commandes rapide et encaissement.',
+    href: '#',
+  },
+  {
+    icon: QrCode,
+    title: 'QR Codes',
+    description: 'Generation de QR codes par table ou generaux, telechargement HD.',
+    href: '#',
+  },
+  {
+    icon: Package,
+    title: 'Inventaire & Fournisseurs',
+    description: 'Gestion des stocks, fiches techniques (recettes), suivi fournisseurs.',
+    href: '#',
+  },
+  {
+    icon: Users,
+    title: 'Equipe & Permissions',
+    description: 'Gestion des membres, roles personnalises et permissions granulaires.',
+    href: '#',
+  },
+  {
+    icon: BarChart3,
+    title: 'Rapports & Analyse',
+    description: "Chiffre d'affaires, commandes, produits populaires et exports.",
     href: '#',
   },
   {
     icon: CreditCard,
-    title: 'Facturation',
-    description: 'Abonnement, factures et gestion du plan.',
+    title: 'Abonnement & Facturation',
+    description: 'Plans Starter, Pro et Business. Facturation mensuelle, semestrielle ou annuelle.',
     href: '#',
   },
 ];
@@ -60,7 +95,7 @@ export default function SupportPage() {
             <h2 className="text-sm font-semibold uppercase tracking-wider text-app-text-muted mb-4">
               Guides rapides
             </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {QUICK_LINKS.map((link) => {
                 const Icon = link.icon;
                 return (

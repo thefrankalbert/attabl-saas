@@ -246,7 +246,7 @@ export default function DashboardClient(props: DashboardClientProps) {
 
   if (loading) {
     return (
-      <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 gap-4 overflow-hidden">
+      <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 xl:p-8 2xl:p-10 gap-4 overflow-hidden">
         <div className="h-8 w-48 sm:w-64 rounded-lg bg-app-elevated/30 animate-pulse" />
         <div className="grid grid-cols-2 sm:flex gap-3 sm:gap-6">
           {[0, 1, 2, 3].map((i) => (
@@ -302,7 +302,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 overflow-hidden">
+    <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 xl:p-8 2xl:p-10 overflow-hidden">
       {/* Greeting + date + time */}
       <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-1 sm:gap-2">
         <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap min-w-0">
@@ -327,9 +327,9 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* ── Two-column: left (gauge + chart + shortcuts), right (orders from top) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col @lg:flex-row gap-3 overflow-y-auto @lg:overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col @md:flex-row @lg:flex-row gap-3 overflow-y-auto @lg:overflow-hidden">
         {/* ── Left column ──────────────────────────────────── */}
-        <div className="shrink-0 @lg:shrink @lg:w-[50%] flex flex-col gap-2">
+        <div className="shrink-0 @md:shrink @md:w-[48%] @lg:shrink @lg:w-[50%] flex flex-col gap-2">
           {/* Stats gauge — compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
