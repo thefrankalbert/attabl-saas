@@ -46,48 +46,9 @@ export async function POST(request: Request) {
       message: 'Si un compte existe avec cet email, vous recevrez un lien de reinitialisation.',
     });
 
-    // 3. Generate recovery link via admin API
+    // 3. Generate recovery link via admin API (O(1) lookup, no listUsers pagination issues)
     const supabase = createAdminClient();
-
-    // Look up user — use generateLink directly instead of listUsers() which only
-    // returns first page (~50 users) and silently misses users at scale.
-    // Try generating the recovery link first; if the user doesn't exist, it will fail.
-    // But we still need email_confirmed_at, so query admin_users + auth join.
-    const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    const foundUser = userList?.users?.find((u) => u.email === email);
-
-    if (!foundUser) {
-      logger.info('Forgot password: user not found', { email });
-      return successResponse;
-    }
-
-    // If email is NOT confirmed, send a confirmation link instead of a recovery link.
-    // This prevents the password-reset flow from being used to bypass email verification.
-    if (!foundUser.email_confirmed_at) {
-      logger.info('Forgot password: email not confirmed, sending confirmation instead', {
-        email,
-      });
-
-      // password is required by TS types for type:'signup' but the Supabase API
-      // accepts an empty string for existing users (it won't update their password).
-      const { data: confirmLinkData, error: confirmError } = await supabase.auth.admin.generateLink(
-        {
-          type: 'signup',
-          email,
-          password: '',
-        },
-      );
-
-      if (!confirmError && confirmLinkData?.properties?.hashed_token) {
-        const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
-        const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${confirmLinkData.properties.hashed_token}&type=signup`;
-
-        const { sendWelcomeConfirmationEmail } = await import('@/services/email.service');
-        await sendWelcomeConfirmationEmail(email, { confirmationUrl });
-      }
-
-      return successResponse;
-    }
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
 
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
       type: 'recovery',
@@ -95,19 +56,46 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      logger.info('Forgot password: generateLink failed', {
-        email,
-        error: linkError?.message,
-      });
+      // Recovery failed -- user may not exist or email may be unconfirmed.
+      // Try generating a confirmation link as fallback for unconfirmed emails.
+      const { data: confirmLinkData, error: confirmError } = await supabase.auth.admin.generateLink(
+        {
+          type: 'signup',
+          email,
+          // password is required by TS types for type:'signup' but the Supabase API
+          // accepts an empty string for existing users (it won't update their password).
+          password: '',
+        },
+      );
+
+      if (!confirmError && confirmLinkData?.properties?.hashed_token) {
+        logger.info('Forgot password: email not confirmed, sending confirmation instead', {
+          email,
+        });
+        const confirmationUrl = `${appUrl}/auth/confirm?token_hash=${confirmLinkData.properties.hashed_token}&type=signup`;
+        const { sendWelcomeConfirmationEmail } = await import('@/services/email.service');
+        const confirmSent = await sendWelcomeConfirmationEmail(email, { confirmationUrl });
+        if (!confirmSent) {
+          logger.warn('Confirmation email failed to send for unverified user', { email });
+        }
+      } else {
+        logger.info('Forgot password: user not found or link generation failed', {
+          email,
+          error: linkError?.message,
+        });
+      }
+
       return successResponse;
     }
 
     // 4. Build the recovery URL
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
     const resetUrl = `${appUrl}/auth/callback?token_hash=${linkData.properties.hashed_token}&type=recovery`;
 
     // 5. Send custom branded email via Resend
-    await sendPasswordResetEmail(email, { resetUrl });
+    const emailSent = await sendPasswordResetEmail(email, { resetUrl });
+    if (!emailSent) {
+      logger.warn('Password reset email failed to send', { email });
+    }
 
     return successResponse;
   } catch (error) {
