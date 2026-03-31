@@ -8,6 +8,8 @@ import { createInvitationService } from '@/services/invitation.service';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
 import { jsonWithCache } from '@/lib/cache-headers';
+import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import type { Tenant } from '@/types/admin.types';
 
 export async function GET(request: Request) {
   try {
@@ -114,6 +116,21 @@ export async function POST(request: Request) {
     const tenantId = adminUser.tenant_id;
 
     const adminClient = createAdminClient();
+
+    // Check plan limits before creating invitation
+    const { data: tenant } = await adminClient
+      .from('tenants')
+      .select(
+        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+      )
+      .eq('id', tenantId)
+      .single();
+
+    if (tenant) {
+      const enforcement = createPlanEnforcementService(adminClient);
+      await enforcement.canAddAdmin(tenant as Tenant);
+    }
+
     const service = createInvitationService(adminClient);
     const invitation = await service.createInvitation({
       tenantId,

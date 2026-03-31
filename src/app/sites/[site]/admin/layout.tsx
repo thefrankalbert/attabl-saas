@@ -62,6 +62,7 @@ export default async function AdminLayout({
   if (authError || !user) {
     redirect(`/login`);
   } else {
+    // First, check if the user is a direct member of this tenant
     const { data: adminData } = await supabase
       .from('admin_users')
       .select('*')
@@ -69,11 +70,32 @@ export default async function AdminLayout({
       .eq('tenant_id', tenant.id)
       .single();
 
-    if (!adminData) {
-      redirect(`/unauthorized`);
-    }
+    if (adminData) {
+      adminUser = adminData;
+    } else {
+      // Not a direct member — check if the user is a super_admin (can access any tenant)
+      const { data: superAdminCheck } = await supabase
+        .from('admin_users')
+        .select('id, user_id, tenant_id, role, name, custom_permissions, is_super_admin')
+        .eq('user_id', user.id)
+        .eq('is_super_admin', true)
+        .limit(1)
+        .single();
 
-    adminUser = adminData;
+      if (!superAdminCheck) {
+        redirect(`/unauthorized`);
+      }
+
+      // Super admin: create a virtual admin entry with owner-level access
+      adminUser = {
+        id: superAdminCheck.id,
+        user_id: superAdminCheck.user_id,
+        tenant_id: tenant.id,
+        role: 'owner' as AdminRole,
+        name: superAdminCheck.name,
+        custom_permissions: null,
+      };
+    }
   }
 
   // Fetch all tenants managed by this user (for tenant switcher)

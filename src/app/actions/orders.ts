@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
+import { createAuditService } from '@/services/audit.service';
 
 type ActionResponse = {
   success?: boolean;
@@ -82,6 +83,21 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
   }
 
   logger.info('Orders deleted successfully', { count: foundIds.length, orderIds: foundIds });
+
+  // Fire-and-forget audit log for each tenant
+  for (const tid of tenantIds) {
+    const idsForTenant = orders.filter((o) => o.tenant_id === tid).map((o) => o.id);
+    const audit = createAuditService(supabase, {
+      tenantId: tid,
+      userId: user.id,
+      userEmail: user.email ?? undefined,
+    });
+    audit.log({
+      action: 'delete',
+      entityType: 'order',
+      oldData: { orderIds: idsForTenant },
+    });
+  }
 
   return { success: true, deletedCount: foundIds.length };
 }

@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import Link from 'next/link';
+
 import {
   Plus,
   Minus,
@@ -65,7 +65,6 @@ export default function POSCart({
   currency,
   total,
   orderNumber,
-  basePath,
   serviceType,
   setServiceType,
   selectedTable,

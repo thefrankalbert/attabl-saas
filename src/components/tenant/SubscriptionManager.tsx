@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { cn } from '@/lib/utils';
 import { PLAN_LIMITS, PLAN_NAMES } from '@/lib/plans/features';
-import { PLAN_AMOUNTS } from '@/lib/stripe/server';
+import { PLAN_AMOUNTS } from '@/lib/stripe/pricing';
 import { logger } from '@/lib/logger';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 

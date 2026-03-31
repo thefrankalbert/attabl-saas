@@ -113,9 +113,13 @@ function createMockSupabase(overrides?: {
     error: null,
   };
 
-  const mockSingle = vi.fn().mockResolvedValue(singleResult);
+  const mockMaybeSingle = vi.fn().mockResolvedValue(singleResult);
 
-  const mockEq = vi.fn().mockReturnValue({ single: mockSingle });
+  const mockLimit = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
+
+  const mockOrder = vi.fn().mockReturnValue({ limit: mockLimit });
+
+  const mockEq = vi.fn().mockReturnValue({ order: mockOrder });
 
   const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
 
@@ -243,6 +247,7 @@ describe('POST /api/create-checkout-session', () => {
     expect(json.error).toBe('Erreur serveur');
     expect(logger.error).toHaveBeenCalledWith(
       'Stripe checkout error',
+      expect.objectContaining({ message: 'Stripe connection failed' }),
       expect.objectContaining({ message: 'Stripe connection failed' }),
     );
   });

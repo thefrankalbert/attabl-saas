@@ -1,4 +1,26 @@
-# Gate 0: TypeScript — catch broken imports/types before commit
+# Gate 0: Critical files — block deletion of security-critical files
+CRITICAL_FILES=(
+  "src/proxy.ts"
+  "src/lib/supabase/client.ts"
+  "src/lib/supabase/server.ts"
+  "src/lib/supabase/admin.ts"
+  "src/lib/supabase/middleware.ts"
+  "src/lib/rate-limit.ts"
+)
+
+DELETED=$(git diff --cached --name-only --diff-filter=D)
+for f in "${CRITICAL_FILES[@]}"; do
+  if echo "$DELETED" | grep -qx "$f"; then
+    echo ""
+    echo "BLOCKED: You are deleting $f"
+    echo "This file is critical for authentication and tenant isolation."
+    echo "If this is intentional, use: git commit --no-verify"
+    echo ""
+    exit 1
+  fi
+done
+
+# Gate 1: TypeScript — catch broken imports/types before commit
 pnpm typecheck || exit 1
 
 # Gate 1: Unit tests — catch logic regressions

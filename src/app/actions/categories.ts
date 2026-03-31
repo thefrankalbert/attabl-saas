@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { AdminRole } from '@/types/admin.types';
+import { createAuditService } from '@/services/audit.service';
 
 type ActionResponse = {
   success?: boolean;
@@ -33,10 +34,10 @@ async function checkCategoryPermissions(
     .single();
 
   if (!adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
-    return { error: 'Permissions insuffisantes', supabase, user };
+    return { error: 'Permissions insuffisantes', supabase, user, role: undefined };
   }
 
-  return { error: null, supabase, user };
+  return { error: null, supabase, user, role: adminUser.role as string };
 }
 
 /**
@@ -47,7 +48,7 @@ export async function actionToggleCategoryActive(
   categoryId: string,
   isActive: boolean,
 ): Promise<ActionResponse> {
-  const { error: permError, supabase } = await checkCategoryPermissions(tenantId);
+  const { error: permError, supabase, user, role } = await checkCategoryPermissions(tenantId);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 
   const { error } = await supabase
@@ -59,6 +60,20 @@ export async function actionToggleCategoryActive(
   if (error) {
     return { error: error.message };
   }
+
+  // Fire-and-forget audit log
+  const audit = createAuditService(supabase, {
+    tenantId,
+    userId: user?.id,
+    userEmail: user?.email ?? undefined,
+    userRole: role,
+  });
+  audit.log({
+    action: 'update',
+    entityType: 'category',
+    entityId: categoryId,
+    newData: { is_active: isActive },
+  });
 
   revalidateTag(CACHE_TAG_MENUS, 'max');
 
