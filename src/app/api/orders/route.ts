@@ -14,8 +14,29 @@ import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
 
+// Fallback translations for API routes where locale may not be resolved
+const FALLBACK_ERRORS: Record<string, string> = {
+  rateLimited: 'Trop de requetes. Reessayez plus tard.',
+  tenantNotIdentified: 'Tenant non identifie',
+  invalidRequestBody: 'Corps de requete invalide',
+  invalidOrderData: 'Donnees de commande invalides',
+  tenantConfigNotFound: 'Configuration du restaurant non trouvee',
+  invalidCoupon: 'Coupon invalide',
+  orderSuccess: 'Commande envoyee avec succes',
+  serverError: 'Erreur serveur',
+  connectionError: 'Erreur de connexion',
+};
+
+async function getT() {
+  try {
+    return await getTranslations('errors');
+  } catch {
+    return (key: string) => FALLBACK_ERRORS[key] || key;
+  }
+}
+
 export async function POST(request: Request) {
-  const t = await getTranslations('errors');
+  const t = await getT();
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
