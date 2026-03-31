@@ -254,12 +254,14 @@ export async function POST(request: Request) {
       );
     }
     const errMsg = error instanceof Error ? error.message : String(error);
-    const errStack = error instanceof Error ? error.stack : undefined;
+    const errStack =
+      error instanceof Error ? error.stack?.split('\n').slice(0, 5).join(' | ') : undefined;
     logger.error('Order creation error', error, { message: errMsg, stack: errStack });
     return NextResponse.json(
       {
         error: t('serverError'),
         _debug: errMsg,
+        _stack: errStack,
       },
       { status: 500 },
     );
