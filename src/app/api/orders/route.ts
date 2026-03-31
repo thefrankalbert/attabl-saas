@@ -128,9 +128,13 @@ export async function POST(request: Request) {
     }
 
     // 8. Create order with all fields (rollback coupon usage on failure)
+    // Use admin client for writes — the regular anon client lacks INSERT
+    // policies on order_items (only admin RLS exists). Validation was already
+    // performed server-side above, so bypassing RLS for the insert is safe.
+    const adminOrderService = createOrderService(adminSupabase);
     let result;
     try {
-      result = await orderService.createOrderWithItems({
+      result = await adminOrderService.createOrderWithItems({
         tenantId,
         items,
         total: pricing.total,
