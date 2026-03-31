@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
+import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
 
 /**
  * Reset API — allows high-level admins (owner, admin) to reset specific data.
@@ -19,6 +20,16 @@ const resetSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await adminResetLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requetes. Reessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
     const supabase = await createClient();
     const headersList = await headers();
     const tenantSlug = headersList.get('x-tenant-slug');

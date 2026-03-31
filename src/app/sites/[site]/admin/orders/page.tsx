@@ -1,5 +1,4 @@
 import { createClient } from '@/lib/supabase/server';
-import { createAdminClient } from '@/lib/supabase/admin';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
 import OrdersClient from '@/components/admin/OrdersClient';
@@ -32,23 +31,14 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     .order('created_at', { ascending: false })
     .limit(100);
 
-  let orders = initialOrders;
-
-  // Fallback to admin client if RLS blocks the query
-  if (queryError || !orders || orders.length === 0) {
-    if (queryError)
-      logger.warn('Orders page: RLS query failed, falling back to admin client', {
-        error: queryError.message,
-      });
-    const adminSupabase = createAdminClient();
-    const { data: adminOrders } = await adminSupabase
-      .from('orders')
-      .select(orderSelect)
-      .eq('tenant_id', tenant.id)
-      .order('created_at', { ascending: false })
-      .limit(100);
-    orders = adminOrders;
+  if (queryError) {
+    logger.error('Orders page: failed to fetch orders', {
+      error: queryError.message,
+      tenantId: tenant.id,
+    });
   }
+
+  const orders = initialOrders;
 
   // Transform order_items → items to match Order type
   const transformedOrders: Order[] = ((orders || []) as Array<Record<string, unknown>>).map(

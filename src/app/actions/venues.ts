@@ -1,10 +1,10 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
+import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 
 type ActionResponse = {
   canCreate?: boolean;
@@ -12,30 +12,19 @@ type ActionResponse = {
 };
 
 /**
- * Vérifie si le tenant peut ajouter un nouvel établissement (limites du plan).
- * À appeler depuis le client avant la création d'un nouveau venue.
+ * SECURITY: Verifies user belongs to tenant before checking plan limits.
+ * tenantId is verified against the session (IDOR prevention).
  */
 export async function actionCheckCanAddVenue(tenantId: string): Promise<ActionResponse> {
   const t = await getTranslations('errors');
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
 
-  if (authError || !user) {
-    return { error: t('notAuthenticated') };
-  }
-
-  // Vérifier que l'utilisateur appartient au tenant
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenantId)
-    .single();
-
-  if (!adminUser) {
+  try {
+    await getAuthenticatedUserForTenant(tenantId, ['owner', 'admin', 'manager']);
+  } catch (err) {
+    if (err instanceof AuthError) {
+      if (err.status === 401) return { error: t('notAuthenticated') };
+      return { error: t('permissionDenied') };
+    }
     return { error: t('permissionDenied') };
   }
 

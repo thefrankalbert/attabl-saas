@@ -74,6 +74,50 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
 }
 
 /**
+ * Get the authenticated user and verify they belong to a specific tenant.
+ * Use in server actions that receive tenantId from the client but need to
+ * verify the user actually has access to that tenant (IDOR prevention).
+ *
+ * @param clientTenantId - The tenant ID provided by the client
+ * @param allowedRoles - Roles that are allowed to perform the action
+ * @throws {AuthError} with status 401 if not authenticated
+ * @throws {AuthError} with status 403 if user does not belong to the tenant or has wrong role
+ */
+export async function getAuthenticatedUserForTenant(
+  clientTenantId: string,
+  allowedRoles: string[] = ['owner', 'admin'],
+): Promise<AuthenticatedUserWithTenant> {
+  const { user, supabase } = await getAuthenticatedUser();
+
+  const { data: adminUser, error } = await supabase
+    .from('admin_users')
+    .select('tenant_id, role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', clientTenantId)
+    .eq('is_active', true)
+    .single();
+
+  if (error || !adminUser) {
+    logger.warn('User attempted action on unauthorized tenant', {
+      userId: user.id,
+      attemptedTenantId: clientTenantId,
+    });
+    throw new AuthError('Acces non autorise pour ce tenant', 403);
+  }
+
+  if (!allowedRoles.includes(adminUser.role)) {
+    throw new AuthError('Permissions insuffisantes', 403);
+  }
+
+  return {
+    user,
+    tenantId: adminUser.tenant_id,
+    role: adminUser.role,
+    supabase,
+  };
+}
+
+/**
  * Custom error class for authentication/authorization failures.
  * Includes HTTP status code for API responses.
  */

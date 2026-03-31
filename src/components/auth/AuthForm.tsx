@@ -111,37 +111,24 @@ function AuthForm({ mode }: AuthFormProps) {
         // Account created — show confirmation message
         setConfirmationSent(true);
       } else {
-        // Login flow
-        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // Login flow — server-side with rate limiting
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
         });
 
-        if (authError) throw new Error(authError.message);
+        const data = await response.json();
 
-        // Login flow — query all admin_users (supports multi-restaurant)
-        const { data: adminUsers } = await supabase
-          .from('admin_users')
-          .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
-          .eq('user_id', authData.user.id);
-
-        if (!adminUsers || adminUsers.length === 0) {
-          throw new Error('Aucun établissement associé à ce compte');
+        if (!response.ok) {
+          if (data.error === 'email_not_confirmed') {
+            throw new Error('Email not confirmed');
+          }
+          throw new Error(data.error || 'Erreur de connexion');
         }
 
-        // Check if any tenant needs onboarding
-        const needsOnboarding = adminUsers.some((au) => {
-          const t = au.tenants as unknown as { onboarding_completed: boolean } | null;
-          return t?.onboarding_completed === false;
-        });
-
-        if (needsOnboarding) {
-          window.location.href = '/onboarding';
-          return;
-        }
-
-        // All users land on the tenant hub — single or multi
-        window.location.href = '/admin/tenants';
+        // Redirect based on server response
+        window.location.href = data.redirect || '/admin/tenants';
       }
     } catch (err) {
       logger.error('Auth form submit failed', err);
@@ -318,20 +305,36 @@ function AuthForm({ mode }: AuthFormProps) {
       )}
 
       {/* URL error banner (e.g. expired confirmation link) */}
-      {isLogin && urlError && !error && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4"
-        >
-          <Alert
-            variant="destructive"
-            className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
-          >
-            <AlertDescription className="text-sm">{urlError}</AlertDescription>
-          </Alert>
-        </motion.div>
-      )}
+      {isLogin &&
+        urlError &&
+        !error &&
+        (() => {
+          const ERROR_MESSAGES: Record<string, string> = {
+            oauth_failed: 'La connexion OAuth a echoue. Veuillez reessayer.',
+            auth_failed: "Erreur d'authentification. Veuillez reessayer.",
+            session_expired: 'Votre session a expire. Veuillez vous reconnecter.',
+            email_not_confirmed: 'Veuillez confirmer votre email avant de vous connecter.',
+            access_denied: 'Acces refuse.',
+            invalid_token: 'Le lien a expire ou est invalide. Veuillez reessayer.',
+            expired_link: 'Ce lien a expire. Veuillez en demander un nouveau.',
+          };
+          const safeMessage =
+            ERROR_MESSAGES[urlError] || 'Une erreur est survenue. Veuillez reessayer.';
+          return (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-4"
+            >
+              <Alert
+                variant="destructive"
+                className="bg-app-status-error-bg text-status-error border-status-error/20 rounded-xl"
+              >
+                <AlertDescription className="text-sm">{safeMessage}</AlertDescription>
+              </Alert>
+            </motion.div>
+          );
+        })()}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">

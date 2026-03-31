@@ -198,8 +198,8 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
         enterprise: true,
       },
       { label: 'Etablissements', starter: '1', pro: '1', business: '10', enterprise: 'Illimite' },
-      { label: 'Admins', starter: '1', pro: '1', business: 'Illimite', enterprise: 'Illimite' },
-      { label: 'Staff', starter: '3', pro: '10', business: 'Illimite', enterprise: 'Illimite' },
+      { label: 'Admins', starter: '1', pro: '1', business: '99', enterprise: '99+' },
+      { label: 'Staff', starter: '3', pro: '10', business: '999', enterprise: '999+' },
     ],
   },
   {
@@ -254,7 +254,7 @@ const faqs = [
   },
   {
     q: 'Combien de menus je peux creer ?',
-    a: 'Illimite sur tous les plans.',
+    a: "Starter : 2 menus. Pro : 10 menus. Business et Enterprise : jusqu'a 99 menus.",
   },
   {
     q: "Et si j'ai plusieurs restaurants ?",

@@ -1,5 +1,7 @@
 import { getTenant } from '@/lib/cache';
+import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 import ReportsClient from '@/components/admin/ReportsClient';
 
@@ -14,6 +16,24 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
 
   if (!tenant) {
     return <TenantNotFound />;
+  }
+
+  // Auth + role check: owner, admin, or manager only
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
+    .single();
+  if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
+    redirect('/unauthorized');
   }
 
   return (

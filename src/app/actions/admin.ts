@@ -1,6 +1,5 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { revalidatePath } from 'next/cache';
 import { AdminRole, AdminUser } from '@/types/admin.types';
@@ -10,6 +9,7 @@ import { createAuditService } from '@/services/audit.service';
 import { ServiceError } from '@/services/errors';
 import { logger } from '@/lib/logger';
 import { getTranslations } from 'next-intl/server';
+import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 
 type ActionResponse = {
   success?: boolean;
@@ -17,34 +17,21 @@ type ActionResponse = {
 };
 
 /**
- * Checks if the current user has permission to perform admin actions for a specific tenant.
+ * SECURITY: Authenticates user and verifies they belong to the tenant with the required role.
+ * tenantId is verified against the session (IDOR prevention).
  */
 async function checkPermissions(tenantId: string, allowedRoles: AdminRole[] = ['owner', 'admin']) {
   const t = await getTranslations('errors');
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return { error: t('notAuthenticated'), user: null, role: null };
-  }
-
-  // Check if user belongs to the tenant and has the required role
-  const { data: adminUser, error: dbError } = await supabase
-    .from('admin_users')
-    .select('role')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenantId)
-    .eq('is_active', true)
-    .single();
-
-  if (dbError || !adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
+  try {
+    const { user, role } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
+    return { error: null, user, role };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      if (err.status === 401) return { error: t('notAuthenticated'), user: null, role: null };
+      return { error: t('permissionDenied'), user: null, role: null };
+    }
     return { error: t('permissionDenied'), user: null, role: null };
   }
-
-  return { error: null, user, role: adminUser.role as string };
 }
 
 /**

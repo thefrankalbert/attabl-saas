@@ -59,7 +59,10 @@ function createLimiter(
     async check(identifier: string): Promise<RateLimitResult> {
       if (!rl) {
         if (process.env.NODE_ENV === 'production') {
-          logger.warn('Rate limiting is DISABLED in production - UPSTASH_REDIS not configured');
+          logger.error(
+            'Rate limiting is DISABLED in production - UPSTASH_REDIS not configured. Blocking request.',
+          );
+          return { success: false, limit: 0, remaining: 0, reset: 0 };
         }
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
@@ -175,6 +178,9 @@ export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20,
 
 /** Admin reset: 3 requests / hour per IP */
 export const adminResetLimiter = createLimiter('admin-reset', Ratelimit.slidingWindow(3, '1 h'));
+
+/** Login: 10 requests / 5 minutes per IP */
+export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(10, '5 m'));
 
 /** Billing portal: 10 requests / minute per IP */
 export const billingPortalLimiter = createLimiter(
