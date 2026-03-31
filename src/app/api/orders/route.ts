@@ -257,13 +257,6 @@ export async function POST(request: Request) {
     const errStack =
       error instanceof Error ? error.stack?.split('\n').slice(0, 5).join(' | ') : undefined;
     logger.error('Order creation error', error, { message: errMsg, stack: errStack });
-    return NextResponse.json(
-      {
-        error: t('serverError'),
-        _debug: errMsg,
-        _stack: errStack,
-      },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: t('serverError') }, { status: 500 });
   }
 }
