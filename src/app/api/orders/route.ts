@@ -261,7 +261,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: t('serverError'),
-        debug: process.env.NODE_ENV === 'development' ? errMsg : undefined,
+        _debug: errMsg,
       },
       { status: 500 },
     );
