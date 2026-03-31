@@ -36,7 +36,13 @@ async function getT() {
 }
 
 export async function POST(request: Request) {
-  const t = await getT();
+  let t: (key: string) => string;
+  try {
+    t = await getT();
+  } catch (initError) {
+    logger.error('Order API: failed to initialize translations', initError);
+    t = (key: string) => FALLBACK_ERRORS[key] || key;
+  }
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
@@ -249,7 +255,15 @@ export async function POST(request: Request) {
         { status: serviceErrorToStatus(error.code) },
       );
     }
-    logger.error('Order creation error', error);
-    return NextResponse.json({ error: t('serverError') }, { status: 500 });
+    const errMsg = error instanceof Error ? error.message : String(error);
+    const errStack = error instanceof Error ? error.stack : undefined;
+    logger.error('Order creation error', error, { message: errMsg, stack: errStack });
+    return NextResponse.json(
+      {
+        error: t('serverError'),
+        debug: process.env.NODE_ENV === 'development' ? errMsg : undefined,
+      },
+      { status: 500 },
+    );
   }
 }
