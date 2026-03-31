@@ -67,13 +67,20 @@ function createLimiter(
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
 
-      const result = await rl.limit(identifier);
-      return {
-        success: result.success,
-        limit: result.limit,
-        remaining: result.remaining,
-        reset: result.reset,
-      };
+      try {
+        const result = await rl.limit(identifier);
+        return {
+          success: result.success,
+          limit: result.limit,
+          remaining: result.remaining,
+          reset: result.reset,
+        };
+      } catch (err) {
+        // Upstash connection failure — allow request through to avoid blocking
+        // legitimate traffic when Redis is temporarily unreachable
+        logger.error('Rate limiter fetch failed, allowing request through', err, { prefix });
+        return { success: true, limit: 0, remaining: 0, reset: 0 };
+      }
     },
   };
 }
