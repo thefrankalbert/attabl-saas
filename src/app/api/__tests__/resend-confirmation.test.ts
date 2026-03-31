@@ -58,10 +58,8 @@ function mockRateLimit(allowed: boolean) {
 }
 
 function createMockAdminClient(overrides?: {
-  users?: Array<{ id: string; email: string; email_confirmed_at: string | null }>;
   generateLinkResult?: { data: unknown; error: unknown };
 }) {
-  const users = overrides?.users ?? [];
   const generateLinkResult = overrides?.generateLinkResult ?? {
     data: { properties: { hashed_token: 'token_abc123' } },
     error: null,
@@ -70,7 +68,6 @@ function createMockAdminClient(overrides?: {
   return {
     auth: {
       admin: {
-        listUsers: vi.fn().mockResolvedValue({ data: { users } }),
         generateLink: vi.fn().mockResolvedValue(generateLinkResult),
       },
     },
@@ -122,7 +119,9 @@ describe('POST /api/resend-confirmation', () => {
 
   it('returns success when user does not exist (prevents enumeration)', async () => {
     mockRateLimit(true);
-    const mock = createMockAdminClient({ users: [] });
+    const mock = createMockAdminClient({
+      generateLinkResult: { data: null, error: { message: 'User not found' } },
+    });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await POST(buildRequest({ email: 'unknown@test.com' }));
@@ -132,12 +131,10 @@ describe('POST /api/resend-confirmation', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns success when user already confirmed (no resend needed)', async () => {
+  it('returns success when user already confirmed (prevents enumeration)', async () => {
     mockRateLimit(true);
     const mock = createMockAdminClient({
-      users: [
-        { id: 'u1', email: 'confirmed@test.com', email_confirmed_at: '2026-01-01T00:00:00Z' },
-      ],
+      generateLinkResult: { data: null, error: { message: 'User already confirmed' } },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -151,7 +148,10 @@ describe('POST /api/resend-confirmation', () => {
   it('returns success when confirmation email is resent', async () => {
     mockRateLimit(true);
     const mock = createMockAdminClient({
-      users: [{ id: 'u1', email: 'unconfirmed@test.com', email_confirmed_at: null }],
+      generateLinkResult: {
+        data: { properties: { hashed_token: 'confirm_token_123' } },
+        error: null,
+      },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -162,11 +162,10 @@ describe('POST /api/resend-confirmation', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns 500 when generateLink fails', async () => {
+  it('returns 500 when generateLink fails with a server error', async () => {
     mockRateLimit(true);
     const mock = createMockAdminClient({
-      users: [{ id: 'u1', email: 'fail@test.com', email_confirmed_at: null }],
-      generateLinkResult: { data: null, error: { message: 'Link generation failed' } },
+      generateLinkResult: { data: null, error: { message: 'Internal server error' } },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -175,5 +174,15 @@ describe('POST /api/resend-confirmation', () => {
 
     expect(res.status).toBe(500);
     expect(json.error).toBeDefined();
+  });
+
+  it('does not call listUsers (scalability fix)', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    expect((mock.auth.admin as Record<string, unknown>).listUsers).toBeUndefined();
   });
 });
