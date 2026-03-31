@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     // who may have multiple admin_users entries across tenants
     const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
-      .select('tenant_id, tenants(name)')
+      .select('tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id)')
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -50,6 +50,28 @@ export async function POST(request: Request) {
 
     const tenantId = adminUser.tenant_id;
     const email = user.email!;
+    const tenantData = adminUser.tenants as unknown as {
+      name: string;
+      stripe_customer_id: string | null;
+      stripe_subscription_id: string | null;
+    } | null;
+
+    // B1: If tenant already has an active subscription, reject and direct to update endpoint
+    if (tenantData?.stripe_subscription_id) {
+      return NextResponse.json(
+        {
+          error: 'Ce tenant a deja un abonnement actif. Utilisez le changement de plan.',
+          code: 'EXISTING_SUBSCRIPTION',
+        },
+        { status: 409 },
+      );
+    }
+
+    // B1: Reuse existing Stripe customer if available
+    const existingCustomerId = tenantData?.stripe_customer_id ?? null;
+    const customerParams: { customer: string } | { customer_email: string } = existingCustomerId
+      ? { customer: existingCustomerId }
+      : { customer_email: email };
 
     // ✅ Validate body with Zod (replaces manual .includes() checks)
     let body: unknown;
@@ -86,7 +108,7 @@ export async function POST(request: Request) {
           quantity: 1,
         },
       ],
-      customer_email: email,
+      ...customerParams,
       metadata: {
         tenant_id: tenantId,
         plan: plan,

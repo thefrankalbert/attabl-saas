@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 
 export async function POST(request: Request) {
+  // Rate limiting
+  const ip = getClientIp(request);
+  const { success: allowed } = await uploadLimiter.check(ip);
+  if (!allowed) {
+    return NextResponse.json(
+      { error: 'Trop de requetes. Reessayez plus tard.' },
+      { status: 429, headers: { 'Retry-After': '60' } },
+    );
+  }
+
   // Verify authentication
   const supabase = await createServerClient();
   const {

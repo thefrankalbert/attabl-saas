@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
 import AuditLogClient from '@/components/admin/AuditLogClient';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 
@@ -18,6 +19,23 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
   }
 
   const supabase = await createClient();
+
+  // Auth + role check: owner and admin only (audit logs are sensitive)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+  const { data: adminUser } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('user_id', user.id)
+    .eq('tenant_id', tenant.id)
+    .single();
+  if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+    redirect('/unauthorized');
+  }
 
   // Pre-fetch initial audit logs server-side (avoids RLS issues with anon client)
   const { data: initialLogs, count } = await supabase

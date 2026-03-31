@@ -38,3 +38,13 @@ export const verifyCheckoutQuerySchema = z.object({
 });
 
 export type VerifyCheckoutQueryInput = z.infer<typeof verifyCheckoutQuerySchema>;
+
+/**
+ * Schema for updating an existing subscription (plan change).
+ * Used in /api/update-subscription route.
+ */
+export const updateSubscriptionSchema = z.object({
+  priceId: z.string().min(1, 'Price ID requis').startsWith('price_', 'Price ID invalide'),
+});
+
+export type UpdateSubscriptionInput = z.infer<typeof updateSubscriptionSchema>;

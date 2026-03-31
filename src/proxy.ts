@@ -1,5 +1,5 @@
 import { createMiddlewareClient } from '@/lib/supabase/middleware';
-import { getCachedTenantByDomain } from '@/lib/cache';
+import { getCachedTenantByDomain, getCachedTenant } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
@@ -156,15 +156,38 @@ export async function proxy(request: NextRequest) {
     ) {
       const mainDomain = process.env.NEXT_PUBLIC_APP_URL || request.nextUrl.origin;
       const loginUrl = new URL('/login', mainDomain);
-      loginUrl.searchParams.set(
-        'error',
-        'Votre email n\u2019a pas encore été confirmé. Vérifiez votre boîte mail.',
-      );
+      loginUrl.searchParams.set('error', 'email_not_confirmed');
       const redirectResponse = NextResponse.redirect(loginUrl);
       sessionResponse.cookies.getAll().forEach((cookie) => {
         redirectResponse.cookies.set(cookie.name, cookie.value);
       });
       return redirectResponse;
+    }
+
+    // B2: Block frozen/inactive tenants from admin pages (except subscription page)
+    const adminMatch = pathname.match(/^\/sites\/([^/]+)\/admin(\/.*)?$/);
+    if (user && adminMatch) {
+      const adminSlug = adminMatch[1];
+      const adminSubPath = adminMatch[2] || '';
+      const isSubscriptionPage = adminSubPath.startsWith('/subscription');
+
+      if (!isSubscriptionPage) {
+        const tenantInfo = await getCachedTenant(adminSlug);
+        if (
+          tenantInfo &&
+          (tenantInfo.subscription_status === 'frozen' || tenantInfo.is_active === false)
+        ) {
+          const subscriptionUrl = new URL(
+            `/sites/${adminSlug}/admin/subscription`,
+            request.nextUrl.origin,
+          );
+          const redirectResponse = NextResponse.redirect(subscriptionUrl);
+          sessionResponse.cookies.getAll().forEach((cookie) => {
+            redirectResponse.cookies.set(cookie.name, cookie.value);
+          });
+          return redirectResponse;
+        }
+      }
     }
   }
 

@@ -38,6 +38,12 @@ export const forgotPasswordSchema = z.object({
   email: z.string().email('Email invalide'),
 });
 
+export const loginSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(1, 'Le mot de passe est requis').max(100),
+});
+
+export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type SignupOAuthInput = z.infer<typeof signupOAuthSchema>;
 export type ResendConfirmationInput = z.infer<typeof resendConfirmationSchema>;

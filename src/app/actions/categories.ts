@@ -1,43 +1,35 @@
 'use server';
 
-import { createClient } from '@/lib/supabase/server';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { AdminRole } from '@/types/admin.types';
 import { createAuditService } from '@/services/audit.service';
+import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
 
 type ActionResponse = {
   success?: boolean;
   error?: string;
 };
 
+/**
+ * SECURITY: Authenticates user and verifies tenant membership + role.
+ * tenantId is verified against the session (IDOR prevention).
+ */
 async function checkCategoryPermissions(
   tenantId: string,
   allowedRoles: AdminRole[] = ['owner', 'admin', 'manager'],
 ) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-    error: authError,
-  } = await supabase.auth.getUser();
-
-  if (authError || !user) {
-    return { error: 'Non authentifié', supabase, user: null };
+  try {
+    const { user, supabase, role } = await getAuthenticatedUserForTenant(tenantId, allowedRoles);
+    return { error: null, supabase, user, role };
+  } catch (err) {
+    if (err instanceof AuthError) {
+      if (err.status === 401)
+        return { error: 'Non authentifie', supabase: null, user: null, role: undefined };
+      return { error: 'Permissions insuffisantes', supabase: null, user: null, role: undefined };
+    }
+    return { error: 'Permissions insuffisantes', supabase: null, user: null, role: undefined };
   }
-
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('id, user_id, tenant_id, role, is_active')
-    .eq('user_id', user.id)
-    .eq('tenant_id', tenantId)
-    .eq('is_active', true)
-    .single();
-
-  if (!adminUser || !allowedRoles.includes(adminUser.role as AdminRole)) {
-    return { error: 'Permissions insuffisantes', supabase, user, role: undefined };
-  }
-
-  return { error: null, supabase, user, role: adminUser.role as string };
 }
 
 /**

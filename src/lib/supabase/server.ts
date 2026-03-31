@@ -1,5 +1,6 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
+import { logger } from '@/lib/logger';
 
 export async function createClient() {
   const cookieStore = await cookies();
@@ -20,15 +21,21 @@ export async function createClient() {
               options.sameSite = 'lax';
             }
             cookieStore.set({ name, value, ...options });
-          } catch {
-            // Handle error (route handler context)
+          } catch (error) {
+            // Server Components cannot set cookies - this is expected.
+            // Route Handlers CAN set cookies - if this fails there, log it.
+            if (process.env.NODE_ENV === 'production') {
+              logger.warn('Supabase server client: failed to set cookie', { name, error });
+            }
           }
         },
         remove(name: string, options: CookieOptions) {
           try {
             cookieStore.set({ name, value: '', ...options });
-          } catch {
-            // Handle error
+          } catch (error) {
+            if (process.env.NODE_ENV === 'production') {
+              logger.warn('Supabase server client: failed to remove cookie', { name, error });
+            }
           }
         },
       },
