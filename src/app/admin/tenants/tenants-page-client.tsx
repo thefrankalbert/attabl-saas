@@ -98,17 +98,29 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'Annulée',
 };
 
-export default function TenantsPageClient() {
-  const [mode, setMode] = useState<'loading' | 'superadmin' | 'owner'>('loading');
+interface TenantsPageClientProps {
+  serverMode: 'superadmin' | 'owner';
+  serverUserName: string;
+  serverTenants?: Tenant[];
+  serverRestaurants?: OwnerDashboardRow[];
+}
+
+export default function TenantsPageClient({
+  serverMode,
+  serverUserName,
+  serverTenants,
+  serverRestaurants,
+}: TenantsPageClientProps) {
+  const [mode] = useState<'loading' | 'superadmin' | 'owner'>(serverMode);
 
   // Super admin state
-  const [tenants, setTenants] = useState<Tenant[]>([]);
+  const [tenants] = useState<Tenant[]>(serverTenants || []);
   const [searchQuery, setSearchQuery] = useState('');
 
   // Owner hub state
-  const [restaurants, setRestaurants] = useState<OwnerDashboardRow[]>([]);
+  const [restaurants] = useState<OwnerDashboardRow[]>(serverRestaurants || []);
   const [showWizard, setShowWizard] = useState(false);
-  const [userName, setUserName] = useState('');
+  const [userName] = useState(serverUserName);
 
   // Chart & orders state
   const [chartPeriod, setChartPeriod] = useState<'day' | 'month'>('day');
@@ -237,94 +249,15 @@ export default function TenantsPageClient() {
     [supabase],
   );
 
+  // Fetch chart data and recent orders on mount (for owner mode)
   useEffect(() => {
-    async function init() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push('/login');
-        return;
-      }
-
-      const { data: adminUsers } = await supabase
-        .from('admin_users')
-        .select('is_super_admin, role, full_name, tenant_id')
-        .eq('user_id', user.id);
-
-      const firstAdmin = adminUsers?.[0];
-      setUserName(firstAdmin?.full_name || user.email?.split('@')[0] || '');
-
-      const isSuperAdmin = (adminUsers || []).some(
-        (au) => au.is_super_admin === true || au.role === 'super_admin',
-      );
-
-      if (isSuperAdmin) {
-        const { data: tenantsData } = await supabase
-          .from('tenants')
-          .select('id, slug, name, subscription_status, subscription_plan, is_active')
-          .order('name');
-
-        setTenants(tenantsData || []);
-        setMode('superadmin');
-      } else {
-        const { data, error: rpcError } = await supabase.rpc('get_owner_dashboard', {
-          p_user_id: user.id,
-        });
-
-        let ownerRestaurants: OwnerDashboardRow[] = [];
-
-        if (rpcError) {
-          const { data: userTenants } = await supabase
-            .from('admin_users')
-            .select(
-              'tenant_id, tenants(id, name, slug, subscription_plan, subscription_status, logo_url, is_active)',
-            )
-            .eq('user_id', user.id);
-
-          ownerRestaurants = (userTenants || [])
-            .filter((ut) => ut.tenants)
-            .map((ut) => {
-              const t = ut.tenants as unknown as {
-                id: string;
-                name: string;
-                slug: string;
-                subscription_plan: string;
-                subscription_status: string;
-                logo_url: string;
-                is_active: boolean;
-              };
-              return {
-                tenant_id: t.id,
-                tenant_name: t.name,
-                tenant_slug: t.slug,
-                tenant_plan: t.subscription_plan,
-                tenant_status: t.subscription_status,
-                tenant_logo_url: t.logo_url,
-                tenant_is_active: t.is_active,
-                orders_today: 0,
-                revenue_today: 0,
-                orders_month: 0,
-                revenue_month: 0,
-              };
-            });
-        } else {
-          ownerRestaurants = (data as OwnerDashboardRow[]) || [];
-        }
-
-        setRestaurants(ownerRestaurants);
-        setMode('owner');
-
-        // Fetch chart data and recent orders
-        const tIds = ownerRestaurants.map((r) => r.tenant_id);
-        fetchChartData(tIds, 'day');
-        fetchRecentOrders(tIds);
-      }
-    }
-
-    init();
-  }, [supabase, router, fetchChartData, fetchRecentOrders]);
+    if (mode !== 'owner' || restaurants.length === 0) return;
+    const tIds = restaurants.map((r) => r.tenant_id);
+    const load = async () => {
+      await Promise.all([fetchChartData(tIds, 'day'), fetchRecentOrders(tIds)]);
+    };
+    load();
+  }, [mode, restaurants, fetchChartData, fetchRecentOrders]);
 
   // Refetch chart data when period changes
   useEffect(() => {

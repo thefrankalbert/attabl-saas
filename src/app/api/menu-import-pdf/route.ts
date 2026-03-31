@@ -7,6 +7,8 @@ import { logger } from '@/lib/logger';
 import { pdfImportLimiter, getClientIp } from '@/lib/rate-limit';
 import { createPdfImportService } from '@/services/pdf-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import type { Tenant } from '@/types/admin.types';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
 import { z } from 'zod';
 
@@ -72,15 +74,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Resolve tenant from slug
+    // 5. Resolve tenant from slug (with plan info for limit checks)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id')
+      .select(
+        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+      )
       .eq('slug', tenantSlug)
       .single();
 
     if (tenantError || !tenant) {
-      return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
     }
 
     // 5b. Verify user belongs to this tenant
@@ -97,6 +101,7 @@ export async function POST(request: Request) {
     }
 
     const importService = createPdfImportService(supabase);
+    const enforcement = createPlanEnforcementService(supabase);
 
     // ─── Action: extract (preview only) ────────────────────
     if (action === 'extract') {
@@ -167,8 +172,11 @@ export async function POST(request: Request) {
       const extraction = await importService.extractFromPdf(Buffer.from(buffer));
 
       if (extraction.items.length === 0) {
-        return NextResponse.json({ error: 'Aucune donnée extraite du PDF.' }, { status: 400 });
+        return NextResponse.json({ error: 'Aucune donnee extraite du PDF.' }, { status: 400 });
       }
+
+      // Check plan limits before importing items
+      await enforcement.canAddItems(tenant as Tenant, extraction.items.length);
 
       const result = await importService.importItems(tenant.id, menuId, extraction.items);
 
@@ -200,6 +208,9 @@ export async function POST(request: Request) {
     }
 
     const items = parsed.data as PdfExtractedItem[];
+
+    // Check plan limits before importing items
+    await enforcement.canAddItems(tenant as Tenant, items.length);
 
     const result = await importService.importItems(tenant.id, menuId, items);
 

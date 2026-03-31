@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Upload, Loader2, CheckCircle2, Clock, Globe, Mail } from 'lucide-react';
+import { Loader2, CheckCircle2, Clock, Globe, Mail } from 'lucide-react';
+import ImageUpload from '@/components/shared/ImageUpload';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -15,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import Image from 'next/image';
 import { useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { locales, LOCALE_LABELS } from '@/i18n/config';
@@ -45,6 +45,8 @@ interface SettingsIdentityProps {
   uploading: boolean;
   saving: boolean;
   onLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  onLogoChange?: (url: string) => void;
+  onLogoRemove?: () => void;
   onDomainSave: (domain: string | null) => Promise<void>;
   t: (key: string) => string;
 }
@@ -57,7 +59,8 @@ export default function SettingsIdentity({
   logoPreview,
   uploading,
   saving,
-  onLogoUpload,
+  onLogoChange,
+  onLogoRemove,
   onDomainSave,
   t,
 }: SettingsIdentityProps) {
@@ -176,39 +179,20 @@ export default function SettingsIdentity({
 
           <div className="space-y-4">
             <Label>{t('logo')}</Label>
-            <div className="flex flex-col @sm:flex-row items-start @sm:items-center gap-4 sm:gap-6">
-              <div className="relative w-32 h-32 rounded-xl bg-app-elevated border-2 border-dashed border-app-border flex items-center justify-center overflow-hidden group hover:border-app-text-muted transition-colors">
-                {logoPreview ? (
-                  <Image src={logoPreview} alt="Logo preview" fill className="object-contain p-2" />
-                ) : (
-                  <Upload className="h-8 w-8 text-app-text-muted" />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={onLogoUpload}
-                  disabled={uploading || saving}
-                  className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                />
-                {uploading ? (
-                  <div className="absolute inset-0 bg-app-text/50 flex flex-col items-center justify-center">
-                    <Loader2 className="h-6 w-6 text-accent-text animate-spin" />
-                    <p className="text-accent-text text-xs font-medium mt-1">
-                      {t('logoUploading')}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="absolute inset-0 bg-app-text/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-accent-text text-xs font-medium">{t('modify')}</p>
-                  </div>
-                )}
-              </div>
-              <div className="text-sm text-app-text-secondary">
-                <p>{t('recommendedFormat')}</p>
-                <p>{t('maxSize')}</p>
-                <p>{t('ratio')}</p>
-              </div>
+            <div className="max-w-sm">
+              <ImageUpload
+                value={logoPreview || ''}
+                onChange={(url) => onLogoChange?.(url)}
+                onRemove={() => onLogoRemove?.()}
+                disabled={uploading || saving}
+                bucket="tenant-logos"
+                aspect={1}
+                maxWidth={512}
+              />
             </div>
+            <p className="text-xs text-app-text-muted">
+              {t('recommendedFormat')} - {t('maxSize')}
+            </p>
           </div>
         </div>
 

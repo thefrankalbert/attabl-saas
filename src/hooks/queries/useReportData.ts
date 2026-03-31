@@ -99,15 +99,6 @@ export function useReportData(tenantId: string, period: Period) {
   return useQuery<ReportData>({
     queryKey: ['report-data', tenantId, period],
     queryFn: async () => {
-      const emptyDefaults: ReportData = {
-        dailyStats: [],
-        topItems: [],
-        categories: [],
-        serverStats: [],
-        summary: { revenue: 0, orders: 0, avgBasket: 0 },
-        previousSummary: { revenue: 0, orders: 0, avgBasket: 0 },
-      };
-
       const supabase = createClient();
       const { startDate, endDate, prevStartDate, prevEndDate } = getDateRange(period);
 

@@ -626,6 +626,121 @@ ${FOOTER_ADDRESS}`;
 }
 
 // ---------------------------------------------------------------------------
+// Contact Form Email (sent to support@attabl.com)
+// ---------------------------------------------------------------------------
+
+interface ContactFormEmailData {
+  name: string;
+  email: string;
+  company?: string;
+  date?: string;
+  message: string;
+}
+
+export async function sendContactFormEmail(data: ContactFormEmailData): Promise<boolean> {
+  if (!resend) {
+    logger.warn('RESEND_API_KEY not configured — skipping contact form email');
+    return false;
+  }
+
+  const safeName = escapeHtml(data.name);
+  const safeEmail = escapeHtml(data.email);
+  const safeCompany = data.company ? escapeHtml(data.company) : '';
+  const safeDate = data.date ? escapeHtml(data.date) : '';
+  const safeMessage = escapeHtml(data.message);
+
+  const subject = `Demande de contact : ${data.name}${data.company ? ` (${data.company})` : ''}`;
+  const preheader = `Nouvelle demande de ${data.name} via le formulaire de contact.`;
+
+  const companyRow = safeCompany
+    ? `<tr>
+        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:120px;vertical-align:top;">Etablissement</td>
+        <td style="padding:6px 0;font-size:14px;color:#111827;">${safeCompany}</td>
+      </tr>`
+    : '';
+
+  const dateRow = safeDate
+    ? `<tr>
+        <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:120px;vertical-align:top;">Date souhaitee</td>
+        <td style="padding:6px 0;font-size:14px;color:#111827;">${safeDate}</td>
+      </tr>`
+    : '';
+
+  const bodyContent = `
+          <!-- Body card -->
+          <tr>
+            <td style="background-color:#ffffff;padding:40px 32px;border-radius:8px;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 8px;font-size:20px;font-weight:600;color:#111827;">
+                Nouvelle demande de contact
+              </p>
+              <p style="margin:0 0 24px;font-size:15px;line-height:1.6;color:#4b5563;">
+                Un visiteur a rempli le formulaire de contact sur attabl.com.
+              </p>
+              <!-- Contact info table -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:24px;">
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:120px;vertical-align:top;">Nom</td>
+                  <td style="padding:6px 0;font-size:14px;color:#111827;">${safeName}</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 0;font-size:13px;color:#9ca3af;width:120px;vertical-align:top;">Email</td>
+                  <td style="padding:6px 0;font-size:14px;color:#111827;">
+                    <a href="mailto:${safeEmail}" style="color:#111827;text-decoration:none;">${safeEmail}</a>
+                  </td>
+                </tr>
+                ${companyRow}
+                ${dateRow}
+              </table>
+              <!-- Separator -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr><td style="border-top:1px solid #e5e7eb;padding:0;height:1px;font-size:0;line-height:0;">&nbsp;</td></tr>
+              </table>
+              <!-- Message -->
+              <p style="margin:20px 0 4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;color:#9ca3af;">
+                Message
+              </p>
+              <p style="margin:0;font-size:15px;line-height:1.7;color:#4b5563;white-space:pre-wrap;">
+                ${safeMessage}
+              </p>
+            </td>
+          </tr>`;
+
+  const html = wrapHtmlDocument({ preheader, bodyContent });
+
+  const text = `Nouvelle demande de contact — attabl.com
+
+Nom : ${data.name}
+Email : ${data.email}${data.company ? `\nEtablissement : ${data.company}` : ''}${data.date ? `\nDate souhaitee : ${data.date}` : ''}
+
+Message :
+${data.message}
+
+---
+${FOOTER_ADDRESS}`;
+
+  try {
+    const { error } = await resend.emails.send({
+      from: FROM_EMAIL,
+      replyTo: data.email,
+      to: ['support@attabl.com'],
+      subject,
+      html,
+      text,
+    });
+
+    if (error) {
+      logger.error('Resend contact form email error', error);
+      return false;
+    }
+
+    return true;
+  } catch (err) {
+    logger.error('Failed to send contact form email', err);
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Stock Alert Email
 // ---------------------------------------------------------------------------
 

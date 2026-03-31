@@ -132,7 +132,7 @@ describe('getUsageCounts', () => {
     });
     const service = createPlanEnforcementService(supabase);
     const result = await service.getUsageCounts('tenant-1');
-    expect(result).toEqual({ admins: 2, items: 50, venues: 1, menus: 3 });
+    expect(result).toEqual({ admins: 2, items: 50, venues: 1, menus: 3, categories: 0 });
   });
 
   it('handles null counts gracefully', async () => {
@@ -144,6 +144,6 @@ describe('getUsageCounts', () => {
     });
     const service = createPlanEnforcementService(supabase);
     const result = await service.getUsageCounts('tenant-1');
-    expect(result).toEqual({ admins: 0, items: 0, venues: 0, menus: 0 });
+    expect(result).toEqual({ admins: 0, items: 0, venues: 0, menus: 0, categories: 0 });
   });
 });
