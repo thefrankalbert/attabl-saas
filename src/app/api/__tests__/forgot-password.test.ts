@@ -59,20 +59,22 @@ function mockRateLimit(allowed: boolean) {
 }
 
 function createMockAdminClient(overrides?: {
-  users?: Array<{ id: string; email: string; email_confirmed_at: string | null }>;
   generateLinkResult?: { data: unknown; error: unknown };
+  generateLinkImpl?: (params: { type: string }) => Promise<{ data: unknown; error: unknown }>;
 }) {
-  const users = overrides?.users ?? [];
-  const generateLinkResult = overrides?.generateLinkResult ?? {
+  const defaultResult = overrides?.generateLinkResult ?? {
     data: { properties: { hashed_token: 'token_abc123' } },
     error: null,
   };
 
+  const generateLink = overrides?.generateLinkImpl
+    ? vi.fn().mockImplementation(overrides.generateLinkImpl)
+    : vi.fn().mockResolvedValue(defaultResult);
+
   return {
     auth: {
       admin: {
-        listUsers: vi.fn().mockResolvedValue({ data: { users } }),
-        generateLink: vi.fn().mockResolvedValue(generateLinkResult),
+        generateLink,
       },
     },
   };
@@ -121,9 +123,15 @@ describe('POST /api/forgot-password', () => {
     expect(json.error).toContain('Email invalide');
   });
 
-  it('returns success even when user does not exist (prevents enumeration)', async () => {
+  it('returns success when user does not exist (prevents enumeration)', async () => {
     mockRateLimit(true);
-    const mock = createMockAdminClient({ users: [] });
+    // Both recovery and signup generateLink fail for non-existent user
+    const mock = createMockAdminClient({
+      generateLinkImpl: async () => ({
+        data: null,
+        error: { message: 'User not found' },
+      }),
+    });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
     const res = await POST(buildRequest({ email: 'unknown@test.com' }));
@@ -133,10 +141,14 @@ describe('POST /api/forgot-password', () => {
     expect(json.success).toBe(true);
   });
 
-  it('returns success when user exists and email is confirmed', async () => {
+  it('returns success and sends reset email when user exists with confirmed email', async () => {
     mockRateLimit(true);
+    // Recovery link succeeds for confirmed users
     const mock = createMockAdminClient({
-      users: [{ id: 'u1', email: 'known@test.com', email_confirmed_at: '2026-01-01T00:00:00Z' }],
+      generateLinkResult: {
+        data: { properties: { hashed_token: 'recovery_token_123' } },
+        error: null,
+      },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -145,12 +157,25 @@ describe('POST /api/forgot-password', () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
+    expect(mock.auth.admin.generateLink).toHaveBeenCalledWith({
+      type: 'recovery',
+      email: 'known@test.com',
+    });
   });
 
-  it('returns success when user exists but email is NOT confirmed', async () => {
+  it('falls back to confirmation link when recovery fails for unconfirmed email', async () => {
     mockRateLimit(true);
+    // Recovery fails, then signup succeeds (unconfirmed user)
     const mock = createMockAdminClient({
-      users: [{ id: 'u1', email: 'unconfirmed@test.com', email_confirmed_at: null }],
+      generateLinkImpl: async (params: { type: string }) => {
+        if (params.type === 'recovery') {
+          return { data: null, error: { message: 'Email not confirmed' } };
+        }
+        return {
+          data: { properties: { hashed_token: 'confirm_token_456' } },
+          error: null,
+        };
+      },
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -159,5 +184,17 @@ describe('POST /api/forgot-password', () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
+    expect(mock.auth.admin.generateLink).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not call listUsers (scalability fix)', async () => {
+    mockRateLimit(true);
+    const mock = createMockAdminClient();
+    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+
+    await POST(buildRequest({ email: 'test@test.com' }));
+
+    // listUsers should not exist on the mock at all -- the route no longer calls it
+    expect((mock.auth.admin as Record<string, unknown>).listUsers).toBeUndefined();
   });
 });

@@ -43,27 +43,11 @@ export async function POST(request: Request) {
     const supabase = createAdminClient();
 
     const SAFE_MSG =
-      'Si un compte existe avec cet email, un nouveau lien de confirmation a été envoyé.';
+      'Si un compte existe avec cet email, un nouveau lien de confirmation a ete envoye.';
 
-    // 3. Find user by email (perPage: 1000 to avoid silent pagination cutoff at ~50 users)
-    const { data: userList } = await supabase.auth.admin.listUsers({ perPage: 1000 });
-    const user = userList?.users?.find((u) => u.email === email);
-
-    if (!user) {
-      logger.info('Resend confirmation requested for unknown email', { email });
-      return NextResponse.json({ success: true, message: SAFE_MSG });
-    }
-
-    // Already confirmed — no need to resend
-    if (user.email_confirmed_at) {
-      logger.info('Resend confirmation requested for already-confirmed email', { email });
-      return NextResponse.json({ success: true, message: SAFE_MSG });
-    }
-
-    // 4. Generate a fresh confirmation link using type: 'signup'
-    //    (consistent with /auth/confirm which expects type=signup)
-    //    Omit password to avoid empty-password mismatch — the API accepts it
-    //    for existing users even though the TS types mark it as required.
+    // 3. Generate a fresh confirmation link directly (O(1), no listUsers pagination issues).
+    //    generateLink({ type: 'signup' }) will fail if the user doesn't exist or is
+    //    already confirmed, which we handle as a silent success (anti-enumeration).
     // password is required by TS types for type:'signup' but the Supabase API
     // accepts an empty string for existing users (it won't update their password).
     const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
@@ -73,9 +57,20 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
+      // User doesn't exist or is already confirmed -- return success to prevent enumeration.
+      // Only log at error level if it looks like a genuine server error (not a "user not found" case).
+      const errorMsg = linkError?.message ?? '';
+      if (
+        errorMsg.includes('already') ||
+        errorMsg.includes('not found') ||
+        errorMsg.includes('confirmed')
+      ) {
+        logger.info('Resend confirmation: user not found or already confirmed', { email });
+        return NextResponse.json({ success: true, message: SAFE_MSG });
+      }
       logger.error('Failed to generate confirmation link for resend', { error: linkError });
       return NextResponse.json(
-        { error: 'Impossible de générer le lien de confirmation. Réessayez plus tard.' },
+        { error: 'Impossible de generer le lien de confirmation. Reessayez plus tard.' },
         { status: 500 },
       );
     }

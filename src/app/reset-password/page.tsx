@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,10 +8,27 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AuthLayout } from '@/components/auth/AuthLayout';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { logger } from '@/lib/logger';
 
 export default function ResetPasswordPage() {
+  return (
+    <Suspense
+      fallback={
+        <AuthLayout>
+          <div className="w-full text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-app-text-muted mx-auto mb-4" />
+            <p className="text-sm text-app-text-secondary">Chargement...</p>
+          </div>
+        </AuthLayout>
+      }
+    >
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}
+
+function ResetPasswordContent() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -19,24 +36,49 @@ export default function ResetPasswordPage() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
   const [sessionReady, setSessionReady] = useState(false);
+  const [checking, setChecking] = useState(true);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Supabase auto-detects the recovery token from the URL hash on mount
+  // Detect recovery session via two mechanisms:
+  // 1. Primary: PASSWORD_RECOVERY event from onAuthStateChange (client-side token in URL hash)
+  // 2. Fallback: getUser() check after a short delay (server-side token already consumed by /auth/callback)
   useEffect(() => {
     const supabase = createClient();
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY') {
         setSessionReady(true);
+        setChecking(false);
       }
     });
 
-    // The PASSWORD_RECOVERY event from onAuthStateChange handles session detection.
-    // No getSession() fallback — prevents any active session from unlocking the form.
+    // If the URL has ?error=invalid_token, the callback already rejected the token.
+    // Skip the fallback and show the expired state immediately.
+    if (searchParams.get('error') === 'invalid_token') {
+      setChecking(false);
+      return () => subscription.unsubscribe();
+    }
 
-    return () => subscription.unsubscribe();
-  }, []);
+    // Fallback: when /auth/callback consumed the token server-side, the PASSWORD_RECOVERY
+    // event never fires. Check for an active session after a short delay.
+    const fallbackTimer = setTimeout(async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        setSessionReady(true);
+      }
+      setChecking(false);
+    }, 500);
+
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(fallbackTimer);
+    };
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,6 +138,12 @@ export default function ResetPasswordPage() {
             <Button onClick={() => router.push('/login')} className="w-full min-h-[44px]">
               Se connecter
             </Button>
+          </div>
+        ) : checking ? (
+          /* Loading — waiting for session detection */
+          <div className="text-center">
+            <Loader2 className="w-8 h-8 animate-spin text-app-text-muted mx-auto mb-4" />
+            <p className="text-sm text-app-text-secondary">Verification en cours...</p>
           </div>
         ) : !sessionReady ? (
           /* No session — invalid or expired link */
