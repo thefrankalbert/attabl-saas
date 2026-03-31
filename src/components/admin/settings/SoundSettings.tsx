@@ -35,7 +35,7 @@ export function SoundSettings({
   tenantId,
 }: SoundSettingsProps) {
   const t = useTranslations('settings');
-  const { canAccess, effectivePlan } = useSubscription();
+  const { effectivePlan } = useSubscription();
   const { toast } = useToast();
   const { setSoundId: setGlobalSoundId, preview: globalPreview } = useSound();
   const [selectedId, setSelectedId] = useState(currentSoundId);

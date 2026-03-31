@@ -163,8 +163,8 @@ export default function ItemsClient({
     setShowModal(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
+    if (formStep !== 3) return;
     if (!name.trim() || !categoryId) return;
     setSaving(true);
     try {
@@ -213,10 +213,14 @@ export default function ItemsClient({
       loadItems();
       router.refresh();
       revalidateMenuCache();
-    } catch (err) {
-      logger.error('Failed to save menu item', err, {
+    } catch (err: unknown) {
+      const pgErr = err as { message?: string; code?: string; details?: string; hint?: string };
+      logger.error('Failed to save menu item', pgErr.message || err, {
         tenantId,
         editingItemId: editingItem?.id ?? null,
+        code: pgErr.code,
+        details: pgErr.details,
+        hint: pgErr.hint,
       });
       toast({ title: t('saveError'), variant: 'destructive' });
     } finally {
@@ -366,7 +370,7 @@ export default function ItemsClient({
           )}
 
           {/* Items List */}
-          {loading ? (
+          {loading && items.length === 0 ? (
             <div className="space-y-3">
               {[1, 2, 3, 4].map((i) => (
                 <div
@@ -693,7 +697,7 @@ export default function ItemsClient({
           title={editingItem ? t('editItemTitle') : t('newItemTitle')}
           size="lg"
         >
-          <form onSubmit={handleSubmit} className="pt-2">
+          <div className="pt-2">
             {/* Step indicator */}
             <div className="flex items-center gap-2 mb-6">
               {([1, 2, 3] as const).map((step) => {
@@ -967,14 +971,14 @@ export default function ItemsClient({
                     {t('next')}
                   </Button>
                 ) : (
-                  <Button type="submit" disabled={saving} variant="default">
+                  <Button type="button" disabled={saving} variant="default" onClick={handleSubmit}>
                     {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                     {editingItem ? t('update') : t('create')}
                   </Button>
                 )}
               </div>
             </div>
-          </form>
+          </div>
         </AdminModal>
       </div>
     </RoleGuard>

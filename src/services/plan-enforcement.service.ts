@@ -124,6 +124,90 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
     },
 
     /**
+     * Check if tenant can add more categories
+     */
+    async canAddCategory(tenant: Tenant): Promise<void> {
+      const limits = getPlanLimits(
+        tenant.subscription_plan,
+        tenant.subscription_status,
+        tenant.trial_ends_at,
+      );
+
+      const { count, error } = await supabase
+        .from('categories')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id);
+
+      if (error) {
+        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
+      }
+
+      if ((count || 0) >= limits.maxCategories) {
+        throw new ServiceError(
+          `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Passez au plan superieur pour en ajouter plus.`,
+          'VALIDATION',
+        );
+      }
+    },
+
+    /**
+     * Check if tenant can add a batch of items (for bulk imports)
+     */
+    async canAddItems(tenant: Tenant, batchSize: number): Promise<void> {
+      const limits = getPlanLimits(
+        tenant.subscription_plan,
+        tenant.subscription_status,
+        tenant.trial_ends_at,
+      );
+
+      const { count, error } = await supabase
+        .from('menu_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id)
+        .eq('is_available', true);
+
+      if (error) {
+        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
+      }
+
+      if ((count || 0) + batchSize > limits.maxItems) {
+        const remaining = limits.maxItems - (count || 0);
+        throw new ServiceError(
+          `Limite atteinte : ${limits.maxItems} articles maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
+          'VALIDATION',
+        );
+      }
+    },
+
+    /**
+     * Check if tenant can add more categories (batch check for imports)
+     */
+    async canAddCategories(tenant: Tenant, batchSize: number): Promise<void> {
+      const limits = getPlanLimits(
+        tenant.subscription_plan,
+        tenant.subscription_status,
+        tenant.trial_ends_at,
+      );
+
+      const { count, error } = await supabase
+        .from('categories')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', tenant.id);
+
+      if (error) {
+        throw new ServiceError('Erreur de verification des limites', 'INTERNAL', error);
+      }
+
+      if ((count || 0) + batchSize > limits.maxCategories) {
+        const remaining = limits.maxCategories - (count || 0);
+        throw new ServiceError(
+          `Limite atteinte : ${limits.maxCategories} categorie(s) maximum pour votre plan ${tenant.subscription_plan || 'starter'}. Il vous reste ${Math.max(0, remaining)} emplacement(s) disponible(s).`,
+          'VALIDATION',
+        );
+      }
+    },
+
+    /**
      * Get current usage counts for a tenant (for display)
      */
     async getUsageCounts(tenantId: string): Promise<{
@@ -131,8 +215,9 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
       items: number;
       venues: number;
       menus: number;
+      categories: number;
     }> {
-      const [adminsRes, itemsRes, venuesRes, menusRes] = await Promise.all([
+      const [adminsRes, itemsRes, venuesRes, menusRes, categoriesRes] = await Promise.all([
         supabase
           .from('admin_users')
           .select('id', { count: 'exact', head: true })
@@ -152,6 +237,10 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
           .select('id', { count: 'exact', head: true })
           .eq('tenant_id', tenantId)
           .eq('is_active', true),
+        supabase
+          .from('categories')
+          .select('id', { count: 'exact', head: true })
+          .eq('tenant_id', tenantId),
       ]);
 
       return {
@@ -159,6 +248,7 @@ export function createPlanEnforcementService(supabase: SupabaseClient) {
         items: itemsRes.count || 0,
         venues: venuesRes.count || 0,
         menus: menusRes.count || 0,
+        categories: categoriesRes.count || 0,
       };
     },
   };

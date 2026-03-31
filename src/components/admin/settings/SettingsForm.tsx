@@ -52,6 +52,8 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
     setSelectedSoundId,
     hasUnsavedChanges,
     handleLogoUpload,
+    handleLogoChange,
+    handleLogoRemove,
     onSubmit,
     onValidationError,
   } = useSettingsData(tenant);
@@ -88,6 +90,8 @@ export function SettingsForm({ tenant }: SettingsFormProps) {
               uploading={uploading}
               saving={saving}
               onLogoUpload={handleLogoUpload}
+              onLogoChange={handleLogoChange}
+              onLogoRemove={handleLogoRemove}
               onDomainSave={async (domain) => {
                 const formData = new FormData();
                 formData.append('name', form.getValues('name'));

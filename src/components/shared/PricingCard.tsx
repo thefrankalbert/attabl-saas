@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
-import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/server';
+import { PLAN_AMOUNTS, PLAN_TOTALS } from '@/lib/stripe/pricing';
 import { PLAN_NAMES } from '@/lib/plans/features';
 
 export type PricingPlan = Exclude<SubscriptionPlan, 'enterprise'>;

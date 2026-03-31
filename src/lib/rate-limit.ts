@@ -59,8 +59,7 @@ function createLimiter(
     async check(identifier: string): Promise<RateLimitResult> {
       if (!rl) {
         if (process.env.NODE_ENV === 'production') {
-          logger.error('Rate limiting is DISABLED in production - UPSTASH_REDIS not configured');
-          return { success: false, limit: 0, remaining: 0, reset: 0 };
+          logger.warn('Rate limiting is DISABLED in production - UPSTASH_REDIS not configured');
         }
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
@@ -169,6 +168,30 @@ export const forgotPasswordLimiter = createLimiter(
 export const resendConfirmationLimiter = createLimiter(
   'resend-confirmation',
   Ratelimit.slidingWindow(3, '10 m'),
+);
+
+/** File upload: 20 requests / minute per IP */
+export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20, '1 m'));
+
+/** Admin reset: 3 requests / hour per IP */
+export const adminResetLimiter = createLimiter('admin-reset', Ratelimit.slidingWindow(3, '1 h'));
+
+/** Billing portal: 10 requests / minute per IP */
+export const billingPortalLimiter = createLimiter(
+  'billing-portal',
+  Ratelimit.slidingWindow(10, '1 m'),
+);
+
+/** Revalidate menu cache: 20 requests / minute per IP */
+export const revalidateMenuLimiter = createLimiter(
+  'revalidate-menu',
+  Ratelimit.slidingWindow(20, '1 m'),
+);
+
+/** Server actions (generic): 30 requests / minute per IP */
+export const serverActionLimiter = createLimiter(
+  'server-action',
+  Ratelimit.slidingWindow(30, '1 m'),
 );
 
 // --- IP extraction helpers ---

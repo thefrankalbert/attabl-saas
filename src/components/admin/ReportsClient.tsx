@@ -56,17 +56,6 @@ interface DailyStats {
   orders: number;
 }
 
-const CHART_COLORS = [
-  'var(--accent)',
-  '#22c55e',
-  '#3b82f6',
-  '#f59e0b',
-  '#ef4444',
-  '#8b5cf6',
-  '#ec4899',
-  '#06b6d4',
-];
-
 /** Pill-style period options for the tab selector */
 const PERIOD_PILLS: { value: Period; labelKey: string }[] = [
   { value: 'today', labelKey: 'periodToday' },

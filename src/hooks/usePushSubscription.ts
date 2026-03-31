@@ -21,10 +21,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export function usePushSubscription({
-  tenantId: _tenantId,
-  enabled = true,
-}: UsePushSubscriptionOptions) {
+export function usePushSubscription({ enabled = true }: UsePushSubscriptionOptions) {
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

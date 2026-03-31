@@ -2,9 +2,19 @@ import { createClient } from '@/lib/supabase/server';
 import { stripe } from '@/lib/stripe/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { billingPortalLimiter, getClientIp } from '@/lib/rate-limit';
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    // 0. Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await billingPortalLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requetes. Reessayez plus tard.' },
+        { status: 429 },
+      );
+    }
     const supabase = await createClient();
     const {
       data: { user },

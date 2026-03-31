@@ -30,15 +30,20 @@ export async function POST(request: Request) {
     }
 
     // ✅ SECURITY: Derive tenantId from authenticated user
+    // Use maybeSingle() instead of single() to handle super_admin users
+    // who may have multiple admin_users entries across tenants
     const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
       .select('tenant_id, tenants(name)')
       .eq('user_id', user.id)
-      .single();
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle();
 
     if (adminUserError || !adminUser?.tenant_id) {
+      logger.error('Checkout: tenant not found for user', adminUserError, { userId: user.id });
       return NextResponse.json(
-        { error: 'Tenant non trouvé pour cet utilisateur' },
+        { error: 'Tenant non trouve pour cet utilisateur' },
         { status: 404 },
       );
     }
@@ -104,7 +109,8 @@ export async function POST(request: Request) {
       url: session.url,
     });
   } catch (error: unknown) {
-    logger.error('Stripe checkout error', error);
+    const msg = error instanceof Error ? error.message : String(error);
+    logger.error('Stripe checkout error', error, { message: msg });
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

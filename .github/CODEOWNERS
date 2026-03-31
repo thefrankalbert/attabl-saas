@@ -1,0 +1,22 @@
+# CODEOWNERS - Require review from project owner for critical files
+#
+# These files control authentication, tenant isolation, and security.
+# Deletion or modification requires explicit review.
+#
+# To activate: enable "Require review from Code Owners" in
+# GitHub > Settings > Branches > Branch protection rules for `main`
+
+# Security-critical: auth middleware, tenant routing, session management
+src/proxy.ts                    @thefrankalbert
+src/lib/supabase/                    @thefrankalbert
+src/lib/rate-limit.ts                @thefrankalbert
+
+# Multi-tenant layout (access verification gate)
+src/app/sites/[site]/admin/layout.tsx @thefrankalbert
+
+# CI/CD pipeline and git hooks
+.github/workflows/                   @thefrankalbert
+.husky/                              @thefrankalbert
+
+# This file itself
+.github/CODEOWNERS                   @thefrankalbert

@@ -4,6 +4,7 @@ import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import { contactSchema } from '@/lib/validations/contact.schema';
+import { sendContactFormEmail } from '@/services/email.service';
 import { getTranslations } from 'next-intl/server';
 
 export type ContactState = {
@@ -58,9 +59,6 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
 
   const { name, email, company, date, message } = validatedFields.data;
 
-  // TODO: Integration with Email Provider (Resend, Nodemailer, etc.)
-  // In production, use: await resend.emails.send({ ... })
-
   logger.info('New appointment request', {
     from: `${name} (${email})`,
     company,
@@ -68,10 +66,11 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
     messageLength: message.length,
   });
 
-  logger.warn('Contact form submission received but email sending is not configured', {
-    name,
-    email,
-  });
+  const emailSent = await sendContactFormEmail({ name, email, company, date, message });
+
+  if (!emailSent) {
+    logger.warn('Contact form email could not be sent', { name, email });
+  }
 
   return {
     success: true,
