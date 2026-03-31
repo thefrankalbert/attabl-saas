@@ -69,7 +69,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
 
   return (
     <RoleGuard permission="canConfigurePOS">
-      <div className="h-[calc(100dvh-7rem)] sm:h-[calc(100dvh-7rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden bg-app-bg">
+      <div className="h-[calc(100dvh-7rem)] sm:h-[calc(100dvh-7rem)] md:h-[calc(100dvh-6rem)] lg:h-[calc(100dvh-4.5rem)] flex flex-col overflow-hidden bg-app-bg">
         {/* Back button + Mobile View Toggle */}
         <div className="flex items-center border-b border-app-border shrink-0">
           <button
@@ -140,7 +140,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
           {/* Cart Section — separated by a vertical line, not a boxed card */}
           <div
             className={cn(
-              'w-full @md:w-[45%] @lg:w-[42%] @xl:w-[40%] border-t @md:border-t-0 @md:border-l border-app-border flex-col overflow-hidden shrink-0',
+              'w-full @md:w-[45%] @lg:w-[42%] @xl:w-[40%] @2xl:w-[35%] border-t @md:border-t-0 @md:border-l border-app-border flex-col overflow-hidden shrink-0',
               isMobile ? (mobileView === 'cart' ? 'flex' : 'hidden') : 'flex',
             )}
           >

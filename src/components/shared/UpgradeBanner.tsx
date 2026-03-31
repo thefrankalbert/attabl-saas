@@ -2,6 +2,7 @@
 
 import { Crown, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { useTenant } from '@/contexts/TenantContext';
 import { useSubscription } from '@/contexts/SubscriptionContext';
 
@@ -72,14 +73,16 @@ export function UpgradeBanner({
 
         <p className="text-sm text-app-text-secondary mb-4">{message || defaultMessage}</p>
 
-        <Link
-          href={upgradeUrl}
+        <Button
+          asChild
           className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold text-sm rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-sm"
         >
-          <Crown className="w-4 h-4" />
-          Passer au Premium
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+          <Link href={upgradeUrl}>
+            <Crown className="w-4 h-4" />
+            Passer au Premium
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+        </Button>
       </div>
     </div>
   );

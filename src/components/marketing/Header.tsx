@@ -43,7 +43,7 @@ export default function Header() {
           </Link>
 
           {/* Navigation */}
-          <nav className="ml-8 hidden items-center gap-6 lg:ml-16 lg:flex lg:gap-10">
+          <nav className="ml-8 hidden items-center gap-6 lg:ml-16 md:flex lg:gap-10">
             <button
               type="button"
               onMouseEnter={() => setActiveMegaMenu('solutions')}
@@ -84,16 +84,16 @@ export default function Header() {
 
           {/* Actions */}
           <div className="ml-auto flex items-center gap-3">
-            <ThemeToggle className="hidden lg:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
+            <ThemeToggle className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
             <Link
               href="/login"
-              className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors lg:block"
+              className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors md:block"
             >
               Se connecter
             </Link>
             <Link
               href="/signup"
-              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors lg:block"
+              className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors md:block"
             >
               Démarrer
             </Link>
@@ -102,7 +102,7 @@ export default function Header() {
             <button
               type="button"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors lg:hidden"
+              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors md:hidden"
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>

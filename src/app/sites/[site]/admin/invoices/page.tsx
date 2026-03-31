@@ -26,7 +26,7 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
     .single();
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
       <InvoiceHistoryClient hasStripeCustomer={!!stripeInfo?.stripe_customer_id} />
     </div>
   );

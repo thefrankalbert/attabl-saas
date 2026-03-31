@@ -88,7 +88,7 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
     : undefined;
 
   return (
-    <div className="flex flex-col h-[calc(100dvh-8rem)] lg:h-[calc(100dvh-4.5rem)]">
+    <div className="flex flex-col h-[calc(100dvh-8rem)] md:h-[calc(100dvh-6rem)] lg:h-[calc(100dvh-4.5rem)]">
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">

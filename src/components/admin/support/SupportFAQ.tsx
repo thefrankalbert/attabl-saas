@@ -9,44 +9,69 @@ import {
 
 const FAQ_ITEMS = [
   {
-    question: 'Comment cr\u00e9er mon premier menu ?',
+    question: 'Comment creer mon premier menu ?',
     answer:
-      'Rendez-vous dans la section "Menus" depuis le tableau de bord, puis cliquez sur "Nouveau menu". Ajoutez ensuite des cat\u00e9gories (entr\u00e9es, plats, desserts...) et des articles pour chacune d\u0027elles. Vous pouvez ajouter des photos, des descriptions et des prix pour chaque article.',
+      'Rendez-vous dans la section "Menus" depuis le tableau de bord, puis cliquez sur "Nouveau menu". Ajoutez ensuite des categories (entrees, plats, desserts...) et des articles pour chacune d\'elles. Vous pouvez ajouter des photos, des descriptions et des prix pour chaque article.',
   },
   {
-    question: 'Comment g\u00e9n\u00e9rer un QR code pour mes tables ?',
+    question: 'Comment generer un QR code pour mes tables ?',
     answer:
-      'Allez dans "QR Codes" depuis le menu lat\u00e9ral. Vous pouvez g\u00e9n\u00e9rer un QR code unique pour chaque table ou un QR code g\u00e9n\u00e9ral pour votre \u00e9tablissement. T\u00e9l\u00e9chargez-les en haute r\u00e9solution pour impression.',
+      'Allez dans "QR Codes" depuis le menu lateral. Vous pouvez generer un QR code unique pour chaque table ou un QR code general pour votre etablissement. Telechargez-les en haute resolution pour impression.',
   },
   {
-    question: 'Comment fonctionne l\u0027\u00e9cran cuisine (KDS) ?',
+    question: "Comment fonctionne l'ecran cuisine (KDS) ?",
     answer:
-      'L\u0027\u00e9cran cuisine affiche en temps r\u00e9el les commandes entrantes. Les commandes sont automatiquement rout\u00e9es selon leur type (boissons vers le bar, plats vers la cuisine). Le personnel peut marquer les commandes comme "en pr\u00e9paration" puis "pr\u00eates".',
+      'L\'ecran cuisine affiche en temps reel les commandes entrantes. Les commandes sont automatiquement routees selon leur type (boissons vers le bar, plats vers la cuisine). Le personnel peut marquer les commandes comme "en preparation" puis "pretes".',
   },
   {
     question: 'Puis-je modifier les prix de mes articles ?',
     answer:
-      'Oui, rendez-vous dans "Articles" et cliquez sur l\u0027article \u00e0 modifier. Vous pouvez changer le prix de base, ajouter des variantes de prix (ex : taille S/M/L) et des options payantes (suppl\u00e9ments). Les modifications sont effectives imm\u00e9diatement sur le menu client.',
+      'Oui, rendez-vous dans "Articles" et cliquez sur l\'article a modifier. Vous pouvez changer le prix de base, ajouter des variantes de prix (ex : taille S/M/L) et des options payantes (supplements). Les modifications sont effectives immediatement sur le menu client.',
   },
   {
     question: 'Comment changer mon abonnement ?',
     answer:
-      'Acc\u00e9dez \u00e0 "Abonnement" depuis le menu de votre compte (en bas de la barre lat\u00e9rale). Vous pouvez passer du plan Essentiel au plan Premium, ou basculer entre facturation mensuelle et annuelle. Le changement prend effet imm\u00e9diatement.',
+      'Accedez a "Abonnement" depuis le menu de votre compte (en bas de la barre laterale). Vous pouvez passer du plan Starter au plan Pro ou Business, ou basculer entre facturation mensuelle, semestrielle et annuelle. Le changement prend effet immediatement.',
   },
   {
-    question: 'Comment g\u00e9rer les commandes en temps r\u00e9el ?',
+    question: 'Comment gerer les commandes en temps reel ?',
     answer:
-      'Les nouvelles commandes apparaissent instantan\u00e9ment dans l\u0027onglet "Commandes" et sur l\u0027\u00e9cran cuisine. Vous recevez une notification sonore \u00e0 chaque nouvelle commande. Vous pouvez accepter, pr\u00e9parer et marquer les commandes comme servies.',
+      'Les nouvelles commandes apparaissent instantanement dans l\'onglet "Commandes" et sur l\'ecran cuisine. Vous recevez une notification sonore a chaque nouvelle commande. Vous pouvez accepter, preparer et marquer les commandes comme servies.',
   },
   {
-    question: 'Est-il possible d\u0027avoir plusieurs \u00e9tablissements ?',
+    question: 'Comment utiliser la Caisse (POS) ?',
     answer:
-      'Oui, vous pouvez g\u00e9rer plusieurs \u00e9tablissements depuis un m\u00eame compte. Chaque \u00e9tablissement dispose de son propre sous-domaine, menu et configuration. Utilisez le s\u00e9lecteur en haut de la barre lat\u00e9rale pour passer d\u0027un \u00e9tablissement \u00e0 l\u0027autre.',
+      'Accedez a "Caisse" depuis le menu lateral. Le point de vente vous permet de prendre des commandes rapidement, de selectionner les articles du menu, d\'appliquer des coupons et de proceder a l\'encaissement. Ideal pour la prise de commande au comptoir ou en salle.',
+  },
+  {
+    question: 'Comment gerer mon inventaire et mes fournisseurs ?',
+    answer:
+      'La section "Inventaire" permet de suivre vos stocks en temps reel. Ajoutez des fournisseurs dans "Fournisseurs" et creez des fiches techniques (recettes) dans "Recettes" pour calculer automatiquement les couts de revient. L\'historique des mouvements de stock est disponible dans "Historique stock".',
+  },
+  {
+    question: 'Comment gerer mon equipe et les permissions ?',
+    answer:
+      'Allez dans "Equipe" pour ajouter des membres (serveurs, cuisiniers, managers). Dans "Parametres > Permissions", configurez des roles personnalises avec des permissions granulaires pour controler l\'acces a chaque section du dashboard.',
+  },
+  {
+    question: 'Comment acceder aux rapports et analyses ?',
+    answer:
+      'La section "Rapports" offre des statistiques detaillees : chiffre d\'affaires, nombre de commandes, produits les plus vendus, et tendances. Vous pouvez filtrer par periode et exporter les donnees en CSV ou Excel.',
+  },
+  {
+    question: 'Comment creer des promotions et coupons ?',
+    answer:
+      'Accedez a "Coupons" depuis le menu lateral pour creer des codes promotionnels avec reduction en pourcentage ou montant fixe. Vous pouvez aussi publier des annonces visibles par vos clients via la section "Annonces".',
+  },
+  {
+    question: "Est-il possible d'avoir plusieurs etablissements ?",
+    answer:
+      "Oui, vous pouvez gerer plusieurs etablissements depuis un meme compte. Chaque etablissement dispose de son propre sous-domaine, menu et configuration. Utilisez le selecteur en haut de la barre laterale pour passer d'un etablissement a l'autre.",
   },
   {
     question: 'Comment contacter le support technique ?',
     answer:
-      '\u00c9crivez-nous \u00e0 support@attabl.com. Notre \u00e9quipe r\u00e9pond g\u00e9n\u00e9ralement sous 24 heures, du lundi au vendredi. Pour les urgences, pr\u00e9cisez "URGENT" dans l\u0027objet de votre email.',
+      'Ecrivez-nous a support@attabl.com. Notre equipe repond generalement sous 24 heures, du lundi au vendredi. Pour les urgences, precisez "URGENT" dans l\'objet de votre email.',
   },
 ];
 

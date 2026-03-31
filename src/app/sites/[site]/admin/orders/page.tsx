@@ -68,7 +68,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   );
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
       <OrdersClient
         tenantId={tenant.id}
         initialOrders={transformedOrders}

@@ -12,9 +12,9 @@ interface AdminModalProps {
 }
 
 const sizeClasses = {
-  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-md',
-  md: 'max-w-[calc(100vw-2rem)] sm:max-w-lg',
-  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl',
+  sm: 'max-w-[calc(100vw-2rem)] sm:max-w-md md:max-w-md',
+  md: 'max-w-[calc(100vw-2rem)] sm:max-w-lg md:max-w-lg',
+  lg: 'max-w-[calc(100vw-2rem)] sm:max-w-2xl md:max-w-2xl lg:max-w-4xl',
 };
 
 export default function AdminModal({

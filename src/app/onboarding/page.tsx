@@ -22,6 +22,7 @@ import { MenuStep } from '@/components/onboarding/MenuStep';
 import { LaunchStep } from '@/components/onboarding/LaunchStep';
 import { WelcomeStep } from '@/components/onboarding/WelcomeStep';
 import { PhonePreview } from '@/components/onboarding/PhonePreview';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
@@ -589,19 +590,20 @@ export default function OnboardingPage() {
             >
               {renderScreen()}
 
-              {/* Error Banner */}
               {error && (
                 <div className="px-4 sm:px-6 lg:px-8 pb-2">
-                  <div className="p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm flex items-center justify-between">
-                    <span>{error}</span>
-                    <button
-                      onClick={() => setError(null)}
-                      className="text-red-400/60 hover:text-red-400 ml-3 shrink-0"
-                    >
-                      <span className="sr-only">Close</span>
-                      &times;
-                    </button>
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>{error}</span>
+                      <button
+                        onClick={() => setError(null)}
+                        className="text-destructive/60 hover:text-destructive ml-3 shrink-0"
+                      >
+                        <span className="sr-only">Close</span>
+                        &times;
+                      </button>
+                    </AlertDescription>
+                  </Alert>
                 </div>
               )}
 

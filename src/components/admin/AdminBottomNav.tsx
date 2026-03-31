@@ -87,7 +87,7 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
               />
               <span
                 className={cn(
-                  'text-[10px] leading-tight truncate max-w-[72px]',
+                  'text-[11px] sm:text-xs leading-tight truncate max-w-[72px]',
                   isActive ? 'font-semibold' : 'font-medium',
                 )}
               >

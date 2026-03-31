@@ -113,7 +113,7 @@ export default function CategoryNav({ categories, visible = true }: CategoryNavP
         style={{
           maxWidth: '768px',
           margin: '0 auto',
-          padding: '0 24px',
+          padding: '0 12px',
           display: 'flex',
           gap: '8px',
           minWidth: 'max-content',

@@ -597,7 +597,7 @@ export default function CartPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
+                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -609,7 +609,7 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
+                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -638,7 +638,7 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => removeFromCart(itemKey)}
-                        className="p-2.5 text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                        className="w-8 h-8 flex items-center justify-center text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
                         aria-label="Supprimer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -813,7 +813,7 @@ export default function CartPage() {
                   }
                   disabled={tipAmount === 0}
                   className={cn(
-                    'w-7 h-7 rounded-full border flex items-center justify-center transition-all',
+                    'w-9 h-9 rounded-full border flex items-center justify-center transition-all',
                     tipAmount === 0
                       ? 'border-app-border text-app-text-muted/40 cursor-not-allowed'
                       : 'border-app-border text-app-text-secondary hover:border-app-border hover:bg-app-hover active:scale-95',
@@ -828,7 +828,7 @@ export default function CartPage() {
                   onClick={() =>
                     setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
                   }
-                  className="w-7 h-7 rounded-full border flex items-center justify-center transition-all active:scale-95"
+                  className="w-9 h-9 rounded-full border flex items-center justify-center transition-all active:scale-95"
                   style={{
                     borderColor: 'var(--tenant-primary)',
                     color: 'var(--tenant-primary)',

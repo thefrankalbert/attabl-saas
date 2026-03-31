@@ -102,7 +102,7 @@ export function DataTable<TData>({
   const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
-    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0">
+    <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
       {/* Scrollable table area — thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
         <table className="w-full text-sm min-w-0">
@@ -116,7 +116,7 @@ export function DataTable<TData>({
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="px-4 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
+                    className="px-4 xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
                   >
                     {header.isPlaceholder
@@ -182,7 +182,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.previousPage()}
               disabled={!table.getCanPreviousPage()}
-              className="h-10 w-10 p-0 min-h-11 min-w-11"
+              className="h-11 w-11 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -191,7 +191,7 @@ export function DataTable<TData>({
               size="sm"
               onClick={() => table.nextPage()}
               disabled={!table.getCanNextPage()}
-              className="h-10 w-10 p-0 min-h-11 min-w-11"
+              className="h-11 w-11 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>

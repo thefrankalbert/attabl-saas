@@ -164,7 +164,7 @@ export function AdminSidebar({
     <aside
       className={cn(
         'shrink-0 bg-app-card flex-col transition-all duration-200 overflow-hidden',
-        collapsed ? 'w-16' : 'w-56',
+        collapsed ? 'w-16 xl:w-20' : 'w-56 xl:w-64 2xl:w-72',
         className,
       )}
     >
@@ -179,7 +179,7 @@ export function AdminSidebar({
           {/* Back arrow / spaces grid */}
           <Link
             href={isAdminHome(pathname, basePath) ? '/admin/tenants' : basePath}
-            className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
             title={isAdminHome(pathname, basePath) ? 'Mes espaces' : 'Retour'}
           >
             {isAdminHome(pathname, basePath) ? (

@@ -61,7 +61,7 @@ export default function KitchenBoard({
     <div
       className={cn(
         'flex-1 grid overflow-hidden',
-        isChefView ? 'grid-cols-1 @md:grid-cols-3' : 'grid-cols-1',
+        isChefView ? 'grid-cols-1 @sm:grid-cols-1 @md:grid-cols-2 @lg:grid-cols-3' : 'grid-cols-1',
       )}
     >
       {visibleColumns.map((key, idx) => {
