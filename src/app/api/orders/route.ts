@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
@@ -54,7 +53,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
     const headersList = await headers();
     const tenantSlug = headersList.get('x-tenant-slug');
 
@@ -77,7 +75,12 @@ export async function POST(request: Request) {
     }
 
     // 3. Execute order creation via service
-    const orderService = createOrderService(supabase);
+    // Use admin client for the entire order flow. The orders API is public
+    // (anonymous customers), so the server Supabase client (which depends on
+    // cookies/session) fails with "fetch failed" in Vercel serverless context.
+    // All validation (tenant, items, prices) is done server-side regardless.
+    const adminSupabase = createAdminClient();
+    const orderService = createOrderService(adminSupabase);
 
     const { id: tenantId } = await orderService.validateTenant(tenantSlug);
 
@@ -106,7 +109,7 @@ export async function POST(request: Request) {
     // 4. Validate coupon if provided
     let discountAmount = 0;
     let couponResult: { couponId?: string } | null = null;
-    const couponService = createCouponService(supabase);
+    const couponService = createCouponService(adminSupabase);
 
     if (coupon_code) {
       const validation = await couponService.validateCoupon(coupon_code, tenantId, validatedTotal);
@@ -120,8 +123,7 @@ export async function POST(request: Request) {
       couponResult = { couponId: validation.coupon?.id };
     }
 
-    // 5. Fetch tenant config for tax & service charge (use admin client to bypass RLS)
-    const adminSupabase = createAdminClient();
+    // 5. Fetch tenant config for tax & service charge
     const { data: tenant, error: tenantError } = await adminSupabase
       .from('tenants')
       .select(
@@ -155,13 +157,9 @@ export async function POST(request: Request) {
     }
 
     // 8. Create order with all fields (rollback coupon usage on failure)
-    // Use admin client for writes — the regular anon client lacks INSERT
-    // policies on order_items (only admin RLS exists). Validation was already
-    // performed server-side above, so bypassing RLS for the insert is safe.
-    const adminOrderService = createOrderService(adminSupabase);
     let result;
     try {
-      result = await adminOrderService.createOrderWithItems({
+      result = await orderService.createOrderWithItems({
         tenantId,
         items,
         total: pricing.total,
@@ -214,7 +212,7 @@ export async function POST(request: Request) {
       tenant?.trial_ends_at as string | null,
     );
     if (hasInventory) {
-      const inventoryService = createInventoryService(supabase);
+      const inventoryService = createInventoryService(adminSupabase);
       inventoryService
         .destockOrder(result.orderId, tenantId)
         .then(() => {
