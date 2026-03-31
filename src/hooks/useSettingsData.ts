@@ -83,6 +83,8 @@ export interface UseSettingsDataReturn {
   setSelectedSoundId: (id: string) => void;
   hasUnsavedChanges: boolean;
   handleLogoUpload: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>;
+  handleLogoChange: (url: string) => void;
+  handleLogoRemove: () => void;
   onSubmit: (data: SettingsFormValues) => Promise<void>;
   onValidationError: (errors: FieldErrors<SettingsFormValues>) => void;
 }
@@ -200,6 +202,18 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     }
   };
 
+  // Called by ImageUpload after crop+upload is done
+  const handleLogoChange = (url: string) => {
+    setLogoPreview(url);
+    form.setValue('logo_url', url);
+    toast({ title: t('logoUploaded') });
+  };
+
+  const handleLogoRemove = () => {
+    setLogoPreview(null);
+    form.setValue('logo_url', '');
+  };
+
   const onValidationError = (errors: FieldErrors<SettingsFormValues>) => {
     const firstError = Object.values(errors)[0];
     const message =
@@ -280,6 +294,8 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
     setSelectedSoundId,
     hasUnsavedChanges,
     handleLogoUpload,
+    handleLogoChange,
+    handleLogoRemove,
     onSubmit,
     onValidationError,
   };

@@ -1,7 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
+
+export const dynamic = 'force-dynamic';
 
 export default async function TenantsPage() {
   const supabase = await createClient();
@@ -17,7 +20,7 @@ export default async function TenantsPage() {
   // Check if the user has super_admin or owner role in any tenant
   const { data: adminUsers } = await supabase
     .from('admin_users')
-    .select('is_super_admin, role')
+    .select('is_super_admin, role, full_name, tenant_id')
     .eq('user_id', user.id);
 
   const isSuperAdmin = (adminUsers || []).some(
@@ -31,9 +34,57 @@ export default async function TenantsPage() {
     notFound();
   }
 
+  // Server-side data fetching — never let the client query tenants directly
+  const userName = adminUsers?.[0]?.full_name || user.email?.split('@')[0] || '';
+
+  if (isSuperAdmin) {
+    // Super admin: fetch ALL tenants via admin client (bypasses RLS)
+    const adminSupabase = createAdminClient();
+    const { data: allTenants } = await adminSupabase
+      .from('tenants')
+      .select('id, slug, name, subscription_status, subscription_plan, is_active')
+      .order('name');
+
+    return (
+      <div className="max-w-7xl mx-auto">
+        <TenantsPageClient
+          serverMode="superadmin"
+          serverUserName={userName}
+          serverTenants={allTenants || []}
+        />
+      </div>
+    );
+  }
+
+  // Owner: fetch ONLY tenants linked to this user via admin_users
+  const tenantIds = (adminUsers || []).map((au) => au.tenant_id).filter(Boolean);
+  const adminSupabase = createAdminClient();
+  const { data: ownerTenants } = await adminSupabase
+    .from('tenants')
+    .select('id, name, slug, subscription_plan, subscription_status, logo_url, is_active')
+    .in('id', tenantIds.length > 0 ? tenantIds : ['__none__']);
+
+  const serverRestaurants = (ownerTenants || []).map((t) => ({
+    tenant_id: t.id,
+    tenant_name: t.name,
+    tenant_slug: t.slug,
+    tenant_plan: t.subscription_plan,
+    tenant_status: t.subscription_status,
+    tenant_logo_url: t.logo_url,
+    tenant_is_active: t.is_active,
+    orders_today: 0,
+    revenue_today: 0,
+    orders_month: 0,
+    revenue_month: 0,
+  }));
+
   return (
     <div className="max-w-7xl mx-auto">
-      <TenantsPageClient />
+      <TenantsPageClient
+        serverMode="owner"
+        serverUserName={userName}
+        serverRestaurants={serverRestaurants}
+      />
     </div>
   );
 }

@@ -5,6 +5,8 @@ import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
 import { createInvitationService } from '@/services/invitation.service';
 import { acceptInvitationSchema } from '@/lib/validations/invitation.schema';
+import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import type { Tenant } from '@/types/admin.types';
 
 export async function POST(request: Request) {
   try {
@@ -28,6 +30,23 @@ export async function POST(request: Request) {
 
     const adminClient = createAdminClient();
     const service = createInvitationService(adminClient);
+
+    // Validate token first, then check plan limits before accepting
+    const invitation = await service.validateToken(parsed.data.token);
+
+    const { data: tenant } = await adminClient
+      .from('tenants')
+      .select(
+        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+      )
+      .eq('id', invitation.tenant_id)
+      .single();
+
+    if (tenant) {
+      const enforcement = createPlanEnforcementService(adminClient);
+      await enforcement.canAddAdmin(tenant as Tenant);
+    }
+
     const { tenantSlug } = await service.acceptInvitation({
       token: parsed.data.token,
       fullName: parsed.data.full_name,

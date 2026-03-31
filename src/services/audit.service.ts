@@ -48,7 +48,7 @@ export function createAuditService(
         });
       } catch (error) {
         // Audit logging should NEVER fail the parent operation
-        logger.error('Audit log insert failed', { error, action, entityType, entityId });
+        logger.error('Audit log insert failed', error, { action, entityType, entityId });
       }
     },
   };

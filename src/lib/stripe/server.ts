@@ -1,6 +1,9 @@
 import Stripe from 'stripe';
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
+// Re-export pricing constants for backwards compatibility (server-side callers)
+export { PLAN_AMOUNTS, PLAN_TOTALS, getPlanAmount } from './pricing';
+
 // Client Stripe côté serveur
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -26,40 +29,12 @@ export const STRIPE_PRICES: Record<
   },
 };
 
-// Display amounts per month in XAF (semiannual/yearly show equivalent monthly)
-export const PLAN_AMOUNTS: Record<
-  Exclude<SubscriptionPlan, 'enterprise'>,
-  Record<BillingInterval, number>
-> = {
-  starter: { monthly: 39000, semiannual: 33150, yearly: 31200 },
-  pro: { monthly: 79000, semiannual: 67150, yearly: 63200 },
-  business: { monthly: 149000, semiannual: 126650, yearly: 119200 },
-};
-
-// Total billed amounts (what Stripe charges)
-export const PLAN_TOTALS: Record<
-  Exclude<SubscriptionPlan, 'enterprise'>,
-  Record<BillingInterval, number>
-> = {
-  starter: { monthly: 39000, semiannual: 198900, yearly: 374400 },
-  pro: { monthly: 79000, semiannual: 402900, yearly: 758400 },
-  business: { monthly: 149000, semiannual: 759900, yearly: 1430400 },
-};
-
 // Helper pour obtenir le Price ID correct
 export function getStripePriceId(
   plan: Exclude<SubscriptionPlan, 'enterprise'>,
   interval: BillingInterval,
 ): string {
   return STRIPE_PRICES[plan][interval];
-}
-
-// Helper pour obtenir le montant en FCFA
-export function getPlanAmount(
-  plan: Exclude<SubscriptionPlan, 'enterprise'>,
-  interval: BillingInterval,
-): number {
-  return PLAN_AMOUNTS[plan][interval];
 }
 
 // Reverse-lookup: find plan name from a Stripe price ID

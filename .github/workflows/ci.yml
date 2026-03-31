@@ -46,6 +46,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Gate 0: Critical files — ensure security-critical files exist
+      - name: Critical files guard
+        run: |
+          CRITICAL_FILES=(
+            "src/proxy.ts"
+            "src/lib/supabase/client.ts"
+            "src/lib/supabase/server.ts"
+            "src/lib/supabase/admin.ts"
+            "src/lib/supabase/middleware.ts"
+            "src/lib/rate-limit.ts"
+          )
+          MISSING=0
+          for f in "${CRITICAL_FILES[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "::error file=$f::CRITICAL FILE MISSING: $f — this file is required for auth, security, and multi-tenant isolation."
+              MISSING=1
+            fi
+          done
+          if [ $MISSING -eq 1 ]; then
+            echo "::error::One or more critical files are missing. This will break authentication and tenant isolation. Restore them before merging."
+            exit 1
+          fi
+          echo "All critical files present."
+
       # Gate 1: TypeScript type checking
       - name: Typecheck
         run: pnpm typecheck

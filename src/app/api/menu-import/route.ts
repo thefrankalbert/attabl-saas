@@ -7,6 +7,8 @@ import { logger } from '@/lib/logger';
 import { excelImportLimiter, getClientIp } from '@/lib/rate-limit';
 import { createExcelImportService } from '@/services/excel-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import type { Tenant } from '@/types/admin.types';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -87,15 +89,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 7. Resolve tenant from slug
+    // 7. Resolve tenant from slug (with plan info for limit checks)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
-      .select('id')
+      .select(
+        'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
+      )
       .eq('slug', tenantSlug)
       .single();
 
     if (tenantError || !tenant) {
-      return NextResponse.json({ error: 'Tenant non trouvé' }, { status: 404 });
+      return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
     }
 
     // 7b. Verify user belongs to this tenant
@@ -121,7 +125,11 @@ export async function POST(request: Request) {
       );
     }
 
-    // 9. Read file buffer and call service
+    // 9. Check plan limits before import
+    const enforcement = createPlanEnforcementService(supabase);
+    await enforcement.canAddMenuItem(tenant as Tenant);
+
+    // 10. Read file buffer and call service
     const buffer = await file.arrayBuffer();
     const importService = createExcelImportService(supabase);
     const result = await importService.importFromExcel(tenant.id, menuId, buffer);
