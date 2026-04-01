@@ -610,6 +610,8 @@
     "enableServiceFee": "Activer les frais de service",
     "addServiceFeeToOrders": "Ajouter des frais de service aux commandes",
     "serviceFeeRate": "Taux frais de service",
+    "enableCoupons": "Codes promotionnels",
+    "enableCouponsDesc": "Permettre l'utilisation de codes promo dans la caisse POS",
     "soundPlayedOnOrderReceived": "Son joué lors de la réception de commandes",
     "idleLock": "Verrouillage par inactivité",
     "autoLockDashboard": "Verrouiller automatiquement le tableau de bord après une période d'inactivité",

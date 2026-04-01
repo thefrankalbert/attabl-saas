@@ -211,6 +211,26 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
           )}
         </div>
       </div>
+      {/* Coupons Toggle */}
+      <div className="space-y-3 p-4 rounded-lg border border-app-border">
+        <div className="flex items-center justify-between">
+          <div>
+            <Label htmlFor="enableCoupons" className="text-sm font-medium text-app-text">
+              {t('enableCoupons')}
+            </Label>
+            <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="enableCoupons"
+              {...register('enableCoupons')}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+          </label>
+        </div>
+      </div>
     </TabsContent>
   );
 }

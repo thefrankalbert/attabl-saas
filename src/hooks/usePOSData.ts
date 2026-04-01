@@ -109,6 +109,7 @@ export function usePOSData(tenantId: string) {
   const [orderNotes, setOrderNotes] = useSessionState<string>('pos:orderNotes', '');
 
   // ─── Coupon state ───────────────────────────────────────
+  const [enableCoupons, setEnableCoupons] = useState(false);
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
@@ -163,7 +164,9 @@ export function usePOSData(tenantId: string) {
       const [tenantRes, suggestionsRes, venuesRes] = await Promise.all([
         supabase
           .from('tenants')
-          .select('currency, enable_tax, tax_rate, enable_service_charge, service_charge_rate')
+          .select(
+            'currency, enable_tax, tax_rate, enable_service_charge, service_charge_rate, enable_coupons',
+          )
           .eq('id', tenantId)
           .single(),
         supabase
@@ -184,6 +187,7 @@ export function usePOSData(tenantId: string) {
           enableServiceCharge: !!tenantRes.data.enable_service_charge,
           serviceChargeRate: (tenantRes.data.service_charge_rate as number) || 0,
         });
+        setEnableCoupons(!!tenantRes.data.enable_coupons);
       }
       if (suggestionsRes.data) {
         setSuggestions(
@@ -511,6 +515,7 @@ export function usePOSData(tenantId: string) {
     setOrderNotes,
 
     // Coupon
+    enableCoupons,
     couponCode,
     setCouponCode,
     appliedCoupon,

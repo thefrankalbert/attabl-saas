@@ -178,6 +178,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   }}
                   orderNotes={pos.orderNotes}
                   setOrderNotes={pos.setOrderNotes}
+                  enableCoupons={pos.enableCoupons}
                   couponCode={pos.couponCode}
                   setCouponCode={pos.setCouponCode}
                   appliedCoupon={pos.appliedCoupon}

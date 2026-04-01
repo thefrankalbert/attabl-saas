@@ -610,6 +610,8 @@
     "enableServiceFee": "Enable service fee",
     "addServiceFeeToOrders": "Add service fee to orders",
     "serviceFeeRate": "Service fee rate",
+    "enableCoupons": "Promo codes",
+    "enableCouponsDesc": "Allow promo code usage in the POS checkout",
     "soundPlayedOnOrderReceived": "Sound played when orders are received",
     "idleLock": "Idle lock",
     "autoLockDashboard": "Automatically lock the dashboard after a period of inactivity",
