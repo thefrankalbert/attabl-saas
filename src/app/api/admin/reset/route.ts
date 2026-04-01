@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
 
 /**
- * Reset API — allows high-level admins (owner, admin) to reset specific data.
+ * Reset API - allows high-level admins (owner, admin) to reset specific data.
  * Requires typing a confirmation phrase for safety.
  */
 
@@ -76,7 +76,12 @@ export async function POST(request: Request) {
     }
 
     // 3. Parse and validate input
-    const body = await request.json();
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Corps de requete invalide' }, { status: 400 });
+    }
     const parseResult = resetSchema.safeParse(body);
     if (!parseResult.success) {
       return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
@@ -100,17 +105,21 @@ export async function POST(request: Request) {
     switch (resetType) {
       case 'orders': {
         // Delete order items first (FK constraint), then orders
-        const { error: itemsErr } = await adminSupabase
-          .from('order_items')
-          .delete()
-          .in(
-            'order_id',
-            (await adminSupabase.from('orders').select('id').eq('tenant_id', tenantId)).data?.map(
-              (o) => o.id,
-            ) || [],
-          );
-        if (itemsErr) {
-          logger.error('Reset: Failed to delete order items', itemsErr);
+        // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
+        const { data: orderData } = await adminSupabase
+          .from('orders')
+          .select('id')
+          .eq('tenant_id', tenantId);
+        const orderIdsForItems = orderData?.map((o) => o.id) || [];
+        for (let i = 0; i < orderIdsForItems.length; i += 200) {
+          const batch = orderIdsForItems.slice(i, i + 200);
+          const { error: itemsErr } = await adminSupabase
+            .from('order_items')
+            .delete()
+            .in('order_id', batch);
+          if (itemsErr) {
+            logger.error('Reset: Failed to delete order items batch', itemsErr);
+          }
         }
 
         const { error: ordersErr, count } = await adminSupabase
@@ -145,11 +154,20 @@ export async function POST(request: Request) {
         const orderIds = deliveredOrders?.map((o) => o.id) || [];
 
         if (orderIds.length > 0) {
-          await adminSupabase.from('order_items').delete().in('order_id', orderIds);
-          const { count } = await adminSupabase
-            .from('orders')
-            .delete({ count: 'exact' })
-            .in('id', orderIds);
+          // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
+          for (let i = 0; i < orderIds.length; i += 200) {
+            const batch = orderIds.slice(i, i + 200);
+            await adminSupabase.from('order_items').delete().in('order_id', batch);
+          }
+          let count = 0;
+          for (let i = 0; i < orderIds.length; i += 200) {
+            const batch = orderIds.slice(i, i + 200);
+            const { count: batchCount } = await adminSupabase
+              .from('orders')
+              .delete({ count: 'exact' })
+              .in('id', batch);
+            count += batchCount || 0;
+          }
 
           logger.info(
             `Reset stats: Deleted ${count} delivered/cancelled orders for tenant ${tenantSlug}`,
@@ -178,7 +196,11 @@ export async function POST(request: Request) {
         const orderIds = allOrders?.map((o) => o.id) || [];
 
         if (orderIds.length > 0) {
-          await adminSupabase.from('order_items').delete().in('order_id', orderIds);
+          // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
+          for (let i = 0; i < orderIds.length; i += 200) {
+            const batch = orderIds.slice(i, i + 200);
+            await adminSupabase.from('order_items').delete().in('order_id', batch);
+          }
         }
 
         const { count: ordersCount } = await adminSupabase
@@ -193,7 +215,7 @@ export async function POST(request: Request) {
         await adminSupabase.from('coupons').update({ current_uses: 0 }).eq('tenant_id', tenantId);
 
         logger.info(
-          `Reset all: Full data reset for tenant ${tenantSlug} by user ${user.id} — ${ordersCount} orders deleted`,
+          `Reset all: Full data reset for tenant ${tenantSlug} by user ${user.id} - ${ordersCount} orders deleted`,
         );
         return NextResponse.json({
           success: true,

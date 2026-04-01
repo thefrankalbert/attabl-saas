@@ -53,6 +53,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Supabase join type gap
     const tenantData = adminUser.tenants as unknown as {
       stripe_subscription_id: string | null;
     } | null;

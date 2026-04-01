@@ -93,7 +93,7 @@ export default function ClientSettings({
       className="min-h-screen bg-app-bg"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ─── HEADER — matching cart page ─────────────── */}
+      {/* ─── HEADER - matching cart page ─────────────── */}
       <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
           <button

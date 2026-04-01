@@ -152,7 +152,7 @@ export function useDashboardStats(tenantId: string, initialData?: DashboardData)
           ),
         ]);
 
-      // Category query is non-critical — fire separately so it never blocks core data
+      // Category query is non-critical - fire separately so it never blocks core data
       const categoryRes = await safeQuery(
         () =>
           supabase

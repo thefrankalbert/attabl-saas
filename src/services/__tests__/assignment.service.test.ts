@@ -36,7 +36,7 @@ function createMockSupabase() {
     const chain = getChain(table);
 
     // update().eq().eq().is() => resolves   (releaseAllForServer, releaseAssignment)
-    // update().eq().eq()     => resolves   (claimOrder — awaited directly)
+    // update().eq().eq()     => resolves   (claimOrder - awaited directly)
     // second .eq() must be both awaitable (claimOrder) and expose .is() (releaseAllForServer)
     const callResolve = chain.resolve as unknown as () => Promise<unknown>;
     const updateChain = {
@@ -51,9 +51,9 @@ function createMockSupabase() {
     };
 
     return {
-      // select().eq().eq().single()  — used by admin_users lookup
-      // select().eq().eq().is().order().limit().maybeSingle() — used by getActiveServerForTable
-      // select().eq().is().order() — used by getActiveAssignments (resolves directly)
+      // select().eq().eq().single()  - used by admin_users lookup
+      // select().eq().eq().is().order().limit().maybeSingle() - used by getActiveServerForTable
+      // select().eq().is().order() - used by getActiveAssignments (resolves directly)
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -72,14 +72,14 @@ function createMockSupabase() {
         }),
       }),
 
-      // insert().select().single() — used by assignServerToTable
+      // insert().select().single() - used by assignServerToTable
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockReturnValue({
           single: chain.single,
         }),
       }),
 
-      // update().eq()... — used by releaseAssignment, releaseAllForServer, claimOrder
+      // update().eq()... - used by releaseAssignment, releaseAllForServer, claimOrder
       update: vi.fn().mockReturnValue(updateChain),
     };
   });
@@ -243,7 +243,7 @@ describe('AssignmentService', () => {
       const supabase = createMockSupabase();
 
       // update().eq().eq() resolves directly (no .is())
-      // The chain for orders uses update().eq().eq() — second eq is the terminal
+      // The chain for orders uses update().eq().eq() - second eq is the terminal
       supabase._getChain('orders').resolve.mockResolvedValue({ error: null });
 
       const service = createAssignmentService(asSupabase(supabase));

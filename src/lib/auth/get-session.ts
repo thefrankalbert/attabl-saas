@@ -62,7 +62,7 @@ export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUse
 
   if (error || !adminUser) {
     logger.warn('User has no tenant association', { userId: user.id });
-    throw new AuthError('Accès non autorisé — aucun tenant associé', 403);
+    throw new AuthError('Accès non autorisé - aucun tenant associé', 403);
   }
 
   return {

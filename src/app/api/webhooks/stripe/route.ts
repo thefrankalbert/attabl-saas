@@ -6,9 +6,21 @@ import { logger } from '@/lib/logger';
 import { getPlanFromPriceId, getIntervalFromPriceId } from '@/lib/stripe/server';
 import type { BillingInterval, SubscriptionStatus } from '@/types/billing';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+function getStripeClient(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+  }
+  return new Stripe(key);
+}
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
+function getWebhookSecret(): string {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error('STRIPE_WEBHOOK_SECRET environment variable is not set');
+  }
+  return secret;
+}
 
 /**
  * Detect billing interval from Stripe subscription item.
@@ -47,10 +59,25 @@ function mapStripeStatus(stripeStatus: string): SubscriptionStatus {
 }
 
 export async function POST(request: Request) {
+  let stripe: Stripe;
+  let webhookSecret: string;
+  try {
+    stripe = getStripeClient();
+    webhookSecret = getWebhookSecret();
+  } catch (err) {
+    logger.error('Stripe webhook env vars missing', err);
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+  }
+
   try {
     const body = await request.text();
     const headersList = await headers();
-    const signature = headersList.get('stripe-signature')!;
+    const signature = headersList.get('stripe-signature');
+
+    if (!signature) {
+      logger.error('Missing stripe-signature header');
+      return NextResponse.json({ error: 'Missing stripe-signature header' }, { status: 400 });
+    }
 
     let event: Stripe.Event;
 

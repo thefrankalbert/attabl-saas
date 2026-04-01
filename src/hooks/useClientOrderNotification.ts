@@ -33,7 +33,7 @@ interface UseClientOrderNotificationReturn {
  * 3. Vibrates the device (if supported)
  * 4. Sends a browser Notification (if permission was granted)
  *
- * No server-side push infrastructure needed — uses the built-in
+ * No server-side push infrastructure needed - uses the built-in
  * browser Notification API + Supabase Realtime (handled by caller).
  */
 export function useClientOrderNotification(): UseClientOrderNotificationReturn {
@@ -106,7 +106,7 @@ export function useClientOrderNotification(): UseClientOrderNotificationReturn {
       try {
         navigator.vibrate([200, 100, 200]);
       } catch {
-        // Vibration not available — silently ignore
+        // Vibration not available - silently ignore
       }
     }
 

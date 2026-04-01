@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ServiceError } from '@/services/errors';
 
 // ---------------------------------------------------------------------------
-// Hoisted mocks — vi.hoisted ensures these are available inside vi.mock factories
+// Hoisted mocks - vi.hoisted ensures these are available inside vi.mock factories
 // ---------------------------------------------------------------------------
 
 const {
@@ -162,7 +162,7 @@ describe('POST /api/signup-oauth', () => {
     expect(json.error).toMatch(/non authentifi/i);
   });
 
-  // 5. IDOR prevention — userId mismatch -> 403
+  // 5. IDOR prevention - userId mismatch -> 403
   it('returns 403 when userId does not match authenticated user (IDOR)', async () => {
     setupAuthenticated(OTHER_UUID);
 

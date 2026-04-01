@@ -54,7 +54,7 @@ function AdminLayoutInner({
   const isHome = isAdminHome(pathname, basePath);
   const immersive = isImmersivePage(pathname);
 
-  // Sidebar collapsed state — persisted to localStorage, respected across navigations
+  // Sidebar collapsed state - persisted to localStorage, respected across navigations
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
@@ -68,7 +68,7 @@ function AdminLayoutInner({
   });
 
   // Auto-collapse on tablet portrait, but only on initial mount / device change
-  // NEVER auto-expand — user's explicit choice is always respected
+  // NEVER auto-expand - user's explicit choice is always respected
   useEffect(() => {
     if (isTablet && !sidebarCollapsed) {
       setSidebarCollapsed(true);
@@ -92,7 +92,7 @@ function AdminLayoutInner({
 
   return (
     <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
-      {/* Sidebar — tablet & desktop, hidden on immersive pages */}
+      {/* Sidebar - tablet & desktop, hidden on immersive pages */}
       {!immersive && (
         <AdminSidebar
           basePath={basePath}

@@ -122,7 +122,7 @@ export const DEFAULT_CURRENCY = CURRENCIES.XAF;
  * In production: https://{slug}.attabl.com
  * In development: http://{slug}.localhost:3000
  *
- * The middleware rewrites subdomain requests to /sites/{slug}/… internally,
+ * The middleware rewrites subdomain requests to /sites/{slug}/... internally,
  * but customers should always see the subdomain URL.
  *
  * Works on both server (reads process.env) and client (reads NEXT_PUBLIC_ vars).
@@ -134,7 +134,7 @@ export function getTenantUrl(slug: string): string {
   const isLocalDev = appDomain === 'localhost' || appDomain.startsWith('localhost:');
   const protocol = isLocalDev ? 'http' : 'https';
 
-  // In dev: http://slug.localhost:3000 — in prod: https://slug.attabl.com
+  // In dev: http://slug.localhost:3000 - in prod: https://slug.attabl.com
   return `${protocol}://${slug}.${appDomain}`;
 }
 
@@ -150,7 +150,7 @@ export const APP_CONFIG = {
   maxFileUploadSize: 5 * 1024 * 1024, // 5MB
 } as const;
 
-// Admin Layout — shared navigation helpers
+// Admin Layout - shared navigation helpers
 /** Pages that hide top-bar, bottom-nav, and chrome (POS, KDS) */
 export const IMMERSIVE_SEGMENTS = ['/kitchen', '/pos'] as const;
 

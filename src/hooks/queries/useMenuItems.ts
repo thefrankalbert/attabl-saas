@@ -28,9 +28,10 @@ export function useMenuItems(
     queryKey: ['menu-items', tenantId, availableOnly, categoryId, availableFilter, withCategory],
     queryFn: async () => {
       const supabase = createClient();
+      const baseSelect = '*, item_price_variants(*), item_modifiers(*)';
       let query = supabase
         .from('menu_items')
-        .select(withCategory ? '*, categories(id, name)' : '*')
+        .select(withCategory ? `${baseSelect}, categories(id, name)` : baseSelect)
         .eq('tenant_id', tenantId);
 
       if (availableOnly) {
@@ -50,14 +51,18 @@ export function useMenuItems(
       const { data, error } = await query;
       if (error) throw error;
 
-      if (withCategory) {
-        return ((data || []) as unknown as Record<string, unknown>[]).map((item) => ({
-          ...item,
-          category: item.categories as Category,
-        })) as MenuItemWithCategory[];
-      }
+      // Map joined relation names to MenuItem field names
+      const mapItem = (item: Record<string, unknown>) => ({
+        ...item,
+        price_variants: item.item_price_variants ?? [],
+        modifiers: item.item_modifiers ?? [],
+        ...(withCategory ? { category: item.categories as Category } : {}),
+      });
 
-      return (data as unknown as MenuItemWithCategory[]) ?? [];
+      // Supabase join type gap
+      return ((data || []) as unknown as Record<string, unknown>[]).map(
+        mapItem,
+      ) as MenuItemWithCategory[];
     },
     enabled: !!tenantId,
     staleTime: 3 * 60 * 1000,

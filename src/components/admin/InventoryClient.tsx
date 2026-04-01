@@ -82,7 +82,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
       if (stock != null && minAlert != null && stock <= minAlert && stock > 0) {
         toast({
           title: t('lowStock'),
-          description: `${String(record.name)} — ${String(stock)} ${String(record.unit || '')}`,
+          description: `${String(record.name)} - ${String(stock)} ${String(record.unit || '')}`,
           variant: 'destructive',
         });
       }
@@ -322,7 +322,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
           <>
             {/* Fixed header area */}
             <div className="shrink-0 space-y-3">
-              {/* Row 1: Title + Search + Filters + Add — all on one line (desktop) */}
+              {/* Row 1: Title + Search + Filters + Add - all on one line (desktop) */}
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 {/* Title */}
                 <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
@@ -333,7 +333,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   </span>
                 </h1>
 
-                {/* Search — compact */}
+                {/* Search - compact */}
                 <div className="relative w-full @lg:w-56 @xl:w-64 @2xl:w-80 shrink-0">
                   <Search className="absolute left-3 top-2.5 h-4 w-4 text-app-text-muted" />
                   <Input
@@ -396,7 +396,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   })}
                 </div>
 
-                {/* Add button — pushed right */}
+                {/* Add button - pushed right */}
                 <div className="lg:ml-auto shrink-0">
                   <Button onClick={openAdd} variant="default" className="gap-2 h-9">
                     <Plus className="w-4 h-4" />
@@ -480,7 +480,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               />
             </div>
 
-            {/* Modal — Add / Edit */}
+            {/* Modal - Add / Edit */}
             <AdminModal
               isOpen={modalMode === 'add' || modalMode === 'edit'}
               onClose={() => {
@@ -591,7 +591,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               </div>
             </AdminModal>
 
-            {/* Modal — Adjust Stock */}
+            {/* Modal - Adjust Stock */}
             <AdminModal
               isOpen={modalMode === 'adjust' && !!selectedIngredient}
               onClose={() => {
@@ -604,7 +604,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {selectedIngredient && (
                 <>
                   <p className="text-sm text-app-text-secondary mb-4">
-                    {selectedIngredient.name} — {t('currentStock')} :{' '}
+                    {selectedIngredient.name} - {t('currentStock')} :{' '}
                     <span className="font-bold">
                       {selectedIngredient.current_stock}{' '}
                       {INGREDIENT_UNITS[selectedIngredient.unit]?.labelShort}
@@ -655,7 +655,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                           onChange={(e) => setAdjustSupplierId(e.target.value)}
                           className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                         >
-                          <option value="">— {tc('none')} —</option>
+                          <option value=""> - {tc('none')} - </option>
                           {activeSuppliers.map((s) => (
                             <option key={s.id} value={s.id}>
                               {s.name}

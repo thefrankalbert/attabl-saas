@@ -89,7 +89,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
 
   return (
     <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
-      {/* Template Preview — dot pattern background */}
+      {/* Template Preview - dot pattern background */}
       <div
         className="bg-neutral-100 p-6 flex items-center justify-center"
         style={{

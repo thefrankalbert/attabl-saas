@@ -59,7 +59,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    // Parallel queries — each is independent so we handle errors per-query
+    // Parallel queries - each is independent so we handle errors per-query
     const [ordersRes, itemsCountRes, venuesCountRes, recentOrdersRes, yesterdayRes, weekRes] =
       await Promise.all([
         // Today's orders (for stats)

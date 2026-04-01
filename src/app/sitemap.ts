@@ -98,7 +98,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
     }
   } catch {
-    // Sitemap generation should never fail — return static pages only
+    // Sitemap generation should never fail - return static pages only
   }
 
   return [...staticPages, ...tenantPages];

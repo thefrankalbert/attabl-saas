@@ -5,7 +5,7 @@ import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 
 /**
- * Global error boundary — catches errors in the root layout.
+ * Global error boundary - catches errors in the root layout.
  * These are rare but critical (e.g., layout-level rendering failures).
  * Must include its own <html> and <body> tags since the root layout has failed.
  */

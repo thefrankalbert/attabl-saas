@@ -11,7 +11,7 @@ import { jsonWithCache } from '@/lib/cache-headers';
  */
 export async function GET(request: Request) {
   try {
-    // Rate limiting (reuse checkout limiter — low-frequency billing endpoint)
+    // Rate limiting (reuse checkout limiter - low-frequency billing endpoint)
     const ip = getClientIp(request);
     const { success: allowed } = await checkoutLimiter.check(ip);
     if (!allowed) {
@@ -44,11 +44,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
     }
 
+    // Supabase join type gap
     const tenant = adminUser.tenants as unknown as { stripe_customer_id: string | null };
     const customerId = tenant?.stripe_customer_id;
 
     if (!customerId) {
-      // No Stripe customer yet — return empty list
+      // No Stripe customer yet - return empty list
       return jsonWithCache({ invoices: [] }, 'dynamic');
     }
 

@@ -7,7 +7,7 @@ import type { NextRequest } from 'next/server';
 // Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
 const PROTECTED_PATHS = ['/admin', '/onboarding', '/dashboard'];
 
-// Routes publiques sur le domaine principal — aucun appel auth nécessaire (~50-100ms économisés)
+// Routes publiques sur le domaine principal - aucun appel auth nécessaire (~50-100ms économisés)
 // Inclut : marketing, auth, webhooks, monitoring, assets statiques
 const SKIP_AUTH_PREFIXES = [
   '/login',
@@ -54,7 +54,7 @@ function isPublicMainDomainPath(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
-  // SECURITY: Strip any client-injected x-tenant-slug — only the proxy should set this
+  // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this
   request.headers.delete('x-tenant-slug');
 
   // 1. Extract subdomain and pathname early for routing decisions
@@ -72,7 +72,7 @@ export async function proxy(request: NextRequest) {
     // Might be a custom domain (e.g., theblutable.com)
     const tenantSlug = await getCachedTenantByDomain(hostWithoutPort);
     if (tenantSlug) {
-      // Custom domain matched — treat like a subdomain rewrite
+      // Custom domain matched - treat like a subdomain rewrite
       const { response: sessionResponse } = await createMiddlewareClient(request);
       const url = request.nextUrl.clone();
 
@@ -143,7 +143,7 @@ export async function proxy(request: NextRequest) {
     }
 
     // Block users whose email is not yet confirmed (prevents password-reset bypass).
-    // Skip for OAuth users (Google/Azure) — their email is verified by the provider.
+    // Skip for OAuth users (Google/Azure) - their email is verified by the provider.
     // Allow /reset-password and /auth/* paths so the reset flow itself still works.
     if (
       user &&
@@ -191,7 +191,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 6. Direct /sites/{slug}/... access on main domain — set x-tenant-slug header
+  // 6. Direct /sites/{slug}/... access on main domain - set x-tenant-slug header
   //    Must be set on REQUEST headers (not response) so headers() in server components can read it
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
@@ -211,7 +211,7 @@ export async function proxy(request: NextRequest) {
   // Le domaine principal (sans subdomain) sert les routes marketing, auth, super admin
   if (subdomain && subdomain !== 'www') {
     // /api/ routes live at src/app/api/ (not under /sites/[site]/api/)
-    // Don't rewrite — just set the x-tenant-slug header so the API can identify the tenant
+    // Don't rewrite - just set the x-tenant-slug header so the API can identify the tenant
     if (pathname.startsWith('/api/')) {
       request.headers.set('x-tenant-slug', subdomain);
       const response = NextResponse.next({
@@ -269,7 +269,7 @@ function extractSubdomain(hostname: string): string | null {
     return null;
   }
 
-  // Vercel preview/production URLs — no subdomain extraction
+  // Vercel preview/production URLs - no subdomain extraction
   // e.g., attabl-saas-xxx.vercel.app → treated as main domain
   if (hostWithoutPort.endsWith('.vercel.app')) {
     return null;

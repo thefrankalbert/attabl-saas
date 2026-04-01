@@ -540,7 +540,7 @@ export default function ServiceManager({ tenantId }: Props) {
                       {/* Server info */}
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-app-text break-words">
-                          {a.server?.full_name ?? '—'}
+                          {a.server?.full_name ?? ' - '}
                         </p>
                         <p className="text-[10px] text-app-text-muted break-words">
                           {a.server?.role ?? ''} · {getZoneName(a.table?.zone_id)}
@@ -549,7 +549,7 @@ export default function ServiceManager({ tenantId }: Props) {
                       {/* Table badge */}
                       <div className="shrink-0">
                         <span className="inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg bg-status-success-bg text-status-success text-[10px] font-bold px-1.5">
-                          {a.table?.display_name || a.table?.table_number || '—'}
+                          {a.table?.display_name || a.table?.table_number || ' - '}
                         </span>
                       </div>
                     </div>
@@ -575,7 +575,7 @@ export default function ServiceManager({ tenantId }: Props) {
                   readyOrders.map((order) => {
                     const items =
                       order.items ||
-                      (order as unknown as { order_items?: { id: string }[] }).order_items ||
+                      (order as { order_items?: { id: string }[] }).order_items ||
                       [];
                     const minutesAgo = Math.floor(
                       (now - new Date(order.created_at).getTime()) / 60000,
@@ -625,7 +625,7 @@ export default function ServiceManager({ tenantId }: Props) {
               </div>
               <div className="space-y-1.5">
                 {availableServers.length === 0 ? (
-                  <p className="text-xs text-app-text-muted py-2">—</p>
+                  <p className="text-xs text-app-text-muted py-2"> - </p>
                 ) : (
                   availableServers.map((server) => (
                     <div
@@ -637,7 +637,7 @@ export default function ServiceManager({ tenantId }: Props) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-app-text break-words">
-                          {server.full_name ?? '—'}
+                          {server.full_name ?? ' - '}
                         </p>
                         <p className="text-[10px] text-app-text-muted">{server.role}</p>
                       </div>
@@ -757,7 +757,7 @@ export default function ServiceManager({ tenantId }: Props) {
 
             {/* Mobile-only: ready orders + assignment summary */}
             <div className="@md:hidden space-y-4">
-              {/* Ready orders — mobile */}
+              {/* Ready orders - mobile */}
               {readyOrders.length > 0 && (
                 <div className="bg-app-card rounded-xl border border-emerald-500/20 p-4">
                   <div className="flex items-center gap-2 mb-3">
@@ -771,7 +771,7 @@ export default function ServiceManager({ tenantId }: Props) {
                     {readyOrders.map((order) => {
                       const items =
                         order.items ||
-                        (order as unknown as { order_items?: { id: string }[] }).order_items ||
+                        (order as { order_items?: { id: string }[] }).order_items ||
                         [];
                       const minutesAgo = Math.floor(
                         (now - new Date(order.created_at).getTime()) / 60000,
@@ -824,11 +824,11 @@ export default function ServiceManager({ tenantId }: Props) {
                       >
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-xs font-medium text-app-text break-words">
-                            {a.server?.full_name ?? '—'}
+                            {a.server?.full_name ?? ' - '}
                           </span>
                         </div>
                         <span className="text-[10px] font-bold text-status-success shrink-0 ml-2">
-                          {a.table?.display_name || a.table?.table_number || '—'}
+                          {a.table?.display_name || a.table?.table_number || ' - '}
                         </span>
                       </div>
                     ))}

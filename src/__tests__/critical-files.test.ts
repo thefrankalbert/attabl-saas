@@ -20,7 +20,7 @@ const ROOT = path.resolve(__dirname, '../..');
 // Files that MUST exist for the app to be secure and functional.
 // Add to this list when introducing new security-critical files.
 const CRITICAL_FILES = [
-  // Auth + tenant routing proxy (Next.js 16 — replaces middleware.ts)
+  // Auth + tenant routing proxy (Next.js 16 - replaces middleware.ts)
   'src/proxy.ts',
   // Supabase clients (auth boundary enforcement)
   'src/lib/supabase/client.ts',

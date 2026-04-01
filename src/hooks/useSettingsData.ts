@@ -242,7 +242,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       formData.append('notificationSoundId', selectedSoundId);
       formData.append('establishmentType', data.establishmentType || 'restaurant');
       formData.append('tableCount', String(data.tableCount ?? 10));
-      // Billing fields — reset rates to 0 when toggle is off to avoid stale invalid values
+      // Billing fields - reset rates to 0 when toggle is off to avoid stale invalid values
       formData.append('currency', data.currency || 'XAF');
       if (data.supportedCurrencies) {
         formData.append('supportedCurrencies', JSON.stringify(data.supportedCurrencies));

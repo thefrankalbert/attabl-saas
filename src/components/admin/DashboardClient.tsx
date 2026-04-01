@@ -228,7 +228,7 @@ export default function DashboardClient(props: DashboardClientProps) {
   const hour = currentTime.getHours();
   const greetKey = hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
-  // Stable timestamp for "new order" detection — refreshes when orders change
+  // Stable timestamp for "new order" detection - refreshes when orders change
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const now = useMemo(() => Date.now(), [recentOrders]);
 
@@ -330,7 +330,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       <div className="flex-1 min-h-0 flex flex-col @md:flex-row @lg:flex-row gap-3 overflow-y-auto @lg:overflow-hidden">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 @md:shrink @md:w-[48%] @lg:shrink @lg:w-[50%] flex flex-col gap-2">
-          {/* Stats gauge — compact */}
+          {/* Stats gauge - compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="shrink-0 w-[80px] sm:w-[110px]">
@@ -420,7 +420,7 @@ export default function DashboardClient(props: DashboardClientProps) {
               </div>
             </div>
           </div>
-          {/* Main chart — Revenue / Orders toggle (always rendered) */}
+          {/* Main chart - Revenue / Orders toggle (always rendered) */}
           <div className="border border-app-border rounded-xl p-3 sm:p-4 bg-app-card flex flex-col">
             {/* Chart header */}
             <div className="mb-3 shrink-0">
@@ -508,7 +508,7 @@ export default function DashboardClient(props: DashboardClientProps) {
             </div>
           )}
 
-          {/* Quick actions — QR, Reports, Stock history */}
+          {/* Quick actions - QR, Reports, Stock history */}
           <div className="flex gap-1.5 mt-auto">
             <Link
               href={`${adminBase}/qr-codes`}
@@ -534,7 +534,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           </div>
         </div>
 
-        {/* ── Right column — orders (full height, scrollable) ── */}
+        {/* ── Right column - orders (full height, scrollable) ── */}
         <div className="flex-1 min-h-[200px] @lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-app-border shrink-0">
             <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
@@ -572,7 +572,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                         isNew && 'bg-accent/[0.04]',
                       )}
                     >
-                      {/* Status dot — glowing ring for new orders */}
+                      {/* Status dot - glowing ring for new orders */}
                       <div className="relative shrink-0 mt-1">
                         <div className={cn('w-2 h-2 rounded-full', sc.dot)} />
                         {isNew && (

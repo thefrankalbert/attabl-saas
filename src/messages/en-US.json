@@ -23,6 +23,7 @@
     "search": "Search",
     "searchPlaceholder": "Search",
     "all": "All",
+    "other": "Other",
     "filter": "Filter",
     "retry": "Retry",
     "noResults": "No results",
@@ -61,8 +62,8 @@
     "noItems": "No items",
     "updateError": "Update error",
     "saving": "Saving...",
-    "offlineMode": "Offline mode — Showing cached data",
-    "connectionRestored": "Connection restored — Syncing...",
+    "offlineMode": "Offline mode - Showing cached data",
+    "connectionRestored": "Connection restored - Syncing...",
     "errorTitle": "Oops, something went wrong",
     "errorDescription": "We apologize for the inconvenience. Please try again or return to the home page.",
     "errorHint": "Don't panic, these things happen.",
@@ -435,7 +436,7 @@
     "dish": "Dish",
     "price": "Price",
     "priceInCurrency": "Price in {currency}",
-    "optionalPriceHint": "Set manual prices for other currencies (optional — auto-conversion used if empty)",
+    "optionalPriceHint": "Set manual prices for other currencies (optional - auto-conversion used if empty)",
     "searchDish": "Search for a dish...",
     "noDishFound": "No dish found",
     "menuLabel": "Menu",
@@ -610,7 +611,7 @@
     "autoLockDashboard": "Automatically lock the dashboard after a period of inactivity",
     "enableAutoLock": "Enable automatic lock",
     "screenLockedAfterIdle": "The screen will be locked after the defined idle period",
-    "idleRange": "5 – 120 minutes",
+    "idleRange": "5 - 120 minutes",
     "overlaySimple": "Simple overlay",
     "clickToUnlock": "Click to unlock",
     "passwordRequired": "Password required",
@@ -885,7 +886,11 @@
     "selectTableFirst": "Please select a table first",
     "server": "Server",
     "itemsCount": "items",
-    "printShort": "Kitchen"
+    "printShort": "Kitchen",
+    "confirmClearCart": "Are you sure you want to clear the cart?",
+    "selectVariant": "Select a variant",
+    "selectModifiers": "Modifiers",
+    "addToCart": "Add to cart"
   },
   "users": {
     "title": "Users",
@@ -1424,7 +1429,7 @@
     "priceFcfa": "{count} FCFA",
     "importExcel": "Import Excel",
     "targetMenu": "Target menu",
-    "selectTargetMenu": "Select a menu…",
+    "selectTargetMenu": "Select a menu...",
     "downloadTemplate": "Download Excel template",
     "selectFile": "Select a file",
     "dragAndDrop": "Drag and drop a .xlsx file here or click to browse",
@@ -1538,7 +1543,7 @@
     "seats": "{count} seats",
     "yourQRCode": "Your QR Code",
     "batchGeneration": "Batch generation",
-    "batchGenerationDesc": "Generate a QR code for each table — {count} table(s) found",
+    "batchGenerationDesc": "Generate a QR code for each table - {count} table(s) found",
     "batchGenerating": "Generating ({count} QR codes)...",
     "batchDownload": "Download {count} QR code(s) (PDF)",
     "batchMenuRedirect": "Each QR redirects to the \"{menu}\" menu",
@@ -1615,7 +1620,7 @@
     "statsProducts": "Products"
   },
   "screenLock": {
-    "lockingIn": "Locking in {time} — move your mouse to stay connected",
+    "lockingIn": "Locking in {time} - move your mouse to stay connected",
     "sessionLocked": "Session locked due to inactivity",
     "clickToUnlock": "Click or press a key to unlock",
     "password": "Password",
@@ -1795,7 +1800,7 @@
     "orderStatusReady": "Your order is ready",
     "orderStatusServed": "Your order has been served",
     "orderReadyNotifTitle": "Your order is ready!",
-    "orderReadyNotifBody": "Order #{number} — ready for pickup",
+    "orderReadyNotifBody": "Order #{number} - ready for pickup",
     "enableNotifications": "Enable notifications to know when your order is ready"
   },
   "shared": {
@@ -2084,7 +2089,7 @@
     "entity_coupon": "Coupon",
     "entity_supplier": "Supplier",
     "more": "more",
-    "showing": "{from}–{to} of {total}",
+    "showing": "{from}-{to} of {total}",
     "loadError": "Error loading audit log",
     "retry": "Retry"
   },
@@ -2163,7 +2168,7 @@
   },
   "qrScanner": {
     "title": "QR Scanner",
-    "activating": "Activating camera…",
+    "activating": "Activating camera...",
     "placeQR": "Place the QR code in the frame",
     "success": "Code scanned!",
     "cameraUnavailable": "Camera not available",

@@ -31,7 +31,7 @@ interface TenantSettings {
 }
 
 /**
- * Tenant service — handles tenant lookup and settings updates.
+ * Tenant service - handles tenant lookup and settings updates.
  *
  * Extracted from tenant-settings.ts server action and orders route.
  */

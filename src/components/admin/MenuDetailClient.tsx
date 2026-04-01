@@ -379,7 +379,7 @@ export default function MenuDetailClient({
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Breadcrumb + toggle — compact, no redundancy */}
+      {/* Breadcrumb + toggle - compact, no redundancy */}
       <div className="shrink-0 flex items-center justify-between gap-3 mb-4 sm:mb-6">
         <div className="flex items-center gap-2 text-sm min-w-0">
           <Link
@@ -484,7 +484,7 @@ export default function MenuDetailClient({
                 const isCatActive = cat.is_active ?? true;
                 return (
                   <div key={cat.id} className={cn('space-y-2', !isCatActive && 'opacity-50')}>
-                    {/* Category header — click to expand/collapse */}
+                    {/* Category header - click to expand/collapse */}
                     <div
                       className="flex items-center gap-4 p-4 bg-app-card rounded-xl border border-app-border hover:bg-app-bg transition-colors group cursor-pointer"
                       onClick={() =>
@@ -547,7 +547,7 @@ export default function MenuDetailClient({
                       </div>
                     </div>
 
-                    {/* Items in this category — collapsible */}
+                    {/* Items in this category - collapsible */}
                     {catItems.length > 0 && expandedCategories.has(cat.id) && (
                       <div className="ml-6 space-y-1">
                         {catItems.map((item) => (

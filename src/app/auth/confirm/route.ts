@@ -82,11 +82,11 @@ export async function GET(request: Request) {
         }
       }
     } catch (emailErr) {
-      // Welcome email is best-effort — never block the confirmation flow
+      // Welcome email is best-effort - never block the confirmation flow
       logger.error('Failed to send welcome onboarding email after confirmation', emailErr);
     }
 
-    // Email confirmed successfully — redirect to login with success message
+    // Email confirmed successfully - redirect to login with success message
     return NextResponse.redirect(`${requestUrl.origin}/login?confirmed=true`);
   } catch (err) {
     logger.error('Unexpected error during email confirmation', err);

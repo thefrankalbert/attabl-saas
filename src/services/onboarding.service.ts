@@ -105,11 +105,11 @@ interface OnboardingState {
 }
 
 /**
- * Onboarding service — handles the multi-step onboarding flow.
+ * Onboarding service - handles the multi-step onboarding flow.
  *
  * Data is persisted in two places:
- * 1. `tenants` table — key business fields (establishment_type, logo_url, etc.)
- * 2. `onboarding_progress.draft` (JSONB) — FULL onboarding state including all fields
+ * 1. `tenants` table - key business fields (establishment_type, logo_url, etc.)
+ * 2. `onboarding_progress.draft` (JSONB) - FULL onboarding state including all fields
  *    that don't have dedicated tenant columns (menu items, QR config, language, etc.)
  *
  * On restore, draft takes priority since it has the most complete snapshot.
@@ -210,7 +210,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         // If onboarding_completed but no categories, fall through to create them
       }
 
-      // 1. Final tenant update + mark progress completed — in parallel
+      // 1. Final tenant update + mark progress completed - in parallel
       const tenantUpdate: Record<string, unknown> = {
         establishment_type: data.establishmentType,
         address: data.address,
@@ -278,7 +278,7 @@ export function createOnboardingService(supabase: SupabaseClient) {
         venueId = newVenue?.id || null;
       }
 
-      // 3. Create zones/tables and categories/menu items — in parallel
+      // 3. Create zones/tables and categories/menu items - in parallel
       const tablePromise = (async () => {
         if (!venueId) return;
         if (data.tableZones && data.tableZones.length > 0 && data.tableConfigMode !== 'skip') {

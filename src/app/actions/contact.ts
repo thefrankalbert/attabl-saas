@@ -30,11 +30,11 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
     return { success: false, message: t('rateLimited') };
   }
 
-  // Honeypot check — bots fill this hidden field, humans don't
+  // Honeypot check - bots fill this hidden field, humans don't
   const honeypot = formData.get('website');
   if (honeypot) {
     // Silently accept to avoid revealing the trap
-    logger.info('Honeypot triggered — bot submission blocked');
+    logger.info('Honeypot triggered - bot submission blocked');
     return {
       success: true,
       message: t('contactSuccessHoneypot'),

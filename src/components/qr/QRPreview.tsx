@@ -48,7 +48,7 @@ export const QRPreview = forwardRef<HTMLDivElement, QRPreviewProps>(function QRP
           backgroundSize: '16px 16px',
         }}
       >
-        {/* Scaled template container — ref for html2canvas capture */}
+        {/* Scaled template container - ref for html2canvas capture */}
         <div
           ref={ref}
           style={{

@@ -4,8 +4,30 @@ import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 // Re-export pricing constants for backwards compatibility (server-side callers)
 export { PLAN_AMOUNTS, PLAN_TOTALS, getPlanAmount } from './pricing';
 
-// Client Stripe côté serveur
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+// Client Stripe cote serveur - lazy initialized to avoid crash if env var is missing at import time
+let _stripeInstance: Stripe | null = null;
+
+export function getStripe(): Stripe {
+  if (!_stripeInstance) {
+    const key = process.env.STRIPE_SECRET_KEY;
+    if (!key) {
+      throw new Error('STRIPE_SECRET_KEY environment variable is not set');
+    }
+    _stripeInstance = new Stripe(key);
+  }
+  return _stripeInstance;
+}
+
+/**
+ * Lazy-initialized Stripe client.
+ * Access is deferred until first property access so missing env vars
+ * do not crash the process at import time.
+ */
+export const stripe: Stripe = new Proxy({} as Stripe, {
+  get(_target, prop: string | symbol) {
+    return Reflect.get(getStripe(), prop);
+  },
+});
 
 // Prix des plans (Price IDs Stripe)
 export const STRIPE_PRICES: Record<

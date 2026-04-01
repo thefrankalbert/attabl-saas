@@ -118,7 +118,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
       case 'void':
         return t('statusVoid');
       default:
-        return status || '—';
+        return status || ' - ';
     }
   };
 
@@ -189,7 +189,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                     >
                       <td className="px-4 py-3">
                         <span className="text-sm font-medium text-app-text">
-                          {inv.number || '—'}
+                          {inv.number || ' - '}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-app-text-secondary">
@@ -252,7 +252,7 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
               {invoices.map((inv) => (
                 <div key={inv.id} className="p-4 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-app-text">{inv.number || '—'}</span>
+                    <span className="text-sm font-medium text-app-text">{inv.number || ' - '}</span>
                     <Badge
                       variant={statusVariant(inv.status)}
                       className={cn(

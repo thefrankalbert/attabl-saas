@@ -119,7 +119,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const queryClient = useQueryClient();
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
-  // TanStack Query for orders — use || to handle empty arrays from persistent cache
+  // TanStack Query for orders - use || to handle empty arrays from persistent cache
   const { data: queryOrders } = useOrders(tenantId);
   const orders = queryOrders?.length ? queryOrders : initialOrders;
 
@@ -182,7 +182,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     return result;
   }, [orders, statusFilter, search]);
 
-  // Status badge config — uses semantic design tokens for colors
+  // Status badge config - uses semantic design tokens for colors
   const statusConfig: Record<
     string,
     {
@@ -439,7 +439,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          {/* Search + Tabs + Sound — wraps on mobile/tablet portrait */}
+          {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
           <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
             <div className="relative w-full @lg:w-auto @lg:min-w-48 shrink-0">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-app-text-muted" />
@@ -483,7 +483,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                 {soundEnabled ? <Volume2 className="h-4 w-4" /> : <VolumeX className="h-4 w-4" />}
               </Button>
 
-              {/* Sound picker popover — opens on long press */}
+              {/* Sound picker popover - opens on long press */}
               {showSoundPicker && (
                 <>
                   <div className="fixed inset-0 z-40" onClick={() => setShowSoundPicker(false)} />
@@ -537,7 +537,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           </div>
         </div>
 
-        {/* Bulk action bar — inline above table */}
+        {/* Bulk action bar - inline above table */}
         <div
           className={cn(
             'flex items-center gap-2 h-8 mt-3 transition-opacity duration-150',
@@ -687,7 +687,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                       {/* Row 3: Server + Items count + Total */}
                       <div className="flex items-center justify-between text-sm">
                         <span className="text-app-text-muted break-words">
-                          {order.server?.full_name ?? '—'}
+                          {order.server?.full_name ?? ' - '}
                         </span>
                         <div className="flex items-center gap-3">
                           <span className="text-app-text-secondary">

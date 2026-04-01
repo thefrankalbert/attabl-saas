@@ -29,7 +29,7 @@ export function createAuditService(
 ) {
   return {
     /**
-     * Log an audit event. Fire-and-forget — never throws.
+     * Log an audit event. Fire-and-forget - never throws.
      * The audit log should never block the primary operation.
      */
     async log({ action, entityType, entityId, oldData, newData, metadata }: LogAuditInput) {

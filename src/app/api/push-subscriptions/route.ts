@@ -8,7 +8,7 @@ import { pushSubscriptionLimiter, getClientIp } from '@/lib/rate-limit';
 const deleteSchema = z.object({ endpoint: z.string().url() });
 
 /**
- * POST /api/push-subscriptions — Subscribe to push notifications
+ * POST /api/push-subscriptions - Subscribe to push notifications
  */
 export async function POST(request: NextRequest) {
   try {
@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
 
     const { endpoint, p256dh, auth } = parsed.data;
 
-    // Derive tenant_id from admin_users — never trust client-supplied tenant_id
+    // Derive tenant_id from admin_users - never trust client-supplied tenant_id
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('tenant_id')
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * DELETE /api/push-subscriptions — Unsubscribe from push notifications
+ * DELETE /api/push-subscriptions - Unsubscribe from push notifications
  */
 export async function DELETE(request: NextRequest) {
   try {

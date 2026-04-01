@@ -45,7 +45,7 @@ function formatFileSize(bytes: number): string {
 }
 
 function formatPrice(price: number): string {
-  if (price === 0) return '—';
+  if (price === 0) return ' - ';
   return price.toLocaleString('fr-FR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
 }
 

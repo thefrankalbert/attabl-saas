@@ -139,7 +139,7 @@ export function useReportData(tenantId: string, period: Period) {
         throw rpcError;
       }
 
-      // Category breakdown + server stats — run in parallel (both independent)
+      // Category breakdown + server stats - run in parallel (both independent)
       const [categoryRes, serverRes] = await Promise.all([
         supabase
           .from('order_items')
@@ -238,7 +238,7 @@ export function useReportData(tenantId: string, period: Period) {
           string,
           { serverName: string; orders: number; revenue: number }
         >();
-        for (const row of serverRes.data as unknown as {
+        for (const row of serverRes.data as {
           server_id: string;
           total: number;
           tip_amount: number;

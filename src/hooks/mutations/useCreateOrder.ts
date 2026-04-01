@@ -2,125 +2,47 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
-import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
-import { createInventoryService } from '@/services/inventory.service';
 import { logger } from '@/lib/logger';
 
 interface CreateOrderInput {
   tenant_id: string;
   table_number: string;
-  status: string;
-  total: number;
+  status: 'pending' | 'delivered';
   service_type: string;
-  cashier_id?: string | null;
-  server_id?: string | null;
   room_number?: string;
   delivery_address?: string;
+  payment_method?: string;
+  tip_amount?: number;
   items: {
     menu_item_id: string;
     quantity: number;
-    price_at_order: number;
     customer_notes?: string | null;
-    item_name: string;
     modifiers?: Array<{ name: string; price: number }>;
   }[];
+  // Legacy fields kept for caller compatibility but not sent to API
+  total?: number;
+  cashier_id?: string | null;
+  server_id?: string | null;
+}
+
+interface POSOrderResponse {
+  success: boolean;
+  orderId: string;
+  orderNumber: string;
+  total: number;
+  error?: string;
+  details?: string[];
 }
 
 /**
- * Verifies that client-supplied prices match the actual menu item prices
- * in the database. Returns server-verified prices or throws if any
- * item is unavailable or has a price mismatch beyond 1% tolerance.
- */
-async function verifyPricesServerSide(
-  supabase: ReturnType<typeof createClient>,
-  tenantId: string,
-  items: CreateOrderInput['items'],
-): Promise<Map<string, number>> {
-  const itemIds = items.map((item) => item.menu_item_id);
-
-  // Fetch actual menu item prices from DB
-  const { data: menuItems, error: menuError } = await supabase
-    .from('menu_items')
-    .select('id, name, price, is_available')
-    .eq('tenant_id', tenantId)
-    .in('id', itemIds);
-
-  if (menuError) {
-    throw new Error('Erreur lors de la vérification des prix');
-  }
-
-  // Fetch actual modifier prices from DB
-  const { data: dbModifiers } = await supabase
-    .from('item_modifiers')
-    .select('id, menu_item_id, name, price')
-    .eq('tenant_id', tenantId)
-    .in('menu_item_id', itemIds);
-
-  const modifiersByItem = new Map<string, Map<string, number>>();
-  for (const mod of dbModifiers || []) {
-    if (!modifiersByItem.has(mod.menu_item_id)) {
-      modifiersByItem.set(mod.menu_item_id, new Map());
-    }
-    modifiersByItem.get(mod.menu_item_id)!.set(mod.name.toLowerCase(), mod.price);
-  }
-
-  const menuItemsMap = new Map(menuItems?.map((item) => [item.id, item]) || []);
-  const verifiedPrices = new Map<string, number>();
-  const errors: string[] = [];
-
-  for (const item of items) {
-    const menuItem = menuItemsMap.get(item.menu_item_id);
-
-    if (!menuItem) {
-      errors.push(`Article "${item.item_name}" non trouvé`);
-      continue;
-    }
-
-    if (menuItem.is_available === false) {
-      errors.push(`"${menuItem.name}" n'est plus disponible`);
-      continue;
-    }
-
-    const expectedPrice = menuItem.price;
-
-    // 1% tolerance for rounding
-    if (Math.abs(item.price_at_order - expectedPrice) > expectedPrice * 0.01) {
-      errors.push(`Prix de "${menuItem.name}" a changé (attendu: ${expectedPrice})`);
-    }
-
-    // Verify modifier prices
-    let modifiersTotal = 0;
-    if (item.modifiers && item.modifiers.length > 0) {
-      const itemModifiers = modifiersByItem.get(item.menu_item_id);
-      for (const mod of item.modifiers) {
-        const serverPrice = itemModifiers?.get(mod.name.toLowerCase());
-        if (serverPrice !== undefined) {
-          modifiersTotal += serverPrice;
-        } else {
-          errors.push(`Modificateur "${mod.name}" non trouvé pour "${menuItem.name}"`);
-        }
-      }
-    }
-
-    verifiedPrices.set(item.menu_item_id, expectedPrice + modifiersTotal);
-  }
-
-  if (errors.length > 0) {
-    throw new Error(errors.join('; '));
-  }
-
-  return verifiedPrices;
-}
-
-/**
- * Mutation to create an order with its items.
- * Automatically invalidates orders and dashboard-stats queries on success.
- * Handles inventory destock and stock alerts as post-order side effects.
- * Includes aggressive retry for offline resilience.
+ * Mutation to create a POS order via the server-side API route.
  *
- * Security: verifies menu item prices server-side before inserting,
- * preventing price tampering from the client.
+ * All price verification, tax calculation, order number generation,
+ * and inventory destock are handled server-side.
+ *
+ * Automatically invalidates orders and dashboard-stats queries on success.
+ * Includes retry logic for transient network failures.
  */
 export function useCreateOrder(tenantId: string) {
   const queryClient = useQueryClient();
@@ -130,90 +52,39 @@ export function useCreateOrder(tenantId: string) {
   return useMutation({
     mutationKey: ['create-order', tenantId],
     mutationFn: async (input: CreateOrderInput) => {
-      const supabase = createClient();
-
-      // ── Price verification (security) ───────────────────────
-      // Fetch actual prices from DB and compare with client prices.
-      // This prevents price tampering via the browser client.
-      const verifiedPrices = await verifyPricesServerSide(supabase, input.tenant_id, input.items);
-
-      // Recalculate total from verified prices
-      let verifiedTotal = 0;
-      for (const item of input.items) {
-        const verifiedUnitPrice = verifiedPrices.get(item.menu_item_id);
-        if (verifiedUnitPrice !== undefined) {
-          verifiedTotal += verifiedUnitPrice * item.quantity;
-        }
-      }
-
-      // Generate order number (same logic as order.service.ts)
-      let orderNumber: string;
-      try {
-        const { data, error } = await supabase.rpc('next_order_number', {
-          p_tenant_id: input.tenant_id,
-        });
-        if (error || !data) {
-          orderNumber = `CMD-${Date.now().toString(36).toUpperCase()}`;
-        } else {
-          orderNumber = data as string;
-        }
-      } catch {
-        orderNumber = `CMD-${Date.now().toString(36).toUpperCase()}`;
-      }
-
-      // Create the order — use server-verified total, not client total
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          tenant_id: input.tenant_id,
-          order_number: orderNumber,
-          table_number: input.table_number,
-          status: input.status,
-          total: verifiedTotal,
-          service_type: input.service_type,
-          cashier_id: input.cashier_id ?? null,
-          server_id: input.server_id ?? null,
-          room_number: input.room_number,
-          delivery_address: input.delivery_address,
-          subtotal: verifiedTotal,
-          payment_status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (orderError) throw orderError;
-
-      // Create order items — use server-verified prices
-      const orderItems = input.items.map((item) => {
-        const verifiedUnitPrice = verifiedPrices.get(item.menu_item_id);
-        // Strip modifier cost from verified price to get base price
-        const modCost = item.modifiers?.reduce((s, m) => s + m.price, 0) || 0;
-        const basePrice =
-          verifiedUnitPrice !== undefined ? verifiedUnitPrice - modCost : item.price_at_order;
-
-        return {
-          order_id: order.id,
+      // Build the API payload (only fields the server expects)
+      const payload = {
+        tenant_id: input.tenant_id,
+        table_number: input.table_number,
+        status: input.status,
+        service_type: input.service_type,
+        room_number: input.room_number,
+        delivery_address: input.delivery_address,
+        payment_method: input.payment_method,
+        tip_amount: input.tip_amount,
+        items: input.items.map((item) => ({
           menu_item_id: item.menu_item_id,
-          item_name: item.item_name,
           quantity: item.quantity,
-          price_at_order: basePrice,
-          customer_notes: item.customer_notes || null,
-          modifiers: item.modifiers?.length ? item.modifiers : [],
-          item_status: 'pending',
-        };
+          customer_notes: item.customer_notes || undefined,
+          modifiers: item.modifiers,
+        })),
+      };
+
+      const response = await fetch('/api/orders/pos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
-      if (itemsError) throw itemsError;
+      const data: POSOrderResponse = await response.json();
 
-      // Auto-destock inventory (non-blocking — order succeeds even if destock fails)
-      const inventoryService = createInventoryService(supabase);
-      inventoryService.destockOrder(order.id, input.tenant_id).catch(() => {});
+      if (!response.ok) {
+        const message = data.error || 'Erreur lors de la creation de la commande';
+        const details = data.details ? ` (${data.details.join(', ')})` : '';
+        throw new Error(`${message}${details}`);
+      }
 
-      // Check stock alerts (non-blocking, fire-and-forget)
-      fetch('/api/stock-alerts/check', { method: 'POST' }).catch(() => {});
-
-      return order;
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
@@ -226,10 +97,25 @@ export function useCreateOrder(tenantId: string) {
           : typeof error === 'object' && error !== null && 'message' in error
             ? String((error as { message: string }).message)
             : String(error);
-      logger.error('Failed to create order', { message, error });
+      logger.error('Failed to create POS order', { message, error });
       toast({ title: tc('error'), description: message, variant: 'destructive' });
     },
-    retry: 10,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 30000),
+    retry: (failureCount, error) => {
+      if (failureCount >= 3) return false;
+      const message = error instanceof Error ? error.message : '';
+      // Do not retry validation or business logic errors
+      if (
+        message.includes('duplicate') ||
+        message.includes('violates') ||
+        message.includes('validation') ||
+        message.includes('invalide') ||
+        message.includes('disponible') ||
+        message.includes('refuse')
+      ) {
+        return false;
+      }
+      return true;
+    },
+    retryDelay: (attempt: number) => Math.min(1000 * 2 ** attempt, 10000),
   });
 }
