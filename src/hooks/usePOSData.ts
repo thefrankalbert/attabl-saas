@@ -454,7 +454,6 @@ export function usePOSData(tenantId: string) {
           setAppliedCoupon(null);
           setCouponCode('');
           setCouponError('');
-          options?.onPaymentModalClose?.();
         },
         onError: (error: unknown) => {
           const message = error instanceof Error ? error.message : String(error);
