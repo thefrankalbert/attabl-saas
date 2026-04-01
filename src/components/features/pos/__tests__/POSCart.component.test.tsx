@@ -88,6 +88,7 @@ function renderCart(overrides: Record<string, unknown> = {}) {
     currency: 'XAF' as CurrencyCode,
     pricing: { subtotal: 0, taxAmount: 0, serviceChargeAmount: 0, discountAmount: 0, total: 0 },
     orderNotes: '',
+    enableCoupons: false,
     couponCode: '',
     appliedCoupon: null,
     couponLoading: false,

@@ -85,6 +85,7 @@ export interface Tenant {
   service_charge_rate?: number;
   enable_tax?: boolean;
   enable_service_charge?: boolean;
+  enable_coupons?: boolean;
   // ─── Establishment ───────────────────────────────────
   establishment_type?: string;
   city?: string;

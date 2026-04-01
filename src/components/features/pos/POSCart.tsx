@@ -63,6 +63,7 @@ interface POSCartProps {
   setOrderNotes: (notes: string) => void;
 
   // Coupon
+  enableCoupons: boolean;
   couponCode: string;
   setCouponCode: (code: string) => void;
   appliedCoupon: AppliedCoupon | null;
@@ -96,6 +97,7 @@ export default function POSCart({
   onEditNotes,
   orderNotes,
   setOrderNotes,
+  enableCoupons,
   couponCode,
   setCouponCode,
   appliedCoupon,
@@ -321,13 +323,14 @@ export default function POSCart({
 
       {/* ━━━ FOOTER ━━━ */}
       <div className="border-t border-app-border px-4 py-3 space-y-2">
-        {/* Order-level notes */}
-        <div>
+        {/* Order note + Coupon on same line */}
+        <div className="flex items-center gap-2">
+          {/* Order note toggle */}
           <button
             type="button"
             onClick={() => setShowOrderNotes((prev) => !prev)}
             className={cn(
-              'flex items-center gap-1.5 text-[11px] font-medium transition-colors',
+              'flex items-center gap-1 text-[11px] font-medium transition-colors shrink-0',
               orderNotes ? 'text-amber-500' : 'text-app-text-muted hover:text-app-text-secondary',
             )}
           >
@@ -335,77 +338,79 @@ export default function POSCart({
             <span>{t('orderNote')}</span>
             {orderNotes && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
           </button>
-          {showOrderNotes && (
-            <textarea
-              value={orderNotes}
-              onChange={(e) => setOrderNotes(e.target.value)}
-              maxLength={500}
-              placeholder={t('orderNotePlaceholder')}
-              rows={2}
-              className="mt-1.5 w-full p-2 text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
-            />
-          )}
-        </div>
 
-        {/* Coupon section */}
-        <div>
-          {appliedCoupon ? (
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-1">
-              <div className="flex items-center gap-1.5 bg-green-500/10 text-green-600 border border-green-500/20 rounded-lg px-2.5 py-1.5 text-xs font-medium flex-1 min-w-0">
-                <Tag className="w-3 h-3 shrink-0" />
-                <span className="truncate">{appliedCoupon.code}</span>
-                <span className="text-green-500 shrink-0">
-                  -
-                  {appliedCoupon.discount_type === 'percentage'
-                    ? `${appliedCoupon.discount_value}%`
-                    : formatCurrency(appliedCoupon.discountAmount, currency)}
-                </span>
-              </div>
-              <button
-                type="button"
-                onClick={onRemoveCoupon}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation shrink-0"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-1">
-              <div className="flex gap-1.5">
-                <Input
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                  placeholder={t('couponPlaceholder') || 'Code promo'}
-                  className="h-8 text-xs flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && couponCode.trim()) {
-                      onValidateCoupon(couponCode);
-                    }
-                  }}
-                  disabled={couponLoading || cart.length === 0}
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-3 text-xs shrink-0"
-                  disabled={!couponCode.trim() || couponLoading || cart.length === 0}
-                  onClick={() => onValidateCoupon(couponCode)}
-                >
-                  {couponLoading ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                  ) : (
-                    <Tag className="w-3 h-3" />
-                  )}
-                </Button>
-              </div>
-              {couponError && (
-                <p className="text-[10px] text-status-error font-medium animate-in fade-in">
-                  {couponError}
-                </p>
+          {/* Coupon inline (only if enabled in tenant settings) */}
+          {enableCoupons && (
+            <div className="flex-1 min-w-0">
+              {appliedCoupon ? (
+                <div className="flex items-center gap-1 animate-in fade-in">
+                  <div className="flex items-center gap-1 bg-green-500/10 text-green-600 border border-green-500/20 rounded-md px-2 py-1 text-[10px] font-medium min-w-0">
+                    <Tag className="w-2.5 h-2.5 shrink-0" />
+                    <span className="truncate">{appliedCoupon.code}</span>
+                    <span className="text-green-500 shrink-0">
+                      -
+                      {appliedCoupon.discount_type === 'percentage'
+                        ? `${appliedCoupon.discount_value}%`
+                        : formatCurrency(appliedCoupon.discountAmount, currency)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={onRemoveCoupon}
+                    className="w-6 h-6 flex items-center justify-center rounded text-app-text-muted hover:text-status-error transition-colors touch-manipulation shrink-0"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-1">
+                  <Input
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    placeholder={t('couponPlaceholder') || 'Code promo'}
+                    className="h-7 text-[10px] flex-1 min-w-0"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && couponCode.trim()) onValidateCoupon(couponCode);
+                    }}
+                    disabled={couponLoading || cart.length === 0}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-[10px] shrink-0"
+                    disabled={!couponCode.trim() || couponLoading || cart.length === 0}
+                    onClick={() => onValidateCoupon(couponCode)}
+                  >
+                    {couponLoading ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Tag className="w-3 h-3" />
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           )}
         </div>
+
+        {/* Expandable notes textarea */}
+        {showOrderNotes && (
+          <textarea
+            value={orderNotes}
+            onChange={(e) => setOrderNotes(e.target.value)}
+            maxLength={500}
+            placeholder={t('orderNotePlaceholder')}
+            rows={2}
+            className="w-full p-2 text-xs border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
+          />
+        )}
+
+        {/* Coupon error */}
+        {enableCoupons && couponError && (
+          <p className="text-[10px] text-status-error font-medium animate-in fade-in">
+            {couponError}
+          </p>
+        )}
 
         {/* Pricing breakdown */}
         {(pricing.taxAmount > 0 ||

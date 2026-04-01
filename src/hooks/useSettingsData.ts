@@ -38,6 +38,7 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     taxRate: z.number().min(0).max(100).optional(),
     enableServiceCharge: z.boolean().optional(),
     serviceChargeRate: z.number().min(0).max(100).optional(),
+    enableCoupons: z.boolean().optional(),
     // Idle timeout
     idleTimeoutMinutes: z.number().int().min(5).max(120).nullable().optional(),
     screenLockMode: z.enum(['overlay', 'password']).optional(),
@@ -69,6 +70,7 @@ export interface SettingsTenant {
   tax_rate?: number;
   enable_service_charge?: boolean;
   service_charge_rate?: number;
+  enable_coupons?: boolean;
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
   custom_domain?: string | null;
@@ -127,6 +129,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
       taxRate: tenant.tax_rate ?? 0,
       enableServiceCharge: tenant.enable_service_charge ?? false,
       serviceChargeRate: tenant.service_charge_rate ?? 0,
+      enableCoupons: tenant.enable_coupons ?? false,
       idleTimeoutMinutes: tenant.idle_timeout_minutes ?? 30,
       screenLockMode: tenant.screen_lock_mode ?? 'overlay',
     },
@@ -254,6 +257,7 @@ export function useSettingsData(tenant: SettingsTenant): UseSettingsDataReturn {
         'serviceChargeRate',
         String(data.enableServiceCharge ? (data.serviceChargeRate ?? 0) : 0),
       );
+      formData.append('enableCoupons', data.enableCoupons ? 'true' : 'false');
       // Idle timeout
       if (data.idleTimeoutMinutes !== null && data.idleTimeoutMinutes !== undefined) {
         formData.append('idleTimeoutMinutes', String(data.idleTimeoutMinutes));
