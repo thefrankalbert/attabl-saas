@@ -40,7 +40,7 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="flex h-screen w-full bg-app-bg">
+    <div className="flex min-h-screen w-full bg-app-bg">
       {/* Left - Form on white */}
       <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">
