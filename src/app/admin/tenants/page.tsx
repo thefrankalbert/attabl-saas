@@ -34,7 +34,7 @@ export default async function TenantsPage() {
     notFound();
   }
 
-  // Server-side data fetching — never let the client query tenants directly
+  // Server-side data fetching - never let the client query tenants directly
   const userName = adminUsers?.[0]?.full_name || user.email?.split('@')[0] || '';
 
   if (isSuperAdmin) {

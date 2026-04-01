@@ -50,7 +50,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Password recovery flow — redirect to reset page
+    // Password recovery flow - redirect to reset page
     if (type === 'recovery' && session) {
       return NextResponse.redirect(`${requestUrl.origin}/reset-password`);
     }
@@ -84,6 +84,7 @@ export async function GET(request: Request) {
           logger.warn('Failed to track login', { error: String(loginTrackError) });
         }
 
+        // Supabase join type gap
         const tenantsData = existingAdmin.tenants as unknown as {
           slug: string;
           onboarding_completed: boolean;
@@ -98,7 +99,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/admin/tenants`);
       }
 
-      // User has no tenant — need to create one via OAuth signup
+      // User has no tenant - need to create one via OAuth signup
       // Use provided plan/restaurantName or defaults
       const signupPlan = plan || 'starter';
       const signupName = restaurantName || 'Mon Établissement';
@@ -122,7 +123,7 @@ export async function GET(request: Request) {
       } else {
         // If user already exists error (duplicate), try to find their tenant again
         if (signupData.error?.includes('already') || signupData.error?.includes('existe')) {
-          logger.warn('OAuth user exists but has no tenant — redirecting to signup', {
+          logger.warn('OAuth user exists but has no tenant - redirecting to signup', {
             userId: session.user.id,
             email: session.user.email,
           });

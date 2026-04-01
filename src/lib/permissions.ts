@@ -2,8 +2,8 @@
 // Defines what each AdminRole can access across the platform
 //
 // This module provides two permission APIs:
-// 1. Legacy role-matrix API: hasPermission(role, permission) — used by admin sidebar/nav
-// 2. New 3-level override API: hasPermission(adminUser, permCode, roleOverrides?) — used by permission checks
+// 1. Legacy role-matrix API: hasPermission(role, permission) - used by admin sidebar/nav
+// 2. New 3-level override API: hasPermission(adminUser, permCode, roleOverrides?) - used by permission checks
 
 import type { AdminRole, AdminUser } from '@/types/admin.types';
 import {
@@ -267,9 +267,9 @@ export function getVisibleNavItems<T extends { requiredPermission?: NavItemPermi
  * Check if an admin user has a specific permission.
  *
  * Resolution order:
- * 1. Individual override (custom_permissions on admin_users) — highest priority
- * 2. Role override (role_permissions per tenant) — medium priority
- * 3. Default matrix (hardcoded) — fallback
+ * 1. Individual override (custom_permissions on admin_users) - highest priority
+ * 2. Role override (role_permissions per tenant) - medium priority
+ * 3. Default matrix (hardcoded) - fallback
  *
  * Owner role always returns true (immutable).
  *
@@ -289,7 +289,7 @@ export function hasPermission(
   const adminUser = adminUserOrRole;
   const perm = permission as PermissionCode;
 
-  // Owner is immutable — always has all permissions
+  // Owner is immutable - always has all permissions
   if (adminUser.role === 'owner') {
     return true;
   }

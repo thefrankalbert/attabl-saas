@@ -83,7 +83,7 @@ type CartContextType = {
 };
 
 // Split into data + actions to prevent unnecessary re-renders.
-// Components that only dispatch actions (addToCart, removeFromCart…)
+// Components that only dispatch actions (addToCart, removeFromCart...)
 // don't re-render when cart items change.
 type CartDataContextType = Pick<
   CartContextType,
@@ -571,7 +571,7 @@ export const useCart = () => {
   return context;
 };
 
-/** Cart data only — re-renders when items/pricing change. */
+/** Cart data only - re-renders when items/pricing change. */
 export const useCartData = () => {
   const context = useContext(CartDataContext);
   if (!context) {
@@ -580,7 +580,7 @@ export const useCartData = () => {
   return context;
 };
 
-/** Cart actions only — stable refs, never causes re-renders. */
+/** Cart actions only - stable refs, never causes re-renders. */
 export const useCartActions = () => {
   const context = useContext(CartActionsContext);
   if (!context) {

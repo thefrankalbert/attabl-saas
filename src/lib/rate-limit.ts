@@ -76,7 +76,7 @@ function createLimiter(
           reset: result.reset,
         };
       } catch (err) {
-        // Upstash connection failure — allow request through to avoid blocking
+        // Upstash connection failure - allow request through to avoid blocking
         // legitimate traffic when Redis is temporarily unreachable
         logger.error('Rate limiter fetch failed, allowing request through', err, { prefix });
         return { success: true, limit: 0, remaining: 0, reset: 0 };

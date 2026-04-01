@@ -4,7 +4,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'POS et Mobile Money : encaisser sans friction en Afrique',
   description:
-    'Cash, carte, mobile money — comment proposer tous les moyens de paiement à vos clients avec un seul outil POS en Afrique.',
+    'Cash, carte, mobile money - comment proposer tous les moyens de paiement à vos clients avec un seul outil POS en Afrique.',
   openGraph: {
     title: 'POS et Mobile Money : encaisser sans friction en Afrique',
     description:
@@ -43,7 +43,7 @@ export default function ArticlePosPage() {
         <div className="prose prose-neutral dark:prose-invert prose-lg max-w-none [&>h2]:font-[family-name:var(--font-sora)] [&>h2]:text-2xl [&>h2]:font-bold [&>h2]:mt-12 [&>h2]:mb-4 [&>p]:text-neutral-600 dark:[&>p]:text-neutral-400 [&>p]:leading-relaxed [&>p]:mb-6 [&>ul]:text-neutral-600 dark:[&>ul]:text-neutral-400 [&>ul]:mb-6 [&>ul>li]:mb-2">
           <p>
             En Afrique, les habitudes de paiement sont radicalement différentes du reste du monde.
-            Le cash domine encore largement, mais le mobile money explose — avec plus de 600
+            Le cash domine encore largement, mais le mobile money explose - avec plus de 600
             millions de comptes actifs sur le continent. Pour les commerçants, proposer plusieurs
             moyens de paiement n&apos;est plus un bonus, c&apos;est une nécessité.
           </p>
@@ -65,19 +65,19 @@ export default function ArticlePosPage() {
           <h2>Pourquoi adopter un POS digital</h2>
           <ul>
             <li>
-              <strong>Encaissement multi-canal</strong> — Acceptez cash, carte et mobile money
+              <strong>Encaissement multi-canal</strong> - Acceptez cash, carte et mobile money
               depuis une seule interface
             </li>
             <li>
-              <strong>Traçabilité complète</strong> — Chaque transaction est enregistrée
+              <strong>Traçabilité complète</strong> - Chaque transaction est enregistrée
               automatiquement, fini les erreurs de caisse en fin de journée
             </li>
             <li>
-              <strong>Rapports en temps réel</strong> — Suivez votre chiffre d&apos;affaires par
+              <strong>Rapports en temps réel</strong> - Suivez votre chiffre d&apos;affaires par
               heure, par jour, par moyen de paiement
             </li>
             <li>
-              <strong>Rapidité</strong> — Réduisez le temps d&apos;encaissement et les files
+              <strong>Rapidité</strong> - Réduisez le temps d&apos;encaissement et les files
               d&apos;attente
             </li>
           </ul>
@@ -92,7 +92,7 @@ export default function ArticlePosPage() {
           <p>
             ATTABL s&apos;intègre nativement avec les principaux opérateurs de mobile money en
             Afrique. Vos clients scannent un QR code, confirment le paiement sur leur téléphone, et
-            la transaction est terminée — en moins de 10 secondes.
+            la transaction est terminée - en moins de 10 secondes.
           </p>
 
           <h2>Bien choisir sa solution POS</h2>
@@ -100,7 +100,7 @@ export default function ArticlePosPage() {
             Un bon POS pour l&apos;Afrique doit fonctionner même avec une connexion internet
             instable, supporter plusieurs devises (XAF, XOF, EUR, USD), et proposer une interface
             simple que n&apos;importe quel employé peut prendre en main en quelques minutes. Évitez
-            les solutions qui nécessitent du matériel coûteux — un smartphone ou une tablette
+            les solutions qui nécessitent du matériel coûteux - un smartphone ou une tablette
             suffit.
           </p>
 

@@ -88,7 +88,7 @@ export function useRealtimeSubscription<T extends Record<string, unknown>>({
       })
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR') {
-          logger.error(`Realtime channel ${channelName} error — will auto-retry`);
+          logger.error(`Realtime channel ${channelName} error - will auto-retry`);
         }
       });
 

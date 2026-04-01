@@ -90,7 +90,7 @@ export function useDashboardData({
   const supabase = createClient();
   const queryClient = useQueryClient();
 
-  // TanStack Query for dashboard data — pass server-computed sparklines as initialData
+  // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
   const { data: dashboardData, isLoading: loading } = useDashboardStats(tenantId, {
     stats: initialStats,

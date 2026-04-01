@@ -19,13 +19,18 @@ interface CartDisplayItem {
   modifiers?: string[];
 }
 
+export interface PaymentData {
+  paymentMethod: PaymentMethod;
+  tipAmount: number;
+}
+
 interface PaymentModalProps {
   onClose: () => void;
   order?: Order;
   total?: number;
   tableNumber?: string;
   orderNumber?: number;
-  onSuccess: () => void;
+  onSuccess: (paymentData?: PaymentData) => void;
   cartItems?: CartDisplayItem[];
   currency?: CurrencyCode;
 }
@@ -33,7 +38,7 @@ interface PaymentModalProps {
 type PaymentMethod = 'cash' | 'card' | 'mobile_money';
 
 const TIP_AMOUNTS = [1000, 2000, 5000] as const;
-// Standard POS keypad: 4 columns — digits + backspace/clear
+// Standard POS keypad: 4 columns -- digits + backspace/clear
 const NUMPAD_KEYS = ['1', '2', '3', '⌫', '4', '5', '6', 'C', '7', '8', '9', '00', '0'] as const;
 
 // ─── Component ──────────────────────────────────
@@ -127,7 +132,9 @@ export default function PaymentModal({
 
       toast({ title: t('paymentSuccess') });
       setIsProcessing(false);
-      onSuccess();
+      // Pass payment data for POS orders (no existing order)
+      // For existing orders, data was already persisted above
+      onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : undefined;
       toast({ title: t('paymentError'), description: message, variant: 'destructive' });
@@ -174,7 +181,7 @@ export default function PaymentModal({
         )}
       </header>
 
-      {/* ━━━ MAIN — 2 columns on md+, payment-only on mobile ━━━ */}
+      {/* ━━━ MAIN -- 2 columns on md+, payment-only on mobile ━━━ */}
       <div className="flex-1 min-h-0 flex flex-col @md:grid @md:grid-cols-2 overflow-hidden">
         {/* ━━━ LEFT: Receipt (hidden on mobile) ━━━ */}
         <div className="hidden @md:flex flex-col border-r border-white/[0.06] overflow-y-auto p-5 lg:p-6">
@@ -271,7 +278,7 @@ export default function PaymentModal({
             </div>
           )}
 
-          {/* Tip Selection — pushed to bottom */}
+          {/* Tip Selection -- pushed to bottom */}
           <div className="space-y-2 mt-auto">
             <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">
               {t('tip')}
@@ -352,7 +359,7 @@ export default function PaymentModal({
             </p>
           </div>
 
-          {/* Payment Method — compact row */}
+          {/* Payment Method -- compact row */}
           <div className="grid grid-cols-3 gap-1.5 mb-3 shrink-0">
             {(
               [
@@ -446,7 +453,7 @@ export default function PaymentModal({
             </div>
           )}
 
-          {/* Cash: Numpad — 4-column POS standard layout */}
+          {/* Cash: Numpad -- 4-column POS standard layout */}
           {method === 'cash' && (
             <div className="flex-1 min-h-0 grid grid-cols-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               {NUMPAD_KEYS.map((key) => (
@@ -512,7 +519,7 @@ export default function PaymentModal({
             </div>
           )}
 
-          {/* Action Buttons — always pinned at bottom */}
+          {/* Action Buttons -- always pinned at bottom */}
           <div className="flex gap-2 shrink-0">
             <button
               type="button"

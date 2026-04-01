@@ -146,7 +146,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
   return (
     <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
       <div className="flex items-center gap-3 flex-wrap">
-        {/* PDF — always available */}
+        {/* PDF - always available */}
         <Button onClick={downloadPDF} disabled={loading !== null} className="gap-2">
           {loading === 'pdf' ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -156,7 +156,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           {loading === 'pdf' ? 'Export...' : 'T\u00e9l\u00e9charger PDF'}
         </Button>
 
-        {/* PNG — premium */}
+        {/* PNG - premium */}
         <FeatureGate feature="canAccessQrCustomization">
           <Button
             variant="outline"
@@ -173,7 +173,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           </Button>
         </FeatureGate>
 
-        {/* SVG — premium */}
+        {/* SVG - premium */}
         <FeatureGate feature="canAccessQrCustomization">
           <Button
             variant="outline"
@@ -190,7 +190,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
           </Button>
         </FeatureGate>
 
-        {/* Print — always available */}
+        {/* Print - always available */}
         <Button
           variant="outline"
           onClick={handlePrint}

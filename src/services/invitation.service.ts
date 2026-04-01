@@ -40,7 +40,7 @@ export function createInvitationService(supabase: SupabaseClient) {
         .maybeSingle();
 
       if (existingAdminUser) {
-        // User already exists — add directly to admin_users
+        // User already exists - add directly to admin_users
         const { error: adminError } = await supabase.from('admin_users').insert({
           user_id: existingAdminUser.user_id,
           tenant_id: input.tenantId,
@@ -74,7 +74,7 @@ export function createInvitationService(supabase: SupabaseClient) {
         };
       }
 
-      // New user — create invitation with token
+      // New user - create invitation with token
       const token = generateToken();
       const expiresAt = getExpiresAt();
 

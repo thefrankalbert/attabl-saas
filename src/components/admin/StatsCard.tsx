@@ -53,7 +53,7 @@ export default function StatsCard({
         )}
       </div>
 
-      {/* Value — HUGE and bold */}
+      {/* Value - HUGE and bold */}
       <div className="text-[2.5rem] font-black text-app-text tracking-tighter mt-2 leading-none">
         {value}
       </div>

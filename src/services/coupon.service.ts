@@ -11,7 +11,7 @@ export interface CouponValidationResult {
 }
 
 /**
- * Coupon service — validates coupons and calculates discounts.
+ * Coupon service - validates coupons and calculates discounts.
  *
  * Security: All validation is server-side. Client sends coupon code,
  * server verifies validity, calculates discount, and applies atomically.

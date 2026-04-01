@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     }
 
     if (authenticatedUser.id !== userId) {
-      logger.warn('OAuth signup: userId mismatch — possible IDOR attempt', {
+      logger.warn('OAuth signup: userId mismatch - possible IDOR attempt', {
         authenticatedUserId: authenticatedUser.id,
         requestedUserId: userId,
       });

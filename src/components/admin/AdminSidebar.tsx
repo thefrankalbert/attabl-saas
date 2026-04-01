@@ -59,7 +59,7 @@ interface AdminSidebarProps {
 /** IDs of groups that render at the bottom of the sidebar */
 const BOTTOM_GROUP_IDS = new Set(['pos', 'kitchen', 'service']);
 
-/** ID of the analyse group — rendered inside account popover */
+/** ID of the analyse group - rendered inside account popover */
 const ANALYSE_GROUP_ID = 'analyse';
 
 /** Item paths that move from organization into the account popover */
@@ -253,7 +253,7 @@ export function AdminSidebar({
           )}
         </div>
 
-        {/* Collapse toggle — directly under tenant info */}
+        {/* Collapse toggle - directly under tenant info */}
         <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
           <button
             type="button"
@@ -431,7 +431,7 @@ export function AdminSidebar({
               </>
             )}
 
-            {/* Analyse — single link to reports page (sub-features are tabs there) */}
+            {/* Analyse - single link to reports page (sub-features are tabs there) */}
             {analyseGroup && (
               <div className="p-1.5 pt-0 border-t border-app-border mt-1">
                 <Link
@@ -489,7 +489,7 @@ function SidebarGroup({
   label,
   showSeparator,
 }: SidebarGroupProps) {
-  // Direct link groups (no sub-items) — render as a single link
+  // Direct link groups (no sub-items) - render as a single link
   if (group.directPath !== undefined && group.items.length === 0) {
     const href = `${basePath}${group.directPath}`;
     const active = isPathActive(pathname, basePath, group.directPath);

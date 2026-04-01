@@ -115,7 +115,7 @@ export default function OnboardingPage() {
   const t = useTranslations('onboarding');
   const { toast } = useToast();
 
-  // Navigation state: phase 0 = welcome, 1–3 = studio phases
+  // Navigation state: phase 0 = welcome, 1-3 = studio phases
   const [phase, setPhase] = useState(0);
   const [subScreen, setSubScreen] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -338,7 +338,7 @@ export default function OnboardingPage() {
     setError(null);
     setDirection('forward');
 
-    // No explicit saveStep() here — the debounced auto-save handles persistence
+    // No explicit saveStep() here - the debounced auto-save handles persistence
     // whenever data or navigation changes, avoiding double-save token waste.
 
     if (currentPhase && subScreen < currentPhase.subScreens.length - 1) {
@@ -484,7 +484,7 @@ export default function OnboardingPage() {
     );
   }
 
-  // ─── Studio layout (phases 1–3) ───────────────────────────────────────────
+  // ─── Studio layout (phases 1-3) ───────────────────────────────────────────
 
   const canGoBack = phase > 1 || subScreen > 0;
 
@@ -534,7 +534,7 @@ export default function OnboardingPage() {
                 {isCompleted ? <Check className="w-3.5 h-3.5" /> : <Icon className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">{t(phaseDef.labelKey)}</span>
 
-                {/* Bottom accent line for active tab — single clean line */}
+                {/* Bottom accent line for active tab - single clean line */}
                 {isActive && (
                   <span className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
                 )}
@@ -667,7 +667,7 @@ export default function OnboardingPage() {
           </div>
         </div>
 
-        {/* Phone preview — desktop only */}
+        {/* Phone preview - desktop only */}
         <div className="hidden lg:flex w-80 items-center justify-center border-l border-app-border/50 bg-app-elevated/30 shrink-0">
           <PhonePreview data={data} phase={phase} />
         </div>

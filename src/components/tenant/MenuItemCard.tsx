@@ -154,7 +154,7 @@ export default function MenuItemCard({
         opacity: isUnavailable ? 0.5 : 1,
       }}
     >
-      {/* TEXT CONTENT — Left */}
+      {/* TEXT CONTENT - Left */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px' }}>
           <h3
@@ -248,7 +248,7 @@ export default function MenuItemCard({
                         : undefined
                     }
                   >
-                    {getVariantName(variant)} —{' '}
+                    {getVariantName(variant)} -{' '}
                     {resolveAndFormatPrice(variant.price, variant.prices, currency)}
                   </button>
                 ))}
@@ -258,7 +258,7 @@ export default function MenuItemCard({
         )}
       </div>
 
-      {/* IMAGE SECTION — Right (with floating +/- on corner) */}
+      {/* IMAGE SECTION - Right (with floating +/- on corner) */}
       <div
         style={{
           position: 'relative',

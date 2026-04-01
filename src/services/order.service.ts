@@ -35,7 +35,7 @@ interface CreateOrderResult {
 }
 
 /**
- * Order service — handles order validation, price verification, and creation.
+ * Order service - handles order validation, price verification, and creation.
  *
  * Extracted from /api/orders/route.ts (209 lines → service + thin route).
  * Key security: server-side price verification prevents price fraud.
@@ -171,7 +171,7 @@ export function createOrderService(supabase: SupabaseClient) {
               // Use server price, not client price
               modifiersTotal += serverPrice;
             } else {
-              // Modifier not found in DB — reject
+              // Modifier not found in DB - reject
               validationErrors.push(
                 `Modificateur "${mod.name}" non trouvé pour "${menuItem.name}"`,
               );

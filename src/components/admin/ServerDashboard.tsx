@@ -171,7 +171,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
               <div key={order.id} className="rounded-lg border border-app-border bg-app-card p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="font-mono font-bold text-app-text">
-                    {order.table_number ?? '—'}
+                    {order.table_number ?? ' - '}
                   </span>
                   <span className="text-xs text-app-text-secondary">
                     {t('items', { count: order.items?.length ?? 0 })}

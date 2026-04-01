@@ -32,7 +32,7 @@ export default function MenuForm({
 }: MenuFormProps) {
   const t = useTranslations('menus');
 
-  // Form state — initialized from editingMenu or defaults
+  // Form state - initialized from editingMenu or defaults
   const [formName, setFormName] = useState(editingMenu?.name ?? '');
   const [formNameEn, setFormNameEn] = useState(editingMenu?.name_en ?? '');
   const [formDescription, setFormDescription] = useState(editingMenu?.description ?? '');

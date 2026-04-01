@@ -1,5 +1,5 @@
 /**
- * Inventory Service — Stock management, recipes, and destock operations
+ * Inventory Service - Stock management, recipes, and destock operations
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';

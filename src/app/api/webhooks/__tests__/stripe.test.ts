@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type Stripe from 'stripe';
 
 // ---------------------------------------------------------------------------
-// Mocks — must be declared before importing the route module
+// Mocks - must be declared before importing the route module
 // ---------------------------------------------------------------------------
 
 // Use vi.hoisted() so mock fns are available when the vi.mock factory runs (hoisted)
@@ -40,6 +40,10 @@ vi.mock('@/lib/logger', () => ({
     info: vi.fn(),
   },
 }));
+
+// Ensure env vars are set so getStripeClient/getWebhookSecret don't throw
+vi.stubEnv('STRIPE_SECRET_KEY', 'sk_test_fake');
+vi.stubEnv('STRIPE_WEBHOOK_SECRET', 'whsec_test_fake');
 
 vi.mock('@/lib/stripe/server', () => ({
   STRIPE_PRICES: {},
@@ -96,7 +100,7 @@ function setupSupabaseChain(options: {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('Stripe Webhook — POST /api/webhooks/stripe', () => {
+describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });

@@ -35,7 +35,7 @@ function createMockSupabase() {
     const chain = getChain(table);
 
     return {
-      // insert().select() — bulk inserts for both zones and tables
+      // insert().select() - bulk inserts for both zones and tables
       // Also supports .single() for addTablesToZone lookup pattern
       insert: vi.fn().mockReturnValue({
         select: vi.fn().mockImplementation(() => {
@@ -53,7 +53,7 @@ function createMockSupabase() {
       }),
 
       // select('table_number').eq().like().order().limit().single()
-      // — used by addTablesToZone to find max existing number
+      // - used by addTablesToZone to find max existing number
       select: vi.fn().mockReturnValue({
         eq: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
@@ -324,7 +324,7 @@ describe('TableConfigService', () => {
       const supabase = createMockSupabase();
       const service = createTableConfigService(asSupabase(supabase));
 
-      // First call: select max table_number for the zone — returns INT-5
+      // First call: select max table_number for the zone - returns INT-5
       supabase._getChain('tables').single.mockResolvedValueOnce({
         data: { table_number: 'INT-5' },
         error: null,

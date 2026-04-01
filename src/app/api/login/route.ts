@@ -68,6 +68,7 @@ export async function POST(request: Request) {
 
     // 4. Determine redirect
     const needsOnboarding = adminUsers.some((au) => {
+      // Supabase join type gap
       const t = au.tenants as unknown as { onboarding_completed: boolean } | null;
       return t?.onboarding_completed === false;
     });

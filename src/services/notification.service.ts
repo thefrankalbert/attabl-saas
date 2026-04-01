@@ -1,5 +1,5 @@
 /**
- * Notification Service — Stock alert checks and email dispatch
+ * Notification Service - Stock alert checks and email dispatch
  *
  * Uses createAdminClient() to bypass RLS since this may be triggered
  * from customer order context (not admin).

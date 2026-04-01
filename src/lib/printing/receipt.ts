@@ -364,7 +364,7 @@ export function generateReceiptHTML(order: Order, tenant: Tenant): string {
   <div class="info-card">
     <div class="info-row">
       <span class="info-label">N° commande</span>
-      <span class="info-value info-value--mono">${escapeHtml(order.order_number || '—')}</span>
+      <span class="info-value info-value--mono">${escapeHtml(order.order_number || ' - ')}</span>
     </div>
     <div class="info-row">
       <span class="info-label">Date</span>

@@ -43,6 +43,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
   // Transform order_items → items to match Order type
   const transformedOrders: Order[] = ((orders || []) as Array<Record<string, unknown>>).map(
     (order) => ({
+      // Supabase join type gap
       ...(order as unknown as Order),
       items: ((order.order_items as Array<Record<string, unknown>>) || []).map((oi) => ({
         id: oi.id as string,

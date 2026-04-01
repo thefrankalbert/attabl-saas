@@ -294,11 +294,11 @@ export default function ClientMenuPage({
         </div>
       </div>
 
-      {/* ═══ HEADER — Profile style (exactly like screenshot) ═══ */}
+      {/* ═══ HEADER - Profile style (exactly like screenshot) ═══ */}
       <div className="px-5 pt-5 pb-1">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3.5">
-            {/* Round avatar — matching screenshot circle */}
+            {/* Round avatar - matching screenshot circle */}
             {tenant.logo_url ? (
               <Image
                 src={tenant.logo_url}
@@ -325,20 +325,20 @@ export default function ClientMenuPage({
                   ? t('seatedAtTable', { table: tableNumber })
                   : tenant.description
                     ? tenant.description.length > 30
-                      ? tenant.description.slice(0, 30) + '…'
+                      ? tenant.description.slice(0, 30) + '...'
                       : tenant.description
                     : t('welcomeSubtitle')}
               </p>
             </div>
           </div>
-          {/* Bell icon — top right like screenshot */}
+          {/* Bell icon - top right like screenshot */}
           <button className="w-10 h-10 rounded-full bg-white border border-neutral-100 shadow-sm flex items-center justify-center hover:bg-neutral-50 transition-colors">
             <Bell className="size-4.5 text-neutral-600" />
           </button>
         </div>
       </div>
 
-      {/* ═══ SEARCH BAR — Rounded pill style like screenshot ═══ */}
+      {/* ═══ SEARCH BAR - Rounded pill style like screenshot ═══ */}
       <div ref={searchBarRef} className="px-5 pt-4 pb-2">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
@@ -399,7 +399,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CATEGORY CIRCLES — 2×4 grid, exactly like screenshot ═══ */}
+      {/* ═══ CATEGORY CIRCLES - 2×4 grid, exactly like screenshot ═══ */}
       {categories.length > 0 && (
         <div className="px-5 pt-4 pb-2">
           <div className="grid grid-cols-4 gap-y-4 gap-x-3">
@@ -411,7 +411,7 @@ export default function ClientMenuPage({
                 }}
                 className="flex flex-col items-center gap-2 group"
               >
-                {/* Circular icon — cream/beige background like screenshot */}
+                {/* Circular icon - cream/beige background like screenshot */}
                 <div className="w-16 h-16 rounded-full bg-[#F5F0E8] flex items-center justify-center group-hover:bg-[#EDE6D8] transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                   <span className="text-[26px] leading-none">{getCategoryEmoji(cat.name)}</span>
                 </div>
@@ -424,7 +424,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ EXPLORE VENUES — Horizontal scroll with circular avatars (like "Explore cooking mentors") ═══ */}
+      {/* ═══ EXPLORE VENUES - Horizontal scroll with circular avatars (like "Explore cooking mentors") ═══ */}
       {venues && venues.length > 0 && (
         <div className="pt-5 pb-2">
           <div className="flex items-center justify-between px-5 mb-3">
@@ -488,7 +488,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CART PREVIEW — Horizontal scroll (like screenshot mentors section) ═══ */}
+      {/* ═══ CART PREVIEW - Horizontal scroll (like screenshot mentors section) ═══ */}
       {cartItems.length > 0 && (
         <div className="pt-4 pb-1">
           <div className="flex items-center justify-between px-5 mb-3">
@@ -540,7 +540,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ FEATURED ITEMS — "Recipes populer" style 2-col grid ═══ */}
+      {/* ═══ FEATURED ITEMS - "Recipes populer" style 2-col grid ═══ */}
       {featuredItems.length > 0 && (
         <div className="pt-5 pb-2 px-5">
           <div className="flex items-center justify-between mb-4">
@@ -559,7 +559,7 @@ export default function ClientMenuPage({
                 onClick={() => setSelectedItem(item)}
                 className="bg-white rounded-2xl overflow-hidden text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow group"
               >
-                {/* Image with heart icon overlay — like screenshot */}
+                {/* Image with heart icon overlay - like screenshot */}
                 <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
                   {item.image_url ? (
                     <Image
@@ -574,7 +574,7 @@ export default function ClientMenuPage({
                       <Utensils className="w-8 h-8 text-neutral-300" />
                     </div>
                   )}
-                  {/* Heart icon — top right like screenshot */}
+                  {/* Heart icon - top right like screenshot */}
                   <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
                     <Heart className="w-4 h-4 text-neutral-400" />
                   </div>
@@ -583,7 +583,7 @@ export default function ClientMenuPage({
                   <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug mb-1.5">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
-                  {/* Tags row — like screenshot category pills */}
+                  {/* Tags row - like screenshot category pills */}
                   <div className="flex flex-wrap gap-1 mb-2">
                     {item.category?.name && (
                       <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded-full px-2.5 py-0.5">

@@ -90,7 +90,7 @@ function AuthForm({ mode }: AuthFormProps) {
 
     try {
       if (mode === 'signup') {
-        // Signup flow — restaurant name is collected during onboarding
+        // Signup flow - restaurant name is collected during onboarding
         const response = await fetch('/api/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -108,10 +108,10 @@ function AuthForm({ mode }: AuthFormProps) {
           throw new Error(data.error || "Erreur lors de l'inscription");
         }
 
-        // Account created — show confirmation message
+        // Account created - show confirmation message
         setConfirmationSent(true);
       } else {
-        // Login flow — server-side with rate limiting
+        // Login flow - server-side with rate limiting
         const response = await fetch('/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

@@ -238,7 +238,7 @@ export function SoundSettings({
         )}
       </div>
 
-      {/* Sound List — 2-column grid on desktop */}
+      {/* Sound List - 2-column grid on desktop */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {displaySounds.map((sound) => {
           const isSelected = selectedId === sound.id;
@@ -378,7 +378,7 @@ export function SoundSettings({
             )}
           </Button>
           <p className="text-xs text-app-text-muted mt-1.5 text-center">
-            MP3, WAV, OGG — {t('maxFileSize', { size: '2 MB' })}
+            MP3, WAV, OGG - {t('maxFileSize', { size: '2 MB' })}
           </p>
         </div>
       ) : (

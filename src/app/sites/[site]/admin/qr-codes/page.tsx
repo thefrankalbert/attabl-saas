@@ -38,7 +38,7 @@ export default async function QRCodesPage({ params }: { params: Promise<{ site: 
       .order('display_order', { ascending: true }),
   ]);
 
-  // Construct menu URL — use subdomain format (e.g. https://radisson.attabl.com)
+  // Construct menu URL - use subdomain format (e.g. https://radisson.attabl.com)
   // The middleware rewrites subdomain requests to /sites/{slug}/ internally
   const menuUrl = getTenantUrl(tenant.slug);
 

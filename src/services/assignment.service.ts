@@ -70,6 +70,7 @@ export function createAssignmentService(supabase: SupabaseClient) {
         .maybeSingle();
 
       if (error || !data) return null;
+      // Supabase join type gap
       return data.server as unknown as AdminUser;
     },
 

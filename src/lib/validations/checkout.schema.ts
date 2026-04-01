@@ -17,7 +17,7 @@ export const createCheckoutSchema = z.object({
 export type CreateCheckoutInput = z.infer<typeof createCheckoutSchema>;
 
 /**
- * Simplified checkout body schema — tenantId and email are derived from session.
+ * Simplified checkout body schema - tenantId and email are derived from session.
  * Used in /api/create-checkout-session route.
  */
 export const checkoutBodySchema = z.object({

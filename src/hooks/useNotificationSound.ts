@@ -9,7 +9,7 @@ const LS_KEY = 'attabl_notification_sound';
 const LS_ENABLED_KEY = 'attabl_notification_enabled';
 
 /**
- * Shared AudioContext singleton — reused across the app to avoid
+ * Shared AudioContext singleton - reused across the app to avoid
  * browser limits on AudioContext instances and ensure "unlock" state persists.
  */
 let sharedAudioContext: AudioContext | null = null;
@@ -20,6 +20,7 @@ function getAudioContext(): AudioContext | null {
     if (!sharedAudioContext) {
       const Ctor =
         window.AudioContext ||
+        // webkitAudioContext is not in standard Window type but exists in Safari
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       sharedAudioContext = new Ctor();
     }
@@ -46,7 +47,7 @@ function unlockAudioOnUserGesture(): void {
     const ctx = getAudioContext();
     if (ctx && ctx.state === 'suspended') {
       ctx.resume().catch(() => {
-        // Ignore — will retry on next gesture
+        // Ignore - will retry on next gesture
         audioContextUnlocked = false;
       });
     }
@@ -69,7 +70,7 @@ function unlockAudioOnUserGesture(): void {
         })
         .catch(() => {
           el.muted = false;
-          // Unlock failed — will retry on next interaction
+          // Unlock failed - will retry on next interaction
           audioContextUnlocked = false;
         });
     });
@@ -123,7 +124,7 @@ export function useNotificationSound(
   const { soundId: initialSoundId, tenantId } = options;
   const lsPrefix = tenantId ? `${tenantId}_` : '';
 
-  // State — default to enabled (critical for restaurant order alerts)
+  // State - default to enabled (critical for restaurant order alerts)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
     const stored = localStorage.getItem(`${lsPrefix}${LS_ENABLED_KEY}`);
@@ -186,7 +187,7 @@ export function useNotificationSound(
     });
   }, [lsPrefix]);
 
-  // Play the notification sound — uses refs for latest state to avoid stale closures
+  // Play the notification sound - uses refs for latest state to avoid stale closures
   const play = useCallback(() => {
     if (!soundEnabledRef.current) return;
 
@@ -205,7 +206,7 @@ export function useNotificationSound(
       audio
         .play()
         .then(() => {
-          // Success — sound played
+          // Success - sound played
         })
         .catch((err: unknown) => {
           logger.warn('Notification sound play() rejected, trying fallback', {
@@ -215,7 +216,7 @@ export function useNotificationSound(
           setTimeout(() => {
             audio.currentTime = 0;
             audio.play().catch(() => {
-              // HTML5 Audio completely blocked — use Web Audio API fallback
+              // HTML5 Audio completely blocked - use Web Audio API fallback
               playFallbackBeep();
             });
           }, 50);
@@ -265,7 +266,7 @@ export function useNotificationSound(
 }
 
 /**
- * Web Audio API fallback — plays a synthetic beep when MP3 is unavailable.
+ * Web Audio API fallback - plays a synthetic beep when MP3 is unavailable.
  * Uses the shared AudioContext singleton to avoid creating new contexts.
  * Two short beeps at 880Hz (A5) with sine wave.
  */
@@ -277,7 +278,7 @@ function playFallbackBeep(): void {
     // Resume if suspended (e.g., background tab)
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {
-        // Cannot resume without user gesture — silently fail
+        // Cannot resume without user gesture - silently fail
       });
     }
 

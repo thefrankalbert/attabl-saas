@@ -4,7 +4,7 @@ import type { Tenant } from '@/types/admin.types';
 import { ServiceError } from './errors';
 
 /**
- * Plan Enforcement Service — server-side limit checking.
+ * Plan Enforcement Service - server-side limit checking.
  *
  * This service ENFORCES plan limits (not just displays them).
  * Every resource creation must check limits before proceeding.

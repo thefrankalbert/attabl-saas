@@ -186,7 +186,7 @@ export default function ItemsClient({
 
       // Only include the prices JSONB field when the tenant has secondary currencies.
       // The column may not exist on DBs where the multi-currency migration was not
-      // applied — omitting it entirely avoids a PostgREST column-not-found error.
+      // applied - omitting it entirely avoids a PostgREST column-not-found error.
       if (secondaryCurrencies.length > 0) {
         payload.prices = Object.keys(cleanPrices).length > 0 ? cleanPrices : null;
       }
@@ -279,7 +279,7 @@ export default function ItemsClient({
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          {/* Header — single row like inventory */}
+          {/* Header - single row like inventory */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {seg.items}
@@ -739,7 +739,7 @@ export default function ItemsClient({
               })}
             </div>
 
-            {/* Step 1 — Basic Info */}
+            {/* Step 1 - Basic Info */}
             {formStep === 1 && (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -802,7 +802,7 @@ export default function ItemsClient({
               </div>
             )}
 
-            {/* Step 2 — Pricing & Availability */}
+            {/* Step 2 - Pricing & Availability */}
             {formStep === 2 && (
               <div className="space-y-5">
                 <div className="space-y-1.5">
@@ -861,7 +861,7 @@ export default function ItemsClient({
               </div>
             )}
 
-            {/* Step 3 — Photo & Details */}
+            {/* Step 3 - Photo & Details */}
             {formStep === 3 && (
               <div className="space-y-5">
                 <div className="space-y-1.5">

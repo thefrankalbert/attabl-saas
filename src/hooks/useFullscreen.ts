@@ -17,7 +17,7 @@ export function useFullscreen() {
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch(() => {
-        // Silently ignore — some browsers block without user gesture
+        // Silently ignore - some browsers block without user gesture
       });
     } else {
       document.exitFullscreen().catch(() => {

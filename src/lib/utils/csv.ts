@@ -1,5 +1,5 @@
 /**
- * Sanitize a value for CSV output — escapes quotes and prevents formula injection.
+ * Sanitize a value for CSV output - escapes quotes and prevents formula injection.
  */
 export function csvCell(value: string): string {
   const escaped = String(value).replace(/"/g, '""');

@@ -4,7 +4,7 @@ import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
 /**
- * Menu/Carte Service — factory pattern.
+ * Menu/Carte Service - factory pattern.
  *
  * Manages the menu hierarchy: Tenant → Venue → Menu (carte) → Category → Item
  * Supports sous-cartes via parent_menu_id (self-referencing FK).

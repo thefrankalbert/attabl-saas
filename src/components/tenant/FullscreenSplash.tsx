@@ -23,7 +23,7 @@ function useIsStandalone(): boolean {
   );
 }
 
-/** Check if splash should show — evaluated once at mount via useSyncExternalStore */
+/** Check if splash should show - evaluated once at mount via useSyncExternalStore */
 function useShouldShowSplash(isStandalone: boolean): boolean {
   return useSyncExternalStore(
     noopSubscribe,
@@ -65,7 +65,7 @@ export default function FullscreenSplash({
     try {
       await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
     } catch {
-      // Fullscreen not supported or denied — continue normally
+      // Fullscreen not supported or denied - continue normally
     }
     setDismissed(true);
   }, []);

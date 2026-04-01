@@ -29,7 +29,7 @@ const articles = [
     slug: 'pos-mobile-money-afrique',
     title: 'POS et Mobile Money : encaisser sans friction en Afrique',
     excerpt:
-      'Cash, carte, mobile money — comment proposer tous les moyens de paiement à vos clients avec un seul outil.',
+      'Cash, carte, mobile money - comment proposer tous les moyens de paiement à vos clients avec un seul outil.',
     category: 'Paiements',
     date: '3 mars 2026',
     readTime: '5 min',

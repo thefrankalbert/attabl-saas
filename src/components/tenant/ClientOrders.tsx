@@ -370,7 +370,7 @@ export default function ClientOrders({
                   className="overflow-hidden"
                 >
                   <div className="border-t border-app-border/50">
-                    {/* Items — matching cart item layout */}
+                    {/* Items - matching cart item layout */}
                     <div className="divide-y divide-app-border/50">
                       {(order.items || []).map((item: OrderItem, idx: number) => (
                         <div key={idx} className="px-4 py-3 flex items-center gap-3">
@@ -388,7 +388,7 @@ export default function ClientOrders({
                       ))}
                     </div>
 
-                    {/* Total — matching cart style */}
+                    {/* Total - matching cart style */}
                     <div className="px-4 py-3 border-t border-app-border">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-bold text-app-text">{t('total')}</span>
@@ -405,7 +405,7 @@ export default function ClientOrders({
                       })}
                     </div>
 
-                    {/* Edit button — visible only for pending orders within 3 min */}
+                    {/* Edit button - visible only for pending orders within 3 min */}
                     {canEdit && (
                       <div className="px-4 pb-4">
                         <button

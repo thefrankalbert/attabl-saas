@@ -117,7 +117,7 @@ export default function KDSTicket({
   } as const;
 
   const items: OrderItem[] =
-    order.items || (order as unknown as { order_items?: OrderItem[] }).order_items || [];
+    order.items || (order as { order_items?: OrderItem[] }).order_items || [];
 
   useEffect(() => {
     const calculate = () => {
@@ -269,7 +269,7 @@ export default function KDSTicket({
                 )}
               </div>
 
-              {/* Status badge — tap to cycle */}
+              {/* Status badge - tap to cycle */}
               <button
                 onClick={() => handleItemClick(item)}
                 disabled={isMock}
@@ -310,7 +310,7 @@ export default function KDSTicket({
             </button>
           )}
 
-          {/* Main action button — big, colored, full-width */}
+          {/* Main action button - big, colored, full-width */}
           <button
             onClick={handleAction}
             disabled={isMock}

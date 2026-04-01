@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Verify tenant membership — reject orphaned/unlinked accounts
+  // Verify tenant membership - reject orphaned/unlinked accounts
   const { data: adminUser } = await supabase
     .from('admin_users')
     .select('tenant_id')

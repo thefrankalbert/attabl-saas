@@ -22,7 +22,7 @@ interface ResponsiveDataTableProps<TData> {
   mobileConfig?: MobileCardConfig<TData>;
   /** When provided, sorting state is persisted to sessionStorage */
   storageKey?: string;
-  /** Column visibility map — hide specific columns on certain screen sizes */
+  /** Column visibility map - hide specific columns on certain screen sizes */
   columnVisibility?: VisibilityState;
 }
 

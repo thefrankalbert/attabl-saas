@@ -14,8 +14,8 @@ interface CurrencyContextValue {
   /**
    * Format a price for display, converting from `baseCurrency` to the
    * user's display currency.
-   * @param amount   – price in the base (tenant) currency
-   * @param baseCurrency – the tenant's native currency (default: XAF)
+   * @param amount   - price in the base (tenant) currency
+   * @param baseCurrency - the tenant's native currency (default: XAF)
    */
   formatDisplayPrice: (amount: number, baseCurrency?: string) => string;
   /**

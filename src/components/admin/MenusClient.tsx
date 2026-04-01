@@ -108,7 +108,7 @@ export default function MenusClient({
       }
       setShowModal(false);
     } catch {
-      // Error already toasted by hook — keep modal open
+      // Error already toasted by hook - keep modal open
     }
   };
 
@@ -116,7 +116,7 @@ export default function MenusClient({
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0 space-y-3">
-          {/* Search + Actions — single row */}
+          {/* Search + Actions - single row */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <span className="text-xs font-bold text-app-text-secondary border border-app-border px-2.5 py-0.5 rounded-full tabular-nums shrink-0">
               {menus.length}

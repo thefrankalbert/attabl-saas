@@ -100,7 +100,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Derive tenant_id from the authenticated user's session — never from client input
+    // Derive tenant_id from the authenticated user's session - never from client input
     const { data: adminUser } = await supabase
       .from('admin_users')
       .select('tenant_id, role')
