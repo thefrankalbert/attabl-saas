@@ -80,10 +80,19 @@ export function useCreateOrder(tenantId: string) {
         body: JSON.stringify(payload),
       });
 
+      // Handle non-JSON responses (HTML error pages, redirects, etc.)
+      const contentType = response.headers.get('content-type') || '';
+      if (!contentType.includes('application/json')) {
+        const text = await response.text();
+        throw new Error(
+          `API returned ${response.status} (${response.statusText}). Response: ${text.slice(0, 200)}`,
+        );
+      }
+
       const data: POSOrderResponse = await response.json();
 
       if (!response.ok) {
-        const message = data.error || 'Erreur lors de la creation de la commande';
+        const message = data.error || `Erreur ${response.status}`;
         const details = data.details ? ` (${data.details.join(', ')})` : '';
         throw new Error(`${message}${details}`);
       }
@@ -101,7 +110,7 @@ export function useCreateOrder(tenantId: string) {
           : typeof error === 'object' && error !== null && 'message' in error
             ? String((error as { message: string }).message)
             : String(error);
-      logger.error('Failed to create POS order', { message, error });
+      logger.error('Failed to create POS order', { message });
       toast({ title: tc('error'), description: message, variant: 'destructive' });
     },
     retry: (failureCount, error) => {
