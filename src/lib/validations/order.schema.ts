@@ -84,6 +84,8 @@ export const createPOSOrderSchema = z.object({
   delivery_address: z.string().max(500).optional(),
   payment_method: z.string().max(50).optional(),
   tip_amount: z.number().min(0).optional(),
+  notes: z.string().max(500).optional(),
+  coupon_code: z.string().max(50).optional(),
   items: z
     .array(posOrderItemSchema)
     .min(1, 'Cart cannot be empty')

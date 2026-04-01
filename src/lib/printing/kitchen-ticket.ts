@@ -15,7 +15,12 @@ function escapeHtml(str: string): string {
  * Gros caractères, items groupés par course, notes mises en évidence.
  */
 export function generateKitchenTicketHTML(order: Order): string {
-  const items = order.items || [];
+  // Filter out bar-only items: kitchen ticket shows only kitchen and both-zone items
+  const allItems = order.items || [];
+  const items = allItems.filter((item) => {
+    const zone = item.preparation_zone || 'kitchen';
+    return zone !== 'bar';
+  });
   const orderTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -191,10 +196,17 @@ export function generateKitchenTicketHTML(order: Order): string {
 /**
  * Ouvre une nouvelle fenêtre et lance l'impression du ticket cuisine.
  */
-export function printKitchenTicket(order: Order): void {
+export function printKitchenTicket(order: Order): boolean {
+  // Skip printing if no kitchen-relevant items exist
+  const kitchenItems = (order.items || []).filter((item) => {
+    const zone = item.preparation_zone || 'kitchen';
+    return zone !== 'bar';
+  });
+  if (kitchenItems.length === 0) return false;
+
   const html = generateKitchenTicketHTML(order);
   const printWindow = window.open('', '_blank', 'width=350,height=600');
-  if (!printWindow) return;
+  if (!printWindow) return false;
 
   printWindow.document.write(html);
   printWindow.document.close();
@@ -203,4 +215,6 @@ export function printKitchenTicket(order: Order): void {
     printWindow.focus();
     printWindow.print();
   };
+
+  return true;
 }

@@ -163,6 +163,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
             item_status: (oi.item_status as ItemStatus) || 'pending',
             course: oi.course as string | undefined,
             modifiers: oi.modifiers as Array<{ name: string; price: number }> | undefined,
+            preparation_zone: (oi.preparation_zone as 'kitchen' | 'bar' | 'both') || 'kitchen',
           })),
         }),
       );

@@ -98,13 +98,20 @@ export async function POST(request: Request) {
       tip_amount,
     } = parseResult.data;
 
-    const { validatedTotal, verifiedPrices, categoryIds } = await orderService.validateOrderItems(
-      tenantId,
-      items,
-    );
+    const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
+      await orderService.validateOrderItems(tenantId, items);
 
     // 3b. Determine preparation zone (kitchen vs bar routing)
-    const preparationZone = await orderService.determinePreparationZone(tenantId, categoryIds);
+    const { orderZone: preparationZone, categoryZoneMap } =
+      await orderService.determinePreparationZone(tenantId, categoryIds);
+
+    // Build per-item preparation zone map (menu_item_id -> zone)
+    const itemPreparationZones = new Map<string, 'kitchen' | 'bar' | 'both'>();
+    for (const item of items) {
+      const catId = itemCategoryMap.get(item.id);
+      const zone = catId ? categoryZoneMap.get(catId) : undefined;
+      itemPreparationZones.set(item.id, zone || 'kitchen');
+    }
 
     // 4. Validate coupon if provided
     let discountAmount = 0;
@@ -179,6 +186,7 @@ export async function POST(request: Request) {
         display_currency,
         verifiedPrices,
         preparation_zone: preparationZone,
+        itemPreparationZones,
       });
     } catch (orderError) {
       // Rollback coupon usage if order creation fails

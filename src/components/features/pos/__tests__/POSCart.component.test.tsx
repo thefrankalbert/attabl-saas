@@ -76,13 +76,22 @@ const mockCallbacks = {
   onEditNotes: vi.fn(),
   onPrintOrder: vi.fn(),
   onCheckout: vi.fn(),
+  setOrderNotes: vi.fn(),
+  setCouponCode: vi.fn(),
+  onValidateCoupon: vi.fn(),
+  onRemoveCoupon: vi.fn(),
 };
 
 function renderCart(overrides: Record<string, unknown> = {}) {
   const defaultProps = {
     cart: [] as CartItem[],
     currency: 'XAF' as CurrencyCode,
-    total: 0,
+    pricing: { subtotal: 0, taxAmount: 0, serviceChargeAmount: 0, discountAmount: 0, total: 0 },
+    orderNotes: '',
+    couponCode: '',
+    appliedCoupon: null,
+    couponLoading: false,
+    couponError: '',
     orderNumber: 42,
     basePath: '/sites/test/admin',
     serviceType: 'dine_in' as ServiceType,
@@ -111,7 +120,16 @@ describe('POSCart', () => {
   });
 
   it('renders cart items with quantities', () => {
-    renderCart({ cart: [cartItem1, cartItem2], total: 11500 });
+    renderCart({
+      cart: [cartItem1, cartItem2],
+      pricing: {
+        subtotal: 11500,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 11500,
+      },
+    });
 
     expect(screen.getByText('Pizza Margherita')).toBeInTheDocument();
     expect(screen.getByText('Coca-Cola')).toBeInTheDocument();
@@ -123,7 +141,16 @@ describe('POSCart', () => {
   });
 
   it('calls onUpdateQuantity when + button clicked', () => {
-    renderCart({ cart: [cartItem1], total: 10000 });
+    renderCart({
+      cart: [cartItem1],
+      pricing: {
+        subtotal: 10000,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 10000,
+      },
+    });
 
     const allButtons = screen.getAllByRole('button');
     const addBtn = allButtons.find((btn) => btn.querySelector('.lucide-plus'));
@@ -134,7 +161,16 @@ describe('POSCart', () => {
   });
 
   it('calls onClearCart when trash button clicked', () => {
-    renderCart({ cart: [cartItem1], total: 10000 });
+    renderCart({
+      cart: [cartItem1],
+      pricing: {
+        subtotal: 10000,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 10000,
+      },
+    });
 
     const allButtons = screen.getAllByRole('button');
     const trashBtn = allButtons.find((btn) => btn.querySelector('.lucide-trash-2'));
@@ -145,7 +181,16 @@ describe('POSCart', () => {
   });
 
   it('displays total amount', () => {
-    renderCart({ cart: [cartItem1], total: 10000 });
+    renderCart({
+      cart: [cartItem1],
+      pricing: {
+        subtotal: 10000,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 10000,
+      },
+    });
     // Total appears in at least the summary area
     const matches = screen.getAllByText('10000 FCFA');
     expect(matches.length).toBeGreaterThanOrEqual(1);
@@ -166,7 +211,16 @@ describe('POSCart', () => {
   });
 
   it('calls onCheckout when checkout button clicked', () => {
-    renderCart({ cart: [cartItem1], total: 10000 });
+    renderCart({
+      cart: [cartItem1],
+      pricing: {
+        subtotal: 10000,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 10000,
+      },
+    });
 
     const allButtons = screen.getAllByRole('button');
     const checkoutBtn = allButtons.find((btn) => btn.textContent?.includes('checkout'));
@@ -178,7 +232,16 @@ describe('POSCart', () => {
   });
 
   it('shows notes badge on items with notes', () => {
-    renderCart({ cart: [cartItem2], total: 1500 });
+    renderCart({
+      cart: [cartItem2],
+      pricing: {
+        subtotal: 1500,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 1500,
+      },
+    });
 
     // Cart item with notes should display the notes text or indicator
     expect(screen.getByText('Coca-Cola')).toBeInTheDocument();

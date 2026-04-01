@@ -129,6 +129,8 @@ export interface OrderItem {
   item_status?: ItemStatus;
   course?: Course;
   modifiers?: Array<{ name: string; price: number }>;
+  // ─── Preparation zone (denormalized from category) ────
+  preparation_zone?: PreparationZone;
 }
 
 export interface Order {
