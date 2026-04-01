@@ -430,6 +430,7 @@ export default function OnboardingPage() {
 
   if (loading) {
     return (
+      /* Standalone page - h-dvh is intentional */
       <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
         {/* Top strip skeleton */}
         <header className="shrink-0 h-14 bg-app-card/80 border-b border-app-border/50 flex items-center px-4 sm:px-6">
@@ -471,6 +472,7 @@ export default function OnboardingPage() {
 
   if (phase === 0) {
     return (
+      /* Standalone page - h-dvh is intentional */
       <div className="h-dvh overflow-hidden flex flex-col bg-app-bg relative">
         <WelcomeStep
           tenantName={data.tenantName}
@@ -489,6 +491,7 @@ export default function OnboardingPage() {
   const canGoBack = phase > 1 || subScreen > 0;
 
   return (
+    /* Standalone page - h-dvh is intentional */
     <div className="h-dvh overflow-hidden flex flex-col bg-app-bg">
       {/* ═══ Floating top navigation strip ═══ */}
       <header className="shrink-0 h-14 bg-app-card/80 backdrop-blur-xl border-b border-app-border/50 flex items-center px-4 sm:px-6 z-10">

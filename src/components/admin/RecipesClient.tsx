@@ -254,7 +254,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
             <div className="flex flex-col @lg:flex-row gap-6">
               {/* Items List */}
               <div className="flex-1 bg-app-card rounded-xl border border-app-border overflow-hidden">
-                <div className="max-h-[600px] overflow-y-auto divide-y divide-app-border">
+                <div className="max-h-[400px] md:max-h-[600px] overflow-y-auto divide-y divide-app-border">
                   {filteredItems.map((item) => {
                     const hasRecipe = itemsWithRecipes.has(item.id);
                     const isSelected = selectedItemId === item.id;
@@ -314,7 +314,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     {loadingRecipe ? (
                       <div className="p-8 text-center text-app-text-secondary">{tc('loading')}</div>
                     ) : (
-                      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[400px]">
+                      <div className="flex-1 p-4 space-y-4 overflow-y-auto max-h-[300px] md:max-h-[400px]">
                         {recipeLines.map((line, idx) => (
                           <div
                             key={idx}

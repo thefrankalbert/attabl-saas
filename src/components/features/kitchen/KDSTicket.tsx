@@ -228,7 +228,7 @@ export default function KDSTicket({
       )}
 
       {/* ━━━ ITEMS LIST (clean, numbered) ━━━ */}
-      <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 lg:max-h-[360px] custom-scrollbar divide-y divide-white/[0.03]">
+      <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 md:max-h-80 lg:max-h-[360px] custom-scrollbar divide-y divide-white/[0.03]">
         {items.map((item) => {
           const badge = ITEM_BADGES[item.item_status || 'pending'] || ITEM_BADGES.pending;
           const hasNotes = item.notes || item.customer_notes;
