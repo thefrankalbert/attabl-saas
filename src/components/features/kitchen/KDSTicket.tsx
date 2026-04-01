@@ -116,8 +116,13 @@ export default function KDSTicket({
     },
   } as const;
 
-  const items: OrderItem[] =
+  // Filter out bar-only items: KDS shows only kitchen and both-zone items
+  const allItems: OrderItem[] =
     order.items || (order as { order_items?: OrderItem[] }).order_items || [];
+  const items = allItems.filter((item) => {
+    const zone = item.preparation_zone || 'kitchen';
+    return zone !== 'bar';
+  });
 
   useEffect(() => {
     const calculate = () => {

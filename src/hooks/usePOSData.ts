@@ -9,7 +9,16 @@ import { useCreateOrder } from '@/hooks/mutations';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { useSessionState } from '@/hooks/useSessionState';
-import type { MenuItem, ServiceType, CurrencyCode, Zone, Table } from '@/types/admin.types';
+import { calculateOrderTotal } from '@/lib/pricing/tax';
+import { logger } from '@/lib/logger';
+import type {
+  MenuItem,
+  ServiceType,
+  CurrencyCode,
+  Zone,
+  Table,
+  PricingBreakdown,
+} from '@/types/admin.types';
 
 export type CartItem = MenuItem & {
   quantity: number;
@@ -25,6 +34,14 @@ export interface POSSuggestion {
   suggested_item_name: string;
   suggestion_type: string;
   description: string | null;
+}
+
+export interface AppliedCoupon {
+  id: string;
+  code: string;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  discountAmount: number;
 }
 
 function getCartKey(
@@ -60,6 +77,14 @@ export function usePOSData(tenantId: string) {
   // ─── Currency ───────────────────────────────────────────
   const [currency, setCurrency] = useState<CurrencyCode>('XAF');
 
+  // ─── Tax config ─────────────────────────────────────────
+  const [taxConfig, setTaxConfig] = useState<{
+    enableTax: boolean;
+    taxRate: number;
+    enableServiceCharge: boolean;
+    serviceChargeRate: number;
+  }>({ enableTax: false, taxRate: 0, enableServiceCharge: false, serviceChargeRate: 0 });
+
   // ─── Filters ────────────────────────────────────────────
   const [searchQuery, setSearchQuery] = useSessionState('pos:searchQuery', '');
   const [selectedCategory, setSelectedCategory] = useSessionState<string>(
@@ -79,6 +104,15 @@ export function usePOSData(tenantId: string) {
   // ─── Zones & Tables (for dine-in table picker) ────────
   const [zones, setZones] = useState<Zone[]>([]);
   const [allTables, setAllTables] = useState<Table[]>([]);
+
+  // ─── Order-level notes ──────────────────────────────────
+  const [orderNotes, setOrderNotes] = useSessionState<string>('pos:orderNotes', '');
+
+  // ─── Coupon state ───────────────────────────────────────
+  const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<AppliedCoupon | null>(null);
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   // ─── Note editing state ─────────────────────────────────
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
@@ -127,7 +161,11 @@ export function usePOSData(tenantId: string) {
   const loadExtras = useCallback(async () => {
     try {
       const [tenantRes, suggestionsRes, venuesRes] = await Promise.all([
-        supabase.from('tenants').select('currency').eq('id', tenantId).single(),
+        supabase
+          .from('tenants')
+          .select('currency, enable_tax, tax_rate, enable_service_charge, service_charge_rate')
+          .eq('id', tenantId)
+          .single(),
         supabase
           .from('item_suggestions')
           .select(
@@ -139,6 +177,14 @@ export function usePOSData(tenantId: string) {
       ]);
 
       if (tenantRes.data?.currency) setCurrency(tenantRes.data.currency as CurrencyCode);
+      if (tenantRes.data) {
+        setTaxConfig({
+          enableTax: !!tenantRes.data.enable_tax,
+          taxRate: (tenantRes.data.tax_rate as number) || 0,
+          enableServiceCharge: !!tenantRes.data.enable_service_charge,
+          serviceChargeRate: (tenantRes.data.service_charge_rate as number) || 0,
+        });
+      }
       if (suggestionsRes.data) {
         setSuggestions(
           suggestionsRes.data.map((s: Record<string, unknown>) => ({
@@ -181,7 +227,6 @@ export function usePOSData(tenantId: string) {
 
   // ─── Initial load of extras ────────────────────────────
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- Async data fetch requires setState
     loadExtras();
   }, [loadExtras]);
 
@@ -289,6 +334,74 @@ export function usePOSData(tenantId: string) {
     [cart],
   );
 
+  // ─── Coupon validation (client-side preview) ────────────
+  const validateCoupon = useCallback(
+    async (code: string) => {
+      if (!code.trim()) return;
+      setCouponLoading(true);
+      setCouponError('');
+      try {
+        const res = await fetch('/api/coupons/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code, subtotal: total }),
+        });
+        const data: {
+          valid: boolean;
+          coupon?: {
+            id: string;
+            code: string;
+            discount_type: 'percentage' | 'fixed';
+            discount_value: number;
+          };
+          discountAmount: number;
+          error?: string;
+        } = await res.json();
+        if (data.valid && data.coupon) {
+          setAppliedCoupon({
+            id: data.coupon.id,
+            code: data.coupon.code,
+            discount_type: data.coupon.discount_type,
+            discount_value: data.coupon.discount_value,
+            discountAmount: data.discountAmount,
+          });
+          setCouponCode('');
+        } else {
+          setCouponError(data.error || 'Coupon invalide');
+        }
+      } catch (err) {
+        logger.error('Coupon validation failed', err);
+        setCouponError('Erreur de validation');
+      } finally {
+        setCouponLoading(false);
+      }
+    },
+    [total],
+  );
+
+  const removeCoupon = useCallback(() => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError('');
+  }, []);
+
+  // ─── Pricing breakdown (subtotal + tax + service charge - discount) ─
+  const discountAmount = appliedCoupon?.discountAmount ?? 0;
+  const pricing: PricingBreakdown = useMemo(
+    () =>
+      calculateOrderTotal(
+        total,
+        {
+          tax_rate: taxConfig.taxRate,
+          service_charge_rate: taxConfig.serviceChargeRate,
+          enable_tax: taxConfig.enableTax,
+          enable_service_charge: taxConfig.enableServiceCharge,
+        },
+        discountAmount,
+      ),
+    [total, taxConfig, discountAmount],
+  );
+
   // ─── Order creation ─────────────────────────────────────
   const handleOrder = (
     status: 'pending' | 'delivered',
@@ -311,6 +424,8 @@ export function usePOSData(tenantId: string) {
           serviceType === 'delivery' && deliveryAddress ? deliveryAddress : undefined,
         payment_method: options?.paymentData?.paymentMethod,
         tip_amount: options?.paymentData?.tipAmount,
+        notes: orderNotes || undefined,
+        coupon_code: appliedCoupon?.code,
         items: cart.map((item) => ({
           menu_item_id: item.id,
           quantity: item.quantity,
@@ -328,8 +443,13 @@ export function usePOSData(tenantId: string) {
           });
           updateOrderNumber(orderNumber + 1);
           setCart([]);
+          setOrderNotes('');
           setRoomNumber('');
           setDeliveryAddress('');
+          // Clear coupon after successful order
+          setAppliedCoupon(null);
+          setCouponCode('');
+          setCouponError('');
           options?.onPaymentModalClose?.();
         },
         onError: () => {
@@ -350,6 +470,8 @@ export function usePOSData(tenantId: string) {
     suggestions,
     loading,
     total,
+    pricing,
+    taxConfig,
     orderNumber,
 
     // Filters
@@ -383,6 +505,19 @@ export function usePOSData(tenantId: string) {
     notesText,
     setNotesText,
     saveNotes,
+
+    // Order-level notes
+    orderNotes,
+    setOrderNotes,
+
+    // Coupon
+    couponCode,
+    setCouponCode,
+    appliedCoupon,
+    couponLoading,
+    couponError,
+    validateCoupon,
+    removeCoupon,
 
     // Order
     handleOrder,

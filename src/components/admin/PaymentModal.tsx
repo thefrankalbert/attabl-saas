@@ -33,6 +33,13 @@ interface PaymentModalProps {
   onSuccess: (paymentData?: PaymentData) => void;
   cartItems?: CartDisplayItem[];
   currency?: CurrencyCode;
+  pricing?: {
+    subtotal: number;
+    taxAmount: number;
+    serviceChargeAmount: number;
+    discountAmount: number;
+    total: number;
+  };
 }
 
 type PaymentMethod = 'cash' | 'card' | 'mobile_money';
@@ -52,6 +59,7 @@ export default function PaymentModal({
   onSuccess,
   cartItems,
   currency = 'XAF',
+  pricing,
 }: PaymentModalProps) {
   const t = useTranslations('payment');
 
@@ -150,12 +158,14 @@ export default function PaymentModal({
     return true;
   };
 
-  // Price breakdown from order (admin view)
-  const subtotal = order?.subtotal;
-  const taxAmount = order?.tax_amount;
-  const serviceChargeAmount = order?.service_charge_amount;
-  const discountAmount = order?.discount_amount;
-  const hasBreakdown = subtotal !== undefined && subtotal !== null;
+  // Price breakdown from order (admin view) or pricing prop (POS view)
+  const subtotal = order?.subtotal ?? pricing?.subtotal;
+  const taxAmount = order?.tax_amount ?? pricing?.taxAmount;
+  const serviceChargeAmount = order?.service_charge_amount ?? pricing?.serviceChargeAmount;
+  const discountAmount = order?.discount_amount ?? pricing?.discountAmount;
+  const hasBreakdown =
+    (subtotal !== undefined && subtotal !== null) ||
+    (pricing !== undefined && (pricing.taxAmount > 0 || pricing.serviceChargeAmount > 0));
 
   return (
     <div className="fixed inset-0 z-50 bg-neutral-950 text-white flex flex-col overflow-hidden animate-in fade-in duration-200">

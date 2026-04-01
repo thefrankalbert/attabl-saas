@@ -14,6 +14,8 @@ interface CreateOrderInput {
   delivery_address?: string;
   payment_method?: string;
   tip_amount?: number;
+  notes?: string;
+  coupon_code?: string;
   items: {
     menu_item_id: string;
     quantity: number;
@@ -62,6 +64,8 @@ export function useCreateOrder(tenantId: string) {
         delivery_address: input.delivery_address,
         payment_method: input.payment_method,
         tip_amount: input.tip_amount,
+        notes: input.notes,
+        coupon_code: input.coupon_code,
         items: input.items.map((item) => ({
           menu_item_id: item.menu_item_id,
           quantity: item.quantity,

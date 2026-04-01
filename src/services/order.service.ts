@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { OrderItemInput } from '@/lib/validations/order.schema';
-import type { ServiceType, OrderPreparationZone } from '@/types/admin.types';
+import type { ServiceType, OrderPreparationZone, PreparationZone } from '@/types/admin.types';
 import { ServiceError } from './errors';
 import { logger } from '@/lib/logger';
 
@@ -26,6 +26,8 @@ interface CreateOrderInput {
   display_currency?: string;
   verifiedPrices?: Map<string, number>;
   preparation_zone?: OrderPreparationZone;
+  /** Per-item preparation zone, keyed by menu_item_id. Denormalized from category at order time. */
+  itemPreparationZones?: Map<string, PreparationZone>;
 }
 
 interface CreateOrderResult {
@@ -79,6 +81,7 @@ export function createOrderService(supabase: SupabaseClient) {
       validatedTotal: number;
       verifiedPrices: Map<string, number>;
       categoryIds: string[];
+      itemCategoryMap: Map<string, string>;
     }> {
       const itemIds = items.map((item) => item.id);
       const { data: menuItems, error: menuError } = await supabase
@@ -196,12 +199,14 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Le total de la commande doit être supérieur à 0', 'VALIDATION');
       }
 
-      // Collect category IDs from validated items for preparation zone routing
+      // Collect category IDs and build item->category map for preparation zone routing
       const categoryIds = new Set<string>();
+      const itemCategoryMap = new Map<string, string>();
       for (const item of items) {
         const menuItem = menuItemsMap.get(item.id);
         if (menuItem?.category_id) {
           categoryIds.add(menuItem.category_id);
+          itemCategoryMap.set(item.id, menuItem.category_id);
         }
       }
 
@@ -209,6 +214,7 @@ export function createOrderService(supabase: SupabaseClient) {
         validatedTotal: calculatedTotal,
         verifiedPrices,
         categoryIds: Array.from(categoryIds),
+        itemCategoryMap,
       };
     },
 
@@ -221,8 +227,13 @@ export function createOrderService(supabase: SupabaseClient) {
     async determinePreparationZone(
       tenantId: string,
       categoryIds: string[],
-    ): Promise<OrderPreparationZone> {
-      if (categoryIds.length === 0) return 'kitchen';
+    ): Promise<{
+      orderZone: OrderPreparationZone;
+      categoryZoneMap: Map<string, PreparationZone>;
+    }> {
+      const categoryZoneMap = new Map<string, PreparationZone>();
+
+      if (categoryIds.length === 0) return { orderZone: 'kitchen', categoryZoneMap };
 
       const { data: categories } = await supabase
         .from('categories')
@@ -230,21 +241,31 @@ export function createOrderService(supabase: SupabaseClient) {
         .eq('tenant_id', tenantId)
         .in('id', categoryIds);
 
-      if (!categories || categories.length === 0) return 'kitchen';
+      if (!categories || categories.length === 0) return { orderZone: 'kitchen', categoryZoneMap };
+
+      // Build category -> zone map
+      for (const c of categories) {
+        const zone = (c.preparation_zone as PreparationZone) || 'kitchen';
+        categoryZoneMap.set(c.id as string, zone);
+      }
 
       const zones = new Set(
         categories.map((c: { preparation_zone?: string }) => c.preparation_zone || 'kitchen'),
       );
 
       // If any category is 'both', the order is mixed
-      if (zones.has('both')) return 'mixed';
-      // If all categories are the same zone
-      if (zones.size === 1) {
+      let orderZone: OrderPreparationZone;
+      if (zones.has('both')) {
+        orderZone = 'mixed';
+      } else if (zones.size === 1) {
         const zone = zones.values().next().value as string;
-        return zone === 'bar' ? 'bar' : 'kitchen';
+        orderZone = zone === 'bar' ? 'bar' : 'kitchen';
+      } else {
+        // Mix of 'kitchen' and 'bar'
+        orderZone = 'mixed';
       }
-      // Mix of 'kitchen' and 'bar'
-      return 'mixed';
+
+      return { orderZone, categoryZoneMap };
     },
 
     /**
@@ -336,6 +357,7 @@ export function createOrderService(supabase: SupabaseClient) {
           modifiers: item.modifiers || [],
           course: item.course || null,
           item_status: 'pending',
+          preparation_zone: input.itemPreparationZones?.get(item.id) || 'kitchen',
         };
       });
 

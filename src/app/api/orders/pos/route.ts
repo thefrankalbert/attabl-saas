@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { createOrderService } from '@/services/order.service';
+import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
@@ -59,6 +60,8 @@ export async function POST(request: Request) {
       delivery_address,
       payment_method,
       tip_amount,
+      notes,
+      coupon_code,
       items,
     } = parseResult.data;
 
@@ -144,13 +147,20 @@ export async function POST(request: Request) {
       };
     });
 
-    const { validatedTotal, verifiedPrices, categoryIds } = await orderService.validateOrderItems(
-      tenant_id,
-      serviceItems,
-    );
+    const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
+      await orderService.validateOrderItems(tenant_id, serviceItems);
 
     // 6. Determine preparation zone
-    const preparationZone = await orderService.determinePreparationZone(tenant_id, categoryIds);
+    const { orderZone: preparationZone, categoryZoneMap } =
+      await orderService.determinePreparationZone(tenant_id, categoryIds);
+
+    // Build per-item preparation zone map (menu_item_id -> zone)
+    const itemPreparationZones = new Map<string, 'kitchen' | 'bar' | 'both'>();
+    for (const item of serviceItems) {
+      const catId = itemCategoryMap.get(item.id);
+      const zone = catId ? categoryZoneMap.get(catId) : undefined;
+      itemPreparationZones.set(item.id, zone || 'kitchen');
+    }
 
     // 7. Fetch tenant config for tax & service charge
     const { data: tenant, error: tenantError } = await adminSupabase
@@ -168,7 +178,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // 8. Calculate pricing breakdown
+    // 8. Validate coupon if provided
+    let discountAmount = 0;
+    let couponResult: { couponId?: string } | null = null;
+    const couponService = createCouponService(adminSupabase);
+
+    if (coupon_code) {
+      const validation = await couponService.validateCoupon(coupon_code, tenant_id, validatedTotal);
+      if (!validation.valid) {
+        return NextResponse.json({ error: validation.error || 'Coupon invalide' }, { status: 400 });
+      }
+      discountAmount = validation.discountAmount;
+      couponResult = { couponId: validation.coupon?.id };
+    }
+
+    // 9. Calculate pricing breakdown
     const pricing = calculateOrderTotal(
       validatedTotal,
       {
@@ -177,30 +201,50 @@ export async function POST(request: Request) {
         enable_tax: tenant.enable_tax || false,
         enable_service_charge: tenant.enable_service_charge || false,
       },
-      0, // POS orders do not use coupons (for now)
+      discountAmount,
     );
 
-    // 9. Create order with items via service
+    // 10. Atomically claim coupon usage BEFORE order creation
+    if (couponResult?.couponId) {
+      const claimed = await couponService.claimUsage(couponResult.couponId);
+      if (!claimed) {
+        return NextResponse.json({ error: 'Coupon invalide ou limite atteinte' }, { status: 400 });
+      }
+    }
+
+    // 11. Create order with items via service
     const hasPayment = !!payment_method;
     const tipValue = tip_amount && tip_amount > 0 ? tip_amount : 0;
 
-    const result = await orderService.createOrderWithItems({
-      tenantId: tenant_id,
-      items: serviceItems,
-      total: pricing.total + tipValue,
-      tableNumber: table_number,
-      service_type,
-      room_number,
-      delivery_address,
-      subtotal: pricing.subtotal,
-      tax_amount: pricing.taxAmount,
-      service_charge_amount: pricing.serviceChargeAmount,
-      discount_amount: 0,
-      tip_amount: tipValue,
-      server_id: adminUser.id,
-      verifiedPrices,
-      preparation_zone: preparationZone,
-    });
+    let result;
+    try {
+      result = await orderService.createOrderWithItems({
+        tenantId: tenant_id,
+        items: serviceItems,
+        total: pricing.total + tipValue,
+        tableNumber: table_number,
+        notes,
+        service_type,
+        room_number,
+        delivery_address,
+        subtotal: pricing.subtotal,
+        tax_amount: pricing.taxAmount,
+        service_charge_amount: pricing.serviceChargeAmount,
+        discount_amount: pricing.discountAmount,
+        tip_amount: tipValue,
+        coupon_id: couponResult?.couponId,
+        server_id: adminUser.id,
+        verifiedPrices,
+        preparation_zone: preparationZone,
+        itemPreparationZones,
+      });
+    } catch (orderError) {
+      // Rollback coupon usage if order creation fails
+      if (couponResult?.couponId) {
+        await couponService.unclaimUsage(couponResult.couponId);
+      }
+      throw orderError;
+    }
 
     // 10. Update order with POS-specific fields (status, payment)
     // The service always creates with status='pending'. For POS we may need 'delivered'

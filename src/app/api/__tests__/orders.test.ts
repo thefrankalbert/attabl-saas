@@ -38,11 +38,17 @@ const mockValidateOrderItems = vi.fn<
     validatedTotal: number;
     verifiedPrices: Map<string, number>;
     categoryIds: string[];
+    itemCategoryMap: Map<string, string>;
   }>
 >();
 const mockCreateOrderWithItems =
   vi.fn<() => Promise<{ orderId: string; orderNumber: string; total: number }>>();
-const mockDeterminePreparationZone = vi.fn<() => Promise<string>>();
+const mockDeterminePreparationZone = vi.fn<
+  () => Promise<{
+    orderZone: string;
+    categoryZoneMap: Map<string, string>;
+  }>
+>();
 
 vi.mock('@/services/order.service', () => ({
   createOrderService: vi.fn(() => ({
@@ -194,8 +200,12 @@ describe('POST /api/orders', () => {
       validatedTotal: 10000,
       verifiedPrices: new Map(),
       categoryIds: [],
+      itemCategoryMap: new Map(),
     });
-    mockDeterminePreparationZone.mockResolvedValue('kitchen');
+    mockDeterminePreparationZone.mockResolvedValue({
+      orderZone: 'kitchen',
+      categoryZoneMap: new Map(),
+    });
 
     // Default: coupon validation (not used unless coupon_code provided)
     mockValidateCoupon.mockResolvedValue({
