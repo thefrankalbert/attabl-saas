@@ -83,21 +83,37 @@ export async function POST(request: Request) {
     // 5. Validate items and verify prices server-side
     const orderService = createOrderService(adminSupabase);
 
-    // Convert POS item shape to the OrderItemInput shape expected by the service
-    // The service needs: id, name, price, quantity, modifiers, etc.
-    // We fetch the menu items from DB to fill in names and prices
+    // 5. Fetch menu items AND tenant config in PARALLEL (independent queries)
     const itemIds = items.map((item) => item.menu_item_id);
-    const { data: menuItems, error: menuError } = await adminSupabase
-      .from('menu_items')
-      .select(
-        'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
-      )
-      .eq('tenant_id', tenant_id)
-      .in('id', itemIds);
+    const [menuResult, tenantResult] = await Promise.all([
+      adminSupabase
+        .from('menu_items')
+        .select(
+          'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
+        )
+        .eq('tenant_id', tenant_id)
+        .in('id', itemIds),
+      adminSupabase
+        .from('tenants')
+        .select(
+          'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
+        )
+        .eq('id', tenant_id)
+        .single(),
+    ]);
 
+    const { data: menuItems, error: menuError } = menuResult;
     if (menuError) {
       logger.error('POS order: error fetching menu items', menuError);
       throw new ServiceError('Erreur lors de la verification du menu', 'INTERNAL', menuError);
+    }
+
+    const { data: tenant, error: tenantError } = tenantResult;
+    if (tenantError || !tenant) {
+      return NextResponse.json(
+        { error: 'Configuration du restaurant non trouvee' },
+        { status: 404 },
+      );
     }
 
     const menuItemsMap = new Map(menuItems?.map((mi) => [mi.id, mi]) || []);
@@ -124,7 +140,6 @@ export async function POST(request: Request) {
       const mi = menuItemsMap.get(item.menu_item_id)!;
       let price = mi.price;
 
-      // If a variant was selected, look up its price from the DB-fetched variants
       if (item.selected_variant && mi.item_price_variants) {
         const variants = mi.item_price_variants as { variant_name_fr: string; price: number }[];
         const variant = variants.find((v) => v.variant_name_fr === item.selected_variant);
@@ -147,35 +162,23 @@ export async function POST(request: Request) {
       };
     });
 
-    const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
-      await orderService.validateOrderItems(tenant_id, serviceItems);
+    // 6. Validate items + determine preparation zones in PARALLEL
+    const [validationResult, zoneResult] = await Promise.all([
+      orderService.validateOrderItems(tenant_id, serviceItems),
+      orderService.determinePreparationZone(tenant_id, [
+        ...new Set(menuItems?.map((mi) => mi.category_id).filter(Boolean) || []),
+      ]),
+    ]);
 
-    // 6. Determine preparation zone
-    const { orderZone: preparationZone, categoryZoneMap } =
-      await orderService.determinePreparationZone(tenant_id, categoryIds);
+    const { validatedTotal, verifiedPrices, itemCategoryMap } = validationResult;
+    const { orderZone: preparationZone, categoryZoneMap } = zoneResult;
 
-    // Build per-item preparation zone map (menu_item_id -> zone)
+    // Build per-item preparation zone map
     const itemPreparationZones = new Map<string, 'kitchen' | 'bar' | 'both'>();
     for (const item of serviceItems) {
       const catId = itemCategoryMap.get(item.id);
       const zone = catId ? categoryZoneMap.get(catId) : undefined;
       itemPreparationZones.set(item.id, zone || 'kitchen');
-    }
-
-    // 7. Fetch tenant config for tax & service charge
-    const { data: tenant, error: tenantError } = await adminSupabase
-      .from('tenants')
-      .select(
-        'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
-      )
-      .eq('id', tenant_id)
-      .single();
-
-    if (tenantError || !tenant) {
-      return NextResponse.json(
-        { error: 'Configuration du restaurant non trouvee' },
-        { status: 404 },
-      );
     }
 
     // 8. Validate coupon if provided
