@@ -456,8 +456,9 @@ export function usePOSData(tenantId: string) {
           setCouponError('');
           options?.onPaymentModalClose?.();
         },
-        onError: () => {
-          toast({ title: t('orderError'), variant: 'destructive' });
+        onError: (error: unknown) => {
+          const message = error instanceof Error ? error.message : String(error);
+          toast({ title: t('orderError'), description: message, variant: 'destructive' });
         },
       },
     );
