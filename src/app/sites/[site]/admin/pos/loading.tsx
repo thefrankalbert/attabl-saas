@@ -1,6 +1,6 @@
 export default function POSLoading() {
   return (
-    <div className="flex h-[calc(100dvh-4rem)] gap-4 animate-pulse">
+    <div className="flex h-full gap-4 animate-pulse">
       {/* Product grid */}
       <div className="flex-1 flex flex-col gap-4">
         {/* Category tabs */}

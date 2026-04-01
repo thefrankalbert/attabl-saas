@@ -325,6 +325,7 @@ export default function TenantsPageClient({
   // ─── Loading state ─────────────────────────────────────────
   if (mode === 'loading') {
     return (
+      /* Standalone page - h-dvh is intentional */
       <div className="flex h-dvh items-center justify-center bg-app-bg">
         <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
       </div>
@@ -334,6 +335,7 @@ export default function TenantsPageClient({
   // ─── SUPER ADMIN MODE ──────────────────────────────────────
   if (mode === 'superadmin') {
     return (
+      /* Standalone page - h-dvh is intentional */
       <div className="h-dvh flex flex-col bg-app-bg">
         <header className="shrink-0 border-b border-app-border px-4 sm:px-6 py-3">
           <div className="mx-auto flex max-w-6xl items-center justify-between">
@@ -477,6 +479,7 @@ export default function TenantsPageClient({
 
   // ─── OWNER HUB MODE ────────────────────────────────────────
   return (
+    /* Standalone page - h-dvh is intentional */
     <div className="h-dvh flex flex-col bg-app-bg p-3 sm:p-5 lg:p-6 overflow-hidden">
       {/* Greeting + stats inline row - matches dashboard style */}
       <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-2">
