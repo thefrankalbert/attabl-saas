@@ -11,7 +11,6 @@ import { QueryProvider } from '@/components/providers/QueryProvider';
 import { OfflineIndicator } from '@/components/admin/OfflineIndicator';
 import { CommandPalette } from '@/components/features/command-palette/CommandPalette';
 import { ShortcutsProvider } from '@/contexts/ShortcutsContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
 import { AdminBreadcrumbs } from '@/components/admin/AdminBreadcrumbs';
 import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
@@ -118,59 +117,55 @@ export default async function AdminLayout({
     <div>
       {showOnboardingResume && <OnboardingResumeDialog />}
       <QueryProvider>
-        <ThemeProvider>
-          <SoundProvider
-            tenantId={tenant.id}
-            notificationSoundId={tenant.notification_sound_id ?? undefined}
+        <SoundProvider
+          tenantId={tenant.id}
+          notificationSoundId={tenant.notification_sound_id ?? undefined}
+        >
+          <AdminLayoutClient
+            isDevMode={false}
+            basePath={`/sites/${tenantSlug}/admin`}
+            role={userRole}
+            tenant={{
+              name: tenant.name,
+              slug: tenant.slug,
+              logo_url: tenant.logo_url ?? undefined,
+              subscription_plan: tenant.subscription_plan ?? undefined,
+              establishment_type: tenant.establishment_type ?? undefined,
+            }}
+            userName={adminUser?.name || user.email || ''}
+            userTenants={userTenants}
+            notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
+            breadcrumbs={<AdminBreadcrumbs />}
           >
-            <AdminLayoutClient
-              isDevMode={false}
-              basePath={`/sites/${tenantSlug}/admin`}
-              role={userRole}
-              tenant={{
-                name: tenant.name,
-                slug: tenant.slug,
-                logo_url: tenant.logo_url ?? undefined,
-                subscription_plan: tenant.subscription_plan ?? undefined,
-                establishment_type: tenant.establishment_type ?? undefined,
-              }}
-              userName={adminUser?.name || user.email || ''}
-              userTenants={userTenants}
-              notifications={
-                <NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />
-              }
-              breadcrumbs={<AdminBreadcrumbs />}
-            >
-              <PermissionsProvider role={userRole}>
-                <OfflineIndicator />
-                <CommandPalette />
-                <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
-                  <AdminIdleWrapper
-                    idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
-                    screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
-                    tenantName={tenant.name}
+            <PermissionsProvider role={userRole}>
+              <OfflineIndicator />
+              <CommandPalette />
+              <ShortcutsProvider basePath={`/sites/${tenantSlug}/admin`}>
+                <AdminIdleWrapper
+                  idleTimeoutMinutes={tenant.idle_timeout_minutes ?? null}
+                  screenLockMode={tenant.screen_lock_mode ?? 'overlay'}
+                  tenantName={tenant.name}
+                >
+                  <SubscriptionProvider
+                    tenant={
+                      tenant
+                        ? {
+                            subscription_plan: tenant.subscription_plan,
+                            subscription_status: tenant.subscription_status,
+                            trial_ends_at: tenant.trial_ends_at,
+                          }
+                        : null
+                    }
                   >
-                    <SubscriptionProvider
-                      tenant={
-                        tenant
-                          ? {
-                              subscription_plan: tenant.subscription_plan,
-                              subscription_status: tenant.subscription_status,
-                              trial_ends_at: tenant.trial_ends_at,
-                            }
-                          : null
-                      }
-                    >
-                      <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
-                        {children}
-                      </AdminContentWrapper>
-                    </SubscriptionProvider>
-                  </AdminIdleWrapper>
-                </ShortcutsProvider>
-              </PermissionsProvider>
-            </AdminLayoutClient>
-          </SoundProvider>
-        </ThemeProvider>
+                    <AdminContentWrapper chrome={<SubscriptionBanners tenantSlug={tenantSlug} />}>
+                      {children}
+                    </AdminContentWrapper>
+                  </SubscriptionProvider>
+                </AdminIdleWrapper>
+              </ShortcutsProvider>
+            </PermissionsProvider>
+          </AdminLayoutClient>
+        </SoundProvider>
       </QueryProvider>
     </div>
   );

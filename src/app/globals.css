@@ -188,6 +188,52 @@
   --app-status-info-bg: #eff6ff;
 }
 
+/* CSS fallback for system light preference before JS loads (prevents FOUC) */
+@media (prefers-color-scheme: light) {
+  :root:not(.dark) {
+    color-scheme: light;
+
+    --app-bg: #f5f5f7;
+    --app-card: #ffffff;
+    --app-elevated: #f0f0f2;
+    --app-hover: #eaeaec;
+
+    --app-border: rgba(0, 0, 0, 0.08);
+    --app-border-hover: rgba(0, 0, 0, 0.15);
+
+    --app-text: #111111;
+    --app-text-secondary: rgba(0, 0, 0, 0.55);
+    --app-text-muted: rgba(0, 0, 0, 0.3);
+
+    --app-accent: #4d7c0f;
+    --app-accent-hover: #3f6212;
+    --app-accent-muted: rgba(77, 124, 15, 0.1);
+    --app-accent-text: #ffffff;
+
+    --accent-50: #f7fee7;
+    --accent-100: #ecfccb;
+    --accent-200: #d9f99d;
+    --accent-300: #bef264;
+    --accent-400: #a3e635;
+    --accent-500: #84cc16;
+    --accent-600: #65a30d;
+    --accent-700: #4d7c0f;
+    --accent-800: #3f6212;
+    --accent-900: #365314;
+
+    --app-status-success-bg: #ecfdf5;
+    --app-status-warning-bg: #fffbeb;
+    --app-status-error-bg: #fef2f2;
+    --app-status-info-bg: #eff6ff;
+
+    --background: var(--app-bg);
+    --foreground: var(--app-text);
+    --border: var(--app-border);
+    --input: var(--app-border);
+    --ring: var(--app-accent);
+  }
+}
+
 body {
   background-color: var(--app-bg);
   color: var(--app-text);
