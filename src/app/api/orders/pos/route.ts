@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     const { data: menuItems, error: menuError } = await adminSupabase
       .from('menu_items')
       .select(
-        'id, name, name_en, price, is_available, category_id, item_price_variants(name, price)',
+        'id, name, name_en, price, is_available, category_id, item_price_variants(variant_name_fr, price)',
       )
       .eq('tenant_id', tenant_id)
       .in('id', itemIds);
@@ -126,8 +126,8 @@ export async function POST(request: Request) {
 
       // If a variant was selected, look up its price from the DB-fetched variants
       if (item.selected_variant && mi.item_price_variants) {
-        const variants = mi.item_price_variants as { name: string; price: number }[];
-        const variant = variants.find((v) => v.name === item.selected_variant);
+        const variants = mi.item_price_variants as { variant_name_fr: string; price: number }[];
+        const variant = variants.find((v) => v.variant_name_fr === item.selected_variant);
         if (variant) {
           price = variant.price;
         }
