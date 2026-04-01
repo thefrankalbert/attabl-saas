@@ -138,10 +138,12 @@ export default function PaymentModal({
         }
       }
 
-      toast({ title: t('paymentSuccess') });
       setIsProcessing(false);
-      // Pass payment data for POS orders (no existing order)
-      // For existing orders, data was already persisted above
+      // For existing orders, payment was persisted above - show success toast
+      if (order?.id) {
+        toast({ title: t('paymentSuccess') });
+      }
+      // For POS orders, pass payment data - the caller handles the toast after order creation
       onSuccess(order?.id ? undefined : { paymentMethod: method, tipAmount });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : undefined;
