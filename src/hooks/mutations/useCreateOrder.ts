@@ -21,6 +21,7 @@ interface CreateOrderInput {
     quantity: number;
     customer_notes?: string | null;
     modifiers?: Array<{ name: string; price: number }>;
+    selected_variant?: string;
   }[];
   // Legacy fields kept for caller compatibility but not sent to API
   total?: number;
@@ -71,25 +72,31 @@ export function useCreateOrder(tenantId: string) {
           quantity: item.quantity,
           customer_notes: item.customer_notes || undefined,
           modifiers: item.modifiers,
+          selected_variant: item.selected_variant,
         })),
       };
 
-      const response = await fetch('/api/orders/pos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      // Handle non-JSON responses (HTML error pages, redirects, etc.)
-      const contentType = response.headers.get('content-type') || '';
-      if (!contentType.includes('application/json')) {
-        const text = await response.text();
+      let response: Response;
+      try {
+        response = await fetch('/api/orders/pos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch (fetchError) {
         throw new Error(
-          `API returned ${response.status} (${response.statusText}). Response: ${text.slice(0, 200)}`,
+          `Erreur reseau: ${fetchError instanceof Error ? fetchError.message : 'connexion echouee'}`,
         );
       }
 
-      const data: POSOrderResponse = await response.json();
+      // Handle non-JSON responses (HTML error pages, redirects, etc.)
+      let data: POSOrderResponse;
+      try {
+        data = await response.json();
+      } catch {
+        const text = await response.text().catch(() => '');
+        throw new Error(`API ${response.status}: reponse invalide. ${text.slice(0, 200)}`);
+      }
 
       if (!response.ok) {
         const message = data.error || `Erreur ${response.status}`;
