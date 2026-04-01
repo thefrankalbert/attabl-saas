@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Maximize, Minimize } from 'lucide-react';
 import { isImmersivePage } from '@/lib/constants';
+import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -58,6 +59,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
       <div className="flex-1 min-w-0 overflow-hidden">{breadcrumbs}</div>
       <div className="flex items-center gap-1 shrink-0">
         {notifications}
+        <ThemeToggle className="w-10 h-10 rounded-lg" iconSize={16} />
         <button
           type="button"
           onClick={toggleFullscreen}
