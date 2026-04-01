@@ -1,13 +1,38 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/admin';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { validateCouponSchema } from '@/lib/validations/coupon.schema';
 import { getTranslations } from 'next-intl/server';
+import { logger } from '@/lib/logger';
+
+// Fallback translations for API routes where locale may not be resolved
+const FALLBACK_ERRORS: Record<string, string> = {
+  rateLimited: 'Trop de requetes. Reessayez plus tard.',
+  tenantNotIdentified: 'Tenant non identifie',
+  tenantNotFound: 'Restaurant non trouve',
+  invalidRequestBody: 'Corps de requete invalide',
+  invalidData: 'Donnees invalides',
+  validationError: 'Erreur de validation',
+};
+
+async function getT() {
+  try {
+    return await getTranslations('errors');
+  } catch {
+    return (key: string) => FALLBACK_ERRORS[key] || key;
+  }
+}
 
 export async function POST(request: Request) {
-  const t = await getTranslations('errors');
+  let t: (key: string) => string;
+  try {
+    t = await getT();
+  } catch (initError) {
+    logger.error('Coupon validate API: failed to initialize translations', initError);
+    t = (key: string) => FALLBACK_ERRORS[key] || key;
+  }
   try {
     // 1. Rate limiting
     const ip = getClientIp(request);
@@ -27,7 +52,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: t('tenantNotIdentified') }, { status: 400 });
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')

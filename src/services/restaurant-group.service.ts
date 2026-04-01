@@ -17,7 +17,7 @@ interface AddRestaurantResult {
 }
 
 /**
- * Restaurant group service — manages owner groups and adding restaurants.
+ * Restaurant group service - manages owner groups and adding restaurants.
  *
  * Each owner has exactly one group. All their restaurants belong to that group.
  * The group is created automatically on first signup or first restaurant addition.

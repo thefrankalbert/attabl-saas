@@ -350,7 +350,7 @@ export default function PricingPage() {
             </div>
           </div>
 
-          {/* Plan cards — badge floats above the card */}
+          {/* Plan cards - badge floats above the card */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
             {plans.map((plan) => {
               const price = period === 'yearly' ? plan.priceYearly : plan.priceMonthly;
@@ -426,7 +426,7 @@ export default function PricingPage() {
                       </p>
                     )}
 
-                    {/* Highlights — short list */}
+                    {/* Highlights - short list */}
                     <ul className="mt-6 space-y-2.5 flex-1">
                       {plan.highlights.map((h) => (
                         <li key={h} className="flex items-start gap-2">

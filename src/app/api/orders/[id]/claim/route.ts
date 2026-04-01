@@ -35,18 +35,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     // Verify user belongs to this tenant
     const { data: adminUser } = await supabase
       .from('admin_users')
-      .select('role')
+      .select('id, role')
       .eq('user_id', user.id)
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
       .single();
-    if (!adminUser) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
+    if (!adminUser) return NextResponse.json({ error: 'Acces refuse' }, { status: 403 });
+
+    const CLAIM_ALLOWED_ROLES = ['owner', 'manager', 'cashier', 'waiter'];
+    if (!CLAIM_ALLOWED_ROLES.includes(adminUser.role)) {
+      return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
+    }
 
     const { id } = await params;
 
-    // Use authenticated user's ID as server_id (servers can only claim for themselves)
+    // Use admin_users.id (not auth user.id) since orders.server_id references admin_users(id)
     const service = createAssignmentService(supabase);
-    await service.claimOrder(id, user.id, tenant.id);
+    await service.claimOrder(id, adminUser.id, tenant.id);
     return NextResponse.json({ success: true });
   } catch (error) {
     if (error instanceof ServiceError)

@@ -23,6 +23,7 @@
     "search": "Rechercher",
     "searchPlaceholder": "Rechercher",
     "all": "Tout",
+    "other": "Autre",
     "filter": "Filtrer",
     "retry": "Réessayer",
     "noResults": "Aucun résultat",
@@ -61,8 +62,8 @@
     "noItems": "Aucun article",
     "updateError": "Erreur de mise à jour",
     "saving": "Enregistrement...",
-    "offlineMode": "Mode hors ligne — Les données sauvegardées sont affichées",
-    "connectionRestored": "Connexion rétablie — Synchronisation en cours...",
+    "offlineMode": "Mode hors ligne - Les données sauvegardées sont affichées",
+    "connectionRestored": "Connexion rétablie - Synchronisation en cours...",
     "errorTitle": "Oups, une erreur est survenue",
     "errorDescription": "Nous nous excusons pour ce désagrément. Veuillez réessayer ou retourner à l'accueil.",
     "errorHint": "Pas de panique, ce sont des choses qui arrivent.",
@@ -435,7 +436,7 @@
     "dish": "Plat",
     "price": "Prix",
     "priceInCurrency": "Prix en {currency}",
-    "optionalPriceHint": "Définir des prix manuels pour d'autres devises (optionnel — conversion automatique si vide)",
+    "optionalPriceHint": "Définir des prix manuels pour d'autres devises (optionnel - conversion automatique si vide)",
     "searchDish": "Rechercher un plat...",
     "noDishFound": "Aucun plat trouvé",
     "menuLabel": "Menu",
@@ -610,7 +611,7 @@
     "autoLockDashboard": "Verrouiller automatiquement le tableau de bord après une période d'inactivité",
     "enableAutoLock": "Activer le verrouillage automatique",
     "screenLockedAfterIdle": "L'écran sera verrouillé après la période d'inactivité définie",
-    "idleRange": "5 – 120 minutes",
+    "idleRange": "5 - 120 minutes",
     "overlaySimple": "Overlay simple",
     "clickToUnlock": "Cliquez pour déverrouiller",
     "passwordRequired": "Mot de passe requis",
@@ -885,7 +886,11 @@
     "selectTableFirst": "Veuillez sélectionner une table d'abord",
     "server": "Serveur",
     "itemsCount": "articles",
-    "printShort": "Cuisine"
+    "printShort": "Cuisine",
+    "confirmClearCart": "Voulez-vous vraiment vider le panier ?",
+    "selectVariant": "Choisir une variante",
+    "selectModifiers": "Modificateurs",
+    "addToCart": "Ajouter au panier"
   },
   "users": {
     "title": "Utilisateurs",
@@ -1424,7 +1429,7 @@
     "priceFcfa": "{count} FCFA",
     "importExcel": "Importer Excel",
     "targetMenu": "Menu cible",
-    "selectTargetMenu": "Sélectionnez un menu…",
+    "selectTargetMenu": "Sélectionnez un menu...",
     "downloadTemplate": "Télécharger le modèle Excel",
     "selectFile": "Sélectionner un fichier",
     "dragAndDrop": "Glissez-déposez un fichier .xlsx ici ou cliquez pour parcourir",
@@ -1538,7 +1543,7 @@
     "seats": "{count} places",
     "yourQRCode": "Votre QR Code",
     "batchGeneration": "Génération par lot",
-    "batchGenerationDesc": "Générez un QR code pour chaque table — {count} table(s) trouvée(s)",
+    "batchGenerationDesc": "Générez un QR code pour chaque table - {count} table(s) trouvée(s)",
     "batchGenerating": "Génération en cours ({count} QR codes)...",
     "batchDownload": "Télécharger {count} QR code(s) (PDF)",
     "batchMenuRedirect": "Chaque QR redirige vers la carte « {menu} »",
@@ -1615,7 +1620,7 @@
     "statsProducts": "Produits"
   },
   "screenLock": {
-    "lockingIn": "Verrouillage dans {time} — bougez la souris pour rester connecté",
+    "lockingIn": "Verrouillage dans {time} - bougez la souris pour rester connecté",
     "sessionLocked": "Session verrouillée pour inactivité",
     "clickToUnlock": "Cliquez ou appuyez sur une touche pour déverrouiller",
     "password": "Mot de passe",
@@ -1795,7 +1800,7 @@
     "orderStatusReady": "Votre commande est prête",
     "orderStatusServed": "Votre commande a été servie",
     "orderReadyNotifTitle": "Votre commande est prête !",
-    "orderReadyNotifBody": "Commande #{number} — prête à être récupérée",
+    "orderReadyNotifBody": "Commande #{number} - prête à être récupérée",
     "enableNotifications": "Activer les notifications pour savoir quand votre commande est prête"
   },
   "shared": {
@@ -2084,7 +2089,7 @@
     "entity_coupon": "Coupon",
     "entity_supplier": "Fournisseur",
     "more": "de plus",
-    "showing": "{from}–{to} sur {total}",
+    "showing": "{from}-{to} sur {total}",
     "loadError": "Erreur lors du chargement du journal",
     "retry": "Réessayer"
   },
@@ -2163,7 +2168,7 @@
   },
   "qrScanner": {
     "title": "Scanner QR",
-    "activating": "Activation de la caméra…",
+    "activating": "Activation de la caméra...",
     "placeQR": "Placez le QR code dans le cadre",
     "success": "Code scanné !",
     "cameraUnavailable": "Caméra non disponible",

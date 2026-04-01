@@ -40,7 +40,7 @@ interface SignupResult {
 }
 
 /**
- * Signup service — handles tenant creation for both email and OAuth flows.
+ * Signup service - handles tenant creation for both email and OAuth flows.
  *
  * Eliminates code duplication between /api/signup and /api/signup-oauth.
  * Both routes shared identical logic for: slug generation, tenant creation,
@@ -124,7 +124,7 @@ export function createSignupService(supabase: SupabaseClient) {
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(input.restaurantName);
 
-      // 2. Create auth user (NOT auto-confirmed — must verify via email)
+      // 2. Create auth user (NOT auto-confirmed - must verify via email)
       const { data: authData, error: authError } = await supabase.auth.admin.createUser({
         email: input.email,
         password: input.password,
@@ -169,7 +169,7 @@ export function createSignupService(supabase: SupabaseClient) {
       }
 
       // 4. Create admin user (rollback: delete group + tenant + auth user if fails)
-      // Use email prefix as initial name — user sets real name during onboarding
+      // Use email prefix as initial name - user sets real name during onboarding
       const emailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
       const initialName = emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1) || input.email;
       try {
@@ -211,7 +211,7 @@ export function createSignupService(supabase: SupabaseClient) {
           });
         }
       } catch (emailErr) {
-        // Email sending is best-effort — do not fail signup
+        // Email sending is best-effort - do not fail signup
         logger.error('Failed to send confirmation email', emailErr);
       }
 
@@ -223,7 +223,7 @@ export function createSignupService(supabase: SupabaseClient) {
      *
      * Steps:
      * 1. Generate unique slug
-     * 2. Create tenant (no auth user creation needed — user exists)
+     * 2. Create tenant (no auth user creation needed - user exists)
      * 3. Create admin user (rollback: delete tenant)
      * 4. Create default venue
      */
@@ -250,7 +250,7 @@ export function createSignupService(supabase: SupabaseClient) {
       }
 
       // 3. Create admin user (rollback: delete group + tenant if fails)
-      // Use email prefix as initial name — user sets real name during onboarding
+      // Use email prefix as initial name - user sets real name during onboarding
       const oauthEmailPrefix = input.email.split('@')[0].replace(/[._-]/g, ' ').trim();
       const oauthInitialName =
         oauthEmailPrefix.charAt(0).toUpperCase() + oauthEmailPrefix.slice(1) || input.email;

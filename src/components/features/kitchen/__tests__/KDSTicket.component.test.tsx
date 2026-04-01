@@ -167,7 +167,7 @@ describe('KDSTicket', () => {
   it('calls onUpdateItemStatus when item status badge clicked', () => {
     render(<KDSTicket order={makeOrder()} {...mockCallbacks} />);
 
-    // Item status badge is a button with a dot — find all buttons and click the status one
+    // Item status badge is a button with a dot - find all buttons and click the status one
     const buttons = screen.getAllByRole('button');
     // The status badge button is the one that's not the action button or rupture button
     const statusBadge = buttons.find(

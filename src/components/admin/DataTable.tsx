@@ -64,7 +64,7 @@ interface DataTableProps<TData> {
   onRowClick?: (row: TData) => void;
   /** When provided, sorting state is persisted to sessionStorage under this key */
   storageKey?: string;
-  /** Column visibility map — hide specific columns by id */
+  /** Column visibility map - hide specific columns by id */
   columnVisibility?: VisibilityState;
 }
 
@@ -103,7 +103,7 @@ export function DataTable<TData>({
 
   return (
     <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
-      {/* Scrollable table area — thead sticks at top */}
+      {/* Scrollable table area - thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
         <table className="w-full text-sm min-w-0">
           {/* Sticky Header */}
@@ -170,7 +170,7 @@ export function DataTable<TData>({
         </table>
       </div>
 
-      {/* Pagination footer — fixed at bottom, outside scroll */}
+      {/* Pagination footer - fixed at bottom, outside scroll */}
       {pageCount > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 border-t border-app-border">
           <p className="text-xs text-app-text-secondary">

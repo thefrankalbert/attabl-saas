@@ -208,7 +208,7 @@ describe('OrderService', () => {
 
       const service = createOrderService(asSupabase(supabase));
 
-      // Client sends price 12 but server has 10 — >1% difference
+      // Client sends price 12 but server has 10 - >1% difference
       const items = makeItem({ id: 'item-1', name: 'Pizza', price: 12, quantity: 1 });
 
       await expect(service.validateOrderItems('tenant-123', items)).rejects.toMatchObject({
@@ -226,7 +226,7 @@ describe('OrderService', () => {
 
       const service = createOrderService(asSupabase(supabase));
 
-      // Client sends 10.05 for a 10.00 item — within 1% (0.10)
+      // Client sends 10.05 for a 10.00 item - within 1% (0.10)
       const items = makeItem({ id: 'item-1', name: 'Pizza', price: 10.05, quantity: 1 });
 
       const result = await service.validateOrderItems('tenant-123', items);
@@ -251,7 +251,7 @@ describe('OrderService', () => {
 
       const service = createOrderService(asSupabase(supabase));
 
-      // Item with variant — server DB price is 15
+      // Item with variant - server DB price is 15
       const items = [
         {
           id: 'item-1',

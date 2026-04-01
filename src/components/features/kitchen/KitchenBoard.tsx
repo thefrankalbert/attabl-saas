@@ -79,7 +79,7 @@ export default function KitchenBoard({
               isChefView ? (isActive ? 'flex' : 'hidden @md:flex') : 'flex',
             )}
           >
-            {/* Column Header — hidden on mobile (tabs serve this role) */}
+            {/* Column Header - hidden on mobile (tabs serve this role) */}
             <div
               className={cn(
                 'py-1.5 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/20',

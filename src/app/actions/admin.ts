@@ -179,28 +179,19 @@ export async function actionDeleteAdminUser(
 
   if (!targetUser) return { error: t('userNotFound') };
 
-  // Vérifier si l'utilisateur appartient à d'autres tenants
-  const { data: otherTenants } = await adminClient
-    .from('admin_users')
-    .select('tenant_id')
-    .eq('user_id', targetUser.user_id)
-    .neq('tenant_id', tenantId);
+  // Atomically delete admin_users row and clean up auth user if no memberships remain.
+  // The RPC uses SELECT FOR UPDATE to prevent race conditions.
+  const { data: authDeleted, error: rpcError } = await adminClient.rpc('delete_admin_user_atomic', {
+    p_admin_user_id: userId,
+    p_user_id: targetUser.user_id,
+  });
 
-  // Supprimer le lien admin_users pour ce tenant
-  const { error: dbError } = await adminClient
-    .from('admin_users')
-    .delete()
-    .eq('id', userId)
-    .eq('tenant_id', tenantId);
+  if (rpcError) return { error: rpcError.message };
 
-  if (dbError) return { error: dbError.message };
-
-  // Supprimer le compte auth UNIQUEMENT si l'utilisateur n'appartient à aucun autre tenant
-  if (!otherTenants || otherTenants.length === 0) {
-    const { error: authError } = await adminClient.auth.admin.deleteUser(targetUser.user_id);
-    if (authError) {
-      logger.warn('Erreur lors de la suppression du compte auth:', { error: authError });
-    }
+  if (authDeleted) {
+    logger.info('Auth user deleted (no remaining memberships)', {
+      userId: targetUser.user_id,
+    });
   }
 
   // Fire-and-forget audit log

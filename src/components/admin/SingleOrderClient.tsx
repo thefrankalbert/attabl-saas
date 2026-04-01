@@ -19,7 +19,7 @@ export default function SingleOrderClient({ order: initialOrder }: SingleOrderCl
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Inline header — same line as breadcrumb text */}
+      {/* Inline header - same line as breadcrumb text */}
       <div className="flex items-center gap-2 mb-3 shrink-0">
         <Button
           variant="ghost"
@@ -30,7 +30,7 @@ export default function SingleOrderClient({ order: initialOrder }: SingleOrderCl
           <ChevronLeft className="w-4 h-4" />
         </Button>
         <h1 className="text-sm font-semibold text-app-text break-words">
-          {t('orderDetails')} — {displayLabel}
+          {t('orderDetails')} - {displayLabel}
         </h1>
       </div>
 

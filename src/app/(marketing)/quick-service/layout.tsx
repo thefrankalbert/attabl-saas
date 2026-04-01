@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Restauration Rapide — Commandes en libre-service',
+  title: 'Restauration Rapide - Commandes en libre-service',
   description:
     'Bornes de commande digitales, menu QR code, gestion des files. Optimise pour la restauration rapide et le fast-casual.',
 };

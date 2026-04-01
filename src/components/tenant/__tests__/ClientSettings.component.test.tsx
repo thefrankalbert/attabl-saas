@@ -189,7 +189,7 @@ describe('ClientSettings', () => {
 
   it('shows notification status text', () => {
     renderSettings();
-    // Mock returns translation keys — happy-dom may not have Notification API
+    // Mock returns translation keys - happy-dom may not have Notification API
     const statusEl = screen.getByText(/notificationsDisabled|notificationsNotSupported/);
     expect(statusEl).toBeInTheDocument();
   });
@@ -222,7 +222,7 @@ describe('ClientSettings', () => {
     fireEvent.click(screen.getByText('privacyPolicy').closest('button')!);
     expect(screen.getByText('dataCollectionTitle')).toBeInTheDocument();
 
-    // Find X close buttons — privacy modal has one
+    // Find X close buttons - privacy modal has one
     const closeButtons = screen.getAllByRole('button');
     const modalClose = closeButtons.find((btn) => btn.closest('.z-\\[1001\\]') !== null);
     if (modalClose) {

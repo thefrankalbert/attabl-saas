@@ -25,6 +25,12 @@ vi.mock('@/lib/utils/currency', () => ({
   formatCurrency: (amount: number) => `${amount} FCFA`,
 }));
 
+// Mock window.confirm for cart clear confirmation
+vi.stubGlobal(
+  'confirm',
+  vi.fn(() => true),
+);
+
 // ─── Test Data ──────────────────────────────────────────
 
 const menuItem1: MenuItem = {
@@ -113,7 +119,7 @@ describe('POSCart', () => {
 
   it('renders order number badge', () => {
     renderCart();
-    expect(screen.getByText('#42')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
   });
 
   it('calls onUpdateQuantity when + button clicked', () => {

@@ -27,12 +27,14 @@ export function useCategories(tenantId: string, options?: { withItemCount?: bool
       if (error) throw error;
 
       if (withItemCount) {
+        // Supabase join type gap
         return ((data || []) as unknown as Record<string, unknown>[]).map((cat) => ({
           ...cat,
           items_count: (cat.menu_items as unknown[])?.length || 0,
         })) as CategoryWithCount[];
       }
 
+      // Supabase join type gap
       return (data as unknown as CategoryWithCount[]) ?? [];
     },
     enabled: !!tenantId,

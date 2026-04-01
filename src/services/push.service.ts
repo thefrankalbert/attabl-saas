@@ -1,7 +1,7 @@
 /**
  * Web Push Notification Service
  *
- * Server-side only — sends push notifications via web-push library.
+ * Server-side only - sends push notifications via web-push library.
  * VAPID keys must be set in environment variables.
  */
 
@@ -30,7 +30,7 @@ interface PushPayload {
  */
 export async function sendPushToUser(userId: string, payload: PushPayload): Promise<void> {
   if (!VAPID_PUBLIC_KEY || !VAPID_PRIVATE_KEY) {
-    logger.warn('VAPID keys not configured — skipping push notification');
+    logger.warn('VAPID keys not configured - skipping push notification');
     return;
   }
 

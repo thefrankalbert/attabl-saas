@@ -73,7 +73,7 @@ export default async function AdminLayout({
     if (adminData) {
       adminUser = adminData;
     } else {
-      // Not a direct member — check if the user is a super_admin (can access any tenant)
+      // Not a direct member - check if the user is a super_admin (can access any tenant)
       const { data: superAdminCheck } = await supabase
         .from('admin_users')
         .select('id, user_id, tenant_id, role, name, custom_permissions, is_super_admin')
@@ -106,6 +106,7 @@ export default async function AdminLayout({
 
   const userTenants = (userTenantLinks ?? [])
     .map((link) => {
+      // Supabase join type gap
       const t = link.tenants as unknown as { id: string; name: string; slug: string } | null;
       return t ? { id: t.id, name: t.name, slug: t.slug } : null;
     })

@@ -25,6 +25,7 @@ function getAudioContext(): AudioContext | null {
     if (!sharedAudioContext) {
       const Ctor =
         window.AudioContext ||
+        // webkitAudioContext is not in standard Window type but exists in Safari
         (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       sharedAudioContext = new Ctor();
     }
@@ -78,7 +79,7 @@ function unlockAudioOnUserGesture(): void {
 }
 
 /**
- * Web Audio API fallback — plays a synthetic beep when MP3 is unavailable.
+ * Web Audio API fallback - plays a synthetic beep when MP3 is unavailable.
  */
 function playFallbackBeep(): void {
   try {
@@ -131,7 +132,7 @@ interface SoundContextValue {
   currentSoundId: string;
   /** Change the active sound (persisted in localStorage + updates audio element) */
   setSoundId: (id: string) => void;
-  /** Audio element ref — mounted once by SoundProvider */
+  /** Audio element ref - mounted once by SoundProvider */
   audioRef: React.RefObject<HTMLAudioElement | null>;
 }
 
@@ -150,7 +151,7 @@ interface SoundProviderProps {
 export function SoundProvider({ children, notificationSoundId, tenantId }: SoundProviderProps) {
   const lsPrefix = tenantId ? `${tenantId}_` : '';
 
-  // State — default to enabled (critical for restaurant order alerts)
+  // State - default to enabled (critical for restaurant order alerts)
   const [soundEnabled, setSoundEnabled] = useState(() => {
     if (typeof window === 'undefined') return true;
     const stored = localStorage.getItem(`${lsPrefix}${LS_ENABLED_KEY}`);

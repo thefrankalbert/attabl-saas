@@ -88,7 +88,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* Header — single line on desktop */}
+      {/* Header - single line on desktop */}
       <div className="shrink-0">
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">

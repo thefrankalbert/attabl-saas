@@ -24,7 +24,7 @@ export default function AboutPage() {
           Nous croyons que chaque &eacute;tablissement, du petit bistrot au grand h&ocirc;tel,
           m&eacute;rite des outils digitaux performants. ATTABL offre un menu QR code, un
           syst&egrave;me de commandes en temps r&eacute;el, un POS tactile, un affichage cuisine
-          (KDS), et des analytics avanc&eacute;s — le tout dans une seule plateforme.
+          (KDS), et des analytics avanc&eacute;s - le tout dans une seule plateforme.
         </p>
 
         <h2 className="text-xl font-semibold text-neutral-900 mt-8">Technologie</h2>

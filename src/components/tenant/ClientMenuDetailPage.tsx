@@ -79,7 +79,7 @@ export default function ClientMenuDetailPage({
   const [isSearchSticky, setIsSearchSticky] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // Menu navigation state — auto-select menu containing the target section
+  // Menu navigation state - auto-select menu containing the target section
   const [activeMenuSlug, setActiveMenuSlug] = useState<string | null>(() => {
     if (initialMenuSlug) return initialMenuSlug;
     if (menus.length <= 1) return menus[0]?.slug || null;
@@ -322,7 +322,7 @@ export default function ClientMenuDetailPage({
       className="flex-1 w-full min-h-screen"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* ═══ STICKY HEADER — appears when scrolled past search bar ═══ */}
+      {/* ═══ STICKY HEADER - appears when scrolled past search bar ═══ */}
       {isSearchSticky && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
           <div style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>

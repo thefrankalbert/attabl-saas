@@ -17,12 +17,12 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   // Check if this is the home/dashboard page (path ends with /admin or /admin/)
   const isHome = /\/admin\/?$/.test(pathname ?? '');
 
-  // Immersive pages (KDS/POS) — no padding, no animation
+  // Immersive pages (KDS/POS) - no padding, no animation
   if (isImmersive) {
     return <div className="h-full">{children}</div>;
   }
 
-  // Home page — minimal wrapper, dark bg handled by DashboardClient
+  // Home page - minimal wrapper, dark bg handled by DashboardClient
   if (isHome) {
     return <div className="h-full w-full flex flex-col">{children}</div>;
   }

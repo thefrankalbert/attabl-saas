@@ -200,7 +200,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
       const id = updated.id as string | undefined;
       const newStatus = updated.status as OrderStatus | undefined;
       if (id && newStatus) {
-        // Optimistic in-place status update — no refetch needed
+        // Optimistic in-place status update - no refetch needed
         setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status: newStatus } : o)));
         setLastUpdate(new Date());
       } else {

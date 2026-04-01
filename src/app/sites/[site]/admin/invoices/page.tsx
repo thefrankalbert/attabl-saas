@@ -17,7 +17,7 @@ export default async function InvoicesPage({ params }: { params: Promise<{ site:
     return <TenantNotFound />;
   }
 
-  // stripe_customer_id is not in getTenant — fetch it separately
+  // stripe_customer_id is not in getTenant - fetch it separately
   const supabase = await createClient();
   const { data: stripeInfo } = await supabase
     .from('tenants')

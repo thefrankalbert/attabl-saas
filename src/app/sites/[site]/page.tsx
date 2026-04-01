@@ -25,10 +25,10 @@ export async function generateMetadata({
   const description = `Consultez le menu de ${tenant.name} et commandez en ligne.`;
 
   return {
-    title: `${tenant.name} — Menu Digital | ATTABL`,
+    title: `${tenant.name} - Menu Digital | ATTABL`,
     description,
     openGraph: {
-      title: `${tenant.name} — Menu Digital`,
+      title: `${tenant.name} - Menu Digital`,
       description,
       ...(tenant.logo_url ? { images: [{ url: tenant.logo_url }] } : {}),
     },

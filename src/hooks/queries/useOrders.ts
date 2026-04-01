@@ -31,6 +31,7 @@ export function useOrders(tenantId: string, statusFilter?: string) {
 
       // Transform order_items → items to match Order type
       return ((data || []) as Array<Record<string, unknown>>).map((order) => ({
+        // Supabase join type gap
         ...(order as unknown as Order),
         items: ((order.order_items as Array<Record<string, unknown>>) || []).map((oi) => ({
           id: oi.id as string,

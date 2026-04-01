@@ -20,7 +20,7 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIp: vi.fn(() => '127.0.0.1'),
 }));
 
-// Supabase mock — built per-test via `configureMockSupabase`
+// Supabase mock - built per-test via `configureMockSupabase`
 const mockGetUser =
   vi.fn<() => Promise<{ data: { user: { id: string } | null }; error: Error | null }>>();
 const mockFrom = vi.fn();
@@ -32,7 +32,7 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-// Stripe mock — the route uses `new Stripe(...)` so we need a class constructor
+// Stripe mock - the route uses `new Stripe(...)` so we need a class constructor
 // Use vi.hoisted() so the mock fn is available when the vi.mock factory runs (hoisted)
 const { mockSessionRetrieve } = vi.hoisted(() => ({
   mockSessionRetrieve: vi.fn(),

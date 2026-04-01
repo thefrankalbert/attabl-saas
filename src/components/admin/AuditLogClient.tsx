@@ -56,6 +56,7 @@ export default function AuditLogClient({
   const locale = useLocale();
 
   const [logs, setLogs] = useState<AuditLogEntry[]>(
+    // Supabase join type gap
     (initialLogs as unknown as AuditLogEntry[]) || [],
   );
   const [loading, setLoading] = useState(!initialLogs);
@@ -168,9 +169,11 @@ export default function AuditLogClient({
           {changedKeys.slice(0, 2).map((k) => (
             <span key={k}>
               {k}:{' '}
-              <span className="line-through text-red-400">{String(entry.old_data![k] ?? '—')}</span>
+              <span className="line-through text-red-400">
+                {String(entry.old_data![k] ?? ' - ')}
+              </span>
               {' → '}
-              <span className="text-emerald-600">{String(entry.new_data![k] ?? '—')}</span>
+              <span className="text-emerald-600">{String(entry.new_data![k] ?? ' - ')}</span>
               {', '}
             </span>
           ))}
@@ -344,7 +347,9 @@ export default function AuditLogClient({
                         </td>
                         <td className="px-4 py-3">
                           <div>
-                            <span className="text-sm text-app-text">{entry.user_email || '—'}</span>
+                            <span className="text-sm text-app-text">
+                              {entry.user_email || ' - '}
+                            </span>
                             {entry.user_role && (
                               <span className="ml-1.5 text-[10px] text-app-text-muted font-medium">
                                 ({entry.user_role})
@@ -381,7 +386,7 @@ export default function AuditLogClient({
                       </span>
                     </div>
                     <div className="text-xs text-app-text-secondary">
-                      {entry.user_email || '—'}
+                      {entry.user_email || ' - '}
                       {entry.user_role && ` (${entry.user_role})`}
                     </div>
                     {(() => {

@@ -429,7 +429,7 @@ function BatchQRPreview({
           }),
         );
 
-        // Wait for React to render the SVG — poll until it appears (max 2s)
+        // Wait for React to render the SVG - poll until it appears (max 2s)
         let svg: SVGElement | null = null;
         for (let attempt = 0; attempt < 40; attempt++) {
           svg = container.querySelector('svg');

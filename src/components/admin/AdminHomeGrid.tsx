@@ -166,7 +166,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
 
   return (
     <div className="flex-1 flex flex-col @md:flex-row gap-3 min-h-0 overflow-hidden">
-      {/* ━━━ Left: Featured tiles (POS + Kitchen) — full height ━━━ */}
+      {/* ━━━ Left: Featured tiles (POS + Kitchen) - full height ━━━ */}
       {featuredTiles.length > 0 && (
         <div className="shrink-0 flex @md:flex-col gap-3 @md:w-52 @lg:w-56">
           {featuredTiles.map((tile) => {
@@ -205,7 +205,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
         </div>
       )}
 
-      {/* ━━━ Right: Regular tiles grid — fills remaining space ━━━ */}
+      {/* ━━━ Right: Regular tiles grid - fills remaining space ━━━ */}
       <div
         className={cn(
           'flex-1 grid gap-3 min-h-0 auto-rows-fr',

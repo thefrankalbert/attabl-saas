@@ -1,5 +1,5 @@
 /**
- * Stripe pricing constants — safe to import from client AND server components.
+ * Stripe pricing constants - safe to import from client AND server components.
  * The Stripe SDK and secret key live in server.ts (server-only).
  */
 import type { SubscriptionPlan, BillingInterval } from '@/types/billing';

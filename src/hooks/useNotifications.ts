@@ -58,7 +58,7 @@ export function useNotifications({
     enabled: enabled && !!tenantId,
   });
 
-  // Realtime subscription — invalidate on any change + fire callback on INSERT
+  // Realtime subscription - invalidate on any change + fire callback on INSERT
   useRealtimeSubscription<Record<string, unknown>>({
     channelName: `notifications_${tenantId}_${userId ?? 'all'}`,
     table: 'notifications',

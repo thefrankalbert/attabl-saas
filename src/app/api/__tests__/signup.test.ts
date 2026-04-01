@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ServiceError } from '@/services/errors';
 
 // ---------------------------------------------------------------------------
-// Mocks — all external dependencies are mocked before the route is imported.
+// Mocks - all external dependencies are mocked before the route is imported.
 // ---------------------------------------------------------------------------
 
 const mockCheck = vi.fn<() => Promise<{ success: boolean }>>().mockResolvedValue({ success: true });

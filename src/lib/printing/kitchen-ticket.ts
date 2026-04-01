@@ -162,9 +162,9 @@ export function generateKitchenTicketHTML(order: Order): string {
 
   <div class="separator"></div>
 
-  <!-- Order info — BIG -->
+  <!-- Order info - BIG -->
   <div class="center">
-    <p style="font-size:32px;font-weight:bold;">TABLE ${escapeHtml(String(order.table_number || '—'))}</p>
+    <p style="font-size:32px;font-weight:bold;">TABLE ${escapeHtml(String(order.table_number || ' - '))}</p>
     ${order.order_number ? `<p style="font-size:16px;color:#666;">${escapeHtml(order.order_number)}</p>` : ''}
     <div class="service-badge">${serviceLabel}</div>
     ${order.room_number ? `<p style="font-size:18px;font-weight:bold;margin-top:6px;">Chambre ${escapeHtml(String(order.room_number))}</p>` : ''}

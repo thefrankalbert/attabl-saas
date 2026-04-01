@@ -41,7 +41,7 @@ export default function ContactPage() {
 
   return (
     <div className="flex h-screen w-full bg-app-bg">
-      {/* Left — Form on white */}
+      {/* Left - Form on white */}
       <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">
           <motion.div
@@ -170,7 +170,7 @@ export default function ContactPage() {
         </div>
       </div>
 
-      {/* Right — Dark panel (hidden on mobile) */}
+      {/* Right - Dark panel (hidden on mobile) */}
       <div className="hidden lg:flex lg:w-5/12 items-center py-6 pr-6 pl-3">
         <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-[2rem]">
           <div className="absolute inset-0 bg-gradient-to-br from-neutral-900 via-black to-neutral-900" />

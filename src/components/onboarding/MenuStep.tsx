@@ -215,7 +215,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
             </div>
           </div>
 
-          {/* Categories — Full width */}
+          {/* Categories - Full width */}
           <div>
             <p className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted mb-4">
               {tSeg(`${family}.catalog`)}

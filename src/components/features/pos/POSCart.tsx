@@ -32,7 +32,6 @@ interface POSCartProps {
   currency: CurrencyCode;
   total: number;
   orderNumber: number;
-  basePath: string;
 
   // Service type
   serviceType: ServiceType;
@@ -107,32 +106,23 @@ export default function POSCart({
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
 
-  const SERVICE_TYPES: {
-    value: ServiceType;
-    label: string;
-    icon: React.ReactNode;
-  }[] = [
-    {
-      value: 'dine_in',
-      label: t('serviceOnSite'),
-      icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
-    },
-    {
-      value: 'takeaway',
-      label: t('serviceTakeaway'),
-      icon: <Package className="w-3.5 h-3.5" />,
-    },
-    {
-      value: 'delivery',
-      label: t('serviceDelivery'),
-      icon: <Truck className="w-3.5 h-3.5" />,
-    },
-    {
-      value: 'room_service',
-      label: t('serviceRoomService'),
-      icon: <BellRing className="w-3.5 h-3.5" />,
-    },
-  ];
+  const SERVICE_TYPES = useMemo<{ value: ServiceType; label: string; icon: React.ReactNode }[]>(
+    () => [
+      {
+        value: 'dine_in',
+        label: t('serviceOnSite'),
+        icon: <UtensilsCrossed className="w-3.5 h-3.5" />,
+      },
+      { value: 'takeaway', label: t('serviceTakeaway'), icon: <Package className="w-3.5 h-3.5" /> },
+      { value: 'delivery', label: t('serviceDelivery'), icon: <Truck className="w-3.5 h-3.5" /> },
+      {
+        value: 'room_service',
+        label: t('serviceRoomService'),
+        icon: <BellRing className="w-3.5 h-3.5" />,
+      },
+    ],
+    [t],
+  );
 
   return (
     <>
@@ -141,146 +131,163 @@ export default function POSCart({
         <div className="flex items-center gap-2.5">
           <Receipt className="w-4 h-4 text-app-text-muted" />
           <span className="font-bold text-sm text-app-text tracking-tight">{t('cart')}</span>
-          <span className="text-xs font-mono bg-app-elevated text-app-text-secondary px-2 py-0.5 rounded">
-            #{orderNumber}
+          <span
+            className="text-xs font-mono bg-app-elevated text-app-text-muted px-1.5 py-0.5 rounded"
+            title={t('cart')}
+          >
+            {String(orderNumber).padStart(2, '0')}
           </span>
         </div>
         <button
-          onClick={onClearCart}
-          title="Supprimer"
+          onClick={() => {
+            if (cart.length === 0 || window.confirm(t('confirmClearCart'))) {
+              onClearCart();
+            }
+          }}
+          title={tc('delete')}
           className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
       </div>
 
-      {/* ━━━ SERVICE TYPE ━━━ */}
-      <div className="p-3 border-b border-app-border space-y-2">
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
-          {SERVICE_TYPES.map((st) => (
+      {/* ━━━ SCROLLABLE AREA (service type + cart items) ━━━ */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {/* ━━━ SERVICE TYPE ━━━ */}
+        <div className="p-3 border-b border-app-border space-y-2">
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
+            {SERVICE_TYPES.map((st) => (
+              <button
+                key={st.value}
+                type="button"
+                onClick={() => setServiceType(st.value)}
+                className={cn(
+                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] transition-all whitespace-nowrap text-xs font-medium',
+                  serviceType === st.value
+                    ? 'bg-accent text-accent-text'
+                    : 'border border-app-border text-app-text-secondary hover:bg-app-hover',
+                )}
+              >
+                {st.icon}
+                <span>{st.label}</span>
+              </button>
+            ))}
+          </div>
+
+          {serviceType === 'dine_in' && (
             <button
-              key={st.value}
               type="button"
-              onClick={() => setServiceType(st.value)}
-              className={cn(
-                'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] transition-all whitespace-nowrap text-xs font-medium',
-                serviceType === st.value
-                  ? 'bg-accent text-accent-text'
-                  : 'border border-app-border text-app-text-secondary hover:bg-app-hover',
-              )}
+              onClick={() => setShowTablePicker(true)}
+              className="flex items-center gap-2 h-9 px-3 rounded-lg border border-app-border bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text transition-colors animate-in fade-in slide-in-from-top-1"
             >
-              {st.icon}
-              <span>{st.label}</span>
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>{selectedTable || t('selectTable')}</span>
             </button>
-          ))}
+          )}
+
+          {serviceType === 'room_service' && (
+            <Input
+              placeholder={t('roomNumberPlaceholder')}
+              value={roomNumber}
+              onChange={(e) => setRoomNumber(e.target.value)}
+              className="h-9 animate-in fade-in slide-in-from-top-1"
+            />
+          )}
+
+          {serviceType === 'delivery' && (
+            <textarea
+              placeholder={t('deliveryAddressPlaceholder')}
+              value={deliveryAddress}
+              onChange={(e) => setDeliveryAddress(e.target.value)}
+              className="w-full h-16 p-2 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
+            />
+          )}
         </div>
 
-        {serviceType === 'dine_in' && (
-          <button
-            type="button"
-            onClick={() => setShowTablePicker(true)}
-            className="flex items-center gap-2 h-9 px-3 rounded-lg border border-app-border bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text transition-colors animate-in fade-in slide-in-from-top-1 w-full"
-          >
-            <LayoutGrid className="w-3.5 h-3.5" />
-            <span>{selectedTable || t('selectTable')}</span>
-          </button>
-        )}
-
-        {serviceType === 'room_service' && (
-          <Input
-            placeholder={t('roomNumberPlaceholder')}
-            value={roomNumber}
-            onChange={(e) => setRoomNumber(e.target.value)}
-            className="h-9 animate-in fade-in slide-in-from-top-1"
-          />
-        )}
-
-        {serviceType === 'delivery' && (
-          <textarea
-            placeholder={t('deliveryAddressPlaceholder')}
-            value={deliveryAddress}
-            onChange={(e) => setDeliveryAddress(e.target.value)}
-            className="w-full h-16 p-2 text-sm border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none animate-in fade-in slide-in-from-top-1"
-          />
-        )}
-      </div>
-
-      {/* ━━━ CART ITEMS — Receipt style ━━━ */}
-      <div className="flex-1 overflow-y-auto">
-        {cart.length > 0 ? (
-          <div className="divide-y divide-app-border">
-            {cart.map((item) => {
-              const itemKey = item.cartKey || item.id;
-              const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
-              const unitTotal = item.price + modCost;
-              return (
-                <div key={itemKey} className="px-3 py-2">
-                  {/* Line 1: Name + line total */}
-                  <div className="flex justify-between items-start gap-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-app-text leading-tight">{item.name}</p>
-                      {/* Modifiers + Notes inline */}
-                      <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                        {item.selectedModifiers && item.selectedModifiers.length > 0 && (
-                          <span className="text-[10px] text-app-text-muted font-medium">
-                            +{item.selectedModifiers.map((m) => m.name).join(', ')}
-                          </span>
-                        )}
-                        {item.notes && (
-                          <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
-                            {item.notes}
-                          </span>
+        {/* ━━━ CART ITEMS - Receipt style ━━━ */}
+        <div>
+          {cart.length > 0 ? (
+            <div className="divide-y divide-app-border">
+              {cart.map((item) => {
+                const itemKey = item.cartKey || item.id;
+                const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
+                const unitTotal = item.price + modCost;
+                return (
+                  <div key={itemKey} className="px-3 py-2">
+                    {/* Line 1: Name + line total */}
+                    <div className="flex justify-between items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-app-text leading-tight">
+                          {item.name}
+                        </p>
+                        {/* Variant + Modifiers + Notes inline */}
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {item.selectedVariant && (
+                            <span className="text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded border border-accent/20 font-medium">
+                              {item.selectedVariant.name}
+                            </span>
+                          )}
+                          {item.selectedModifiers && item.selectedModifiers.length > 0 && (
+                            <span className="text-[10px] text-app-text-muted font-medium">
+                              +{item.selectedModifiers.map((m) => m.name).join(', ')}
+                            </span>
+                          )}
+                          {item.notes && (
+                            <span className="text-[10px] bg-amber-500/10 text-amber-500 px-1.5 py-0.5 rounded border border-amber-500/20">
+                              {item.notes}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-sm font-bold text-app-text tabular-nums font-mono">
+                          {formatCurrency(unitTotal * item.quantity, currency)}
+                        </p>
+                        {item.quantity > 1 && (
+                          <p className="text-[10px] text-app-text-muted tabular-nums font-mono">
+                            {item.quantity} &times; {formatCurrency(unitTotal, currency)}
+                          </p>
                         )}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-sm font-bold text-app-text tabular-nums font-mono">
-                        {formatCurrency(unitTotal * item.quantity, currency)}
-                      </p>
-                      {item.quantity > 1 && (
-                        <p className="text-[10px] text-app-text-muted tabular-nums font-mono">
-                          {item.quantity} &times; {formatCurrency(unitTotal, currency)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Line 2: Quantity controls + Note button */}
-                  <div className="flex items-center justify-between mt-1.5">
-                    <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
+                    {/* Line 2: Quantity controls + Note button */}
+                    <div className="flex items-center justify-between mt-1.5">
+                      <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
+                        <button
+                          onClick={() => onUpdateQuantity(itemKey, -1)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-l-md text-app-text-muted transition-colors touch-manipulation"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="w-7 text-center text-xs font-bold tabular-nums text-app-text">
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={() => onUpdateQuantity(itemKey, 1)}
+                          className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-r-md text-app-text-muted transition-colors touch-manipulation"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
                       <button
-                        onClick={() => onUpdateQuantity(itemKey, -1)}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-l-md text-app-text-muted transition-colors touch-manipulation"
+                        onClick={() => onEditNotes(itemKey, item.notes || '')}
+                        className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 flex items-center transition-colors touch-manipulation"
                       >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="w-7 text-center text-xs font-bold tabular-nums text-app-text">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => onUpdateQuantity(itemKey, 1)}
-                        className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-r-md text-app-text-muted transition-colors touch-manipulation"
-                      >
-                        <Plus className="w-3 h-3" />
+                        {item.notes ? tc('edit') : seg.productionNote}
                       </button>
                     </div>
-                    <button
-                      onClick={() => onEditNotes(itemKey, item.notes || '')}
-                      className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 flex items-center transition-colors touch-manipulation"
-                    >
-                      {item.notes ? tc('edit') : seg.productionNote}
-                    </button>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-16 text-app-text-muted">
-            <ShoppingBag className="w-10 h-10 mb-2 opacity-30" />
-            <p className="text-sm">{t('emptyCart')}</p>
-          </div>
-        )}
+                );
+              })}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-16 text-app-text-muted">
+              <ShoppingBag className="w-10 h-10 mb-2 opacity-30" />
+              <p className="text-sm">{t('emptyCart')}</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ━━━ FOOTER ━━━ */}

@@ -61,7 +61,7 @@ function OrderConfirmedContent() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setShowSuccess(false);
-      // Request permission after the animation — a subtle moment, not intrusive
+      // Request permission after the animation - a subtle moment, not intrusive
       if (permissionState === 'default') {
         requestPermission();
       }
@@ -245,7 +245,7 @@ function OrderConfirmedContent() {
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
-        {/* Order ready banner — prominent notification */}
+        {/* Order ready banner - prominent notification */}
         {showReadyBanner && (
           <div className="relative bg-emerald-500 text-white rounded-xl px-4 py-4 flex items-center gap-3 shadow-lg animate-pulse-once">
             <BellRing className="w-6 h-6 shrink-0" />
@@ -265,7 +265,7 @@ function OrderConfirmedContent() {
           </div>
         )}
 
-        {/* Notification permission prompt — shown once if not yet decided */}
+        {/* Notification permission prompt - shown once if not yet decided */}
         {!showReadyBanner &&
           permissionState === 'default' &&
           order.status !== 'ready' &&
@@ -279,10 +279,10 @@ function OrderConfirmedContent() {
             </button>
           )}
 
-        {/* Simple status message — no detailed tracking visible to customer */}
+        {/* Simple status message - no detailed tracking visible to customer */}
         <OrderStatusMessage status={order.status} />
 
-        {/* Order summary card — same style as cart */}
+        {/* Order summary card - same style as cart */}
         <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
           {order.table_number && (
             <div className="px-4 py-3 border-b border-app-border/50 flex items-center justify-between">

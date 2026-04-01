@@ -140,13 +140,13 @@ function ResetPasswordContent() {
             </Button>
           </div>
         ) : checking ? (
-          /* Loading — waiting for session detection */
+          /* Loading - waiting for session detection */
           <div className="text-center">
             <Loader2 className="w-8 h-8 animate-spin text-app-text-muted mx-auto mb-4" />
             <p className="text-sm text-app-text-secondary">Verification en cours...</p>
           </div>
         ) : !sessionReady ? (
-          /* No session — invalid or expired link */
+          /* No session - invalid or expired link */
           <div className="text-center">
             <div className="w-14 h-14 bg-status-warning-bg rounded-full flex items-center justify-center mx-auto mb-4">
               <AlertTriangle className="w-7 h-7 text-status-warning" />

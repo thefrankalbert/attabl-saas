@@ -11,12 +11,7 @@ import {
   Shield,
   LogOut,
   Search,
-  Store,
-  Crown,
-  Zap,
-  Clock,
   Plus,
-  TrendingUp,
   ShoppingBag,
   ArrowRight,
   CalendarDays,
@@ -232,10 +227,11 @@ export default function TenantsPageClient({
       if (data) {
         setRecentOrders(
           data.map((o) => {
+            // Supabase join type gap
             const t = o.tenants as unknown as { name: string; slug: string } | null;
             return {
               id: o.id,
-              order_number: o.order_number || '—',
+              order_number: o.order_number || ' - ',
               total: Number(o.total) || 0,
               status: o.status || 'pending',
               created_at: o.created_at,
@@ -370,50 +366,17 @@ export default function TenantsPageClient({
 
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-5">
+            <div className="flex items-center gap-4 sm:gap-6 mb-4 pb-3 border-b border-app-border">
               {[
-                {
-                  icon: Store,
-                  label: 'Total',
-                  value: stats.total,
-                  color: 'text-accent',
-                  bg: 'bg-accent-muted',
-                },
-                {
-                  icon: Zap,
-                  label: 'Actifs',
-                  value: stats.active,
-                  color: 'text-status-success',
-                  bg: 'bg-app-status-success-bg',
-                },
-                {
-                  icon: Crown,
-                  label: 'Premium',
-                  value: stats.paid,
-                  color: 'text-amber-500',
-                  bg: 'bg-amber-500/10',
-                },
-                {
-                  icon: Clock,
-                  label: 'Trial',
-                  value: stats.trial,
-                  color: 'text-app-text-muted',
-                  bg: 'bg-app-elevated',
-                },
+                { label: 'Total', value: stats.total, color: 'bg-accent' },
+                { label: 'Actifs', value: stats.active, color: 'bg-status-success' },
+                { label: 'Premium', value: stats.paid, color: 'bg-amber-500' },
+                { label: 'Trial', value: stats.trial, color: 'bg-app-text-muted' },
               ].map((stat) => (
-                <div
-                  key={stat.label}
-                  className="border border-app-border rounded-xl p-3 bg-app-card"
-                >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={`rounded-lg p-1 ${stat.bg}`}>
-                      <stat.icon className={`h-3 w-3 ${stat.color}`} />
-                    </div>
-                    <span className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                      {stat.label}
-                    </span>
-                  </div>
-                  <p className="text-2xl font-black text-app-text tabular-nums">{stat.value}</p>
+                <div key={stat.label} className="flex items-center gap-1.5">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${stat.color}`} />
+                  <span className="text-xs text-app-text-muted">{stat.label}</span>
+                  <span className="text-sm font-bold text-app-text tabular-nums">{stat.value}</span>
                 </div>
               ))}
             </div>
@@ -434,38 +397,35 @@ export default function TenantsPageClient({
             </div>
 
             {filteredTenants.length > 0 ? (
-              <div className="space-y-1.5">
+              <div>
                 {filteredTenants.map((tenant) => (
                   <div
                     key={tenant.id}
-                    className="flex items-center justify-between gap-3 border border-app-border rounded-xl bg-app-card p-3 hover:bg-app-hover transition-colors"
+                    className="flex items-center justify-between gap-3 py-2.5 border-b border-app-border last:border-b-0 hover:bg-app-hover/50 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-app-elevated shrink-0">
-                        <Building2 className="h-4 w-4 text-app-text-muted" />
-                      </div>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span
+                        className={`inline-block h-2 w-2 rounded-full shrink-0 ${
+                          tenant.is_active ? 'bg-status-success' : 'bg-app-text-muted'
+                        }`}
+                      />
                       <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-app-text break-words">
-                          {tenant.name}
-                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-sm font-semibold text-app-text break-words">
+                            {tenant.name}
+                          </h3>
+                          <Badge
+                            variant="outline"
+                            className="hidden sm:inline-flex text-[9px] font-semibold rounded-md border-app-border px-1 py-0"
+                          >
+                            {tenant.subscription_plan || 'N/A'}
+                          </Badge>
+                        </div>
                         <p className="text-[10px] text-app-text-muted">{tenant.slug}.attabl.com</p>
                       </div>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
-                      <div className="hidden sm:flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className="text-[10px] font-semibold rounded-lg border-app-border"
-                        >
-                          {tenant.subscription_plan || 'N/A'}
-                        </Badge>
-                        <span
-                          className={`inline-block h-2 w-2 rounded-full ${
-                            tenant.is_active ? 'bg-status-success' : 'bg-app-text-muted'
-                          }`}
-                        />
-                      </div>
                       <Button
                         size="sm"
                         onClick={() => handleSelectTenant(tenant.slug)}
@@ -487,17 +447,15 @@ export default function TenantsPageClient({
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-app-border py-16 bg-app-card">
-                <div className="mb-3 rounded-xl bg-app-elevated p-4">
-                  <Building2 className="h-8 w-8 text-app-text-muted" />
-                </div>
+              <div className="flex flex-col items-center justify-center py-16">
+                <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
                 <h3 className="text-sm font-semibold text-app-text mb-1">
-                  {searchQuery ? 'Aucun résultat' : 'Aucun établissement'}
+                  {searchQuery ? 'Aucun resultat' : 'Aucun etablissement'}
                 </h3>
                 <p className="text-xs text-app-text-muted text-center max-w-xs">
                   {searchQuery
-                    ? `Aucun établissement ne correspond à "${searchQuery}".`
-                    : 'Aucun établissement enregistré pour le moment.'}
+                    ? `Aucun etablissement ne correspond a "${searchQuery}".`
+                    : 'Aucun etablissement enregistre pour le moment.'}
                 </p>
                 {searchQuery && (
                   <Button
@@ -519,399 +477,352 @@ export default function TenantsPageClient({
 
   // ─── OWNER HUB MODE ────────────────────────────────────────
   return (
-    <div className="h-dvh flex flex-col bg-app-bg">
-      {/* Header */}
-      <header className="shrink-0 border-b border-app-border px-4 sm:px-6 py-3">
-        <div className="mx-auto flex max-w-6xl items-center justify-between">
-          <div className="flex items-baseline gap-2 flex-wrap min-w-0">
-            <h1 className="text-lg font-bold text-app-text">
-              {greetKey}, {userName}
-            </h1>
-            <span className="text-xs text-app-text-muted capitalize" suppressHydrationWarning>
-              {new Date().toLocaleDateString('fr-FR', {
-                weekday: 'long',
-                day: 'numeric',
-                month: 'long',
-              })}
+    <div className="h-dvh flex flex-col bg-app-bg p-3 sm:p-5 lg:p-6 overflow-hidden">
+      {/* Greeting + stats inline row - matches dashboard style */}
+      <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-baseline gap-2 flex-wrap min-w-0">
+          <h1 className="text-base sm:text-lg font-bold text-app-text">
+            {greetKey}, {userName}
+          </h1>
+          <span
+            className="text-xs text-app-text-muted capitalize hidden sm:inline"
+            suppressHydrationWarning
+          >
+            {new Date().toLocaleDateString('fr-FR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+            })}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <ThemeToggle />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2 rounded-xl border-app-border"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline text-xs">Deconnexion</span>
+          </Button>
+        </div>
+      </div>
+
+      {/* Stats row - inline with border separator */}
+      <div className="shrink-0 px-1 py-2 mb-2 border-b border-app-border">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
+            <span className="text-xs text-app-text-muted">CA</span>
+            <span className="text-sm font-bold text-app-text tabular-nums">
+              {formatCFA(ownerGlobals.totalRevenueToday)}
+            </span>
+            <span className="text-[10px] text-app-text-muted hidden sm:inline">
+              / mois {formatCFA(ownerGlobals.totalRevenueMonth)}
             </span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <ThemeToggle />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-2 rounded-xl border-app-border"
-            >
-              <LogOut className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline text-xs">Déconnexion</span>
-            </Button>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
+            <span className="text-xs text-app-text-muted">Cmd</span>
+            <span className="text-sm font-bold text-app-text tabular-nums">
+              {ownerGlobals.totalOrdersToday}
+            </span>
+            <span className="text-[10px] text-app-text-muted hidden sm:inline">
+              / mois {ownerGlobals.totalOrdersMonth}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2 h-2 rounded-full bg-violet-400 shrink-0" />
+            <span className="text-xs text-app-text-muted">Sites</span>
+            <span className="text-sm font-bold text-app-text tabular-nums">
+              {ownerGlobals.totalRestaurants}
+            </span>
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* Content — single viewport, no scroll */}
-      <div className="flex-1 flex flex-col min-h-0">
-        <div className="mx-auto max-w-6xl w-full px-4 sm:px-6 py-3 flex-1 flex flex-col gap-3 min-h-0">
-          {/* ═══ TOP ROW: KPIs + Chart ═══ */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 shrink-0">
-            {/* KPI compact cards — 3 cards in first column */}
-            <div className="flex md:flex-col gap-2">
-              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <TrendingUp className="h-3 w-3 text-accent" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
-                    CA
-                  </span>
-                </div>
-                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
-                  {formatCFA(ownerGlobals.totalRevenueToday)}
-                </p>
-                <p className="text-[9px] text-app-text-muted">
-                  Mois : {formatCFA(ownerGlobals.totalRevenueMonth)}
-                </p>
-              </div>
-              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <ShoppingBag className="h-3 w-3 text-blue-500" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
-                    Commandes
-                  </span>
-                </div>
-                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
-                  {ownerGlobals.totalOrdersToday}
-                </p>
-                <p className="text-[9px] text-app-text-muted">
-                  Mois : {ownerGlobals.totalOrdersMonth}
-                </p>
-              </div>
-              <div className="flex-1 bg-app-card rounded-xl border border-app-border p-2.5">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <Store className="h-3 w-3 text-app-text-muted" />
-                  <span className="text-[8px] font-bold uppercase tracking-widest text-app-text-muted">
-                    Sites
-                  </span>
-                </div>
-                <p className="text-sm font-black text-app-text tabular-nums leading-tight">
-                  {ownerGlobals.totalRestaurants}
-                </p>
-              </div>
+      {/* Two-column: left (chart), right (orders + establishments) */}
+      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-3">
+        {/* Left: Chart */}
+        <div className="md:w-[50%] overflow-hidden flex flex-col min-h-0">
+          <div className="px-1 pt-1 pb-1.5 flex items-center justify-between shrink-0">
+            <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
+              {(['revenue', 'orders'] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setChartMode(m)}
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartMode === m ? 'bg-app-card text-accent shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
+                >
+                  {m === 'revenue' ? 'CA' : 'Commandes'}
+                </button>
+              ))}
             </div>
-
-            {/* Chart — takes 3 cols */}
-            <div className="md:col-span-3 bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col">
-              <div className="px-3 pt-2.5 pb-1.5 flex items-center justify-between">
-                <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
-                  <button
-                    onClick={() => setChartMode('revenue')}
-                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      chartMode === 'revenue'
-                        ? 'bg-app-card text-accent shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary'
-                    }`}
-                  >
-                    CA
-                  </button>
-                  <button
-                    onClick={() => setChartMode('orders')}
-                    className={`px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      chartMode === 'orders'
-                        ? 'bg-app-card text-accent shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary'
-                    }`}
-                  >
-                    Commandes
-                  </button>
-                </div>
-                <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
-                  <button
-                    onClick={() => setChartPeriod('day')}
-                    className={`flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      chartPeriod === 'day'
-                        ? 'bg-app-card text-app-text shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary'
-                    }`}
-                  >
-                    <CalendarDays className="h-2.5 w-2.5" />
-                    Jour
-                  </button>
-                  <button
-                    onClick={() => setChartPeriod('month')}
-                    className={`flex items-center gap-1 px-2.5 py-1 text-[9px] font-bold uppercase tracking-widest rounded-md transition-all ${
-                      chartPeriod === 'month'
-                        ? 'bg-app-card text-app-text shadow-sm'
-                        : 'text-app-text-muted hover:text-app-text-secondary'
-                    }`}
-                  >
-                    <CalendarDays className="h-2.5 w-2.5" />
-                    Mois
-                  </button>
-                </div>
-              </div>
-              <div className="px-2 pb-2 flex-1 min-h-[120px] h-[140px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  {chartMode === 'revenue' ? (
-                    <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="hubRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
-                          <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.1} />
-                          <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="var(--app-border)"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="label"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                        dy={4}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                        tickFormatter={formatCompactCFA}
-                        width={40}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'var(--app-elevated)',
-                          border: '1px solid var(--app-border)',
-                          borderRadius: '10px',
-                          fontSize: '11px',
-                          color: 'var(--app-text)',
-                          padding: '6px 10px',
-                        }}
-                        formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
-                        labelStyle={{
-                          color: 'var(--app-text-muted)',
-                          fontSize: '9px',
-                          marginBottom: '2px',
-                        }}
-                        cursor={{
-                          stroke: 'var(--accent)',
-                          strokeWidth: 1,
-                          strokeDasharray: '4 4',
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="revenue"
-                        stroke="var(--accent)"
-                        fill="url(#hubRevenueGrad)"
-                        strokeWidth={2}
-                        dot={false}
-                        activeDot={{
-                          r: 3,
-                          fill: 'var(--accent)',
-                          stroke: 'var(--app-card)',
-                          strokeWidth: 2,
-                        }}
-                      />
-                    </AreaChart>
-                  ) : (
-                    <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid
-                        strokeDasharray="3 3"
-                        stroke="var(--app-border)"
-                        vertical={false}
-                      />
-                      <XAxis
-                        dataKey="label"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                        dy={4}
-                        interval="preserveStartEnd"
-                      />
-                      <YAxis
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fontSize: 9, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                        width={25}
-                        allowDecimals={false}
-                      />
-                      <Tooltip
-                        contentStyle={{
-                          background: 'var(--app-elevated)',
-                          border: '1px solid var(--app-border)',
-                          borderRadius: '10px',
-                          fontSize: '11px',
-                          color: 'var(--app-text)',
-                          padding: '6px 10px',
-                        }}
-                        formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
-                        labelStyle={{
-                          color: 'var(--app-text-muted)',
-                          fontSize: '9px',
-                          marginBottom: '2px',
-                        }}
-                        cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
-                      />
-                      <Bar
-                        dataKey="orders"
-                        fill="var(--accent)"
-                        radius={[3, 3, 0, 0]}
-                        maxBarSize={24}
-                      />
-                    </BarChart>
-                  )}
-                </ResponsiveContainer>
-              </div>
+            <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
+              {(['day', 'month'] as const).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setChartPeriod(p)}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartPeriod === p ? 'bg-app-card text-app-text shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
+                >
+                  <CalendarDays className="h-2.5 w-2.5" />
+                  {p === 'day' ? 'Jour' : 'Mois'}
+                </button>
+              ))}
             </div>
           </div>
+          <div className="pb-2 flex-1 min-h-0 border-b border-app-border">
+            <ResponsiveContainer width="100%" height="100%">
+              {chartMode === 'revenue' ? (
+                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="hubRevenueGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
+                      <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.1} />
+                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--app-border)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
+                    dy={4}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
+                    tickFormatter={formatCompactCFA}
+                    width={40}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--app-elevated)',
+                      border: '1px solid var(--app-border)',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      color: 'var(--app-text)',
+                      padding: '6px 10px',
+                    }}
+                    formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
+                    labelStyle={{
+                      color: 'var(--app-text-muted)',
+                      fontSize: '10px',
+                      marginBottom: '2px',
+                    }}
+                    cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="var(--accent)"
+                    fill="url(#hubRevenueGrad)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{
+                      r: 3,
+                      fill: 'var(--accent)',
+                      stroke: 'var(--app-card)',
+                      strokeWidth: 2,
+                    }}
+                  />
+                </AreaChart>
+              ) : (
+                <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--app-border)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="label"
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
+                    dy={4}
+                    interval="preserveStartEnd"
+                  />
+                  <YAxis
+                    axisLine={false}
+                    tickLine={false}
+                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
+                    width={25}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--app-elevated)',
+                      border: '1px solid var(--app-border)',
+                      borderRadius: '10px',
+                      fontSize: '11px',
+                      color: 'var(--app-text)',
+                      padding: '6px 10px',
+                    }}
+                    formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
+                    labelStyle={{
+                      color: 'var(--app-text-muted)',
+                      fontSize: '10px',
+                      marginBottom: '2px',
+                    }}
+                    cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
+                  />
+                  <Bar
+                    dataKey="orders"
+                    fill="var(--accent)"
+                    radius={[3, 3, 0, 0]}
+                    maxBarSize={24}
+                  />
+                </BarChart>
+              )}
+            </ResponsiveContainer>
+          </div>
+        </div>
 
-          {/* ═══ BOTTOM ROW: Recent Orders + Establishments ═══ */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1 min-h-0">
-            {/* Recent orders */}
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0">
-              <div className="px-3 py-2 border-b border-app-border flex items-center justify-between shrink-0">
-                <div className="flex items-center gap-1.5">
-                  <Receipt className="h-3 w-3 text-app-text-muted" />
-                  <h2 className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                    Commandes récentes
-                  </h2>
-                </div>
-                {recentOrders.length > 0 && (
-                  <div className="flex items-center gap-1">
-                    <span className="relative flex h-1.5 w-1.5">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
-                      <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-status-success" />
-                    </span>
-                    <span className="text-[8px] text-status-success font-medium">Live</span>
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 overflow-y-auto scrollbar-hide">
-                {recentOrders.length > 0 ? (
-                  <div className="divide-y divide-app-border">
-                    {recentOrders.map((order) => (
-                      <div
-                        key={order.id}
-                        onClick={() => handleSelectTenant(order.tenant_slug)}
-                        className="flex items-center gap-2 px-3 py-2 hover:bg-app-hover transition-colors cursor-pointer"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-[11px] font-bold text-app-text">
-                              #{order.order_number}
-                            </span>
-                            <span
-                              className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
-                            >
-                              {STATUS_LABELS[order.status] || order.status}
-                            </span>
-                          </div>
-                          {restaurants.length > 1 && (
-                            <p className="text-[9px] text-app-text-muted break-words">
-                              {order.tenant_name}
-                            </p>
-                          )}
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className="text-[11px] font-bold text-app-text tabular-nums">
-                            {formatCFA(order.total)}
-                          </p>
-                          <p className="text-[8px] text-app-text-muted tabular-nums">
-                            {formatTime(order.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-6">
-                    <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
-                    <p className="text-[10px] text-app-text-muted">Aucune commande récente</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Establishments */}
-            <div className="bg-app-card rounded-xl border border-app-border overflow-hidden flex flex-col min-h-0">
-              <div className="px-3 py-2 border-b border-app-border flex items-center justify-between shrink-0">
-                <h2 className="text-[9px] font-bold uppercase tracking-widest text-app-text-muted">
-                  Mes établissements
+        {/* Right: Orders + Establishments stacked */}
+        <div className="md:w-[50%] flex flex-col gap-3 min-h-0">
+          {/* Recent orders */}
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="px-1 py-2 border-b border-app-border flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-1.5">
+                <Receipt className="h-3.5 w-3.5 text-app-text-muted" />
+                <h2 className="text-xs font-bold uppercase tracking-wider text-app-text-muted">
+                  Commandes recentes
                 </h2>
-                <button
-                  onClick={() => setShowWizard(true)}
-                  className="flex items-center gap-1 text-[10px] font-medium text-accent hover:text-accent-hover transition-colors"
-                >
-                  <Plus className="h-3 w-3" />
-                  Ajouter
-                </button>
               </div>
-              <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {recentOrders.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-status-success" />
+                  </span>
+                  <span className="text-[11px] text-status-success font-medium">Live</span>
+                </div>
+              )}
+            </div>
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              {recentOrders.length > 0 ? (
                 <div className="divide-y divide-app-border">
-                  {restaurants.map((r) => (
+                  {recentOrders.map((order) => (
                     <div
-                      key={r.tenant_id}
-                      onClick={() => handleSelectTenant(r.tenant_slug)}
-                      className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer group"
+                      key={order.id}
+                      onClick={() => handleSelectTenant(order.tenant_slug)}
+                      className="flex items-center gap-2 px-3 py-2 hover:bg-app-hover transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        {r.tenant_logo_url ? (
-                          <Image
-                            src={r.tenant_logo_url}
-                            alt={r.tenant_name}
-                            width={32}
-                            height={32}
-                            className="h-8 w-8 rounded-lg object-cover shrink-0"
-                          />
-                        ) : (
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-elevated shrink-0">
-                            <Building2 className="h-3.5 w-3.5 text-app-text-muted" />
-                          </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-app-text">
+                            #{order.order_number}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
+                          >
+                            {STATUS_LABELS[order.status] || order.status}
+                          </span>
+                        </div>
+                        {restaurants.length > 1 && (
+                          <p className="text-[10px] text-app-text-muted">{order.tenant_name}</p>
                         )}
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-1.5">
-                            <h3 className="text-xs font-semibold text-app-text break-words">
-                              {r.tenant_name}
-                            </h3>
-                            <span
-                              className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${
-                                r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'
-                              }`}
-                            />
-                            {r.tenant_plan && (
-                              <Badge
-                                variant="outline"
-                                className="text-[8px] font-semibold rounded-md border-app-border px-1 py-0"
-                              >
-                                {r.tenant_plan}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-[9px] text-app-text-muted">
-                            {r.tenant_slug}.attabl.com
-                          </p>
-                        </div>
                       </div>
-                      <div className="flex items-center gap-3 shrink-0">
-                        <div className="hidden sm:block text-right">
-                          <p className="text-[8px] text-app-text-muted uppercase">Cmd</p>
-                          <p className="text-xs font-bold text-app-text tabular-nums">
-                            {Number(r.orders_today)}
-                          </p>
-                        </div>
-                        <div className="hidden sm:block text-right">
-                          <p className="text-[8px] text-app-text-muted uppercase">CA</p>
-                          <p className="text-xs font-bold text-app-text tabular-nums">
-                            {formatCFA(Number(r.revenue_today))}
-                          </p>
-                        </div>
-                        <ArrowRight className="h-3.5 w-3.5 text-app-text-muted group-hover:text-accent transition-colors" />
+                      <div className="text-right shrink-0">
+                        <p className="text-xs font-bold text-app-text tabular-nums">
+                          {formatCFA(order.total)}
+                        </p>
+                        <p className="text-[10px] text-app-text-muted tabular-nums">
+                          {formatTime(order.created_at)}
+                        </p>
                       </div>
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-6">
+                  <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
+                  <p className="text-xs text-app-text-muted">Aucune commande recente</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Establishments */}
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <div className="px-1 py-2 border-b border-app-border flex items-center justify-between shrink-0">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-app-text-muted">
+                Mes etablissements
+              </h2>
+              <button
+                onClick={() => setShowWizard(true)}
+                className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
+              >
+                <Plus className="h-3 w-3" />
+                Ajouter
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto scrollbar-hide">
+              <div className="divide-y divide-app-border">
+                {restaurants.map((r) => (
+                  <div
+                    key={r.tenant_id}
+                    onClick={() => handleSelectTenant(r.tenant_slug)}
+                    className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer group"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      {r.tenant_logo_url ? (
+                        <Image
+                          src={r.tenant_logo_url}
+                          alt={r.tenant_name}
+                          width={32}
+                          height={32}
+                          className="h-8 w-8 rounded-lg object-cover shrink-0"
+                        />
+                      ) : (
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-elevated shrink-0">
+                          <Building2 className="h-3.5 w-3.5 text-app-text-muted" />
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="text-xs font-semibold text-app-text">{r.tenant_name}</h3>
+                          <span
+                            className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'}`}
+                          />
+                          {r.tenant_plan && (
+                            <Badge
+                              variant="outline"
+                              className="text-[9px] font-semibold rounded-md border-app-border px-1 py-0"
+                            >
+                              {r.tenant_plan}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-app-text-muted">
+                          {r.tenant_slug}.attabl.com
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="hidden sm:block text-right">
+                        <p className="text-[10px] text-app-text-muted uppercase">Cmd</p>
+                        <p className="text-xs font-bold text-app-text tabular-nums">
+                          {Number(r.orders_today)}
+                        </p>
+                      </div>
+                      <div className="hidden sm:block text-right">
+                        <p className="text-[10px] text-app-text-muted uppercase">CA</p>
+                        <p className="text-xs font-bold text-app-text tabular-nums">
+                          {formatCFA(Number(r.revenue_today))}
+                        </p>
+                      </div>
+                      <ArrowRight className="h-3.5 w-3.5 text-app-text-muted group-hover:text-accent transition-colors" />
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ export const preloadScanner = () => {
 function parseQRData(decodedText: string): QRScanResult {
   const cleanText = decodedText.trim().replace(/\s+/g, '');
 
-  // Case 1: URL — extract ?table= or ?t= and ?menu= parameters
+  // Case 1: URL - extract ?table= or ?t= and ?menu= parameters
   if (cleanText.startsWith('http://') || cleanText.startsWith('https://')) {
     try {
       const scannedUrl = new URL(cleanText);
@@ -56,7 +56,7 @@ function parseQRData(decodedText: string): QRScanResult {
     }
   }
 
-  // Case 2: Plain text — treat as table number directly
+  // Case 2: Plain text - treat as table number directly
   return {
     tableNumber: cleanText || null,
     menuSlug: null,

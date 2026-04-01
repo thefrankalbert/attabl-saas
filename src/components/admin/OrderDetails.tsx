@@ -113,9 +113,9 @@ export default function OrderDetails({
       <div className="flex flex-col @md:flex-row @lg:flex-row gap-4 flex-1 min-h-0">
         {/* ── Left: order info + scrollable items ─────────── */}
         <div className="flex-1 flex flex-col min-h-0 min-w-0">
-          {/* Static: status bar + info — compact */}
+          {/* Static: status bar + info - compact */}
           <div className="shrink-0 space-y-3 mb-3">
-            {/* Status + total + time — single compact row */}
+            {/* Status + total + time - single compact row */}
             <div className="flex items-center gap-3 flex-wrap">
               <Badge className={`${statusStyle.bg} ${statusStyle.text} border-0 text-xs`}>
                 <span
@@ -146,7 +146,7 @@ export default function OrderDetails({
               </span>
             </div>
 
-            {/* Info row — inline chips */}
+            {/* Info row - inline chips */}
             <div className="flex items-center gap-2 flex-wrap text-xs">
               <InfoChip icon={<Hash className="w-3 h-3" />} value={order.table_number} />
               <InfoChip

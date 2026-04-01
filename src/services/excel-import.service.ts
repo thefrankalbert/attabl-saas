@@ -394,7 +394,7 @@ export function createExcelImportService(supabase: SupabaseClient) {
           .single();
 
         if (catLookupError && catLookupError.code !== 'PGRST116') {
-          // PGRST116 = "no rows returned" — expected when category doesn't exist
+          // PGRST116 = "no rows returned" - expected when category doesn't exist
           logger.error('Error looking up category', catLookupError, {
             categoryName,
             tenantId,

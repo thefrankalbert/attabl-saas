@@ -193,8 +193,8 @@ export async function POST(request: Request) {
       tenant_id: tenantId,
       user_id: null, // broadcast to all tenant admins
       type: 'info',
-      title: `Nouvelle commande — Table ${tableNumber}`,
-      body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString()} ${tenant.currency || 'XAF'}`,
+      title: `Nouvelle commande - Table ${tableNumber}`,
+      body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
       link: `/orders`,
     });
     if (notifError) {
@@ -204,7 +204,7 @@ export async function POST(request: Request) {
       });
     }
 
-    // 10. Auto-destock inventory (non-blocking — order succeeds even if destock fails)
+    // 10. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
     const hasInventory = canAccessFeature(
       'canAccessInventory',
       tenant?.subscription_plan as SubscriptionPlan | null,
@@ -216,20 +216,11 @@ export async function POST(request: Request) {
       inventoryService
         .destockOrder(result.orderId, tenantId)
         .then(() => {
-          // 11. Check stock alerts after destock (non-blocking)
-          const hasAlerts = canAccessFeature(
-            'canAccessInventory',
-            tenant?.subscription_plan as SubscriptionPlan | null,
-            tenant?.subscription_status as SubscriptionStatus | null,
-            tenant?.trial_ends_at as string | null,
+          import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
+            checkAndNotifyLowStock(tenantId).catch((err) => {
+              logger.error('Stock alert check failed (non-blocking)', err);
+            }),
           );
-          if (hasAlerts) {
-            import('@/services/notification.service').then(({ checkAndNotifyLowStock }) =>
-              checkAndNotifyLowStock(tenantId).catch((err) => {
-                logger.error('Stock alert check failed (non-blocking)', err);
-              }),
-            );
-          }
         })
         .catch((err) => {
           logger.error('Auto-destock failed (non-blocking)', err);

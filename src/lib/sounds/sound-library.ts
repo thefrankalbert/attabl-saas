@@ -1,5 +1,5 @@
 /**
- * Sound Library — Pre-installed notification sounds for ATTABL
+ * Sound Library - Pre-installed notification sounds for ATTABL
  *
  * 3 sounds available on Plan Essentiel (isPremium: false)
  * All 10 sounds available on Plan Premium (isPremium: true)

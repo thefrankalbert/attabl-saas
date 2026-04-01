@@ -32,6 +32,7 @@ export async function POST(request: Request) {
       .eq('user_id', user.id)
       .single();
 
+    // Supabase join type gap
     const tenant = adminUser?.tenants as unknown as {
       stripe_customer_id: string | null;
       slug: string;

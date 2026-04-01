@@ -136,7 +136,7 @@ export default function CartPage() {
           return;
         }
 
-        // Don't clear previous suggestions while loading — keep stale data visible
+        // Don't clear previous suggestions while loading - keep stale data visible
         setIsLoadingUpsell(true);
         try {
           const supabase = createClient();
@@ -158,6 +158,7 @@ export default function CartPage() {
           if (pairings && pairings.length > 0) {
             const seen = new Set<string>();
             for (const p of pairings) {
+              // Supabase join type gap
               const si = p.suggested_item as unknown as Record<string, unknown> | null;
               if (!si || si.is_available === false) continue;
               const id = si.id as string;
@@ -375,7 +376,7 @@ export default function CartPage() {
             }
           }
 
-          // Nothing found — use pairings we collected (even if < 3)
+          // Nothing found - use pairings we collected (even if < 3)
           if (thisFetchId !== fetchIdRef.current) return;
           if (collected.length > 0) {
             setActiveRecommendation({
@@ -852,7 +853,7 @@ export default function CartPage() {
         </section>
       </div>
 
-      {/* STICKY CTA — above bottom nav */}
+      {/* STICKY CTA - above bottom nav */}
       <div
         className="fixed left-0 right-0 z-[60] bg-app-card border-t border-app-border p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
         style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}

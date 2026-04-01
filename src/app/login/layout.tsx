@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Connexion — ATTABL',
+  title: 'Connexion - ATTABL',
   description: 'Connectez-vous à votre espace ATTABL pour gérer votre activité.',
   robots: { index: false, follow: false },
 };

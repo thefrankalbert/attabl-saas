@@ -1,5 +1,5 @@
 /**
- * Supplier Service — CRUD operations for suppliers
+ * Supplier Service - CRUD operations for suppliers
  */
 
 import type { SupabaseClient } from '@supabase/supabase-js';

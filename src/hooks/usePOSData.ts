@@ -15,7 +15,8 @@ export type CartItem = MenuItem & {
   quantity: number;
   notes?: string;
   selectedModifiers?: Array<{ name: string; price: number }>;
-  cartKey?: string; // unique key when same item has different modifiers
+  selectedVariant?: { name: string; price: number };
+  cartKey?: string; // unique key when same item has different modifiers/variant
 };
 
 export interface POSSuggestion {
@@ -26,15 +27,32 @@ export interface POSSuggestion {
   description: string | null;
 }
 
+function getCartKey(
+  item: CartItem | MenuItem,
+  mods?: Array<{ name: string; price: number }>,
+  variant?: { name: string; price: number },
+) {
+  let key = item.id;
+  const resolvedVariant = variant || (item as CartItem).selectedVariant;
+  if (resolvedVariant) {
+    key = `${key}-var-${resolvedVariant.name}`;
+  }
+  const modifiers = mods || (item as CartItem).selectedModifiers;
+  if (modifiers && modifiers.length > 0) {
+    key = `${key}-mod-${modifiers
+      .map((m) => m.name)
+      .sort()
+      .join(',')}`;
+  }
+  return key;
+}
+
 export function usePOSData(tenantId: string) {
   const t = useTranslations('pos');
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
   const createOrder = useCreateOrder(tenantId);
-
-  // ─── Current admin user ─────────────────────────────────
-  const [currentAdminUser, setCurrentAdminUser] = useState<{ id: string } | null>(null);
 
   // ─── Cart state ─────────────────────────────────────────
   const [cart, setCart] = useSessionState<CartItem[]>('pos:cart', []);
@@ -66,7 +84,7 @@ export function usePOSData(tenantId: string) {
   const [editingNotes, setEditingNotes] = useState<string | null>(null);
   const [notesText, setNotesText] = useState('');
 
-  // ─── Order number — initialize from localStorage ────────
+  // ─── Order number - initialize from localStorage ────────
   const [orderNumber, setOrderNumber] = useState(() => {
     if (typeof window === 'undefined') return 1;
     try {
@@ -88,24 +106,6 @@ export function usePOSData(tenantId: string) {
   });
   const { data: categories = [], isLoading: catsLoading } = useCategories(tenantId);
   const loading = itemsLoading || catsLoading;
-
-  // ─── Fetch current admin user ───────────────────────────
-  useEffect(() => {
-    async function fetchCurrentUser() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        const { data } = await supabase
-          .from('admin_users')
-          .select('id')
-          .eq('user_id', user.id)
-          .single();
-        if (data) setCurrentAdminUser(data);
-      }
-    }
-    fetchCurrentUser();
-  }, [supabase]);
 
   // ─── Order number persistence ───────────────────────────
   const updateOrderNumber = useCallback(
@@ -175,7 +175,7 @@ export function usePOSData(tenantId: string) {
         }
       }
     } catch {
-      // Non-critical — suggestions, currency, and tables are optional enhancements
+      // Non-critical - suggestions, currency, and tables are optional enhancements
     }
   }, [supabase, tenantId]);
 
@@ -212,50 +212,48 @@ export function usePOSData(tenantId: string) {
   });
 
   // ─── Filtered items ─────────────────────────────────────
+  const searchFilteredItems = useMemo(() => {
+    if (!searchQuery) return menuItems;
+    const q = searchQuery.toLowerCase();
+    return menuItems.filter((i) => i.name.toLowerCase().includes(q));
+  }, [menuItems, searchQuery]);
+
   const filteredItems = useMemo(() => {
-    let items = menuItems;
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      items = items.filter((i) => i.name.toLowerCase().includes(q));
-    }
-    if (selectedCategory !== 'all') {
-      items = items.filter((i) => i.category_id === selectedCategory);
-    }
-    return items;
-  }, [menuItems, searchQuery, selectedCategory]);
+    if (selectedCategory === 'all') return searchFilteredItems;
+    return searchFilteredItems.filter((i) => i.category_id === selectedCategory);
+  }, [searchFilteredItems, selectedCategory]);
 
   // ─── Cart actions ───────────────────────────────────────
-  const getCartKey = (item: CartItem | MenuItem, mods?: Array<{ name: string; price: number }>) => {
-    const key = item.id;
-    const modifiers = mods || (item as CartItem).selectedModifiers;
-    if (modifiers && modifiers.length > 0) {
-      return `${key}-mod-${modifiers
-        .map((m) => m.name)
-        .sort()
-        .join(',')}`;
-    }
-    return key;
-  };
-
-  const addToCart = (item: MenuItem, modifiers?: Array<{ name: string; price: number }>) => {
-    const key = getCartKey(item, modifiers);
-    setCart((prev) => {
-      const existing = prev.find((i) => (i.cartKey || i.id) === key);
-      if (existing)
-        return prev.map((i) =>
-          (i.cartKey || i.id) === key ? { ...i, quantity: i.quantity + 1 } : i,
-        );
-      return [
-        ...prev,
-        {
-          ...item,
-          quantity: 1,
-          selectedModifiers: modifiers,
-          cartKey: modifiers?.length ? key : undefined,
-        },
-      ];
-    });
-  };
+  const addToCart = useCallback(
+    (
+      item: MenuItem,
+      modifiers?: Array<{ name: string; price: number }>,
+      variant?: { name: string; price: number },
+    ) => {
+      const key = getCartKey(item, modifiers, variant);
+      const hasCustomization = (modifiers && modifiers.length > 0) || !!variant;
+      setCart((prev) => {
+        const existing = prev.find((i) => (i.cartKey || i.id) === key);
+        if (existing)
+          return prev.map((i) =>
+            (i.cartKey || i.id) === key ? { ...i, quantity: i.quantity + 1 } : i,
+          );
+        return [
+          ...prev,
+          {
+            ...item,
+            // Override price with variant price when a variant is selected
+            price: variant ? variant.price : item.price,
+            quantity: 1,
+            selectedModifiers: modifiers,
+            selectedVariant: variant,
+            cartKey: hasCustomization ? key : undefined,
+          },
+        ];
+      });
+    },
+    [setCart],
+  );
 
   const updateQuantity = (itemId: string, delta: number) => {
     setCart((prev) => {
@@ -282,15 +280,22 @@ export function usePOSData(tenantId: string) {
   };
 
   // ─── Total calculation ──────────────────────────────────
-  const total = cart.reduce((acc, item) => {
-    const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
-    return acc + (item.price + modCost) * item.quantity;
-  }, 0);
+  const total = useMemo(
+    () =>
+      cart.reduce((acc, item) => {
+        const modCost = item.selectedModifiers?.reduce((s, m) => s + m.price, 0) || 0;
+        return acc + (item.price + modCost) * item.quantity;
+      }, 0),
+    [cart],
+  );
 
   // ─── Order creation ─────────────────────────────────────
   const handleOrder = (
     status: 'pending' | 'delivered',
-    options?: { onPaymentModalClose?: () => void },
+    options?: {
+      onPaymentModalClose?: () => void;
+      paymentData?: { paymentMethod: string; tipAmount: number };
+    },
   ) => {
     if (cart.length === 0) return;
 
@@ -301,24 +306,25 @@ export function usePOSData(tenantId: string) {
         status,
         total,
         service_type: serviceType,
-        cashier_id: currentAdminUser?.id ?? null,
-        server_id: currentAdminUser?.id ?? null,
         room_number: serviceType === 'room_service' && roomNumber ? roomNumber : undefined,
         delivery_address:
           serviceType === 'delivery' && deliveryAddress ? deliveryAddress : undefined,
+        payment_method: options?.paymentData?.paymentMethod,
+        tip_amount: options?.paymentData?.tipAmount,
         items: cart.map((item) => ({
           menu_item_id: item.id,
           quantity: item.quantity,
-          price_at_order: item.price,
           customer_notes: item.notes || null,
-          item_name: item.name,
           modifiers: item.selectedModifiers,
+          selected_variant: item.selectedVariant?.name,
         })),
       },
       {
-        onSuccess: () => {
+        onSuccess: (order: { orderNumber?: string }) => {
+          const serverNum = order?.orderNumber;
           toast({
             title: status === 'pending' ? t('sentToKitchen') : t('saleRecorded'),
+            description: serverNum ? `#${serverNum}` : undefined,
           });
           updateOrderNumber(orderNumber + 1);
           setCart([]);
@@ -338,6 +344,7 @@ export function usePOSData(tenantId: string) {
     menuItems,
     categories,
     filteredItems,
+    searchFilteredItems,
     cart,
     currency,
     suggestions,

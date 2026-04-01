@@ -1,5 +1,5 @@
 /**
- * Email Service — Wraps Resend SDK for transactional emails
+ * Email Service - Wraps Resend SDK for transactional emails
  *
  * Anti-spam best practices applied:
  * - Proper DOCTYPE + table-based layout for email clients
@@ -11,7 +11,7 @@
  * - Minimal HTML, high text-to-HTML ratio
  * - Inline styles only (no <style> blocks)
  * - Single clear CTA
- * - Light background, clean design (like Stripe/Linear) — avoids spam filters
+ * - Light background, clean design (like Stripe/Linear) - avoids spam filters
  */
 
 import { Resend } from 'resend';
@@ -45,7 +45,7 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'ATTABL <bonjour@attabl.com>';
 const REPLY_TO = 'support@attabl.com';
 
-const FOOTER_ADDRESS = 'ATTABL SAS — Douala, Cameroun';
+const FOOTER_ADDRESS = 'ATTABL SAS - Douala, Cameroun';
 const FOOTER_TAGLINE = 'Menus digitaux pour restaurants et h\u00f4tels';
 
 /**
@@ -98,9 +98,9 @@ function wrapHtmlDocument(opts: { preheader: string; bodyContent: string }): str
 }
 
 // ---------------------------------------------------------------------------
-// Email 1 — Verification d'adresse (court, transactionnel)
+// Email 1 - Verification d'adresse (court, transactionnel)
 // Envoye immediatement apres inscription.
-// NOTE: At signup time, user only provided their email — no restaurant name yet.
+// NOTE: At signup time, user only provided their email - no restaurant name yet.
 // This email addresses the user directly, not their establishment.
 // ---------------------------------------------------------------------------
 
@@ -115,7 +115,7 @@ export async function sendWelcomeConfirmationEmail(
   data: WelcomeConfirmationEmailData,
 ): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping confirmation email');
+    logger.warn('RESEND_API_KEY not configured - skipping confirmation email');
     return false;
   }
 
@@ -211,7 +211,7 @@ ${FOOTER_ADDRESS}`;
 }
 
 // ---------------------------------------------------------------------------
-// Email — Password Reset
+// Email - Password Reset
 // ---------------------------------------------------------------------------
 
 interface PasswordResetEmailData {
@@ -223,7 +223,7 @@ export async function sendPasswordResetEmail(
   data: PasswordResetEmailData,
 ): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping password reset email');
+    logger.warn('RESEND_API_KEY not configured - skipping password reset email');
     return false;
   }
 
@@ -319,7 +319,7 @@ ${FOOTER_ADDRESS}`;
 }
 
 // ---------------------------------------------------------------------------
-// Email 2 — Bienvenue + Onboarding (envoye apres verification email)
+// Email 2 - Bienvenue + Onboarding (envoye apres verification email)
 // At this point, user confirmed their email. We use their name if available,
 // otherwise fall back to "Bonjour".
 // ---------------------------------------------------------------------------
@@ -336,7 +336,7 @@ export async function sendWelcomeOnboardingEmail(
   data: WelcomeOnboardingEmailData,
 ): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping welcome email');
+    logger.warn('RESEND_API_KEY not configured - skipping welcome email');
     return false;
   }
 
@@ -368,7 +368,7 @@ export async function sendWelcomeOnboardingEmail(
               </p>
               <!-- Corps -->
               <p style="margin:0 0 12px;font-size:15px;line-height:1.7;color:#4b5563;">
-                A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel — depuis votre telephone, entre deux services.
+                A partir de maintenant, vous pouvez creer et modifier votre carte en temps reel - depuis votre telephone, entre deux services.
               </p>
               <p style="margin:0 0 28px;font-size:15px;line-height:1.7;color:#4b5563;">
                 Vos clients scannent un QR code, votre menu s'affiche. <strong style="color:#111827;">Un plat en rupture ? Retirez-le en 10 secondes.</strong> Un nouveau dessert ? Il est en ligne avant le coup de feu.
@@ -464,7 +464,7 @@ export async function sendWelcomeOnboardingEmail(
               <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.6;">
                 Besoin d'aide ?
                 <a href="mailto:support@attabl.com" style="color:#111827;font-weight:600;text-decoration:none;">Ecrivez-nous</a>
-                — on repond en moins de 2 heures.
+                - on repond en moins de 2 heures.
               </p>
             </td>
           </tr>`;
@@ -528,7 +528,7 @@ interface InvitationEmailData {
 
 export async function sendInvitationEmail(to: string, data: InvitationEmailData): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping invitation email');
+    logger.warn('RESEND_API_KEY not configured - skipping invitation email');
     return false;
   }
 
@@ -639,7 +639,7 @@ interface ContactFormEmailData {
 
 export async function sendContactFormEmail(data: ContactFormEmailData): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping contact form email');
+    logger.warn('RESEND_API_KEY not configured - skipping contact form email');
     return false;
   }
 
@@ -707,7 +707,7 @@ export async function sendContactFormEmail(data: ContactFormEmailData): Promise<
 
   const html = wrapHtmlDocument({ preheader, bodyContent });
 
-  const text = `Nouvelle demande de contact — attabl.com
+  const text = `Nouvelle demande de contact - attabl.com
 
 Nom : ${data.name}
 Email : ${data.email}${data.company ? `\nEtablissement : ${data.company}` : ''}${data.date ? `\nDate souhaitee : ${data.date}` : ''}
@@ -763,7 +763,7 @@ export async function sendStockAlertEmail(
   data: StockAlertEmailData,
 ): Promise<boolean> {
   if (!resend) {
-    logger.warn('RESEND_API_KEY not configured — skipping stock alert email');
+    logger.warn('RESEND_API_KEY not configured - skipping stock alert email');
     return false;
   }
 
@@ -849,7 +849,7 @@ export async function sendStockAlertEmail(
           <tr>
             <td style="padding:16px 24px 0;text-align:center;">
               <p style="margin:0;font-size:12px;line-height:1.5;color:#9ca3af;">
-                Alerte automatique — maximum une par produit par heure.
+                Alerte automatique - maximum une par produit par heure.
               </p>
             </td>
           </tr>`;
@@ -859,11 +859,11 @@ export async function sendStockAlertEmail(
   const textItemList = data.items
     .map(
       (item) =>
-        `- ${item.name}: ${item.current_stock} ${item.unit} (seuil: ${item.min_stock_alert}) — ${item.is_out ? 'RUPTURE' : 'Stock bas'}`,
+        `- ${item.name}: ${item.current_stock} ${item.unit} (seuil: ${item.min_stock_alert}) - ${item.is_out ? 'RUPTURE' : 'Stock bas'}`,
     )
     .join('\n');
 
-  const text = `Alerte stock — ${data.tenantName}
+  const text = `Alerte stock - ${data.tenantName}
 
 ${outOfStockItems.length > 0 ? `${outOfStockItems.length} produit(s) en rupture de stock.` : ''}
 ${lowStockItems.length > 0 ? `${lowStockItems.length} produit(s) sous le seuil d'alerte.` : ''}
@@ -873,7 +873,7 @@ ${textItemList}
 Voir l'inventaire : ${data.dashboardUrl}
 
 ---
-Alerte automatique — maximum une par produit par heure.
+Alerte automatique - maximum une par produit par heure.
 ${FOOTER_ADDRESS}`;
 
   try {

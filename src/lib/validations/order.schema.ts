@@ -59,5 +59,39 @@ export const createOrderSchema = z.object({
   tip_amount: z.number().min(0).optional(),
 });
 
+// ─── POS-specific order schema ──────────────────────────
+// POS orders include payment info and use menu_item_id instead of the full
+// cart item shape used by QR orders. The server resolves names/prices from DB.
+
+const posOrderItemSchema = z.object({
+  menu_item_id: z.string().uuid(),
+  quantity: z
+    .number()
+    .int('Quantity must be an integer')
+    .min(1, 'Minimum quantity is 1')
+    .max(100, 'Maximum quantity is 100'),
+  customer_notes: z.string().max(500).optional(),
+  modifiers: z.array(orderItemModifierSchema).max(20).optional(),
+  selected_variant: z.string().max(200).optional(),
+});
+
+export const createPOSOrderSchema = z.object({
+  tenant_id: z.string().uuid(),
+  table_number: z.string().min(1).max(50),
+  status: z.enum(['pending', 'delivered']),
+  service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
+  room_number: z.string().max(20).optional(),
+  delivery_address: z.string().max(500).optional(),
+  payment_method: z.string().max(50).optional(),
+  tip_amount: z.number().min(0).optional(),
+  items: z
+    .array(posOrderItemSchema)
+    .min(1, 'Cart cannot be empty')
+    .max(50, 'Maximum 50 items per order'),
+});
+
+export type CreatePOSOrderInput = z.infer<typeof createPOSOrderSchema>;
+export type POSOrderItemInput = z.infer<typeof posOrderItemSchema>;
+
 export type CreateOrderInput = z.infer<typeof createOrderSchema>;
 export type OrderItemInput = z.infer<typeof orderItemSchema>;

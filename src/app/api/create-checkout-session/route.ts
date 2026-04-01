@@ -49,7 +49,17 @@ export async function POST(request: Request) {
     }
 
     const tenantId = adminUser.tenant_id;
-    const email = user.email!;
+
+    if (!user.email) {
+      logger.error('Checkout: user has no email', undefined, { userId: user.id });
+      return NextResponse.json(
+        { error: 'Aucune adresse email associee a ce compte' },
+        { status: 400 },
+      );
+    }
+
+    const email = user.email;
+    // Supabase join type gap
     const tenantData = adminUser.tenants as unknown as {
       name: string;
       stripe_customer_id: string | null;

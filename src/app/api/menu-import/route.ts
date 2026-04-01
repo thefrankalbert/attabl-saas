@@ -9,8 +9,6 @@ import { createExcelImportService } from '@/services/excel-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import type { Tenant } from '@/types/admin.types';
-import * as fs from 'fs';
-import * as path from 'path';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
 const ALLOWED_EXTENSIONS = ['.xlsx', '.xls'];
@@ -185,26 +183,8 @@ export async function GET(request: Request) {
     const templateType = url.searchParams.get('type');
 
     if (templateType === 'demo') {
-      // Serve the pre-filled demo file from public/
-      const demoFilePath = path.join(process.cwd(), 'public', 'demo-menu-epicurien.xlsx');
-
-      if (fs.existsSync(demoFilePath)) {
-        const demoBuffer = fs.readFileSync(demoFilePath);
-        const bytes = new Uint8Array(demoBuffer);
-        return new Response(bytes, {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition': 'attachment; filename="demo-menu-epicurien.xlsx"',
-            'Content-Length': String(bytes.byteLength),
-          },
-        });
-      }
-
-      // Fall through to the blank template if demo file is not found
-      logger.warn('Demo Excel file not found, falling back to blank template', {
-        path: demoFilePath,
-      });
+      // Redirect to the static file served by Next.js from public/
+      return NextResponse.redirect(new URL('/demo-menu-epicurien.xlsx', request.url));
     }
 
     // 4. Generate blank template via service

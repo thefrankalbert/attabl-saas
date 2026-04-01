@@ -182,7 +182,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
     setExportingCsv(true);
     try {
       const rows: string[] = [];
-      rows.push(`${t('activityReport')} — ${periodDisplayLabel}`);
+      rows.push(`${t('activityReport')} - ${periodDisplayLabel}`);
       rows.push(`${t('generatedOn', { date: format(new Date(), 'dd/MM/yyyy HH:mm') })}`);
       rows.push('');
       rows.push(`${t('revenueLabel')},${t('orders')},${t('averageBasket')}`);
@@ -412,7 +412,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                         _name: string | undefined,
                         item: { payload?: DailyStats },
                       ) => [
-                        `${fmt(value ?? 0)} — ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
+                        `${fmt(value ?? 0)} - ${t('ordersCountShort', { count: item.payload?.orders ?? 0 })}`,
                         t('revenueLabel'),
                       ]}
                       cursor={{ fill: 'var(--app-accent-muted)' }}

@@ -66,10 +66,10 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      // Cmd+K guard — let CommandPalette handle it
+      // Cmd+K guard - let CommandPalette handle it
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') return;
 
-      // Input guard — don't intercept when user is typing
+      // Input guard - don't intercept when user is typing
       if (isEditableTarget(e.target)) return;
 
       // Ignore if any modifier is held (except for modifier shortcuts)
@@ -89,7 +89,7 @@ export function useKeyboardShortcuts({ shortcuts, onOpenHelp }: UseKeyboardShort
           navShortcut.action();
           return;
         }
-        // No match — fall through (key is consumed by go-sequence attempt)
+        // No match - fall through (key is consumed by go-sequence attempt)
         return;
       }
 

@@ -201,7 +201,7 @@ export default function AnnouncementsClient({
                   <Calendar className="w-3 h-3" />
                   <span>{new Date(ann.start_date).toLocaleDateString(locale)}</span>
                   {ann.end_date && (
-                    <span>– {new Date(ann.end_date).toLocaleDateString(locale)}</span>
+                    <span>- {new Date(ann.end_date).toLocaleDateString(locale)}</span>
                   )}
                 </div>
                 <span

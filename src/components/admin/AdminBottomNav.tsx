@@ -25,7 +25,7 @@ export function AdminBottomNav({ basePath, role, establishmentType }: AdminBotto
   const t = useTranslations('sidebar');
   const tSeg = useTranslations('segment');
 
-  // Hide bottom nav on immersive pages (KDS, POS) — they need full screen
+  // Hide bottom nav on immersive pages (KDS, POS) - they need full screen
   if (isImmersivePage(pathname)) return null;
 
   // Segment-aware label overrides (consistent with AdminSidebar)
