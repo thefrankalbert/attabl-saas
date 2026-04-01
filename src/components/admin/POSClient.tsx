@@ -158,7 +158,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                 <POSCart
                   cart={pos.cart}
                   currency={pos.currency}
-                  total={pos.total}
+                  pricing={pos.pricing}
                   orderNumber={pos.orderNumber}
                   serviceType={pos.serviceType}
                   setServiceType={pos.setServiceType}
@@ -176,6 +176,15 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     pos.setEditingNotes(itemId);
                     pos.setNotesText(currentNotes);
                   }}
+                  orderNotes={pos.orderNotes}
+                  setOrderNotes={pos.setOrderNotes}
+                  couponCode={pos.couponCode}
+                  setCouponCode={pos.setCouponCode}
+                  appliedCoupon={pos.appliedCoupon}
+                  couponLoading={pos.couponLoading}
+                  couponError={pos.couponError}
+                  onValidateCoupon={pos.validateCoupon}
+                  onRemoveCoupon={pos.removeCoupon}
                   onPrintOrder={() => pos.handleOrder('pending')}
                   onCheckout={() => setShowPaymentModal(true)}
                 />
@@ -217,8 +226,9 @@ export default function POSClient({ tenantId }: POSClientProps) {
               <PaymentModal
                 onClose={() => setShowPaymentModal(false)}
                 orderNumber={pos.orderNumber}
-                total={pos.total}
+                total={pos.pricing.total}
                 tableNumber={pos.selectedTable || `CMD-${pos.orderNumber}`}
+                pricing={pos.pricing}
                 cartItems={pos.cart.map((item) => ({
                   name: item.name,
                   quantity: item.quantity,

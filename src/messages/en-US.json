@@ -74,7 +74,11 @@
     "lessThanHour": "Less than an hour",
     "expired": "Expired",
     "tenantNotFound": "Establishment not found",
-    "tenantNotFoundDesc": "This establishment does not exist or you don't have access."
+    "tenantNotFoundDesc": "This establishment does not exist or you don't have access.",
+    "subtotal": "Subtotal",
+    "tax": "Tax",
+    "service": "Service",
+    "discount": "Discount"
   },
   "checkout": {
     "successTitle": "Payment successful!",
@@ -890,7 +894,10 @@
     "confirmClearCart": "Are you sure you want to clear the cart?",
     "selectVariant": "Select a variant",
     "selectModifiers": "Modifiers",
-    "addToCart": "Add to cart"
+    "addToCart": "Add to cart",
+    "orderNote": "Order note",
+    "orderNotePlaceholder": "Special instructions for this order...",
+    "couponPlaceholder": "Promo code"
   },
   "users": {
     "title": "Users",
