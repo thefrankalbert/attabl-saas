@@ -100,7 +100,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   if (kitchen.loading) {
     return (
       <div
-        className={`${containerClass} bg-neutral-950 flex items-center justify-center text-white`}
+        className={`${containerClass} bg-neutral-950 flex items-center justify-center text-app-text`}
         style={safeAreaStyle}
       >
         <div className="flex flex-col items-center gap-4">
@@ -113,7 +113,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   return (
     <div
-      className={`${containerClass} bg-neutral-950 text-white flex flex-col overflow-hidden`}
+      className={`${containerClass} bg-neutral-950 text-app-text flex flex-col overflow-hidden`}
       style={safeAreaStyle}
     >
       <KitchenFilters

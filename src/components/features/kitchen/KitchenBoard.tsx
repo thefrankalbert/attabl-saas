@@ -33,7 +33,7 @@ function EmptyColumn({
 }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-      <div className="w-12 h-12 rounded-xl bg-neutral-800/30 flex items-center justify-center mb-3">
+      <div className="w-12 h-12 rounded-xl bg-app-elevated/30 flex items-center justify-center mb-3">
         <Icon className="w-6 h-6 text-app-text-secondary" />
       </div>
       <p className="text-xs font-medium text-app-text-secondary">{label}</p>
@@ -75,14 +75,14 @@ export default function KitchenBoard({
             className={cn(
               'flex-col overflow-hidden',
               col.colBg,
-              isChefView && idx < 2 && '@md:border-r border-white/[0.04]',
+              isChefView && idx < 2 && '@md:border-r border-app-border',
               isChefView ? (isActive ? 'flex' : 'hidden @md:flex') : 'flex',
             )}
           >
             {/* Column Header - hidden on mobile (tabs serve this role) */}
             <div
               className={cn(
-                'py-1.5 px-2 sm:px-3 items-center gap-2 border-b border-white/[0.04] shrink-0 bg-neutral-900/20',
+                'py-1.5 px-2 sm:px-3 items-center gap-2 border-b border-app-border shrink-0 bg-app-card/20',
                 isChefView ? 'hidden @md:flex' : 'flex',
               )}
             >

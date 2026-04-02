@@ -82,7 +82,9 @@ export async function POST(request: Request) {
     const adminSupabase = createAdminClient();
     const orderService = createOrderService(adminSupabase);
 
-    const { id: tenantId } = await orderService.validateTenant(tenantSlug);
+    // validateTenant now returns tenant config in a single DB round-trip (Optimization #2)
+    const tenant = await orderService.validateTenant(tenantSlug);
+    const tenantId = tenant.id;
 
     const {
       items,
@@ -101,9 +103,16 @@ export async function POST(request: Request) {
     const { validatedTotal, verifiedPrices, categoryIds, itemCategoryMap } =
       await orderService.validateOrderItems(tenantId, items);
 
-    // 3b. Determine preparation zone (kitchen vs bar routing)
-    const { orderZone: preparationZone, categoryZoneMap } =
-      await orderService.determinePreparationZone(tenantId, categoryIds);
+    // 3b. Determine preparation zone + validate coupon in parallel (Optimization #3)
+    const couponService = createCouponService(adminSupabase);
+    const [zoneResult, couponValidation] = await Promise.all([
+      orderService.determinePreparationZone(tenantId, categoryIds),
+      coupon_code
+        ? couponService.validateCoupon(coupon_code, tenantId, validatedTotal)
+        : Promise.resolve(null),
+    ]);
+
+    const { orderZone: preparationZone, categoryZoneMap } = zoneResult;
 
     // Build per-item preparation zone map (menu_item_id -> zone)
     const itemPreparationZones = new Map<string, 'kitchen' | 'bar' | 'both'>();
@@ -113,34 +122,19 @@ export async function POST(request: Request) {
       itemPreparationZones.set(item.id, zone || 'kitchen');
     }
 
-    // 4. Validate coupon if provided
+    // 4. Process coupon validation result
     let discountAmount = 0;
     let couponResult: { couponId?: string } | null = null;
-    const couponService = createCouponService(adminSupabase);
 
-    if (coupon_code) {
-      const validation = await couponService.validateCoupon(coupon_code, tenantId, validatedTotal);
-      if (!validation.valid) {
+    if (coupon_code && couponValidation) {
+      if (!couponValidation.valid) {
         return NextResponse.json(
-          { error: validation.error || t('invalidCoupon') },
+          { error: couponValidation.error || t('invalidCoupon') },
           { status: 400 },
         );
       }
-      discountAmount = validation.discountAmount;
-      couponResult = { couponId: validation.coupon?.id };
-    }
-
-    // 5. Fetch tenant config for tax & service charge
-    const { data: tenant, error: tenantError } = await adminSupabase
-      .from('tenants')
-      .select(
-        'currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
-      )
-      .eq('id', tenantId)
-      .single();
-
-    if (tenantError || !tenant) {
-      return NextResponse.json({ error: t('tenantConfigNotFound') }, { status: 404 });
+      discountAmount = couponValidation.discountAmount;
+      couponResult = { couponId: couponValidation.coupon?.id };
     }
 
     // 6. Calculate pricing breakdown
@@ -196,21 +190,24 @@ export async function POST(request: Request) {
       throw orderError;
     }
 
-    // 9. Create in-app notification for admins
-    const { error: notifError } = await adminSupabase.from('notifications').insert({
-      tenant_id: tenantId,
-      user_id: null, // broadcast to all tenant admins
-      type: 'info',
-      title: `Nouvelle commande - Table ${tableNumber}`,
-      body: `${items.length} article${items.length > 1 ? 's' : ''} • ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
-      link: `/orders`,
+    // 9. Create in-app notification for admins (fire-and-forget, non-blocking)
+    void Promise.resolve(
+      adminSupabase.from('notifications').insert({
+        tenant_id: tenantId,
+        user_id: null, // broadcast to all tenant admins
+        type: 'info',
+        title: `Nouvelle commande - Table ${tableNumber}`,
+        body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
+        link: `/orders`,
+      }),
+    ).then(({ error: notifError }) => {
+      if (notifError) {
+        logger.error('Failed to create order notification', notifError, {
+          tenantId,
+          orderId: result.orderId,
+        });
+      }
     });
-    if (notifError) {
-      logger.error('Failed to create order notification', notifError, {
-        tenantId,
-        orderId: result.orderId,
-      });
-    }
 
     // 10. Auto-destock inventory (non-blocking - order succeeds even if destock fails)
     const hasInventory = canAccessFeature(

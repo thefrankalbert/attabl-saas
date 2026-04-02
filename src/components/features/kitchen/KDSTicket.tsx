@@ -100,7 +100,7 @@ export default function KDSTicket({
     pending: {
       dot: 'bg-neutral-500',
       text: 'text-app-text-muted',
-      bg: 'bg-neutral-800 hover:bg-neutral-700',
+      bg: 'bg-app-elevated hover:bg-app-hover',
     },
     preparing: {
       dot: 'bg-amber-400',
@@ -138,7 +138,7 @@ export default function KDSTicket({
       next: 'delivered' as OrderStatus,
     },
     delivered: {
-      headerBg: 'bg-neutral-700',
+      headerBg: 'bg-app-elevated',
       headerText: 'text-app-text-secondary',
       actionBg: '',
       actionLabel: '',
@@ -212,7 +212,7 @@ export default function KDSTicket({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg overflow-hidden bg-neutral-900 border border-white/[0.06]',
+        'flex flex-col rounded-lg overflow-hidden bg-app-card border border-app-border',
         URGENCY_CARD_STYLES[urgency],
         isMock && 'opacity-80',
       )}
@@ -273,7 +273,7 @@ export default function KDSTicket({
 
       {/* ━━━ Customer Notes ━━━ */}
       {order.notes && (
-        <div className="px-3 py-1.5 bg-amber-500/[0.08] border-b border-white/[0.04]">
+        <div className="px-3 py-1.5 bg-amber-500/[0.08] border-b border-app-border">
           <div className="flex items-start gap-1.5 text-amber-300/80">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
             <p className="text-sm font-medium leading-snug">{order.notes}</p>
@@ -282,7 +282,7 @@ export default function KDSTicket({
       )}
 
       {/* ━━━ ITEMS LIST (grouped by course) ━━━ */}
-      <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 md:max-h-80 lg:max-h-[360px] custom-scrollbar divide-y divide-white/[0.03]">
+      <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 md:max-h-80 lg:max-h-[360px] custom-scrollbar divide-y divide-app-border">
         {(() => {
           // Group items by course
           const grouped: Record<string, OrderItem[]> = {};
@@ -325,7 +325,7 @@ export default function KDSTicket({
                         <span className="text-base text-app-text-secondary font-black tabular-nums shrink-0">
                           {item.quantity}x
                         </span>
-                        <span className="text-base font-semibold text-white leading-tight break-words">
+                        <span className="text-base font-semibold text-app-text leading-tight break-words">
                           {item.name}
                         </span>
                         {!isMock && item.menu_item_id && (
@@ -379,13 +379,13 @@ export default function KDSTicket({
 
       {/* ━━━ ACTION BAR ━━━ */}
       {cfg.actionLabel && (
-        <div className="flex border-t border-white/[0.06]">
+        <div className="flex border-t border-app-border">
           {/* Mark all ready shortcut */}
           {order.status !== 'ready' && items.length > 0 && (
             <button
               onClick={handleMarkAllReady}
               disabled={isMock}
-              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-app-text-secondary hover:text-white bg-white/[0.02] hover:bg-white/[0.06] border-r border-white/[0.06] transition-colors"
+              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-app-text-secondary hover:text-app-text bg-app-hover/30 hover:bg-app-hover border-r border-app-border transition-colors"
             >
               <Check className="w-3.5 h-3.5" />
               {readyCount > 0 && (

@@ -32,7 +32,19 @@ vi.mock('@/lib/rate-limit', () => ({
 }));
 
 // ─── Order service mock ────────────────────────────────────────
-const mockValidateTenant = vi.fn<() => Promise<{ id: string }>>();
+const mockValidateTenant = vi.fn<
+  () => Promise<{
+    id: string;
+    currency: string | null;
+    tax_rate: number | null;
+    service_charge_rate: number | null;
+    enable_tax: boolean | null;
+    enable_service_charge: boolean | null;
+    subscription_plan: string | null;
+    subscription_status: string | null;
+    trial_ends_at: string | null;
+  }>
+>();
 const mockValidateOrderItems = vi.fn<
   () => Promise<{
     validatedTotal: number;
@@ -192,8 +204,18 @@ describe('POST /api/orders', () => {
     // Default: headers return x-tenant-slug
     mockHeaders.mockResolvedValue(new Headers({ 'x-tenant-slug': 'test-restaurant' }));
 
-    // Default: tenant validation succeeds
-    mockValidateTenant.mockResolvedValue({ id: 'tenant-abc' });
+    // Default: tenant validation succeeds (includes config fields - single DB round-trip)
+    mockValidateTenant.mockResolvedValue({
+      id: 'tenant-abc',
+      currency: 'XAF',
+      tax_rate: 0,
+      service_charge_rate: 0,
+      enable_tax: false,
+      enable_service_charge: false,
+      subscription_plan: 'starter',
+      subscription_status: 'active',
+      trial_ends_at: null,
+    });
 
     // Default: order items validation succeeds
     mockValidateOrderItems.mockResolvedValue({
@@ -212,21 +234,6 @@ describe('POST /api/orders', () => {
       valid: true,
       discountAmount: 0,
       coupon: undefined,
-    });
-
-    // Default: supabase tenant config fetch succeeds
-    mockSupabaseSingle.mockResolvedValue({
-      data: {
-        currency: 'XAF',
-        tax_rate: 0,
-        service_charge_rate: 0,
-        enable_tax: false,
-        enable_service_charge: false,
-        subscription_plan: 'starter',
-        subscription_status: 'active',
-        trial_ends_at: null,
-      },
-      error: null,
     });
 
     // Default: pricing calculation

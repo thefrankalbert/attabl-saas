@@ -74,19 +74,19 @@ export interface UseKitchenDataReturn {
 const COLUMN_STYLES = {
   pending: {
     dot: 'bg-amber-400/60',
-    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
     emptyIcon: Bell,
   },
   preparing: {
     dot: 'bg-blue-400/60',
-    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
     emptyIcon: Utensils,
   },
   ready: {
     dot: 'bg-emerald-400/60',
-    countBadge: 'text-neutral-300 bg-white/[0.05]',
+    countBadge: 'text-app-text-secondary bg-app-elevated',
     colBg: '',
     emptyIcon: CheckCircle2,
   },
@@ -180,7 +180,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
   // ─── Initial load + polling fallback ────────────────────
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(loadOrders, 60000); // Polling as fallback only (realtime handles most updates)
+    const interval = setInterval(loadOrders, 15000); // Polling fallback every 15s (realtime handles most updates)
     return () => clearInterval(interval);
   }, [loadOrders]);
 
