@@ -2,12 +2,10 @@
 
 import { WifiOff, RefreshCw } from 'lucide-react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
-import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 export function OfflineIndicator() {
   const { isOnline, wasOffline } = useNetworkStatus();
-  const t = useTranslations('common');
 
   if (isOnline && !wasOffline) return null;
 
@@ -21,12 +19,12 @@ export function OfflineIndicator() {
       {isOnline ? (
         <>
           <RefreshCw className="h-4 w-4 animate-spin" />
-          {t('connectionRestored')}
+          Connexion retablie
         </>
       ) : (
         <>
           <WifiOff className="h-4 w-4" />
-          {t('offlineMode')}
+          Mode hors ligne
         </>
       )}
     </div>
