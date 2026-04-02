@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
@@ -8,16 +8,23 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
+import FooterSummaryBar from '@/components/features/kitchen/FooterSummaryBar';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
+import type { OrderStatus } from '@/types/admin.types';
 
 interface KitchenClientProps {
   tenantId: string;
+  tenantName?: string;
   notificationSoundId?: string;
 }
 
 const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
 
-export default function KitchenClient({ tenantId, notificationSoundId }: KitchenClientProps) {
+export default function KitchenClient({
+  tenantId,
+  tenantName,
+  notificationSoundId,
+}: KitchenClientProps) {
   const t = useTranslations('kitchen');
   const { role } = usePermissions();
 
@@ -25,7 +32,20 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
 
-  // ── Wake lock: prevent tablet screen from sleeping during KDS use ──
+  // -- Footer filter state --
+  const [footerFilter, setFooterFilter] = useState<OrderStatus | 'all'>('all');
+
+  // Flat sorted list of all orders for the board
+  const boardOrders = useMemo(() => {
+    if (footerFilter === 'all') return kitchen.allOrders;
+    return kitchen.allOrders.filter((o) => o.status === footerFilter);
+  }, [kitchen.allOrders, footerFilter]);
+
+  const handlePageChange = useCallback((_direction: 'prev' | 'next') => {
+    // Pagination placeholder - no-op until board pagination is implemented
+  }, []);
+
+  // -- Wake lock: prevent tablet screen from sleeping during KDS use --
   useEffect(() => {
     let wakeLock: WakeLockSentinel | null = null;
 
@@ -55,7 +75,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
     };
   }, []);
 
-  // ── Contextual keyboard shortcuts ──
+  // -- Contextual keyboard shortcuts --
   const shortcuts = useMemo<ShortcutDefinition[]>(
     () => [
       {
@@ -113,39 +133,37 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
 
   return (
     <div
-      className={`${containerClass} bg-neutral-950 text-app-text flex flex-col overflow-hidden`}
+      className={`${containerClass} bg-app-bg text-app-text flex flex-col overflow-hidden`}
       style={safeAreaStyle}
     >
       <KitchenFilters
-        pendingOrders={kitchen.pendingOrders}
-        preparingOrders={kitchen.preparingOrders}
-        readyOrders={kitchen.readyOrders}
-        columns={kitchen.columns}
-        columnOrders={kitchen.columnOrders}
-        activeTab={kitchen.activeTab}
-        setActiveTab={kitchen.setActiveTab}
-        lastUpdate={kitchen.lastUpdate}
-        showMockData={kitchen.showMockData}
-        setShowMockData={kitchen.setShowMockData}
-        soundEnabled={kitchen.soundEnabled}
-        toggleSound={kitchen.toggleSound}
+        activeCount={kitchen.totalActive}
+        scheduledCount={0}
+        completedCount={0}
         isFullscreen={kitchen.isFullscreen}
         toggleFullscreen={kitchen.toggleFullscreen}
         goBack={kitchen.goBack}
-        audioRef={kitchen.audioRef}
         isChefView={isChefView}
       />
 
       <KitchenBoard
-        columns={kitchen.columns}
-        columnOrders={kitchen.columnOrders}
-        activeTab={kitchen.activeTab}
+        orders={boardOrders}
         showMockData={kitchen.showMockData}
         onStatusChange={kitchen.handleStatusChange}
         onUpdateItemStatus={kitchen.updateItemStatus}
         onMarkAllReady={kitchen.markAllItemsReady}
         onUpdate={kitchen.loadOrders}
         isChefView={isChefView}
+      />
+
+      <FooterSummaryBar
+        orders={kitchen.allOrders}
+        activeFilter={footerFilter}
+        onFilterChange={setFooterFilter}
+        currentPage={1}
+        totalPages={1}
+        onPageChange={handlePageChange}
+        tenantName={tenantName}
       />
     </div>
   );

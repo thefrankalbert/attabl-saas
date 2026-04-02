@@ -19,6 +19,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
   return (
     <KitchenClient
       tenantId={tenant.id}
+      tenantName={tenant.name}
       notificationSoundId={tenant.notification_sound_id ?? undefined}
     />
   );
