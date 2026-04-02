@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Bell, Utensils, CheckCircle2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -186,6 +186,16 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     const interval = setInterval(loadOrders, 15000); // Polling fallback every 15s (realtime handles most updates)
     return () => clearInterval(interval);
   }, [loadOrders]);
+
+  // ─── Play sound when polling detects new orders ────────
+  const prevOrderCountRef = useRef(orders.length);
+
+  useEffect(() => {
+    if (orders.length > prevOrderCountRef.current) {
+      playNotification();
+    }
+    prevOrderCountRef.current = orders.length;
+  }, [orders.length, playNotification]);
 
   // ─── Realtime subscription via shared hook ─────────────
   // Optimised: only full-refetch on INSERT (needs joined data like order_items).

@@ -846,7 +846,9 @@
     "showLess": "Show less",
     "tabActive": "ACTIVE",
     "tabScheduled": "SCHEDULED",
-    "tabCompleted": "COMPLETED"
+    "tabCompleted": "COMPLETED",
+    "tapToEnableSound": "Tap to enable sound",
+    "tapToEnableSoundDesc": "Sound notifications will be enabled for new orders"
   },
   "pos": {
     "title": "Point of Sale",
