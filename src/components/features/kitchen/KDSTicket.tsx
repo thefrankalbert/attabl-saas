@@ -1,31 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import {
-  Flame,
-  AlertTriangle,
-  Package,
-  Hotel,
-  Truck,
-  Clock,
-  Check,
-  ChevronRight,
-  Printer,
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Printer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { Order, OrderItem, ItemStatus, OrderStatus, Course } from '@/types/admin.types';
+import type { Order, OrderItem, OrderStatus, ItemStatus } from '@/types/admin.types';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
-import RuptureButton from '@/components/admin/RuptureButton';
 
-const COURSE_ORDER: Course[] = ['appetizer', 'main', 'dessert', 'drink'];
-
-const COURSE_LABELS: Record<string, string> = {
-  appetizer: 'ENTREES',
-  main: 'PLATS',
-  dessert: 'DESSERTS',
-  drink: 'BOISSONS',
-};
+// ─── Urgency ─────────────────────────────────────────────────
 
 type UrgencyLevel = 'fresh' | 'normal' | 'aging' | 'late' | 'critical';
 
@@ -37,123 +19,94 @@ function getUrgency(minutes: number): UrgencyLevel {
   return 'critical';
 }
 
-const URGENCY_CARD_STYLES: Record<UrgencyLevel, string> = {
-  fresh: 'border-l-4 border-emerald-500',
-  normal: '',
-  aging: 'border-l-4 border-amber-400',
-  late: 'border-l-4 border-orange-500 bg-orange-500/5',
-  critical: 'border-l-4 border-red-500 bg-red-500/5',
-};
-
-const URGENCY_TIMER_STYLES: Record<UrgencyLevel, string> = {
+const URGENCY_BORDER: Record<UrgencyLevel, string> = {
   fresh: '',
   normal: '',
-  aging: 'text-amber-400',
-  late: 'text-orange-400',
-  critical: 'text-red-400 animate-pulse',
+  aging: '',
+  late: '',
+  critical: '',
 };
+
+// ─── Status badge config ─────────────────────────────────────
+
+const STATUS_BADGE: Record<string, { labelKey: string; className: string }> = {
+  pending: {
+    labelKey: 'statusQueue',
+    className: 'text-app-text-muted border border-app-border',
+  },
+  preparing: {
+    labelKey: 'statusCooking',
+    className: 'bg-orange-500 text-white',
+  },
+  ready: {
+    labelKey: 'statusPacking',
+    className: 'bg-emerald-500 text-white',
+  },
+};
+
+// ─── CTA config ──────────────────────────────────────────────
+
+const CTA_CONFIG: Record<string, { labelKey: string; next: OrderStatus | undefined; bg: string }> =
+  {
+    pending: {
+      labelKey: 'startCooking',
+      next: 'preparing',
+      bg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-black',
+    },
+    preparing: {
+      labelKey: 'finishCooking',
+      next: 'ready',
+      bg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600 text-white',
+    },
+    ready: {
+      labelKey: 'done',
+      next: 'delivered',
+      bg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-white',
+    },
+  };
+
+// ─── Props ───────────────────────────────────────────────────
 
 interface KDSTicketProps {
   order: Order;
   onStatusChange: (id: string, status: OrderStatus) => void;
+  /** @deprecated Kept for KitchenBoard compat - no longer used in compact card */
   onUpdateItemStatus?: (
     orderId: string,
     itemId: string,
     newStatus: ItemStatus,
     allItems: { id: string; item_status?: string }[],
   ) => Promise<void>;
+  /** @deprecated Kept for KitchenBoard compat - no longer used in compact card */
   onMarkAllReady?: (orderId: string, itemIds: string[]) => Promise<void>;
   onUpdate?: () => void;
   isMock?: boolean;
 }
 
-const ITEM_NEXT: Record<string, ItemStatus> = {
-  pending: 'preparing',
-  preparing: 'ready',
-  ready: 'pending',
-};
+// ─── Component ───────────────────────────────────────────────
 
 export default function KDSTicket({
   order,
   onStatusChange,
-  onUpdateItemStatus,
-  onMarkAllReady,
-  onUpdate,
+  onUpdateItemStatus: _onUpdateItemStatus,
+  onMarkAllReady: _onMarkAllReady,
+  onUpdate: _onUpdate,
   isMock = false,
 }: KDSTicketProps) {
   const [elapsed, setElapsed] = useState(0);
+  const [expanded, setExpanded] = useState(false);
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
 
-  // ─── Service type config ────────────────────────────────────
-  const SERVICE_ICONS: Record<
-    string,
-    { icon: React.ComponentType<{ className?: string }>; label: string }
-  > = {
-    takeaway: { icon: Package, label: t('serviceTakeaway') },
-    delivery: { icon: Truck, label: t('serviceDelivery') },
-    room_service: { icon: Hotel, label: t('serviceRoom') },
+  // ─── Service type labels ─────────────────────────────────
+  const SERVICE_LABELS: Record<string, string> = {
+    dine_in: t('serviceDineIn'),
+    takeaway: t('serviceTakeaway'),
+    delivery: t('serviceDelivery'),
+    room_service: t('serviceRoom'),
   };
 
-  // ─── Item status badges ────────────────────────────────────
-  const ITEM_BADGES: Record<string, { dot: string; text: string; bg: string }> = {
-    pending: {
-      dot: 'bg-app-text-muted',
-      text: 'text-app-text-muted',
-      bg: 'bg-app-elevated hover:bg-app-hover',
-    },
-    preparing: {
-      dot: 'bg-amber-400',
-      text: 'text-amber-400',
-      bg: 'bg-amber-500/10 hover:bg-amber-500/20',
-    },
-    ready: {
-      dot: 'bg-emerald-400',
-      text: 'text-emerald-400',
-      bg: 'bg-emerald-500/10 hover:bg-emerald-500/20',
-    },
-  };
-
-  // ─── Order status → visual config ─────────────────────────
-  const STATUS_CONFIG = {
-    pending: {
-      headerBg: 'bg-amber-500',
-      headerText: 'text-black',
-      actionBg: 'bg-amber-500 hover:bg-amber-400 active:bg-amber-600',
-      actionLabel: t('actionStart').toUpperCase(),
-      next: 'preparing' as OrderStatus,
-    },
-    preparing: {
-      headerBg: 'bg-blue-500',
-      headerText: 'text-white',
-      actionBg: 'bg-blue-500 hover:bg-blue-400 active:bg-blue-600',
-      actionLabel: t('actionFinish').toUpperCase(),
-      next: 'ready' as OrderStatus,
-    },
-    ready: {
-      headerBg: 'bg-emerald-500',
-      headerText: 'text-white',
-      actionBg: 'bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600',
-      actionLabel: t('actionServe').toUpperCase(),
-      next: 'delivered' as OrderStatus,
-    },
-    delivered: {
-      headerBg: 'bg-app-elevated',
-      headerText: 'text-app-text-secondary',
-      actionBg: '',
-      actionLabel: '',
-      next: undefined,
-    },
-    cancelled: {
-      headerBg: 'bg-red-900/60',
-      headerText: 'text-red-300',
-      actionBg: '',
-      actionLabel: '',
-      next: undefined,
-    },
-  } as const;
-
-  // Filter out bar-only items: KDS shows only kitchen and both-zone items
+  // Filter out bar-only items
   const allItems: OrderItem[] =
     order.items || (order as { order_items?: OrderItem[] }).order_items || [];
   const items = allItems.filter((item) => {
@@ -161,252 +114,221 @@ export default function KDSTicket({
     return zone !== 'bar';
   });
 
+  // ─── Timer (stops when order is ready/delivered) ───────────
+  const isTimerActive = order.status === 'pending' || order.status === 'preparing';
   useEffect(() => {
     const calculate = () => {
       const diff = Math.floor((Date.now() - new Date(order.created_at).getTime()) / 1000);
       setElapsed(diff);
     };
     calculate();
+    if (!isTimerActive) return;
     const interval = setInterval(calculate, 1000);
     return () => clearInterval(interval);
-  }, [order.created_at]);
+  }, [order.created_at, isTimerActive]);
 
   const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const minutes = Math.floor(elapsed / 60);
   const urgency = getUrgency(minutes);
 
-  const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
+  // ─── Due time (created_at + 20min as default target) ─────
+  const dueTimeStr = useMemo(() => {
+    const d = new Date(order.created_at);
+    d.setMinutes(d.getMinutes() + 20);
+    const h = d.getHours();
+    const m = d.getMinutes();
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12 = h % 12 || 12;
+    return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  }, [order.created_at]);
 
-  // ─── Actions ────────────────────────────────────────────────
+  // ─── Status badge ────────────────────────────────────────
+  const badge = STATUS_BADGE[order.status] || STATUS_BADGE.pending;
+  const isDelayed = urgency === 'critical';
+
+  // ─── CTA ─────────────────────────────────────────────────
+  const cta = CTA_CONFIG[order.status];
+
+  // ─── Service type ────────────────────────────────────────
+  const serviceLabel = order.service_type ? SERVICE_LABELS[order.service_type] : null;
+
+  // ─── Server name (from joined admin_users relation) ─────
+  const serverName = (order as unknown as { server?: { full_name?: string } }).server?.full_name;
+
+  // ─── Actions ─────────────────────────────────────────────
   const handleAction = () => {
     if (isMock) return;
-    if (cfg.next) onStatusChange(order.id, cfg.next);
+    if (cta?.next) onStatusChange(order.id, cta.next);
   };
 
-  const handleItemClick = (item: OrderItem) => {
-    if (isMock) return;
-    const current = item.item_status || 'pending';
-    const newStatus = ITEM_NEXT[current] || 'pending';
-    onUpdateItemStatus?.(order.id, item.id, newStatus, items);
-  };
-
-  const handleMarkAllReady = () => {
-    if (isMock) return;
-    onMarkAllReady?.(
-      order.id,
-      items.map((i) => i.id),
-    );
-  };
-
-  const serviceType = order.service_type;
-  const svc = serviceType && serviceType !== 'dine_in' ? SERVICE_ICONS[serviceType] : null;
-
-  // Ready count for inline indicator
-  const readyCount = items.filter((i) => i.item_status === 'ready').length;
+  const elapsedStr = formatTime(elapsed);
 
   return (
     <div
       className={cn(
-        'flex flex-col rounded-lg overflow-hidden bg-app-card border border-app-border',
-        URGENCY_CARD_STYLES[urgency],
+        'flex flex-col h-full rounded-lg overflow-hidden bg-app-card border border-app-border shadow-sm',
+        URGENCY_BORDER[urgency],
         isMock && 'opacity-80',
       )}
     >
-      {/* ━━━ COLORED HEADER (Square KDS style) ━━━ */}
-      <div className={cn('px-3 py-2', cfg.headerBg, cfg.headerText)}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-black text-lg break-words">
-              {order.table_number || order.order_number}
+      {/* ━━━ HEADER ━━━ */}
+      <div className="px-3 pt-2.5 pb-2 border-b border-app-border">
+        {/* Line 1: #order_number . table_number   Due HH:MM */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 min-w-0">
+            <span className="text-sm font-bold text-app-text">
+              #{order.order_number || order.table_number}
             </span>
-            {svc && (
-              <div className="flex items-center gap-1 opacity-80">
-                <svc.icon className="w-3.5 h-3.5" />
-                <span className="text-xs font-bold uppercase">{svc.label}</span>
-              </div>
+            {order.order_number && order.table_number && (
+              <>
+                <span className="text-app-text-muted text-xs" aria-hidden="true">
+                  -
+                </span>
+                <span className="text-sm font-bold text-app-text truncate">
+                  {order.table_number}
+                </span>
+              </>
             )}
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => printKitchenTicket(order)}
-              className="w-8 h-8 min-h-[44px] flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
-              title="Imprimer"
-            >
-              <Printer className="w-4 h-4" />
-            </button>
-            <div
-              className={cn(
-                'flex items-center gap-1 font-mono text-sm font-bold',
-                URGENCY_TIMER_STYLES[urgency],
-              )}
-            >
-              {urgency === 'critical' ? (
-                <Flame className="w-4 h-4" />
-              ) : (
-                <Clock className="w-4 h-4 opacity-70" />
-              )}
-              {formatTime(elapsed)}
-            </div>
-          </div>
+          <span className="text-xs text-app-text-muted shrink-0">
+            {t('due')} {dueTimeStr}
+          </span>
         </div>
-        {/* Order number + server + customer (second line, compact) */}
-        {(order.order_number || order.server || order.customer_name) && (
-          <div className="flex items-center gap-2 mt-0.5 text-xs font-bold opacity-70">
-            {order.order_number && order.table_number && (
-              <span className="font-mono font-bold">#{order.order_number}</span>
+
+        {/* Line 2: server . customer . service_type   [STATUS BADGE] */}
+        <div className="flex items-center justify-between gap-2 mt-0.5">
+          <div className="flex items-center gap-1 min-w-0 text-xs text-app-text-muted truncate">
+            {serverName && (
+              <span className="font-medium text-app-text-secondary truncate max-w-[100px]">
+                {serverName}
+              </span>
             )}
             {order.customer_name && (
-              <span className="truncate max-w-[120px]">{order.customer_name}</span>
+              <>
+                <span aria-hidden="true">-</span>
+                <span className="truncate max-w-[100px]">{order.customer_name}</span>
+              </>
             )}
-            {order.server && <span>{order.server.full_name}</span>}
-            {serviceType === 'room_service' && order.room_number && (
-              <span>Ch. {order.room_number}</span>
+            {serviceLabel && (
+              <>
+                <span aria-hidden="true">-</span>
+                <span>{serviceLabel}</span>
+              </>
+            )}
+            {order.service_type === 'room_service' && order.room_number && (
+              <span className="ml-0.5">Ch. {order.room_number}</span>
             )}
           </div>
-        )}
+          <span
+            className={cn(
+              'text-[10px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded shrink-0',
+              isDelayed ? 'bg-red-500 text-white' : badge.className,
+            )}
+          >
+            {isDelayed ? t('footerDelayed').toUpperCase() : t(badge.labelKey)}
+          </span>
+        </div>
       </div>
 
-      {/* ━━━ Customer Notes ━━━ */}
+      {/* ━━━ ORDER NOTES ━━━ */}
       {order.notes && (
-        <div className="px-3 py-1.5 bg-amber-500/[0.08] border-b border-app-border">
-          <div className="flex items-start gap-1.5 text-amber-300/80">
-            <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-            <p className="text-sm font-medium leading-snug">{order.notes}</p>
-          </div>
+        <div className="px-3 py-1.5 border-b border-app-border">
+          <p className="text-xs italic text-amber-500">{order.notes}</p>
         </div>
       )}
 
-      {/* ━━━ ITEMS LIST (grouped by course) ━━━ */}
-      <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 md:max-h-80 lg:max-h-[360px] custom-scrollbar divide-y divide-app-border">
-        {(() => {
-          // Group items by course
-          const grouped: Record<string, OrderItem[]> = {};
-          for (const item of items) {
-            const course = item.course || 'main';
-            if (!grouped[course]) grouped[course] = [];
-            grouped[course].push(item);
-          }
+      {/* ━━━ ITEMS LIST ━━━ */}
+      <div
+        className={cn(
+          'flex-1 min-h-0 px-3 py-2 space-y-1',
+          expanded ? 'overflow-y-auto custom-scrollbar' : 'overflow-hidden',
+        )}
+        onClick={() => !expanded && items.length > 4 && setExpanded(true)}
+        role={!expanded && items.length > 4 ? 'button' : undefined}
+      >
+        {(expanded ? items : items.slice(0, 4)).map((item) => {
+          const hasNotes = item.notes || item.customer_notes;
+          const hasMods = item.modifiers && item.modifiers.length > 0;
 
-          // Determine distinct courses present
-          const presentCourses = COURSE_ORDER.filter((c) => grouped[c] && grouped[c].length > 0);
-          // Add any courses not in COURSE_ORDER
-          for (const course of Object.keys(grouped)) {
-            if (!presentCourses.includes(course as Course)) {
-              presentCourses.push(course as Course);
-            }
-          }
-
-          const showHeaders = presentCourses.length >= 2;
-
-          return presentCourses.map((course) => (
-            <div key={course}>
-              {showHeaders && (
-                <div className="px-3 pt-2 pb-1">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
-                    {COURSE_LABELS[course] || 'AUTRES'}
-                  </span>
-                </div>
-              )}
-              {grouped[course]!.map((item) => {
-                const badge = ITEM_BADGES[item.item_status || 'pending'] || ITEM_BADGES.pending;
-                const hasNotes = item.notes || item.customer_notes;
-                const hasMods = item.modifiers && item.modifiers.length > 0;
-
-                return (
-                  <div key={item.id} className="flex items-start gap-2 px-3 py-2">
-                    {/* Number + Name */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base text-app-text-secondary font-black tabular-nums shrink-0">
-                          {item.quantity}x
-                        </span>
-                        <span className="text-base font-semibold text-app-text leading-tight break-words">
-                          {item.name}
-                        </span>
-                        {!isMock && item.menu_item_id && (
-                          <RuptureButton
-                            menuItemId={item.menu_item_id}
-                            itemName={item.name}
-                            onRupture={onUpdate}
-                          />
-                        )}
-                      </div>
-                      {hasMods && (
-                        <div className="flex flex-wrap gap-x-2 ml-5 mt-0.5">
-                          {item.modifiers!.map((mod, modIdx) => (
-                            <span key={modIdx} className="text-sm text-app-text-secondary">
-                              + {mod.name}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      {hasNotes && (
-                        <p className="text-sm text-amber-400/60 ml-5 mt-0.5 italic">
-                          {item.customer_notes || item.notes}
-                        </p>
-                      )}
-                    </div>
-
-                    {/* Status badge - tap to cycle */}
-                    <button
-                      onClick={() => handleItemClick(item)}
-                      disabled={isMock}
-                      className={cn(
-                        'flex items-center gap-1 px-2 py-1.5 min-h-[44px] rounded-md text-xs font-bold shrink-0 transition-all',
-                        badge.bg,
-                        badge.text,
-                        !isMock && 'cursor-pointer active:scale-95',
-                      )}
-                    >
-                      <div className={cn('w-1.5 h-1.5 rounded-full', badge.dot)} />
-                    </button>
+          return (
+            <div key={item.id}>
+              <div className="flex items-start gap-1.5">
+                <span className="text-sm font-bold text-app-text tabular-nums shrink-0">
+                  {item.quantity}
+                </span>
+                <span className="text-sm text-app-text leading-tight">{item.name}</span>
+              </div>
+              {hasMods &&
+                item.modifiers!.map((mod, modIdx) => (
+                  <div key={modIdx} className="ml-5 flex items-start gap-1.5">
+                    <span className="text-xs text-app-text-muted tabular-nums shrink-0">1</span>
+                    <span className="text-xs text-app-text-muted">{mod.name}</span>
                   </div>
-                );
-              })}
+                ))}
+              {hasNotes && (
+                <p className="text-xs italic text-amber-500/70 ml-5 mt-0.5">
+                  {item.customer_notes || item.notes}
+                </p>
+              )}
             </div>
-          ));
-        })()}
+          );
+        })}
 
+        {!expanded && items.length > 4 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="w-full text-center py-1 text-xs font-medium text-accent hover:underline"
+          >
+            +{items.length - 4} {t('moreItems')}
+          </button>
+        )}
+        {expanded && items.length > 4 && (
+          <button
+            type="button"
+            onClick={() => setExpanded(false)}
+            className="w-full text-center py-1 text-xs font-medium text-app-text-muted hover:underline"
+          >
+            {t('showLess')}
+          </button>
+        )}
         {items.length === 0 && (
-          <div className="text-center py-6 text-app-text-secondary text-xs">{tc('noItems')}</div>
+          <div className="text-center py-4 text-app-text-secondary text-xs">{tc('noItems')}</div>
         )}
       </div>
 
       {/* ━━━ ACTION BAR ━━━ */}
-      {cfg.actionLabel && (
-        <div className="flex border-t border-app-border">
-          {/* Mark all ready shortcut */}
-          {order.status !== 'ready' && items.length > 0 && (
-            <button
-              onClick={handleMarkAllReady}
-              disabled={isMock}
-              className="flex items-center justify-center gap-1 px-3 min-h-[48px] text-xs font-bold uppercase tracking-wide text-app-text-secondary hover:text-app-text bg-app-hover/30 hover:bg-app-hover border-r border-app-border transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-              {readyCount > 0 && (
-                <span className="tabular-nums">
-                  {readyCount}/{items.length}
-                </span>
-              )}
-            </button>
-          )}
-
-          {/* Main action button - big, colored, full-width */}
+      {cta && (
+        <div className="flex items-stretch border-t border-app-border">
+          {/* CTA button */}
           <button
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 min-h-[48px] font-black text-base uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2',
-              cfg.actionBg,
+              'flex-1 min-h-[44px] flex items-center justify-between px-3 font-bold text-sm uppercase tracking-wide transition-all active:scale-[0.98]',
+              isDelayed ? 'bg-red-500 hover:bg-red-400 active:bg-red-600 text-white' : cta.bg,
             )}
           >
-            {cfg.actionLabel}
-            <ChevronRight className="w-4 h-4" />
+            <span>{t(cta.labelKey)}</span>
+            <span className="font-mono text-xs opacity-80">{elapsedStr}</span>
+          </button>
+
+          {/* Print button */}
+          <button
+            onClick={() => printKitchenTicket(order)}
+            className="flex items-center justify-center w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover transition-colors"
+            title="Print"
+          >
+            <Printer className="w-4 h-4 text-app-text-muted" />
           </button>
         </div>
       )}

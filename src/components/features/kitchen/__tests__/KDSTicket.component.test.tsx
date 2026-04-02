@@ -20,10 +20,6 @@ vi.mock('next-intl', () => ({
   },
 }));
 
-vi.mock('@/components/admin/RuptureButton', () => ({
-  default: () => <button data-testid="rupture-btn">Rupture</button>,
-}));
-
 // ─── Test Data ──────────────────────────────────────────
 
 const baseItem: OrderItem = {
@@ -70,8 +66,6 @@ function makeOrder(overrides: Partial<Order> = {}): Order {
 
 const mockCallbacks = {
   onStatusChange: vi.fn(),
-  onUpdateItemStatus: vi.fn().mockResolvedValue(undefined),
-  onMarkAllReady: vi.fn().mockResolvedValue(undefined),
   onUpdate: vi.fn(),
 };
 
@@ -87,13 +81,13 @@ describe('KDSTicket', () => {
     vi.useRealTimers();
   });
 
-  it('renders table number in header and order number', () => {
+  it('renders order number and table number in header', () => {
     render(<KDSTicket order={makeOrder()} {...mockCallbacks} />);
 
-    // Table number is shown prominently in the colored header
-    expect(screen.getByText('T5')).toBeInTheDocument();
-    // Order number shown as secondary info
+    // Order number shown as #042
     expect(screen.getByText('#042')).toBeInTheDocument();
+    // Table number shown separately
+    expect(screen.getByText('T5')).toBeInTheDocument();
   });
 
   it('renders item names and quantities', () => {
@@ -101,33 +95,35 @@ describe('KDSTicket', () => {
 
     expect(screen.getByText('Pizza Margherita')).toBeInTheDocument();
     expect(screen.getByText('Tiramisu')).toBeInTheDocument();
-    expect(screen.getByText('2x')).toBeInTheDocument();
-    expect(screen.getByText('1x')).toBeInTheDocument();
+    // Quantities shown as plain numbers (not Nx)
+    const twos = screen.getAllByText('2');
+    expect(twos.length).toBeGreaterThanOrEqual(1);
+    const ones = screen.getAllByText('1');
+    expect(ones.length).toBeGreaterThanOrEqual(1);
   });
 
   it('shows timer that increments', () => {
     const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
     render(<KDSTicket order={makeOrder({ created_at: fiveMinAgo })} {...mockCallbacks} />);
 
-    // Timer should show ~05:00
-    expect(screen.getByText(/05:0\d/)).toBeInTheDocument();
+    // Timer should show ~05:00 in the action button
+    expect(screen.getAllByText(/05:0\d/).length).toBeGreaterThanOrEqual(1);
 
     // Advance 10 seconds
     act(() => {
       vi.advanceTimersByTime(10_000);
     });
 
-    expect(screen.getByText(/05:1\d/)).toBeInTheDocument();
+    expect(screen.getAllByText(/05:1\d/).length).toBeGreaterThanOrEqual(1);
   });
 
-  it('shows warning styling for orders 10-19 min old', () => {
+  it('shows warning styling for orders 15+ min old', () => {
     const fifteenMinAgo = new Date(Date.now() - 15 * 60 * 1000).toISOString();
     const { container } = render(
       <KDSTicket order={makeOrder({ created_at: fifteenMinAgo })} {...mockCallbacks} />,
     );
 
-    // Header still uses amber color for pending, timer area should have pulse or similar
-    // The isWarning flag is set for 10-19 min
+    // Should have font-mono timer in the action bar
     expect(container.querySelector('.font-mono')).toBeInTheDocument();
   });
 
@@ -137,12 +133,11 @@ describe('KDSTicket', () => {
       <KDSTicket order={makeOrder({ created_at: twentyFiveMinAgo })} {...mockCallbacks} />,
     );
 
-    // Ticket should have red left border for critical urgency (20+ min)
-    const ticket = container.querySelector('.border-red-500');
-    expect(ticket).toBeInTheDocument();
+    // Critical orders show DELAYED badge in red
+    expect(screen.getByText('FOOTERDELAYED')).toBeInTheDocument();
   });
 
-  it('displays customer notes with warning icon', () => {
+  it('displays order notes', () => {
     render(<KDSTicket order={makeOrder({ notes: 'Allergie noix' })} {...mockCallbacks} />);
 
     expect(screen.getByText('Allergie noix')).toBeInTheDocument();
@@ -157,59 +152,17 @@ describe('KDSTicket', () => {
   it('calls onStatusChange when main action clicked', () => {
     render(<KDSTicket order={makeOrder({ status: 'pending' })} {...mockCallbacks} />);
 
-    // Pending → actionStart button → should advance to 'preparing'
-    const actionBtn = screen.getByText('actionStart'.toUpperCase());
+    // Pending -> startCooking button -> should advance to 'preparing'
+    const actionBtn = screen.getByText('startCooking');
     fireEvent.click(actionBtn);
 
     expect(mockCallbacks.onStatusChange).toHaveBeenCalledWith('order-1', 'preparing');
   });
 
-  it('calls onUpdateItemStatus when item status badge clicked', () => {
-    render(<KDSTicket order={makeOrder()} {...mockCallbacks} />);
-
-    // Item status badge is a button with a dot - find all buttons and click the status one
-    const buttons = screen.getAllByRole('button');
-    // The status badge button is the one that's not the action button or rupture button
-    const statusBadge = buttons.find(
-      (btn) =>
-        !btn.textContent?.includes('ACTIONSTART') &&
-        !btn.textContent?.includes('Rupture') &&
-        btn.querySelector('.rounded-full'),
-    );
-    expect(statusBadge).toBeTruthy();
-    fireEvent.click(statusBadge!);
-
-    expect(mockCallbacks.onUpdateItemStatus).toHaveBeenCalledWith(
-      'order-1',
-      'item-1',
-      'preparing',
-      [baseItem],
-    );
-  });
-
-  it('calls onMarkAllReady when mark-all button clicked', () => {
-    const { container } = render(
-      <KDSTicket
-        order={makeOrder({ status: 'preparing', items: [baseItem, readyItem] })}
-        {...mockCallbacks}
-      />,
-    );
-
-    // The mark-all-ready button contains a Check icon and is in the items area
-    const buttons = container.querySelectorAll('button');
-    const markAllBtn = Array.from(buttons).find(
-      (btn) => btn.querySelector('.lucide-check') && !btn.textContent?.includes('ACTIONFINISH'),
-    );
-    expect(markAllBtn).toBeTruthy();
-    fireEvent.click(markAllBtn!);
-
-    expect(mockCallbacks.onMarkAllReady).toHaveBeenCalledWith('order-1', ['item-1', 'item-2']);
-  });
-
   it('disables actions in mock mode', () => {
     render(<KDSTicket order={makeOrder()} {...mockCallbacks} isMock />);
 
-    const actionBtn = screen.getByText('actionStart'.toUpperCase());
+    const actionBtn = screen.getByText('startCooking');
     fireEvent.click(actionBtn);
 
     expect(mockCallbacks.onStatusChange).not.toHaveBeenCalled();
@@ -239,5 +192,33 @@ describe('KDSTicket', () => {
     render(<KDSTicket order={makeOrder({ items: [] })} {...mockCallbacks} />);
 
     expect(screen.getByText('noItems')).toBeInTheDocument();
+  });
+
+  it('shows status badge in header', () => {
+    render(<KDSTicket order={makeOrder({ status: 'preparing' })} {...mockCallbacks} />);
+
+    // Should show COOKING badge
+    expect(screen.getByText('statusCooking')).toBeInTheDocument();
+  });
+
+  it('shows DELAYED badge when order is critical urgency', () => {
+    const thirtyMinAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+    render(
+      <KDSTicket
+        order={makeOrder({ created_at: thirtyMinAgo, status: 'pending' })}
+        {...mockCallbacks}
+      />,
+    );
+
+    // Should show DELAYED badge (footerDelayed key uppercased)
+    expect(screen.getByText('FOOTERDELAYED')).toBeInTheDocument();
+  });
+
+  it('shows due time in header', () => {
+    render(<KDSTicket order={makeOrder()} {...mockCallbacks} />);
+
+    // Should contain "due" text
+    const dueElements = screen.getAllByText(/due/i);
+    expect(dueElements.length).toBeGreaterThanOrEqual(1);
   });
 });

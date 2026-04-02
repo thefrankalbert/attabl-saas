@@ -38,6 +38,7 @@ export interface UseKitchenDataReturn {
   pendingOrders: Order[];
   preparingOrders: Order[];
   readyOrders: Order[];
+  allOrders: Order[];
   columnOrders: Record<ColumnKey, Order[]>;
   totalActive: number;
   columns: Record<ColumnKey, ColumnConfig>;
@@ -309,6 +310,14 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
   const preparingOrders = displayOrders.filter((o) => o.status === 'preparing');
   const readyOrders = displayOrders.filter((o) => o.status === 'ready');
 
+  const allOrders = useMemo(
+    () =>
+      [...pendingOrders, ...preparingOrders, ...readyOrders].sort(
+        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+      ),
+    [pendingOrders, preparingOrders, readyOrders],
+  );
+
   const columnOrders: Record<ColumnKey, Order[]> = {
     pending: pendingOrders,
     preparing: preparingOrders,
@@ -334,6 +343,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     pendingOrders,
     preparingOrders,
     readyOrders,
+    allOrders,
     columnOrders,
     totalActive,
     columns,
