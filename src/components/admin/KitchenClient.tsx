@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
@@ -24,6 +24,36 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
+
+  // ── Wake lock: prevent tablet screen from sleeping during KDS use ──
+  useEffect(() => {
+    let wakeLock: WakeLockSentinel | null = null;
+
+    async function requestWakeLock() {
+      try {
+        if ('wakeLock' in navigator) {
+          wakeLock = await navigator.wakeLock.request('screen');
+        }
+      } catch {
+        // Wake lock not supported or denied - silently ignore
+      }
+    }
+
+    requestWakeLock();
+
+    // Re-request on visibility change (wake lock is released when tab is hidden)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      wakeLock?.release();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
 
   // ── Contextual keyboard shortcuts ──
   const shortcuts = useMemo<ShortcutDefinition[]>(

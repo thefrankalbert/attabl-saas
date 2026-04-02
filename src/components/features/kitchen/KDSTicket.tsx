@@ -10,11 +10,48 @@ import {
   Clock,
   Check,
   ChevronRight,
+  Printer,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { Order, OrderItem, ItemStatus, OrderStatus } from '@/types/admin.types';
+import type { Order, OrderItem, ItemStatus, OrderStatus, Course } from '@/types/admin.types';
+import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 import RuptureButton from '@/components/admin/RuptureButton';
+
+const COURSE_ORDER: Course[] = ['appetizer', 'main', 'dessert', 'drink'];
+
+const COURSE_LABELS: Record<string, string> = {
+  appetizer: 'ENTREES',
+  main: 'PLATS',
+  dessert: 'DESSERTS',
+  drink: 'BOISSONS',
+};
+
+type UrgencyLevel = 'fresh' | 'normal' | 'aging' | 'late' | 'critical';
+
+function getUrgency(minutes: number): UrgencyLevel {
+  if (minutes < 5) return 'fresh';
+  if (minutes < 10) return 'normal';
+  if (minutes < 15) return 'aging';
+  if (minutes < 20) return 'late';
+  return 'critical';
+}
+
+const URGENCY_CARD_STYLES: Record<UrgencyLevel, string> = {
+  fresh: 'border-l-4 border-emerald-500',
+  normal: '',
+  aging: 'border-l-4 border-amber-400',
+  late: 'border-l-4 border-orange-500 bg-orange-500/5',
+  critical: 'border-l-4 border-red-500 bg-red-500/5',
+};
+
+const URGENCY_TIMER_STYLES: Record<UrgencyLevel, string> = {
+  fresh: '',
+  normal: '',
+  aging: 'text-amber-400',
+  late: 'text-orange-400',
+  critical: 'text-red-400 animate-pulse',
+};
 
 interface KDSTicketProps {
   order: Order;
@@ -141,7 +178,7 @@ export default function KDSTicket({
   };
 
   const minutes = Math.floor(elapsed / 60);
-  const isLate = minutes >= 20;
+  const urgency = getUrgency(minutes);
 
   const cfg = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending;
 
@@ -176,7 +213,7 @@ export default function KDSTicket({
     <div
       className={cn(
         'flex flex-col rounded-lg overflow-hidden bg-neutral-900 border border-white/[0.06]',
-        isLate && 'ring-1 ring-red-500/40',
+        URGENCY_CARD_STYLES[urgency],
         isMock && 'opacity-80',
       )}
     >
@@ -184,7 +221,7 @@ export default function KDSTicket({
       <div className={cn('px-3 py-2', cfg.headerBg, cfg.headerText)}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="font-black text-sm break-words">
+            <span className="font-black text-lg break-words">
               {order.table_number || order.order_number}
             </span>
             {svc && (
@@ -194,25 +231,37 @@ export default function KDSTicket({
               </div>
             )}
           </div>
-          <div
-            className={cn(
-              'flex items-center gap-1 font-mono text-xs font-black',
-              isLate ? 'animate-pulse' : '',
-            )}
-          >
-            {isLate ? (
-              <Flame className="w-3.5 h-3.5" />
-            ) : (
-              <Clock className="w-3.5 h-3.5 opacity-70" />
-            )}
-            {formatTime(elapsed)}
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => printKitchenTicket(order)}
+              className="w-8 h-8 min-h-[44px] flex items-center justify-center opacity-50 hover:opacity-100 transition-opacity"
+              title="Imprimer"
+            >
+              <Printer className="w-4 h-4" />
+            </button>
+            <div
+              className={cn(
+                'flex items-center gap-1 font-mono text-sm font-bold',
+                URGENCY_TIMER_STYLES[urgency],
+              )}
+            >
+              {urgency === 'critical' ? (
+                <Flame className="w-4 h-4" />
+              ) : (
+                <Clock className="w-4 h-4 opacity-70" />
+              )}
+              {formatTime(elapsed)}
+            </div>
           </div>
         </div>
-        {/* Order number + server (second line, compact) */}
-        {(order.order_number || order.server) && (
-          <div className="flex items-center gap-2 mt-0.5 text-xs opacity-70">
+        {/* Order number + server + customer (second line, compact) */}
+        {(order.order_number || order.server || order.customer_name) && (
+          <div className="flex items-center gap-2 mt-0.5 text-xs font-bold opacity-70">
             {order.order_number && order.table_number && (
               <span className="font-mono font-bold">#{order.order_number}</span>
+            )}
+            {order.customer_name && (
+              <span className="truncate max-w-[120px]">{order.customer_name}</span>
             )}
             {order.server && <span>{order.server.full_name}</span>}
             {serviceType === 'room_service' && order.room_number && (
@@ -227,69 +276,101 @@ export default function KDSTicket({
         <div className="px-3 py-1.5 bg-amber-500/[0.08] border-b border-white/[0.04]">
           <div className="flex items-start gap-1.5 text-amber-300/80">
             <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
-            <p className="text-xs font-medium leading-snug">{order.notes}</p>
+            <p className="text-sm font-medium leading-snug">{order.notes}</p>
           </div>
         </div>
       )}
 
-      {/* ━━━ ITEMS LIST (clean, numbered) ━━━ */}
+      {/* ━━━ ITEMS LIST (grouped by course) ━━━ */}
       <div className="flex-1 overflow-y-auto max-h-44 sm:max-h-64 md:max-h-80 lg:max-h-[360px] custom-scrollbar divide-y divide-white/[0.03]">
-        {items.map((item) => {
-          const badge = ITEM_BADGES[item.item_status || 'pending'] || ITEM_BADGES.pending;
-          const hasNotes = item.notes || item.customer_notes;
-          const hasMods = item.modifiers && item.modifiers.length > 0;
+        {(() => {
+          // Group items by course
+          const grouped: Record<string, OrderItem[]> = {};
+          for (const item of items) {
+            const course = item.course || 'main';
+            if (!grouped[course]) grouped[course] = [];
+            grouped[course].push(item);
+          }
 
-          return (
-            <div key={item.id} className="flex items-start gap-2 px-3 py-2">
-              {/* Number + Name */}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-app-text-secondary font-bold tabular-nums shrink-0">
-                    {item.quantity}x
+          // Determine distinct courses present
+          const presentCourses = COURSE_ORDER.filter((c) => grouped[c] && grouped[c].length > 0);
+          // Add any courses not in COURSE_ORDER
+          for (const course of Object.keys(grouped)) {
+            if (!presentCourses.includes(course as Course)) {
+              presentCourses.push(course as Course);
+            }
+          }
+
+          const showHeaders = presentCourses.length >= 2;
+
+          return presentCourses.map((course) => (
+            <div key={course}>
+              {showHeaders && (
+                <div className="px-3 pt-2 pb-1">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-app-text-muted">
+                    {COURSE_LABELS[course] || 'AUTRES'}
                   </span>
-                  <span className="text-sm font-semibold text-white leading-tight break-words">
-                    {item.name}
-                  </span>
-                  {!isMock && item.menu_item_id && (
-                    <RuptureButton
-                      menuItemId={item.menu_item_id}
-                      itemName={item.name}
-                      onRupture={onUpdate}
-                    />
-                  )}
                 </div>
-                {hasMods && (
-                  <div className="flex flex-wrap gap-x-2 ml-5 mt-0.5">
-                    {item.modifiers!.map((mod, modIdx) => (
-                      <span key={modIdx} className="text-xs text-app-text-secondary">
-                        + {mod.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                {hasNotes && (
-                  <p className="text-xs text-amber-400/60 ml-5 mt-0.5 italic">
-                    {item.customer_notes || item.notes}
-                  </p>
-                )}
-              </div>
+              )}
+              {grouped[course]!.map((item) => {
+                const badge = ITEM_BADGES[item.item_status || 'pending'] || ITEM_BADGES.pending;
+                const hasNotes = item.notes || item.customer_notes;
+                const hasMods = item.modifiers && item.modifiers.length > 0;
 
-              {/* Status badge - tap to cycle */}
-              <button
-                onClick={() => handleItemClick(item)}
-                disabled={isMock}
-                className={cn(
-                  'flex items-center gap-1 px-2 py-1.5 min-h-[44px] rounded-md text-xs font-bold shrink-0 transition-all',
-                  badge.bg,
-                  badge.text,
-                  !isMock && 'cursor-pointer active:scale-95',
-                )}
-              >
-                <div className={cn('w-1.5 h-1.5 rounded-full', badge.dot)} />
-              </button>
+                return (
+                  <div key={item.id} className="flex items-start gap-2 px-3 py-2">
+                    {/* Number + Name */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-base text-app-text-secondary font-black tabular-nums shrink-0">
+                          {item.quantity}x
+                        </span>
+                        <span className="text-base font-semibold text-white leading-tight break-words">
+                          {item.name}
+                        </span>
+                        {!isMock && item.menu_item_id && (
+                          <RuptureButton
+                            menuItemId={item.menu_item_id}
+                            itemName={item.name}
+                            onRupture={onUpdate}
+                          />
+                        )}
+                      </div>
+                      {hasMods && (
+                        <div className="flex flex-wrap gap-x-2 ml-5 mt-0.5">
+                          {item.modifiers!.map((mod, modIdx) => (
+                            <span key={modIdx} className="text-sm text-app-text-secondary">
+                              + {mod.name}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                      {hasNotes && (
+                        <p className="text-sm text-amber-400/60 ml-5 mt-0.5 italic">
+                          {item.customer_notes || item.notes}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Status badge - tap to cycle */}
+                    <button
+                      onClick={() => handleItemClick(item)}
+                      disabled={isMock}
+                      className={cn(
+                        'flex items-center gap-1 px-2 py-1.5 min-h-[44px] rounded-md text-xs font-bold shrink-0 transition-all',
+                        badge.bg,
+                        badge.text,
+                        !isMock && 'cursor-pointer active:scale-95',
+                      )}
+                    >
+                      <div className={cn('w-1.5 h-1.5 rounded-full', badge.dot)} />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
-          );
-        })}
+          ));
+        })()}
 
         {items.length === 0 && (
           <div className="text-center py-6 text-app-text-secondary text-xs">{tc('noItems')}</div>
@@ -320,7 +401,7 @@ export default function KDSTicket({
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 min-h-[48px] font-black text-sm uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2',
+              'flex-1 min-h-[48px] font-black text-base uppercase tracking-wider text-white transition-all active:scale-[0.98] flex items-center justify-center gap-2',
               cfg.actionBg,
             )}
           >
