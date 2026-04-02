@@ -137,8 +137,8 @@ describe('KDSTicket', () => {
       <KDSTicket order={makeOrder({ created_at: twentyFiveMinAgo })} {...mockCallbacks} />,
     );
 
-    // Ticket should have red ring for late orders
-    const ticket = container.querySelector('.ring-red-500\\/40');
+    // Ticket should have red left border for critical urgency (20+ min)
+    const ticket = container.querySelector('.border-red-500');
     expect(ticket).toBeInTheDocument();
   });
 
@@ -195,10 +195,10 @@ describe('KDSTicket', () => {
       />,
     );
 
-    // The mark-all-ready button contains a Check icon
+    // The mark-all-ready button contains a Check icon and is in the items area
     const buttons = container.querySelectorAll('button');
     const markAllBtn = Array.from(buttons).find(
-      (btn) => btn.querySelector('svg') && !btn.textContent?.includes('ACTIONFINISH'),
+      (btn) => btn.querySelector('.lucide-check') && !btn.textContent?.includes('ACTIONFINISH'),
     );
     expect(markAllBtn).toBeTruthy();
     fireEvent.click(markAllBtn!);
