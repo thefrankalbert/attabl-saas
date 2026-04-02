@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, Volume2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useKitchenData } from '@/hooks/useKitchenData';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -31,6 +31,17 @@ export default function KitchenClient({
   const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
   const kitchen = useKitchenData({ tenantId, notificationSoundId });
+
+  // -- Sound unlock interstitial (browser blocks audio until user gesture) --
+  const [soundUnlocked, setSoundUnlocked] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return sessionStorage.getItem('kds-sound-unlocked') === 'true';
+  });
+
+  const handleUnlock = useCallback(() => {
+    setSoundUnlocked(true);
+    sessionStorage.setItem('kds-sound-unlocked', 'true');
+  }, []);
 
   // -- Footer filter state --
   const [footerFilter, setFooterFilter] = useState<OrderStatus | 'all'>('all');
@@ -137,6 +148,20 @@ export default function KitchenClient({
       className={`${containerClass} bg-app-bg text-app-text flex flex-col overflow-hidden`}
       style={safeAreaStyle}
     >
+      {!soundUnlocked && (
+        <div
+          className="fixed inset-0 z-[250] bg-app-bg/95 flex items-center justify-center cursor-pointer"
+          onClick={handleUnlock}
+          onTouchStart={handleUnlock}
+        >
+          <div className="text-center p-8">
+            <Volume2 className="w-16 h-16 text-amber-400 mx-auto" />
+            <p className="text-lg font-bold text-app-text mt-4">{t('tapToEnableSound')}</p>
+            <p className="text-sm text-app-text-muted mt-2">{t('tapToEnableSoundDesc')}</p>
+          </div>
+        </div>
+      )}
+
       <KitchenFilters
         activeCount={kitchen.totalActive}
         completedToday={kitchen.completedToday}

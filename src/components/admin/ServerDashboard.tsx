@@ -9,6 +9,7 @@ import { useReleaseAssignment, useClaimOrder } from '@/hooks/mutations/useAssign
 import { UserCheck, ShoppingCart, LogOut, ChevronDown } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 import { createClient } from '@/lib/supabase/client';
+import { useSound } from '@/contexts/SoundContext';
 import type { Order, CurrencyCode } from '@/types/admin.types';
 
 interface Props {
@@ -27,6 +28,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
   const [expandedTableId, setExpandedTableId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
+  const { play: playNotification } = useSound();
 
   useEffect(() => {
     const supabase = createClient();
@@ -35,7 +37,32 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          playNotification();
+          queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['orders', tenantId] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
           schema: 'public',
           table: 'orders',
           filter: `tenant_id=eq.${tenantId}`,
@@ -49,7 +76,7 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, queryClient]);
+  }, [tenantId, queryClient, playNotification]);
 
   const myAssignments = allAssignments.filter((a) => a.server_id === currentServerId);
   const myOrders = orders.filter(

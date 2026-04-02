@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDashboardStats } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
 import { useToast } from '@/components/ui/use-toast';
+import { useSound } from '@/contexts/SoundContext';
 import type {
   Order,
   DashboardStats,
@@ -89,6 +90,7 @@ export function useDashboardData({
   const ta = useTranslations('admin');
   const supabase = createClient();
   const queryClient = useQueryClient();
+  const { play: playNotification } = useSound();
 
   // TanStack Query for dashboard data - pass server-computed sparklines as initialData
   // so charts render immediately on first paint without waiting for client fetch
@@ -135,7 +137,32 @@ export function useDashboardData({
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
+          schema: 'public',
+          table: 'orders',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          playNotification();
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `tenant_id=eq.${tenantId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['dashboard-stats', tenantId] });
+        },
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
           schema: 'public',
           table: 'orders',
           filter: `tenant_id=eq.${tenantId}`,
@@ -169,7 +196,7 @@ export function useDashboardData({
       supabase.removeChannel(channel);
       supabase.removeChannel(stockChannel);
     };
-  }, [supabase, tenantId, queryClient]);
+  }, [supabase, tenantId, queryClient, playNotification]);
 
   return {
     stats,

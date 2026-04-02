@@ -846,7 +846,9 @@
     "showLess": "Reduire",
     "tabActive": "ACTIVES",
     "tabScheduled": "PLANIFIEES",
-    "tabCompleted": "TERMINEES"
+    "tabCompleted": "TERMINEES",
+    "tapToEnableSound": "Appuyez pour activer le son",
+    "tapToEnableSoundDesc": "Les notifications sonores seront activees pour les nouvelles commandes"
   },
   "pos": {
     "title": "Caisse (POS)",
