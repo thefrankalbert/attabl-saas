@@ -227,7 +227,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               {...register('enableCoupons')}
               className="sr-only peer"
             />
-            <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
+            <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
           </label>
         </div>
       </div>

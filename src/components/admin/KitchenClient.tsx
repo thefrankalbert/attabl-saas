@@ -100,7 +100,7 @@ export default function KitchenClient({ tenantId, notificationSoundId }: Kitchen
   if (kitchen.loading) {
     return (
       <div
-        className={`${containerClass} bg-neutral-950 flex items-center justify-center text-app-text`}
+        className={`${containerClass} bg-app-bg flex items-center justify-center text-app-text`}
         style={safeAreaStyle}
       >
         <div className="flex flex-col items-center gap-4">

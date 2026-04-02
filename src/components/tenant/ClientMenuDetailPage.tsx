@@ -324,77 +324,29 @@ export default function ClientMenuDetailPage({
     >
       {/* ═══ STICKY HEADER - appears when scrolled past search bar ═══ */}
       {isSearchSticky && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 50 }}>
-          <div style={{ backgroundColor: '#ffffff', borderBottom: '1px solid #f3f4f6' }}>
-            <div style={{ width: '100%', padding: '12px 16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ flex: 1, position: 'relative' }}>
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      bottom: 0,
-                      left: 0,
-                      paddingLeft: '16px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      pointerEvents: 'none',
-                      color: '#9ca3af',
-                    }}
-                  >
-                    <Search style={{ width: '18px', height: '18px' }} strokeWidth={1.5} />
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <div className="bg-app-card border-b border-app-border">
+            <div className="w-full p-3 px-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-app-text-muted">
+                    <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
                   </div>
                   <input
                     type="text"
                     placeholder={t('searchMenu')}
-                    style={{
-                      width: '100%',
-                      backgroundColor: '#f9fafb',
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '24px',
-                      padding: '10px 16px 10px 44px',
-                      fontSize: '14px',
-                      fontWeight: 500,
-                      outline: 'none',
-                    }}
+                    className="w-full bg-app-elevated border border-app-border rounded-3xl py-2.5 pl-11 pr-4 text-sm font-medium text-app-text outline-none"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
                 <Link
                   href={`/sites/${tenant.slug}/cart`}
-                  style={{
-                    position: 'relative',
-                    width: '40px',
-                    height: '40px',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    color: '#9ca3af',
-                    textDecoration: 'none',
-                  }}
+                  className="relative w-10 h-10 rounded-full flex items-center justify-center text-app-text-muted no-underline"
                 >
-                  <ShoppingCart style={{ width: '20px', height: '20px' }} />
+                  <ShoppingCart className="w-5 h-5" />
                   {totalCartItems > 0 && (
-                    <span
-                      style={{
-                        position: 'absolute',
-                        top: '-4px',
-                        right: '-4px',
-                        width: '20px',
-                        height: '20px',
-                        borderRadius: '50%',
-                        backgroundColor: '#ef4444',
-                        color: '#fff',
-                        fontSize: '10px',
-                        fontWeight: 700,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: '2px solid #fff',
-                      }}
-                    >
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-app-card">
                       {totalCartItems}
                     </span>
                   )}
@@ -406,69 +358,21 @@ export default function ClientMenuDetailPage({
       )}
 
       {/* ═══ PAGE HEADER ═══ */}
-      <div
-        style={{
-          padding: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          backgroundColor: '#ffffff',
-          borderBottom: '1px solid #f3f4f6',
-        }}
-      >
+      <div className="p-4 flex items-center gap-3 bg-app-card border-b border-app-border">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}`)}
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: '#f3f4f6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            border: 'none',
-            cursor: 'pointer',
-          }}
+          className="w-9 h-9 rounded-full bg-app-elevated flex items-center justify-center border-none cursor-pointer"
         >
-          <ChevronLeft style={{ width: '20px', height: '20px', color: '#374151' }} />
+          <ChevronLeft className="w-5 h-5 text-app-text" />
         </button>
-        <h1 style={{ fontSize: '18px', fontWeight: 700, color: '#111827', flex: 1 }}>
-          {t('ourMenu')}
-        </h1>
+        <h1 className="text-lg font-bold text-app-text flex-1">{t('ourMenu')}</h1>
         <Link
           href={`/sites/${tenant.slug}/cart`}
-          style={{
-            position: 'relative',
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#6b7280',
-            textDecoration: 'none',
-          }}
+          className="relative w-9 h-9 rounded-full flex items-center justify-center text-app-text-muted no-underline"
         >
-          <ShoppingCart style={{ width: '20px', height: '20px' }} />
+          <ShoppingCart className="w-5 h-5" />
           {totalCartItems > 0 && (
-            <span
-              style={{
-                position: 'absolute',
-                top: '-4px',
-                right: '-4px',
-                width: '18px',
-                height: '18px',
-                borderRadius: '50%',
-                backgroundColor: '#ef4444',
-                color: '#fff',
-                fontSize: '9px',
-                fontWeight: 700,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '2px solid #fff',
-              }}
-            >
+            <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border-2 border-app-card">
               {totalCartItems}
             </span>
           )}
@@ -476,41 +380,15 @@ export default function ClientMenuDetailPage({
       </div>
 
       {/* ═══ SEARCH BAR ═══ */}
-      <div
-        ref={searchBarRef}
-        style={{ padding: '12px 16px 12px', backgroundColor: '#ffffff' }}
-        className="sm:px-6"
-      >
-        <div style={{ position: 'relative' }}>
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              bottom: 0,
-              left: 0,
-              paddingLeft: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              pointerEvents: 'none',
-              color: '#9ca3af',
-            }}
-          >
-            <Search style={{ width: '18px', height: '18px' }} strokeWidth={1.5} />
+      <div ref={searchBarRef} className="py-3 px-4 bg-app-card sm:px-6">
+        <div className="relative">
+          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-app-text-muted">
+            <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
           </div>
           <input
             type="text"
             placeholder={t('searchMenu')}
-            style={{
-              width: '100%',
-              backgroundColor: '#f9fafb',
-              border: '1px solid #e5e7eb',
-              borderRadius: '24px',
-              padding: '10px 16px 10px 44px',
-              fontSize: '14px',
-              fontWeight: 500,
-              color: '#374151',
-              outline: 'none',
-            }}
+            className="w-full bg-app-elevated border border-app-border rounded-3xl py-2.5 pl-11 pr-4 text-sm font-medium text-app-text outline-none"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -520,7 +398,7 @@ export default function ClientMenuDetailPage({
         {searchQuery.length >= 2 && searchResults.length > 0 && (
           <div className="mt-2 bg-app-card rounded-2xl border border-app-border shadow-lg overflow-hidden z-50 relative">
             <div className="p-2">
-              <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3 py-2">
+              <h3 className="text-[10px] font-bold text-app-text-muted uppercase tracking-widest px-3 py-2">
                 {t('dishesFound')}
               </h3>
               {searchResults.map((item) => (
@@ -530,17 +408,17 @@ export default function ClientMenuDetailPage({
                     setSelectedItem(item);
                     setSearchQuery('');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-3 hover:bg-gray-50 rounded-xl transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-3 hover:bg-app-elevated rounded-xl transition-colors text-left"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-gray-900">
+                    <p className="text-sm font-bold text-app-text">
                       {lang === 'en' && item.name_en ? item.name_en : item.name}
                     </p>
                   </div>
                   <span className="text-sm font-bold text-[#C5A065] flex-shrink-0">
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-gray-300" />
+                  <ChevronRight className="w-3.5 h-3.5 text-app-text-muted" />
                 </button>
               ))}
             </div>
@@ -550,30 +428,14 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ VENUE FILTER PILLS ═══ */}
       {venues && venues.length > 1 && (
-        <div
-          style={{
-            padding: '0 16px 12px',
-            backgroundColor: '#ffffff',
-            display: 'flex',
-            gap: '8px',
-            overflowX: 'auto',
-          }}
-          className="scrollbar-hide"
-        >
+        <div className="px-4 pb-3 bg-app-card flex gap-2 overflow-x-auto scrollbar-hide">
           <button
             onClick={() => setActiveVenueId(null)}
-            style={{
-              flexShrink: 0,
-              padding: '6px 14px',
-              borderRadius: '9999px',
-              fontSize: '13px',
-              fontWeight: 600,
-              whiteSpace: 'nowrap',
-              border: 'none',
-              cursor: 'pointer',
-              backgroundColor: !activeVenueId ? '#002C5F' : '#f3f4f6',
-              color: !activeVenueId ? '#ffffff' : '#4b5563',
-            }}
+            className={cn(
+              'flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap border-none cursor-pointer',
+              !activeVenueId ? 'text-white' : 'bg-app-elevated text-app-text-secondary',
+            )}
+            style={!activeVenueId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
           >
             {t('allFilter')}
           </button>
@@ -581,18 +443,17 @@ export default function ClientMenuDetailPage({
             <button
               key={venue.id}
               onClick={() => setActiveVenueId(venue.id)}
-              style={{
-                flexShrink: 0,
-                padding: '6px 14px',
-                borderRadius: '9999px',
-                fontSize: '13px',
-                fontWeight: 600,
-                whiteSpace: 'nowrap',
-                border: 'none',
-                cursor: 'pointer',
-                backgroundColor: activeVenueId === venue.id ? '#002C5F' : '#f3f4f6',
-                color: activeVenueId === venue.id ? '#ffffff' : '#4b5563',
-              }}
+              className={cn(
+                'flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap border-none cursor-pointer',
+                activeVenueId === venue.id
+                  ? 'text-white'
+                  : 'bg-app-elevated text-app-text-secondary',
+              )}
+              style={
+                activeVenueId === venue.id
+                  ? { backgroundColor: 'var(--tenant-primary)' }
+                  : undefined
+              }
             >
               {venue.name}
             </button>
@@ -602,28 +463,23 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ MENU TABS (multiple menus) ═══ */}
       {filteredMenus.length > 1 && (
-        <div style={{ padding: '0 16px', marginBottom: '12px' }}>
-          <div
-            style={{ display: 'flex', gap: '4px', overflowX: 'auto', paddingBottom: '8px' }}
-            className="scrollbar-hide"
-            data-tab-pane
-          >
+        <div className="px-4 mb-3">
+          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide" data-tab-pane>
             {filteredMenus.map((menu) => (
               <button
                 key={menu.slug}
                 onClick={() => handleMenuChange(menu.slug)}
-                style={{
-                  flexShrink: 0,
-                  padding: '8px 16px',
-                  borderRadius: '9999px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  whiteSpace: 'nowrap',
-                  border: 'none',
-                  cursor: 'pointer',
-                  backgroundColor: activeMenuSlug === menu.slug ? '#002C5F' : '#f3f4f6',
-                  color: activeMenuSlug === menu.slug ? '#ffffff' : '#4b5563',
-                }}
+                className={cn(
+                  'flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap border-none cursor-pointer',
+                  activeMenuSlug === menu.slug
+                    ? 'text-white'
+                    : 'bg-app-elevated text-app-text-secondary',
+                )}
+                style={
+                  activeMenuSlug === menu.slug
+                    ? { backgroundColor: 'var(--tenant-primary)' }
+                    : undefined
+                }
               >
                 {menu.name}
               </button>
@@ -641,9 +497,10 @@ export default function ClientMenuDetailPage({
               className={cn(
                 'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
                 !activeSubMenuId
-                  ? 'bg-[#002C5F] text-white'
-                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                  ? 'text-white'
+                  : 'bg-app-elevated text-app-text-muted hover:bg-app-bg',
               )}
+              style={!activeSubMenuId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
             >
               {t('all')}
             </button>
@@ -656,9 +513,14 @@ export default function ClientMenuDetailPage({
                   className={cn(
                     'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
                     activeSubMenuId === child.id
-                      ? 'bg-[#002C5F] text-white'
-                      : 'bg-gray-100 text-gray-500 hover:bg-gray-200',
+                      ? 'text-white'
+                      : 'bg-app-elevated text-app-text-muted hover:bg-app-bg',
                   )}
+                  style={
+                    activeSubMenuId === child.id
+                      ? { backgroundColor: 'var(--tenant-primary)' }
+                      : undefined
+                  }
                 >
                   {child.name}
                 </button>
@@ -674,38 +536,20 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ MENU ITEMS LIST ═══ */}
       {filteredItemsByCategory.length > 0 ? (
-        <div style={{ marginTop: '16px' }}>
+        <div className="mt-4">
           {filteredItemsByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section
-                  key={category.id}
-                  id={`cat-${category.id}`}
-                  style={{ scrollMarginTop: '120px' }}
-                >
+                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[120px]">
                   {/* Section header */}
-                  <div style={{ padding: '16px', backgroundColor: '#F8FAFC' }}>
-                    <h2
-                      style={{
-                        fontSize: '18px',
-                        fontWeight: 700,
-                        color: '#003058',
-                        textTransform: 'uppercase',
-                        letterSpacing: '-0.01em',
-                      }}
-                    >
+                  <div className="p-4 bg-app-bg">
+                    <h2 className="text-lg font-bold text-[#003058] dark:text-app-text uppercase tracking-tight">
                       {category.name}
                     </h2>
                   </div>
 
                   {/* Items list */}
-                  <div
-                    style={{
-                      backgroundColor: '#ffffff',
-                      borderTop: '1px solid #f3f4f6',
-                      borderBottom: '1px solid #f3f4f6',
-                    }}
-                  >
+                  <div className="bg-app-card border-y border-app-border">
                     <div>
                       {category.items.map((item: MenuItem, index: number) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
@@ -730,7 +574,7 @@ export default function ClientMenuDetailPage({
 
                   {/* Spacer between sections */}
                   {catIndex < filteredItemsByCategory.length - 1 && (
-                    <div className="h-4 bg-[#F8FAFC]" />
+                    <div className="h-4 bg-app-bg" />
                   )}
                 </section>
               ),
@@ -746,55 +590,25 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '72px',
-            left: '16px',
-            right: '16px',
-            zIndex: 40,
-            maxWidth: '512px',
-            margin: '0 auto',
-          }}
-        >
+        <div className="fixed bottom-18 left-4 right-4 z-40 max-w-lg mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '14px 20px',
-              borderRadius: '16px',
-              color: '#ffffff',
-              backgroundColor: '#14b8a6',
-              textDecoration: 'none',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.15)',
-            }}
+            className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white no-underline shadow-xl"
+            style={{ backgroundColor: 'var(--tenant-primary)' }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <ShoppingCart style={{ width: '16px', height: '16px' }} />
+            <div className="flex items-center gap-3">
+              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
+                <ShoppingCart className="w-4 h-4" />
               </div>
-              <span style={{ fontWeight: 600, fontSize: '14px' }}>
+              <span className="font-semibold text-sm">
                 {t('cartItemCount', { count: totalCartItems })}
               </span>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontWeight: 700, fontSize: '14px' }}>
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-sm">
                 {formatDisplayPrice(grandTotal, tenant.currency)}
               </span>
-              <ChevronRight style={{ width: '16px', height: '16px' }} />
+              <ChevronRight className="w-4 h-4" />
             </div>
           </Link>
         </div>

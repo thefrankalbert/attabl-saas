@@ -372,8 +372,8 @@ function OrderStatusMessage({ status }: { status: string }) {
     },
     delivered: {
       message: t('orderStatusServed'),
-      bg: 'bg-neutral-100',
-      textColor: 'text-neutral-600',
+      bg: 'bg-app-elevated',
+      textColor: 'text-app-text-muted',
     },
     cancelled: {
       message: t('statusCancelled'),

@@ -15,7 +15,7 @@ export default function TenantNotFound() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">
       <div className="text-center max-w-sm">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm border border-app-border dark:bg-app-elevated">
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-app-card shadow-sm border border-app-border">
           <UtensilsCrossed className="h-7 w-7 text-app-text-muted" />
         </div>
 

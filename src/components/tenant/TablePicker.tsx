@@ -55,7 +55,7 @@ export default function TablePicker({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white gap-0">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-app-card gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>{t('selectYourTable')}</DialogTitle>
         </DialogHeader>
@@ -64,7 +64,7 @@ export default function TablePicker({
           <div className="flex gap-4 h-64">
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 text-center">
+              <label className="text-xs font-semibold text-app-text-secondary uppercase tracking-wider mb-2 text-center">
                 {t('zone')}
               </label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
@@ -75,24 +75,24 @@ export default function TablePicker({
                     className={cn(
                       'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedZone?.id === zone.id
-                        ? 'bg-gray-900 text-white font-medium'
-                        : 'text-neutral-600 hover:bg-neutral-100',
+                        ? 'bg-accent text-accent-text font-medium'
+                        : 'text-app-text-secondary hover:bg-app-elevated',
                     )}
                   >
                     {zone.name}
                   </button>
                 ))}
                 {zones.length === 0 && (
-                  <p className="text-xs text-neutral-400 text-center py-4">{t('noZone')}</p>
+                  <p className="text-xs text-app-text-muted text-center py-4">{t('noZone')}</p>
                 )}
               </div>
             </div>
 
-            <div className="w-px bg-neutral-100 my-2"></div>
+            <div className="w-px bg-app-border my-2"></div>
 
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-neutral-500 uppercase tracking-wider mb-2 text-center">
+              <label className="text-xs font-semibold text-app-text-secondary uppercase tracking-wider mb-2 text-center">
                 {t('table')}
               </label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
@@ -104,7 +104,7 @@ export default function TablePicker({
                       'w-full text-center px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedTable?.id === table.id
                         ? 'text-white font-bold'
-                        : 'text-neutral-600 hover:bg-neutral-100',
+                        : 'text-app-text-secondary hover:bg-app-elevated',
                     )}
                     style={
                       selectedTable?.id === table.id
@@ -116,10 +116,10 @@ export default function TablePicker({
                   </button>
                 ))}
                 {selectedZone && availableTables.length === 0 && (
-                  <p className="text-xs text-neutral-400 text-center py-4">{t('noTable')}</p>
+                  <p className="text-xs text-app-text-muted text-center py-4">{t('noTable')}</p>
                 )}
                 {!selectedZone && (
-                  <p className="text-xs text-neutral-400 text-center py-4">{t('selectZone')}</p>
+                  <p className="text-xs text-app-text-muted text-center py-4">{t('selectZone')}</p>
                 )}
               </div>
             </div>

@@ -32,7 +32,7 @@ import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-neutral-100 rounded-2xl" />,
+  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-2xl" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -243,7 +243,7 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen bg-[#FAFAF8]"
+      className="min-h-screen bg-app-bg"
       style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ FULLSCREEN SPLASH ═══ */}
@@ -258,7 +258,7 @@ export default function ClientMenuPage({
             : 'opacity-0 -translate-y-2 pointer-events-none',
         )}
       >
-        <div className="bg-[#FAFAF8]/95 backdrop-blur-md border-b border-neutral-200/60">
+        <div className="bg-app-bg/95 backdrop-blur-md border-b border-app-border">
           <div className="flex items-center justify-between px-5 py-3">
             <div className="flex items-center gap-3">
               {tenant.logo_url ? (
@@ -277,11 +277,11 @@ export default function ClientMenuPage({
                   <span className="text-white text-xs font-bold">{tenant.name.charAt(0)}</span>
                 </div>
               )}
-              <span className="text-sm font-semibold text-neutral-900">{tenant.name}</span>
+              <span className="text-sm font-semibold text-app-text">{tenant.name}</span>
             </div>
             {totalCartItems > 0 && (
               <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
-                <ShoppingCart className="w-5 h-5 text-neutral-700" />
+                <ShoppingCart className="w-5 h-5 text-app-text" />
                 <span
                   className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
                   style={{ backgroundColor: primary }}
@@ -305,22 +305,20 @@ export default function ClientMenuPage({
                 alt={tenant.name}
                 width={52}
                 height={52}
-                className="size-13 rounded-full object-cover border-[2.5px] border-white shadow-md"
+                className="size-13 rounded-full object-cover border-[2.5px] border-app-card shadow-md"
                 priority
               />
             ) : (
               <div
-                className="size-13 rounded-full flex items-center justify-center border-[2.5px] border-white shadow-md"
+                className="size-13 rounded-full flex items-center justify-center border-[2.5px] border-app-card shadow-md"
                 style={{ backgroundColor: primary }}
               >
                 <span className="text-white text-xl font-bold">{tenant.name.charAt(0)}</span>
               </div>
             )}
             <div>
-              <h1 className="text-[17px] font-bold text-neutral-900 leading-tight">
-                {tenant.name}
-              </h1>
-              <p className="text-[13px] text-neutral-500 mt-0.5">
+              <h1 className="text-[17px] font-bold text-app-text leading-tight">{tenant.name}</h1>
+              <p className="text-[13px] text-app-text-muted mt-0.5">
                 {tableNumber
                   ? t('seatedAtTable', { table: tableNumber })
                   : tenant.description
@@ -332,8 +330,8 @@ export default function ClientMenuPage({
             </div>
           </div>
           {/* Bell icon - top right like screenshot */}
-          <button className="w-10 h-10 rounded-full bg-white border border-neutral-100 shadow-sm flex items-center justify-center hover:bg-neutral-50 transition-colors">
-            <Bell className="size-4.5 text-neutral-600" />
+          <button className="w-10 h-10 rounded-full bg-app-card border border-app-border shadow-sm flex items-center justify-center hover:bg-app-elevated transition-colors">
+            <Bell className="size-4.5 text-app-text-muted" />
           </button>
         </div>
       </div>
@@ -345,9 +343,9 @@ export default function ClientMenuPage({
           className="relative w-full"
         >
           <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="size-4.5 text-neutral-400" strokeWidth={1.8} />
+            <Search className="size-4.5 text-app-text-muted" strokeWidth={1.8} />
           </div>
-          <div className="w-full bg-white border border-neutral-200/80 rounded-xl py-3.5 pl-11 pr-5 text-[14px] text-neutral-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
+          <div className="w-full bg-app-card border border-app-border rounded-xl py-3.5 pl-11 pr-5 text-[14px] text-app-text-muted shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
             {t('searchMenu')}
           </div>
         </button>
@@ -412,10 +410,10 @@ export default function ClientMenuPage({
                 className="flex flex-col items-center gap-2 group"
               >
                 {/* Circular icon - cream/beige background like screenshot */}
-                <div className="w-16 h-16 rounded-full bg-[#F5F0E8] flex items-center justify-center group-hover:bg-[#EDE6D8] transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+                <div className="w-16 h-16 rounded-full bg-app-elevated flex items-center justify-center group-hover:bg-app-bg transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
                   <span className="text-[26px] leading-none">{getCategoryEmoji(cat.name)}</span>
                 </div>
-                <span className="text-[11px] font-medium text-neutral-700 leading-tight text-center">
+                <span className="text-[11px] font-medium text-app-text leading-tight text-center">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
@@ -428,11 +426,11 @@ export default function ClientMenuPage({
       {venues && venues.length > 0 && (
         <div className="pt-5 pb-2">
           <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-[15px] font-bold text-neutral-900">{t('ourUniverses')}</h2>
+            <h2 className="text-[15px] font-bold text-app-text">{t('ourUniverses')}</h2>
             {venues.length > 1 && (
               <button
                 onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-[12px] font-semibold text-neutral-500 hover:text-neutral-700 transition-colors"
+                className="text-[12px] font-semibold text-app-text-muted hover:text-app-text transition-colors"
               >
                 {t('viewAll')}
               </button>
@@ -445,12 +443,12 @@ export default function ClientMenuPage({
               className="flex flex-col items-center gap-1.5 flex-shrink-0"
             >
               <div
-                className="size-15 rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+                className="size-15 rounded-full flex items-center justify-center border-2 border-app-card shadow-sm"
                 style={{ backgroundColor: `${primary}15` }}
               >
                 <Utensils className="w-6 h-6" style={{ color: primary }} />
               </div>
-              <span className="text-[11px] font-medium text-neutral-600 text-center w-15">
+              <span className="text-[11px] font-medium text-app-text-muted text-center w-15">
                 {t('allMenus')}
               </span>
             </button>
@@ -462,7 +460,7 @@ export default function ClientMenuPage({
                 }
                 className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <div className="size-15 rounded-full overflow-hidden border-2 border-white shadow-sm bg-neutral-100">
+                <div className="size-15 rounded-full overflow-hidden border-2 border-app-card shadow-sm bg-app-elevated">
                   {venue.image_url ? (
                     <Image
                       src={venue.image_url}
@@ -472,14 +470,14 @@ export default function ClientMenuPage({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-[#F5F0E8]">
-                      <span className="text-lg font-bold text-neutral-400">
+                    <div className="w-full h-full flex items-center justify-center bg-app-elevated">
+                      <span className="text-lg font-bold text-app-text-muted">
                         {venue.name.charAt(0)}
                       </span>
                     </div>
                   )}
                 </div>
-                <span className="text-[11px] font-medium text-neutral-600 text-center w-15">
+                <span className="text-[11px] font-medium text-app-text-muted text-center w-15">
                   {venue.name}
                 </span>
               </button>
@@ -492,7 +490,7 @@ export default function ClientMenuPage({
       {cartItems.length > 0 && (
         <div className="pt-4 pb-1">
           <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-[15px] font-bold text-neutral-900">{t('yourCart')}</h2>
+            <h2 className="text-[15px] font-bold text-app-text">{t('yourCart')}</h2>
             <Link
               href={`/sites/${tenant.slug}/cart`}
               className="text-[12px] font-semibold transition-colors"
@@ -506,9 +504,9 @@ export default function ClientMenuPage({
               <Link
                 key={item.id}
                 href={`/sites/${tenant.slug}/cart`}
-                className="flex-shrink-0 w-30 bg-white rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
+                className="flex-shrink-0 w-30 bg-app-card rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
               >
-                <div className="w-full h-20 bg-neutral-50 overflow-hidden flex items-center justify-center">
+                <div className="w-full h-20 bg-app-bg overflow-hidden flex items-center justify-center">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -518,18 +516,18 @@ export default function ClientMenuPage({
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Utensils className="w-5 h-5 text-neutral-300" />
+                    <Utensils className="w-5 h-5 text-app-text-muted" />
                   )}
                 </div>
                 <div className="p-2.5">
-                  <h3 className="text-[11px] font-semibold text-neutral-800 leading-tight mb-1">
+                  <h3 className="text-[11px] font-semibold text-app-text leading-tight mb-1">
                     {item.name}
                   </h3>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold" style={{ color: primary }}>
                       {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                     </span>
-                    <span className="text-[9px] font-bold text-neutral-500 bg-neutral-100 px-1.5 py-0.5 rounded-full">
+                    <span className="text-[9px] font-bold text-app-text-muted bg-app-elevated px-1.5 py-0.5 rounded-full">
                       x{item.quantity}
                     </span>
                   </div>
@@ -544,10 +542,10 @@ export default function ClientMenuPage({
       {featuredItems.length > 0 && (
         <div className="pt-5 pb-2 px-5">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-bold text-neutral-900">{t('dontMiss')}</h2>
+            <h2 className="text-[15px] font-bold text-app-text">{t('dontMiss')}</h2>
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="text-[12px] font-semibold text-neutral-500 hover:text-neutral-700 transition-colors"
+              className="text-[12px] font-semibold text-app-text-muted hover:text-app-text transition-colors"
             >
               {t('viewAll')}
             </button>
@@ -557,10 +555,10 @@ export default function ClientMenuPage({
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-white rounded-2xl overflow-hidden text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow group"
+                className="bg-app-card rounded-2xl overflow-hidden text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow group"
               >
                 {/* Image with heart icon overlay - like screenshot */}
-                <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
+                <div className="w-full aspect-[4/3] relative overflow-hidden bg-app-elevated">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -571,22 +569,22 @@ export default function ClientMenuPage({
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Utensils className="w-8 h-8 text-neutral-300" />
+                      <Utensils className="w-8 h-8 text-app-text-muted" />
                     </div>
                   )}
                   {/* Heart icon - top right like screenshot */}
-                  <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                    <Heart className="w-4 h-4 text-neutral-400" />
+                  <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-app-card/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
+                    <Heart className="w-4 h-4 text-app-text-muted" />
                   </div>
                 </div>
                 <div className="p-3 pt-2.5">
-                  <h3 className="text-[13px] font-semibold text-neutral-900 leading-snug mb-1.5">
+                  <h3 className="text-[13px] font-semibold text-app-text leading-snug mb-1.5">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
                   {/* Tags row - like screenshot category pills */}
                   <div className="flex flex-wrap gap-1 mb-2">
                     {item.category?.name && (
-                      <span className="text-[10px] font-medium text-neutral-500 bg-neutral-100 rounded-full px-2.5 py-0.5">
+                      <span className="text-[10px] font-medium text-app-text-muted bg-app-elevated rounded-full px-2.5 py-0.5">
                         {getTranslatedContent(lang, item.category.name, item.category.name_en)}
                       </span>
                     )}

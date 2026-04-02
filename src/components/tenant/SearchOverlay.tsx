@@ -64,12 +64,12 @@ export default function SearchOverlay({
           <div className="sticky top-0 z-10 bg-app-card border-b border-app-border/50 px-4 py-3 flex items-center gap-3">
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-neutral-100 transition-colors"
+              className="p-2 rounded-full hover:bg-app-elevated transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex-1 flex items-center gap-2 bg-neutral-100 rounded-xl px-3 py-2.5">
-              <Search className="w-4 h-4 text-neutral-400" />
+            <div className="flex-1 flex items-center gap-2 bg-app-elevated rounded-xl px-3 py-2.5">
+              <Search className="w-4 h-4 text-app-text-muted" />
               <input
                 ref={inputRef}
                 type="text"
@@ -80,7 +80,7 @@ export default function SearchOverlay({
               />
               {query && (
                 <button onClick={() => setQuery('')} className="p-0.5">
-                  <X className="w-4 h-4 text-neutral-400" />
+                  <X className="w-4 h-4 text-app-text-muted" />
                 </button>
               )}
             </div>
@@ -90,8 +90,8 @@ export default function SearchOverlay({
           <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-3">
             {query && results.length === 0 && (
               <div className="text-center py-12">
-                <Search className="w-12 h-12 text-neutral-200 mx-auto mb-3" />
-                <p className="text-sm text-neutral-500">{t('noSearchResults', { query })}</p>
+                <Search className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
+                <p className="text-sm text-app-text-secondary">{t('noSearchResults', { query })}</p>
               </div>
             )}
             {results.map((item) => (

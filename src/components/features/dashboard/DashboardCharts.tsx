@@ -48,36 +48,36 @@ export default function DashboardCharts({
             <defs>
               <linearGradient id="revenueGradientLimeEmerald" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.4} />
-                <stop offset="50%" stopColor="#10B981" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+                <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.15} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--app-border)" vertical={false} />
             <XAxis
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: '#9ca3af', fontWeight: 500 }}
+              tick={{ fontSize: 12, fill: 'var(--app-text-muted)', fontWeight: 500 }}
               dy={8}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: '#9ca3af', fontWeight: 500 }}
+              tick={{ fontSize: 12, fill: 'var(--app-text-muted)', fontWeight: 500 }}
               tickFormatter={formatCompactValue}
               width={50}
             />
             <Tooltip
               contentStyle={{
-                background: '#111827',
-                border: 'none',
+                background: 'var(--app-card)',
+                border: '1px solid var(--app-border)',
                 borderRadius: '12px',
                 fontSize: '13px',
-                color: '#fff',
+                color: 'var(--app-text)',
                 padding: '10px 14px',
               }}
               itemStyle={{ color: 'var(--accent)', fontWeight: 700 }}
-              labelStyle={{ color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}
+              labelStyle={{ color: 'var(--app-text-muted)', fontSize: '11px', marginBottom: '4px' }}
               cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
             />
             <Area
@@ -87,7 +87,7 @@ export default function DashboardCharts({
               fill="url(#revenueGradientLimeEmerald)"
               strokeWidth={2.5}
               dot={false}
-              activeDot={{ r: 5, fill: 'var(--accent)', stroke: '#fff', strokeWidth: 2 }}
+              activeDot={{ r: 5, fill: 'var(--accent)', stroke: 'var(--app-text)', strokeWidth: 2 }}
             />
           </AreaChart>
         </ResponsiveContainer>

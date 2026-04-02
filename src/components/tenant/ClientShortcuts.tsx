@@ -83,12 +83,12 @@ function ShortcutButton({
       className="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
     >
       <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-neutral-100 group-hover:shadow-md transition-all bg-white"
+        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-app-border group-hover:shadow-md transition-all bg-app-card"
         style={{ color: color }}
       >
         {icon}
       </div>
-      <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide text-center leading-tight">
+      <span className="text-[10px] font-semibold text-app-text-secondary uppercase tracking-wide text-center leading-tight">
         {label}
       </span>
     </button>

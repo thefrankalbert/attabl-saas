@@ -38,12 +38,12 @@ const categories = [
 export default function FeaturesPage() {
   return (
     <>
-      <section className="py-20 lg:py-28 bg-white">
+      <section className="py-20 lg:py-28 bg-white dark:bg-neutral-950">
         <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 mb-6">
+          <h1 className="text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white mb-6">
             Tout ce dont vous avez besoin
           </h1>
-          <p className="text-lg sm:text-xl text-neutral-600">
+          <p className="text-lg sm:text-xl text-neutral-600 dark:text-neutral-400">
             Une plateforme complète pour gérer votre activité.
           </p>
         </div>
@@ -52,10 +52,12 @@ export default function FeaturesPage() {
       {categories.map((cat, catIdx) => (
         <section
           key={cat.title}
-          className={`py-20 ${catIdx % 2 === 0 ? 'bg-white' : 'bg-neutral-50'}`}
+          className={`py-20 ${catIdx % 2 === 0 ? 'bg-white dark:bg-neutral-950' : 'bg-neutral-50 dark:bg-neutral-900'}`}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl font-bold text-neutral-900 mb-12">{cat.title}</h2>
+            <h2 className="text-2xl font-bold text-neutral-900 dark:text-white mb-12">
+              {cat.title}
+            </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {cat.features.map((feat, idx) => (
                 <motion.div
@@ -64,13 +66,15 @@ export default function FeaturesPage() {
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   viewport={{ once: true }}
-                  className="bg-white p-8 rounded-2xl border border-neutral-200"
+                  className="bg-white dark:bg-neutral-950 p-8 rounded-2xl border border-neutral-200 dark:border-neutral-800"
                 >
                   <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-6">
                     <feat.icon className="h-6 w-6 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold text-neutral-900 mb-2">{feat.title}</h3>
-                  <p className="text-neutral-600 text-sm">{feat.desc}</p>
+                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-2">
+                    {feat.title}
+                  </h3>
+                  <p className="text-neutral-600 dark:text-neutral-400 text-sm">{feat.desc}</p>
                 </motion.div>
               ))}
             </div>
