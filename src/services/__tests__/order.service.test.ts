@@ -110,7 +110,10 @@ describe('OrderService', () => {
       const service = createOrderService(asSupabase(supabase));
       const result = await service.validateTenant('my-restaurant');
 
-      expect(result).toEqual({ id: 'tenant-123' });
+      expect(result.id).toBe('tenant-123');
+      expect(result).toHaveProperty('currency');
+      expect(result).toHaveProperty('tax_rate');
+      expect(result).toHaveProperty('subscription_plan');
     });
 
     it('should throw NOT_FOUND when tenant does not exist', async () => {

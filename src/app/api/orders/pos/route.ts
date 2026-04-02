@@ -275,21 +275,24 @@ export async function POST(request: Request) {
       }
     }
 
-    // 11. Create in-app notification
-    const { error: notifError } = await adminSupabase.from('notifications').insert({
-      tenant_id,
-      user_id: null,
-      type: 'info',
-      title: `Nouvelle commande POS - Table ${table_number}`,
-      body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
-      link: '/orders',
+    // 11. Create in-app notification (fire-and-forget, non-blocking)
+    void Promise.resolve(
+      adminSupabase.from('notifications').insert({
+        tenant_id,
+        user_id: null,
+        type: 'info',
+        title: `Nouvelle commande POS - Table ${table_number}`,
+        body: `${items.length} article${items.length > 1 ? 's' : ''} - ${pricing.total.toLocaleString('fr-FR')} ${tenant.currency || 'XAF'}`,
+        link: '/orders',
+      }),
+    ).then(({ error: notifError }) => {
+      if (notifError) {
+        logger.error('POS order: failed to create notification', notifError, {
+          tenantId: tenant_id,
+          orderId: result.orderId,
+        });
+      }
     });
-    if (notifError) {
-      logger.error('POS order: failed to create notification', notifError, {
-        tenantId: tenant_id,
-        orderId: result.orderId,
-      });
-    }
 
     // 12. Auto-destock inventory (non-blocking)
     const hasInventory = canAccessFeature(

@@ -36,6 +36,18 @@ interface CreateOrderResult {
   total: number;
 }
 
+interface TenantValidationResult {
+  id: string;
+  currency: string | null;
+  tax_rate: number | null;
+  service_charge_rate: number | null;
+  enable_tax: boolean | null;
+  enable_service_charge: boolean | null;
+  subscription_plan: string | null;
+  subscription_status: string | null;
+  trial_ends_at: string | null;
+}
+
 /**
  * Order service - handles order validation, price verification, and creation.
  *
@@ -46,12 +58,15 @@ export function createOrderService(supabase: SupabaseClient) {
   return {
     /**
      * Validates that a tenant exists and is active.
+     * Also returns tenant config (currency, tax, subscription) to avoid a second round-trip.
      * Throws ServiceError if not found or inactive.
      */
-    async validateTenant(slug: string): Promise<{ id: string }> {
+    async validateTenant(slug: string): Promise<TenantValidationResult> {
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
-        .select('id, is_active')
+        .select(
+          'id, is_active, currency, tax_rate, service_charge_rate, enable_tax, enable_service_charge, subscription_plan, subscription_status, trial_ends_at',
+        )
         .eq('slug', slug)
         .single();
 
@@ -63,7 +78,17 @@ export function createOrderService(supabase: SupabaseClient) {
         throw new ServiceError('Ce restaurant est temporairement indisponible', 'VALIDATION');
       }
 
-      return { id: tenant.id };
+      return {
+        id: tenant.id,
+        currency: tenant.currency ?? null,
+        tax_rate: tenant.tax_rate ?? null,
+        service_charge_rate: tenant.service_charge_rate ?? null,
+        enable_tax: tenant.enable_tax ?? null,
+        enable_service_charge: tenant.enable_service_charge ?? null,
+        subscription_plan: tenant.subscription_plan ?? null,
+        subscription_status: tenant.subscription_status ?? null,
+        trial_ends_at: tenant.trial_ends_at ?? null,
+      };
     },
 
     /**
@@ -84,24 +109,33 @@ export function createOrderService(supabase: SupabaseClient) {
       itemCategoryMap: Map<string, string>;
     }> {
       const itemIds = items.map((item) => item.id);
-      const { data: menuItems, error: menuError } = await supabase
-        .from('menu_items')
-        .select('id, name, price, is_available, category_id')
-        .eq('tenant_id', tenantId)
-        .in('id', itemIds);
 
+      // Run all three independent queries in parallel (biggest latency win)
+      const [menuItemsRes, modifiersRes, variantsRes] = await Promise.all([
+        supabase
+          .from('menu_items')
+          .select('id, name, price, is_available, category_id')
+          .eq('tenant_id', tenantId)
+          .in('id', itemIds),
+        supabase
+          .from('item_modifiers')
+          .select('id, menu_item_id, name, price')
+          .eq('tenant_id', tenantId)
+          .in('menu_item_id', itemIds),
+        supabase
+          .from('item_price_variants')
+          .select('id, menu_item_id, variant_name_fr, price')
+          .eq('tenant_id', tenantId)
+          .in('menu_item_id', itemIds),
+      ]);
+
+      const { data: menuItems, error: menuError } = menuItemsRes;
       if (menuError) {
         logger.error('Error fetching menu items', menuError);
         throw new ServiceError('Erreur lors de la vérification du menu', 'INTERNAL', menuError);
       }
 
-      // Fetch server-side modifier prices for all items
-      const { data: dbModifiers } = await supabase
-        .from('item_modifiers')
-        .select('id, menu_item_id, name, price')
-        .eq('tenant_id', tenantId)
-        .in('menu_item_id', itemIds);
-
+      const { data: dbModifiers } = modifiersRes;
       const modifiersByItem = new Map<string, Map<string, number>>();
       for (const mod of dbModifiers || []) {
         if (!modifiersByItem.has(mod.menu_item_id)) {
@@ -110,13 +144,7 @@ export function createOrderService(supabase: SupabaseClient) {
         modifiersByItem.get(mod.menu_item_id)!.set(mod.name.toLowerCase(), mod.price);
       }
 
-      // Fetch server-side variant prices for all items
-      const { data: dbVariants } = await supabase
-        .from('item_price_variants')
-        .select('id, menu_item_id, variant_name_fr, price')
-        .eq('tenant_id', tenantId)
-        .in('menu_item_id', itemIds);
-
+      const { data: dbVariants } = variantsRes;
       const variantsByItem = new Map<string, Map<string, number>>();
       for (const v of dbVariants || []) {
         if (!variantsByItem.has(v.menu_item_id)) {
