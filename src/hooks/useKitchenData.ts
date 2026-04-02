@@ -41,6 +41,8 @@ export interface UseKitchenDataReturn {
   allOrders: Order[];
   columnOrders: Record<ColumnKey, Order[]>;
   totalActive: number;
+  completedToday: number;
+  completedOrders: Order[];
   columns: Record<ColumnKey, ColumnConfig>;
   loading: boolean;
 
@@ -326,6 +328,47 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
 
   const totalActive = pendingOrders.length + preparingOrders.length + readyOrders.length;
 
+  // Fetch completed orders today (delivered/cancelled)
+  const [completedOrders, setCompletedOrders] = useState<Order[]>([]);
+  const loadCompleted = useCallback(async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const { data } = await supabase
+      .from('orders')
+      .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
+      .eq('tenant_id', tenantId)
+      .in('status', ['delivered', 'cancelled'])
+      .in('preparation_zone', ['kitchen', 'mixed'])
+      .gte('created_at', today.toISOString())
+      .order('created_at', { ascending: false });
+
+    if (data) {
+      const mapped = (data || []).map(
+        (row: Record<string, unknown> & { order_items?: Array<Record<string, unknown>> }) => ({
+          ...row,
+          items: (row.order_items || []).map((oi) => ({
+            id: oi.id as string,
+            name: (oi.item_name as string) || '',
+            quantity: (oi.quantity as number) || 1,
+            price: (oi.price_at_order as number) || 0,
+            item_status: (oi.item_status as ItemStatus) || 'pending',
+            preparation_zone: (oi.preparation_zone as string) || 'kitchen',
+            customer_notes: oi.customer_notes as string | undefined,
+            modifiers: oi.modifiers as { name: string; price: number }[] | undefined,
+          })),
+        }),
+      ) as Order[];
+      setCompletedOrders(mapped);
+    }
+  }, [supabase, tenantId]);
+
+  // Reload completed when active orders change (an order just got delivered)
+  useEffect(() => {
+    loadCompleted();
+  }, [loadCompleted, orders]);
+
+  const completedToday = completedOrders.length;
+
   const params = useParams();
   const goBack = () => {
     // If in fullscreen, just exit fullscreen (stay on page)
@@ -346,6 +389,8 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     allOrders,
     columnOrders,
     totalActive,
+    completedToday,
+    completedOrders,
     columns,
     loading,
 

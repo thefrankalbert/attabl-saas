@@ -106,6 +106,7 @@ export default function KitchenClient({
   );
   useContextualShortcuts(shortcuts);
 
+  const [viewMode, setViewMode] = useState<'active' | 'completed'>('active');
   const isFs = kitchen.isFullscreen;
 
   const safeAreaStyle = isFs
@@ -138,8 +139,9 @@ export default function KitchenClient({
     >
       <KitchenFilters
         activeCount={kitchen.totalActive}
-        scheduledCount={0}
-        completedCount={0}
+        completedToday={kitchen.completedToday}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
         isFullscreen={kitchen.isFullscreen}
         toggleFullscreen={kitchen.toggleFullscreen}
         goBack={kitchen.goBack}
@@ -147,7 +149,7 @@ export default function KitchenClient({
       />
 
       <KitchenBoard
-        orders={boardOrders}
+        orders={viewMode === 'completed' ? kitchen.completedOrders : boardOrders}
         showMockData={kitchen.showMockData}
         onStatusChange={kitchen.handleStatusChange}
         onUpdateItemStatus={kitchen.updateItemStatus}
