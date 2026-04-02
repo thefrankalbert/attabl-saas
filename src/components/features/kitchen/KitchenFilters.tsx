@@ -6,12 +6,11 @@ import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
-type FilterTab = 'active' | 'scheduled' | 'completed';
-
 interface KitchenFiltersProps {
   activeCount: number;
-  scheduledCount: number;
-  completedCount: number;
+  completedToday: number;
+  viewMode: 'active' | 'completed';
+  onViewModeChange: (mode: 'active' | 'completed') => void;
   isFullscreen: boolean;
   toggleFullscreen: () => void;
   goBack: () => void;
@@ -20,8 +19,9 @@ interface KitchenFiltersProps {
 
 export default function KitchenFilters({
   activeCount,
-  scheduledCount,
-  completedCount,
+  completedToday,
+  viewMode,
+  onViewModeChange,
   isFullscreen,
   toggleFullscreen,
   goBack,
@@ -29,7 +29,6 @@ export default function KitchenFilters({
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
   const locale = useLocale();
-  const [currentTab, setCurrentTab] = useState<FilterTab>('active');
   const [now, setNow] = useState(() => new Date());
 
   // Live clock - update every second
@@ -37,12 +36,6 @@ export default function KitchenFilters({
     const timer = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
-
-  const tabs: { key: FilterTab; label: string; count: number }[] = [
-    { key: 'active', label: t('tabActive'), count: activeCount },
-    { key: 'scheduled', label: t('tabScheduled'), count: scheduledCount },
-    { key: 'completed', label: t('tabCompleted'), count: completedCount },
-  ];
 
   const dateStr = now.toLocaleDateString(locale, {
     weekday: 'short',
@@ -71,34 +64,49 @@ export default function KitchenFilters({
         )}
       </div>
 
-      {/* Center: filter tabs */}
+      {/* Center: active / completed tabs */}
       {isChefView && (
-        <div className="flex items-center gap-0.5">
-          {tabs.map((tab) => {
-            const isActive = currentTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => setCurrentTab(tab.key)}
-                className={cn(
-                  'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold tracking-wide transition-colors',
-                  isActive
-                    ? 'bg-app-elevated text-app-text'
-                    : 'text-app-text-muted hover:text-app-text-secondary',
-                )}
-              >
-                {tab.label}
-                <span
-                  className={cn(
-                    'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
-                    isActive ? 'bg-app-hover text-app-text' : 'text-app-text-muted',
-                  )}
-                >
-                  {tab.count}
-                </span>
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => onViewModeChange('active')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold tracking-wide transition-colors',
+              viewMode === 'active'
+                ? 'bg-app-elevated text-app-text'
+                : 'text-app-text-muted hover:text-app-text-secondary',
+            )}
+          >
+            {t('tabActive')}
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
+                viewMode === 'active' ? 'bg-app-hover text-app-text' : 'text-app-text-muted',
+              )}
+            >
+              {activeCount}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onViewModeChange('completed')}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold tracking-wide transition-colors',
+              viewMode === 'completed'
+                ? 'bg-app-elevated text-app-text'
+                : 'text-app-text-muted hover:text-app-text-secondary',
+            )}
+          >
+            {t('tabCompleted')}
+            <span
+              className={cn(
+                'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
+                viewMode === 'completed' ? 'bg-app-hover text-app-text' : 'text-app-text-muted',
+              )}
+            >
+              {completedToday}
+            </span>
+          </button>
         </div>
       )}
 
