@@ -78,7 +78,7 @@ export default function FullscreenSplash({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-app-card"
       style={{ touchAction: 'none' }}
     >
       {/* Background gradient */}
@@ -92,7 +92,7 @@ export default function FullscreenSplash({
       <div className="relative flex flex-col items-center gap-6 px-8 text-center">
         {/* Logo */}
         {logoUrl ? (
-          <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg bg-white">
+          <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg bg-app-card">
             <Image
               src={logoUrl}
               alt={tenantName}
@@ -112,8 +112,8 @@ export default function FullscreenSplash({
 
         {/* Restaurant name */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{tenantName}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t('splashSubtitle')}</p>
+          <h1 className="text-2xl font-bold text-app-text">{tenantName}</h1>
+          <p className="text-sm text-app-text-muted mt-1">{t('splashSubtitle')}</p>
         </div>
 
         {/* Enter button */}
@@ -126,13 +126,16 @@ export default function FullscreenSplash({
         </button>
 
         {/* Skip link */}
-        <button onClick={handleSkip} className="text-xs text-gray-400 underline underline-offset-2">
+        <button
+          onClick={handleSkip}
+          className="text-xs text-app-text-muted underline underline-offset-2"
+        >
           {t('splashSkip')}
         </button>
       </div>
 
       {/* Powered by */}
-      <p className="absolute bottom-8 text-[10px] text-gray-300 tracking-wider uppercase">
+      <p className="absolute bottom-8 text-[10px] text-app-text-muted tracking-wider uppercase">
         Powered by ATTABL
       </p>
     </div>

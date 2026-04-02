@@ -39,7 +39,7 @@ export default function OrderProgressBar({ status }: OrderProgressBarProps) {
                   'w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-colors',
                   isCompleted && 'bg-green-500 text-white',
                   isActive && 'text-white',
-                  isFuture && 'bg-neutral-100 text-neutral-400',
+                  isFuture && 'bg-app-elevated text-app-text-muted',
                 )}
                 style={isActive ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
               >
@@ -58,7 +58,7 @@ export default function OrderProgressBar({ status }: OrderProgressBarProps) {
               <span
                 className={cn(
                   'text-[9px] font-medium whitespace-nowrap',
-                  isActive ? 'text-neutral-900' : 'text-neutral-400',
+                  isActive ? 'text-app-text' : 'text-app-text-muted',
                 )}
               >
                 {stepLabels[step]}
@@ -71,7 +71,7 @@ export default function OrderProgressBar({ status }: OrderProgressBarProps) {
                 <div
                   className={cn(
                     'h-full rounded-full transition-colors',
-                    isCompleted ? 'bg-green-500' : 'bg-neutral-100',
+                    isCompleted ? 'bg-green-500' : 'bg-app-elevated',
                   )}
                 />
               </div>

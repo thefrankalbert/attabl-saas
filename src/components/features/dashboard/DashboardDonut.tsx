@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import type { CategoryBreakdown } from '@/types/admin.types';
 
-const COLORS = ['var(--accent)', '#F59E0B', '#3B82F6', '#D4D4D8'];
+const COLORS = ['var(--accent)', '#F59E0B', '#3B82F6', 'var(--app-text-muted)'];
 
 interface DashboardDonutProps {
   data: CategoryBreakdown[];
@@ -43,11 +43,11 @@ export default function DashboardDonut({ data, t, fmtCompact }: DashboardDonutPr
               </Pie>
               <Tooltip
                 contentStyle={{
-                  background: '#111827',
-                  border: 'none',
+                  background: 'var(--app-card)',
+                  border: '1px solid var(--app-border)',
                   borderRadius: '12px',
                   fontSize: '13px',
-                  color: '#fff',
+                  color: 'var(--app-text)',
                   padding: '10px 14px',
                 }}
                 formatter={(value: number | undefined) => [fmtCompact(value ?? 0), '']}

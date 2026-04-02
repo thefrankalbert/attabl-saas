@@ -51,7 +51,7 @@ export default function BlogPage() {
           {articles.map((article) => (
             <article key={article.slug} className="group">
               <Link href={`/blog/${article.slug}`} className="block">
-                <div className="mb-3 flex items-center gap-3 text-sm text-neutral-400">
+                <div className="mb-3 flex items-center gap-3 text-sm text-neutral-400 dark:text-neutral-500">
                   <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
                     {article.category}
                   </span>

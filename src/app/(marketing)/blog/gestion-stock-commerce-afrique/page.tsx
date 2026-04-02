@@ -19,14 +19,14 @@ export default function ArticleStockPage() {
         <div className="mb-12">
           <Link
             href="/blog"
-            className="text-sm text-neutral-400 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
+            className="text-sm text-neutral-400 dark:text-neutral-500 transition-colors hover:text-neutral-600 dark:hover:text-neutral-300"
           >
             &larr; Retour au blog
           </Link>
         </div>
 
         <header className="mb-12">
-          <div className="mb-4 flex items-center gap-3 text-sm text-neutral-400">
+          <div className="mb-4 flex items-center gap-3 text-sm text-neutral-400 dark:text-neutral-500">
             <span className="rounded-full bg-neutral-100 dark:bg-neutral-800 px-2.5 py-0.5 text-xs font-medium text-neutral-900 dark:text-white">
               Gestion
             </span>
@@ -120,7 +120,7 @@ export default function ArticleStockPage() {
           </p>
           <Link
             href="/signup"
-            className="inline-flex items-center rounded-lg bg-neutral-900 px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-neutral-800"
+            className="inline-flex items-center rounded-lg bg-neutral-900 dark:bg-white px-6 py-3 text-sm font-semibold text-white dark:text-neutral-900 transition-colors hover:bg-neutral-800 dark:hover:bg-neutral-200"
           >
             Essayer ATTABL gratuitement
           </Link>

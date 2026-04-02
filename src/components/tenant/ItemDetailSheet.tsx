@@ -213,13 +213,13 @@ export default function ItemDetailSheet({
           >
             {/* Drag handle */}
             <div className="flex justify-center py-3">
-              <div className="h-1 w-10 rounded-full bg-neutral-300" />
+              <div className="h-1 w-10 rounded-full bg-app-border" />
             </div>
 
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {/* Hero image */}
-              <div className="relative aspect-video w-full bg-neutral-100">
+              <div className="relative aspect-video w-full bg-app-elevated">
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
@@ -232,7 +232,7 @@ export default function ItemDetailSheet({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Utensils className="h-12 w-12 text-neutral-300" />
+                    <Utensils className="h-12 w-12 text-app-text-muted" />
                   </div>
                 )}
               </div>
@@ -246,7 +246,7 @@ export default function ItemDetailSheet({
                   </h2>
                   <button
                     onClick={onClose}
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-neutral-100 text-neutral-500 transition-colors active:bg-neutral-200"
+                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-app-elevated text-app-text-secondary transition-colors active:bg-app-border"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -281,7 +281,7 @@ export default function ItemDetailSheet({
 
                 {/* Description */}
                 {(item.description || item.description_en) && (
-                  <p className="mt-3 text-sm leading-relaxed text-neutral-600">
+                  <p className="mt-3 text-sm leading-relaxed text-app-text-secondary">
                     {getTranslatedContent(language, item.description || '', item.description_en)}
                   </p>
                 )}
@@ -296,7 +296,7 @@ export default function ItemDetailSheet({
                 {/* ─── Variants (radio) ─────────────────────────── */}
                 {hasVariants && (
                   <div className="mt-5">
-                    <h3 className="mb-2 text-sm font-semibold text-neutral-800">{t('size')}</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-app-text">{t('size')}</h3>
                     <div className="flex flex-col gap-2">
                       {item
                         .price_variants!.sort((a, b) => a.display_order - b.display_order)
@@ -310,7 +310,7 @@ export default function ItemDetailSheet({
                               style={{
                                 borderColor: isActive
                                   ? 'var(--tenant-primary)'
-                                  : 'rgb(245 245 245)',
+                                  : 'var(--app-border)',
                               }}
                             >
                               <div className="flex items-center gap-3">
@@ -320,7 +320,7 @@ export default function ItemDetailSheet({
                                   style={{
                                     borderColor: isActive
                                       ? 'var(--tenant-primary)'
-                                      : 'rgb(212 212 212)',
+                                      : 'var(--app-border)',
                                   }}
                                 >
                                   {isActive && (
@@ -332,7 +332,7 @@ export default function ItemDetailSheet({
                                     />
                                   )}
                                 </div>
-                                <span className="text-sm font-medium text-neutral-800">
+                                <span className="text-sm font-medium text-app-text">
                                   {getTranslatedContent(
                                     language,
                                     variant.variant_name_fr,
@@ -356,7 +356,7 @@ export default function ItemDetailSheet({
                 {/* ─── Modifiers (checkboxes) ───────────────────── */}
                 {hasModifiers && (
                   <div className="mt-5">
-                    <h3 className="mb-2 text-sm font-semibold text-neutral-800">{t('extras')}</h3>
+                    <h3 className="mb-2 text-sm font-semibold text-app-text">{t('extras')}</h3>
                     <div className="flex flex-col gap-2">
                       {item
                         .modifiers!.filter((m) => m.is_available)
@@ -371,7 +371,7 @@ export default function ItemDetailSheet({
                               style={{
                                 borderColor: isActive
                                   ? 'var(--tenant-primary)'
-                                  : 'rgb(245 245 245)',
+                                  : 'var(--app-border)',
                               }}
                             >
                               <div className="flex items-center gap-3">
@@ -381,7 +381,7 @@ export default function ItemDetailSheet({
                                   style={{
                                     borderColor: isActive
                                       ? 'var(--tenant-primary)'
-                                      : 'rgb(212 212 212)',
+                                      : 'var(--app-border)',
                                     backgroundColor: isActive
                                       ? 'var(--tenant-primary)'
                                       : 'transparent',
@@ -389,12 +389,12 @@ export default function ItemDetailSheet({
                                 >
                                   {isActive && <Check className="h-3 w-3 text-white" />}
                                 </div>
-                                <span className="text-sm font-medium text-neutral-800">
+                                <span className="text-sm font-medium text-app-text">
                                   {getTranslatedContent(language, modifier.name, modifier.name_en)}
                                 </span>
                               </div>
                               {modifier.price > 0 && (
-                                <span className="text-sm font-medium text-neutral-500">
+                                <span className="text-sm font-medium text-app-text-secondary">
                                   +
                                   {resolveAndFormatPrice(modifier.price, modifier.prices, currency)}
                                 </span>
@@ -408,7 +408,7 @@ export default function ItemDetailSheet({
 
                 {/* ─── Special instructions ─────────────────────── */}
                 <div className="mt-5">
-                  <h3 className="mb-2 text-sm font-semibold text-neutral-800">
+                  <h3 className="mb-2 text-sm font-semibold text-app-text">
                     {t('specialInstructions')}
                   </h3>
                   <textarea
@@ -434,7 +434,7 @@ export default function ItemDetailSheet({
                 <div className="flex items-center gap-2 rounded-full border border-app-border px-1 py-1">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition-colors active:bg-neutral-100"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-app-text-secondary transition-colors active:bg-app-elevated"
                     disabled={quantity <= 1}
                   >
                     <Minus className="h-4 w-4" />
@@ -444,7 +444,7 @@ export default function ItemDetailSheet({
                   </span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-600 transition-colors active:bg-neutral-100"
+                    className="flex h-8 w-8 items-center justify-center rounded-full text-app-text-secondary transition-colors active:bg-app-elevated"
                   >
                     <Plus className="h-4 w-4" />
                   </button>

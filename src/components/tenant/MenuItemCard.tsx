@@ -150,7 +150,7 @@ export default function MenuItemCard({
         position: 'relative',
         padding: '16px',
         cursor: 'pointer',
-        borderBottom: '1px solid #f5f5f5',
+        borderBottom: '1px solid var(--app-border)',
         opacity: isUnavailable ? 0.5 : 1,
       }}
     >
@@ -161,7 +161,7 @@ export default function MenuItemCard({
             style={{
               fontSize: '15px',
               fontWeight: 600,
-              color: '#171717',
+              color: 'var(--app-text)',
               lineHeight: 1.3,
               overflow: 'hidden',
               display: '-webkit-box',
@@ -182,7 +182,7 @@ export default function MenuItemCard({
         <p
           style={{
             fontSize: '13px',
-            color: '#737373',
+            color: 'var(--app-text-secondary)',
             lineHeight: 1.4,
             overflow: 'hidden',
             display: '-webkit-box',
@@ -226,7 +226,7 @@ export default function MenuItemCard({
               />
             </button>
             {showVariantDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-white rounded-lg border border-neutral-200 py-1 z-20 shadow-lg min-w-[140px]">
+              <div className="absolute top-full left-0 mt-1 bg-app-card rounded-lg border border-app-border py-1 z-20 shadow-lg min-w-[140px]">
                 {item.price_variants?.map((variant) => (
                   <button
                     key={variant.id}
@@ -236,8 +236,8 @@ export default function MenuItemCard({
                       setShowVariantDropdown(false);
                     }}
                     className={cn(
-                      'w-full px-3 py-2 text-left text-xs hover:bg-neutral-50',
-                      selectedVariant?.id === variant.id ? 'font-bold' : 'text-neutral-700',
+                      'w-full px-3 py-2 text-left text-xs hover:bg-app-elevated',
+                      selectedVariant?.id === variant.id ? 'font-bold' : 'text-app-text-secondary',
                     )}
                     style={
                       selectedVariant?.id === variant.id
@@ -273,8 +273,8 @@ export default function MenuItemCard({
             height: '100%',
             borderRadius: '8px',
             overflow: 'hidden',
-            backgroundColor: '#fafafa',
-            border: '1px solid #f5f5f5',
+            backgroundColor: 'var(--app-elevated)',
+            border: '1px solid var(--app-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -292,9 +292,9 @@ export default function MenuItemCard({
               priority={priority}
             />
           ) : isDrinkCategory ? (
-            <Martini style={{ width: '24px', height: '24px', color: '#d4d4d4' }} />
+            <Martini style={{ width: '24px', height: '24px', color: 'var(--app-text-muted)' }} />
           ) : (
-            <Utensils style={{ width: '24px', height: '24px', color: '#d4d4d4' }} />
+            <Utensils style={{ width: '24px', height: '24px', color: 'var(--app-text-muted)' }} />
           )}
         </div>
 
@@ -308,10 +308,10 @@ export default function MenuItemCard({
               style={{
                 display: 'flex',
                 alignItems: 'center',
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--app-card)',
                 borderRadius: '9999px',
                 boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                border: '1px solid #e5e5e5',
+                border: '1px solid var(--app-border)',
                 padding: '2px',
               }}
             >
@@ -320,7 +320,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all"
                 style={{
                   color: 'var(--tenant-primary)',
                   background: 'none',
@@ -334,7 +334,7 @@ export default function MenuItemCard({
                 style={{
                   fontSize: '13px',
                   fontWeight: 700,
-                  color: '#171717',
+                  color: 'var(--app-text)',
                   width: '24px',
                   textAlign: 'center',
                 }}
@@ -346,7 +346,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-gray-50 active:scale-90 transition-all"
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all"
                 style={{
                   color: 'var(--tenant-primary)',
                   background: 'none',
@@ -368,8 +368,8 @@ export default function MenuItemCard({
                 width: '40px',
                 height: '40px',
                 borderRadius: '50%',
-                backgroundColor: '#fff',
-                border: '2px solid #f5f5f5',
+                backgroundColor: 'var(--app-card)',
+                border: '2px solid var(--app-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -390,7 +390,7 @@ export default function MenuItemCard({
           style={{
             position: 'absolute',
             inset: 0,
-            backgroundColor: 'rgba(255,255,255,0.4)',
+            backgroundColor: 'color-mix(in srgb, var(--app-card) 40%, transparent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -399,8 +399,8 @@ export default function MenuItemCard({
         >
           <span
             style={{
-              backgroundColor: 'rgba(23,23,23,0.8)',
-              color: '#fff',
+              backgroundColor: 'rgba(0,0,0,0.7)',
+              color: 'var(--app-bg)',
               fontSize: '10px',
               fontWeight: 700,
               textTransform: 'uppercase',

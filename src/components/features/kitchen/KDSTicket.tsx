@@ -98,7 +98,7 @@ export default function KDSTicket({
   // ─── Item status badges ────────────────────────────────────
   const ITEM_BADGES: Record<string, { dot: string; text: string; bg: string }> = {
     pending: {
-      dot: 'bg-neutral-500',
+      dot: 'bg-app-text-muted',
       text: 'text-app-text-muted',
       bg: 'bg-app-elevated hover:bg-app-hover',
     },

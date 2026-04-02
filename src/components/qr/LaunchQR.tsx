@@ -79,19 +79,19 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
 
   if (!mounted) {
     return (
-      <div className="p-4 rounded-xl border border-neutral-200 bg-white">
+      <div className="p-4 rounded-xl border border-app-border bg-app-card">
         <div className="flex items-center justify-center" style={{ minHeight: 200 }}>
-          <div className="w-32 h-32 bg-neutral-100 rounded-lg animate-pulse" />
+          <div className="w-32 h-32 bg-app-elevated rounded-lg animate-pulse" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white overflow-hidden">
+    <div className="rounded-xl border border-app-border bg-app-card overflow-hidden">
       {/* Template Preview - dot pattern background */}
       <div
-        className="bg-neutral-100 p-6 flex items-center justify-center"
+        className="bg-app-elevated p-6 flex items-center justify-center"
         style={{
           minHeight: 260,
           backgroundImage: 'radial-gradient(circle, #d1d5db 1px, transparent 1px)',
@@ -110,7 +110,7 @@ export function LaunchQR({ config, url, tenantName, logoUrl }: LaunchQRProps) {
       </div>
 
       {/* Download Buttons */}
-      <div className="flex gap-2 justify-center p-3 border-t border-neutral-100">
+      <div className="flex gap-2 justify-center p-3 border-t border-app-border">
         <Button
           onClick={() => downloadAs('pdf')}
           disabled={downloading !== null}

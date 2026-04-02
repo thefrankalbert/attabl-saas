@@ -142,7 +142,7 @@ export default function InstallPrompt({
 
   return (
     <div
-      className="fixed left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm max-w-sm mx-auto z-[55] bg-[#1a1a1a] text-white rounded-xl shadow-2xl border border-white/10 overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
+      className="fixed left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm max-w-sm mx-auto z-[55] bg-app-bg text-app-text rounded-xl shadow-2xl border border-app-border overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
       style={{
         bottom: hasFloatingCart
           ? 'calc(140px + env(safe-area-inset-bottom, 0px))'
@@ -156,41 +156,41 @@ export default function InstallPrompt({
             alt={appName}
             width={40}
             height={40}
-            className="rounded-lg bg-white p-1"
+            className="rounded-lg bg-app-card p-1"
           />
         ) : (
-          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-black font-bold text-xl">
+          <div className="w-10 h-10 bg-app-card rounded-lg flex items-center justify-center text-app-text font-bold text-xl">
             {appName.charAt(0)}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-sm leading-tight">{t('installApp', { name: appName })}</h3>
-          <p className="text-[10px] text-gray-400 mt-0.5">{t('subtitle')}</p>
+          <p className="text-[10px] text-app-text-muted mt-0.5">{t('subtitle')}</p>
         </div>
 
         {isIOS ? (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="px-3 py-1.5 bg-white text-black rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
+            className="px-3 py-1.5 bg-app-card text-app-text rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
           >
             <Download size={14} /> {t('install')}
           </button>
         ) : (
           <button
             onClick={handleInstall}
-            className="px-3 py-1.5 bg-white text-black rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
+            className="px-3 py-1.5 bg-app-card text-app-text rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
           >
             <Download size={14} /> {t('install')}
           </button>
         )}
 
-        <button onClick={handleDismiss} className="p-1 text-gray-500 hover:text-white">
+        <button onClick={handleDismiss} className="p-1 text-app-text-secondary hover:text-white">
           <X size={16} />
         </button>
       </div>
 
       {isIOS && isExpanded && (
-        <div className="px-3 pb-3 pt-0 border-t border-white/10 text-xs text-gray-300 space-y-2">
+        <div className="px-3 pb-3 pt-0 border-t border-app-border text-xs text-app-text-secondary space-y-2">
           <p className="flex items-center gap-2 pt-2">
             <Share size={14} className="shrink-0" /> {t('iosStep1')}
           </p>

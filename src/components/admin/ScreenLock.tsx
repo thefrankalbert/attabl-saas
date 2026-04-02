@@ -193,7 +193,7 @@ export function ScreenLock({
                         }}
                         required
                         autoFocus
-                        className="h-12 pr-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
+                        className="h-12 pr-12 bg-app-elevated/50 border-app-border text-app-text placeholder:text-app-text-muted/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
                       />
                       <button
                         type="button"

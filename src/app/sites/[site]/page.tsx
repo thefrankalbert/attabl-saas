@@ -65,13 +65,13 @@ export default async function MenuPage({
     const t = await getTranslations('tenant');
     return (
       <div className="min-h-screen bg-app-bg">
-        <header className="bg-white dark:bg-app-elevated shadow-sm sticky top-0 z-10">
+        <header className="bg-app-card shadow-sm sticky top-0 z-10">
           <div className="container mx-auto px-4 py-4">
             <h1 className="text-2xl font-bold text-app-text capitalize">{tenantSlug}</h1>
           </div>
         </header>
         <main className="container mx-auto px-4 py-8">
-          <div className="text-center py-12 bg-white dark:bg-app-elevated rounded-lg shadow-sm">
+          <div className="text-center py-12 bg-app-card rounded-lg shadow-sm">
             <h2 className="text-xl font-semibold text-app-text-secondary mb-2">
               {t('notConfiguredTitle')}
             </h2>

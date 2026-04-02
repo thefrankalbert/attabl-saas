@@ -144,7 +144,7 @@ export function QRExportBar({ config, previewRef, tenantSlug }: QRExportBarProps
   // ─── Render ─────────────────────────────────────────
 
   return (
-    <div className="sticky bottom-0 bg-white border-t border-gray-200 p-4">
+    <div className="sticky bottom-0 bg-app-card border-t border-app-border p-4">
       <div className="flex items-center gap-3 flex-wrap">
         {/* PDF - always available */}
         <Button onClick={downloadPDF} disabled={loading !== null} className="gap-2">

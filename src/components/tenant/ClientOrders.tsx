@@ -459,8 +459,8 @@ function BadgeStatus({ status }: { status: string }) {
     confirmed: 'bg-blue-50 text-blue-700',
     preparing: 'bg-blue-50 text-blue-700',
     ready: 'bg-emerald-50 text-emerald-700',
-    delivered: 'bg-neutral-100 text-neutral-600',
-    served: 'bg-neutral-100 text-neutral-600',
+    delivered: 'bg-app-elevated text-app-text-muted',
+    served: 'bg-app-elevated text-app-text-muted',
     cancelled: 'bg-red-50 text-red-600',
   };
 

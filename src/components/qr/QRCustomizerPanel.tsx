@@ -370,13 +370,13 @@ export function QRCustomizerPanel({
 
                       {/* Preview of uploaded/selected logo */}
                       {config.logo.src && (
-                        <div className="relative rounded-xl border border-neutral-100 p-2 bg-neutral-50">
+                        <div className="relative rounded-xl border border-app-border p-2 bg-app-elevated">
                           <div className="flex items-center gap-3">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={config.logo.src}
                               alt="Aperçu du logo"
-                              className="h-10 w-10 rounded-lg object-contain bg-app-card border border-neutral-100"
+                              className="h-10 w-10 rounded-lg object-contain bg-app-card border border-app-border"
                             />
                             <span className="text-xs text-app-text-muted break-all flex-1">
                               {config.logo.src.startsWith('data:')

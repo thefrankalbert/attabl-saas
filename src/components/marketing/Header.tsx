@@ -87,7 +87,7 @@ export default function Header() {
             <ThemeToggle className="hidden md:flex w-8 h-8 items-center justify-center rounded-lg text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors" />
             <Link
               href="/login"
-              className="hidden text-sm font-medium text-neutral-600 hover:text-neutral-900 transition-colors md:block"
+              className="hidden text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors md:block"
             >
               Se connecter
             </Link>

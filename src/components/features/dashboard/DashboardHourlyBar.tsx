@@ -24,22 +24,22 @@ export default function DashboardHourlyBar({ data, t }: DashboardHourlyBarProps)
               dataKey="hour"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: '#9ca3af', fontWeight: 500 }}
+              tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
               dy={4}
               interval={1}
             />
             <Tooltip
               contentStyle={{
-                background: '#111827',
-                border: 'none',
+                background: 'var(--app-card)',
+                border: '1px solid var(--app-border)',
                 borderRadius: '12px',
                 fontSize: '13px',
-                color: '#fff',
+                color: 'var(--app-text)',
                 padding: '10px 14px',
               }}
               formatter={(value: number | undefined) => [value ?? 0, t('ordersPerHour')]}
-              labelStyle={{ color: '#9ca3af', fontSize: '11px', marginBottom: '4px' }}
-              cursor={{ fill: 'rgba(204, 255, 0, 0.08)' }}
+              labelStyle={{ color: 'var(--app-text-muted)', fontSize: '11px', marginBottom: '4px' }}
+              cursor={{ fill: 'var(--app-accent)', opacity: 0.08 }}
             />
             <Bar dataKey="count" fill="var(--accent)" radius={[6, 6, 0, 0]} maxBarSize={28} />
           </BarChart>

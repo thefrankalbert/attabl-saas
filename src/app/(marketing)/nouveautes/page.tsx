@@ -74,13 +74,13 @@ export default function NouveautesPage() {
   return (
     <>
       {/* Hero */}
-      <section className="bg-white pb-12 pt-20 lg:pt-28">
+      <section className="bg-white dark:bg-neutral-950 pb-12 pt-20 lg:pt-28">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-6 text-4xl font-bold text-neutral-900 sm:text-5xl"
+            className="mb-6 text-4xl font-bold text-neutral-900 dark:text-white sm:text-5xl"
           >
             Nouveautés
           </motion.h1>
@@ -88,7 +88,7 @@ export default function NouveautesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-lg text-neutral-600 sm:text-xl"
+            className="text-lg text-neutral-600 dark:text-neutral-400 sm:text-xl"
           >
             Les dernières fonctionnalités et améliorations d&apos;Attabl.
           </motion.p>
@@ -96,7 +96,7 @@ export default function NouveautesPage() {
       </section>
 
       {/* Timeline */}
-      <section className="bg-neutral-50 py-20">
+      <section className="bg-neutral-50 dark:bg-neutral-900 py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <div className="space-y-8">
             {updates.map((update, idx) => (
@@ -106,29 +106,33 @@ export default function NouveautesPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: idx * 0.05 }}
                 viewport={{ once: true }}
-                className="rounded-2xl border border-neutral-200 bg-white p-8"
+                className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8"
               >
                 <div className="mb-4 flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
                     <update.icon className="h-5 w-5 text-primary" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold uppercase tracking-widest text-neutral-500">
+                    <span className="text-xs font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                       {update.date}
                     </span>
                     <span
                       className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
                         update.tag === 'Nouveau'
-                          ? 'bg-primary/10 text-lime-700'
-                          : 'bg-neutral-100 text-neutral-600'
+                          ? 'bg-primary/10 text-lime-700 dark:text-lime-400'
+                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
                       }`}
                     >
                       {update.tag}
                     </span>
                   </div>
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-neutral-900">{update.title}</h3>
-                <p className="leading-relaxed text-neutral-600">{update.description}</p>
+                <h3 className="mb-2 text-xl font-semibold text-neutral-900 dark:text-white">
+                  {update.title}
+                </h3>
+                <p className="leading-relaxed text-neutral-600 dark:text-neutral-400">
+                  {update.description}
+                </p>
               </motion.div>
             ))}
           </div>
@@ -136,10 +140,14 @@ export default function NouveautesPage() {
       </section>
 
       {/* CTA */}
-      <section className="bg-white py-20">
+      <section className="bg-white dark:bg-neutral-950 py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold text-neutral-900 sm:text-4xl">Prêt à essayer ?</h2>
-          <p className="mb-10 text-lg text-neutral-600">14 jours gratuits. Sans carte bancaire.</p>
+          <h2 className="mb-6 text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
+            Prêt à essayer ?
+          </h2>
+          <p className="mb-10 text-lg text-neutral-600 dark:text-neutral-400">
+            14 jours gratuits. Sans carte bancaire.
+          </p>
           <Link
             href="/signup"
             className="inline-flex items-center justify-center rounded-lg bg-black px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-900"
