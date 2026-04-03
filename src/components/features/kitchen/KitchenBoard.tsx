@@ -48,8 +48,22 @@ export default function KitchenBoard({
   zoneFilter = 'all',
   barDisplayEnabled = false,
 }: KitchenBoardProps) {
+  // Filter out orders that have no visible items for the current zone
+  const visibleOrders = orders.filter((order) => {
+    if (!barDisplayEnabled) return true;
+    const relevantItems = (order.items || []).filter((item) => {
+      const zone = item.preparation_zone || 'kitchen';
+      if (zoneFilter === 'kitchen') return zone !== 'bar';
+      if (zoneFilter === 'bar') return zone !== 'kitchen';
+      return true;
+    });
+    return relevantItems.length > 0;
+  });
+
   // Server/waiter view: only show ready orders
-  const displayOrders = isChefView ? orders : orders.filter((o) => o.status === 'ready');
+  const displayOrders = isChefView
+    ? visibleOrders
+    : visibleOrders.filter((o) => o.status === 'ready');
 
   return (
     <div className="flex-1 overflow-y-auto p-2 sm:p-3 custom-scrollbar">
