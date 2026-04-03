@@ -116,6 +116,7 @@
     "completeOrder": "Compléter ma commande"
   },
   "orders": {
+    "title": "Commandes",
     "sendOrder": "Envoyer la commande",
     "confirmed": "Confirmé.",
     "successMsg": "Nos équipes en cuisine s'activent pour vous servir.",
@@ -1630,7 +1631,9 @@
     "markDelivered": "Livré",
     "tableLabel": "Table",
     "itemsCount": "{count} article(s)",
-    "orderAge": "il y a {minutes} min"
+    "orderAge": "il y a {minutes} min",
+    "releaseAssignment": "Liberer l'assignation",
+    "searchAssignments": "Rechercher des assignations"
   },
   "stockHistory": {
     "title": "Historique des mouvements",

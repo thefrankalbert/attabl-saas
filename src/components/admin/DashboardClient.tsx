@@ -306,7 +306,7 @@ export default function DashboardClient(props: DashboardClientProps) {
       {/* Greeting + date + time */}
       <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-1 sm:gap-2">
         <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-app-text">
+          <h1 className="text-lg sm:text-xl font-bold text-app-text">
             {t(greetKey)}, {userName || tenantName}
           </h1>
           <span className="text-[10px] sm:text-xs text-app-text-muted capitalize hidden sm:inline">
