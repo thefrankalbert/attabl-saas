@@ -82,7 +82,7 @@ export default async function MenuDetailPage({
       supabase
         .from('categories')
         .select(
-          'id, tenant_id, menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at',
+          'id, tenant_id, menu_id, name, name_en, description, display_order, is_active, created_at, preparation_zone',
         )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
@@ -92,8 +92,8 @@ export default async function MenuDetailPage({
         .from('menu_items')
         .select(
           `
-        id, tenant_id, category_id, name, name_en, slug, description, description_en,
-        price, image_url, is_available, is_featured, display_order, allergens, created_at,
+        id, tenant_id, category_id, name, name_en, description, description_en,
+        price, image_url, is_available, is_featured, allergens, calories, created_at,
         category:categories(id, tenant_id, name, name_en, created_at),
         modifiers:item_modifiers(id, tenant_id, menu_item_id, name, name_en, price, is_available, display_order, created_at)
       `,
