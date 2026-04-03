@@ -65,14 +65,29 @@ export default function KitchenClient({
     sessionStorage.setItem('kds-sound-unlocked', 'true');
   }, []);
 
+  // -- Search state --
+  const [searchQuery, setSearchQuery] = useState('');
+
   // -- Footer filter state --
   const [footerFilter, setFooterFilter] = useState<OrderStatus | 'all'>('all');
 
   // Flat sorted list of all orders for the board
   const boardOrders = useMemo(() => {
-    if (footerFilter === 'all') return kitchen.allOrders;
-    return kitchen.allOrders.filter((o) => o.status === footerFilter);
-  }, [kitchen.allOrders, footerFilter]);
+    let filtered = kitchen.allOrders;
+    if (footerFilter !== 'all') {
+      filtered = filtered.filter((o) => o.status === footerFilter);
+    }
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      filtered = filtered.filter(
+        (o) =>
+          o.customer_name?.toLowerCase().includes(q) ||
+          o.table_number?.toString().includes(q) ||
+          o.id.toLowerCase().includes(q),
+      );
+    }
+    return filtered;
+  }, [kitchen.allOrders, footerFilter, searchQuery]);
 
   const handlePageChange = useCallback((_direction: 'prev' | 'next') => {
     // Pagination placeholder - no-op until board pagination is implemented
@@ -196,6 +211,8 @@ export default function KitchenClient({
         barDisplayEnabled={barDisplayEnabled}
         zoneFilter={zoneFilter}
         onZoneFilterChange={handleZoneChange}
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
       />
 
       <KitchenBoard

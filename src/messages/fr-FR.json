@@ -853,7 +853,9 @@
     "tapToEnableSoundDesc": "Les notifications sonores seront activees pour les nouvelles commandes",
     "zoneAll": "Tout",
     "zoneKitchen": "Cuisine",
-    "zoneBar": "Bar"
+    "zoneBar": "Bar",
+    "searchPlaceholder": "Rechercher une commande...",
+    "searchLabel": "Rechercher"
   },
   "pos": {
     "title": "Caisse (POS)",

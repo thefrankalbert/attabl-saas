@@ -101,6 +101,14 @@ export default function KDSTicket({
   const [expanded, setExpanded] = useState(false);
   const t = useTranslations('kitchen');
 
+  // Extract short order number: "CMD-20260403-001" -> "001"
+  const shortOrderNumber = useMemo(() => {
+    const num = order.order_number;
+    if (!num) return order.table_number;
+    const match = num.match(/-(\d+)$/);
+    return match ? match[1] : num;
+  }, [order.order_number, order.table_number]);
+
   // ─── Service type labels ─────────────────────────────────
   const SERVICE_LABELS: Record<string, string> = {
     dine_in: t('serviceDineIn'),
@@ -195,15 +203,13 @@ export default function KDSTicket({
         {/* Line 1: #order_number . table_number   Due HH:MM */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-1 min-w-0">
-            <span className="text-sm font-bold text-app-text">
-              #{order.order_number || order.table_number}
-            </span>
+            <span className="text-xs font-semibold text-app-text">#{shortOrderNumber}</span>
             {order.order_number && order.table_number && (
               <>
                 <span className="text-app-text-muted text-xs" aria-hidden="true">
                   -
                 </span>
-                <span className="text-sm font-bold text-app-text truncate">
+                <span className="text-xs font-semibold text-app-text truncate">
                   {order.table_number}
                 </span>
               </>

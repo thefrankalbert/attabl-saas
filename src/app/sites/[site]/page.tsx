@@ -93,7 +93,7 @@ export default async function MenuPage({
       // Venues (optionnel) - explicit columns to avoid SELECT *
       supabase
         .from('venues')
-        .select('id, tenant_id, name, name_en, slug, is_active, display_order, created_at')
+        .select('id, tenant_id, name, name_en, slug, type, has_own_menu, is_active, created_at')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .order('created_at', { ascending: true }),

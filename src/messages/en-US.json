@@ -853,7 +853,9 @@
     "tapToEnableSoundDesc": "Sound notifications will be enabled for new orders",
     "zoneAll": "All",
     "zoneKitchen": "Kitchen",
-    "zoneBar": "Bar"
+    "zoneBar": "Bar",
+    "searchPlaceholder": "Search an order...",
+    "searchLabel": "Search"
   },
   "pos": {
     "title": "Point of Sale",

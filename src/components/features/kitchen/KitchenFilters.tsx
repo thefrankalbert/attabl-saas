@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Maximize, Minimize, ChefHat, Wine } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Maximize, Minimize, ChefHat, Wine, Search, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,8 @@ interface KitchenFiltersProps {
   barDisplayEnabled?: boolean;
   zoneFilter?: KDSZoneFilter;
   onZoneFilterChange?: (zone: KDSZoneFilter) => void;
+  searchQuery: string;
+  onSearchChange: (query: string) => void;
 }
 
 export default function KitchenFilters({
@@ -33,10 +35,14 @@ export default function KitchenFilters({
   barDisplayEnabled = false,
   zoneFilter = 'all',
   onZoneFilterChange,
+  searchQuery,
+  onSearchChange,
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
   const locale = useLocale();
   const [now, setNow] = useState(() => new Date());
+  const [searchOpen, setSearchOpen] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Live clock - update every second
   useEffect(() => {
@@ -67,6 +73,40 @@ export default function KitchenFilters({
             title={t('backToDashboard')}
           >
             <ArrowLeft className="w-4 h-4" />
+          </button>
+        )}
+        {searchOpen ? (
+          <div className="flex items-center gap-1 bg-app-elevated rounded-lg px-2 py-1">
+            <Search className="w-4 h-4 text-app-text-muted shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              placeholder={t('searchPlaceholder')}
+              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 sm:w-56"
+              autoFocus
+            />
+            <button
+              onClick={() => {
+                onSearchChange('');
+                setSearchOpen(false);
+              }}
+              className="p-1 min-h-[32px] min-w-[32px] flex items-center justify-center rounded text-app-text-muted hover:text-app-text transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => {
+              setSearchOpen(true);
+              requestAnimationFrame(() => searchInputRef.current?.focus());
+            }}
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
+            aria-label={t('searchLabel')}
+          >
+            <Search className="w-4 h-4" />
           </button>
         )}
       </div>
@@ -101,55 +141,45 @@ export default function KitchenFilters({
 
       {/* Center: active / completed tabs */}
       {isChefView && (
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => onViewModeChange('active')}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold tracking-wide transition-colors',
-              viewMode === 'active'
-                ? 'bg-app-elevated text-app-text'
-                : 'text-app-text-muted hover:text-app-text-secondary',
-            )}
-          >
-            {t('tabActive')}
-            <span
+        <nav className="flex items-center bg-app-elevated/50 rounded-full p-0.5">
+          {(
+            [
+              { mode: 'active' as const, label: t('tabActive'), count: activeCount },
+              { mode: 'completed' as const, label: t('tabCompleted'), count: completedToday },
+            ] as const
+          ).map(({ mode, label, count }) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => onViewModeChange(mode)}
               className={cn(
-                'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
-                viewMode === 'active' ? 'bg-app-hover text-app-text' : 'text-app-text-muted',
+                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium transition-all duration-150',
+                viewMode === mode
+                  ? 'bg-app-bg text-app-text shadow-sm'
+                  : 'text-app-text-muted hover:text-app-text-secondary',
               )}
             >
-              {activeCount}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => onViewModeChange('completed')}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold tracking-wide transition-colors',
-              viewMode === 'completed'
-                ? 'bg-app-elevated text-app-text'
-                : 'text-app-text-muted hover:text-app-text-secondary',
-            )}
-          >
-            {t('tabCompleted')}
-            <span
-              className={cn(
-                'px-1.5 py-0.5 rounded text-xs tabular-nums font-black',
-                viewMode === 'completed' ? 'bg-app-hover text-app-text' : 'text-app-text-muted',
-              )}
-            >
-              {completedToday}
-            </span>
-          </button>
-        </div>
+              {label}
+              <span
+                className={cn(
+                  'min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold tabular-nums',
+                  viewMode === mode
+                    ? 'bg-accent text-accent-text'
+                    : 'bg-app-hover text-app-text-muted',
+                )}
+              >
+                {count}
+              </span>
+            </button>
+          ))}
+        </nav>
       )}
 
       {/* Right: date/time + fullscreen */}
       <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-1.5 text-xs text-app-text-muted font-mono tabular-nums">
-          <span>{dateStr}</span>
-          <span className="text-app-text-secondary font-semibold">{timeStr}</span>
+        <div className="hidden sm:flex items-center gap-3 text-xs text-app-text-muted tabular-nums">
+          <span className="capitalize">{dateStr}</span>
+          <span>{timeStr}</span>
         </div>
         <button
           onClick={toggleFullscreen}
