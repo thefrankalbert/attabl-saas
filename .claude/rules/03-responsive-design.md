@@ -73,14 +73,57 @@ Utiliser EXCLUSIVEMENT les breakpoints Tailwind definis dans `src/lib/layout/bre
 - JAMAIS de tableau HTML classique sans alternative mobile
 - Pour les tableaux complexes : scroll horizontal `overflow-x-auto` comme fallback minimum
 
+## Touch Targets (OBLIGATOIRE)
+
+Les interfaces tactiles (KDS, POS, menu client) sont utilisees sur tablette et mobile. Les zones de touch doivent etre suffisamment grandes.
+
+- Taille minimale : `min-h-[44px] min-w-[44px]` pour TOUT bouton interactif (standard Apple/Google)
+- Espacement entre boutons tactiles : minimum `gap-1.5` (6px) pour eviter les taps accidentels
+- Footer bars, toolbars : hauteur minimum `h-14` (56px) pour confort tactile sur tablette
+- Boutons d'action principaux (CTA) : `min-h-[44px]` avec padding genereux `px-4 py-2`
+- Icones seules comme boutons : toujours wrapper avec `p-2 min-h-[44px] min-w-[44px] flex items-center justify-center`
+
+## Texte et Lisibilite
+
+- JAMAIS de `text-[10px]` sur des elements interactifs - minimum `text-xs` (12px)
+- `text-[10px]` acceptable UNIQUEMENT pour des labels purement decoratifs non-interactifs
+- Sur les interfaces KDS/POS (tablette) : preferer `text-xs` a `text-[10px]`, `text-sm` a `text-xs`
+- Les numeros de commande longs doivent etre raccourcis pour l'affichage (ex: `CMD-20260403-001` -> `#001`)
+- Couleurs de texte : contraste minimum WCAG AA - `text-app-text-muted` est le minimum acceptable
+
+## Couleurs et Harmonisation
+
+- Les tabs/filtres de statut doivent utiliser une palette coherente et subtile
+- Preferer les fonds semi-transparents pour les etats actifs : `bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30`
+- EVITER les couleurs pleines criardes (`bg-amber-500 text-black`) pour les filtres - les reserver aux CTA principaux
+- Les etats inactifs utilisent une couleur neutre uniforme (`text-app-text-muted`), pas chacun sa couleur
+
+## Hydration et localStorage (CRITIQUE)
+
+Le responsive design depend souvent de valeurs lues depuis `localStorage` ou `window` (sidebar collapsed, preferences). Ces valeurs causent des hydration mismatches si lues dans `useState` initializer.
+
+- JAMAIS lire `localStorage` ou `window.innerWidth` dans un `useState(() => ...)` initializer
+- Pattern correct : `useState(SERVER_DEFAULT)` + `useEffect(() => { readFromLocalStorage(); }, [])`
+- La valeur serveur par defaut doit etre la valeur la plus commune (ex: sidebar expanded = `false`)
+- Accepter un flash visuel rapide au mount plutot qu'un hydration mismatch
+
+## Dev/Prod Responsive Parity
+
+Turbopack (dev) et Webpack (prod) rendent differemment. Une page responsive en local peut casser en production.
+
+- TOUJOURS tester avec `pnpm build && pnpm start` avant de valider un changement layout/responsive
+- Les classes Tailwind dynamiques (`text-${size}`) sont purgees en prod - TOUJOURS utiliser des classes completes
+- Le PWA service worker (actif en prod, inactif en dev) peut cacher du CSS obsolete
+
 ## Tests Responsive
 
 - Avant de valider un composant, verifier visuellement sur :
-  - 375px (iPhone SE — plus petit ecran courant)
+  - 375px (iPhone SE - plus petit ecran courant)
   - 768px (iPad portrait)
   - 1024px (iPad paysage)
   - 1440px (desktop standard)
 - Utiliser `pnpm test:e2e:responsive` pour les tests automatises
+- OBLIGATOIRE pour les changements layout : `pnpm build && pnpm start` et tester en mode production
 
 ## Anti-Patterns a EVITER
 
@@ -91,3 +134,7 @@ Utiliser EXCLUSIVEMENT les breakpoints Tailwind definis dans `src/lib/layout/bre
 - `overflow-hidden` sur un conteneur parent qui tronque du contenu sur petit ecran
 - `h-screen` sans penser au viewport mobile (barre d'adresse)
 - Composants qui dependent de `hover:` sans alternative `active:` pour le tactile
+- `text-[10px]` sur des elements interactifs (trop petit pour etre lu/tape)
+- Boutons sans `min-h-[44px]` sur interfaces tactiles
+- Lire `localStorage`/`window` dans `useState` initializer (hydration mismatch)
+- Classes Tailwind construites dynamiquement (`\`text-${var}\``) - purgees en prod
