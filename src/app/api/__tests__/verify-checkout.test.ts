@@ -32,23 +32,20 @@ vi.mock('@/lib/supabase/server', () => ({
   })),
 }));
 
-// Stripe mock - the route uses `new Stripe(...)` so we need a class constructor
-// Use vi.hoisted() so the mock fn is available when the vi.mock factory runs (hoisted)
+// Stripe mock - the route imports { stripe } from '@/lib/stripe/server' (lazy proxy)
 const { mockSessionRetrieve } = vi.hoisted(() => ({
   mockSessionRetrieve: vi.fn(),
 }));
 
-vi.mock('stripe', () => {
-  return {
-    default: class StripeMock {
-      checkout = {
-        sessions: {
-          retrieve: mockSessionRetrieve,
-        },
-      };
+vi.mock('@/lib/stripe/server', () => ({
+  stripe: {
+    checkout: {
+      sessions: {
+        retrieve: mockSessionRetrieve,
+      },
     },
-  };
-});
+  },
+}));
 
 // ---------------------------------------------------------------------------
 // Import the handler AFTER mocks are set up

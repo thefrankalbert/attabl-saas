@@ -36,6 +36,8 @@ import { actionUpdateMenu } from '@/app/actions/menus';
 import { actionToggleCategoryActive } from '@/app/actions/categories';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
+import { createCategoryService } from '@/services/category.service';
+import { createMenuItemService } from '@/services/menu-item.service';
 
 interface MenuDetailClientProps {
   tenantId: string;
@@ -194,16 +196,12 @@ export default function MenuDetailClient({
         tenant_id: tenantId,
         menu_id: menu.id,
       };
+      const categoryService = createCategoryService(supabase);
       if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(payload)
-          .eq('id', editingCategory.id);
-        if (error) throw error;
+        await categoryService.updateCategory(editingCategory.id, payload);
         toast({ title: t('categoryUpdated') });
       } else {
-        const { error } = await supabase.from('categories').insert([payload]);
-        if (error) throw error;
+        await categoryService.createCategory(payload);
         toast({ title: t('categoryCreated') });
       }
       setShowCategoryModal(false);
@@ -226,8 +224,8 @@ export default function MenuDetailClient({
     }
     if (!confirm(tCat('deleteCategoryConfirm', { name: cat.name }))) return;
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', cat.id);
-      if (error) throw error;
+      const categoryService = createCategoryService(supabase);
+      await categoryService.deleteCategory(cat.id);
       toast({ title: t('categoryDeleted') });
       loadData();
     } catch {
@@ -258,11 +256,8 @@ export default function MenuDetailClient({
   const handleAssignCategory = async (cat: Category) => {
     setAssigningCategory(true);
     try {
-      const { error } = await supabase
-        .from('categories')
-        .update({ menu_id: menu.id })
-        .eq('id', cat.id);
-      if (error) throw error;
+      const categoryService = createCategoryService(supabase);
+      await categoryService.assignCategoryToMenu(cat.id, menu.id);
       toast({ title: t('categoryAssigned') });
       setShowAssignDropdown(false);
       revalidateMenuCache();
@@ -281,11 +276,8 @@ export default function MenuDetailClient({
     // Optimistic update
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, is_available: newValue } : i)));
     try {
-      const { error } = await supabase
-        .from('menu_items')
-        .update({ is_available: newValue })
-        .eq('id', item.id);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.toggleAvailable(item.id, newValue);
     } catch {
       // Rollback
       setItems((prev) =>
@@ -311,11 +303,8 @@ export default function MenuDetailClient({
     // Optimistic update
     setItems((prev) => prev.map((i) => (i.id === item.id ? { ...i, price: newPrice } : i)));
     try {
-      const { error } = await supabase
-        .from('menu_items')
-        .update({ price: newPrice })
-        .eq('id', item.id);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.updatePrice(item.id, newPrice);
       toast({ title: t('itemSaved') });
     } catch {
       // Rollback
@@ -347,8 +336,8 @@ export default function MenuDetailClient({
         is_available: itemFormAvailable,
         image_url: itemFormImageUrl || null,
       };
-      const { error } = await supabase.from('menu_items').update(payload).eq('id', editingItem.id);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.updateMenuItem(editingItem.id, payload);
 
       // Optimistic update
       setItems((prev) =>

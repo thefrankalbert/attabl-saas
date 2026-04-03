@@ -42,6 +42,7 @@ export default async function SettingsPage({ params }: SettingsPageProps) {
           tax_rate: tenant.tax_rate,
           enable_service_charge: tenant.enable_service_charge,
           service_charge_rate: tenant.service_charge_rate,
+          bar_display_enabled: tenant.bar_display_enabled,
           idle_timeout_minutes: tenant.idle_timeout_minutes,
           screen_lock_mode: tenant.screen_lock_mode,
         }}

@@ -244,6 +244,9 @@ export function createMenuService(supabase: SupabaseClient) {
      * Reorder menus by updating display_order.
      */
     async reorderMenus(tenantId: string, orderedIds: string[]) {
+      // N parallel UPDATEs via Promise.all - intentional trade-off for simplicity.
+      // Supabase JS client has no multi-row UPDATE with varying values.
+      // Acceptable because menu count is small (typically < 20) and calls are parallel.
       const updates = orderedIds.map((id, index) =>
         supabase
           .from('menus')

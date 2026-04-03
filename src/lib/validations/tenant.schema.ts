@@ -45,6 +45,8 @@ export const updateTenantSettingsSchema = z.object({
     .optional(),
   enableTax: z.boolean().optional(),
   enableServiceCharge: z.boolean().optional(),
+  // ─── KDS / Kitchen display ────────────────────────────
+  barDisplayEnabled: z.boolean().optional(),
   // ─── Idle timeout / screen lock ────────────────────────
   idleTimeoutMinutes: z
     .number()

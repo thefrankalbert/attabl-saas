@@ -108,16 +108,17 @@ export async function checkAndNotifyLowStock(tenantId: string): Promise<void> {
   if (!sent) return;
 
   // 6. Create in-app notifications so NotificationCenter picks them up via realtime
-  for (const ingredient of itemsToNotify) {
-    await supabase.from('notifications').insert({
-      tenant_id: tenantId,
-      user_id: null,
-      type: 'stock_alert',
-      title: `Alerte stock: ${ingredient.name}`,
-      body: `Stock bas: ${ingredient.current_stock} ${ingredient.unit} restant(s)`,
-      read: false,
-    });
-  }
+  // Batched into a single INSERT to avoid N+1 round-trips
+  const notifRows = itemsToNotify.map((ingredient) => ({
+    tenant_id: tenantId,
+    user_id: null,
+    type: 'stock_alert',
+    title: `Alerte stock: ${ingredient.name}`,
+    body: `Stock bas: ${ingredient.current_stock} ${ingredient.unit} restant(s)`,
+    read: false,
+  }));
+
+  await supabase.from('notifications').insert(notifRows);
 
   // 7. Record notifications for rate-limiting
   const notificationRows = itemsToNotify.map((i) => ({

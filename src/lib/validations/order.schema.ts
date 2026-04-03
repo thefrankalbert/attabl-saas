@@ -76,7 +76,7 @@ const posOrderItemSchema = z.object({
 });
 
 export const createPOSOrderSchema = z.object({
-  tenant_id: z.string().uuid(),
+  // tenant_id is derived from the authenticated user's session, NOT from client input (IDOR prevention)
   table_number: z.string().min(1).max(50),
   status: z.enum(['pending', 'delivered']),
   service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),

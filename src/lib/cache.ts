@@ -1,7 +1,12 @@
 import { unstable_cache } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
-import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
+import {
+  CACHE_TAG_MENUS,
+  CACHE_TAG_TENANT_CONFIG,
+  CACHE_TAG_TENANT_DOMAIN,
+  tenantConfigTag,
+} from '@/lib/cache-tags';
 
 /**
  * Supabase client for use inside unstable_cache.
@@ -33,41 +38,54 @@ function createCacheClient() {
  * Revalidation: 60 seconds OR on-demand via `revalidateTag('tenant-config')`
  */
 const TENANT_SELECT =
-  'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, created_at';
+  'id, name, slug, primary_color, secondary_color, logo_url, currency, establishment_type, subscription_plan, subscription_status, trial_ends_at, onboarding_completed, enable_tax, tax_rate, enable_service_charge, service_charge_rate, table_count, is_active, description, address, city, country, phone, notification_sound_id, idle_timeout_minutes, screen_lock_mode, bar_display_enabled, created_at';
 
-const getCachedTenantInner = unstable_cache(
-  async (slug: string) => {
-    const supabase = createCacheClient();
+/**
+ * Per-tenant cache factory.
+ * Each slug gets its own unstable_cache instance with tenant-scoped tags,
+ * so revalidating one tenant's config does not flush all tenants.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const tenantCacheMap = new Map<string, (...args: any[]) => Promise<any>>();
 
-    // Retry once to handle transient network failures
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const { data, error } = await supabase
-        .from('tenants')
-        .select(TENANT_SELECT)
-        .eq('slug', slug)
-        .single();
+function getOrCreateTenantCache(slug: string) {
+  let cached = tenantCacheMap.get(slug);
+  if (!cached) {
+    cached = unstable_cache(
+      async (s: string) => {
+        const supabase = createCacheClient();
 
-      if (!error) return data;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          const { data, error } = await supabase
+            .from('tenants')
+            .select(TENANT_SELECT)
+            .eq('slug', s)
+            .single();
 
-      if (attempt === 0) {
-        logger.warn('getCachedTenant: retrying after transient failure', { slug });
-      } else {
-        // Throw to prevent unstable_cache from caching a failure for 60s
-        throw new Error(`getCachedTenant failed for "${slug}": ${error.message}`);
-      }
-    }
+          if (!error) return data;
 
-    // Unreachable, but satisfies TS
-    throw new Error('getCachedTenant: unexpected code path');
-  },
-  [CACHE_TAG_TENANT_CONFIG],
-  { revalidate: 60, tags: [CACHE_TAG_TENANT_CONFIG] },
-);
+          if (attempt === 0) {
+            logger.warn('getCachedTenant: retrying after transient failure', { slug: s });
+          } else {
+            throw new Error(`getCachedTenant failed for "${s}": ${error.message}`);
+          }
+        }
+
+        throw new Error('getCachedTenant: unexpected code path');
+      },
+      [`${CACHE_TAG_TENANT_CONFIG}:${slug}`],
+      { revalidate: 60, tags: [CACHE_TAG_TENANT_CONFIG, tenantConfigTag(slug)] },
+    );
+    tenantCacheMap.set(slug, cached);
+  }
+  return cached;
+}
 
 /** Cached tenant config. Returns null on failure instead of crashing the page. */
 export async function getCachedTenant(slug: string) {
   try {
-    return await getCachedTenantInner(slug);
+    const cacheFn = getOrCreateTenantCache(slug);
+    return await cacheFn(slug);
   } catch (err) {
     logger.error('getCachedTenant: all attempts failed', err, { slug });
     return null;
@@ -118,7 +136,7 @@ export const getCachedTenantByDomain = unstable_cache(
     return data.slug;
   },
   ['tenant-domain'],
-  { revalidate: 300, tags: [CACHE_TAG_TENANT_CONFIG] },
+  { revalidate: 300, tags: [CACHE_TAG_TENANT_DOMAIN] },
 );
 
 /**

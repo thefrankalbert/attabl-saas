@@ -54,7 +54,9 @@ export const logger = {
   },
 
   /**
-   * Log info. In production, sends to Sentry as an info breadcrumb.
+   * Log info. In production, creates a Sentry breadcrumb (visible if a
+   * subsequent error occurs). Use logger.event() for important business
+   * events that should always be visible in Sentry.
    */
   info(message: string, context?: LogContext): void {
     if (isDev) {
@@ -66,6 +68,23 @@ export const logger = {
       message,
       level: 'info',
       data: context,
+    });
+  },
+
+  /**
+   * Log an important business event. In production, sends to Sentry as
+   * an info-level message (visible in the Issues dashboard).
+   * Use sparingly - each call creates a billable Sentry event.
+   */
+  event(message: string, context?: LogContext): void {
+    if (isDev) {
+      console.info(`[EVENT] ${message}`, context);
+      return;
+    }
+
+    Sentry.captureMessage(message, {
+      level: 'info',
+      extra: context,
     });
   },
 };

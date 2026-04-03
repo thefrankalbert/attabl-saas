@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Printer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
-import type { Order, OrderItem, OrderStatus, ItemStatus } from '@/types/admin.types';
+import type { Order, OrderItem, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 
 // ─── Urgency ─────────────────────────────────────────────────
@@ -81,6 +81,8 @@ interface KDSTicketProps {
   onMarkAllReady?: (orderId: string, itemIds: string[]) => Promise<void>;
   onUpdate?: () => void;
   isMock?: boolean;
+  zoneFilter?: KDSZoneFilter;
+  barDisplayEnabled?: boolean;
 }
 
 // ─── Component ───────────────────────────────────────────────
@@ -92,6 +94,8 @@ export default function KDSTicket({
   onMarkAllReady: _onMarkAllReady,
   onUpdate: _onUpdate,
   isMock = false,
+  zoneFilter = 'all',
+  barDisplayEnabled = false,
 }: KDSTicketProps) {
   const [elapsed, setElapsed] = useState(0);
   const [expanded, setExpanded] = useState(false);
@@ -106,12 +110,19 @@ export default function KDSTicket({
     room_service: t('serviceRoom'),
   };
 
-  // Filter out bar-only items
+  // Filter items based on zone selection
   const allItems: OrderItem[] =
     order.items || (order as { order_items?: OrderItem[] }).order_items || [];
   const items = allItems.filter((item) => {
     const zone = item.preparation_zone || 'kitchen';
-    return zone !== 'bar';
+    if (!barDisplayEnabled) {
+      // Bar display OFF: show all items on the single KDS screen
+      return true;
+    }
+    // Bar display ON: filter by selected zone
+    if (zoneFilter === 'kitchen') return zone !== 'bar';
+    if (zoneFilter === 'bar') return zone !== 'kitchen';
+    return true; // 'all' shows everything
   });
 
   // ─── Timer (stops when order is ready/delivered) ───────────
@@ -324,7 +335,7 @@ export default function KDSTicket({
 
           {/* Print button */}
           <button
-            onClick={() => printKitchenTicket(order)}
+            onClick={() => printKitchenTicket(order, { zoneFilter, barDisplayEnabled })}
             className="flex items-center justify-center w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover transition-colors"
             title="Print"
           >

@@ -25,7 +25,7 @@
     "all": "All",
     "other": "Other",
     "filter": "Filter",
-    "retry": "Retry",
+    "retry": "Try again",
     "noResults": "No results",
     "name": "Name",
     "unit": "Unit",
@@ -67,7 +67,6 @@
     "errorTitle": "Oops, something went wrong",
     "errorDescription": "We apologize for the inconvenience. Please try again or return to the home page.",
     "errorHint": "Don't panic, these things happen.",
-    "retry": "Try again",
     "backToHome": "Back to home",
     "notFoundTitle": "Page not found",
     "notFoundDescription": "This page does not exist or has been moved. Check the URL or go back to the home page.",
@@ -713,7 +712,9 @@
     "resetCancel": "Cancel",
     "resetClose": "Close",
     "resetInProgress": "Deleting...",
-    "resetError": "An error occurred during the reset."
+    "resetError": "An error occurred during the reset.",
+    "enableBarDisplay": "Separate preparation zones",
+    "enableBarDisplayDesc": "Enable zone filtering (Kitchen / Bar / All) in the KDS. When disabled, all orders appear on a single screen."
   },
   "commandPalette": {
     "placeholder": "Search for a page or action...",
@@ -848,7 +849,10 @@
     "tabScheduled": "SCHEDULED",
     "tabCompleted": "COMPLETED",
     "tapToEnableSound": "Tap to enable sound",
-    "tapToEnableSoundDesc": "Sound notifications will be enabled for new orders"
+    "tapToEnableSoundDesc": "Sound notifications will be enabled for new orders",
+    "zoneAll": "All",
+    "zoneKitchen": "Kitchen",
+    "zoneBar": "Bar"
   },
   "pos": {
     "title": "Point of Sale",
@@ -2268,7 +2272,14 @@
     "invalidCoupon": "Invalid coupon code",
     "tenantConfigNotFound": "Tenant configuration not found",
     "orderSuccess": "Order placed successfully!",
-    "serverError": "Server error"
+    "serverError": "Server error",
+    "invalidCredentials": "Invalid email or password.",
+    "emailNotConfirmed": "Please confirm your email address before signing in",
+    "loginError": "Login failed. Please try again.",
+    "noEstablishment": "No establishment linked to this account",
+    "invalidLoginFields": "Invalid email or password.",
+    "signupConfirmation": "A confirmation email has been sent. Please check your inbox.",
+    "invalidDataFallback": "Invalid data"
   },
   "segment": {
     "food": {

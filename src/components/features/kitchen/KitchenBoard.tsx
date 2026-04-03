@@ -5,7 +5,7 @@ import { ClipboardList } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import KDSTicket from '@/components/features/kitchen/KDSTicket';
-import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
+import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 
 interface KitchenBoardProps {
   orders: Order[];
@@ -21,6 +21,8 @@ interface KitchenBoardProps {
   onUpdate?: () => void;
   /** true = chef/admin full view, false = server/waiter simplified view (ready only) */
   isChefView: boolean;
+  zoneFilter?: KDSZoneFilter;
+  barDisplayEnabled?: boolean;
 }
 
 function EmptyState() {
@@ -43,6 +45,8 @@ export default function KitchenBoard({
   onMarkAllReady,
   onUpdate,
   isChefView,
+  zoneFilter = 'all',
+  barDisplayEnabled = false,
 }: KitchenBoardProps) {
   // Server/waiter view: only show ready orders
   const displayOrders = isChefView ? orders : orders.filter((o) => o.status === 'ready');
@@ -67,6 +71,8 @@ export default function KitchenBoard({
                 onMarkAllReady={onMarkAllReady}
                 onUpdate={onUpdate}
                 isMock={showMockData}
+                zoneFilter={zoneFilter}
+                barDisplayEnabled={barDisplayEnabled}
               />
             </div>
           ))}

@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { createTableConfigService } from '@/services/table-config.service';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -131,19 +132,14 @@ export function TablesClient({
     if (!zoneName.trim() || !zonePrefix.trim()) return;
 
     setSavingZone(true);
-    const { error } = await supabase.from('zones').insert([
-      {
-        venue_id: venueId,
-        name: zoneName.trim(),
-        prefix: zonePrefix.trim().toUpperCase(),
-        display_order: zones.length,
-      },
-    ]);
-
-    if (error) {
-      logger.error('Failed to create zone', { error });
-      toast({ title: t('errorCreateZone'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.createZone(
+        venueId,
+        zoneName.trim(),
+        zonePrefix.trim(),
+        zones.length,
+      );
       toast({ title: t('successCreateZone') });
       setShowAddZone(false);
       setZoneName('');
@@ -155,6 +151,9 @@ export function TablesClient({
         setSelectedZoneId(lastZone.id);
         await loadTables(lastZone.id);
       }
+    } catch (err: unknown) {
+      logger.error('Failed to create zone', { error: err });
+      toast({ title: t('errorCreateZone'), variant: 'destructive' });
     }
     setSavingZone(false);
   };
@@ -167,17 +166,14 @@ export function TablesClient({
   const handleSaveZoneName = async (zoneId: string) => {
     if (!editingZoneName.trim()) return;
 
-    const { error } = await supabase
-      .from('zones')
-      .update({ name: editingZoneName.trim() })
-      .eq('id', zoneId);
-
-    if (error) {
-      logger.error('Failed to update zone name', { error });
-      toast({ title: t('errorUpdateZone'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.updateZoneName(zoneId, editingZoneName.trim());
       toast({ title: t('successUpdateZone') });
       await loadZones(venueId);
+    } catch (err: unknown) {
+      logger.error('Failed to update zone name', { error: err });
+      toast({ title: t('errorUpdateZone'), variant: 'destructive' });
     }
     setEditingZoneId(null);
   };
@@ -185,12 +181,9 @@ export function TablesClient({
   const handleDeleteZone = async (zone: Zone) => {
     if (!confirm(t('confirmDeleteZone', { name: zone.name }))) return;
 
-    const { error } = await supabase.from('zones').delete().eq('id', zone.id);
-
-    if (error) {
-      logger.error('Failed to delete zone', { error });
-      toast({ title: t('errorDeleteZone'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.deleteZone(zone.id);
       toast({ title: t('successDeleteZone') });
       const newZones = await loadZones(venueId);
       if (selectedZoneId === zone.id) {
@@ -202,6 +195,9 @@ export function TablesClient({
           setTables([]);
         }
       }
+    } catch (err: unknown) {
+      logger.error('Failed to delete zone', { error: err });
+      toast({ title: t('errorDeleteZone'), variant: 'destructive' });
     }
   };
 
@@ -243,50 +239,44 @@ export function TablesClient({
       };
     });
 
-    const { error } = await supabase.from('tables').insert(newTables);
-
-    if (error) {
-      logger.error('Failed to create tables', { error });
-      toast({ title: t('errorCreateTables'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.insertTables(newTables);
       toast({ title: t('successCreateTables', { count }) });
       setShowAddTables(false);
       setTableCount(1);
       setTableCapacity(4);
       await loadTables(selectedZoneId);
+    } catch (err: unknown) {
+      logger.error('Failed to create tables', { error: err });
+      toast({ title: t('errorCreateTables'), variant: 'destructive' });
     }
     setSavingTables(false);
   };
 
   const handleToggleActive = async (table: Table) => {
-    const { error } = await supabase
-      .from('tables')
-      .update({ is_active: !table.is_active })
-      .eq('id', table.id);
-
-    if (error) {
-      logger.error('Failed to toggle table status', { error });
-      toast({ title: t('errorToggleTable'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.toggleTableActive(table.id, !table.is_active);
       setTables((prev) =>
         prev.map((t) => (t.id === table.id ? { ...t, is_active: !t.is_active } : t)),
       );
+    } catch (err: unknown) {
+      logger.error('Failed to toggle table status', { error: err });
+      toast({ title: t('errorToggleTable'), variant: 'destructive' });
     }
   };
 
   const handleUpdateCapacity = async (table: Table, newCapacity: number) => {
-    const { error } = await supabase
-      .from('tables')
-      .update({ capacity: newCapacity })
-      .eq('id', table.id);
-
-    if (error) {
-      logger.error('Failed to update capacity', { error });
-      toast({ title: t('errorUpdateCapacity'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.updateTableCapacity(table.id, newCapacity);
       setTables((prev) =>
         prev.map((tbl) => (tbl.id === table.id ? { ...tbl, capacity: newCapacity } : tbl)),
       );
+    } catch (err: unknown) {
+      logger.error('Failed to update capacity', { error: err });
+      toast({ title: t('errorUpdateCapacity'), variant: 'destructive' });
     }
   };
 
@@ -298,20 +288,17 @@ export function TablesClient({
   const handleSaveTableName = async (tableId: string) => {
     if (!editingDisplayName.trim()) return;
 
-    const { error } = await supabase
-      .from('tables')
-      .update({ display_name: editingDisplayName.trim() })
-      .eq('id', tableId);
-
-    if (error) {
-      logger.error('Failed to update table name', { error });
-      toast({ title: t('errorUpdateTableName'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.updateTableDisplayName(tableId, editingDisplayName.trim());
       setTables((prev) =>
         prev.map((tbl) =>
           tbl.id === tableId ? { ...tbl, display_name: editingDisplayName.trim() } : tbl,
         ),
       );
+    } catch (err: unknown) {
+      logger.error('Failed to update table name', { error: err });
+      toast({ title: t('errorUpdateTableName'), variant: 'destructive' });
     }
     setEditingTableId(null);
   };
@@ -319,14 +306,14 @@ export function TablesClient({
   const handleDeleteTable = async (table: Table) => {
     if (!confirm(t('confirmDeleteTable', { name: table.display_name }))) return;
 
-    const { error } = await supabase.from('tables').delete().eq('id', table.id);
-
-    if (error) {
-      logger.error('Failed to delete table', { error });
-      toast({ title: t('errorDeleteTable'), variant: 'destructive' });
-    } else {
+    try {
+      const tableConfigService = createTableConfigService(supabase);
+      await tableConfigService.deleteTable(table.id);
       toast({ title: t('successDeleteTable') });
       setTables((prev) => prev.filter((tbl) => tbl.id !== table.id));
+    } catch (err: unknown) {
+      logger.error('Failed to delete table', { error: err });
+      toast({ title: t('errorDeleteTable'), variant: 'destructive' });
     }
   };
 

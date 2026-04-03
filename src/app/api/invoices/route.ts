@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
+import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 
 /**
  * GET /api/invoices
@@ -54,10 +55,12 @@ export async function GET(request: Request) {
     }
 
     // Fetch invoices from Stripe
-    const invoiceList = await stripe.invoices.list({
-      customer: customerId,
-      limit: 50,
-    });
+    const invoiceList = await withStripeBreaker(() =>
+      stripe.invoices.list({
+        customer: customerId,
+        limit: 50,
+      }),
+    );
 
     const invoices = invoiceList.data.map((inv) => ({
       id: inv.id,

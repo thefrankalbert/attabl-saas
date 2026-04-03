@@ -418,7 +418,6 @@ export function usePOSData(tenantId: string) {
 
     createOrder.mutate(
       {
-        tenant_id: tenantId,
         table_number: selectedTable || `CMD-${orderNumber}`,
         status,
         total,

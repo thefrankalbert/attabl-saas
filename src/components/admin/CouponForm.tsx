@@ -17,6 +17,8 @@ import {
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import AdminModal from '@/components/admin/AdminModal';
 import type { Coupon, CurrencyCode } from '@/types/admin.types';
+import { createCouponService } from '@/services/coupon.service';
+import { ServiceError } from '@/services/errors';
 
 interface CouponFormProps {
   tenantId: string;
@@ -80,6 +82,7 @@ export default function CouponForm({
     setSubmitting(true);
 
     const supabase = createClient();
+    const couponService = createCouponService(supabase);
     const payload = {
       code: code.toUpperCase().trim(),
       discount_type: discountType,
@@ -91,33 +94,26 @@ export default function CouponForm({
       max_uses: maxUses ? Number(maxUses) : null,
     };
 
-    let error;
-    if (initialData) {
-      ({ error } = await supabase.from('coupons').update(payload).eq('id', initialData.id));
-    } else {
-      ({ error } = await supabase.from('coupons').insert({
-        tenant_id: tenantId,
-        ...payload,
-        is_active: true,
-        current_uses: 0,
-      }));
-    }
-
-    setSubmitting(false);
-
-    if (error) {
-      if (error.code === '23505') {
+    try {
+      if (initialData) {
+        await couponService.updateCoupon(initialData.id, payload);
+      } else {
+        await couponService.createCoupon(tenantId, payload);
+      }
+      setSubmitting(false);
+      toast({ title: t('couponCreated') });
+      onSuccess();
+    } catch (err: unknown) {
+      setSubmitting(false);
+      if (err instanceof ServiceError && err.code === 'CONFLICT') {
         toast({ title: t('codeExists'), variant: 'destructive' });
       } else {
         toast({
           title: t('createError'),
-          description: error.message,
+          description: err instanceof Error ? err.message : undefined,
           variant: 'destructive',
         });
       }
-    } else {
-      toast({ title: t('couponCreated') });
-      onSuccess();
     }
   };
 

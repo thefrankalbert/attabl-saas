@@ -64,7 +64,7 @@ export default async function AdminLayout({
     // First, check if the user is a direct member of this tenant
     const { data: adminData } = await supabase
       .from('admin_users')
-      .select('*')
+      .select('id, user_id, tenant_id, email, full_name, role, is_active, custom_permissions')
       .eq('user_id', user.id)
       .eq('tenant_id', tenant.id)
       .single();

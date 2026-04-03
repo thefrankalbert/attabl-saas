@@ -13,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
 import type { Ad } from '@/types/admin.types';
+import { createAdService } from '@/services/ad.service';
 
 interface AdsClientProps {
   tenantId: string;
@@ -75,19 +76,14 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
       } = supabase.storage.from('images').getPublicUrl(fileName);
 
       // 2. Insert DB Record
-      const { data: newAd, error: dbError } = await supabase
-        .from('ads')
-        .insert({
-          tenant_id: tenantId,
-          image_url: publicUrl,
-          link: link || null,
-          sort_order: Number(sortOrder) || 1,
-          is_active: isActive,
-        })
-        .select()
-        .single();
-
-      if (dbError) throw dbError;
+      const adService = createAdService(supabase);
+      const newAd = await adService.createAd({
+        tenant_id: tenantId,
+        image_url: publicUrl,
+        link: link || null,
+        sort_order: Number(sortOrder) || 1,
+        is_active: isActive,
+      });
 
       setAds((prev) => [...prev, newAd as Ad].sort((a, b) => a.sort_order - b.sort_order));
       toast({ title: t('adCreated') });
@@ -109,7 +105,8 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
     if (!confirm(t('confirmDelete'))) return;
 
     try {
-      await supabase.from('ads').delete().eq('id', id);
+      const adService = createAdService(supabase);
+      await adService.deleteAd(id);
       setAds((prev) => prev.filter((ad) => ad.id !== id));
       toast({ title: t('adDeleted') });
     } catch {
@@ -119,17 +116,11 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   const toggleActive = async (ad: Ad) => {
     try {
-      const { data } = await supabase
-        .from('ads')
-        .update({ is_active: !ad.is_active })
-        .eq('id', ad.id)
-        .select()
-        .single();
+      const adService = createAdService(supabase);
+      const data = await adService.toggleActive(ad.id, !ad.is_active);
 
-      if (data) {
-        setAds((prev) => prev.map((a) => (a.id === ad.id ? (data as Ad) : a)));
-        toast({ title: !ad.is_active ? t('activated') : t('deactivated') });
-      }
+      setAds((prev) => prev.map((a) => (a.id === ad.id ? (data as Ad) : a)));
+      toast({ title: !ad.is_active ? t('activated') : t('deactivated') });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }

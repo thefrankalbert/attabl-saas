@@ -248,13 +248,19 @@ export function createInvitationService(supabase: SupabaseClient) {
 
       const now = new Date();
       const valid: Invitation[] = [];
+      const expiredIds: string[] = [];
 
       for (const inv of (data || []) as Invitation[]) {
         if (new Date(inv.expires_at) < now) {
-          await supabase.from('invitations').update({ status: 'expired' }).eq('id', inv.id);
+          expiredIds.push(inv.id);
         } else {
           valid.push(inv);
         }
+      }
+
+      // Batch-update all expired invitations in a single query instead of N updates
+      if (expiredIds.length > 0) {
+        await supabase.from('invitations').update({ status: 'expired' }).in('id', expiredIds);
       }
 
       return valid;

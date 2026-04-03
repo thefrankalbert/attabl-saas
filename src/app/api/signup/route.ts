@@ -5,15 +5,18 @@ import { signupSchema } from '@/lib/validations/auth.schema';
 import { signupLimiter, getClientIp } from '@/lib/rate-limit';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
+import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
   try {
+    const t = await getTranslations('errors');
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await signupLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
-        { error: 'Trop de requêtes. Réessayez plus tard.' },
+        { error: t('rateLimited') },
         { status: 429, headers: { 'Retry-After': '60' } },
       );
     }
@@ -23,12 +26,12 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Corps de requête invalide' }, { status: 400 });
+      return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
     }
 
     const parseResult = signupSchema.safeParse(body);
     if (!parseResult.success) {
-      const firstError = parseResult.error.issues[0]?.message ?? 'Données invalides';
+      const firstError = parseResult.error.issues[0]?.message ?? t('invalidDataFallback');
       return NextResponse.json({ error: firstError }, { status: 400 });
     }
 
@@ -43,7 +46,7 @@ export async function POST(request: Request) {
       slug: result.slug,
       tenantId: result.tenantId,
       requiresConfirmation: true,
-      message: 'Un email de confirmation a été envoyé. Veuillez vérifier votre boîte mail.',
+      message: t('signupConfirmation'),
     });
   } catch (error) {
     if (error instanceof ServiceError) {
@@ -53,6 +56,6 @@ export async function POST(request: Request) {
       );
     }
     logger.error('Signup error', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

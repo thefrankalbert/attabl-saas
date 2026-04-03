@@ -15,6 +15,7 @@ import AdminModal from '@/components/admin/AdminModal';
 import { DatePickerField } from '@/components/ui/date-picker-field';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
+import { createAnnouncementService } from '@/services/announcement.service';
 
 interface AnnouncementsClientProps {
   tenantId: string;
@@ -76,27 +77,15 @@ export default function AnnouncementsClient({
         is_active: isActive,
       };
 
+      const announcementService = createAnnouncementService(supabase);
       if (editingAnnouncement) {
-        const { data, error } = await supabase
-          .from('announcements')
-          .update(payload)
-          .eq('id', editingAnnouncement.id)
-          .select()
-          .single();
-
-        if (error) throw error;
+        const data = await announcementService.updateAnnouncement(editingAnnouncement.id, payload);
         setAnnouncements((prev) =>
           prev.map((a) => (a.id === editingAnnouncement.id ? (data as Announcement) : a)),
         );
         toast({ title: t('announcementUpdated') });
       } else {
-        const { data: newAnnouncement, error } = await supabase
-          .from('announcements')
-          .insert({ tenant_id: tenantId, ...payload })
-          .select()
-          .single();
-
-        if (error) throw error;
+        const newAnnouncement = await announcementService.createAnnouncement(tenantId, payload);
         setAnnouncements((prev) => [newAnnouncement as Announcement, ...prev]);
         toast({ title: t('announcementCreated') });
       }
@@ -129,7 +118,8 @@ export default function AnnouncementsClient({
     if (!confirm(t('deleteConfirm'))) return;
 
     try {
-      await supabase.from('announcements').delete().eq('id', id);
+      const announcementService = createAnnouncementService(supabase);
+      await announcementService.deleteAnnouncement(id);
       setAnnouncements((prev) => prev.filter((a) => a.id !== id));
       toast({ title: t('announcementDeletedConfirm') });
     } catch {
@@ -139,21 +129,14 @@ export default function AnnouncementsClient({
 
   const toggleActive = async (announcement: Announcement) => {
     try {
-      const { data } = await supabase
-        .from('announcements')
-        .update({ is_active: !announcement.is_active })
-        .eq('id', announcement.id)
-        .select()
-        .single();
-
-      if (data) {
-        setAnnouncements((prev) =>
-          prev.map((a) => (a.id === announcement.id ? (data as Announcement) : a)),
-        );
-        toast({
-          title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
-        });
-      }
+      const announcementService = createAnnouncementService(supabase);
+      const data = await announcementService.toggleActive(announcement.id, !announcement.is_active);
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === announcement.id ? (data as Announcement) : a)),
+      );
+      toast({
+        title: !announcement.is_active ? t('announcementEnabled') : t('announcementDisabled'),
+      });
     } catch {
       toast({ title: tc('error'), variant: 'destructive' });
     }

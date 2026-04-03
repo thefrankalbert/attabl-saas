@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import type { Menu, Category, PreparationZone } from '@/types/admin.types';
+import { createCategoryService } from '@/services/category.service';
 
 interface WizardStepCategoriesProps {
   menu: Menu;
@@ -49,8 +50,8 @@ export default function WizardStepCategories({
         menu_id: menu.id,
         display_order: categories.length,
       };
-      const { data, error } = await supabase.from('categories').insert([payload]).select().single();
-      if (error) throw error;
+      const categoryService = createCategoryService(supabase);
+      const data = await categoryService.createCategory(payload, { returning: true });
       toast({ title: t('categoryCreated') });
       onCategoryCreated(data as Category);
       setName('');

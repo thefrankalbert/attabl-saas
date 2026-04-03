@@ -99,6 +99,7 @@ export interface Tenant {
   notification_sound_id?: string;
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
+  bar_display_enabled?: boolean;
 }
 
 export interface AdminUser {
@@ -204,6 +205,7 @@ export interface Menu {
 
 export type PreparationZone = 'kitchen' | 'bar' | 'both';
 export type OrderPreparationZone = 'kitchen' | 'bar' | 'mixed';
+export type KDSZoneFilter = 'all' | 'kitchen' | 'bar';
 
 export interface Category {
   id: string;

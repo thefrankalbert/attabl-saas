@@ -1,13 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
-import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { excelImportLimiter, getClientIp } from '@/lib/rate-limit';
 import { createExcelImportService } from '@/services/excel-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { Tenant } from '@/types/admin.types';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
@@ -29,31 +28,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // 2. Authenticate user and derive tenant from session (not from header)
+    const { user, tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    // 3. Get tenant slug from header
-    const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
-
-    if (!tenantSlug) {
-      return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
-    }
-
-    // 4. Parse FormData and extract file
+    // 3. Parse FormData and extract file
     let formData: FormData;
     try {
       formData = await request.formData();
     } catch {
       return NextResponse.json(
-        { error: 'Corps de requête invalide. Utilisez FormData.' },
+        { error: 'Corps de requete invalide. Utilisez FormData.' },
         { status: 400 },
       );
     }
@@ -67,53 +51,40 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Validate file size
+    // 4. Validate file size
     if (file.size > MAX_FILE_SIZE) {
       return NextResponse.json(
-        { error: 'Le fichier dépasse la taille maximale de 5 Mo.' },
+        { error: 'Le fichier depasse la taille maximale de 5 Mo.' },
         { status: 400 },
       );
     }
 
-    // 6. Validate file extension and MIME type
+    // 5. Validate file extension and MIME type
     const fileName = file.name.toLowerCase();
     const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
     const hasValidMimeType = ALLOWED_MIME_TYPES.includes(file.type);
 
     if (!hasValidExtension || !hasValidMimeType) {
       return NextResponse.json(
-        { error: 'Format de fichier invalide. Seuls les fichiers .xlsx et .xls sont acceptés.' },
+        { error: 'Format de fichier invalide. Seuls les fichiers .xlsx et .xls sont acceptes.' },
         { status: 400 },
       );
     }
 
-    // 7. Resolve tenant from slug (with plan info for limit checks)
+    // 6. Resolve tenant by ID from session (with plan info for limit checks)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
         'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
       )
-      .eq('slug', tenantSlug)
+      .eq('id', tenantId)
       .single();
 
     if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
     }
 
-    // 7b. Verify user belongs to this tenant
-    const { data: membership } = await supabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .single();
-
-    if (!membership) {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
-    }
-
-    // 8. Get menu ID from FormData (required)
+    // 7. Get menu ID from FormData (required)
     const menuId = formData.get('menuId');
 
     if (!menuId || typeof menuId !== 'string') {
@@ -139,6 +110,9 @@ export async function POST(request: Request) {
       ...result,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof ServiceError) {
       if (error.details) {
         logger.error('Excel import ServiceError details', {
@@ -168,15 +142,8 @@ export async function GET(request: Request) {
       );
     }
 
-    // 2. Authenticate user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
+    // 2. Authenticate user via session
+    const { supabase } = await getAuthenticatedUserWithTenant();
 
     // 3. Check if the user requested the demo file (?type=demo)
     const url = new URL(request.url);
@@ -202,6 +169,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof ServiceError) {
       if (error.details) {
         logger.error('Excel template ServiceError details', {

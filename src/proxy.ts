@@ -121,8 +121,13 @@ export async function proxy(request: NextRequest) {
 
   if (isProtectedPath) {
     // Dev bypass: skip auth check in development when explicitly enabled
+    // SECURITY: Only allow bypass on localhost/127.0.0.1 to prevent abuse on public networks
     const devBypass =
-      process.env.NODE_ENV === 'development' && process.env.ALLOW_DEV_AUTH_BYPASS === 'true';
+      process.env.NODE_ENV === 'development' &&
+      process.env.ALLOW_DEV_AUTH_BYPASS === 'true' &&
+      (hostWithoutPort === 'localhost' ||
+        hostWithoutPort === '127.0.0.1' ||
+        hostWithoutPort.endsWith('.localhost'));
 
     const {
       data: { user },

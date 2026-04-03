@@ -21,6 +21,7 @@ export default async function KitchenPage({ params }: { params: Promise<{ site: 
       tenantId={tenant.id}
       tenantName={tenant.name}
       notificationSoundId={tenant.notification_sound_id ?? undefined}
+      barDisplayEnabled={tenant.bar_display_enabled ?? false}
     />
   );
 }

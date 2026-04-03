@@ -1,13 +1,12 @@
-import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
-import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { pdfImportLimiter, getClientIp } from '@/lib/rate-limit';
 import { createPdfImportService } from '@/services/pdf-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { Tenant } from '@/types/admin.types';
 import type { PdfExtractedItem } from '@/services/pdf-import.service';
 import { z } from 'zod';
@@ -35,31 +34,16 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    // 2. Authenticate user and derive tenant from session (not from header)
+    const { tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    // 3. Get tenant slug from header
-    const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
-
-    if (!tenantSlug) {
-      return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
-    }
-
-    // 4. Parse FormData
+    // 3. Parse FormData
     let formData: FormData;
     try {
       formData = await request.formData();
     } catch {
       return NextResponse.json(
-        { error: 'Corps de requête invalide. Utilisez FormData.' },
+        { error: 'Corps de requete invalide. Utilisez FormData.' },
         { status: 400 },
       );
     }
@@ -74,30 +58,17 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Resolve tenant from slug (with plan info for limit checks)
+    // 4. Resolve tenant by ID from session (with plan info for limit checks)
     const { data: tenant, error: tenantError } = await supabase
       .from('tenants')
       .select(
         'id, name, slug, subscription_plan, subscription_status, trial_ends_at, is_active, created_at',
       )
-      .eq('slug', tenantSlug)
+      .eq('id', tenantId)
       .single();
 
     if (tenantError || !tenant) {
       return NextResponse.json({ error: 'Tenant non trouve' }, { status: 404 });
-    }
-
-    // 5b. Verify user belongs to this tenant
-    const { data: membership } = await supabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenant.id)
-      .eq('is_active', true)
-      .single();
-
-    if (!membership) {
-      return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
     const importService = createPdfImportService(supabase);
@@ -221,6 +192,9 @@ export async function POST(request: Request) {
       ...result,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: error.status });
+    }
     if (error instanceof ServiceError) {
       if (error.details) {
         logger.error('PDF import ServiceError details', {

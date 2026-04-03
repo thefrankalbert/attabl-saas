@@ -1,8 +1,11 @@
 'use server';
 
+import { z } from 'zod';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { createAuditService } from '@/services/audit.service';
+
+const deleteOrdersSchema = z.array(z.string().uuid()).min(1).max(200);
 
 type ActionResponse = {
   success?: boolean;
@@ -16,7 +19,8 @@ type ActionResponse = {
  * Deletes associated order_items first, then the orders themselves.
  */
 export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResponse> {
-  if (!orderIds.length || orderIds.length > 200) {
+  const parsed = deleteOrdersSchema.safeParse(orderIds);
+  if (!parsed.success) {
     return { error: 'Invalid order IDs' };
   }
 
@@ -50,15 +54,16 @@ export async function actionDeleteOrders(orderIds: string[]): Promise<ActionResp
   // Get the tenant IDs involved
   const tenantIds = [...new Set(orders.map((o) => o.tenant_id))];
 
-  // Verify admin access for all tenants
+  // Verify admin access for all tenants (owner/admin only - privilege escalation prevention)
   const { data: adminRecords, error: adminError } = await supabase
     .from('admin_users')
-    .select('tenant_id')
+    .select('tenant_id, role')
     .eq('user_id', user.id)
-    .in('tenant_id', tenantIds);
+    .in('tenant_id', tenantIds)
+    .in('role', ['owner', 'admin']);
 
   if (adminError || !adminRecords || adminRecords.length !== tenantIds.length) {
-    return { error: 'Unauthorized: not admin for all order tenants' };
+    return { error: 'Unauthorized: requires owner or admin role' };
   }
 
   const foundIds = orders.map((o) => o.id);

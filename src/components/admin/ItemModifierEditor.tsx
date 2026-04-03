@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { ItemModifier } from '@/types/admin.types';
+import { createModifierService } from '@/services/modifier.service';
 
 interface ItemModifierEditorProps {
   tenantId: string;
@@ -47,21 +48,16 @@ export default function ItemModifierEditor({
     setSaving(true);
 
     try {
-      const { data, error } = await supabase
-        .from('item_modifiers')
-        .insert({
-          tenant_id: tenantId,
-          menu_item_id: menuItemId,
-          name,
-          name_en: newNameEn.trim() || null,
-          price,
-          is_available: true,
-          display_order: modifiers.length,
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
+      const modifierService = createModifierService(supabase);
+      const data = await modifierService.createModifier({
+        tenant_id: tenantId,
+        menu_item_id: menuItemId,
+        name,
+        name_en: newNameEn.trim() || null,
+        price,
+        is_available: true,
+        display_order: modifiers.length,
+      });
       setModifiers((prev) => [...prev, data as ItemModifier]);
       setNewName('');
       setNewNameEn('');
@@ -78,8 +74,8 @@ export default function ItemModifierEditor({
   const handleDelete = async (id: string) => {
     setDeletingId(id);
     try {
-      const { error } = await supabase.from('item_modifiers').delete().eq('id', id);
-      if (error) throw error;
+      const modifierService = createModifierService(supabase);
+      await modifierService.deleteModifier(id);
       setModifiers((prev) => prev.filter((m) => m.id !== id));
       onUpdate();
       toast({ title: t('deleted') });
@@ -92,11 +88,8 @@ export default function ItemModifierEditor({
 
   const handleToggleAvailable = async (mod: ItemModifier) => {
     try {
-      const { error } = await supabase
-        .from('item_modifiers')
-        .update({ is_available: !mod.is_available })
-        .eq('id', mod.id);
-      if (error) throw error;
+      const modifierService = createModifierService(supabase);
+      await modifierService.toggleAvailable(mod.id, !mod.is_available);
       setModifiers((prev) =>
         prev.map((m) => (m.id === mod.id ? { ...m, is_available: !m.is_available } : m)),
       );

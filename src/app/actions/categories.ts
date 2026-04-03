@@ -1,10 +1,17 @@
 'use server';
 
+import { z } from 'zod';
 import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import type { AdminRole } from '@/types/admin.types';
 import { createAuditService } from '@/services/audit.service';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+
+const toggleCategoryActiveSchema = z.object({
+  tenantId: z.string().uuid(),
+  categoryId: z.string().uuid(),
+  isActive: z.boolean(),
+});
 
 type ActionResponse = {
   success?: boolean;
@@ -40,6 +47,11 @@ export async function actionToggleCategoryActive(
   categoryId: string,
   isActive: boolean,
 ): Promise<ActionResponse> {
+  const parsed = toggleCategoryActiveSchema.safeParse({ tenantId, categoryId, isActive });
+  if (!parsed.success) {
+    return { error: 'Invalid input' };
+  }
+
   const { error: permError, supabase, user, role } = await checkCategoryPermissions(tenantId);
   if (permError || !supabase) return { error: permError || 'Erreur serveur' };
 

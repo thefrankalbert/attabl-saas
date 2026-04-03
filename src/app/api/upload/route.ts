@@ -3,40 +3,68 @@ import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
 
-export async function POST(request: Request) {
-  // Rate limiting
-  const ip = getClientIp(request);
-  const { success: allowed } = await uploadLimiter.check(ip);
-  if (!allowed) {
-    return NextResponse.json(
-      { error: 'Trop de requetes. Reessayez plus tard.' },
-      { status: 429, headers: { 'Retry-After': '60' } },
+/** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
+function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
+  if (buffer.length < 4) return false;
+
+  // JPEG: FF D8 FF
+  if (declaredType === 'image/jpeg') {
+    return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+  }
+  // PNG: 89 50 4E 47
+  if (declaredType === 'image/png') {
+    return buffer[0] === 0x89 && buffer[1] === 0x50 && buffer[2] === 0x4e && buffer[3] === 0x47;
+  }
+  // WebP: RIFF....WEBP
+  if (declaredType === 'image/webp') {
+    return (
+      buffer[0] === 0x52 &&
+      buffer[1] === 0x49 &&
+      buffer[2] === 0x46 &&
+      buffer[3] === 0x46 &&
+      buffer.length >= 12 &&
+      buffer[8] === 0x57 &&
+      buffer[9] === 0x45 &&
+      buffer[10] === 0x42 &&
+      buffer[11] === 0x50
     );
   }
+  return false;
+}
 
-  // Verify authentication
-  const supabase = await createServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Verify tenant membership - reject orphaned/unlinked accounts
-  const { data: adminUser } = await supabase
-    .from('admin_users')
-    .select('tenant_id')
-    .eq('user_id', user.id)
-    .limit(1)
-    .single();
-
-  if (!adminUser) {
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-  }
-
+export async function POST(request: Request) {
   try {
+    // Rate limiting
+    const ip = getClientIp(request);
+    const { success: allowed } = await uploadLimiter.check(ip);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Trop de requetes. Reessayez plus tard.' },
+        { status: 429, headers: { 'Retry-After': '60' } },
+      );
+    }
+
+    // Verify authentication
+    const supabase = await createServerClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Verify tenant membership - reject orphaned/unlinked accounts
+    const { data: adminUser } = await supabase
+      .from('admin_users')
+      .select('tenant_id')
+      .eq('user_id', user.id)
+      .limit(1)
+      .single();
+
+    if (!adminUser) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const bucket = (formData.get('bucket') as string) || 'logos';
@@ -69,6 +97,14 @@ export async function POST(request: Request) {
     // Use admin client to bypass RLS
     const admin = createAdminClient();
     const buffer = Buffer.from(await file.arrayBuffer());
+
+    // Validate magic bytes to prevent Content-Type spoofing (stored XSS prevention)
+    if (!validateMagicBytes(buffer, file.type)) {
+      return NextResponse.json(
+        { error: 'File content does not match declared type' },
+        { status: 400 },
+      );
+    }
 
     const { error: uploadError } = await admin.storage.from(bucket).upload(fileName, buffer, {
       upsert: false,

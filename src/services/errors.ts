@@ -5,7 +5,13 @@
  * API routes catch ServiceError and map the code to HTTP status codes.
  */
 
-export type ServiceErrorCode = 'NOT_FOUND' | 'CONFLICT' | 'VALIDATION' | 'INTERNAL' | 'AUTH';
+export type ServiceErrorCode =
+  | 'NOT_FOUND'
+  | 'CONFLICT'
+  | 'VALIDATION'
+  | 'INTERNAL'
+  | 'AUTH'
+  | 'UNAUTHORIZED';
 
 export class ServiceError extends Error {
   constructor(
@@ -30,6 +36,8 @@ export function serviceErrorToStatus(code: ServiceErrorCode): number {
       return 409;
     case 'VALIDATION':
       return 400;
+    case 'UNAUTHORIZED':
+      return 401;
     case 'AUTH':
       return 403;
     case 'INTERNAL':

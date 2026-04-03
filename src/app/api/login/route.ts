@@ -3,15 +3,18 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { loginSchema } from '@/lib/validations/auth.schema';
 import { loginLimiter, getClientIp } from '@/lib/rate-limit';
+import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
   try {
+    const t = await getTranslations('errors');
+
     // 0. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await loginLimiter.check(ip);
     if (!allowed) {
       return NextResponse.json(
-        { error: 'Trop de requetes. Reessayez plus tard.' },
+        { error: t('rateLimited') },
         { status: 429, headers: { 'Retry-After': '300' } },
       );
     }
@@ -21,12 +24,12 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Corps de requete invalide' }, { status: 400 });
+      return NextResponse.json({ error: t('invalidRequestBody') }, { status: 400 });
     }
 
     const parseResult = loginSchema.safeParse(body);
     if (!parseResult.success) {
-      return NextResponse.json({ error: 'Email ou mot de passe invalide.' }, { status: 400 });
+      return NextResponse.json({ error: t('invalidLoginFields') }, { status: 400 });
     }
 
     const { email, password } = parseResult.data;
@@ -41,16 +44,13 @@ export async function POST(request: Request) {
     if (authError) {
       // Generic error message to prevent user enumeration
       if (authError.message.includes('Invalid login credentials')) {
-        return NextResponse.json({ error: 'Email ou mot de passe incorrect.' }, { status: 401 });
+        return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });
       }
       if (authError.message.includes('Email not confirmed')) {
-        return NextResponse.json({ error: 'email_not_confirmed', email }, { status: 403 });
+        return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
       }
       logger.error('Login failed', authError);
-      return NextResponse.json(
-        { error: 'Erreur de connexion. Veuillez reessayer.' },
-        { status: 401 },
-      );
+      return NextResponse.json({ error: t('loginError') }, { status: 401 });
     }
 
     // 3. Query admin_users for routing info
@@ -60,17 +60,14 @@ export async function POST(request: Request) {
       .eq('user_id', authData.user.id);
 
     if (!adminUsers || adminUsers.length === 0) {
-      return NextResponse.json(
-        { error: 'Aucun etablissement associe a ce compte' },
-        { status: 403 },
-      );
+      return NextResponse.json({ error: t('noEstablishment') }, { status: 403 });
     }
 
     // 4. Determine redirect
     const needsOnboarding = adminUsers.some((au) => {
       // Supabase join type gap
-      const t = au.tenants as unknown as { onboarding_completed: boolean } | null;
-      return t?.onboarding_completed === false;
+      const tenant = au.tenants as unknown as { onboarding_completed: boolean } | null;
+      return tenant?.onboarding_completed === false;
     });
 
     return NextResponse.json({
@@ -79,6 +76,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     logger.error('Login route error', error);
-    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+    return NextResponse.json({ error: 'Server error' }, { status: 500 });
   }
 }

@@ -3,6 +3,7 @@ import { stripe } from '@/lib/stripe/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { billingPortalLimiter, getClientIp } from '@/lib/rate-limit';
+import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 
 export async function POST(request: Request) {
   try {
@@ -44,10 +45,13 @@ export async function POST(request: Request) {
 
     const returnUrl = `${process.env.NEXT_PUBLIC_APP_URL}/sites/${tenant.slug}/admin/subscription`;
 
-    const session = await stripe.billingPortal.sessions.create({
-      customer: tenant.stripe_customer_id,
-      return_url: returnUrl,
-    });
+    const customerId = tenant.stripe_customer_id;
+    const session = await withStripeBreaker(() =>
+      stripe.billingPortal.sessions.create({
+        customer: customerId,
+        return_url: returnUrl,
+      }),
+    );
 
     return NextResponse.json({ url: session.url });
   } catch (error) {

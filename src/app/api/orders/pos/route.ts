@@ -1,4 +1,3 @@
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
@@ -10,6 +9,7 @@ import { calculateOrderTotal } from '@/lib/pricing/tax';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createInventoryService } from '@/services/inventory.service';
 import { canAccessFeature } from '@/lib/plans/features';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export async function POST(request: Request) {
@@ -24,15 +24,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Authenticate user (POS is staff-only)
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
-    }
+    // 2. Authenticate user + derive tenant from session (IDOR prevention)
+    const { tenantId: tenant_id, user, role } = await getAuthenticatedUserWithTenant();
 
     // 3. Parse and validate input with Zod
     let body: unknown;
@@ -52,7 +45,6 @@ export async function POST(request: Request) {
     }
 
     const {
-      tenant_id,
       table_number,
       status,
       service_type,
@@ -65,7 +57,7 @@ export async function POST(request: Request) {
       items,
     } = parseResult.data;
 
-    // 4. Verify user is an active admin_user for this tenant
+    // 4. Get admin user record for server_id
     const adminSupabase = createAdminClient();
 
     const { data: adminUser } = await adminSupabase
@@ -324,6 +316,9 @@ export async function POST(request: Request) {
       total: result.total,
     });
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     if (error instanceof ServiceError) {
       if (error.details) {
         logger.error('POS order ServiceError details', {
