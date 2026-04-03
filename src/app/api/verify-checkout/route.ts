@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
-import Stripe from 'stripe';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { verifyCheckoutQuerySchema } from '@/lib/validations/checkout.schema';
 import { verifyCheckoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { jsonWithCache } from '@/lib/cache-headers';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+import { stripe } from '@/lib/stripe/server';
+import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 
 export async function GET(request: Request) {
   try {
@@ -42,7 +41,9 @@ export async function GET(request: Request) {
     }
 
     // 3. Retrieve Stripe session
-    const session = await stripe.checkout.sessions.retrieve(parseResult.data.session_id);
+    const session = await withStripeBreaker(() =>
+      stripe.checkout.sessions.retrieve(parseResult.data.session_id),
+    );
 
     if (!session) {
       return NextResponse.json({ error: 'Session non trouvée' }, { status: 404 });

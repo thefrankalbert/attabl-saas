@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutBodySchema } from '@/lib/validations/checkout.schema';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
+import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 
 export async function POST(request: Request) {
   try {
@@ -109,32 +110,34 @@ export async function POST(request: Request) {
       (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
 
     // Créer la session Stripe Checkout
-    const session = await stripe.checkout.sessions.create({
-      mode: 'subscription',
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      ...customerParams,
-      metadata: {
-        tenant_id: tenantId,
-        plan: plan,
-        billing_interval: billingInterval,
-      },
-      success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${baseUrl}/checkout/cancel`,
-      subscription_data: {
-        trial_period_days: 14,
+    const session = await withStripeBreaker(() =>
+      stripe.checkout.sessions.create({
+        mode: 'subscription',
+        payment_method_types: ['card'],
+        line_items: [
+          {
+            price: priceId,
+            quantity: 1,
+          },
+        ],
+        ...customerParams,
         metadata: {
           tenant_id: tenantId,
           plan: plan,
           billing_interval: billingInterval,
         },
-      },
-    });
+        success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${baseUrl}/checkout/cancel`,
+        subscription_data: {
+          trial_period_days: 14,
+          metadata: {
+            tenant_id: tenantId,
+            plan: plan,
+            billing_interval: billingInterval,
+          },
+        },
+      }),
+    );
 
     return NextResponse.json({
       sessionId: session.id,

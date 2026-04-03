@@ -125,11 +125,11 @@ export function createCouponService(supabase: SupabaseClient) {
         code: string;
         discount_type: 'percentage' | 'fixed';
         discount_value: number;
-        min_order_amount?: number;
-        max_discount_amount?: number;
-        valid_from?: string;
-        valid_until?: string;
-        max_uses?: number;
+        min_order_amount?: number | null;
+        max_discount_amount?: number | null;
+        valid_from?: string | null;
+        valid_until?: string | null;
+        max_uses?: number | null;
       },
     ): Promise<Coupon> {
       const { data: coupon, error } = await supabase
@@ -160,6 +160,44 @@ export function createCouponService(supabase: SupabaseClient) {
       }
 
       return coupon as Coupon;
+    },
+
+    /**
+     * Update an existing coupon.
+     */
+    async updateCoupon(
+      couponId: string,
+      data: {
+        code: string;
+        discount_type: 'percentage' | 'fixed';
+        discount_value: number;
+        min_order_amount?: number | null;
+        max_discount_amount?: number | null;
+        valid_from?: string | null;
+        valid_until?: string | null;
+        max_uses?: number | null;
+      },
+    ): Promise<void> {
+      const { error } = await supabase
+        .from('coupons')
+        .update({
+          code: data.code.toUpperCase().trim(),
+          discount_type: data.discount_type,
+          discount_value: data.discount_value,
+          min_order_amount: data.min_order_amount ?? null,
+          max_discount_amount: data.max_discount_amount ?? null,
+          valid_from: data.valid_from ?? null,
+          valid_until: data.valid_until ?? null,
+          max_uses: data.max_uses ?? null,
+        })
+        .eq('id', couponId);
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new ServiceError('Ce code promo existe deja', 'CONFLICT');
+        }
+        throw new ServiceError('Erreur lors de la mise a jour du coupon', 'INTERNAL', error);
+      }
     },
 
     /**

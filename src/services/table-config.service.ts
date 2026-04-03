@@ -197,5 +197,119 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
       return (Array.isArray(tables) ? tables : [tables]) as TableRow[];
     },
+
+    /**
+     * Create a single zone for a venue.
+     */
+    async createZone(
+      venueId: string,
+      name: string,
+      prefix: string,
+      displayOrder: number,
+    ): Promise<void> {
+      const { error } = await supabase.from('zones').insert([
+        {
+          venue_id: venueId,
+          name,
+          prefix: prefix.toUpperCase(),
+          display_order: displayOrder,
+        },
+      ]);
+
+      if (error) {
+        throw new ServiceError(`Erreur creation zone: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Update a zone's name.
+     */
+    async updateZoneName(zoneId: string, name: string): Promise<void> {
+      const { error } = await supabase.from('zones').update({ name }).eq('id', zoneId);
+
+      if (error) {
+        throw new ServiceError(`Erreur mise a jour zone: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Delete a zone by ID.
+     */
+    async deleteZone(zoneId: string): Promise<void> {
+      const { error } = await supabase.from('zones').delete().eq('id', zoneId);
+
+      if (error) {
+        throw new ServiceError(`Erreur suppression zone: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Insert multiple tables into a zone.
+     */
+    async insertTables(
+      tables: Array<{
+        zone_id: string;
+        table_number: string;
+        display_name: string;
+        capacity: number;
+        is_active: boolean;
+      }>,
+    ): Promise<void> {
+      const { error } = await supabase.from('tables').insert(tables);
+
+      if (error) {
+        throw new ServiceError(`Erreur creation tables: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Toggle the is_active flag on a table.
+     */
+    async toggleTableActive(tableId: string, isActive: boolean): Promise<void> {
+      const { error } = await supabase
+        .from('tables')
+        .update({ is_active: isActive })
+        .eq('id', tableId);
+
+      if (error) {
+        throw new ServiceError(`Erreur mise a jour table: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Update a table's capacity.
+     */
+    async updateTableCapacity(tableId: string, capacity: number): Promise<void> {
+      const { error } = await supabase.from('tables').update({ capacity }).eq('id', tableId);
+
+      if (error) {
+        throw new ServiceError(`Erreur mise a jour capacite: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Update a table's display name.
+     */
+    async updateTableDisplayName(tableId: string, displayName: string): Promise<void> {
+      const { error } = await supabase
+        .from('tables')
+        .update({ display_name: displayName })
+        .eq('id', tableId);
+
+      if (error) {
+        throw new ServiceError(`Erreur mise a jour nom table: ${error.message}`, 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Delete a table by ID.
+     */
+    async deleteTable(tableId: string): Promise<void> {
+      const { error } = await supabase.from('tables').delete().eq('id', tableId);
+
+      if (error) {
+        throw new ServiceError(`Erreur suppression table: ${error.message}`, 'INTERNAL', error);
+      }
+    },
   };
 }

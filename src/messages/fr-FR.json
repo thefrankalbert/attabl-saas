@@ -67,7 +67,6 @@
     "errorTitle": "Oups, une erreur est survenue",
     "errorDescription": "Nous nous excusons pour ce désagrément. Veuillez réessayer ou retourner à l'accueil.",
     "errorHint": "Pas de panique, ce sont des choses qui arrivent.",
-    "retry": "Réessayer",
     "backToHome": "Retour à l'accueil",
     "notFoundTitle": "Page introuvable",
     "notFoundDescription": "Cette page n'existe pas ou a été déplacée. Vérifiez l'URL ou revenez à l'accueil.",
@@ -713,7 +712,9 @@
     "resetCancel": "Annuler",
     "resetClose": "Fermer",
     "resetInProgress": "Suppression...",
-    "resetError": "Une erreur est survenue lors de la réinitialisation."
+    "resetError": "Une erreur est survenue lors de la réinitialisation.",
+    "enableBarDisplay": "Zones de preparation separees",
+    "enableBarDisplayDesc": "Activer le filtrage par zone (Cuisine / Bar / Tout) dans le KDS. Quand desactive, toutes les commandes apparaissent sur un seul ecran."
   },
   "commandPalette": {
     "placeholder": "Rechercher une page ou une action...",
@@ -848,7 +849,10 @@
     "tabScheduled": "PLANIFIEES",
     "tabCompleted": "TERMINEES",
     "tapToEnableSound": "Appuyez pour activer le son",
-    "tapToEnableSoundDesc": "Les notifications sonores seront activees pour les nouvelles commandes"
+    "tapToEnableSoundDesc": "Les notifications sonores seront activees pour les nouvelles commandes",
+    "zoneAll": "Tout",
+    "zoneKitchen": "Cuisine",
+    "zoneBar": "Bar"
   },
   "pos": {
     "title": "Caisse (POS)",
@@ -1504,7 +1508,7 @@
     "sharedMenu": "Menu partagé (visible dans tous les espaces)",
     "sharedMenuBadge": "Partagé",
     "sharedMenuHint": "Ce menu sera visible dans tous vos espaces (ex : Carte des Boissons)",
-    "wizardMenuCreatedMessage": "Carte « {name} » créée",
+    "wizardMenuCreatedMessage": "Carte \"{name}\" creee",
     "wizardAddCategoriesPrompt": "Souhaitez-vous ajouter des catégories maintenant ?",
     "wizardAddCategories": "Ajouter des catégories",
     "wizardAddItems": "Ajouter des plats",
@@ -1578,7 +1582,7 @@
     "batchGenerationDesc": "Générez un QR code pour chaque table - {count} table(s) trouvée(s)",
     "batchGenerating": "Génération en cours ({count} QR codes)...",
     "batchDownload": "Télécharger {count} QR code(s) (PDF)",
-    "batchMenuRedirect": "Chaque QR redirige vers la carte « {menu} »",
+    "batchMenuRedirect": "Chaque QR redirige vers la carte \"{menu}\"",
     "tipStandard": "Standard",
     "tipStandardDesc": "Format carré 10×10 cm, idéal pour les affichages muraux et comptoirs.",
     "tipEasel": "Chevalet",
@@ -2268,7 +2272,14 @@
     "invalidCoupon": "Code promo invalide",
     "tenantConfigNotFound": "Configuration du tenant non trouvée",
     "orderSuccess": "Commande enregistrée avec succès !",
-    "serverError": "Erreur serveur"
+    "serverError": "Erreur serveur",
+    "invalidCredentials": "Email ou mot de passe incorrect.",
+    "emailNotConfirmed": "Veuillez confirmer votre adresse email avant de vous connecter",
+    "loginError": "Erreur de connexion. Veuillez reessayer.",
+    "noEstablishment": "Aucun etablissement associe a ce compte",
+    "invalidLoginFields": "Email ou mot de passe invalide.",
+    "signupConfirmation": "Un email de confirmation a ete envoye. Veuillez verifier votre boite mail.",
+    "invalidDataFallback": "Donnees invalides"
   },
   "segment": {
     "food": {

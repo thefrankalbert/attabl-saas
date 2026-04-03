@@ -5,7 +5,7 @@ import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
-import type { Announcement, MenuItem } from '@/types/admin.types';
+import type { Announcement, MenuItem, Venue, Category, Ad, Zone, Table } from '@/types/admin.types';
 
 export const revalidate = 30;
 
@@ -90,10 +90,10 @@ export default async function MenuPage({
   // OPTIMISATION: Requetes paralleles avec Promise.all
   const [venuesResult, categoriesResult, adsResult, announcementResult, featuredResult] =
     await Promise.all([
-      // Venues (optionnel)
+      // Venues (optionnel) - explicit columns to avoid SELECT *
       supabase
         .from('venues')
-        .select('*')
+        .select('id, tenant_id, name, name_en, slug, is_active, display_order, created_at')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .order('created_at', { ascending: true }),
@@ -101,7 +101,9 @@ export default async function MenuPage({
       // Categories (for category grid on home)
       supabase
         .from('categories')
-        .select('*')
+        .select(
+          'id, tenant_id, menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at',
+        )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .order('display_order', { ascending: true }),
@@ -109,7 +111,7 @@ export default async function MenuPage({
       // Ads / Banners
       supabase
         .from('ads')
-        .select('*')
+        .select('id, tenant_id, image_url, link, sort_order, is_active, created_at')
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .order('sort_order', { ascending: true }),
@@ -117,7 +119,9 @@ export default async function MenuPage({
       // Active announcement
       supabase
         .from('announcements')
-        .select('*')
+        .select(
+          'id, tenant_id, title, title_en, description, description_en, image_url, start_date, end_date, is_active, created_at',
+        )
         .eq('tenant_id', tenant.id)
         .eq('is_active', true)
         .lte('start_date', now)
@@ -128,7 +132,9 @@ export default async function MenuPage({
       // Featured menu items
       supabase
         .from('menu_items')
-        .select('*, category:categories(id, name, name_en), modifiers:item_modifiers(*)')
+        .select(
+          'id, tenant_id, category_id, name, name_en, slug, description, description_en, price, image_url, is_available, is_featured, display_order, allergens, created_at, category:categories(id, name, name_en), modifiers:item_modifiers(id, name, name_en, price, is_available, display_order)',
+        )
         .eq('tenant_id', tenant.id)
         .eq('is_featured', true)
         .eq('is_available', true)
@@ -136,32 +142,40 @@ export default async function MenuPage({
         .limit(10),
     ]);
 
-  const venues = venuesResult.data;
-  const categories = categoriesResult.data;
-  const ads = adsResult.data;
+  const venues = (venuesResult.data || []) as unknown as Venue[];
+  const categories = (categoriesResult.data || []) as unknown as Category[];
+  const ads = (adsResult.data || []) as unknown as Ad[];
   const announcement = (announcementResult.data?.[0] as Announcement) || null;
-  const featuredItems = featuredResult.data || [];
+  const featuredItems = (featuredResult.data || []) as unknown as MenuItem[];
 
   // Fetch zones and tables (for TablePicker)
   const [zonesResult, tablesResult] = await Promise.all([
-    supabase.from('zones').select('*').eq('tenant_id', tenant.id),
-    supabase.from('tables').select('*').eq('tenant_id', tenant.id),
+    supabase
+      .from('zones')
+      .select('id, venue_id, name, name_en, prefix, display_order, created_at')
+      .eq('tenant_id', tenant.id),
+    supabase
+      .from('tables')
+      .select(
+        'id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
+      )
+      .eq('tenant_id', tenant.id),
   ]);
 
-  const zones = zonesResult.data || [];
-  const tables = tablesResult.data || [];
+  const zones = (zonesResult.data || []) as unknown as Zone[];
+  const tables = (tablesResult.data || []) as unknown as Table[];
 
   return (
     <ClientMenuPage
       tenant={tenant}
-      venues={venues || []}
+      venues={venues}
       initialTable={initialTable}
-      categories={categories || []}
-      ads={ads || []}
+      categories={categories}
+      ads={ads}
       zones={zones}
       tables={tables}
       announcement={announcement}
-      featuredItems={(featuredItems as MenuItem[]) || []}
+      featuredItems={featuredItems}
     />
   );
 }

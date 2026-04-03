@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
 import type { SuggestionType } from '@/types/inventory.types';
-import { generateAndSaveSuggestions } from '@/services/suggestion.service';
+import { generateAndSaveSuggestions, createSuggestionService } from '@/services/suggestion.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
@@ -138,7 +138,8 @@ export default function SuggestionsClient({
     }
 
     try {
-      const { error } = await supabase.from('item_suggestions').insert({
+      const suggestionService = createSuggestionService(supabase);
+      await suggestionService.createSuggestion({
         tenant_id: tenantId,
         menu_item_id: sourceItemId,
         suggested_item_id: targetItemId,
@@ -146,8 +147,6 @@ export default function SuggestionsClient({
         description: description.trim() || null,
         display_order: suggestions.length,
       });
-
-      if (error) throw error;
       toast({ title: t('suggestionAdded') });
       setShowAdd(false);
       setSourceItemId('');
@@ -161,12 +160,8 @@ export default function SuggestionsClient({
 
   const handleDelete = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('item_suggestions')
-        .update({ is_active: false })
-        .eq('id', id);
-
-      if (error) throw error;
+      const suggestionService = createSuggestionService(supabase);
+      await suggestionService.deactivateSuggestion(id);
       toast({ title: t('suggestionDeleted') });
       loadData();
     } catch {
@@ -207,12 +202,8 @@ export default function SuggestionsClient({
   const handleBulkDelete = async () => {
     if (selectedIds.size === 0) return;
     try {
-      const { error } = await supabase
-        .from('item_suggestions')
-        .update({ is_active: false })
-        .in('id', Array.from(selectedIds));
-
-      if (error) throw error;
+      const suggestionService = createSuggestionService(supabase);
+      await suggestionService.bulkDeactivateSuggestions(Array.from(selectedIds));
       toast({ title: t('suggestionsDeleted', { count: selectedIds.size }) });
       setSelectedIds(new Set());
       loadData();

@@ -322,60 +322,22 @@ export function createOrderService(supabase: SupabaseClient) {
     },
 
     /**
-     * Creates an order with its items.
-     * Rolls back the order if item insertion fails.
+     * Creates an order with its items atomically via a DB function.
+     * The entire operation runs in a single PostgreSQL transaction -
+     * if item insertion fails, the order is automatically rolled back.
      */
     async createOrderWithItems(input: CreateOrderInput): Promise<CreateOrderResult> {
       const orderNumber = await this.generateOrderNumber(input.tenantId);
 
-      // Create the main order
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert({
-          tenant_id: input.tenantId,
-          order_number: orderNumber,
-          status: 'pending',
-          total: input.total,
-          table_number: input.tableNumber || null,
-          customer_name: input.customerName || null,
-          customer_phone: input.customerPhone || null,
-          notes: input.notes || null,
-          // ─── Production upgrade ──────────────────────────────
-          service_type: input.service_type || 'dine_in',
-          room_number: input.room_number || null,
-          delivery_address: input.delivery_address || null,
-          subtotal: input.subtotal ?? input.total,
-          tax_amount: input.tax_amount ?? 0,
-          service_charge_amount: input.service_charge_amount ?? 0,
-          discount_amount: input.discount_amount ?? 0,
-          tip_amount: input.tip_amount ?? 0,
-          payment_status: 'pending',
-          coupon_id: input.coupon_id || null,
-          server_id: input.server_id ?? null,
-          display_currency: input.display_currency || null,
-          preparation_zone: input.preparation_zone || 'kitchen',
-        })
-        .select('id, order_number')
-        .single();
-
-      if (orderError) {
-        logger.error('Error creating order', orderError);
-        throw new ServiceError('Erreur lors de la création de la commande', 'INTERNAL', orderError);
-      }
-
-      // Create order items
-      // DB columns: order_id, menu_item_id, item_name, item_name_en, quantity,
-      //   price_at_order, customer_notes, modifiers, course, item_status, created_at
-      const orderItems = input.items.map((item) => {
-        // Build variant/option label to prepend to customer notes
+      // Build items array for the DB function
+      const itemsJson = input.items.map((item) => {
         const parts: string[] = [];
         if (item.selectedVariant) parts.push(item.selectedVariant.name_fr);
         if (item.selectedOption) parts.push(item.selectedOption.name_fr);
         if (item.customerNotes) parts.push(item.customerNotes);
-        const combinedNotes = parts.length > 0 ? parts.join(' · ') : null;
+        const combinedNotes = parts.length > 0 ? parts.join(' - ') : null;
 
         return {
-          order_id: order.id,
           menu_item_id: item.id,
           item_name: item.name,
           item_name_en: item.name_en || null,
@@ -384,31 +346,44 @@ export function createOrderService(supabase: SupabaseClient) {
           customer_notes: combinedNotes,
           modifiers: item.modifiers || [],
           course: item.course || null,
-          item_status: 'pending',
           preparation_zone: input.itemPreparationZones?.get(item.id) || 'kitchen',
         };
       });
 
-      const { error: itemsError } = await supabase.from('order_items').insert(orderItems);
+      const { data, error } = await supabase.rpc('create_order_with_items', {
+        p_tenant_id: input.tenantId,
+        p_order_number: orderNumber,
+        p_total: input.total,
+        p_table_number: input.tableNumber || null,
+        p_customer_name: input.customerName || null,
+        p_customer_phone: input.customerPhone || null,
+        p_notes: input.notes || null,
+        p_service_type: input.service_type || 'dine_in',
+        p_room_number: input.room_number || null,
+        p_delivery_address: input.delivery_address || null,
+        p_subtotal: input.subtotal ?? input.total,
+        p_tax_amount: input.tax_amount ?? 0,
+        p_service_charge_amount: input.service_charge_amount ?? 0,
+        p_discount_amount: input.discount_amount ?? 0,
+        p_tip_amount: input.tip_amount ?? 0,
+        p_coupon_id: input.coupon_id || null,
+        p_server_id: input.server_id ?? null,
+        p_display_currency: input.display_currency || null,
+        p_preparation_zone: input.preparation_zone || 'kitchen',
+        p_items: itemsJson,
+      });
 
-      if (itemsError) {
-        logger.error('Error creating order items', itemsError);
-        // Rollback: delete the order
-        const { error: deleteError } = await supabase.from('orders').delete().eq('id', order.id);
-        if (deleteError) {
-          logger.error('Failed to rollback order', deleteError, { orderId: order.id });
-        }
-        throw new ServiceError(
-          "Erreur lors de l'enregistrement des articles",
-          'INTERNAL',
-          itemsError,
-        );
+      if (error) {
+        logger.error('Atomic order creation failed', error);
+        throw new ServiceError('Erreur lors de la creation de la commande', 'INTERNAL', error);
       }
 
+      const result = data as { orderId: string; orderNumber: string; total: number };
+
       return {
-        orderId: order.id,
-        orderNumber: order.order_number,
-        total: input.total,
+        orderId: result.orderId,
+        orderNumber: result.orderNumber,
+        total: result.total,
       };
     },
   };

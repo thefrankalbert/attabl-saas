@@ -46,6 +46,8 @@ interface RateLimitResult {
 function createLimiter(
   prefix: string,
   limiter: ConstructorParameters<typeof Ratelimit>[0]['limiter'],
+  /** When true, Redis failure blocks the request instead of allowing it through */
+  failClosed = false,
 ) {
   const rl = redis
     ? new Ratelimit({
@@ -76,8 +78,14 @@ function createLimiter(
           reset: result.reset,
         };
       } catch (err) {
-        // Upstash connection failure - allow request through to avoid blocking
-        // legitimate traffic when Redis is temporarily unreachable
+        if (failClosed) {
+          // Security-critical endpoints: block on Redis failure to prevent brute-force
+          logger.error('Rate limiter fetch failed, BLOCKING request (fail-closed)', err, {
+            prefix,
+          });
+          return { success: false, limit: 0, remaining: 0, reset: 0 };
+        }
+        // Non-critical endpoints: allow through to avoid blocking legitimate traffic
         logger.error('Rate limiter fetch failed, allowing request through', err, { prefix });
         return { success: true, limit: 0, remaining: 0, reset: 0 };
       }
@@ -87,11 +95,15 @@ function createLimiter(
 
 // --- Limiters per endpoint ---
 
-/** Signup: 5 requests / 10 minutes per IP */
-export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(5, '10 m'));
+/** Signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
+export const signupLimiter = createLimiter('signup', Ratelimit.slidingWindow(5, '10 m'), true);
 
-/** OAuth signup: 5 requests / 10 minutes per IP */
-export const oauthSignupLimiter = createLimiter('signup-oauth', Ratelimit.slidingWindow(5, '10 m'));
+/** OAuth signup: 5 requests / 10 minutes per IP (fail-closed: brute-force protection) */
+export const oauthSignupLimiter = createLimiter(
+  'signup-oauth',
+  Ratelimit.slidingWindow(5, '10 m'),
+  true,
+);
 
 /** Orders: 20 requests / minute per IP */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
@@ -168,10 +180,11 @@ export const stockAlertLimiter = createLimiter('stock-alert', Ratelimit.slidingW
 /** Auth signout: 10 requests / minute per IP */
 export const signoutLimiter = createLimiter('signout', Ratelimit.slidingWindow(10, '1 m'));
 
-/** Forgot password: 3 requests / 10 minutes per IP */
+/** Forgot password: 3 requests / 10 minutes per IP (fail-closed: brute-force protection) */
 export const forgotPasswordLimiter = createLimiter(
   'forgot-password',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
 );
 
 /** Resend confirmation email: 3 requests / 10 minutes per IP */
@@ -183,11 +196,15 @@ export const resendConfirmationLimiter = createLimiter(
 /** File upload: 20 requests / minute per IP */
 export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20, '1 m'));
 
-/** Admin reset: 3 requests / hour per IP */
-export const adminResetLimiter = createLimiter('admin-reset', Ratelimit.slidingWindow(3, '1 h'));
+/** Admin reset: 3 requests / hour per IP (fail-closed: destructive action) */
+export const adminResetLimiter = createLimiter(
+  'admin-reset',
+  Ratelimit.slidingWindow(3, '1 h'),
+  true,
+);
 
-/** Login: 10 requests / 5 minutes per IP */
-export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(10, '5 m'));
+/** Login: 10 requests / 5 minutes per IP (fail-closed: brute-force protection) */
+export const loginLimiter = createLimiter('login', Ratelimit.slidingWindow(10, '5 m'), true);
 
 /** Billing portal: 10 requests / minute per IP */
 export const billingPortalLimiter = createLimiter(

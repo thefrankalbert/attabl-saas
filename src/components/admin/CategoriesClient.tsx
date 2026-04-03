@@ -45,6 +45,7 @@ import { revalidateMenuCache } from '@/lib/revalidate';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
+import { createCategoryService } from '@/services/category.service';
 
 interface CategoriesClientProps {
   tenantId: string;
@@ -276,16 +277,12 @@ export default function CategoriesClient({
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
+      const categoryService = createCategoryService(supabase);
       if (editingCategory) {
-        const { error } = await supabase
-          .from('categories')
-          .update(payload)
-          .eq('id', editingCategory.id);
-        if (error) throw error;
+        await categoryService.updateCategory(editingCategory.id, payload);
         toast({ title: t('categoryUpdated') });
       } else {
-        const { error } = await supabase.from('categories').insert([payload]);
-        if (error) throw error;
+        await categoryService.createCategory(payload);
         toast({ title: t('categoryCreated') });
       }
       setShowModal(false);
@@ -308,8 +305,8 @@ export default function CategoriesClient({
     }
     if (!confirm(t('deleteCategoryConfirm', { name: cat.name }))) return;
     try {
-      const { error } = await supabase.from('categories').delete().eq('id', cat.id);
-      if (error) throw error;
+      const categoryService = createCategoryService(supabase);
+      await categoryService.deleteCategory(cat.id);
       toast({ title: t('categoryDeleted') });
       loadCategories();
       revalidateMenuCache();

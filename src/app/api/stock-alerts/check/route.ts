@@ -5,6 +5,7 @@ import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { stockAlertLimiter, getClientIp } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
@@ -71,10 +72,13 @@ export async function POST(request: Request) {
     }
 
     // Non-blocking: fire and forget
-    checkAndNotifyLowStock(tenant.id).catch(() => {});
+    checkAndNotifyLowStock(tenant.id).catch((err) => {
+      logger.error('Stock alert check failed', err);
+    });
 
     return NextResponse.json({ success: true });
-  } catch {
+  } catch (error) {
+    logger.error('Stock alerts route error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

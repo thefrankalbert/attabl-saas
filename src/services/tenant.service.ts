@@ -24,6 +24,8 @@ interface TenantSettings {
   enableServiceCharge?: boolean;
   serviceChargeRate?: number;
   enableCoupons?: boolean;
+  // KDS
+  barDisplayEnabled?: boolean;
   // Idle timeout
   idleTimeoutMinutes?: number | null;
   screenLockMode?: 'overlay' | 'password';
@@ -66,6 +68,8 @@ export function createTenantService(supabase: SupabaseClient) {
           enable_service_charge: settings.enableServiceCharge ?? false,
           service_charge_rate: settings.serviceChargeRate ?? 0,
           enable_coupons: settings.enableCoupons ?? false,
+          // KDS
+          bar_display_enabled: settings.barDisplayEnabled ?? false,
           // Idle timeout
           idle_timeout_minutes: settings.idleTimeoutMinutes ?? null,
           screen_lock_mode: settings.screenLockMode ?? 'overlay',

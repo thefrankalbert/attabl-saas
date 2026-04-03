@@ -1,10 +1,13 @@
 'use server';
 
+import { z } from 'zod';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
 import { ServiceError } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 import { getAuthenticatedUserForTenant, AuthError } from '@/lib/auth/get-session';
+
+const tenantIdSchema = z.string().uuid();
 
 type ActionResponse = {
   canCreate?: boolean;
@@ -16,6 +19,11 @@ type ActionResponse = {
  * tenantId is verified against the session (IDOR prevention).
  */
 export async function actionCheckCanAddMenuItem(tenantId: string): Promise<ActionResponse> {
+  const parsed = tenantIdSchema.safeParse(tenantId);
+  if (!parsed.success) {
+    return { error: 'Invalid tenant ID' };
+  }
+
   const t = await getTranslations('errors');
 
   try {

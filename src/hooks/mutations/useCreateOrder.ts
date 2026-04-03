@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { logger } from '@/lib/logger';
 
 interface CreateOrderInput {
-  tenant_id: string;
+  tenant_id?: string; // Deprecated: tenant_id is now derived server-side from session
   table_number: string;
   status: 'pending' | 'delivered';
   service_type: string;
@@ -57,7 +57,7 @@ export function useCreateOrder(tenantId: string) {
     mutationFn: async (input: CreateOrderInput) => {
       // Build the API payload (only fields the server expects)
       const payload = {
-        tenant_id: input.tenant_id,
+        // tenant_id derived server-side from session (not sent from client)
         table_number: input.table_number,
         status: input.status,
         service_type: input.service_type,

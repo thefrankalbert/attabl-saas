@@ -39,13 +39,20 @@ const STORAGE_KEY = 'attabl_display_currency';
 
 /**
  * Conversion rates TO XAF.
- * XAF ↔ EUR is fixed (CFA franc pegged to Euro: 1 EUR = 655.957 XAF).
- * USD rate is approximate and should be updated periodically.
+ *
+ * - EUR: Fixed peg (CFA franc pegged to Euro via BCEAO: 1 EUR = 655.957 XAF).
+ *   This rate is permanent and guaranteed by treaty - no update needed.
+ *
+ * - USD: Approximate rate only. The real XAF/USD rate fluctuates daily.
+ *   As of early 2026 the rate is roughly 1 USD = 590-620 XAF.
+ *   TODO: Fetch a live USD/XAF rate from an exchange-rate API (e.g. Open
+ *   Exchange Rates, exchangerate.host) instead of relying on this hardcoded
+ *   fallback. This is a known limitation - see GitHub issue backlog.
  */
 const RATES_TO_XAF: Record<string, number> = {
   XAF: 1,
   EUR: 655.957,
-  USD: 610,
+  USD: 605,
 };
 
 // ─── Helpers ────────────────────────────────────────────

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Maximize, Minimize } from 'lucide-react';
+import { ArrowLeft, Maximize, Minimize, ChefHat, Wine } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import type { KDSZoneFilter } from '@/types/admin.types';
 
 interface KitchenFiltersProps {
   activeCount: number;
@@ -15,6 +16,9 @@ interface KitchenFiltersProps {
   toggleFullscreen: () => void;
   goBack: () => void;
   isChefView: boolean;
+  barDisplayEnabled?: boolean;
+  zoneFilter?: KDSZoneFilter;
+  onZoneFilterChange?: (zone: KDSZoneFilter) => void;
 }
 
 export default function KitchenFilters({
@@ -26,6 +30,9 @@ export default function KitchenFilters({
   toggleFullscreen,
   goBack,
   isChefView,
+  barDisplayEnabled = false,
+  zoneFilter = 'all',
+  onZoneFilterChange,
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
   const locale = useLocale();
@@ -63,6 +70,34 @@ export default function KitchenFilters({
           </button>
         )}
       </div>
+
+      {/* Zone filter (only when bar display is enabled) */}
+      {barDisplayEnabled && onZoneFilterChange && (
+        <div className="flex items-center gap-0.5 bg-app-elevated rounded-md p-0.5">
+          {(
+            [
+              { key: 'all' as const, label: t('zoneAll'), icon: null },
+              { key: 'kitchen' as const, label: t('zoneKitchen'), icon: ChefHat },
+              { key: 'bar' as const, label: t('zoneBar'), icon: Wine },
+            ] as const
+          ).map(({ key, label, icon: Icon }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onZoneFilterChange(key)}
+              className={cn(
+                'flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-colors',
+                zoneFilter === key
+                  ? 'bg-accent text-accent-text shadow-sm'
+                  : 'text-app-text-muted hover:text-app-text',
+              )}
+            >
+              {Icon && <Icon className="w-3 h-3" />}
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Center: active / completed tabs */}
       {isChefView && (

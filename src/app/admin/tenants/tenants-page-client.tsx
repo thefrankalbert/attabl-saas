@@ -21,7 +21,7 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
-import { LoadingIndicator } from '@/components/application/loading-indicator/loading-indicator';
+import { LoadingIndicator } from '@/components/application/loading-indicator/LoadingIndicator';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import {
   AreaChart,

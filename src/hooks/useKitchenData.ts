@@ -11,7 +11,7 @@ import { useSound } from '@/contexts/SoundContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useFullscreen } from '@/hooks/useFullscreen';
 import { logger } from '@/lib/logger';
-import type { Order, OrderStatus, ItemStatus } from '@/types/admin.types';
+import type { Order, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { MOCK_ORDERS } from '@/hooks/kitchen-mock-data';
 
 // ─── Types ──────────────────────────────────────────────
@@ -20,6 +20,10 @@ interface UseKitchenDataParams {
   tenantId: string;
   /** @deprecated Sound is now managed globally via SoundContext */
   notificationSoundId?: string;
+  /** When true, zone filter UI is shown and queries adapt. When false, all items go to KDS. */
+  barDisplayEnabled?: boolean;
+  /** Active zone filter: 'all' shows everything, 'kitchen' shows kitchen+mixed, 'bar' shows bar+mixed */
+  zoneFilter?: KDSZoneFilter;
 }
 
 export interface ColumnConfig {
@@ -53,6 +57,10 @@ export interface UseKitchenDataReturn {
   isFullscreen: boolean;
   activeTab: ColumnKey;
   setActiveTab: (tab: ColumnKey) => void;
+
+  // Zone
+  zoneFilter: KDSZoneFilter;
+  barDisplayEnabled: boolean;
 
   // Sound
   soundEnabled: boolean;
@@ -97,7 +105,11 @@ const COLUMN_STYLES = {
 
 // ─── Hook ───────────────────────────────────────────────
 
-export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDataReturn {
+export function useKitchenData({
+  tenantId,
+  barDisplayEnabled = false,
+  zoneFilter = 'all',
+}: UseKitchenDataParams): UseKitchenDataReturn {
   const t = useTranslations('kitchen');
   const tc = useTranslations('common');
   const ta = useTranslations('admin');
@@ -140,14 +152,29 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
       const todayStart = new Date();
       todayStart.setHours(0, 0, 0, 0);
 
-      const { data, error } = await supabase
+      let query = supabase
         .from('orders')
         .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
         .eq('tenant_id', tenantId)
         .in('status', ['pending', 'preparing', 'ready'])
-        .in('preparation_zone', ['kitchen', 'mixed']) // Exclude bar-only orders from KDS
         .gte('created_at', todayStart.toISOString())
         .order('created_at', { ascending: true });
+
+      // Zone filtering: when bar display is disabled, show all orders.
+      // When enabled, filter by the selected zone.
+      if (barDisplayEnabled) {
+        if (zoneFilter === 'kitchen') {
+          query = query.in('preparation_zone', ['kitchen', 'mixed']);
+        } else if (zoneFilter === 'bar') {
+          query = query.in('preparation_zone', ['bar', 'mixed']);
+        }
+        // 'all' = no zone filter, show everything
+      } else {
+        // bar_display_enabled OFF: show all orders (no zone filter)
+        // All items appear on the single KDS screen
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -178,7 +205,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     } finally {
       setLoading(false);
     }
-  }, [supabase, tenantId]);
+  }, [supabase, tenantId, barDisplayEnabled, zoneFilter]);
 
   // ─── Initial load + polling fallback ────────────────────
   useEffect(() => {
@@ -206,7 +233,9 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     table: 'orders',
     filter: `tenant_id=eq.${tenantId}`,
     onInsert: () => {
-      playNotification();
+      // Don't play sound here -- the prevOrderCountRef effect (above) plays
+      // the notification only when loadOrders returns more visible orders,
+      // which correctly respects the active zone filter.
       loadOrders();
     },
     onUpdate: (record) => {
@@ -343,14 +372,23 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
   const loadCompleted = useCallback(async () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const { data } = await supabase
+    let completedQuery = supabase
       .from('orders')
       .select('*, order_items(*), server:admin_users!orders_server_id_fkey(id, full_name)')
       .eq('tenant_id', tenantId)
       .in('status', ['delivered', 'cancelled'])
-      .in('preparation_zone', ['kitchen', 'mixed'])
       .gte('created_at', today.toISOString())
       .order('created_at', { ascending: false });
+
+    if (barDisplayEnabled) {
+      if (zoneFilter === 'kitchen') {
+        completedQuery = completedQuery.in('preparation_zone', ['kitchen', 'mixed']);
+      } else if (zoneFilter === 'bar') {
+        completedQuery = completedQuery.in('preparation_zone', ['bar', 'mixed']);
+      }
+    }
+
+    const { data } = await completedQuery;
 
     if (data) {
       const mapped = (data || []).map(
@@ -370,7 +408,7 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
       ) as Order[];
       setCompletedOrders(mapped);
     }
-  }, [supabase, tenantId]);
+  }, [supabase, tenantId, barDisplayEnabled, zoneFilter]);
 
   // Reload completed when active orders change (an order just got delivered)
   useEffect(() => {
@@ -411,6 +449,10 @@ export function useKitchenData({ tenantId }: UseKitchenDataParams): UseKitchenDa
     isFullscreen,
     activeTab,
     setActiveTab,
+
+    // Zone
+    zoneFilter,
+    barDisplayEnabled,
 
     // Sound
     soundEnabled,

@@ -51,6 +51,7 @@ import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
+import { createMenuItemService } from '@/services/menu-item.service';
 
 interface ItemsClientProps {
   tenantId: string;
@@ -191,22 +192,18 @@ export default function ItemsClient({
         payload.prices = Object.keys(cleanPrices).length > 0 ? cleanPrices : null;
       }
 
+      const menuItemService = createMenuItemService(supabase);
       if (editingItem) {
-        const { error } = await supabase
-          .from('menu_items')
-          .update(payload)
-          .eq('id', editingItem.id);
-        if (error) throw error;
+        await menuItemService.updateMenuItem(editingItem.id, payload);
         toast({ title: t('itemUpdated') });
       } else {
-        // Vérifier les limites du plan avant la création
+        // Verifier les limites du plan avant la creation
         const limitCheck = await actionCheckCanAddMenuItem(tenantId);
         if (limitCheck.error) {
           toast({ title: limitCheck.error, variant: 'destructive' });
           return;
         }
-        const { error } = await supabase.from('menu_items').insert([payload]);
-        if (error) throw error;
+        await menuItemService.createMenuItem(payload);
         toast({ title: t('itemCreated') });
       }
       setShowModal(false);
@@ -231,8 +228,8 @@ export default function ItemsClient({
   const handleDelete = async (item: MenuItem) => {
     if (!confirm(t('deleteConfirm', { name: item.name }))) return;
     try {
-      const { error } = await supabase.from('menu_items').delete().eq('id', item.id);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.deleteMenuItem(item.id);
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
@@ -244,12 +241,8 @@ export default function ItemsClient({
 
   const toggleAvailable = async (item: MenuItem) => {
     try {
-      const { error } = await supabase
-        .from('menu_items')
-        .update({ is_available: !item.is_available })
-        .eq('id', item.id)
-        .eq('tenant_id', tenantId);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.toggleAvailable(item.id, !item.is_available, tenantId);
       loadItems();
       router.refresh();
       revalidateMenuCache();
@@ -260,12 +253,8 @@ export default function ItemsClient({
 
   const toggleFeatured = async (item: MenuItem) => {
     try {
-      const { error } = await supabase
-        .from('menu_items')
-        .update({ is_featured: !item.is_featured })
-        .eq('id', item.id)
-        .eq('tenant_id', tenantId);
-      if (error) throw error;
+      const menuItemService = createMenuItemService(supabase);
+      await menuItemService.toggleFeatured(item.id, !item.is_featured, tenantId);
       toast({ title: item.is_featured ? t('removedFromFeatured') : t('addedToFeatured') });
       loadItems();
       router.refresh();

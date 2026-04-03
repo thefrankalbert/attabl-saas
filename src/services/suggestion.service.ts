@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SuggestionType } from '@/types/inventory.types';
+import { ServiceError } from './errors';
 
 interface MenuItem {
   id: string;
@@ -7,6 +8,63 @@ interface MenuItem {
   price: number;
   category_id: string | null;
   is_available: boolean;
+}
+
+interface CreateSuggestionInput {
+  tenant_id: string;
+  menu_item_id: string;
+  suggested_item_id: string;
+  suggestion_type: SuggestionType;
+  description?: string | null;
+  display_order: number;
+}
+
+/**
+ * Suggestion service - handles item suggestion CRUD and auto-generation.
+ *
+ * Used by SuggestionsClient.
+ */
+export function createSuggestionService(supabase: SupabaseClient) {
+  return {
+    /**
+     * Create a manual suggestion.
+     */
+    async createSuggestion(data: CreateSuggestionInput): Promise<void> {
+      const { error } = await supabase.from('item_suggestions').insert(data);
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la creation de la suggestion', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Soft-delete a suggestion by setting is_active to false.
+     */
+    async deactivateSuggestion(suggestionId: string): Promise<void> {
+      const { error } = await supabase
+        .from('item_suggestions')
+        .update({ is_active: false })
+        .eq('id', suggestionId);
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la suppression de la suggestion', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Bulk soft-delete suggestions by setting is_active to false.
+     */
+    async bulkDeactivateSuggestions(suggestionIds: string[]): Promise<void> {
+      const { error } = await supabase
+        .from('item_suggestions')
+        .update({ is_active: false })
+        .in('id', suggestionIds);
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la suppression des suggestions', 'INTERNAL', error);
+      }
+    },
+  };
 }
 
 interface GeneratedSuggestion {

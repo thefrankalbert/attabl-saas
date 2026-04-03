@@ -1,7 +1,7 @@
 'use server';
 
 import { revalidateTag } from 'next/cache';
-import { CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
+import { CACHE_TAG_TENANT_CONFIG, tenantConfigTag } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 import { updateTenantSettingsSchema } from '@/lib/validations/tenant.schema';
@@ -52,6 +52,8 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       serviceChargeRate: formData.get('serviceChargeRate')
         ? Number(formData.get('serviceChargeRate'))
         : 0,
+      // KDS
+      barDisplayEnabled: formData.get('barDisplayEnabled') === 'true',
       // Idle timeout
       idleTimeoutMinutes: formData.get('idleTimeoutMinutes')
         ? Number(formData.get('idleTimeoutMinutes'))
@@ -86,7 +88,16 @@ export async function actionUpdateTenantSettings(formData: FormData) {
       newData: parseResult.data as Record<string, unknown>,
     });
 
-    // 4. Revalidate cached tenant config (used by site + admin layouts)
+    // 4. Revalidate cached tenant config (scoped to this tenant)
+    const { data: tenantSlug } = await supabase
+      .from('tenants')
+      .select('slug')
+      .eq('id', tenantId)
+      .single();
+    if (tenantSlug?.slug) {
+      revalidateTag(tenantConfigTag(tenantSlug.slug), 'max');
+    }
+    // Also revalidate global tag as fallback for any non-scoped consumers
     revalidateTag(CACHE_TAG_TENANT_CONFIG, 'max');
 
     return { success: true };

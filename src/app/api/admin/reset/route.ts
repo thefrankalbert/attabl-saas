@@ -1,10 +1,9 @@
-import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
+import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 
 /**
  * Reset API - allows high-level admins (owner, admin) to reset specific data.
@@ -30,50 +29,21 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createClient();
-    const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
+    // 1. Auth + tenant from session (IDOR prevention)
+    const { tenantId, user, role } = await getAuthenticatedUserWithTenant();
 
-    // 1. Auth check
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      return NextResponse.json({ error: 'Non authentifié' }, { status: 401 });
-    }
-
-    if (!tenantSlug) {
-      return NextResponse.json({ error: 'Tenant non identifié' }, { status: 400 });
-    }
-
-    // 2. Verify admin role (owner or admin only)
-    const adminSupabase = createAdminClient();
-    const { data: tenant } = await adminSupabase
-      .from('tenants')
-      .select('id')
-      .eq('slug', tenantSlug)
-      .single();
-
-    if (!tenant) {
-      return NextResponse.json({ error: 'Restaurant non trouvé' }, { status: 404 });
-    }
-
-    const { data: adminUser } = await adminSupabase
-      .from('admin_users')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('tenant_id', tenant.id)
-      .single();
-
-    if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
+    // 2. Only owner/admin can reset
+    if (!['owner', 'admin'].includes(role)) {
       return NextResponse.json(
         {
           error:
-            'Permissions insuffisantes. Seuls les propriétaires et administrateurs peuvent effectuer cette action.',
+            'Permissions insuffisantes. Seuls les proprietaires et administrateurs peuvent effectuer cette action.',
         },
         { status: 403 },
       );
     }
+
+    const adminSupabase = createAdminClient();
 
     // 3. Parse and validate input
     let body: unknown;
@@ -99,7 +69,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const tenantId = tenant.id;
+    // tenantId already derived from session above
 
     // 5. Execute reset based on type
     switch (resetType) {
@@ -135,7 +105,7 @@ export async function POST(request: Request) {
           );
         }
 
-        logger.info(`Reset: Deleted ${count} orders for tenant ${tenantSlug} by user ${user.id}`);
+        logger.info(`Reset: Deleted ${count} orders for tenant ${tenantId} by user ${user.id}`);
         return NextResponse.json({
           success: true,
           message: `${count || 0} commandes supprimées avec succès.`,
@@ -170,7 +140,7 @@ export async function POST(request: Request) {
           }
 
           logger.info(
-            `Reset stats: Deleted ${count} delivered/cancelled orders for tenant ${tenantSlug}`,
+            `Reset stats: Deleted ${count} delivered/cancelled orders for tenant ${tenantId}`,
           );
           return NextResponse.json({
             success: true,
@@ -215,7 +185,7 @@ export async function POST(request: Request) {
         await adminSupabase.from('coupons').update({ current_uses: 0 }).eq('tenant_id', tenantId);
 
         logger.info(
-          `Reset all: Full data reset for tenant ${tenantSlug} by user ${user.id} - ${ordersCount} orders deleted`,
+          `Reset all: Full data reset for tenant ${tenantId} by user ${user.id} - ${ordersCount} orders deleted`,
         );
         return NextResponse.json({
           success: true,
@@ -225,6 +195,9 @@ export async function POST(request: Request) {
       }
     }
   } catch (error) {
+    if (error instanceof AuthError) {
+      return NextResponse.json({ error: error.message }, { status: 401 });
+    }
     logger.error('Reset API error', error);
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { checkoutLimiter, getClientIp } from '@/lib/rate-limit';
 import { updateSubscriptionSchema } from '@/lib/validations/checkout.schema';
+import { withStripeBreaker } from '@/lib/stripe/circuit-breaker';
 
 export async function POST(request: Request) {
   try {
@@ -82,7 +83,10 @@ export async function POST(request: Request) {
     const { priceId } = parseResult.data;
 
     // 4. Retrieve current subscription and update with proration
-    const subscription = await stripe.subscriptions.retrieve(tenantData.stripe_subscription_id);
+    const subscriptionId = tenantData.stripe_subscription_id;
+    const subscription = await withStripeBreaker(() =>
+      stripe.subscriptions.retrieve(subscriptionId),
+    );
 
     if (subscription.status === 'canceled') {
       return NextResponse.json(
@@ -102,9 +106,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const updatedSubscription = await stripe.subscriptions.update(
-      tenantData.stripe_subscription_id,
-      {
+    const updatedSubscription = await withStripeBreaker(() =>
+      stripe.subscriptions.update(subscriptionId, {
         items: [
           {
             id: existingItem.id,
@@ -112,7 +115,7 @@ export async function POST(request: Request) {
           },
         ],
         proration_behavior: 'create_prorations',
-      },
+      }),
     );
 
     logger.info('Subscription updated successfully', {

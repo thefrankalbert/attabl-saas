@@ -1,4 +1,24 @@
-import type { Order } from '@/types/admin.types';
+import type { Order, KDSZoneFilter } from '@/types/admin.types';
+
+interface PrintOptions {
+  zoneFilter?: KDSZoneFilter;
+  barDisplayEnabled?: boolean;
+}
+
+/** Filter items based on zone selection */
+function filterItemsByZone(
+  allItems: Order['items'],
+  barDisplayEnabled: boolean,
+  zoneFilter: KDSZoneFilter,
+) {
+  return (allItems || []).filter((item) => {
+    const zone = item.preparation_zone || 'kitchen';
+    if (!barDisplayEnabled) return true;
+    if (zoneFilter === 'kitchen') return zone !== 'bar';
+    if (zoneFilter === 'bar') return zone !== 'kitchen';
+    return true;
+  });
+}
 
 /** Escape user-controlled strings before interpolating into HTML. */
 function escapeHtml(str: string): string {
@@ -14,13 +34,9 @@ function escapeHtml(str: string): string {
  * Génère le HTML d'un ticket cuisine pour impression.
  * Gros caractères, items groupés par course, notes mises en évidence.
  */
-export function generateKitchenTicketHTML(order: Order): string {
-  // Filter out bar-only items: kitchen ticket shows only kitchen and both-zone items
-  const allItems = order.items || [];
-  const items = allItems.filter((item) => {
-    const zone = item.preparation_zone || 'kitchen';
-    return zone !== 'bar';
-  });
+export function generateKitchenTicketHTML(order: Order, options: PrintOptions = {}): string {
+  const { zoneFilter = 'all', barDisplayEnabled = false } = options;
+  const items = filterItemsByZone(order.items, barDisplayEnabled, zoneFilter);
   const orderTime = new Date(order.created_at).toLocaleTimeString('fr-FR', {
     hour: '2-digit',
     minute: '2-digit',
@@ -196,15 +212,12 @@ export function generateKitchenTicketHTML(order: Order): string {
 /**
  * Ouvre une nouvelle fenêtre et lance l'impression du ticket cuisine.
  */
-export function printKitchenTicket(order: Order): boolean {
-  // Skip printing if no kitchen-relevant items exist
-  const kitchenItems = (order.items || []).filter((item) => {
-    const zone = item.preparation_zone || 'kitchen';
-    return zone !== 'bar';
-  });
-  if (kitchenItems.length === 0) return false;
+export function printKitchenTicket(order: Order, options: PrintOptions = {}): boolean {
+  const { zoneFilter = 'all', barDisplayEnabled = false } = options;
+  const relevantItems = filterItemsByZone(order.items, barDisplayEnabled, zoneFilter);
+  if (relevantItems.length === 0) return false;
 
-  const html = generateKitchenTicketHTML(order);
+  const html = generateKitchenTicketHTML(order, options);
   const printWindow = window.open('', '_blank', 'width=350,height=600');
   if (!printWindow) return false;
 

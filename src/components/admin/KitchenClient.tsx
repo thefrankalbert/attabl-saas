@@ -10,12 +10,13 @@ import KitchenFilters from '@/components/features/kitchen/KitchenFilters';
 import KitchenBoard from '@/components/features/kitchen/KitchenBoard';
 import FooterSummaryBar from '@/components/features/kitchen/FooterSummaryBar';
 import type { ShortcutDefinition } from '@/hooks/useKeyboardShortcuts';
-import type { OrderStatus } from '@/types/admin.types';
+import type { OrderStatus, KDSZoneFilter } from '@/types/admin.types';
 
 interface KitchenClientProps {
   tenantId: string;
   tenantName?: string;
   notificationSoundId?: string;
+  barDisplayEnabled?: boolean;
 }
 
 const CHEF_VIEW_ROLES = ['owner', 'admin', 'manager', 'chef'] as const;
@@ -24,13 +25,23 @@ export default function KitchenClient({
   tenantId,
   tenantName,
   notificationSoundId,
+  barDisplayEnabled = false,
 }: KitchenClientProps) {
   const t = useTranslations('kitchen');
   const { role } = usePermissions();
 
   const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
-  const kitchen = useKitchenData({ tenantId, notificationSoundId });
+
+  // Zone filter state (only used when barDisplayEnabled is true)
+  const [zoneFilter, setZoneFilter] = useState<KDSZoneFilter>('all');
+
+  const kitchen = useKitchenData({
+    tenantId,
+    notificationSoundId,
+    barDisplayEnabled,
+    zoneFilter,
+  });
 
   // -- Sound unlock interstitial (browser blocks audio until user gesture) --
   const [soundUnlocked, setSoundUnlocked] = useState(() => {
@@ -171,6 +182,9 @@ export default function KitchenClient({
         toggleFullscreen={kitchen.toggleFullscreen}
         goBack={kitchen.goBack}
         isChefView={isChefView}
+        barDisplayEnabled={barDisplayEnabled}
+        zoneFilter={zoneFilter}
+        onZoneFilterChange={setZoneFilter}
       />
 
       <KitchenBoard
@@ -181,6 +195,8 @@ export default function KitchenClient({
         onMarkAllReady={kitchen.markAllItemsReady}
         onUpdate={kitchen.loadOrders}
         isChefView={isChefView}
+        zoneFilter={zoneFilter}
+        barDisplayEnabled={barDisplayEnabled}
       />
 
       <FooterSummaryBar
