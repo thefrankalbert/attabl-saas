@@ -116,6 +116,7 @@
     "completeOrder": "Complete my order"
   },
   "orders": {
+    "title": "Orders",
     "sendOrder": "Send Order",
     "confirmed": "Confirmed.",
     "successMsg": "Our kitchen teams are busy preparing your order.",
@@ -1630,7 +1631,9 @@
     "markDelivered": "Delivered",
     "tableLabel": "Table",
     "itemsCount": "{count} item(s)",
-    "orderAge": "{minutes} min ago"
+    "orderAge": "{minutes} min ago",
+    "releaseAssignment": "Release assignment",
+    "searchAssignments": "Search assignments"
   },
   "stockHistory": {
     "title": "Movement history",

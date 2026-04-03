@@ -119,6 +119,8 @@ interface VisualTableProps {
   releaseLabel: string;
   occupiedLabel: string;
   vacantLabel: string;
+  releaseAriaLabel: string;
+  assignAriaLabel: string;
 }
 
 function VisualTable({
@@ -131,6 +133,8 @@ function VisualTable({
   releaseLabel,
   occupiedLabel,
   vacantLabel,
+  releaseAriaLabel,
+  assignAriaLabel,
 }: VisualTableProps) {
   const chairs = getChairLayout(table.capacity);
   const isAssigned = !!assignment;
@@ -172,8 +176,9 @@ function VisualTable({
           {isAssigned && (
             <button
               onClick={() => onRelease(assignment.id)}
-              className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-status-error-bg text-app-text-muted hover:text-status-error transition-all"
+              className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded opacity-0 group-hover:opacity-100 hover:bg-status-error-bg text-app-text-muted hover:text-status-error transition-all focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:opacity-100"
               title={releaseLabel}
+              aria-label={releaseAriaLabel}
             >
               <X className="w-3 h-3" />
             </button>
@@ -195,7 +200,10 @@ function VisualTable({
             <>
               <p className="text-[10px] text-app-text-muted font-medium mb-1">{vacantLabel}</p>
               <Select onValueChange={(val) => onAssign(table.id, val)}>
-                <SelectTrigger className="h-7 text-[10px] bg-app-card/60 border-app-border/50">
+                <SelectTrigger
+                  className="min-h-[44px] text-[10px] bg-app-card/60 border-app-border/50"
+                  aria-label={assignAriaLabel}
+                >
                   <SelectValue placeholder={assignLabel} />
                 </SelectTrigger>
                 <SelectContent>
@@ -479,6 +487,7 @@ export default function ServiceManager({ tenantId }: Props) {
     <div className="h-full flex flex-col overflow-hidden">
       {/* ═══ Header stats ═══════════════════════════════════════ */}
       <div className="shrink-0 flex items-center gap-2">
+        <h1 className="text-lg sm:text-xl font-bold text-app-text shrink-0">{t('title')}</h1>
         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-app-card rounded-lg border border-app-border text-xs">
           <Clock className="w-3.5 h-3.5 text-app-text-muted" />
           <span className="text-app-text-secondary font-medium">
@@ -505,6 +514,7 @@ export default function ServiceManager({ tenantId }: Props) {
                 value={sidebarSearch}
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 placeholder={t('searchPlaceholder')}
+                aria-label={t('searchAssignments')}
                 className="pl-8 h-9 text-sm bg-app-bg border-app-border"
               />
             </div>
@@ -561,7 +571,7 @@ export default function ServiceManager({ tenantId }: Props) {
             {/* ── COMMANDES PRETES (ready orders) ── */}
             <div>
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-500">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-status-success">
                   {t('readyOrders')}
                 </span>
                 <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-status-success-bg text-status-success text-[9px] font-bold px-1">
@@ -583,11 +593,11 @@ export default function ServiceManager({ tenantId }: Props) {
                     return (
                       <div
                         key={order.id}
-                        className="p-2.5 rounded-lg bg-emerald-500/5 border border-emerald-500/20 hover:bg-emerald-500/10 transition-colors"
+                        className="p-2.5 rounded-lg bg-status-success-bg border border-status-success/20 hover:bg-status-success/10 transition-colors"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-1.5">
-                            <Utensils className="w-3 h-3 text-emerald-500" />
+                            <Utensils className="w-3 h-3 text-status-success" />
                             <span className="text-xs font-bold text-app-text">
                               {t('tableLabel')} {order.table_number}
                             </span>
@@ -601,7 +611,8 @@ export default function ServiceManager({ tenantId }: Props) {
                         </p>
                         <button
                           onClick={() => handleMarkDelivered(order.id)}
-                          className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 min-h-[36px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                          aria-label={t('markDelivered')}
+                          className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {t('markDelivered')}
@@ -656,8 +667,9 @@ export default function ServiceManager({ tenantId }: Props) {
             <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide">
               <button
                 onClick={() => setActiveZoneId(null)}
+                aria-label={tc('all')}
                 className={cn(
-                  'shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all border',
+                  'shrink-0 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all border focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none',
                   !activeZoneId
                     ? 'bg-accent text-accent-text border-accent'
                     : 'bg-app-card text-app-text-secondary border-app-border hover:text-app-text',
@@ -680,8 +692,9 @@ export default function ServiceManager({ tenantId }: Props) {
                   <button
                     key={zone.id}
                     onClick={() => setActiveZoneId(zone.id)}
+                    aria-label={zone.name}
                     className={cn(
-                      'shrink-0 px-4 py-2 rounded-lg text-sm font-medium transition-all border',
+                      'shrink-0 px-4 py-2 min-h-[44px] rounded-lg text-sm font-medium transition-all border focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none',
                       isActive
                         ? 'bg-accent text-accent-text border-accent'
                         : 'bg-app-card text-app-text-secondary border-app-border hover:text-app-text',
@@ -747,6 +760,8 @@ export default function ServiceManager({ tenantId }: Props) {
                           releaseLabel={t('release')}
                           occupiedLabel={t('occupied')}
                           vacantLabel={t('vacant')}
+                          releaseAriaLabel={t('releaseAssignment')}
+                          assignAriaLabel={t('assignServer')}
                         />
                       ))}
                     </div>
@@ -759,9 +774,9 @@ export default function ServiceManager({ tenantId }: Props) {
             <div className="@md:hidden space-y-4">
               {/* Ready orders - mobile */}
               {readyOrders.length > 0 && (
-                <div className="bg-app-card rounded-xl border border-emerald-500/20 p-4">
+                <div className="bg-app-card rounded-xl border border-status-success/20 p-4">
                   <div className="flex items-center gap-2 mb-3">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    <CheckCircle2 className="w-4 h-4 text-status-success" />
                     <span className="text-sm font-semibold text-app-text">{t('readyOrders')}</span>
                     <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] rounded-full bg-status-success-bg text-status-success text-[9px] font-bold px-1">
                       {readyOrders.length}
@@ -782,7 +797,7 @@ export default function ServiceManager({ tenantId }: Props) {
                           className="flex items-center justify-between py-2 border-b border-app-border/50 last:border-0"
                         >
                           <div className="flex items-center gap-2 min-w-0 flex-1">
-                            <Utensils className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                            <Utensils className="w-3.5 h-3.5 text-status-success shrink-0" />
                             <div className="min-w-0">
                               <span className="text-xs font-bold text-app-text">
                                 {t('tableLabel')} {order.table_number}
@@ -795,7 +810,8 @@ export default function ServiceManager({ tenantId }: Props) {
                           </div>
                           <button
                             onClick={() => handleMarkDelivered(order.id)}
-                            className="shrink-0 flex items-center gap-1 px-3 py-2 min-h-[36px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                            aria-label={t('markDelivered')}
+                            className="shrink-0 flex items-center gap-1 px-3 py-2 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none"
                           >
                             <CheckCircle2 className="w-3 h-3" />
                             {t('markDelivered')}
