@@ -270,7 +270,7 @@ export default function ItemsClient({
         <div className="shrink-0">
           {/* Header - single row like inventory */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <h1 className="text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {seg.items}
               <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
             </h1>

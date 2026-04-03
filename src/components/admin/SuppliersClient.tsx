@@ -296,7 +296,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
             <div className="shrink-0 space-y-3">
               {/* Header - single line on desktop */}
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-                <h1 className="text-2xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Truck className="w-6 h-6" />
                   {t('title')}
                   <span className="text-base font-normal text-app-text-secondary">
