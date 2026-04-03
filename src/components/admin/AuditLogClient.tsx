@@ -197,7 +197,7 @@ export default function AuditLogClient({
       <div className="shrink-0 space-y-3">
         <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
           <div className="flex items-center gap-3 shrink-0">
-            <h1 className="text-xl font-bold text-app-text">{t('title')}</h1>
+            <h1 className="text-lg sm:text-xl font-bold text-app-text">{t('title')}</h1>
             <span className="text-xs font-medium text-app-text-muted bg-app-elevated px-2 py-0.5 rounded-md tabular-nums">
               {totalCount}
             </span>

@@ -438,6 +438,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   return (
     <RoleGuard permission="canViewAllOrders">
       <div className="h-full flex flex-col overflow-hidden">
+        <h1 className="sr-only">{t('title')}</h1>
         <div className="shrink-0">
           {/* Search + Tabs + Sound - wraps on mobile/tablet portrait */}
           <div className="flex flex-wrap @lg:flex-nowrap items-center gap-2 sm:gap-3 overflow-x-auto scrollbar-hide">
