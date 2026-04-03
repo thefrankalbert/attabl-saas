@@ -33,8 +33,19 @@ export default function KitchenClient({
   const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
 
-  // Zone filter state (only used when barDisplayEnabled is true)
-  const [zoneFilter, setZoneFilter] = useState<KDSZoneFilter>('all');
+  // Zone filter state - persisted per tenant in localStorage
+  const [zoneFilter, setZoneFilter] = useState<KDSZoneFilter>(() => {
+    if (typeof window === 'undefined') return 'all';
+    return (localStorage.getItem(`kds_zone_${tenantId}`) as KDSZoneFilter) || 'all';
+  });
+
+  const handleZoneChange = useCallback(
+    (zone: KDSZoneFilter) => {
+      setZoneFilter(zone);
+      localStorage.setItem(`kds_zone_${tenantId}`, zone);
+    },
+    [tenantId],
+  );
 
   const kitchen = useKitchenData({
     tenantId,
@@ -184,7 +195,7 @@ export default function KitchenClient({
         isChefView={isChefView}
         barDisplayEnabled={barDisplayEnabled}
         zoneFilter={zoneFilter}
-        onZoneFilterChange={setZoneFilter}
+        onZoneFilterChange={handleZoneChange}
       />
 
       <KitchenBoard

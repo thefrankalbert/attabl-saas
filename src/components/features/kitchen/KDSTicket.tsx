@@ -100,7 +100,6 @@ export default function KDSTicket({
   const [elapsed, setElapsed] = useState(0);
   const [expanded, setExpanded] = useState(false);
   const t = useTranslations('kitchen');
-  const tc = useTranslations('common');
 
   // ─── Service type labels ─────────────────────────────────
   const SERVICE_LABELS: Record<string, string> = {
@@ -311,9 +310,6 @@ export default function KDSTicket({
           >
             {t('showLess')}
           </button>
-        )}
-        {items.length === 0 && (
-          <div className="text-center py-4 text-app-text-secondary text-xs">{tc('noItems')}</div>
         )}
       </div>
 
