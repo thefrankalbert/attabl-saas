@@ -188,11 +188,8 @@ describe('KDSTicket', () => {
     expect(screen.getByText('Salade Caesar')).toBeInTheDocument();
   });
 
-  it('shows empty state when no items', () => {
-    render(<KDSTicket order={makeOrder({ items: [] })} {...mockCallbacks} />);
-
-    expect(screen.getByText('noItems')).toBeInTheDocument();
-  });
+  // Empty items test removed: tickets without visible items are now
+  // filtered out at the KitchenBoard level (Fix 2) and never rendered.
 
   it('shows status badge in header', () => {
     render(<KDSTicket order={makeOrder({ status: 'preparing' })} {...mockCallbacks} />);
