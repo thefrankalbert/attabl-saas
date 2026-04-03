@@ -55,17 +55,22 @@ function AdminLayoutInner({
   const immersive = isImmersivePage(pathname);
 
   // Sidebar collapsed state - persisted to localStorage, respected across navigations
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false;
+  // Use false as SSR default to avoid hydration mismatch, then sync from localStorage after mount
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  useEffect(() => {
+    let initial = false;
     try {
       const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-      if (stored !== null) return stored === 'true';
+      if (stored !== null) {
+        initial = stored === 'true';
+      } else {
+        initial = window.innerWidth < 1024;
+      }
     } catch {
       // localStorage unavailable
     }
-    // Default: collapsed on tablet, expanded on desktop
-    return window.innerWidth < 1024;
-  });
+    setSidebarCollapsed(initial);
+  }, []);
 
   // Auto-collapse on tablet portrait, but only on initial mount / device change
   // NEVER auto-expand - user's explicit choice is always respected
