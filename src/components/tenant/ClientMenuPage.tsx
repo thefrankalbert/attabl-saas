@@ -242,7 +242,7 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="bg-white"
+      className="bg-neutral-50"
       style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ FULLSCREEN SPLASH ═══ */}
@@ -253,7 +253,11 @@ export default function ClientMenuPage({
         className="relative overflow-hidden rounded-b-[2rem]"
         style={{ backgroundColor: primary }}
       >
-        <div className="px-5 pt-12 pb-20">
+        {/* Decorative shapes for depth */}
+        <div className="absolute top-6 right-[-30px] w-28 h-28 rounded-full bg-white/10" />
+        <div className="absolute bottom-16 left-[-15px] w-16 h-16 rounded-full bg-white/10" />
+
+        <div className="relative px-5 pt-12 pb-20">
           {/* Top bar: table/location pill */}
           <div className="flex items-center justify-between mb-5">
             <button
@@ -279,24 +283,30 @@ export default function ClientMenuPage({
             </Link>
           </div>
 
-          {/* Welcome text — 2 lines with different styles */}
-          <h1 className="text-2xl font-bold text-white leading-tight">
-            {t('hello') || 'Bienvenue'},
-          </h1>
-          <p className="text-base font-semibold mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
+          {/* Welcome text — 2 lines like reference app */}
+          <p className="text-base font-semibold text-white/70">{t('hello') || 'Bienvenue'} 👋</p>
+          <h1 className="text-[26px] font-extrabold text-white leading-snug mt-1 tracking-tight">
             {tenant.description || t('welcomeSubtitle')}
-          </p>
+          </h1>
         </div>
 
         {/* Search bar — floating on the boundary */}
         <div ref={searchBarRef} className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-5">
           <div
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-lg cursor-pointer"
+            className="w-full flex items-center gap-3 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] px-4 py-3 cursor-pointer border border-neutral-100"
           >
-            <Search className="w-5 h-5 text-neutral-400" />
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center"
+              style={{ backgroundColor: `${primary}12` }}
+            >
+              <Search className="w-4 h-4" style={{ color: primary }} />
+            </div>
             <span className="flex-1 text-sm text-neutral-400">{t('searchMenu')}</span>
-            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-600">
+            <span
+              className="text-[11px] font-semibold px-3 py-1.5 rounded-full text-white"
+              style={{ backgroundColor: primary }}
+            >
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
           </div>
@@ -355,10 +365,13 @@ export default function ClientMenuPage({
                 }
                 className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <div className="w-14 h-14 rounded-2xl bg-app-card border border-app-border/30 shadow-sm flex items-center justify-center hover:shadow-md transition-shadow active:scale-95">
+                <div
+                  className="w-[58px] h-[58px] rounded-[16px] shadow-sm border border-neutral-100 flex items-center justify-center hover:shadow-md transition-shadow active:scale-95"
+                  style={{ backgroundColor: `${primary}10` }}
+                >
                   <span className="text-2xl leading-none">{getCategoryEmoji(cat.name)}</span>
                 </div>
-                <span className="text-[11px] font-medium text-app-text-secondary text-center w-14 leading-tight">
+                <span className="text-[11px] font-medium text-neutral-600 text-center w-[58px] leading-tight">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
