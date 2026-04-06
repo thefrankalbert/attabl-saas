@@ -191,6 +191,15 @@ Cette regle s'applique a :
 
 SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx, .pdf) peuvent utiliser la typographie riche.
 
+## Regles d'integration de code externe
+
+- Lorsqu'un fichier ou snippet de code est fourni comme reference, il doit etre integre TEL QUEL sans modification de structure, de noms de classes, ni de logique.
+- Ne jamais renommer les composants, variables ou fonctions du code source fourni.
+- Ne jamais remplacer les classes Tailwind par des equivalents "preferes".
+- Ne jamais reorganiser l'ordre des elements JSX/TSX.
+- Si une adaptation est necessaire (typage TS, imports manquants), la faire a la marge sans toucher au rendu visuel.
+- En cas de doute, demander confirmation AVANT de modifier.
+
 ## Documentation supplementaire
 
 - `agent_docs/architecture.md` : Details sur l'architecture en couches
