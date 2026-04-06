@@ -39,7 +39,10 @@ export default function LegalPage() {
         <p>
           ATTABL propose des plans d&apos;abonnement mensuels et annuels. Les tarifs en vigueur sont
           disponibles sur la page{' '}
-          <a href="/pricing" className="text-[#CCFF00] hover:underline">
+          <a
+            href="/pricing"
+            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+          >
             Tarifs
           </a>
           . Toute modification tarifaire sera communiqu&eacute;e 30 jours &agrave; l&apos;avance.
@@ -57,7 +60,10 @@ export default function LegalPage() {
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">5. Contact</h2>
         <p>
           Pour toute question relative aux pr&eacute;sentes CGU, contactez-nous &agrave;{' '}
-          <a href="mailto:contact@attabl.com" className="text-[#CCFF00] hover:underline">
+          <a
+            href="mailto:contact@attabl.com"
+            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+          >
             contact@attabl.com
           </a>
           .
