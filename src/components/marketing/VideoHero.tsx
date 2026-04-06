@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { UtensilsCrossed, Hotel, Zap, Wine, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
 import DashboardPreview from './DashboardPreview';
 
 type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
@@ -26,7 +25,9 @@ export default function VideoHero() {
         {/* Centered text */}
         <div className="text-center">
           <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
-            Petit comptoir ou grande enseigne. Marquez votre territoire.
+            <span className="block">Petit comptoir</span>
+            <span className="block">ou grande enseigne.</span>
+            <span className="block">Marquez votre territoire.</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500 dark:text-neutral-400">
             Menu, commandes, stocks, finances - tout piloté depuis un seul outil.

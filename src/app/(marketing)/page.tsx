@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import VideoHero from '@/components/marketing/VideoHero';
 import ProductShowcase from '@/components/marketing/ProductShowcase';
-import IndustrySection from '@/components/marketing/IndustrySection';
-import PhoneAnimation from '@/components/marketing/PhoneAnimation';
+import PresenceSection from '@/components/marketing/PresenceSection';
 import SegmentsSection from '@/components/marketing/SegmentsSection';
 import FeaturesShowcase from '@/components/marketing/FeaturesShowcase';
 import SocialProof from '@/components/marketing/SocialProof';
@@ -27,8 +26,7 @@ export default function HomePage() {
       <VideoHero />
       <ProductShowcase />
       <SegmentsSection />
-      <PhoneAnimation />
-      <IndustrySection />
+      <PresenceSection />
       <FeaturesShowcase />
       <SocialProof />
       <CTASection />
