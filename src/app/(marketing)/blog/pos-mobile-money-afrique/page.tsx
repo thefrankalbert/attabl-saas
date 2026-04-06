@@ -90,18 +90,16 @@ export default function ArticlePosPage() {
             disponible immédiatement sur son compte.
           </p>
           <p>
-            ATTABL s&apos;intègre nativement avec les principaux opérateurs de mobile money en
-            Afrique. Vos clients scannent un QR code, confirment le paiement sur leur téléphone, et
-            la transaction est terminée - en moins de 10 secondes.
+            ATTABL supporte le mobile money comme methode de paiement. Vos equipes peuvent
+            enregistrer les transactions mobile money directement depuis le POS.
           </p>
 
           <h2>Bien choisir sa solution POS</h2>
           <p>
             Un bon POS pour l&apos;Afrique doit fonctionner même avec une connexion internet
-            instable, supporter plusieurs devises (XAF, XOF, EUR, USD), et proposer une interface
-            simple que n&apos;importe quel employé peut prendre en main en quelques minutes. Évitez
-            les solutions qui nécessitent du matériel coûteux - un smartphone ou une tablette
-            suffit.
+            instable, supporter plusieurs devises (XAF, EUR, USD), et proposer une interface simple
+            que n&apos;importe quel employé peut prendre en main en quelques minutes. Évitez les
+            solutions qui nécessitent du matériel coûteux - un smartphone ou une tablette suffit.
           </p>
 
           <h2>Conclusion</h2>

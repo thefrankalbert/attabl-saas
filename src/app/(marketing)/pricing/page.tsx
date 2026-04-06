@@ -1,80 +1,77 @@
 'use client';
 
 import { Fragment, useState } from 'react';
-import Link from 'next/link';
-import { Check, Minus, ChevronDown } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  CreditCard,
+  Crown,
+  Minus,
+  Zap,
+  Building2,
+  Phone,
+  Users,
+  BarChart3,
+  UtensilsCrossed,
+  Star,
+  Shield,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { SinglePricingCard, type Testimonial } from '@/components/ui/single-pricing-card';
 
 // ─── Types ──────────────────────────────────
 type BillingPeriod = 'monthly' | 'yearly';
 
-interface Plan {
-  name: string;
-  priceMonthly: number | null;
-  priceYearly: number | null;
-  subtitle: string;
-  description: string;
-  cta: string;
-  ctaHref: string;
-  popular?: boolean;
-  trialPlan?: boolean;
-  highlights: string[];
-}
-
-// ─── Plans ──────────────────────────────────
-const plans: Plan[] = [
-  {
-    name: 'STARTER',
-    priceMonthly: 39000,
-    priceYearly: 31200,
-    subtitle: 'Pour demarrer',
-    description: 'Pour digitaliser votre menu et vos commandes.',
-    cta: 'Commencer',
-    ctaHref: '/signup',
-    highlights: ['Menu QR bilingue', 'POS basique', '1 admin, 3 staff', 'Support email'],
-  },
-  {
-    name: 'PRO',
-    priceMonthly: 79000,
-    priceYearly: 63200,
-    subtitle: 'Le plus populaire',
-    description: 'Pilotez votre restaurant comme un pro.',
-    cta: 'Essayer gratuitement',
-    ctaHref: '/signup',
-    popular: true,
-    trialPlan: true,
-    highlights: ['Tout STARTER +', 'KDS, tables, stock', 'Multi-devises', 'Support WhatsApp 24h'],
-  },
-  {
-    name: 'BUSINESS',
-    priceMonthly: 149000,
-    priceYearly: 119200,
-    subtitle: 'Multi-sites',
-    description: 'Gérez un hôtel ou une chaîne, tout au même endroit.',
-    cta: 'Commencer',
-    ctaHref: '/signup',
-    highlights: [
-      'Tout PRO +',
-      "Jusqu'a 10 sites",
-      'Room service, delivery',
-      'Support prioritaire 4h',
-    ],
-  },
-  {
-    name: 'ENTERPRISE',
-    priceMonthly: null,
-    priceYearly: null,
-    subtitle: 'Sur mesure',
-    description: 'Solution sur mesure pour les grands groupes.',
-    cta: 'Contactez-nous',
-    ctaHref: '/contact',
-    highlights: ['Tout BUSINESS +', 'Sites illimites', 'SLA 99.9%', 'Account manager'],
-  },
-];
-
 const formatPrice = (price: number): string => {
   return new Intl.NumberFormat('fr-FR').format(price);
 };
+
+// ─── Testimonials ──────────────────────────────────
+const testimonials: Testimonial[] = [
+  {
+    id: 1,
+    name: 'Amadou K.',
+    role: 'Gerant',
+    company: "Le Jardin, N'Djamena",
+    content:
+      "On a reduit les erreurs de commande de 40% en 2 mois. La cuisine recoit tout sur l'ecran, plus de tickets perdus.",
+    rating: 5,
+    avatar:
+      'https://images.unsplash.com/photo-1589156280159-27698a70f29e?w=80&h=80&fit=crop&crop=face',
+  },
+  {
+    id: 2,
+    name: 'Grace M.',
+    role: 'Proprietaire',
+    company: 'Chez Mama, Douala',
+    content: '200 commandes par jour, zero stress. Le KDS fait le tri, on prepare, on envoie.',
+    rating: 5,
+    avatar:
+      'https://images.unsplash.com/photo-1611432579699-484f7990b127?w=80&h=80&fit=crop&crop=face',
+  },
+  {
+    id: 3,
+    name: 'Ibrahim D.',
+    role: 'Directeur',
+    company: 'Hotel Prestige, Abidjan',
+    content:
+      'Le room service digital a change notre classement Booking. Les clients commandent depuis le lit, en anglais ou en francais.',
+    rating: 5,
+    avatar:
+      'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80&h=80&fit=crop&crop=face',
+  },
+  {
+    id: 4,
+    name: 'Fatou S.',
+    role: 'Gerante',
+    company: 'La Terrasse, Dakar',
+    content:
+      "En 3 mois, notre chiffre d'affaires a augmente de 25%. Le menu digital pousse les clients a commander plus.",
+    rating: 5,
+    avatar:
+      'https://images.unsplash.com/photo-1523824921871-d6f1a15151f1?w=80&h=80&fit=crop&crop=face',
+  },
+];
 
 // ─── Feature Comparison Grid ──────────────────────────────────
 interface FeatureRow {
@@ -121,13 +118,6 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
         enterprise: true,
       },
       { label: 'Pourboires integres', starter: false, pro: true, business: true, enterprise: true },
-      {
-        label: 'Reconciliation automatique',
-        starter: false,
-        pro: true,
-        business: true,
-        enterprise: true,
-      },
     ],
   },
   {
@@ -177,7 +167,7 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
       },
       { label: 'Rapports de vente', starter: false, pro: true, business: true, enterprise: true },
       { label: 'Best-sellers', starter: false, pro: true, business: true, enterprise: true },
-      { label: 'Analytics IA', starter: false, pro: false, business: true, enterprise: true },
+      { label: 'Rapports avances', starter: false, pro: false, business: true, enterprise: true },
       {
         label: 'Rapports multi-sites',
         starter: false,
@@ -190,13 +180,6 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
   {
     title: 'Equipe & Organisation',
     features: [
-      {
-        label: 'Gestion equipe (roles, permissions)',
-        starter: false,
-        pro: true,
-        business: true,
-        enterprise: true,
-      },
       { label: 'Etablissements', starter: '1', pro: '1', business: '10', enterprise: 'Illimite' },
       { label: 'Admins', starter: '1', pro: '1', business: '99', enterprise: '99+' },
       { label: 'Staff', starter: '3', pro: '10', business: '999', enterprise: '999+' },
@@ -215,13 +198,6 @@ const featureCategories: { title: string; features: FeatureRow[] }[] = [
       },
       { label: 'Account manager', starter: false, pro: false, business: false, enterprise: true },
       { label: 'SLA garanti', starter: false, pro: false, business: false, enterprise: '99.9%' },
-      {
-        label: 'Integrations API sur mesure',
-        starter: false,
-        pro: false,
-        business: false,
-        enterprise: true,
-      },
     ],
   },
 ];
@@ -240,10 +216,7 @@ const faqs = [
     q: 'Puis-je changer de plan ?',
     a: 'Oui, a tout moment. Montee en gamme immediate. Retour en arriere a la fin de la periode en cours.',
   },
-  {
-    q: 'Y a-t-il un engagement ?',
-    a: 'Mensuel = sans engagement. Annuel = -20%.',
-  },
+  { q: 'Y a-t-il un engagement ?', a: 'Mensuel = sans engagement. Annuel = -20%.' },
   {
     q: 'Comment je paie ?',
     a: 'Par carte bancaire (Visa, Mastercard) via Stripe. Paiement securise.',
@@ -251,14 +224,6 @@ const faqs = [
   {
     q: 'Je dois acheter du materiel ?',
     a: 'Non. ATTABL est un logiciel. Utilisez votre telephone, tablette ou ordinateur existant.',
-  },
-  {
-    q: 'Combien de menus je peux creer ?',
-    a: "Starter : 2 menus. Pro : 10 menus. Business et Enterprise : jusqu'a 99 menus.",
-  },
-  {
-    q: "Et si j'ai plusieurs restaurants ?",
-    a: "Plan BUSINESS (jusqu'a 10 sites) ou ENTERPRISE (illimite).",
   },
 ];
 
@@ -307,10 +272,14 @@ function FeatureCell({ value }: { value: boolean | string }) {
 export default function PricingPage() {
   const [period, setPeriod] = useState<BillingPeriod>('monthly');
 
+  const starterPrice = period === 'yearly' ? 31200 : 39000;
+  const proPrice = period === 'yearly' ? 63200 : 79000;
+  const businessPrice = period === 'yearly' ? 119200 : 149000;
+
   return (
     <>
-      {/* Hero + Plan Cards */}
-      <section className="bg-white dark:bg-neutral-950 py-20 lg:py-28">
+      {/* Hero */}
+      <section className="bg-white dark:bg-neutral-950 pt-20 lg:pt-28 pb-8">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h1 className="font-[family-name:var(--font-sora)] text-4xl sm:text-5xl font-bold text-neutral-900 dark:text-white">
@@ -349,99 +318,137 @@ export default function PricingPage() {
               </button>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Plan cards - badge floats above the card */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
-            {plans.map((plan) => {
-              const price = period === 'yearly' ? plan.priceYearly : plan.priceMonthly;
-              const isCustom = price === null;
+      {/* Plan Cards */}
+      <section className="bg-white dark:bg-neutral-950 pb-20">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 space-y-8">
+          {/* STARTER */}
+          <SinglePricingCard
+            badge={{ icon: Zap, text: 'Pour demarrer' }}
+            title="STARTER"
+            subtitle="Digitalisez votre menu et vos commandes."
+            price={{
+              current: `${formatPrice(starterPrice)} XAF/mois`,
+              original: period === 'yearly' ? `${formatPrice(39000)} XAF/mois` : undefined,
+              discount: period === 'yearly' ? '-20%' : undefined,
+            }}
+            benefits={[
+              { text: 'Menu QR bilingue (FR/EN)', icon: UtensilsCrossed },
+              { text: 'POS basique (cash + carte)', icon: CreditCard },
+              { text: '1 admin, 3 staff', icon: Users },
+              { text: 'Support email', icon: Phone },
+            ]}
+            features={[
+              { text: 'Menu QR digital bilingue' },
+              { text: 'Commandes sur place et a emporter' },
+              { text: 'POS cash et carte bancaire' },
+              { text: 'Dashboard (CA, commandes)' },
+              { text: '1 etablissement, 2 menus' },
+            ]}
+            featuresIcon={Check}
+            featuresTitle="Inclus dans STARTER"
+            primaryButton={{ text: 'Commencer', href: '/signup' }}
+            testimonials={[testimonials[0], testimonials[1]]}
+            testimonialRotationSpeed={6000}
+          />
 
-              return (
-                <div key={plan.name} className="relative">
-                  {/* Badge floats ABOVE the card */}
-                  {plan.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                      <span className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-[10px] px-3 py-1 rounded-full font-semibold uppercase tracking-wider whitespace-nowrap">
-                        Le plus populaire
-                      </span>
-                    </div>
-                  )}
+          {/* PRO */}
+          <SinglePricingCard
+            badge={{ icon: Crown, text: 'Essai gratuit 14 jours' }}
+            title="PRO"
+            subtitle="Pilotez votre restaurant comme un pro."
+            popular
+            price={{
+              current: `${formatPrice(proPrice)} XAF/mois`,
+              original: period === 'yearly' ? `${formatPrice(79000)} XAF/mois` : undefined,
+              discount: period === 'yearly' ? '-20%' : undefined,
+            }}
+            benefits={[
+              { text: 'Tout STARTER + KDS, tables, stock', icon: Star },
+              { text: 'Multi-devises (XAF, EUR, USD)', icon: BarChart3 },
+              { text: 'Essai gratuit 14 jours sans CB', icon: Shield },
+              { text: 'Support WhatsApp 24h', icon: Phone },
+            ]}
+            features={[
+              { text: 'Tout ce qui est dans STARTER' },
+              { text: 'KDS (ecran cuisine)' },
+              { text: 'Gestion des tables et assignation serveurs' },
+              { text: 'Gestion de stock et alertes' },
+              { text: 'Fiches techniques (cout matiere)' },
+              { text: 'Suivi fournisseurs' },
+              { text: 'Mobile money et pourboires' },
+              { text: 'Rapports de vente et best-sellers' },
+              { text: 'Gestion equipe (roles, permissions)' },
+              { text: '10 menus, 10 staff' },
+            ]}
+            featuresIcon={Check}
+            featuresTitle="Inclus dans PRO"
+            primaryButton={{ text: 'Essayer gratuitement', href: '/signup' }}
+            testimonials={testimonials}
+            testimonialRotationSpeed={5000}
+          />
 
-                  <div
-                    className={cn(
-                      'bg-white dark:bg-neutral-800 rounded-2xl p-6 sm:p-8 flex flex-col h-full',
-                      plan.popular
-                        ? 'ring-2 ring-neutral-900 dark:ring-white border border-transparent'
-                        : 'border border-neutral-200 dark:border-neutral-700',
-                    )}
-                  >
-                    {/* Plan name + description */}
-                    <div className="mb-5">
-                      <h3 className="text-lg font-bold text-neutral-900 dark:text-white">
-                        {plan.name}
-                      </h3>
-                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">
-                        {plan.description}
-                      </p>
-                    </div>
+          {/* BUSINESS */}
+          <SinglePricingCard
+            badge={{ icon: Building2, text: 'Multi-sites' }}
+            title="BUSINESS"
+            subtitle="Gerez un hotel ou une chaine, tout au meme endroit."
+            price={{
+              current: `${formatPrice(businessPrice)} XAF/mois`,
+              original: period === 'yearly' ? `${formatPrice(149000)} XAF/mois` : undefined,
+              discount: period === 'yearly' ? '-20%' : undefined,
+            }}
+            benefits={[
+              { text: "Tout PRO + jusqu'a 10 sites", icon: Building2 },
+              { text: 'Room service et delivery', icon: UtensilsCrossed },
+              { text: 'Rapports avances et multi-sites', icon: BarChart3 },
+              { text: 'Support prioritaire 4h', icon: Phone },
+            ]}
+            features={[
+              { text: 'Tout ce qui est dans PRO' },
+              { text: 'Room service digital' },
+              { text: 'Commandes delivery' },
+              { text: 'Rapports avances' },
+              { text: 'Rapports multi-sites' },
+              { text: "Jusqu'a 10 etablissements" },
+              { text: '99 admins, 999 staff, 99 menus' },
+            ]}
+            featuresIcon={Check}
+            featuresTitle="Inclus dans BUSINESS"
+            primaryButton={{ text: 'Commencer', href: '/signup' }}
+            secondaryButton={{ text: 'Voir une demo', href: '/contact' }}
+            testimonials={[testimonials[2], testimonials[3]]}
+            testimonialRotationSpeed={6000}
+          />
 
-                    {/* Price */}
-                    <div className="mb-6">
-                      {isCustom ? (
-                        <span className="text-3xl font-bold text-neutral-900 dark:text-white">
-                          Sur mesure
-                        </span>
-                      ) : (
-                        <>
-                          <span className="text-3xl sm:text-4xl font-bold text-neutral-900 dark:text-white tabular-nums">
-                            {formatPrice(price)}
-                          </span>
-                          <span className="text-sm text-neutral-500 dark:text-neutral-400 block mt-1">
-                            XAF/mois
-                          </span>
-                          {period === 'yearly' && plan.priceMonthly && (
-                            <span className="text-xs text-neutral-400 dark:text-neutral-500 line-through block mt-0.5">
-                              {formatPrice(plan.priceMonthly)} XAF/mois
-                            </span>
-                          )}
-                        </>
-                      )}
-                    </div>
-
-                    {/* CTA */}
-                    <Link
-                      href={plan.ctaHref}
-                      className={cn(
-                        'block w-full text-center rounded-lg py-3 text-sm font-semibold transition-colors',
-                        plan.popular
-                          ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 hover:bg-neutral-800 dark:hover:bg-neutral-100'
-                          : 'bg-neutral-900 text-white hover:bg-neutral-800',
-                      )}
-                    >
-                      {plan.cta}
-                    </Link>
-                    {plan.trialPlan && (
-                      <p className="text-[11px] text-neutral-400 dark:text-neutral-500 text-center mt-2">
-                        {"Plan de l'essai gratuit 14 jours"}
-                      </p>
-                    )}
-
-                    {/* Highlights - short list */}
-                    <ul className="mt-6 space-y-2.5 flex-1">
-                      {plan.highlights.map((h) => (
-                        <li key={h} className="flex items-start gap-2">
-                          <Check className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                          <span className="text-neutral-600 dark:text-neutral-400 text-sm">
-                            {h}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          {/* ENTERPRISE */}
+          <SinglePricingCard
+            badge={{ icon: Crown, text: 'Sur mesure' }}
+            title="ENTERPRISE"
+            subtitle="Solution sur mesure pour les grands groupes."
+            price={{ current: 'Sur mesure' }}
+            benefits={[
+              { text: 'Tout BUSINESS + sites illimites', icon: Building2 },
+              { text: 'SLA 99.9% garanti', icon: Shield },
+              { text: 'Account manager dedie', icon: Users },
+              { text: 'Support telephone 1h + API sur mesure', icon: Phone },
+            ]}
+            features={[
+              { text: 'Tout ce qui est dans BUSINESS' },
+              { text: 'Etablissements illimites' },
+              { text: 'SLA 99.9%' },
+              { text: 'Account manager' },
+              { text: 'Integrations API sur mesure' },
+              { text: 'Support telephone prioritaire 1h' },
+            ]}
+            featuresIcon={Check}
+            featuresTitle="Inclus dans ENTERPRISE"
+            primaryButton={{ text: 'Contactez-nous', href: '/contact' }}
+            testimonials={[testimonials[2]]}
+            testimonialRotationSpeed={8000}
+          />
         </div>
       </section>
 
@@ -454,7 +461,6 @@ export default function PricingPage() {
 
           <div className="overflow-x-auto">
             <table className="w-full min-w-[640px]">
-              {/* Header */}
               <thead>
                 <tr className="border-b-2 border-neutral-200 dark:border-neutral-700">
                   <th className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
@@ -470,11 +476,9 @@ export default function PricingPage() {
                   ))}
                 </tr>
               </thead>
-
               <tbody>
                 {featureCategories.map((cat) => (
                   <Fragment key={cat.title}>
-                    {/* Category header */}
                     <tr>
                       <td
                         colSpan={5}
@@ -483,7 +487,6 @@ export default function PricingPage() {
                         {cat.title}
                       </td>
                     </tr>
-                    {/* Feature rows */}
                     {cat.features.map((f) => (
                       <tr
                         key={f.label}
@@ -514,7 +517,7 @@ export default function PricingPage() {
         </div>
       </section>
 
-      {/* FAQ Accordion */}
+      {/* FAQ */}
       <section className="bg-white dark:bg-neutral-950 py-20">
         <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
           <h2 className="font-[family-name:var(--font-sora)] text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-white mb-8 text-center">

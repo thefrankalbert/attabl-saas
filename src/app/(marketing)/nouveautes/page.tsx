@@ -16,9 +16,9 @@ const updates = [
   {
     date: 'Février 2026',
     tag: 'Nouveau',
-    title: 'Internationalisation (8 locales)',
+    title: 'Internationalisation (2 langues)',
     description:
-      "Interface disponible en français, anglais (US, GB, CA, AU, IE) et espagnol. Changez la langue de l'interface en un clic.",
+      "Interface disponible en francais et anglais. Changez la langue de l'interface en un clic.",
     icon: Globe,
   },
   {

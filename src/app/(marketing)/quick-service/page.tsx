@@ -49,9 +49,9 @@ export default function QuickServicePage() {
               },
               {
                 icon: Ticket,
-                title: "File et temps d'attente",
+                title: 'Notifications en temps reel',
                 description:
-                  "Vos clients savent où en est leur commande. Moins d'attente au comptoir, plus de satisfaction.",
+                  'Vos clients et votre equipe sont informes a chaque etape de la commande.',
               },
             ].map((feature) => (
               <div

@@ -11,7 +11,7 @@ export default function FastFoodPage() {
             {'1 point de vente ou 10. Même contrôle.'}
           </h1>
           <p className="text-lg sm:text-xl text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto mt-6">
-            {'Écran cuisine, bornes, stock centralisé. La vitesse à grande échelle.'}
+            {'Ecran cuisine, stock centralise. La vitesse a grande echelle.'}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
             <Link
@@ -43,9 +43,9 @@ export default function FastFoodPage() {
               },
               {
                 icon: Smartphone,
-                title: 'KDS + bornes',
+                title: 'KDS intelligent',
                 description:
-                  "Commandes directes client vers cuisine. Pas d'intermédiaire, pas d'erreur.",
+                  'Commandes directes vers la cuisine. Priorite automatique, zero erreur.',
               },
               {
                 icon: Users,
