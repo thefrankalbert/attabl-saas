@@ -60,7 +60,10 @@ export default function PrivacyPage() {
           Conform&eacute;ment au RGPD, vous disposez d&apos;un droit d&apos;acc&egrave;s, de
           rectification, de suppression et de portabilit&eacute; de vos donn&eacute;es.
           Contactez-nous &agrave;{' '}
-          <a href="mailto:contact@attabl.com" className="text-[#CCFF00] hover:underline">
+          <a
+            href="mailto:contact@attabl.com"
+            className="text-neutral-900 dark:text-white font-semibold hover:underline"
+          >
             contact@attabl.com
           </a>
           .

@@ -80,7 +80,7 @@ export default function NouveautesPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="mb-6 text-4xl font-bold text-neutral-900 dark:text-white sm:text-5xl"
+            className="mb-6 text-4xl font-bold font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white sm:text-5xl"
           >
             Nouveautés
           </motion.h1>
@@ -109,20 +109,14 @@ export default function NouveautesPage() {
                 className="rounded-2xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950 p-8"
               >
                 <div className="mb-4 flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-                    <update.icon className="h-5 w-5 text-primary" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-neutral-100 dark:bg-neutral-800">
+                    <update.icon className="h-5 w-5 text-neutral-700 dark:text-neutral-300" />
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-semibold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
                       {update.date}
                     </span>
-                    <span
-                      className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${
-                        update.tag === 'Nouveau'
-                          ? 'bg-primary/10 text-lime-700 dark:text-lime-400'
-                          : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400'
-                      }`}
-                    >
+                    <span className="rounded-full px-2.5 py-0.5 text-xs font-semibold bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
                       {update.tag}
                     </span>
                   </div>
@@ -142,7 +136,7 @@ export default function NouveautesPage() {
       {/* CTA */}
       <section className="bg-white dark:bg-neutral-950 py-20">
         <div className="mx-auto max-w-4xl px-4 text-center sm:px-6 lg:px-8">
-          <h2 className="mb-6 text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
+          <h2 className="mb-6 text-3xl font-bold font-[family-name:var(--font-sora)] text-neutral-900 dark:text-white sm:text-4xl">
             Prêt à essayer ?
           </h2>
           <p className="mb-10 text-lg text-neutral-600 dark:text-neutral-400">

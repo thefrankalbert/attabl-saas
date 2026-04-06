@@ -15,7 +15,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-accent px-6 py-3.5 text-sm font-semibold text-accent-text transition-all hover:bg-accent-hover disabled:opacity-50"
+      className="w-full rounded-xl bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
     >
       {pending ? (
         <span className="flex items-center justify-center gap-2">
@@ -40,9 +40,9 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-app-bg">
+    <div className="flex min-h-screen w-full bg-white dark:bg-neutral-950">
       {/* Left - Form on white */}
-      <div className="flex w-full items-center justify-center bg-app-bg px-4 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
+      <div className="flex w-full items-center justify-center bg-white px-4 dark:bg-neutral-950 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
@@ -52,17 +52,19 @@ export default function ContactPage() {
             {/* Back to home */}
             <Link
               href="/"
-              className="mb-8 inline-flex items-center text-sm font-medium text-app-text-muted transition-colors hover:text-app-text"
+              className="mb-8 inline-flex items-center text-sm font-medium text-neutral-500 transition-colors hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             >
               <span className="mr-2">&larr;</span>
               {t('back')}
             </Link>
 
-            <h1 className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-tight text-app-text sm:text-4xl">
+            <h1 className="font-[family-name:var(--font-dm-serif-display)] text-3xl font-light leading-tight text-neutral-900 dark:text-white sm:text-4xl">
               {t('title')}
             </h1>
 
-            <p className="mt-3 text-sm leading-relaxed text-app-text-muted">{t('subtitle')}</p>
+            <p className="mt-3 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
+              {t('subtitle')}
+            </p>
 
             {formState.success ? (
               <motion.div
@@ -70,15 +72,19 @@ export default function ContactPage() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="mt-8 text-center"
               >
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold text-app-text">{t('successTitle')}</h3>
-                <p className="mt-2 text-sm text-app-text-muted">{formState.message}</p>
+                <h3 className="text-xl font-bold text-neutral-900 dark:text-white">
+                  {t('successTitle')}
+                </h3>
+                <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+                  {formState.message}
+                </p>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
-                  className="mt-6 rounded-lg border border-app-border px-5 py-2.5 text-sm font-semibold text-app-text transition-colors hover:bg-app-hover"
+                  className="mt-6 rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
                 >
                   {t('newMessage')}
                 </button>
@@ -92,7 +98,10 @@ export default function ContactPage() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label htmlFor="name" className="text-xs font-semibold text-app-text-secondary">
+                    <label
+                      htmlFor="name"
+                      className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+                    >
                       {t('labelName')}
                     </label>
                     <input
@@ -101,7 +110,7 @@ export default function ContactPage() {
                       id="name"
                       required
                       placeholder={t('placeholderName')}
-                      className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                     />
                     {formState.errors?.name && (
                       <p className="text-xs text-red-500">{formState.errors.name[0]}</p>
@@ -110,7 +119,7 @@ export default function ContactPage() {
                   <div className="space-y-1.5">
                     <label
                       htmlFor="company"
-                      className="text-xs font-semibold text-app-text-secondary"
+                      className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                     >
                       {t('labelCompany')}
                     </label>
@@ -119,13 +128,16 @@ export default function ContactPage() {
                       name="company"
                       id="company"
                       placeholder={t('placeholderCompany')}
-                      className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
+                      className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label htmlFor="email" className="text-xs font-semibold text-app-text-secondary">
+                  <label
+                    htmlFor="email"
+                    className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
+                  >
                     {t('labelEmail')}
                   </label>
                   <input
@@ -134,7 +146,7 @@ export default function ContactPage() {
                     id="email"
                     required
                     placeholder={t('placeholderEmail')}
-                    className="h-11 w-full rounded-xl border border-app-border bg-app-elevated px-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    className="h-11 w-full rounded-xl border border-neutral-200 bg-white px-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                   />
                   {formState.errors?.email && (
                     <p className="text-xs text-red-500">{formState.errors.email[0]}</p>
@@ -144,7 +156,7 @@ export default function ContactPage() {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="message"
-                    className="text-xs font-semibold text-app-text-secondary"
+                    className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                   >
                     {t('labelMessage')}
                   </label>
@@ -154,7 +166,7 @@ export default function ContactPage() {
                     rows={3}
                     required
                     placeholder={t('placeholderMessage')}
-                    className="w-full resize-none rounded-xl border border-app-border bg-app-elevated p-4 text-sm text-app-text transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-accent/40"
+                    className="w-full resize-none rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-900 transition-all focus:border-transparent focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:border-neutral-800 dark:bg-neutral-950 dark:text-white"
                   />
                   {formState.errors?.message && (
                     <p className="text-xs text-red-500">{formState.errors.message[0]}</p>
@@ -163,7 +175,9 @@ export default function ContactPage() {
 
                 <SubmitButton />
 
-                <p className="text-center text-[11px] text-app-text-muted">{t('disclaimer')}</p>
+                <p className="text-center text-[11px] text-neutral-500 dark:text-neutral-400">
+                  {t('disclaimer')}
+                </p>
               </form>
             )}
           </motion.div>
@@ -204,7 +218,7 @@ export default function ContactPage() {
                 { stat: t('statTrialTime'), label: t('statTrialLabel') },
               ].map((item) => (
                 <div key={item.label} className="flex items-center gap-4 text-left">
-                  <span className="min-w-max text-2xl font-bold text-[#CCFF00]">{item.stat}</span>
+                  <span className="min-w-max text-2xl font-bold text-white">{item.stat}</span>
                   <span className="text-sm text-white/60">{item.label}</span>
                 </div>
               ))}
