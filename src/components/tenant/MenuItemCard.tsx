@@ -1,16 +1,7 @@
 'use client';
 
 import { toast } from 'sonner';
-import {
-  Plus,
-  Minus,
-  Leaf,
-  Flame,
-  Utensils,
-  Martini,
-  ChevronDown,
-  AlertTriangle,
-} from 'lucide-react';
+import { Plus, Leaf, Flame, Utensils, Martini, ChevronDown, AlertTriangle } from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
@@ -43,7 +34,7 @@ export default function MenuItemCard({
   currency = 'XOF',
   onOpenDetail,
 }: MenuItemCardProps) {
-  const { addToCart, updateQuantity } = useCartActions();
+  const { addToCart } = useCartActions();
   const { items } = useCartData();
   const tt = useTranslations('tenant');
   const { resolveAndFormatPrice } = useDisplayCurrency();
@@ -173,86 +164,60 @@ export default function MenuItemCard({
     !item.image_url.includes('default') &&
     !imageError;
 
+  const description = getTranslatedContent(language, item.description || '', item.description_en);
+  const formattedPrice =
+    currentPrice > 0
+      ? resolveAndFormatPrice(currentPrice, selectedVariant?.prices || item.prices, currency)
+      : tt('included');
+  const hasModifiersOrVariants =
+    (item.modifiers && item.modifiers.length > 0) ||
+    (item.price_variants && item.price_variants.length > 0);
+
   return (
     <div
+      className={`relative flex gap-4 py-4 px-4 cursor-pointer active:bg-app-elevated/50 transition-colors border-b border-app-border/30 ${isUnavailable ? 'opacity-50' : ''}`}
       onClick={onOpenDetail}
-      style={{
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '16px',
-        position: 'relative',
-        padding: '16px',
-        cursor: 'pointer',
-        borderBottom: '1px solid var(--app-border)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-        opacity: isUnavailable ? 0.5 : 1,
-      }}
     >
-      {/* TEXT CONTENT - Left */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', marginBottom: '4px' }}>
-          <h3
-            style={{
-              fontSize: '15px',
-              fontWeight: 600,
-              color: 'var(--app-text)',
-              lineHeight: 1.3,
-              overflow: 'hidden',
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-            }}
-          >
-            {getTranslatedContent(language, item.name, item.name_en)}
-          </h3>
-          <div style={{ display: 'flex', gap: '4px', flexShrink: 0, marginTop: '2px' }}>
-            {item.is_vegetarian && (
-              <Leaf style={{ width: '12px', height: '12px', color: '#22c55e' }} />
-            )}
-            {item.is_spicy && <Flame style={{ width: '12px', height: '12px', color: '#ef4444' }} />}
-            {item.allergens && item.allergens.length > 0 && (
-              <span
-                className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400"
-                title={item.allergens.join(', ')}
-              >
-                <AlertTriangle style={{ width: '12px', height: '12px' }} />
-              </span>
-            )}
-          </div>
-        </div>
+      {/* TEXT — Left */}
+      <div className="flex-1 min-w-0">
+        <h3 className="text-base font-semibold text-app-text leading-snug">
+          {getTranslatedContent(language, item.name, item.name_en)}
+        </h3>
 
-        <p
-          style={{
-            fontSize: '13px',
-            color: 'var(--app-text-secondary)',
-            lineHeight: 1.4,
-            overflow: 'hidden',
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            marginBottom: '8px',
-          }}
-        >
-          {getTranslatedContent(language, item.description || '', item.description_en)}
-        </p>
+        {description && (
+          <p className="text-sm text-app-text-secondary leading-relaxed mt-1 line-clamp-3">
+            {description}
+          </p>
+        )}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--tenant-primary)' }}>
-            {currentPrice > 0
-              ? resolveAndFormatPrice(
-                  currentPrice,
-                  selectedVariant?.prices || item.prices,
-                  currency,
-                )
-              : tt('included')}
+        <div className="flex items-center flex-wrap gap-2 mt-2">
+          <span className="text-base font-bold" style={{ color: 'var(--tenant-primary)' }}>
+            {formattedPrice}
           </span>
-          {((item.modifiers && item.modifiers.length > 0) ||
-            (item.price_variants && item.price_variants.length > 0)) && (
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-app-elevated text-app-text-secondary">
-              Personnalisable
+
+          {item.is_vegetarian && (
+            <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-700">
+              <Leaf className="w-3 h-3" />
+            </span>
+          )}
+          {item.is_spicy && (
+            <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600">
+              <Flame className="w-3 h-3" />
+            </span>
+          )}
+          {item.allergens && item.allergens.length > 0 && (
+            <span
+              className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600"
+              title={item.allergens.join(', ')}
+            >
+              <AlertTriangle className="w-3 h-3" />
             </span>
           )}
         </div>
+
+        {hasModifiersOrVariants && (
+          <span className="text-[11px] text-app-text-muted mt-1 block">Personnalisable</span>
+        )}
 
         {/* Variant dropdown */}
         {hasVariants && (
@@ -262,7 +227,7 @@ export default function MenuItemCard({
                 e.stopPropagation();
                 setShowVariantDropdown(!showVariantDropdown);
               }}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-md transition-colors"
+              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors"
               style={{
                 color: 'var(--tenant-primary)',
                 backgroundColor: 'var(--tenant-primary-10)',
@@ -274,7 +239,7 @@ export default function MenuItemCard({
               />
             </button>
             {showVariantDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-app-card rounded-lg border border-app-border py-1 z-20 shadow-lg min-w-[140px]">
+              <div className="absolute top-full left-0 mt-1 bg-app-card rounded-xl shadow-xl border border-app-border/30 py-1 z-20 min-w-[160px]">
                 {item.price_variants?.map((variant) => (
                   <button
                     key={variant.id}
@@ -284,7 +249,7 @@ export default function MenuItemCard({
                       setShowVariantDropdown(false);
                     }}
                     className={cn(
-                      'w-full px-3 py-2 text-left text-xs hover:bg-app-elevated',
+                      'w-full px-3 py-2.5 text-left text-sm hover:bg-app-elevated',
                       selectedVariant?.id === variant.id ? 'font-bold' : 'text-app-text-secondary',
                     )}
                     style={
@@ -306,192 +271,68 @@ export default function MenuItemCard({
         )}
       </div>
 
-      {/* IMAGE SECTION - Right (with floating +/- on corner) */}
-      <div
-        style={{
-          position: 'relative',
-          flexShrink: 0,
-          width: 'clamp(60px, 20vw, 80px)',
-          height: 'clamp(60px, 20vw, 80px)',
-        }}
-      >
-        <div
-          style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: '8px',
-            overflow: 'hidden',
-            backgroundColor: 'var(--app-elevated)',
-            border: '1px solid var(--app-border)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
+      {/* IMAGE — Right */}
+      <div className="relative w-24 h-24 sm:w-[120px] sm:h-[120px] flex-shrink-0">
+        <div className="w-full h-full rounded-xl overflow-hidden bg-app-elevated border border-app-border/50 flex items-center justify-center">
           {hasValidImage ? (
             <>
               {!imageLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-lg" />
+                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-xl" />
               )}
               <Image
                 src={item.image_url!}
                 alt={item.name}
                 fill
-                sizes="80px"
+                sizes="120px"
                 className={cn(
-                  'object-cover !relative transition-opacity duration-300',
+                  'object-cover transition-opacity duration-300',
                   imageLoaded ? 'opacity-100' : 'opacity-0',
                 )}
-                style={{ objectFit: 'cover' }}
                 onLoad={() => setImageLoaded(true)}
                 onError={() => setImageError(true)}
                 priority={priority}
               />
             </>
           ) : isDrinkCategory ? (
-            <Martini style={{ width: '24px', height: '24px', color: 'var(--app-text-muted)' }} />
+            <Martini className="w-8 h-8 text-app-text-muted" />
           ) : (
-            <Utensils style={{ width: '24px', height: '24px', color: 'var(--app-text-muted)' }} />
+            <Utensils className="w-8 h-8 text-app-text-muted" />
           )}
         </div>
 
-        {/* Floating add/counter on bottom-right of image */}
-        <div
-          style={{ position: 'absolute', bottom: '-4px', right: '-4px' }}
-          onClick={(e) => e.stopPropagation()}
-        >
+        {/* Add button or quantity badge */}
+        <div className="absolute bottom-1.5 right-1.5" onClick={(e) => e.stopPropagation()}>
           {cartItem ? (
             <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                backgroundColor: 'var(--app-card)',
-                borderRadius: '9999px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                border: '1px solid var(--app-border)',
-                padding: '2px',
-              }}
+              className="min-w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center text-sm font-bold"
+              style={{ color: 'var(--tenant-primary)' }}
             >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(getCartKey(), cartItem.quantity - 1);
-                }}
-                aria-label="Diminuer la quantite"
-                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  color: 'var(--tenant-primary)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <Minus style={{ width: '16px', height: '16px' }} strokeWidth={2.5} />
-              </button>
-              <span
-                style={{
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  color: 'var(--app-text)',
-                  width: '24px',
-                  textAlign: 'center',
-                }}
-              >
-                {cartItem.quantity}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateQuantity(getCartKey(), cartItem.quantity + 1);
-                }}
-                aria-label="Augmenter la quantite"
-                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
-                style={{
-                  color: 'var(--tenant-primary)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                }}
-              >
-                <Plus style={{ width: '16px', height: '16px' }} strokeWidth={2.5} />
-              </button>
+              {cartItem.quantity}
             </div>
-          ) : (
+          ) : !isUnavailable ? (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 handleAdd();
               }}
-              disabled={isUnavailable || isAdding}
+              disabled={isAdding}
               aria-label="Ajouter au panier"
-              className="focus-visible:ring-2 focus-visible:ring-offset-2"
-              style={{
-                width: '44px',
-                height: '44px',
-                borderRadius: '50%',
-                backgroundColor: 'var(--app-card)',
-                border: '2px solid var(--app-border)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
-                cursor: 'pointer',
-                color: 'var(--tenant-primary)',
-              }}
+              className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-90 transition-transform"
             >
-              <Plus style={{ width: '20px', height: '20px' }} strokeWidth={2.5} />
+              <Plus className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
             </button>
-          )}
+          ) : null}
         </div>
-      </div>
 
-      {/* Unavailable overlay */}
-      {isUnavailable && (
-        <div
-          style={{
-            position: 'absolute',
-            inset: 0,
-            backgroundColor: 'color-mix(in srgb, var(--app-card) 40%, transparent)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            pointerEvents: 'none',
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: 'rgba(0,0,0,0.7)',
-              color: 'var(--app-bg)',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              textAlign: 'center',
-            }}
-          >
-            <span
-              style={{
-                fontSize: '10px',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                display: 'block',
-              }}
-            >
+        {/* Unavailable overlay */}
+        {isUnavailable && (
+          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
+            <span className="bg-neutral-900 text-white px-3 py-1 rounded-full text-[11px] font-semibold">
               {tt('unavailable')}
             </span>
-            <span
-              style={{
-                fontSize: '9px',
-                fontWeight: 400,
-                opacity: 0.85,
-                display: 'block',
-                marginTop: '1px',
-              }}
-            >
-              {tt('temporarilyUnavailable')}
-            </span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
