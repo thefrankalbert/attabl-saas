@@ -19,9 +19,11 @@ interface CategoryNavProps {
   categories: Category[];
   /** Show the sticky nav (e.g. when user has scrolled past the hero) */
   visible?: boolean;
+  /** Optional map of category id to item count */
+  itemCounts?: Record<string, number>;
 }
 
-export default function CategoryNav({ categories, visible = true }: CategoryNavProps) {
+export default function CategoryNav({ categories, visible = true, itemCounts }: CategoryNavProps) {
   const [activeCategory, setActiveCategory] = React.useState<string>('');
   const navRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
@@ -147,6 +149,9 @@ export default function CategoryNav({ categories, visible = true }: CategoryNavP
               }}
             >
               {category.name}
+              {itemCounts && itemCounts[category.id] !== undefined && (
+                <span style={{ opacity: 0.7, marginLeft: '4px' }}>({itemCounts[category.id]})</span>
+              )}
             </button>
           );
         })}

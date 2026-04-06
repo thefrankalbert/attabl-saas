@@ -148,6 +148,12 @@ export default function ItemDetailSheet({
     };
 
     addToCart(cartItem, restaurantId);
+
+    // Haptic feedback for mobile devices
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+
     toast.success(`${item.name} ajoute au panier`);
     setShowSuccess(true);
 

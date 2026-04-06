@@ -505,7 +505,10 @@ export default function CartPage() {
             <ShoppingBag className="w-16 h-16 text-app-text-muted/40" />
           </div>
           <h2 className="text-xl font-bold text-app-text mb-2">{t('emptyCart')}</h2>
-          <p className="text-sm text-app-text-muted text-center mb-8">{t('emptyCartDesc')}</p>
+          <p className="text-sm text-app-text-muted text-center mb-2">{t('emptyCartDesc')}</p>
+          <p className="text-xs text-app-text-muted/70 text-center mb-8">
+            {t('browseMenuEncouragement')}
+          </p>
           <Link href={menuPath}>
             <button
               className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"

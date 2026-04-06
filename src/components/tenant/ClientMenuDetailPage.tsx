@@ -250,19 +250,38 @@ export default function ClientMenuDetailPage({
 
   const allItems = useMemo(() => itemsByCategory.flatMap((cat) => cat.items), [itemsByCategory]);
 
+  // Build category item counts for nav pills
+  const categoryItemCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const cat of filteredItemsByCategory) {
+      counts[cat.id] = cat.items.length;
+    }
+    return counts;
+  }, [filteredItemsByCategory]);
+
+  // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
+  const normalize = useCallback(
+    (text: string) =>
+      text
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, ''),
+    [],
+  );
+
   // Search results
   const searchResults = useMemo(() => {
     if (!searchQuery || searchQuery.length < 2) return [];
-    const lower = searchQuery.toLowerCase();
+    const q = normalize(searchQuery);
     return allItems
       .filter((item) => {
-        const name = (item.name || '').toLowerCase();
-        const nameEn = (item.name_en || '').toLowerCase();
-        const desc = (item.description || '').toLowerCase();
-        return name.includes(lower) || nameEn.includes(lower) || desc.includes(lower);
+        const name = normalize(item.name || '');
+        const nameEn = normalize(item.name_en || '');
+        const desc = normalize(item.description || '');
+        return name.includes(q) || nameEn.includes(q) || desc.includes(q);
       })
       .slice(0, 8);
-  }, [allItems, searchQuery]);
+  }, [allItems, searchQuery, normalize]);
 
   // ─── Handlers ──────────────────────────────────────────
 
@@ -539,7 +558,11 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ CATEGORY NAVIGATION (sticky pills) ═══ */}
       {filteredCategories && filteredCategories.length > 0 && (
-        <CategoryNav categories={filteredCategories} visible={isSearchSticky} />
+        <CategoryNav
+          categories={filteredCategories}
+          visible={isSearchSticky}
+          itemCounts={categoryItemCounts}
+        />
       )}
 
       {/* ═══ MENU ITEMS LIST ═══ */}
@@ -550,7 +573,7 @@ export default function ClientMenuDetailPage({
               category.items.length > 0 && (
                 <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[120px]">
                   {/* Section header */}
-                  <div className="p-4 bg-app-bg">
+                  <div className="p-3 sm:p-4 bg-app-bg">
                     <h2 className="text-lg font-bold text-app-text dark:text-app-text uppercase tracking-tight">
                       {category.name}
                     </h2>
@@ -590,7 +613,7 @@ export default function ClientMenuDetailPage({
         </div>
       ) : (
         <div className="text-center py-20">
-          <div className="bg-app-card rounded-2xl shadow-sm p-8 max-w-sm mx-auto">
+          <div className="bg-app-card rounded-2xl shadow-sm p-6 sm:p-8 max-w-sm mx-auto">
             <p className="text-app-text-muted font-medium">{t('noMenuAvailable')}</p>
           </div>
         </div>

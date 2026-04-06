@@ -30,24 +30,32 @@ export default function SearchOverlay({
   const locale = useLocale();
   const language = locale.startsWith('en') ? 'en' : 'fr';
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (isOpen) {
-      setQuery('');
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // Use setTimeout to batch setState outside the effect synchronously
+      setTimeout(() => {
+        setQuery('');
+        inputRef.current?.focus();
+      }, 50);
     }
   }, [isOpen]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Normalize text: lowercase + strip accents (e.g. "Taginé" -> "tagine", "Café" -> "cafe")
+  const normalize = (text: string) =>
+    text
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    const q = query.toLowerCase();
+    const q = normalize(query);
     return items.filter(
       (item) =>
-        item.name.toLowerCase().includes(q) ||
-        item.name_en?.toLowerCase().includes(q) ||
-        item.description?.toLowerCase().includes(q) ||
-        item.description_en?.toLowerCase().includes(q),
+        normalize(item.name).includes(q) ||
+        normalize(item.name_en || '').includes(q) ||
+        normalize(item.description || '').includes(q) ||
+        normalize(item.description_en || '').includes(q),
     );
   }, [query, items]);
 

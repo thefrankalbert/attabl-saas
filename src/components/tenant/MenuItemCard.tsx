@@ -1,7 +1,16 @@
 'use client';
 
 import { toast } from 'sonner';
-import { Plus, Minus, Leaf, Flame, Utensils, Martini, ChevronDown } from 'lucide-react';
+import {
+  Plus,
+  Minus,
+  Leaf,
+  Flame,
+  Utensils,
+  Martini,
+  ChevronDown,
+  AlertTriangle,
+} from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
@@ -39,6 +48,7 @@ export default function MenuItemCard({
   const tt = useTranslations('tenant');
   const { resolveAndFormatPrice } = useDisplayCurrency();
   const [, setIsAnimating] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const [imageError, setImageError] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
 
@@ -98,7 +108,9 @@ export default function MenuItemCard({
 
   const handleAdd = useCallback(() => {
     if (item.is_available === false) return;
+    if (isAdding) return;
 
+    setIsAdding(true);
     setIsAnimating(true);
 
     const cartItemData = {
@@ -125,9 +137,27 @@ export default function MenuItemCard({
     };
 
     addToCart(cartItemData, restaurantId);
+
+    // Haptic feedback for mobile devices
+    if (typeof navigator !== 'undefined' && navigator.vibrate) {
+      navigator.vibrate(10);
+    }
+
     toast.success(`${item.name} ajoute au panier`);
-    setTimeout(() => setIsAnimating(false), 300);
-  }, [item, currentPrice, category, selectedOption, selectedVariant, addToCart, restaurantId]);
+    setTimeout(() => {
+      setIsAnimating(false);
+      setIsAdding(false);
+    }, 300);
+  }, [
+    item,
+    currentPrice,
+    category,
+    selectedOption,
+    selectedVariant,
+    addToCart,
+    restaurantId,
+    isAdding,
+  ]);
 
   const getVariantName = (variant: ItemPriceVariant) => {
     return language === 'en' && variant.variant_name_en
@@ -154,6 +184,7 @@ export default function MenuItemCard({
         padding: '16px',
         cursor: 'pointer',
         borderBottom: '1px solid var(--app-border)',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
         opacity: isUnavailable ? 0.5 : 1,
       }}
     >
@@ -179,6 +210,14 @@ export default function MenuItemCard({
               <Leaf style={{ width: '12px', height: '12px', color: '#22c55e' }} />
             )}
             {item.is_spicy && <Flame style={{ width: '12px', height: '12px', color: '#ef4444' }} />}
+            {item.allergens && item.allergens.length > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 text-[10px] text-amber-600 dark:text-amber-400"
+                title={item.allergens.join(', ')}
+              >
+                <AlertTriangle style={{ width: '12px', height: '12px' }} />
+              </span>
+            )}
           </div>
         </div>
 
@@ -383,7 +422,7 @@ export default function MenuItemCard({
                 e.stopPropagation();
                 handleAdd();
               }}
-              disabled={isUnavailable}
+              disabled={isUnavailable || isAdding}
               aria-label="Ajouter au panier"
               className="focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
