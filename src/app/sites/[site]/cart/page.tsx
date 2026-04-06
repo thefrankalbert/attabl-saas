@@ -501,8 +501,8 @@ export default function CartPage() {
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
-          <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-10 h-10 text-app-text-muted/40" />
+          <div className="w-28 h-28 bg-app-elevated rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-16 h-16 text-app-text-muted/40" />
           </div>
           <h2 className="text-xl font-bold text-app-text mb-2">{t('emptyCart')}</h2>
           <p className="text-sm text-app-text-muted text-center mb-8">{t('emptyCartDesc')}</p>

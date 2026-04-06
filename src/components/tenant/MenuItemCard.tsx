@@ -40,6 +40,7 @@ export default function MenuItemCard({
   const { resolveAndFormatPrice } = useDisplayCurrency();
   const [, setIsAnimating] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   // Variant dropdown
   const [selectedOption, setSelectedOption] = useState<ItemOption | null>(null);
@@ -206,6 +207,12 @@ export default function MenuItemCard({
                 )
               : tt('included')}
           </span>
+          {((item.modifiers && item.modifiers.length > 0) ||
+            (item.price_variants && item.price_variants.length > 0)) && (
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-app-elevated text-app-text-secondary">
+              Personnalisable
+            </span>
+          )}
         </div>
 
         {/* Variant dropdown */}
@@ -283,16 +290,25 @@ export default function MenuItemCard({
           }}
         >
           {hasValidImage ? (
-            <Image
-              src={item.image_url!}
-              alt={item.name}
-              fill
-              sizes="80px"
-              className="object-cover !relative"
-              style={{ objectFit: 'cover' }}
-              onError={() => setImageError(true)}
-              priority={priority}
-            />
+            <>
+              {!imageLoaded && (
+                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-lg" />
+              )}
+              <Image
+                src={item.image_url!}
+                alt={item.name}
+                fill
+                sizes="80px"
+                className={cn(
+                  'object-cover !relative transition-opacity duration-300',
+                  imageLoaded ? 'opacity-100' : 'opacity-0',
+                )}
+                style={{ objectFit: 'cover' }}
+                onLoad={() => setImageLoaded(true)}
+                onError={() => setImageError(true)}
+                priority={priority}
+              />
+            </>
           ) : isDrinkCategory ? (
             <Martini style={{ width: '24px', height: '24px', color: 'var(--app-text-muted)' }} />
           ) : (
@@ -403,20 +419,38 @@ export default function MenuItemCard({
             pointerEvents: 'none',
           }}
         >
-          <span
+          <div
             style={{
               backgroundColor: 'rgba(0,0,0,0.7)',
               color: 'var(--app-bg)',
-              fontSize: '10px',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
               padding: '4px 8px',
               borderRadius: '4px',
+              textAlign: 'center',
             }}
           >
-            {tt('unavailable')}
-          </span>
+            <span
+              style={{
+                fontSize: '10px',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                display: 'block',
+              }}
+            >
+              {tt('unavailable')}
+            </span>
+            <span
+              style={{
+                fontSize: '9px',
+                fontWeight: 400,
+                opacity: 0.85,
+                display: 'block',
+                marginTop: '1px',
+              }}
+            >
+              {tt('temporarilyUnavailable')}
+            </span>
+          </div>
         </div>
       )}
     </div>

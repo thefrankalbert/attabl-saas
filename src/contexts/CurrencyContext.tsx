@@ -86,13 +86,13 @@ function formatWithThinSpace(n: number, decimals = 0): string {
 function formatConverted(amount: number, currency: DisplayCurrency): string {
   switch (currency) {
     case 'XAF':
-      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
+      return `${formatWithThinSpace(Math.round(amount))} XAF`;
     case 'EUR':
-      return `${formatWithThinSpace(amount, 2)} €`;
+      return `${formatWithThinSpace(amount, 2)} EUR`;
     case 'USD':
-      return `$${formatWithThinSpace(amount, 2)}`;
+      return `${formatWithThinSpace(amount, 2)} USD`;
     default:
-      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
+      return `${formatWithThinSpace(Math.round(amount))} XAF`;
   }
 }
 
@@ -193,9 +193,9 @@ export function useDisplayCurrency() {
     return {
       displayCurrency: 'XAF' as DisplayCurrency,
       setDisplayCurrency: () => {},
-      formatDisplayPrice: (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} FCFA`,
+      formatDisplayPrice: (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} XAF`,
       resolveAndFormatPrice: (amount: number) =>
-        `${Math.round(amount).toLocaleString('fr-FR')} FCFA`,
+        `${Math.round(amount).toLocaleString('fr-FR')} XAF`,
       supportedCurrencies: ['XAF'] as DisplayCurrency[],
     };
   }
