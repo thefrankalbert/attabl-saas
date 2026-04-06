@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { getTranslations } from 'next-intl/server';
+import { getTranslations, getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
 import type { Announcement, MenuItem, Venue, Category, Ad, Zone, Table } from '@/types/admin.types';
@@ -46,6 +47,7 @@ export default async function MenuPage({
   const { site } = await params;
   const resolvedSearchParams = await searchParams;
   const initialTable = resolvedSearchParams.table || resolvedSearchParams.t || undefined;
+  const messages = await getMessages();
 
   const headersList = await headers();
   // Use header if available (from middleware), otherwise use route params
@@ -166,16 +168,18 @@ export default async function MenuPage({
   const tables = (tablesResult.data || []) as unknown as Table[];
 
   return (
-    <ClientMenuPage
-      tenant={tenant}
-      venues={venues}
-      initialTable={initialTable}
-      categories={categories}
-      ads={ads}
-      zones={zones}
-      tables={tables}
-      announcement={announcement}
-      featuredItems={featuredItems}
-    />
+    <NextIntlClientProvider messages={messages}>
+      <ClientMenuPage
+        tenant={tenant}
+        venues={venues}
+        initialTable={initialTable}
+        categories={categories}
+        ads={ads}
+        zones={zones}
+        tables={tables}
+        announcement={announcement}
+        featuredItems={featuredItems}
+      />
+    </NextIntlClientProvider>
   );
 }
