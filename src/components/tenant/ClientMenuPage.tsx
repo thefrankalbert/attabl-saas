@@ -134,8 +134,17 @@ function RestaurantCard({ r }: { r: RestaurantCardData }) {
       style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
     >
       <div className="relative h-[115px] overflow-hidden">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={r.img} alt={r.name} className="w-full h-full object-cover" />
+        {r.img ? (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img src={r.img} alt={r.name} className="w-full h-full object-cover" />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: '#f0f0ee' }}
+          >
+            <Utensils className="w-8 h-8" style={{ color: '#ccc' }} />
+          </div>
+        )}
         {r.badge && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
             <span className="text-[11px]">{'\uD83D\uDEF5'}</span>
@@ -331,7 +340,7 @@ export default function ClientMenuPage({
           <ChevronDown size={14} className="text-gray-800" strokeWidth={2.5} />
         </button>
         <h1 className="text-3xl font-extrabold text-gray-900 leading-tight tracking-tight">
-          {t('hello') || 'Bienvenue'} 👋
+          {lang === 'en' ? 'Welcome' : 'Bienvenue'} 👋
         </h1>
         <p className="text-base text-green-700 mt-1 mb-4 font-medium leading-snug">
           {tenant.description || t('welcomeSubtitle')}
