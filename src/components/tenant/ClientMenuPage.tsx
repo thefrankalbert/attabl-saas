@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useTranslations, useLocale } from 'next-intl';
+import { useLocale } from 'next-intl';
 import {
   ShoppingBag,
   Clock,
@@ -195,9 +195,21 @@ export default function ClientMenuPage({
   announcement,
   featuredItems = [],
 }: ClientMenuPageProps) {
-  const t = useTranslations('tenant');
   const locale = useLocale();
   const lang = locale.startsWith('en') ? 'en' : 'fr';
+  const txt = {
+    tableIdentified: lang === 'en' ? 'Table identified' : 'Table identifiee',
+    seatedAtTable: lang === 'en' ? 'You are seated' : 'Vous etes installe',
+    tableSelected: lang === 'en' ? 'Table selected' : 'Table selectionnee',
+    qrScanned: lang === 'en' ? 'QR scanned' : 'QR scanne',
+    noTableDetected: lang === 'en' ? 'No table detected' : 'Aucune table detectee',
+    searchMenu: lang === 'en' ? 'Search a dish...' : 'Rechercher un plat...',
+    ourUniverses: lang === 'en' ? 'Our Menus' : 'Nos Univers',
+    dontMiss: lang === 'en' ? "Don't miss" : 'A ne pas manquer',
+    viewAll: lang === 'en' ? 'View all' : 'Voir tout',
+    seeFullMenu: lang === 'en' ? 'See full menu' : 'Voir tout le menu',
+    welcomeSubtitle: lang === 'en' ? 'Discover our menu' : 'Decouvrez notre carte',
+  };
   const router = useRouter();
   const { toast } = useToast();
   const { items: cartItems, grandTotal } = useCartData();
@@ -223,8 +235,8 @@ export default function ClientMenuPage({
       localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
       queueMicrotask(() => {
         toast({
-          title: t('tableIdentified'),
-          description: t('seatedAtTable', { table: initialTable }),
+          title: txt.tableIdentified,
+          description: txt.seatedAtTable,
         });
       });
       return true;
@@ -255,8 +267,8 @@ export default function ClientMenuPage({
     setTableNumber(table.table_number);
     localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
     toast({
-      title: t('tableSelected'),
-      description: t('seatedAtTable', { table: table.table_number }),
+      title: txt.tableSelected,
+      description: txt.seatedAtTable,
     });
   };
 
@@ -274,14 +286,14 @@ export default function ClientMenuPage({
         setTableNumber(result.tableNumber);
         localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
         toast({
-          title: t('tableIdentified'),
-          description: t('seatedAtTable', { table: result.tableNumber }),
+          title: txt.tableIdentified,
+          description: txt.seatedAtTable,
         });
       }
     } else {
       toast({
-        title: t('qrScanned'),
-        description: t('noTableDetected'),
+        title: txt.qrScanned,
+        description: txt.noTableDetected,
         variant: 'destructive',
       });
     }
@@ -340,7 +352,7 @@ export default function ClientMenuPage({
           {lang === 'en' ? 'Welcome' : 'Bienvenue'} 👋
         </h1>
         <p className="text-base text-green-700 mt-1 mb-4 font-medium leading-snug">
-          {tenant.description || t('welcomeSubtitle')}
+          {tenant.description || txt.welcomeSubtitle}
         </p>
         <div className="flex gap-2.5 items-center">
           <button
@@ -348,7 +360,7 @@ export default function ClientMenuPage({
             className="flex-1 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
             <Search size={18} className="text-gray-300" strokeWidth={2.2} />
-            <span className="text-sm text-gray-300">{t('searchMenu')}</span>
+            <span className="text-sm text-gray-300">{txt.searchMenu}</span>
           </button>
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
@@ -441,7 +453,7 @@ export default function ClientMenuPage({
         {/* Nos Univers */}
         {venues.length > 0 && (
           <div className="px-5 mt-1">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('ourUniverses')}</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{txt.ourUniverses}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
               {venues.map((venue, i) => (
                 <div
@@ -461,7 +473,7 @@ export default function ClientMenuPage({
         {/* Featured Items */}
         {featuredItems.length > 0 && (
           <div className="px-5 mt-6">
-            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('dontMiss')}</h2>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{txt.dontMiss}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
               {featuredItems.map((item, i) => (
                 <div key={item.id} onClick={() => setSelectedItem(item)} className="cursor-pointer">
@@ -480,7 +492,7 @@ export default function ClientMenuPage({
             style={{ backgroundColor: primary, boxShadow: `0 4px 16px ${primary}40` }}
           >
             <Utensils size={18} />
-            {t('seeFullMenu')}
+            {txt.seeFullMenu}
           </button>
         </div>
       </div>
@@ -498,7 +510,7 @@ export default function ClientMenuPage({
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <span className="font-semibold text-sm">
-                {t('cartItemCount', { count: totalCartItems })}
+                {`${totalCartItems} article${totalCartItems > 1 ? 's' : ''}`}
               </span>
             </div>
             <div className="flex items-center gap-2">
