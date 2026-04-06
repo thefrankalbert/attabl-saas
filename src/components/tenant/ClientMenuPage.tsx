@@ -242,7 +242,7 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="bg-app-bg"
+      className="bg-white"
       style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ FULLSCREEN SPLASH ═══ */}
@@ -253,34 +253,21 @@ export default function ClientMenuPage({
         className="relative overflow-hidden rounded-b-[2rem]"
         style={{ backgroundColor: primary }}
       >
-        <div className="px-5 pt-12 pb-16">
-          {/* Top bar: logo + cart */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              {tenant.logo_url ? (
-                <Image
-                  src={tenant.logo_url}
-                  alt=""
-                  width={40}
-                  height={40}
-                  className="w-10 h-10 rounded-xl object-cover border border-white/20"
-                />
-              ) : (
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <span className="text-white text-sm font-bold">{tenant.name.charAt(0)}</span>
-                </div>
-              )}
-              {tableNumber && (
-                <button
-                  onClick={() => setIsTablePickerOpen(true)}
-                  className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/20 text-white"
-                >
-                  Table {tableNumber}
-                </button>
-              )}
-            </div>
+        <div className="px-5 pt-12 pb-20">
+          {/* Top bar: table/location pill */}
+          <div className="flex items-center justify-between mb-5">
+            <button
+              onClick={() => setIsTablePickerOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-medium text-white/90"
+            >
+              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
+                📍
+              </span>
+              {tableNumber ? `Table ${tableNumber}` : tenant.name}
+              <ChevronRight className="w-3 h-3 text-white/60" />
+            </button>
             <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
-              <ShoppingCart className="w-6 h-6 text-white" />
+              <ShoppingCart className="w-5 h-5 text-white" />
               {totalCartItems > 0 && (
                 <span
                   className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-white text-[11px] font-bold flex items-center justify-center"
@@ -292,20 +279,27 @@ export default function ClientMenuPage({
             </Link>
           </div>
 
-          {/* Welcome text */}
-          <h1 className="text-2xl font-bold text-white leading-tight">{tenant.name}</h1>
-          <p className="text-sm text-white/80 mt-1">{tenant.description || t('welcomeSubtitle')}</p>
+          {/* Welcome text — 2 lines with different styles */}
+          <h1 className="text-2xl font-bold text-white leading-tight">
+            {t('hello') || 'Bienvenue'},
+          </h1>
+          <p className="text-base font-semibold mt-1" style={{ color: 'rgba(255,255,255,0.7)' }}>
+            {tenant.description || t('welcomeSubtitle')}
+          </p>
         </div>
 
         {/* Search bar — floating on the boundary */}
         <div ref={searchBarRef} className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-5">
-          <button
+          <div
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="w-full flex items-center gap-3 px-4 py-3.5 bg-app-card rounded-2xl shadow-lg border border-app-border/30"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-white rounded-2xl shadow-lg cursor-pointer"
           >
-            <Search className="w-5 h-5 text-app-text-muted" />
-            <span className="text-sm text-app-text-muted">{t('searchMenu')}</span>
-          </button>
+            <Search className="w-5 h-5 text-neutral-400" />
+            <span className="flex-1 text-sm text-neutral-400">{t('searchMenu')}</span>
+            <span className="text-xs font-semibold px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-600">
+              {lang === 'en' ? 'Now' : 'Menu'}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -425,7 +419,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ FEATURED ITEMS — Horizontal scroll cards (like the reference) ═══ */}
+      {/* ═══ FEATURED ITEMS — Horizontal scroll cards with badge + price ═══ */}
       {featuredItems.length > 0 && (
         <div className="pt-4 pb-2">
           <div className="flex items-center justify-between px-5 mb-3">
@@ -443,34 +437,39 @@ export default function ClientMenuPage({
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="flex-shrink-0 w-44 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/30 hover:shadow-md transition-shadow text-left group"
+                className="flex-shrink-0 w-48 bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-100 hover:shadow-md transition-shadow text-left group"
               >
-                <div className="w-full aspect-[4/3] relative overflow-hidden bg-app-elevated">
+                <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
                       alt={getTranslatedContent(lang, item.name, item.name_en)}
                       fill
-                      sizes="180px"
+                      sizes="200px"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <Utensils className="w-8 h-8 text-app-text-muted" />
+                      <Utensils className="w-8 h-8 text-neutral-300" />
                     </div>
+                  )}
+                  {/* Badge on image */}
+                  {item.is_featured && (
+                    <span
+                      className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-1 rounded-lg text-white"
+                      style={{ backgroundColor: primary }}
+                    >
+                      {item.is_vegetarian ? 'Veggie' : 'Top'}
+                    </span>
                   )}
                 </div>
                 <div className="p-3">
-                  <h3 className="text-sm font-semibold text-app-text leading-snug">
+                  <h3 className="text-sm font-semibold text-neutral-900 leading-snug">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
-                  <div className="flex items-center gap-1.5 mt-1.5">
-                    <span className="text-sm font-bold" style={{ color: primary }}>
-                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                    </span>
-                    {item.is_vegetarian && <Leaf className="w-3.5 h-3.5 text-green-600" />}
-                    {item.is_spicy && <Flame className="w-3.5 h-3.5 text-red-500" />}
-                  </div>
+                  <p className="text-sm font-bold mt-1" style={{ color: primary }}>
+                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                  </p>
                 </div>
               </button>
             ))}
