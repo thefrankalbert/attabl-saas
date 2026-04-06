@@ -468,7 +468,7 @@ export default function ItemDetailSheet({
                 <button
                   onClick={handleAddToCart}
                   disabled={showSuccess}
-                  className="flex flex-1 h-12 items-center justify-center gap-2 rounded-xl text-base font-bold text-white whitespace-nowrap transition-all active:scale-[0.98]"
+                  className="flex flex-1 h-12 items-center justify-center gap-1.5 rounded-xl text-sm sm:text-base font-bold text-white overflow-hidden transition-all active:scale-[0.98]"
                   style={{
                     backgroundColor: showSuccess ? 'rgb(34 197 94)' : 'var(--tenant-primary)',
                   }}

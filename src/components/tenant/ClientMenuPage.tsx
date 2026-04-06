@@ -361,40 +361,58 @@ export default function ClientMenuPage({
         </div>
       )}
 
+      {/* ═══ CATEGORIES — Grid with "Voir plus" ═══ */}
+      {categories.length > 0 && (
+        <div className="pt-5 pb-2 px-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-app-text">
+              {lang === 'en' ? 'Categories' : 'Categories'}
+            </h2>
+            {categories.length > 6 && (
+              <button
+                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+                className="text-xs font-semibold transition-colors"
+                style={{ color: primary }}
+              >
+                {t('viewAll')}
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-2.5">
+            {categories.slice(0, 6).map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() =>
+                  router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
+                }
+                className="flex flex-col items-center gap-2 py-3 bg-app-card rounded-xl border border-app-border/30 shadow-sm hover:shadow-md transition-shadow active:scale-95"
+              >
+                <span className="text-2xl leading-none">{getCategoryEmoji(cat.name)}</span>
+                <span className="text-xs font-medium text-app-text text-center leading-tight px-1">
+                  {getTranslatedContent(lang, cat.name, cat.name_en)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ═══ NOS CARTES — Venues as visual cards ═══ */}
       {venues && venues.length > 0 && (
-        <div className="pt-5 pb-1">
+        <div className="pt-4 pb-1">
           <div className="flex items-center justify-between px-5 mb-3">
             <h2 className="text-base font-bold text-app-text">{t('ourUniverses')}</h2>
-            <button
-              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="text-xs font-semibold transition-colors"
-              style={{ color: primary }}
-            >
-              {t('viewAll')}
-            </button>
+            {venues.length > 1 && (
+              <button
+                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+                className="text-xs font-semibold transition-colors"
+                style={{ color: primary }}
+              >
+                {t('viewAll')}
+              </button>
+            )}
           </div>
           <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
-            {/* "Toutes les cartes" card */}
-            <button
-              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="flex-shrink-0 w-36 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/50 hover:shadow-md transition-shadow"
-            >
-              <div
-                className="w-full h-24 flex items-center justify-center"
-                style={{ backgroundColor: `${primary}10` }}
-              >
-                <Utensils className="w-8 h-8" style={{ color: primary }} />
-              </div>
-              <div className="p-3">
-                <h3 className="text-sm font-semibold text-app-text leading-tight">
-                  {t('allMenus')}
-                </h3>
-                <p className="text-xs text-app-text-muted mt-0.5">
-                  {categories.length} {lang === 'en' ? 'categories' : 'categories'}
-                </p>
-              </div>
-            </button>
             {venues.map((venue) => (
               <button
                 key={venue.id}
@@ -424,37 +442,7 @@ export default function ClientMenuPage({
                   <h3 className="text-sm font-semibold text-app-text leading-tight">
                     {getTranslatedContent(lang, venue.name, venue.name_en)}
                   </h3>
-                  <p className="text-xs text-app-text-muted mt-0.5">
-                    {getTranslatedContent(lang, venue.name_en || '', venue.name_en)}
-                  </p>
                 </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CATEGORIES — Horizontal pills ═══ */}
-      {categories.length > 0 && (
-        <div className="pt-4 pb-2">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-base font-bold text-app-text">
-              {lang === 'en' ? 'Categories' : 'Categories'}
-            </h2>
-          </div>
-          <div className="flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() =>
-                  router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
-                }
-                className="flex items-center gap-2 flex-shrink-0 px-4 py-2.5 bg-app-card rounded-xl border border-app-border/50 shadow-sm hover:shadow-md transition-shadow active:scale-95"
-              >
-                <span className="text-lg leading-none">{getCategoryEmoji(cat.name)}</span>
-                <span className="text-sm font-medium text-app-text whitespace-nowrap">
-                  {getTranslatedContent(lang, cat.name, cat.name_en)}
-                </span>
               </button>
             ))}
           </div>
