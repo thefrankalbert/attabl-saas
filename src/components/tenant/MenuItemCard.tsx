@@ -1,5 +1,6 @@
 'use client';
 
+import { toast } from 'sonner';
 import { Plus, Minus, Leaf, Flame, Utensils, Martini, ChevronDown } from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -123,6 +124,7 @@ export default function MenuItemCard({
     };
 
     addToCart(cartItemData, restaurantId);
+    toast.success(`${item.name} ajoute au panier`);
     setTimeout(() => setIsAnimating(false), 300);
   }, [item, currentPrice, category, selectedOption, selectedVariant, addToCart, restaurantId]);
 
@@ -195,7 +197,7 @@ export default function MenuItemCard({
         </p>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '16px', fontWeight: 700, color: '#C5A065' }}>
+          <span style={{ fontSize: '16px', fontWeight: 700, color: 'var(--tenant-primary)' }}>
             {currentPrice > 0
               ? resolveAndFormatPrice(
                   currentPrice,
@@ -320,7 +322,8 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity - 1);
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all"
+                aria-label="Diminuer la quantite"
+                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{
                   color: 'var(--tenant-primary)',
                   background: 'none',
@@ -346,7 +349,8 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   updateQuantity(getCartKey(), cartItem.quantity + 1);
                 }}
-                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all"
+                aria-label="Augmenter la quantite"
+                className="w-11 h-11 rounded-full flex items-center justify-center hover:bg-app-elevated active:scale-90 transition-all focus-visible:ring-2 focus-visible:ring-offset-2"
                 style={{
                   color: 'var(--tenant-primary)',
                   background: 'none',
@@ -364,9 +368,11 @@ export default function MenuItemCard({
                 handleAdd();
               }}
               disabled={isUnavailable}
+              aria-label="Ajouter au panier"
+              className="focus-visible:ring-2 focus-visible:ring-offset-2"
               style={{
-                width: '40px',
-                height: '40px',
+                width: '44px',
+                height: '44px',
                 borderRadius: '50%',
                 backgroundColor: 'var(--app-card)',
                 border: '2px solid var(--app-border)',

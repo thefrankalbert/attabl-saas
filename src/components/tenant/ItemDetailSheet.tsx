@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { toast } from 'sonner';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Minus, Plus, Utensils, Leaf, Flame, Check, AlertTriangle } from 'lucide-react';
 import Image from 'next/image';
@@ -147,6 +148,7 @@ export default function ItemDetailSheet({
     };
 
     addToCart(cartItem, restaurantId);
+    toast.success(`${item.name} ajoute au panier`);
     setShowSuccess(true);
 
     setTimeout(() => {
