@@ -14,8 +14,8 @@ import {
   Search,
   MapPin,
   ChevronDown,
-  Utensils,
   ChevronRight,
+  Utensils,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
@@ -43,7 +43,7 @@ const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   loading: () => <div className="h-64 animate-pulse rounded-2xl" style={{ background: '#eee' }} />,
 });
 
-// ─── Twemoji CDN (Twitter high-quality emoji icons) ──────
+/* ── Twemoji CDN (Twitter high-quality emoji icons) ── */
 const twemoji = (code: string) =>
   `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${code}.png`;
 
@@ -58,6 +58,7 @@ const CATEGORY_TWEMOJI: Record<string, string> = {
   pizzas: '1f355',
   pates: '1f35d',
   pasta: '1f35d',
+  lasagna: '1f35d',
   grillade: '1f356',
   grills: '1f356',
   plats: '1f37d',
@@ -96,6 +97,7 @@ const CATEGORY_TWEMOJI: Record<string, string> = {
   sandwich: '1f96a',
   sushi: '1f363',
   tart: '1f967',
+  arancini: '1f9c6',
 };
 
 function getCatImg(name: string): string {
@@ -111,73 +113,56 @@ function getCatImg(name: string): string {
   return twemoji('1f37d');
 }
 
-// ─── Helpers ─────────────────────────────────────────────
 const getTranslatedContent = (lang: string, fr: string, en?: string | null) =>
   lang === 'en' && en ? en : fr;
 
-// ─── RestaurantCard (exactement comme le template) ───────
-function RestaurantCard({
-  name,
-  price,
-  time,
-  badge,
-  rating,
-  img,
-  onClick,
-}: {
+/* ── COMPONENTS ── */
+
+interface RestaurantCardData {
   name: string;
   price: string;
-  time?: string;
+  time: string;
   badge?: string;
   rating?: number;
-  img?: string;
-  onClick?: () => void;
-}) {
+  img: string;
+}
+
+function RestaurantCard({ r }: { r: RestaurantCardData }) {
   return (
     <div
-      onClick={onClick}
-      className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden cursor-pointer"
+      className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden"
       style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
     >
       <div className="relative h-[115px] overflow-hidden">
-        {img ? (
-          <Image src={img} alt={name} fill sizes="172px" className="object-cover" />
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: '#f5f5f5' }}
-          >
-            <Utensils className="w-8 h-8" style={{ color: '#ccc' }} />
-          </div>
-        )}
-        {badge && (
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={r.img} alt={r.name} className="w-full h-full object-cover" />
+        {r.badge && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
             <span className="text-[11px]">{'\uD83D\uDEF5'}</span>
-            <span className="text-[11px] font-semibold text-green-700">{badge}</span>
+            <span className="text-[11px] font-semibold text-green-700">{r.badge}</span>
           </div>
         )}
-        {rating && (
+        {r.rating && (
           <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
             <span className="text-xs text-amber-500">{'\u2605'}</span>
-            <span className="text-[11px] font-bold">{rating}</span>
+            <span className="text-[11px] font-bold">{r.rating}</span>
           </div>
         )}
       </div>
       <div className="p-3">
-        <p className="text-[13px] font-semibold text-gray-900 truncate">{name}</p>
-        <p className="text-[13px] font-bold text-gray-900 mt-1.5">{price}</p>
-        {time && (
-          <div className="flex items-center gap-1 mt-1 text-gray-400">
-            <Clock size={13} strokeWidth={1.5} />
-            <span className="text-xs">{time}</span>
-          </div>
-        )}
+        <p className="text-[13px] font-semibold text-gray-900 truncate">{r.name}</p>
+        <p className="text-[13px] font-bold text-gray-900 mt-1.5">{r.price}</p>
+        <div className="flex items-center gap-1 mt-1 text-gray-400">
+          <Clock size={13} strokeWidth={1.5} />
+          <span className="text-xs">{r.time}</span>
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── Types ───────────────────────────────────────────────
+/* ── Types ── */
+
 interface ClientMenuPageProps {
   tenant: Tenant;
   venues: Venue[];
@@ -190,7 +175,8 @@ interface ClientMenuPageProps {
   featuredItems?: MenuItem[];
 }
 
-// ─── Component ───────────────────────────────────────────
+/* ── MAIN ── */
+
 export default function ClientMenuPage({
   tenant,
   venues,
@@ -213,11 +199,11 @@ export default function ClientMenuPage({
 
   const primary = tenant.primary_color || '#4caf50';
 
-  // ─── State ─────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('Menu');
+  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
@@ -225,9 +211,7 @@ export default function ClientMenuPage({
     }
     return null;
   });
-  const searchBarRef = useRef<HTMLDivElement>(null);
 
-  // ─── Table auto-detection from URL ─────────────────────
   const [tableToastShown] = useState(() => {
     if (initialTable && typeof window !== 'undefined') {
       localStorage.setItem(`attabl_${tenant.slug}_table`, initialTable);
@@ -243,7 +227,6 @@ export default function ClientMenuPage({
   });
   void tableToastShown;
 
-  // ─── Realtime subscriptions ─────────────────────────────
   const handleRealtimeChange = useCallback(() => {
     router.refresh();
   }, [router]);
@@ -262,7 +245,6 @@ export default function ClientMenuPage({
     onChange: handleRealtimeChange,
   });
 
-  // ─── Handlers ──────────────────────────────────────────
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
     localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
@@ -302,7 +284,25 @@ export default function ClientMenuPage({
     }
   };
 
-  // ─── Render (structure EXACTE du template fourni) ──────
+  // Build venue cards data
+  const venueCards: RestaurantCardData[] = venues.map((v) => ({
+    name: getTranslatedContent(lang, v.name, v.name_en),
+    price: '',
+    time: '',
+    img: v.image_url || '',
+  }));
+
+  // Build featured items cards data
+  const featuredCards: RestaurantCardData[] = featuredItems.map((item) => ({
+    name: getTranslatedContent(lang, item.name, item.name_en),
+    price: resolveAndFormatPrice(item.price, item.prices, tenant.currency),
+    time: item.category?.name
+      ? getTranslatedContent(lang, item.category.name, item.category.name_en)
+      : '',
+    badge: item.is_vegetarian ? 'Veggie' : item.is_featured ? 'Top' : undefined,
+    img: item.image_url || '',
+  }));
+
   return (
     <div
       className="w-full max-w-[430px] mx-auto min-h-screen relative flex flex-col overflow-hidden"
@@ -317,28 +317,26 @@ export default function ClientMenuPage({
       <div
         className="px-5 pt-14 pb-5"
         style={{
-          background: `linear-gradient(180deg, ${primary}66 0%, ${primary}33 50%, ${primary}15 80%, #f4f4f0 100%)`,
+          background: 'linear-gradient(180deg, #b5e2a0 0%, #c9edba 50%, #e4f5db 80%, #f4f4f0 100%)',
         }}
       >
         <button
           onClick={() => setIsTablePickerOpen(true)}
-          className="flex items-center justify-center gap-1.5 mb-4 mx-auto"
+          className="flex items-center justify-center gap-1.5 mb-4 w-full"
         >
-          <MapPin size={14} style={{ color: primary }} fill={primary} strokeWidth={0} />
+          <MapPin size={14} className="text-green-700" fill="#3a8a3e" strokeWidth={0} />
           <span className="text-sm font-medium text-gray-800">
             {tableNumber ? `Table ${tableNumber} - ${tenant.name}` : tenant.name}
           </span>
           <ChevronDown size={14} className="text-gray-800" strokeWidth={2.5} />
         </button>
-
         <h1 className="text-3xl font-extrabold text-gray-900 leading-tight tracking-tight">
           {t('hello') || 'Bienvenue'} 👋
         </h1>
-        <p className="text-base mt-1 mb-4 font-medium leading-snug" style={{ color: primary }}>
+        <p className="text-base text-green-700 mt-1 mb-4 font-medium leading-snug">
           {tenant.description || t('welcomeSubtitle')}
         </p>
-
-        <div ref={searchBarRef} className="flex gap-2.5 items-center">
+        <div className="flex gap-2.5 items-center">
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
             className="flex-1 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
@@ -350,7 +348,7 @@ export default function ClientMenuPage({
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
             className="flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <div className="w-2 h-2 rounded-full" style={{ background: primary }} />
+            <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-sm font-semibold text-gray-900">
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
@@ -361,36 +359,34 @@ export default function ClientMenuPage({
 
       {/* ─ SCROLLABLE CONTENT ─ */}
       <div className="flex-1 overflow-y-auto pb-24">
-        {/* Categories - Twemoji icons */}
+        {/* Categories – Twemoji icons */}
         {categories.length > 0 && (
           <div className="flex gap-2 px-5 py-3.5 overflow-x-auto scrollbar-hide">
-            {categories.map((cat) => {
-              const isActive = activeCat === cat.id;
-              const catName = getTranslatedContent(lang, cat.name, cat.name_en);
+            {categories.map((c) => {
+              const isActive = activeCat === c.id;
+              const catName = getTranslatedContent(lang, c.name, c.name_en);
               return (
                 <div
-                  key={cat.id}
+                  key={c.id}
                   onClick={() => {
-                    setActiveCat(isActive ? null : cat.id);
-                    router.push(
-                      `/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`,
-                    );
+                    setActiveCat(isActive ? null : c.id);
+                    router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(c.name)}`);
                   }}
                   className="flex flex-col items-center gap-1.5 min-w-[62px] cursor-pointer"
                 >
                   <div
                     className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
                     style={{
-                      background: isActive ? `${primary}15` : '#fff',
+                      background: isActive ? '#e8f5e9' : '#fff',
                       boxShadow: isActive
-                        ? `0 0 0 2px ${primary}, 0 2px 8px rgba(0,0,0,.06)`
+                        ? '0 0 0 2px #4caf50, 0 2px 8px rgba(0,0,0,.06)'
                         : '0 2px 8px rgba(0,0,0,.05)',
                       transition: 'all .2s ease',
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={getCatImg(cat.name)}
+                      src={getCatImg(c.name)}
                       alt={catName}
                       className="w-[32px] h-[32px]"
                       style={{ imageRendering: 'auto' }}
@@ -398,7 +394,7 @@ export default function ClientMenuPage({
                   </div>
                   <span
                     className="text-[11px] font-medium"
-                    style={{ color: isActive ? primary : '#777' }}
+                    style={{ color: isActive ? '#2e7d32' : '#777' }}
                   >
                     {catName}
                   </span>
@@ -408,7 +404,7 @@ export default function ClientMenuPage({
           </div>
         )}
 
-        {/* Announcement banner */}
+        {/* Announcement */}
         {announcement && (
           <div className="px-5 pb-3">
             <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '2.5/1' }}>
@@ -436,21 +432,21 @@ export default function ClientMenuPage({
           </div>
         )}
 
-        {/* Nos Univers / Venues */}
-        {venues && venues.length > 0 && (
+        {/* Nos Univers */}
+        {venues.length > 0 && (
           <div className="px-5 mt-1">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('ourUniverses')}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
-              {venues.map((venue) => (
-                <RestaurantCard
+              {venues.map((venue, i) => (
+                <div
                   key={venue.id}
-                  name={getTranslatedContent(lang, venue.name, venue.name_en)}
-                  price=""
-                  img={venue.image_url || undefined}
                   onClick={() =>
                     router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
                   }
-                />
+                  className="cursor-pointer"
+                >
+                  <RestaurantCard r={venueCards[i]} />
+                </div>
               ))}
             </div>
           </div>
@@ -461,26 +457,16 @@ export default function ClientMenuPage({
           <div className="px-5 mt-6">
             <h2 className="text-lg font-bold text-gray-900 mb-3">{t('dontMiss')}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
-              {featuredItems.map((item) => (
-                <RestaurantCard
-                  key={item.id}
-                  name={getTranslatedContent(lang, item.name, item.name_en)}
-                  price={resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                  img={item.image_url || undefined}
-                  badge={item.is_vegetarian ? 'Veggie' : item.is_featured ? 'Top' : undefined}
-                  time={
-                    item.category?.name
-                      ? getTranslatedContent(lang, item.category.name, item.category.name_en)
-                      : undefined
-                  }
-                  onClick={() => setSelectedItem(item)}
-                />
+              {featuredItems.map((item, i) => (
+                <div key={item.id} onClick={() => setSelectedItem(item)} className="cursor-pointer">
+                  <RestaurantCard r={featuredCards[i]} />
+                </div>
               ))}
             </div>
           </div>
         )}
 
-        {/* See full menu CTA */}
+        {/* See full menu */}
         <div className="px-5 mt-6 mb-4">
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
