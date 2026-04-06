@@ -205,11 +205,11 @@ export default function ItemDetailSheet({
           {/* Sheet */}
           <motion.div
             key="sheet"
-            className="fixed inset-x-0 bottom-0 z-[61] flex max-h-[90vh] flex-col rounded-t-2xl bg-app-card"
+            className="fixed inset-x-0 bottom-0 z-[61] flex max-h-[95dvh] flex-col rounded-t-3xl bg-app-card"
             initial={{ y: '100%' }}
             animate={{ y: 0 }}
             exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={{ type: 'spring', stiffness: 350, damping: 32 }}
             drag="y"
             dragConstraints={{ top: 0, bottom: 0 }}
             dragElastic={0.2}
@@ -227,7 +227,7 @@ export default function ItemDetailSheet({
             {/* Scrollable content */}
             <div className="flex-1 overflow-y-auto overscroll-contain">
               {/* Hero image */}
-              <div className="relative aspect-video w-full bg-app-elevated">
+              <div className="relative aspect-[4/3] w-full bg-app-elevated">
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
@@ -243,21 +243,25 @@ export default function ItemDetailSheet({
                     <Utensils className="h-12 w-12 text-app-text-muted" />
                   </div>
                 )}
+                {/* Gradient overlay */}
+                <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-app-card to-transparent" />
+                {/* Close button on image */}
+                <button
+                  onClick={onClose}
+                  className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-black/40 backdrop-blur-sm text-white transition-colors active:bg-black/60"
+                  aria-label="Fermer"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
               {/* Content */}
               <div className="px-5 pb-4 pt-4">
-                {/* Title + close */}
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="text-xl font-bold text-app-text">
+                {/* Title - full width, no truncation */}
+                <div>
+                  <h2 className="text-2xl font-bold text-app-text">
                     {getTranslatedContent(language, item.name, item.name_en)}
                   </h2>
-                  <button
-                    onClick={onClose}
-                    className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-app-elevated text-app-text-secondary transition-colors active:bg-app-border"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
                 </div>
 
                 {/* Diet badges */}
@@ -289,7 +293,7 @@ export default function ItemDetailSheet({
 
                 {/* Description */}
                 {(item.description || item.description_en) && (
-                  <p className="mt-3 text-sm leading-relaxed text-app-text-secondary">
+                  <p className="mt-3 text-base leading-relaxed text-app-text-secondary">
                     {getTranslatedContent(language, item.description || '', item.description_en)}
                   </p>
                 )}
@@ -432,37 +436,39 @@ export default function ItemDetailSheet({
 
             {/* ─── Sticky footer ──────────────────────────────── */}
             <div
-              className="border-t border-app-border/50 bg-app-card px-5 py-4"
+              className="border-t border-app-border/50 bg-app-card/90 backdrop-blur-xl px-4 py-4"
               style={{
-                paddingBottom: 'max(env(safe-area-inset-bottom, 16px), 16px)',
+                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
               }}
             >
               <div className="flex items-center gap-3">
                 {/* Quantity controls */}
-                <div className="flex items-center gap-2 rounded-full border border-app-border px-1 py-1">
+                <div className="flex items-center bg-app-bg rounded-xl">
                   <button
                     onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-app-text-secondary transition-colors active:bg-app-elevated"
+                    className="flex h-10 w-10 items-center justify-center rounded-l-xl text-app-text-secondary transition-colors active:bg-app-elevated"
                     disabled={quantity <= 1}
+                    aria-label="Diminuer la quantite"
                   >
                     <Minus className="h-4 w-4" />
                   </button>
-                  <span className="min-w-[24px] text-center text-sm font-bold text-app-text">
+                  <span className="w-10 text-center text-lg font-bold text-app-text">
                     {quantity}
                   </span>
                   <button
                     onClick={() => setQuantity((q) => q + 1)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full text-app-text-secondary transition-colors active:bg-app-elevated"
+                    className="flex h-10 w-10 items-center justify-center rounded-r-xl text-app-text-secondary transition-colors active:bg-app-elevated"
+                    aria-label="Augmenter la quantite"
                   >
                     <Plus className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* Add to cart button */}
+                {/* Add to cart button — flex-1 + whitespace-nowrap = NEVER truncates */}
                 <button
                   onClick={handleAddToCart}
                   disabled={showSuccess}
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl py-3.5 text-sm font-bold text-white transition-all active:scale-[0.98]"
+                  className="flex flex-1 h-12 items-center justify-center gap-2 rounded-xl text-base font-bold text-white whitespace-nowrap transition-all active:scale-[0.98]"
                   style={{
                     backgroundColor: showSuccess ? 'rgb(34 197 94)' : 'var(--tenant-primary)',
                   }}
@@ -471,16 +477,15 @@ export default function ItemDetailSheet({
                     <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
-                      transition={{ type: 'spring', stiffness: 500, damping: 20 }}
+                      transition={{ type: 'spring', stiffness: 600, damping: 15 }}
                     >
                       <Check className="h-5 w-5" />
                     </motion.div>
                   ) : (
                     <>
                       <span>{t('addToCart')}</span>
-                      <span className="opacity-90">
-                        {formatDisplayPrice(currentPrice, currency)}
-                      </span>
+                      <span>-</span>
+                      <span>{formatDisplayPrice(currentPrice, currency)}</span>
                     </>
                   )}
                 </button>
