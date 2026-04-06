@@ -7,13 +7,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import {
-  Search,
+  Home,
   ShoppingBag,
   Clock,
+  SlidersHorizontal,
+  Search,
   MapPin,
   ChevronDown,
-  ChevronRight,
   Utensils,
+  ChevronRight,
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
@@ -38,16 +40,10 @@ import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-neutral-100 rounded-2xl" />,
+  loading: () => <div className="h-64 animate-pulse rounded-2xl" style={{ background: '#eee' }} />,
 });
 
-// ─── Helpers ────────────────────────────────────────────
-
-const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
-  return lang === 'en' && en ? en : fr;
-};
-
-// Twemoji CDN for high-quality category icons
+// ─── Twemoji CDN (Twitter high-quality emoji icons) ──────
 const twemoji = (code: string) =>
   `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${code}.png`;
 
@@ -90,19 +86,19 @@ const CATEGORY_TWEMOJI: Record<string, string> = {
   salad: '1f957',
   soupe: '1f35c',
   soup: '1f35c',
+  noodles: '1f35c',
   vin: '1f377',
   wine: '1f377',
   biere: '1f37a',
   beer: '1f37a',
   snack: '1f96a',
   snacks: '1f96a',
-  sushi: '1f363',
   sandwich: '1f96a',
+  sushi: '1f363',
   tart: '1f967',
-  noodles: '1f35c',
 };
 
-function getCategoryTwemojiUrl(name: string): string {
+function getCatImg(name: string): string {
   const lower = name
     .toLowerCase()
     .trim()
@@ -112,39 +108,76 @@ function getCategoryTwemojiUrl(name: string): string {
   for (const [key, code] of Object.entries(CATEGORY_TWEMOJI)) {
     if (lower.includes(key) || key.includes(lower)) return twemoji(code);
   }
-  return twemoji('1f37d'); // default plate
+  return twemoji('1f37d');
 }
 
-// ─── Derive lighter / darker shades from primary hex ─────
-function hexToHSL(hex: string): { h: number; s: number; l: number } {
-  const r = parseInt(hex.slice(1, 3), 16) / 255;
-  const g = parseInt(hex.slice(3, 5), 16) / 255;
-  const b = parseInt(hex.slice(5, 7), 16) / 255;
-  const max = Math.max(r, g, b),
-    min = Math.min(r, g, b);
-  const l = (max + min) / 2;
-  let h = 0,
-    s = 0;
-  if (max !== min) {
-    const d = max - min;
-    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-    switch (max) {
-      case r:
-        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
-        break;
-      case g:
-        h = ((b - r) / d + 2) / 6;
-        break;
-      case b:
-        h = ((r - g) / d + 4) / 6;
-        break;
-    }
-  }
-  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
+// ─── Helpers ─────────────────────────────────────────────
+const getTranslatedContent = (lang: string, fr: string, en?: string | null) =>
+  lang === 'en' && en ? en : fr;
+
+// ─── RestaurantCard (exactement comme le template) ───────
+function RestaurantCard({
+  name,
+  price,
+  time,
+  badge,
+  rating,
+  img,
+  onClick,
+}: {
+  name: string;
+  price: string;
+  time?: string;
+  badge?: string;
+  rating?: number;
+  img?: string;
+  onClick?: () => void;
+}) {
+  return (
+    <div
+      onClick={onClick}
+      className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden cursor-pointer"
+      style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
+    >
+      <div className="relative h-[115px] overflow-hidden">
+        {img ? (
+          <Image src={img} alt={name} fill sizes="172px" className="object-cover" />
+        ) : (
+          <div
+            className="w-full h-full flex items-center justify-center"
+            style={{ background: '#f5f5f5' }}
+          >
+            <Utensils className="w-8 h-8" style={{ color: '#ccc' }} />
+          </div>
+        )}
+        {badge && (
+          <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
+            <span className="text-[11px]">{'\uD83D\uDEF5'}</span>
+            <span className="text-[11px] font-semibold text-green-700">{badge}</span>
+          </div>
+        )}
+        {rating && (
+          <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
+            <span className="text-xs text-amber-500">{'\u2605'}</span>
+            <span className="text-[11px] font-bold">{rating}</span>
+          </div>
+        )}
+      </div>
+      <div className="p-3">
+        <p className="text-[13px] font-semibold text-gray-900 truncate">{name}</p>
+        <p className="text-[13px] font-bold text-gray-900 mt-1.5">{price}</p>
+        {time && (
+          <div className="flex items-center gap-1 mt-1 text-gray-400">
+            <Clock size={13} strokeWidth={1.5} />
+            <span className="text-xs">{time}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
-// ─── Types ──────────────────────────────────────────────
-
+// ─── Types ───────────────────────────────────────────────
 interface ClientMenuPageProps {
   tenant: Tenant;
   venues: Venue[];
@@ -157,8 +190,7 @@ interface ClientMenuPageProps {
   featuredItems?: MenuItem[];
 }
 
-// ─── Component ──────────────────────────────────────────
-
+// ─── Component ───────────────────────────────────────────
 export default function ClientMenuPage({
   tenant,
   venues,
@@ -179,12 +211,7 @@ export default function ClientMenuPage({
   const { formatDisplayPrice, resolveAndFormatPrice } = useDisplayCurrency();
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const primary = tenant.primary_color || '#2D5A3D';
-  const hsl = hexToHSL(primary);
-  // Generate a soft gradient from the tenant color
-  const gradientTop = `hsl(${hsl.h}, ${Math.min(hsl.s + 10, 80)}%, ${Math.min(hsl.l + 30, 82)}%)`;
-  const gradientMid = `hsl(${hsl.h}, ${Math.min(hsl.s + 5, 70)}%, ${Math.min(hsl.l + 38, 88)}%)`;
-  const gradientEnd = '#f4f4f0';
+  const primary = tenant.primary_color || '#4caf50';
 
   // ─── State ─────────────────────────────────────────────
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
@@ -198,7 +225,6 @@ export default function ClientMenuPage({
     }
     return null;
   });
-  const [isSearchSticky, setIsSearchSticky] = useState(false);
   const searchBarRef = useRef<HTMLDivElement>(null);
 
   // ─── Table auto-detection from URL ─────────────────────
@@ -216,19 +242,6 @@ export default function ClientMenuPage({
     return false;
   });
   void tableToastShown;
-
-  // ─── Sticky search on scroll ───────────────────────────
-  const handleScroll = useCallback(() => {
-    if (searchBarRef.current) {
-      const rect = searchBarRef.current.getBoundingClientRect();
-      setIsSearchSticky(rect.top <= 0);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   // ─── Realtime subscriptions ─────────────────────────────
   const handleRealtimeChange = useCallback(() => {
@@ -250,7 +263,6 @@ export default function ClientMenuPage({
   });
 
   // ─── Handlers ──────────────────────────────────────────
-
   const handleTableSelect = (table: Table) => {
     setTableNumber(table.table_number);
     localStorage.setItem(`attabl_${tenant.slug}_table`, table.table_number);
@@ -268,7 +280,6 @@ export default function ClientMenuPage({
           tb.table_number === result.tableNumber?.toUpperCase() ||
           tb.display_name === result.tableNumber,
       );
-
       if (matchedTable) {
         handleTableSelect(matchedTable);
       } else {
@@ -286,13 +297,12 @@ export default function ClientMenuPage({
         variant: 'destructive',
       });
     }
-
     if (result.menuSlug) {
       router.push(`/sites/${tenant.slug}/menu?menu=${result.menuSlug}`);
     }
   };
 
-  // ─── Render ────────────────────────────────────────────
+  // ─── Render (structure EXACTE du template fourni) ──────
   return (
     <div
       className="w-full max-w-[430px] mx-auto min-h-screen relative flex flex-col overflow-hidden"
@@ -303,68 +313,62 @@ export default function ClientMenuPage({
     >
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ GREEN HEADER ═══ */}
+      {/* ─ GREEN HEADER ─ */}
       <div
         className="px-5 pt-14 pb-5"
         style={{
-          background: `linear-gradient(180deg, ${gradientTop} 0%, ${gradientMid} 50%, ${gradientEnd} 100%)`,
+          background: `linear-gradient(180deg, ${primary}66 0%, ${primary}33 50%, ${primary}15 80%, #f4f4f0 100%)`,
         }}
       >
-        {/* Location / Table pill */}
-        <div className="flex items-center justify-center gap-1.5 mb-4">
+        <button
+          onClick={() => setIsTablePickerOpen(true)}
+          className="flex items-center justify-center gap-1.5 mb-4 mx-auto"
+        >
           <MapPin size={14} style={{ color: primary }} fill={primary} strokeWidth={0} />
-          <button
-            onClick={() => setIsTablePickerOpen(true)}
-            className="text-sm font-medium text-neutral-800"
-          >
+          <span className="text-sm font-medium text-gray-800">
             {tableNumber ? `Table ${tableNumber} - ${tenant.name}` : tenant.name}
-          </button>
-          <ChevronDown size={14} className="text-neutral-800" strokeWidth={2.5} />
-        </div>
+          </span>
+          <ChevronDown size={14} className="text-gray-800" strokeWidth={2.5} />
+        </button>
 
-        {/* Welcome */}
-        <h1 className="text-3xl font-extrabold text-neutral-900 leading-tight tracking-tight">
+        <h1 className="text-3xl font-extrabold text-gray-900 leading-tight tracking-tight">
           {t('hello') || 'Bienvenue'} 👋
         </h1>
         <p className="text-base mt-1 mb-4 font-medium leading-snug" style={{ color: primary }}>
           {tenant.description || t('welcomeSubtitle')}
         </p>
 
-        {/* Search bar */}
         <div ref={searchBarRef} className="flex gap-2.5 items-center">
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
             className="flex-1 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <Search size={18} className="text-neutral-300" strokeWidth={2.2} />
-            <span className="text-sm text-neutral-400">{t('searchMenu')}</span>
+            <Search size={18} className="text-gray-300" strokeWidth={2.2} />
+            <span className="text-sm text-gray-300">{t('searchMenu')}</span>
           </button>
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
             className="flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
-            <span className="text-sm font-semibold text-neutral-900">
+            <div className="w-2 h-2 rounded-full" style={{ background: primary }} />
+            <span className="text-sm font-semibold text-gray-900">
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
-            <ChevronDown size={12} className="text-neutral-900" strokeWidth={3} />
+            <ChevronDown size={12} className="text-gray-900" strokeWidth={3} />
           </button>
         </div>
       </div>
 
-      {/* ═══ SCROLLABLE CONTENT ═══ */}
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
-      >
-        {/* ── Categories — Twemoji icons in circles ── */}
+      {/* ─ SCROLLABLE CONTENT ─ */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        {/* Categories - Twemoji icons */}
         {categories.length > 0 && (
           <div className="flex gap-2 px-5 py-3.5 overflow-x-auto scrollbar-hide">
             {categories.map((cat) => {
               const isActive = activeCat === cat.id;
               const catName = getTranslatedContent(lang, cat.name, cat.name_en);
               return (
-                <button
+                <div
                   key={cat.id}
                   onClick={() => {
                     setActiveCat(isActive ? null : cat.id);
@@ -372,24 +376,24 @@ export default function ClientMenuPage({
                       `/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`,
                     );
                   }}
-                  className="flex flex-col items-center gap-1.5 min-w-[62px]"
+                  className="flex flex-col items-center gap-1.5 min-w-[62px] cursor-pointer"
                 >
                   <div
-                    className="w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all duration-200"
+                    className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
                     style={{
-                      background: isActive ? `${primary}18` : '#fff',
+                      background: isActive ? `${primary}15` : '#fff',
                       boxShadow: isActive
                         ? `0 0 0 2px ${primary}, 0 2px 8px rgba(0,0,0,.06)`
                         : '0 2px 8px rgba(0,0,0,.05)',
+                      transition: 'all .2s ease',
                     }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={getCategoryTwemojiUrl(cat.name)}
+                      src={getCatImg(cat.name)}
                       alt={catName}
-                      width={32}
-                      height={32}
-                      className="w-8 h-8"
+                      className="w-[32px] h-[32px]"
+                      style={{ imageRendering: 'auto' }}
                     />
                   </div>
                   <span
@@ -398,13 +402,13 @@ export default function ClientMenuPage({
                   >
                     {catName}
                   </span>
-                </button>
+                </div>
               );
             })}
           </div>
         )}
 
-        {/* ── Announcement banner ── */}
+        {/* Announcement banner */}
         {announcement && (
           <div className="px-5 pb-3">
             <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '2.5/1' }}>
@@ -432,147 +436,66 @@ export default function ClientMenuPage({
           </div>
         )}
 
-        {/* ── Nos Cartes / Venues ── */}
+        {/* Nos Univers / Venues */}
         {venues && venues.length > 0 && (
           <div className="px-5 mt-1">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-neutral-900">{t('ourUniverses')}</h2>
-              <button
-                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-xs font-semibold"
-                style={{ color: primary }}
-              >
-                {t('viewAll')}
-              </button>
-            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('ourUniverses')}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
               {venues.map((venue) => (
-                <button
+                <RestaurantCard
                   key={venue.id}
+                  name={getTranslatedContent(lang, venue.name, venue.name_en)}
+                  price=""
+                  img={venue.image_url || undefined}
                   onClick={() =>
                     router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
                   }
-                  className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden text-left"
-                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
-                >
-                  <div className="relative h-[115px] overflow-hidden bg-neutral-100">
-                    {venue.image_url ? (
-                      <Image
-                        src={venue.image_url}
-                        alt={venue.name}
-                        width={172}
-                        height={115}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ backgroundColor: `${primary}12` }}
-                      >
-                        <span className="text-3xl font-bold" style={{ color: primary }}>
-                          {venue.name.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[13px] font-semibold text-neutral-900 truncate">
-                      {getTranslatedContent(lang, venue.name, venue.name_en)}
-                    </p>
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
         )}
 
-        {/* ── Featured Items ── */}
+        {/* Featured Items */}
         {featuredItems.length > 0 && (
           <div className="px-5 mt-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-neutral-900">{t('dontMiss')}</h2>
-              <button
-                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-xs font-semibold"
-                style={{ color: primary }}
-              >
-                {t('viewAll')}
-              </button>
-            </div>
+            <h2 className="text-lg font-bold text-gray-900 mb-3">{t('dontMiss')}</h2>
             <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
               {featuredItems.map((item) => (
-                <button
+                <RestaurantCard
                   key={item.id}
+                  name={getTranslatedContent(lang, item.name, item.name_en)}
+                  price={resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                  img={item.image_url || undefined}
+                  badge={item.is_vegetarian ? 'Veggie' : item.is_featured ? 'Top' : undefined}
+                  time={
+                    item.category?.name
+                      ? getTranslatedContent(lang, item.category.name, item.category.name_en)
+                      : undefined
+                  }
                   onClick={() => setSelectedItem(item)}
-                  className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden text-left"
-                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
-                >
-                  <div className="relative h-[115px] overflow-hidden bg-neutral-100">
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={getTranslatedContent(lang, item.name, item.name_en)}
-                        width={172}
-                        height={115}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center"
-                        style={{ backgroundColor: `${primary}12` }}
-                      >
-                        <Utensils className="w-8 h-8" style={{ color: primary }} />
-                      </div>
-                    )}
-                    {/* Badge */}
-                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
-                      <span className="text-[11px]">{item.is_vegetarian ? '🌿' : '⭐'}</span>
-                      <span className="text-[11px] font-semibold" style={{ color: primary }}>
-                        {item.is_vegetarian ? 'Veggie' : 'Top'}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <p className="text-[13px] font-semibold text-neutral-900 truncate">
-                      {getTranslatedContent(lang, item.name, item.name_en)}
-                    </p>
-                    <p className="text-[13px] font-bold text-neutral-900 mt-1.5">
-                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                    </p>
-                    {item.category?.name && (
-                      <div className="flex items-center gap-1 mt-1 text-neutral-400">
-                        <Clock size={13} strokeWidth={1.5} />
-                        <span className="text-xs">
-                          {getTranslatedContent(lang, item.category.name, item.category.name_en)}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </button>
+                />
               ))}
             </div>
           </div>
         )}
 
-        {/* ── See Full Menu CTA ── */}
+        {/* See full menu CTA */}
         <div className="px-5 mt-6 mb-4">
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="w-full h-[52px] rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
-            style={{
-              backgroundColor: primary,
-              boxShadow: `0 4px 16px ${primary}40`,
-            }}
+            className="w-full py-3.5 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+            style={{ backgroundColor: primary, boxShadow: `0 4px 16px ${primary}40` }}
           >
-            <Utensils className="w-[18px] h-[18px]" />
+            <Utensils size={18} />
             {t('seeFullMenu')}
           </button>
         </div>
       </div>
 
-      {/* ═══ FLOATING CART BAR ═══ */}
+      {/* ─ FLOATING CART BAR ─ */}
       {totalCartItems > 0 && (
-        <div className="absolute bottom-[80px] left-4 right-4 z-40 max-w-[430px] mx-auto">
+        <div className="absolute left-4 right-4 z-40" style={{ bottom: '80px' }}>
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"
@@ -596,7 +519,7 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ MODALS ═══ */}
+      {/* ─ MODALS ─ */}
       <TablePicker
         isOpen={isTablePickerOpen}
         onClose={() => setIsTablePickerOpen(false)}
@@ -604,7 +527,6 @@ export default function ClientMenuPage({
         zones={zones}
         tables={tables}
       />
-
       <QRScanner
         isOpen={isQRScannerOpen}
         onClose={() => setIsQRScannerOpen(false)}
@@ -612,13 +534,11 @@ export default function ClientMenuPage({
         onManualEntry={() => setIsTablePickerOpen(true)}
         tables={tables}
       />
-
       <InstallPrompt
         appName={tenant.name}
         logoUrl={tenant.logo_url}
         hasFloatingCart={totalCartItems > 0}
       />
-
       <ItemDetailSheet
         item={selectedItem}
         isOpen={!!selectedItem}
@@ -628,7 +548,6 @@ export default function ClientMenuPage({
         currency={tenant.currency || 'XAF'}
         language={lang}
       />
-
       <BottomNav tenantSlug={tenant.slug} />
     </div>
   );
