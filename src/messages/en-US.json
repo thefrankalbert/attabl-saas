@@ -1740,6 +1740,7 @@
     "confirmTable": "Confirm table {number}",
     "included": "Included",
     "unavailable": "Unavailable",
+    "temporarilyUnavailable": "Temporarily unavailable",
     "viewOfferAriaLabel": "View offer",
     "goToSlideAriaLabel": "Go to slide {n}",
     "bannerAlt": "Banner {index}",
