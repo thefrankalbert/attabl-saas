@@ -597,71 +597,38 @@ export default function CartPage() {
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, x: -100 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="px-4 py-4"
+                    className="px-4 py-3 flex items-center gap-3"
                   >
-                    <div className="flex gap-3">
-                      {/* Item image */}
-                      <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-app-bg">
-                        {item.image_url &&
-                        !item.image_url.includes('placeholder') &&
-                        !item.image_url.includes('default') ? (
-                          <Image
-                            src={item.image_url}
-                            alt={item.name}
-                            width={56}
-                            height={56}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Utensils className="w-5 h-5 text-app-text-muted" />
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Name, variant, price */}
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-sm font-semibold text-app-text leading-snug">
-                          {getTranslatedContent(language, item.name, item.name_en)}
-                        </h3>
-                        {(optionLabel || variantLabel) && (
-                          <p className="text-xs text-app-text-muted mt-0.5">
-                            {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
-                          </p>
-                        )}
-                        <span
-                          className="text-sm font-bold mt-1 block"
-                          style={{ color: 'var(--tenant-primary)' }}
-                        >
-                          {resolveAndFormatPrice(
-                            item.price * item.quantity,
-                            item.prices,
-                            currencyCode,
-                          )}
-                        </span>
-                      </div>
-
-                      {/* Delete */}
-                      <button
-                        onClick={() => removeFromCart(itemKey)}
-                        className="w-8 h-8 flex items-center justify-center text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors self-start"
-                        aria-label="Supprimer"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    {/* Item image */}
+                    <div className="w-12 h-12 rounded-lg overflow-hidden flex-shrink-0 bg-app-bg">
+                      {item.image_url &&
+                      !item.image_url.includes('placeholder') &&
+                      !item.image_url.includes('default') ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={48}
+                          height={48}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <Utensils className="w-4 h-4 text-app-text-muted" />
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quantity controls — below */}
-                    <div className="flex items-center gap-2 mt-3 ml-[68px]">
+                    {/* Quantity controls — compact inline */}
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                         aria-label="Diminuer la quantite"
-                        className="w-10 h-10 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
+                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
-                        <Minus className="w-3.5 h-3.5" />
+                        <Minus className="w-3 h-3" />
                       </button>
                       <span
-                        className="text-sm font-bold w-6 text-center"
+                        className="text-xs font-bold w-5 text-center"
                         style={{ color: 'var(--tenant-primary)' }}
                       >
                         {item.quantity}
@@ -669,9 +636,42 @@ export default function CartPage() {
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                         aria-label="Augmenter la quantite"
-                        className="w-10 h-10 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
+                        className="w-7 h-7 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3 h-3" />
+                      </button>
+                    </div>
+
+                    {/* Name, variant, price */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm font-medium text-app-text leading-tight">
+                        {getTranslatedContent(language, item.name, item.name_en)}
+                      </h3>
+                      {(optionLabel || variantLabel) && (
+                        <p className="text-[11px] text-app-text-muted mt-0.5">
+                          {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
+                    </div>
+
+                    {/* Price + delete */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span
+                        className="text-sm font-bold whitespace-nowrap"
+                        style={{ color: 'var(--tenant-primary)' }}
+                      >
+                        {resolveAndFormatPrice(
+                          item.price * item.quantity,
+                          item.prices,
+                          currencyCode,
+                        )}
+                      </span>
+                      <button
+                        onClick={() => removeFromCart(itemKey)}
+                        className="w-7 h-7 flex items-center justify-center text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                        aria-label="Supprimer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
                   </motion.div>
