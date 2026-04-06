@@ -1,16 +1,14 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
 import {
-  Home,
   ShoppingBag,
   Clock,
-  SlidersHorizontal,
   Search,
   MapPin,
   ChevronDown,
@@ -191,7 +189,7 @@ export default function ClientMenuPage({
   venues,
   initialTable,
   categories,
-  ads,
+  ads: _ads,
   zones,
   tables,
   announcement,
@@ -208,7 +206,6 @@ export default function ClientMenuPage({
 
   const primary = tenant.primary_color || '#4caf50';
 
-  const [activeTab, setActiveTab] = useState('Menu');
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
