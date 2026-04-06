@@ -319,7 +319,7 @@ export default function ClientMenuDetailPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="flex-1 w-full min-h-screen"
+      className="flex-1 w-full"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ STICKY HEADER - appears when scrolled past search bar ═══ */}
@@ -395,6 +395,11 @@ export default function ClientMenuDetailPage({
         </div>
 
         {/* Inline search results */}
+        {searchQuery.length >= 2 && searchResults.length === 0 && (
+          <p className="text-center text-sm text-app-text-muted py-8">
+            Aucun plat trouve pour &quot;{searchQuery}&quot;
+          </p>
+        )}
         {searchQuery.length >= 2 && searchResults.length > 0 && (
           <div className="mt-2 bg-app-card rounded-2xl border border-app-border shadow-lg overflow-hidden z-50 relative">
             <div className="p-2">
@@ -415,7 +420,10 @@ export default function ClientMenuDetailPage({
                       {lang === 'en' && item.name_en ? item.name_en : item.name}
                     </p>
                   </div>
-                  <span className="text-sm font-bold text-[#C5A065] flex-shrink-0">
+                  <span
+                    className="text-sm font-bold flex-shrink-0"
+                    style={{ color: 'var(--tenant-primary)' }}
+                  >
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5 text-app-text-muted" />
@@ -543,7 +551,7 @@ export default function ClientMenuDetailPage({
                 <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[120px]">
                   {/* Section header */}
                   <div className="p-4 bg-app-bg">
-                    <h2 className="text-lg font-bold text-[#003058] dark:text-app-text uppercase tracking-tight">
+                    <h2 className="text-lg font-bold text-app-text dark:text-app-text uppercase tracking-tight">
                       {category.name}
                     </h2>
                   </div>

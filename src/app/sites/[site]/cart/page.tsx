@@ -529,7 +529,7 @@ export default function CartPage() {
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
           <button
             onClick={() => router.back()}
-            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
+            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
@@ -541,7 +541,8 @@ export default function CartPage() {
             onClick={() => {
               if (confirm(t('clearCartConfirm'))) clearCart();
             }}
-            className="p-2 -mr-2 text-app-text-muted hover:text-red-500 transition-colors"
+            aria-label="Vider le panier"
+            className="p-2 -mr-2 text-app-text-muted hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
           >
             <Trash2 className="w-5 h-5" />
           </button>
@@ -598,7 +599,8 @@ export default function CartPage() {
                     <div className="flex items-center gap-1.5">
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
+                        aria-label="Diminuer la quantite"
+                        className="w-11 h-11 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -610,7 +612,8 @@ export default function CartPage() {
                       </span>
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors"
+                        aria-label="Augmenter la quantite"
+                        className="w-11 h-11 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
@@ -813,8 +816,9 @@ export default function CartPage() {
                     )
                   }
                   disabled={tipAmount === 0}
+                  aria-label="Diminuer la quantite"
                   className={cn(
-                    'w-9 h-9 rounded-full border flex items-center justify-center transition-all',
+                    'w-11 h-11 rounded-full border flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-offset-2',
                     tipAmount === 0
                       ? 'border-app-border text-app-text-muted/40 cursor-not-allowed'
                       : 'border-app-border text-app-text-secondary hover:border-app-border hover:bg-app-hover active:scale-95',
@@ -829,7 +833,8 @@ export default function CartPage() {
                   onClick={() =>
                     setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
                   }
-                  className="w-9 h-9 rounded-full border flex items-center justify-center transition-all active:scale-95"
+                  aria-label="Augmenter la quantite"
+                  className="w-11 h-11 rounded-full border flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2"
                   style={{
                     borderColor: 'var(--tenant-primary)',
                     color: 'var(--tenant-primary)',
