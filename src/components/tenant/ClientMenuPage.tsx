@@ -6,7 +6,15 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, Utensils, ChevronRight, Leaf, Flame } from 'lucide-react';
+import {
+  Search,
+  ShoppingBag,
+  Clock,
+  MapPin,
+  ChevronDown,
+  ChevronRight,
+  Utensils,
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -21,7 +29,6 @@ import {
   Announcement,
   MenuItem,
 } from '@/types/admin.types';
-import { cn } from '@/lib/utils';
 import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';
@@ -31,7 +38,7 @@ import type { QRScanResult } from '@/components/tenant/QRScanner';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-2xl" />,
+  loading: () => <div className="h-64 animate-pulse bg-neutral-100 rounded-2xl" />,
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -40,60 +47,100 @@ const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
   return lang === 'en' && en ? en : fr;
 };
 
-// Emoji mapping for common category names
-const CATEGORY_EMOJIS: Record<string, string> = {
-  entrée: '🥗',
-  starters: '🥗',
-  'pour commencer': '🥗',
-  burger: '🍔',
-  burgers: '🍔',
-  hamburger: '🍔',
-  pizza: '🍕',
-  pizzas: '🍕',
-  pâtes: '🍝',
-  pasta: '🍝',
-  grillade: '🍖',
-  grills: '🍖',
-  'du grill': '🍖',
-  'plat principal': '🍽️',
-  'main course': '🍽️',
-  plats: '🍽️',
-  végétarien: '🥬',
-  vegetarian: '🥬',
-  dessert: '🍰',
-  desserts: '🍰',
-  douceurs: '🍰',
-  boisson: '🍹',
-  boissons: '🍹',
-  drinks: '🍹',
-  cocktail: '🍸',
-  cocktails: '🍸',
-  apéritif: '🫒',
-  café: '☕',
-  coffee: '☕',
-  africain: '🍲',
-  african: '🍲',
-  'plats africains': '🍲',
-  poisson: '🐟',
-  fish: '🐟',
-  seafood: '🦐',
-  salade: '🥗',
-  salad: '🥗',
-  soupe: '🍲',
-  soup: '🍲',
-  vin: '🍷',
-  wine: '🍷',
-  bière: '🍺',
-  beer: '🍺',
+// Twemoji CDN for high-quality category icons
+const twemoji = (code: string) =>
+  `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${code}.png`;
+
+const CATEGORY_TWEMOJI: Record<string, string> = {
+  entree: '1f957',
+  starters: '1f957',
+  'pour commencer': '1f957',
+  burger: '1f354',
+  burgers: '1f354',
+  hamburger: '1f354',
+  pizza: '1f355',
+  pizzas: '1f355',
+  pates: '1f35d',
+  pasta: '1f35d',
+  grillade: '1f356',
+  grills: '1f356',
+  plats: '1f37d',
+  'plat principal': '1f37d',
+  'main course': '1f37d',
+  vegetarien: '1f96c',
+  vegetarian: '1f96c',
+  dessert: '1f370',
+  desserts: '1f370',
+  douceurs: '1f370',
+  boisson: '1f379',
+  boissons: '1f379',
+  drinks: '1f379',
+  cocktail: '1f378',
+  cocktails: '1f378',
+  aperitif: '1fad2',
+  cafe: '2615',
+  coffee: '2615',
+  africain: '1f372',
+  african: '1f372',
+  'plats africains': '1f372',
+  poisson: '1f41f',
+  fish: '1f41f',
+  seafood: '1f990',
+  salade: '1f957',
+  salad: '1f957',
+  soupe: '1f35c',
+  soup: '1f35c',
+  vin: '1f377',
+  wine: '1f377',
+  biere: '1f37a',
+  beer: '1f37a',
+  snack: '1f96a',
+  snacks: '1f96a',
+  sushi: '1f363',
+  sandwich: '1f96a',
+  tart: '1f967',
+  noodles: '1f35c',
 };
 
-function getCategoryEmoji(name: string): string {
-  const lower = name.toLowerCase().trim();
-  if (CATEGORY_EMOJIS[lower]) return CATEGORY_EMOJIS[lower];
-  for (const [key, emoji] of Object.entries(CATEGORY_EMOJIS)) {
-    if (lower.includes(key) || key.includes(lower)) return emoji;
+function getCategoryTwemojiUrl(name: string): string {
+  const lower = name
+    .toLowerCase()
+    .trim()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '');
+  if (CATEGORY_TWEMOJI[lower]) return twemoji(CATEGORY_TWEMOJI[lower]);
+  for (const [key, code] of Object.entries(CATEGORY_TWEMOJI)) {
+    if (lower.includes(key) || key.includes(lower)) return twemoji(code);
   }
-  return '🍽️';
+  return twemoji('1f37d'); // default plate
+}
+
+// ─── Derive lighter / darker shades from primary hex ─────
+function hexToHSL(hex: string): { h: number; s: number; l: number } {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b),
+    min = Math.min(r, g, b);
+  const l = (max + min) / 2;
+  let h = 0,
+    s = 0;
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case r:
+        h = ((g - b) / d + (g < b ? 6 : 0)) / 6;
+        break;
+      case g:
+        h = ((b - r) / d + 2) / 6;
+        break;
+      case b:
+        h = ((r - g) / d + 4) / 6;
+        break;
+    }
+  }
+  return { h: Math.round(h * 360), s: Math.round(s * 100), l: Math.round(l * 100) };
 }
 
 // ─── Types ──────────────────────────────────────────────
@@ -133,11 +180,17 @@ export default function ClientMenuPage({
   const totalCartItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const primary = tenant.primary_color || '#2D5A3D';
+  const hsl = hexToHSL(primary);
+  // Generate a soft gradient from the tenant color
+  const gradientTop = `hsl(${hsl.h}, ${Math.min(hsl.s + 10, 80)}%, ${Math.min(hsl.l + 30, 82)}%)`;
+  const gradientMid = `hsl(${hsl.h}, ${Math.min(hsl.s + 5, 70)}%, ${Math.min(hsl.l + 38, 88)}%)`;
+  const gradientEnd = '#f4f4f0';
 
   // ─── State ─────────────────────────────────────────────
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
@@ -242,269 +295,284 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="bg-neutral-50"
-      style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+      className="w-full max-w-[430px] mx-auto min-h-screen relative flex flex-col overflow-hidden"
+      style={{
+        background: '#f4f4f0',
+        fontFamily: "-apple-system, 'SF Pro Display', BlinkMacSystemFont, sans-serif",
+      }}
     >
-      {/* ═══ FULLSCREEN SPLASH ═══ */}
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ HERO — Colored background with welcome text ═══ */}
+      {/* ═══ GREEN HEADER ═══ */}
       <div
-        className="relative overflow-hidden rounded-b-[2rem]"
-        style={{ backgroundColor: primary }}
+        className="px-5 pt-14 pb-5"
+        style={{
+          background: `linear-gradient(180deg, ${gradientTop} 0%, ${gradientMid} 50%, ${gradientEnd} 100%)`,
+        }}
       >
-        {/* Decorative shapes for depth */}
-        <div className="absolute top-6 right-[-30px] w-28 h-28 rounded-full bg-white/10" />
-        <div className="absolute bottom-16 left-[-15px] w-16 h-16 rounded-full bg-white/10" />
-
-        <div className="relative px-5 pt-12 pb-20">
-          {/* Top bar: table/location pill */}
-          <div className="flex items-center justify-between mb-5">
-            <button
-              onClick={() => setIsTablePickerOpen(true)}
-              className="flex items-center gap-1.5 text-xs font-medium text-white/90"
-            >
-              <span className="w-4 h-4 rounded-full bg-white/20 flex items-center justify-center text-[10px]">
-                📍
-              </span>
-              {tableNumber ? `Table ${tableNumber}` : tenant.name}
-              <ChevronRight className="w-3 h-3 text-white/60" />
-            </button>
-            <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
-              <ShoppingCart className="w-5 h-5 text-white" />
-              {totalCartItems > 0 && (
-                <span
-                  className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-white text-[11px] font-bold flex items-center justify-center"
-                  style={{ color: primary }}
-                >
-                  {totalCartItems > 9 ? '9+' : totalCartItems}
-                </span>
-              )}
-            </Link>
-          </div>
-
-          {/* Welcome text — 2 lines like reference app */}
-          <p className="text-base font-semibold text-white/70">{t('hello') || 'Bienvenue'} 👋</p>
-          <h1 className="text-[26px] font-extrabold text-white leading-snug mt-1 tracking-tight">
-            {tenant.description || t('welcomeSubtitle')}
-          </h1>
+        {/* Location / Table pill */}
+        <div className="flex items-center justify-center gap-1.5 mb-4">
+          <MapPin size={14} style={{ color: primary }} fill={primary} strokeWidth={0} />
+          <button
+            onClick={() => setIsTablePickerOpen(true)}
+            className="text-sm font-medium text-neutral-800"
+          >
+            {tableNumber ? `Table ${tableNumber} - ${tenant.name}` : tenant.name}
+          </button>
+          <ChevronDown size={14} className="text-neutral-800" strokeWidth={2.5} />
         </div>
 
-        {/* Search bar — floating on the boundary */}
-        <div ref={searchBarRef} className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-5">
-          <div
+        {/* Welcome */}
+        <h1 className="text-3xl font-extrabold text-neutral-900 leading-tight tracking-tight">
+          {t('hello') || 'Bienvenue'} 👋
+        </h1>
+        <p className="text-base mt-1 mb-4 font-medium leading-snug" style={{ color: primary }}>
+          {tenant.description || t('welcomeSubtitle')}
+        </p>
+
+        {/* Search bar */}
+        <div ref={searchBarRef} className="flex gap-2.5 items-center">
+          <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="w-full flex items-center gap-3 bg-white rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.08)] px-4 py-3 cursor-pointer border border-neutral-100"
+            className="flex-1 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ backgroundColor: `${primary}12` }}
-            >
-              <Search className="w-4 h-4" style={{ color: primary }} />
-            </div>
-            <span className="flex-1 text-sm text-neutral-400">{t('searchMenu')}</span>
-            <span
-              className="text-[11px] font-semibold px-3 py-1.5 rounded-full text-white"
-              style={{ backgroundColor: primary }}
-            >
+            <Search size={18} className="text-neutral-300" strokeWidth={2.2} />
+            <span className="text-sm text-neutral-400">{t('searchMenu')}</span>
+          </button>
+          <button
+            onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+            className="flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
+          >
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
+            <span className="text-sm font-semibold text-neutral-900">
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
-          </div>
+            <ChevronDown size={12} className="text-neutral-900" strokeWidth={3} />
+          </button>
         </div>
       </div>
 
-      {/* Spacer for floating search bar */}
-      <div className="h-8" />
+      {/* ═══ SCROLLABLE CONTENT ═══ */}
+      <div
+        className="flex-1 overflow-y-auto"
+        style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        {/* ── Categories — Twemoji icons in circles ── */}
+        {categories.length > 0 && (
+          <div className="flex gap-2 px-5 py-3.5 overflow-x-auto scrollbar-hide">
+            {categories.map((cat) => {
+              const isActive = activeCat === cat.id;
+              const catName = getTranslatedContent(lang, cat.name, cat.name_en);
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => {
+                    setActiveCat(isActive ? null : cat.id);
+                    router.push(
+                      `/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`,
+                    );
+                  }}
+                  className="flex flex-col items-center gap-1.5 min-w-[62px]"
+                >
+                  <div
+                    className="w-[54px] h-[54px] rounded-full flex items-center justify-center transition-all duration-200"
+                    style={{
+                      background: isActive ? `${primary}18` : '#fff',
+                      boxShadow: isActive
+                        ? `0 0 0 2px ${primary}, 0 2px 8px rgba(0,0,0,.06)`
+                        : '0 2px 8px rgba(0,0,0,.05)',
+                    }}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getCategoryTwemojiUrl(cat.name)}
+                      alt={catName}
+                      width={32}
+                      height={32}
+                      className="w-8 h-8"
+                    />
+                  </div>
+                  <span
+                    className="text-[11px] font-medium"
+                    style={{ color: isActive ? primary : '#777' }}
+                  >
+                    {catName}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
 
-      {/* ═══ ANNOUNCEMENT BANNER ═══ */}
-      {announcement && (
-        <div className="px-5 pt-2 pb-1">
-          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
-            {announcement.image_url ? (
-              <Image
-                src={announcement.image_url}
-                alt={getTranslatedContent(lang, announcement.title, announcement.title_en)}
-                fill
-                sizes="(max-width: 768px) 100vw, 600px"
-                className="object-cover"
-              />
-            ) : (
-              <div
-                className="w-full h-full"
-                style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }}
-              />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-              <h3 className="text-sm font-bold text-white leading-snug">
-                {getTranslatedContent(lang, announcement.title, announcement.title_en)}
-              </h3>
-              {announcement.description && (
-                <p className="text-xs text-white/80 leading-relaxed mt-0.5">
-                  {getTranslatedContent(
-                    lang,
-                    announcement.description,
-                    announcement.description_en,
-                  )}
-                </p>
+        {/* ── Announcement banner ── */}
+        {announcement && (
+          <div className="px-5 pb-3">
+            <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '2.5/1' }}>
+              {announcement.image_url ? (
+                <Image
+                  src={announcement.image_url}
+                  alt={getTranslatedContent(lang, announcement.title, announcement.title_en)}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  className="object-cover"
+                />
+              ) : (
+                <div
+                  className="w-full h-full"
+                  style={{ background: `linear-gradient(135deg, ${primary}, ${primary}bb)` }}
+                />
               )}
+              <div className="absolute inset-0 bg-gradient-to-r from-black/50 to-transparent" />
+              <div className="absolute bottom-0 left-0 p-4">
+                <h3 className="text-sm font-bold text-white leading-snug">
+                  {getTranslatedContent(lang, announcement.title, announcement.title_en)}
+                </h3>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ═══ CATEGORIES — Horizontal scroll with emoji + name (like the reference) ═══ */}
-      {categories.length > 0 && (
-        <div className="pt-5 pb-1">
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
-            {categories.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() =>
-                  router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
-                }
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
-              >
-                <div
-                  className="w-[58px] h-[58px] rounded-[16px] shadow-sm border border-neutral-100 flex items-center justify-center hover:shadow-md transition-shadow active:scale-95"
-                  style={{ backgroundColor: `${primary}10` }}
-                >
-                  <span className="text-2xl leading-none">{getCategoryEmoji(cat.name)}</span>
-                </div>
-                <span className="text-[11px] font-medium text-neutral-600 text-center w-[58px] leading-tight">
-                  {getTranslatedContent(lang, cat.name, cat.name_en)}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ NOS CARTES — Venues as visual cards ═══ */}
-      {venues && venues.length > 0 && (
-        <div className="pt-4 pb-1">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-base font-bold text-app-text">{t('ourUniverses')}</h2>
-            {venues.length > 1 && (
+        {/* ── Nos Cartes / Venues ── */}
+        {venues && venues.length > 0 && (
+          <div className="px-5 mt-1">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-neutral-900">{t('ourUniverses')}</h2>
               <button
                 onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-xs font-semibold transition-colors"
+                className="text-xs font-semibold"
                 style={{ color: primary }}
               >
                 {t('viewAll')}
               </button>
-            )}
+            </div>
+            <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
+              {venues.map((venue) => (
+                <button
+                  key={venue.id}
+                  onClick={() =>
+                    router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
+                  }
+                  className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden text-left"
+                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
+                >
+                  <div className="relative h-[115px] overflow-hidden bg-neutral-100">
+                    {venue.image_url ? (
+                      <Image
+                        src={venue.image_url}
+                        alt={venue.name}
+                        width={172}
+                        height={115}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{ backgroundColor: `${primary}12` }}
+                      >
+                        <span className="text-3xl font-bold" style={{ color: primary }}>
+                          {venue.name.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[13px] font-semibold text-neutral-900 truncate">
+                      {getTranslatedContent(lang, venue.name, venue.name_en)}
+                    </p>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
-            {venues.map((venue) => (
+        )}
+
+        {/* ── Featured Items ── */}
+        {featuredItems.length > 0 && (
+          <div className="px-5 mt-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-lg font-bold text-neutral-900">{t('dontMiss')}</h2>
               <button
-                key={venue.id}
-                onClick={() =>
-                  router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
-                }
-                className="flex-shrink-0 w-40 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/30 hover:shadow-md transition-shadow text-left"
+                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+                className="text-xs font-semibold"
+                style={{ color: primary }}
               >
-                <div className="w-full h-28 bg-app-elevated overflow-hidden relative">
-                  {venue.image_url ? (
-                    <Image
-                      src={venue.image_url}
-                      alt={venue.name}
-                      width={160}
-                      height={112}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-3xl font-bold text-app-text-muted">
-                        {venue.name.charAt(0)}
+                {t('viewAll')}
+              </button>
+            </div>
+            <div className="flex gap-3.5 overflow-x-auto pb-1 scrollbar-hide">
+              {featuredItems.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => setSelectedItem(item)}
+                  className="min-w-[172px] max-w-[172px] shrink-0 rounded-2xl bg-white overflow-hidden text-left"
+                  style={{ boxShadow: '0 2px 12px rgba(0,0,0,.06)' }}
+                >
+                  <div className="relative h-[115px] overflow-hidden bg-neutral-100">
+                    {item.image_url ? (
+                      <Image
+                        src={item.image_url}
+                        alt={getTranslatedContent(lang, item.name, item.name_en)}
+                        width={172}
+                        height={115}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center"
+                        style={{ backgroundColor: `${primary}12` }}
+                      >
+                        <Utensils className="w-8 h-8" style={{ color: primary }} />
+                      </div>
+                    )}
+                    {/* Badge */}
+                    <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
+                      <span className="text-[11px]">{item.is_vegetarian ? '🌿' : '⭐'}</span>
+                      <span className="text-[11px] font-semibold" style={{ color: primary }}>
+                        {item.is_vegetarian ? 'Veggie' : 'Top'}
                       </span>
                     </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold text-app-text leading-tight">
-                    {getTranslatedContent(lang, venue.name, venue.name_en)}
-                  </h3>
-                </div>
-              </button>
-            ))}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-[13px] font-semibold text-neutral-900 truncate">
+                      {getTranslatedContent(lang, item.name, item.name_en)}
+                    </p>
+                    <p className="text-[13px] font-bold text-neutral-900 mt-1.5">
+                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                    </p>
+                    {item.category?.name && (
+                      <div className="flex items-center gap-1 mt-1 text-neutral-400">
+                        <Clock size={13} strokeWidth={1.5} />
+                        <span className="text-xs">
+                          {getTranslatedContent(lang, item.category.name, item.category.name_en)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ═══ FEATURED ITEMS — Horizontal scroll cards with badge + price ═══ */}
-      {featuredItems.length > 0 && (
-        <div className="pt-4 pb-2">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-base font-bold text-app-text">{t('dontMiss')}</h2>
-            <button
-              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="text-xs font-semibold transition-colors"
-              style={{ color: primary }}
-            >
-              {t('viewAll')}
-            </button>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
-            {featuredItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => setSelectedItem(item)}
-                className="flex-shrink-0 w-48 bg-white rounded-2xl overflow-hidden shadow-sm border border-neutral-100 hover:shadow-md transition-shadow text-left group"
-              >
-                <div className="w-full aspect-[4/3] relative overflow-hidden bg-neutral-100">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={getTranslatedContent(lang, item.name, item.name_en)}
-                      fill
-                      sizes="200px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Utensils className="w-8 h-8 text-neutral-300" />
-                    </div>
-                  )}
-                  {/* Badge on image */}
-                  {item.is_featured && (
-                    <span
-                      className="absolute top-2 left-2 text-[10px] font-semibold px-2 py-1 rounded-lg text-white"
-                      style={{ backgroundColor: primary }}
-                    >
-                      {item.is_vegetarian ? 'Veggie' : 'Top'}
-                    </span>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="text-sm font-semibold text-neutral-900 leading-snug">
-                    {getTranslatedContent(lang, item.name, item.name_en)}
-                  </h3>
-                  <p className="text-sm font-bold mt-1" style={{ color: primary }}>
-                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                  </p>
-                </div>
-              </button>
-            ))}
-          </div>
+        {/* ── See Full Menu CTA ── */}
+        <div className="px-5 mt-6 mb-4">
+          <button
+            onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+            className="w-full h-[52px] rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2.5 active:scale-[0.98] transition-transform"
+            style={{
+              backgroundColor: primary,
+              boxShadow: `0 4px 16px ${primary}40`,
+            }}
+          >
+            <Utensils className="w-[18px] h-[18px]" />
+            {t('seeFullMenu')}
+          </button>
         </div>
-      )}
-
-      {/* ═══ "SEE FULL MENU" CTA ═══ */}
-      <div className="px-5 pt-4 pb-6">
-        <button
-          onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          className="w-full h-14 rounded-2xl text-white text-base font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity active:scale-[0.98]"
-          style={{ backgroundColor: primary }}
-        >
-          <Utensils className="w-5 h-5" />
-          {t('seeFullMenu')}
-        </button>
       </div>
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div className="fixed bottom-20 left-4 right-4 z-40 max-w-lg mx-auto">
+        <div className="absolute bottom-[80px] left-4 right-4 z-40 max-w-[430px] mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"
@@ -512,7 +580,7 @@ export default function ClientMenuPage({
           >
             <div className="flex items-center gap-3">
               <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                <ShoppingCart className="w-4 h-4" />
+                <ShoppingBag className="w-4 h-4" />
               </div>
               <span className="font-semibold text-sm">
                 {t('cartItemCount', { count: totalCartItems })}
