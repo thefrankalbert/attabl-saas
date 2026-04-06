@@ -248,85 +248,73 @@ export default function ClientMenuPage({
       {/* ═══ FULLSCREEN SPLASH ═══ */}
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ HERO BANNER ═══ */}
-      <div className="relative h-52 sm:h-60 overflow-hidden">
-        {ads && ads.length > 0 && ads[0].image_url ? (
-          <Image
-            src={ads[0].image_url}
-            alt={tenant.name}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            priority
-          />
-        ) : (
-          <div className="absolute inset-0" style={{ backgroundColor: primary }} />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-5">
-          <div className="flex items-end gap-3">
-            {tenant.logo_url ? (
-              <Image
-                src={tenant.logo_url}
-                alt=""
-                width={56}
-                height={56}
-                className="w-14 h-14 rounded-2xl border-2 border-white/20 object-cover shadow-lg"
-              />
-            ) : (
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-white/20 shadow-lg"
-                style={{ backgroundColor: primary }}
-              >
-                <span className="text-white text-xl font-bold">{tenant.name.charAt(0)}</span>
-              </div>
-            )}
-            <div className="pb-0.5">
-              <h1 className="text-2xl font-bold text-white leading-tight">{tenant.name}</h1>
-              <p className="text-sm text-white/70 mt-0.5">
-                {tenant.description || t('welcomeSubtitle')}
-              </p>
+      {/* ═══ HERO — Colored background with welcome text ═══ */}
+      <div
+        className="relative overflow-hidden rounded-b-[2rem]"
+        style={{ backgroundColor: primary }}
+      >
+        <div className="px-5 pt-12 pb-16">
+          {/* Top bar: logo + cart */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              {tenant.logo_url ? (
+                <Image
+                  src={tenant.logo_url}
+                  alt=""
+                  width={40}
+                  height={40}
+                  className="w-10 h-10 rounded-xl object-cover border border-white/20"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">{tenant.name.charAt(0)}</span>
+                </div>
+              )}
+              {tableNumber && (
+                <button
+                  onClick={() => setIsTablePickerOpen(true)}
+                  className="text-xs font-medium px-3 py-1.5 rounded-full bg-white/20 text-white"
+                >
+                  Table {tableNumber}
+                </button>
+              )}
             </div>
+            <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
+              <ShoppingCart className="w-6 h-6 text-white" />
+              {totalCartItems > 0 && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full bg-white text-[11px] font-bold flex items-center justify-center"
+                  style={{ color: primary }}
+                >
+                  {totalCartItems > 9 ? '9+' : totalCartItems}
+                </span>
+              )}
+            </Link>
           </div>
+
+          {/* Welcome text */}
+          <h1 className="text-2xl font-bold text-white leading-tight">{tenant.name}</h1>
+          <p className="text-sm text-white/80 mt-1">{tenant.description || t('welcomeSubtitle')}</p>
+        </div>
+
+        {/* Search bar — floating on the boundary */}
+        <div ref={searchBarRef} className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-5">
+          <button
+            onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+            className="w-full flex items-center gap-3 px-4 py-3.5 bg-app-card rounded-2xl shadow-lg border border-app-border/30"
+          >
+            <Search className="w-5 h-5 text-app-text-muted" />
+            <span className="text-sm text-app-text-muted">{t('searchMenu')}</span>
+          </button>
         </div>
       </div>
 
-      {/* ═══ INFO BAR (Table + Search + Cart) ═══ */}
-      <div
-        ref={searchBarRef}
-        className="flex items-center gap-3 px-4 py-3 bg-app-card border-b border-app-border/50"
-      >
-        {tableNumber && (
-          <button
-            onClick={() => setIsTablePickerOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full bg-app-bg text-app-text whitespace-nowrap"
-          >
-            Table {tableNumber}
-          </button>
-        )}
-        <button
-          onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-bg text-app-text-muted text-sm"
-        >
-          <Search className="w-4 h-4 flex-shrink-0" />
-          {t('searchMenu')}
-        </button>
-        <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
-          <ShoppingCart className="w-6 h-6 text-app-text" />
-          {totalCartItems > 0 && (
-            <span
-              className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full text-white text-[11px] font-bold flex items-center justify-center"
-              style={{ backgroundColor: primary }}
-            >
-              {totalCartItems > 9 ? '9+' : totalCartItems}
-            </span>
-          )}
-        </Link>
-      </div>
+      {/* Spacer for floating search bar */}
+      <div className="h-8" />
 
-      {/* ═══ ANNOUNCEMENT BANNER (dismissible) ═══ */}
+      {/* ═══ ANNOUNCEMENT BANNER ═══ */}
       {announcement && (
-        <div className="px-4 pt-3">
+        <div className="px-5 pt-2 pb-1">
           <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
             {announcement.image_url ? (
               <Image
@@ -361,34 +349,22 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CATEGORIES — Grid with "Voir plus" ═══ */}
+      {/* ═══ CATEGORIES — Horizontal scroll with emoji + name (like the reference) ═══ */}
       {categories.length > 0 && (
-        <div className="pt-5 pb-2 px-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-bold text-app-text">
-              {lang === 'en' ? 'Categories' : 'Categories'}
-            </h2>
-            {categories.length > 6 && (
-              <button
-                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-xs font-semibold transition-colors"
-                style={{ color: primary }}
-              >
-                {t('viewAll')}
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-3 gap-2.5">
-            {categories.slice(0, 6).map((cat) => (
+        <div className="pt-5 pb-1">
+          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
+            {categories.map((cat) => (
               <button
                 key={cat.id}
                 onClick={() =>
                   router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
                 }
-                className="flex flex-col items-center gap-2 py-3 bg-app-card rounded-xl border border-app-border/30 shadow-sm hover:shadow-md transition-shadow active:scale-95"
+                className="flex flex-col items-center gap-1.5 flex-shrink-0"
               >
-                <span className="text-2xl leading-none">{getCategoryEmoji(cat.name)}</span>
-                <span className="text-xs font-medium text-app-text text-center leading-tight px-1">
+                <div className="w-14 h-14 rounded-2xl bg-app-card border border-app-border/30 shadow-sm flex items-center justify-center hover:shadow-md transition-shadow active:scale-95">
+                  <span className="text-2xl leading-none">{getCategoryEmoji(cat.name)}</span>
+                </div>
+                <span className="text-[11px] font-medium text-app-text-secondary text-center w-14 leading-tight">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
@@ -419,20 +395,20 @@ export default function ClientMenuPage({
                 onClick={() =>
                   router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
                 }
-                className="flex-shrink-0 w-36 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/50 hover:shadow-md transition-shadow text-left"
+                className="flex-shrink-0 w-40 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/30 hover:shadow-md transition-shadow text-left"
               >
-                <div className="w-full h-24 bg-app-elevated overflow-hidden">
+                <div className="w-full h-28 bg-app-elevated overflow-hidden relative">
                   {venue.image_url ? (
                     <Image
                       src={venue.image_url}
                       alt={venue.name}
-                      width={144}
-                      height={96}
+                      width={160}
+                      height={112}
                       className="w-full h-full object-cover"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
-                      <span className="text-2xl font-bold text-app-text-muted">
+                      <span className="text-3xl font-bold text-app-text-muted">
                         {venue.name.charAt(0)}
                       </span>
                     </div>
@@ -449,10 +425,10 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ FEATURED ITEMS — Grid cards ═══ */}
+      {/* ═══ FEATURED ITEMS — Horizontal scroll cards (like the reference) ═══ */}
       {featuredItems.length > 0 && (
-        <div className="pt-4 pb-2 px-5">
-          <div className="flex items-center justify-between mb-3">
+        <div className="pt-4 pb-2">
+          <div className="flex items-center justify-between px-5 mb-3">
             <h2 className="text-base font-bold text-app-text">{t('dontMiss')}</h2>
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
@@ -462,12 +438,12 @@ export default function ClientMenuPage({
               {t('viewAll')}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
             {featuredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-app-card rounded-2xl overflow-hidden text-left shadow-sm border border-app-border/30 hover:shadow-md transition-shadow group"
+                className="flex-shrink-0 w-44 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/30 hover:shadow-md transition-shadow text-left group"
               >
                 <div className="w-full aspect-[4/3] relative overflow-hidden bg-app-elevated">
                   {item.image_url ? (
@@ -475,7 +451,7 @@ export default function ClientMenuPage({
                       src={item.image_url}
                       alt={getTranslatedContent(lang, item.name, item.name_en)}
                       fill
-                      sizes="(max-width: 768px) 50vw, 300px"
+                      sizes="180px"
                       className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
