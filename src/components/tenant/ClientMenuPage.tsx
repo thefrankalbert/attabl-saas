@@ -6,7 +6,16 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import { Search, ShoppingCart, Utensils, ChevronRight, Bell, Heart } from 'lucide-react';
+import {
+  Search,
+  ShoppingCart,
+  Utensils,
+  ChevronRight,
+  Bell,
+  Heart,
+  Leaf,
+  Flame,
+} from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -243,125 +252,92 @@ export default function ClientMenuPage({
   // ─── Render ────────────────────────────────────────────
   return (
     <div
-      className="min-h-screen bg-app-bg"
+      className="bg-app-bg"
       style={{ paddingBottom: 'calc(5.5rem + env(safe-area-inset-bottom, 0px))' }}
     >
       {/* ═══ FULLSCREEN SPLASH ═══ */}
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ═══ STICKY HEADER (appears on scroll) ═══ */}
-      <div
-        className={cn(
-          'fixed top-0 left-0 right-0 z-50 transition-all duration-300',
-          isSearchSticky
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 -translate-y-2 pointer-events-none',
+      {/* ═══ HERO BANNER ═══ */}
+      <div className="relative h-52 sm:h-60 overflow-hidden">
+        {ads && ads.length > 0 && ads[0].image_url ? (
+          <Image
+            src={ads[0].image_url}
+            alt={tenant.name}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            priority
+          />
+        ) : (
+          <div className="absolute inset-0" style={{ backgroundColor: primary }} />
         )}
-      >
-        <div className="bg-app-bg/95 backdrop-blur-md border-b border-app-border">
-          <div className="flex items-center justify-between px-5 py-3">
-            <div className="flex items-center gap-3">
-              {tenant.logo_url ? (
-                <Image
-                  src={tenant.logo_url}
-                  alt={tenant.name}
-                  width={28}
-                  height={28}
-                  className="h-7 w-7 rounded-full object-cover"
-                />
-              ) : (
-                <div
-                  className="h-7 w-7 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: primary }}
-                >
-                  <span className="text-white text-xs font-bold">{tenant.name.charAt(0)}</span>
-                </div>
-              )}
-              <span className="text-sm font-semibold text-app-text">{tenant.name}</span>
-            </div>
-            {totalCartItems > 0 && (
-              <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
-                <ShoppingCart className="w-5 h-5 text-app-text" />
-                <span
-                  className="absolute -top-0.5 -right-0.5 min-w-4.5 h-4.5 flex items-center justify-center rounded-full text-[10px] font-bold text-white"
-                  style={{ backgroundColor: primary }}
-                >
-                  {totalCartItems}
-                </span>
-              </Link>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* ═══ HEADER - Profile style (exactly like screenshot) ═══ */}
-      <div className="px-5 pt-5 pb-1">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3.5">
-            {/* Round avatar - matching screenshot circle */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 p-5">
+          <div className="flex items-end gap-3">
             {tenant.logo_url ? (
               <Image
                 src={tenant.logo_url}
-                alt={tenant.name}
-                width={52}
-                height={52}
-                className="size-13 rounded-full object-cover border-[2.5px] border-app-card shadow-md"
-                priority
+                alt=""
+                width={56}
+                height={56}
+                className="w-14 h-14 rounded-2xl border-2 border-white/20 object-cover shadow-lg"
               />
             ) : (
               <div
-                className="size-13 rounded-full flex items-center justify-center border-[2.5px] border-app-card shadow-md"
+                className="w-14 h-14 rounded-2xl flex items-center justify-center border-2 border-white/20 shadow-lg"
                 style={{ backgroundColor: primary }}
               >
                 <span className="text-white text-xl font-bold">{tenant.name.charAt(0)}</span>
               </div>
             )}
-            <div>
-              <h1 className="text-[17px] font-bold text-app-text leading-tight">{tenant.name}</h1>
-              <p className="text-[13px] text-app-text-muted mt-0.5">
-                {tableNumber
-                  ? t('seatedAtTable', { table: tableNumber })
-                  : tenant.description
-                    ? tenant.description.length > 30
-                      ? tenant.description.slice(0, 30) + '...'
-                      : tenant.description
-                    : t('welcomeSubtitle')}
+            <div className="pb-0.5">
+              <h1 className="text-2xl font-bold text-white leading-tight">{tenant.name}</h1>
+              <p className="text-sm text-white/70 mt-0.5">
+                {tenant.description || t('welcomeSubtitle')}
               </p>
             </div>
           </div>
-          {/* Bell icon - top right like screenshot */}
-          <button className="w-10 h-10 rounded-full bg-app-card border border-app-border shadow-sm flex items-center justify-center hover:bg-app-elevated transition-colors">
-            <Bell className="size-4.5 text-app-text-muted" />
-          </button>
         </div>
       </div>
 
-      {/* ═══ SEARCH BAR - Rounded pill style like screenshot ═══ */}
-      <div ref={searchBarRef} className="px-5 pt-4 pb-2">
+      {/* ═══ INFO BAR (Table + Search + Cart) ═══ */}
+      <div
+        ref={searchBarRef}
+        className="flex items-center gap-3 px-4 py-3 bg-app-card border-b border-app-border/50"
+      >
+        {tableNumber && (
+          <button
+            onClick={() => setIsTablePickerOpen(true)}
+            className="flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-full bg-app-bg text-app-text whitespace-nowrap"
+          >
+            Table {tableNumber}
+          </button>
+        )}
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          className="relative w-full"
+          className="flex-1 flex items-center gap-2 px-4 py-2.5 rounded-xl bg-app-bg text-app-text-muted text-sm"
         >
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <Search className="size-4.5 text-app-text-muted" strokeWidth={1.8} />
-          </div>
-          <div className="w-full bg-app-card border border-app-border rounded-xl py-3.5 pl-11 pr-5 text-[14px] text-app-text-muted shadow-[0_1px_2px_rgba(0,0,0,0.04)]">
-            {t('searchMenu')}
-          </div>
+          <Search className="w-4 h-4 flex-shrink-0" />
+          {t('searchMenu')}
         </button>
+        <Link href={`/sites/${tenant.slug}/cart`} className="relative p-2">
+          <ShoppingCart className="w-6 h-6 text-app-text" />
+          {totalCartItems > 0 && (
+            <span
+              className="absolute -top-0.5 -right-0.5 min-w-5 h-5 rounded-full text-white text-[11px] font-bold flex items-center justify-center"
+              style={{ backgroundColor: primary }}
+            >
+              {totalCartItems > 9 ? '9+' : totalCartItems}
+            </span>
+          )}
+        </Link>
       </div>
 
-      {/* ═══ ADS BANNER ═══ */}
-      {ads && ads.length > 0 && (
-        <div className="px-5 py-2">
-          <AdsSlider ads={ads} />
-        </div>
-      )}
-
-      {/* ═══ ANNOUNCEMENT BANNER ═══ */}
+      {/* ═══ ANNOUNCEMENT BANNER (dismissible) ═══ */}
       {announcement && (
-        <div className="px-5 mb-1 mt-1">
-          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '21/9' }}>
+        <div className="px-4 pt-3">
+          <div className="relative rounded-2xl overflow-hidden" style={{ aspectRatio: '16/7' }}>
             {announcement.image_url ? (
               <Image
                 src={announcement.image_url}
@@ -373,18 +349,16 @@ export default function ClientMenuPage({
             ) : (
               <div
                 className="w-full h-full"
-                style={{
-                  background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)`,
-                }}
+                style={{ background: `linear-gradient(135deg, ${primary} 0%, ${primary}99 100%)` }}
               />
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-4">
-              <h3 className="text-sm font-bold text-white mb-0.5 leading-snug">
+              <h3 className="text-sm font-bold text-white leading-snug">
                 {getTranslatedContent(lang, announcement.title, announcement.title_en)}
               </h3>
               {announcement.description && (
-                <p className="text-xs text-white/80 leading-relaxed">
+                <p className="text-xs text-white/80 leading-relaxed mt-0.5">
                   {getTranslatedContent(
                     lang,
                     announcement.description,
@@ -397,23 +371,98 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ CATEGORY CIRCLES - 2×4 grid, exactly like screenshot ═══ */}
+      {/* ═══ NOS CARTES — Venues as visual cards ═══ */}
+      {venues && venues.length > 0 && (
+        <div className="pt-5 pb-1">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-base font-bold text-app-text">{t('ourUniverses')}</h2>
+            <button
+              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+              className="text-xs font-semibold transition-colors"
+              style={{ color: primary }}
+            >
+              {t('viewAll')}
+            </button>
+          </div>
+          <div className="flex gap-3 overflow-x-auto px-5 pb-2 scrollbar-hide">
+            {/* "Toutes les cartes" card */}
+            <button
+              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
+              className="flex-shrink-0 w-36 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/50 hover:shadow-md transition-shadow"
+            >
+              <div
+                className="w-full h-24 flex items-center justify-center"
+                style={{ backgroundColor: `${primary}10` }}
+              >
+                <Utensils className="w-8 h-8" style={{ color: primary }} />
+              </div>
+              <div className="p-3">
+                <h3 className="text-sm font-semibold text-app-text leading-tight">
+                  {t('allMenus')}
+                </h3>
+                <p className="text-xs text-app-text-muted mt-0.5">
+                  {categories.length} {lang === 'en' ? 'categories' : 'categories'}
+                </p>
+              </div>
+            </button>
+            {venues.map((venue) => (
+              <button
+                key={venue.id}
+                onClick={() =>
+                  router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
+                }
+                className="flex-shrink-0 w-36 bg-app-card rounded-2xl overflow-hidden shadow-sm border border-app-border/50 hover:shadow-md transition-shadow text-left"
+              >
+                <div className="w-full h-24 bg-app-elevated overflow-hidden">
+                  {venue.image_url ? (
+                    <Image
+                      src={venue.image_url}
+                      alt={venue.name}
+                      width={144}
+                      height={96}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <span className="text-2xl font-bold text-app-text-muted">
+                        {venue.name.charAt(0)}
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="p-3">
+                  <h3 className="text-sm font-semibold text-app-text leading-tight">
+                    {getTranslatedContent(lang, venue.name, venue.name_en)}
+                  </h3>
+                  <p className="text-xs text-app-text-muted mt-0.5">
+                    {getTranslatedContent(lang, venue.name_en || '', venue.name_en)}
+                  </p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ═══ CATEGORIES — Horizontal pills ═══ */}
       {categories.length > 0 && (
-        <div className="px-5 pt-4 pb-2">
-          <div className="grid grid-cols-4 gap-y-4 gap-x-3">
-            {categories.slice(0, 8).map((cat) => (
+        <div className="pt-4 pb-2">
+          <div className="flex items-center justify-between px-5 mb-3">
+            <h2 className="text-base font-bold text-app-text">
+              {lang === 'en' ? 'Categories' : 'Categories'}
+            </h2>
+          </div>
+          <div className="flex gap-2 overflow-x-auto px-5 pb-1 scrollbar-hide">
+            {categories.map((cat) => (
               <button
                 key={cat.id}
-                onClick={() => {
-                  router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`);
-                }}
-                className="flex flex-col items-center gap-2 group"
+                onClick={() =>
+                  router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
+                }
+                className="flex items-center gap-2 flex-shrink-0 px-4 py-2.5 bg-app-card rounded-xl border border-app-border/50 shadow-sm hover:shadow-md transition-shadow active:scale-95"
               >
-                {/* Circular icon - cream/beige background like screenshot */}
-                <div className="w-16 h-16 rounded-full bg-app-elevated flex items-center justify-center group-hover:bg-app-bg transition-colors shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
-                  <span className="text-[26px] leading-none">{getCategoryEmoji(cat.name)}</span>
-                </div>
-                <span className="text-[11px] font-medium text-app-text leading-tight text-center">
+                <span className="text-lg leading-none">{getCategoryEmoji(cat.name)}</span>
+                <span className="text-sm font-medium text-app-text whitespace-nowrap">
                   {getTranslatedContent(lang, cat.name, cat.name_en)}
                 </span>
               </button>
@@ -422,142 +471,26 @@ export default function ClientMenuPage({
         </div>
       )}
 
-      {/* ═══ EXPLORE VENUES - Horizontal scroll with circular avatars (like "Explore cooking mentors") ═══ */}
-      {venues && venues.length > 0 && (
-        <div className="pt-5 pb-2">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-[15px] font-bold text-app-text">{t('ourUniverses')}</h2>
-            {venues.length > 1 && (
-              <button
-                onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-                className="text-[12px] font-semibold text-app-text-muted hover:text-app-text transition-colors"
-              >
-                {t('viewAll')}
-              </button>
-            )}
-          </div>
-          <div className="flex gap-4 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            {/* "All menus" entry */}
+      {/* ═══ FEATURED ITEMS — Grid cards ═══ */}
+      {featuredItems.length > 0 && (
+        <div className="pt-4 pb-2 px-5">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-bold text-app-text">{t('dontMiss')}</h2>
             <button
               onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="flex flex-col items-center gap-1.5 flex-shrink-0"
-            >
-              <div
-                className="size-15 rounded-full flex items-center justify-center border-2 border-app-card shadow-sm"
-                style={{ backgroundColor: `${primary}15` }}
-              >
-                <Utensils className="w-6 h-6" style={{ color: primary }} />
-              </div>
-              <span className="text-[11px] font-medium text-app-text-muted text-center w-15">
-                {t('allMenus')}
-              </span>
-            </button>
-            {venues.map((venue) => (
-              <button
-                key={venue.id}
-                onClick={() =>
-                  router.push(`/sites/${tenant.slug}/menu?v=${venue.slug || venue.id}`)
-                }
-                className="flex flex-col items-center gap-1.5 flex-shrink-0"
-              >
-                <div className="size-15 rounded-full overflow-hidden border-2 border-app-card shadow-sm bg-app-elevated">
-                  {venue.image_url ? (
-                    <Image
-                      src={venue.image_url}
-                      alt={venue.name}
-                      width={60}
-                      height={60}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-app-elevated">
-                      <span className="text-lg font-bold text-app-text-muted">
-                        {venue.name.charAt(0)}
-                      </span>
-                    </div>
-                  )}
-                </div>
-                <span className="text-[11px] font-medium text-app-text-muted text-center w-15">
-                  {venue.name}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ CART PREVIEW - Horizontal scroll (like screenshot mentors section) ═══ */}
-      {cartItems.length > 0 && (
-        <div className="pt-4 pb-1">
-          <div className="flex items-center justify-between px-5 mb-3">
-            <h2 className="text-[15px] font-bold text-app-text">{t('yourCart')}</h2>
-            <Link
-              href={`/sites/${tenant.slug}/cart`}
-              className="text-[12px] font-semibold transition-colors"
+              className="text-xs font-semibold transition-colors"
               style={{ color: primary }}
             >
               {t('viewAll')}
-            </Link>
-          </div>
-          <div className="flex gap-3 overflow-x-auto px-5 pb-1 scrollbar-hide">
-            {cartItems.slice(0, 6).map((item) => (
-              <Link
-                key={item.id}
-                href={`/sites/${tenant.slug}/cart`}
-                className="flex-shrink-0 w-30 bg-app-card rounded-2xl overflow-hidden shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-md transition-shadow"
-              >
-                <div className="w-full h-20 bg-app-bg overflow-hidden flex items-center justify-center">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      width={120}
-                      height={80}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <Utensils className="w-5 h-5 text-app-text-muted" />
-                  )}
-                </div>
-                <div className="p-2.5">
-                  <h3 className="text-[11px] font-semibold text-app-text leading-tight mb-1">
-                    {item.name}
-                  </h3>
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold" style={{ color: primary }}>
-                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                    </span>
-                    <span className="text-[9px] font-bold text-app-text-muted bg-app-elevated px-1.5 py-0.5 rounded-full">
-                      x{item.quantity}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ═══ FEATURED ITEMS - "Recipes populer" style 2-col grid ═══ */}
-      {featuredItems.length > 0 && (
-        <div className="pt-5 pb-2 px-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-[15px] font-bold text-app-text">{t('dontMiss')}</h2>
-            <button
-              onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-              className="text-[12px] font-semibold text-app-text-muted hover:text-app-text transition-colors"
-            >
-              {t('viewAll')}
             </button>
           </div>
-          <div className="grid grid-cols-2 gap-3.5">
+          <div className="grid grid-cols-2 gap-3">
             {featuredItems.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setSelectedItem(item)}
-                className="bg-app-card rounded-2xl overflow-hidden text-left shadow-[0_1px_4px_rgba(0,0,0,0.06)] hover:shadow-lg transition-shadow group"
+                className="bg-app-card rounded-2xl overflow-hidden text-left shadow-sm border border-app-border/30 hover:shadow-md transition-shadow group"
               >
-                {/* Image with heart icon overlay - like screenshot */}
                 <div className="w-full aspect-[4/3] relative overflow-hidden bg-app-elevated">
                   {item.image_url ? (
                     <Image
@@ -565,43 +498,25 @@ export default function ClientMenuPage({
                       alt={getTranslatedContent(lang, item.name, item.name_en)}
                       fill
                       sizes="(max-width: 768px) 50vw, 300px"
-                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Utensils className="w-8 h-8 text-app-text-muted" />
                     </div>
                   )}
-                  {/* Heart icon - top right like screenshot */}
-                  <div className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-app-card/90 backdrop-blur-sm flex items-center justify-center shadow-sm">
-                    <Heart className="w-4 h-4 text-app-text-muted" />
-                  </div>
                 </div>
-                <div className="p-3 pt-2.5">
-                  <h3 className="text-[13px] font-semibold text-app-text leading-snug mb-1.5">
+                <div className="p-3">
+                  <h3 className="text-sm font-semibold text-app-text leading-snug">
                     {getTranslatedContent(lang, item.name, item.name_en)}
                   </h3>
-                  {/* Tags row - like screenshot category pills */}
-                  <div className="flex flex-wrap gap-1 mb-2">
-                    {item.category?.name && (
-                      <span className="text-[10px] font-medium text-app-text-muted bg-app-elevated rounded-full px-2.5 py-0.5">
-                        {getTranslatedContent(lang, item.category.name, item.category.name_en)}
-                      </span>
-                    )}
-                    {item.is_vegetarian && (
-                      <span className="text-[10px] font-medium text-emerald-600 bg-emerald-50 rounded-full px-2.5 py-0.5">
-                        Veggie
-                      </span>
-                    )}
-                    {item.is_spicy && (
-                      <span className="text-[10px] font-medium text-orange-600 bg-orange-50 rounded-full px-2.5 py-0.5">
-                        Spicy
-                      </span>
-                    )}
+                  <div className="flex items-center gap-1.5 mt-1.5">
+                    <span className="text-sm font-bold" style={{ color: primary }}>
+                      {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                    </span>
+                    {item.is_vegetarian && <Leaf className="w-3.5 h-3.5 text-green-600" />}
+                    {item.is_spicy && <Flame className="w-3.5 h-3.5 text-red-500" />}
                   </div>
-                  <span className="text-[14px] font-bold" style={{ color: primary }}>
-                    {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
-                  </span>
                 </div>
               </button>
             ))}
@@ -613,17 +528,17 @@ export default function ClientMenuPage({
       <div className="px-5 pt-4 pb-6">
         <button
           onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-          className="w-full py-4 rounded-2xl text-white text-[15px] font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity active:scale-[0.98]"
+          className="w-full h-14 rounded-2xl text-white text-base font-bold flex items-center justify-center gap-2 shadow-lg hover:opacity-90 transition-opacity active:scale-[0.98]"
           style={{ backgroundColor: primary }}
         >
-          <Utensils className="size-4.5" />
+          <Utensils className="w-5 h-5" />
           {t('seeFullMenu')}
         </button>
       </div>
 
       {/* ═══ FLOATING CART BAR ═══ */}
       {totalCartItems > 0 && (
-        <div className="fixed bottom-18 left-4 right-4 z-40 max-w-lg mx-auto">
+        <div className="fixed bottom-20 left-4 right-4 z-40 max-w-lg mx-auto">
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"
