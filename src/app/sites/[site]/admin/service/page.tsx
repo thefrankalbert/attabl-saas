@@ -16,9 +16,5 @@ export default async function ServicePage({ params }: { params: Promise<{ site: 
     return <TenantNotFound />;
   }
 
-  return (
-    <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
-      <ServiceManager tenantId={tenant.id} />
-    </div>
-  );
+  return <ServiceManager tenantId={tenant.id} />;
 }

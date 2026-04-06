@@ -7,6 +7,7 @@ import {
   CACHE_TAG_TENANT_DOMAIN,
   tenantConfigTag,
 } from '@/lib/cache-tags';
+import type { Tenant } from '@/types/admin.types';
 
 /**
  * Supabase client for use inside unstable_cache.
@@ -45,8 +46,9 @@ const TENANT_SELECT =
  * Each slug gets its own unstable_cache instance with tenant-scoped tags,
  * so revalidating one tenant's config does not flush all tenants.
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const tenantCacheMap = new Map<string, (...args: any[]) => Promise<any>>();
+type CachedTenantFn = (slug: string) => Promise<Tenant>;
+
+const tenantCacheMap = new Map<string, CachedTenantFn>();
 
 function getOrCreateTenantCache(slug: string) {
   let cached = tenantCacheMap.get(slug);
@@ -82,7 +84,7 @@ function getOrCreateTenantCache(slug: string) {
 }
 
 /** Cached tenant config. Returns null on failure instead of crashing the page. */
-export async function getCachedTenant(slug: string) {
+export async function getCachedTenant(slug: string): Promise<Tenant | null> {
   try {
     const cacheFn = getOrCreateTenantCache(slug);
     return await cacheFn(slug);
@@ -99,7 +101,7 @@ export async function getCachedTenant(slug: string) {
  * (e.g., right after onboarding, settings changes, etc.).
  * Public/client pages should continue using getCachedTenant.
  */
-export async function getTenant(slug: string) {
+export async function getTenant(slug: string): Promise<Tenant | null> {
   try {
     const supabase = createCacheClient();
     const { data, error } = await supabase

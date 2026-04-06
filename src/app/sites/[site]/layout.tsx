@@ -49,12 +49,10 @@ export default async function SiteLayout({
             <CurrencyProvider
               tenantCurrency={tenant?.currency || 'XAF'}
               supportedCurrencies={
-                ((tenant as Record<string, unknown>)?.supported_currencies as string[]) || [
-                  tenant?.currency || 'XAF',
-                ]
+                (tenant?.supported_currencies as string[]) || [tenant?.currency || 'XAF']
               }
             >
-              {children}
+              <div className="h-full overflow-y-auto">{children}</div>
             </CurrencyProvider>
           </CartProvider>
         </TenantBrandProvider>

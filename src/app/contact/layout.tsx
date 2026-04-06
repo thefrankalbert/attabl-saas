@@ -12,5 +12,5 @@ export const metadata: Metadata = {
 };
 
 export default function ContactLayout({ children }: { children: React.ReactNode }) {
-  return children;
+  return <div className="h-full overflow-y-auto">{children}</div>;
 }

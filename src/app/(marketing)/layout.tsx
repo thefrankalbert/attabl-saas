@@ -20,7 +20,7 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-white dark:bg-neutral-950">
+    <div className="h-full overflow-y-auto bg-white dark:bg-neutral-950">
       <Header />
       <main>{children}</main>
       <Footer />
