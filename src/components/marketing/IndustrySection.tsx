@@ -90,7 +90,7 @@ export default function IndustrySection() {
             const Icon = counter.Icon;
             return (
               <div key={counter.label} className="text-center">
-                <Icon className="mx-auto mb-3 h-8 w-8 text-[#CCFF00]" />
+                <Icon className="mx-auto mb-3 h-8 w-8 text-white/70" />
                 <p className="tabular-nums text-4xl font-bold text-white sm:text-5xl">
                   {counter.prefix}
                   {formatNumber(values[i], counter.target, counter.suffix)}

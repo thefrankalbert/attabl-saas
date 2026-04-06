@@ -72,7 +72,7 @@ export default function PhoneAnimation() {
               <span
                 className={`relative z-10 rounded-full transition-all duration-300 ${
                   i === activeStep
-                    ? 'h-4 w-4 bg-[#CCFF00] shadow-[0_0_12px_rgba(204,255,0,0.4)]'
+                    ? 'h-4 w-4 bg-white shadow-[0_0_12px_rgba(255,255,255,0.3)]'
                     : 'h-3 w-3 bg-white/20 group-hover:bg-white/40'
                 }`}
               />
@@ -80,7 +80,7 @@ export default function PhoneAnimation() {
               {/* Time label */}
               <span
                 className={`mt-3 text-xs font-semibold transition-colors duration-300 ${
-                  i === activeStep ? 'text-[#CCFF00]' : 'text-white/40'
+                  i === activeStep ? 'text-white' : 'text-white/40'
                 }`}
               >
                 {step.time} - {step.label}
@@ -105,7 +105,7 @@ export default function PhoneAnimation() {
                 <div className="rounded-xl border border-white/10 bg-white/5 p-5">
                   <p className="text-sm leading-relaxed text-white/80">{current.message}</p>
                 </div>
-                <p className="mt-4 text-xs font-medium text-[#CCFF00]">{current.insight}</p>
+                <p className="mt-4 text-xs font-medium text-white/70">{current.insight}</p>
               </div>
 
               {/* Right: placeholder mockup */}
