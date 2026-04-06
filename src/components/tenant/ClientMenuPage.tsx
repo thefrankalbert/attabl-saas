@@ -6,16 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations, useLocale } from 'next-intl';
-import {
-  Search,
-  ShoppingCart,
-  Utensils,
-  ChevronRight,
-  Bell,
-  Heart,
-  Leaf,
-  Flame,
-} from 'lucide-react';
+import { Search, ShoppingCart, Utensils, ChevronRight, Leaf, Flame } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -31,7 +22,6 @@ import {
   MenuItem,
 } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
-import AdsSlider from '@/components/tenant/AdsSlider';
 import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';

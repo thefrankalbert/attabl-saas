@@ -656,7 +656,7 @@ export default function CartPage() {
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                         aria-label="Diminuer la quantite"
-                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
+                        className="w-10 h-10 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
                         <Minus className="w-3.5 h-3.5" />
                       </button>
@@ -669,7 +669,7 @@ export default function CartPage() {
                       <button
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                         aria-label="Augmenter la quantite"
-                        className="w-9 h-9 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
+                        className="w-10 h-10 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
                       >
                         <Plus className="w-3.5 h-3.5" />
                       </button>
