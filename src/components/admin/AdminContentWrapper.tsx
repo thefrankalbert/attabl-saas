@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { isImmersivePage } from '@/lib/constants';
+import { cn } from '@/lib/utils';
 
 interface AdminContentWrapperProps {
   children: React.ReactNode;
@@ -16,6 +17,8 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
 
   // Check if this is the home/dashboard page (path ends with /admin or /admin/)
   const isHome = /\/admin\/?$/.test(pathname ?? '');
+  // Full-bleed pages need minimal padding (service floor plan, etc.)
+  const isFullBleed = pathname?.includes('/admin/service');
 
   // Immersive pages (KDS/POS) - no padding, no animation
   if (isImmersive) {
@@ -30,7 +33,14 @@ export function AdminContentWrapper({ children, chrome }: AdminContentWrapperPro
   const duration = prefersReduced ? 0 : 0.2;
 
   return (
-    <div className="h-full w-full px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-12 xl:py-10 2xl:px-16 2xl:py-12 flex flex-col overflow-hidden">
+    <div
+      className={cn(
+        'h-full w-full flex flex-col overflow-hidden',
+        isFullBleed
+          ? 'px-2 py-2 sm:px-3 sm:py-3'
+          : 'px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 xl:px-12 xl:py-10 2xl:px-16 2xl:py-12',
+      )}
+    >
       {chrome}
       <AnimatePresence mode="wait">
         <motion.div

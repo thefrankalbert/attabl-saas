@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google';
 import './globals.css';
 import { Suspense } from 'react';
-import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
 import ScrollRestoration from '@/components/shared/ScrollRestoration';
 import { AgentationOverlay } from '@/components/shared/AgentationOverlay';

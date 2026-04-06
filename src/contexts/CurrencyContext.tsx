@@ -1,6 +1,15 @@
 'use client';
 
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
+import { getUsdXafRate } from '@/lib/exchange-rate';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -43,13 +52,10 @@ const STORAGE_KEY = 'attabl_display_currency';
  * - EUR: Fixed peg (CFA franc pegged to Euro via BCEAO: 1 EUR = 655.957 XAF).
  *   This rate is permanent and guaranteed by treaty - no update needed.
  *
- * - USD: Approximate rate only. The real XAF/USD rate fluctuates daily.
- *   As of early 2026 the rate is roughly 1 USD = 590-620 XAF.
- *   TODO: Fetch a live USD/XAF rate from an exchange-rate API (e.g. Open
- *   Exchange Rates, exchangerate.host) instead of relying on this hardcoded
- *   fallback. This is a known limitation - see GitHub issue backlog.
+ * - USD: Fetched live from exchangerate-api.com on mount (cached 24h).
+ *   Falls back to 605 if the API is unreachable.
  */
-const RATES_TO_XAF: Record<string, number> = {
+const DEFAULT_RATES_TO_XAF: Record<string, number> = {
   XAF: 1,
   EUR: 655.957,
   USD: 605,
@@ -62,11 +68,11 @@ function readStored(fallback: string): DisplayCurrency {
   return (localStorage.getItem(STORAGE_KEY) as DisplayCurrency) || (fallback as DisplayCurrency);
 }
 
-function convert(amount: number, from: string, to: string): number {
+function convert(amount: number, from: string, to: string, rates: Record<string, number>): number {
   if (from === to) return amount;
-  const fromRate = RATES_TO_XAF[from] ?? 1;
-  const toRate = RATES_TO_XAF[to] ?? 1;
-  // from → XAF → to
+  const fromRate = rates[from] ?? 1;
+  const toRate = rates[to] ?? 1;
+  // from -> XAF -> to
   return (amount * fromRate) / toRate;
 }
 
@@ -109,6 +115,17 @@ export function CurrencyProvider({
     readStored(tenantCurrency),
   );
 
+  const [ratesToXaf, setRatesToXaf] = useState<Record<string, number>>(DEFAULT_RATES_TO_XAF);
+  const hasFetched = useRef(false);
+
+  useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
+    getUsdXafRate().then((rate) => {
+      setRatesToXaf((prev) => ({ ...prev, USD: rate }));
+    });
+  }, []);
+
   const setDisplayCurrency = useCallback((code: DisplayCurrency) => {
     setDisplayCurrencyState(code);
     if (typeof window !== 'undefined') {
@@ -119,10 +136,10 @@ export function CurrencyProvider({
   const formatDisplayPrice = useCallback(
     (amount: number, baseCurrency?: string) => {
       const base = baseCurrency || tenantCurrency;
-      const converted = convert(amount, base, displayCurrency);
+      const converted = convert(amount, base, displayCurrency, ratesToXaf);
       return formatConverted(converted, displayCurrency);
     },
-    [displayCurrency, tenantCurrency],
+    [displayCurrency, tenantCurrency, ratesToXaf],
   );
 
   const resolveAndFormatPrice = useCallback(
@@ -133,12 +150,12 @@ export function CurrencyProvider({
     ): string => {
       const base = baseCurrency || tenantCurrency;
 
-      // 1. Same currency → no conversion needed
+      // 1. Same currency - no conversion needed
       if (displayCurrency === base) {
         return formatConverted(basePrice, displayCurrency);
       }
 
-      // 2. Manual price exists → use it directly
+      // 2. Manual price exists - use it directly
       if (
         manualPrices &&
         manualPrices[displayCurrency] != null &&
@@ -147,11 +164,11 @@ export function CurrencyProvider({
         return formatConverted(manualPrices[displayCurrency]!, displayCurrency);
       }
 
-      // 3. Fallback → auto-convert
-      const converted = convert(basePrice, base, displayCurrency);
+      // 3. Fallback - auto-convert
+      const converted = convert(basePrice, base, displayCurrency, ratesToXaf);
       return formatConverted(converted, displayCurrency);
     },
-    [displayCurrency, tenantCurrency],
+    [displayCurrency, tenantCurrency, ratesToXaf],
   );
 
   return (

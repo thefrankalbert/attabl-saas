@@ -1,5 +1,3 @@
-'use client';
-
 import StatsCard, { StatsCardSkeleton } from '@/components/admin/StatsCard';
 import type { DashboardStats, SparklinePoint } from '@/types/admin.types';
 

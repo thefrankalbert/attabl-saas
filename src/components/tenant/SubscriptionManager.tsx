@@ -13,8 +13,8 @@ import type { SubscriptionPlan, BillingInterval } from '@/types/billing';
 
 interface Tenant {
   id: string;
-  subscription_plan: string;
-  subscription_status: string;
+  subscription_plan?: string;
+  subscription_status?: string;
   subscription_current_period_end: string | null;
   billing_interval: string | null;
   email?: string;
@@ -210,10 +210,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <span
                     className={cn(
                       'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                      getStatusBadge(tenant.subscription_status),
+                      getStatusBadge(tenant.subscription_status || 'active'),
                     )}
                   >
-                    {getStatusLabel(tenant.subscription_status)}
+                    {getStatusLabel(tenant.subscription_status || 'active')}
                   </span>
                 </div>
 

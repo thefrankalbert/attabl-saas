@@ -1,5 +1,3 @@
-'use client';
-
 import { cn } from '@/lib/utils';
 
 type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
