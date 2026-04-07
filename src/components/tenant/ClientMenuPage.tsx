@@ -47,55 +47,88 @@ const twemoji = (code: string) =>
 
 const CATEGORY_TWEMOJI: Record<string, string> = {
   entree: '1f957',
+  entrees: '1f957',
   starters: '1f957',
   'pour commencer': '1f957',
   burger: '1f354',
   burgers: '1f354',
   hamburger: '1f354',
+  hamburgers: '1f354',
   pizza: '1f355',
   pizzas: '1f355',
   pates: '1f35d',
   pasta: '1f35d',
+  pastas: '1f35d',
   lasagna: '1f35d',
   grillade: '1f356',
   grills: '1f356',
+  grille: '1f356',
+  bbq: '1f356',
   plats: '1f37d',
   'plat principal': '1f37d',
+  'plats principaux': '1f37d',
   'main course': '1f37d',
   vegetarien: '1f96c',
   vegetarian: '1f96c',
+  vegan: '1f96c',
+  veggie: '1f96c',
   dessert: '1f370',
   desserts: '1f370',
   douceurs: '1f370',
+  patisserie: '1f370',
   boisson: '1f379',
   boissons: '1f379',
   drinks: '1f379',
+  beverages: '1f379',
+  'boissons chaudes': '2615',
   cocktail: '1f378',
   cocktails: '1f378',
+  'cocktails alcoolises': '1f378',
+  'cocktails sans alcool': '1f379',
   aperitif: '1fad2',
+  aperitifs: '1fad2',
   cafe: '2615',
   coffee: '2615',
+  the: '1f375',
+  tea: '1f375',
   africain: '1f372',
   african: '1f372',
   'plats africains': '1f372',
   poisson: '1f41f',
   fish: '1f41f',
   seafood: '1f990',
+  'fruits de mer': '1f990',
   salade: '1f957',
   salad: '1f957',
+  salades: '1f957',
   soupe: '1f35c',
   soup: '1f35c',
+  soupes: '1f35c',
   noodles: '1f35c',
   vin: '1f377',
+  vins: '1f377',
   wine: '1f377',
   biere: '1f37a',
+  bieres: '1f37a',
   beer: '1f37a',
   snack: '1f96a',
   snacks: '1f96a',
   sandwich: '1f96a',
+  sandwiches: '1f96a',
   sushi: '1f363',
+  sushis: '1f363',
   tart: '1f967',
   arancini: '1f9c6',
+  accompagnement: '1f955',
+  accompagnements: '1f955',
+  sides: '1f955',
+  petit_dejeuner: '1f95e',
+  breakfast: '1f95e',
+  glace: '1f368',
+  glaces: '1f368',
+  jus: '1f9c3',
+  juice: '1f9c3',
+  smoothie: '1f9c3',
 };
 
 function getCatImg(name: string): string {
@@ -146,7 +179,7 @@ function RestaurantCard({ r }: { r: RestaurantCardData }) {
         {r.badge && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
             <span className="text-[11px]">{'\uD83D\uDEF5'}</span>
-            <span className="text-[11px] font-semibold text-green-700">{r.badge}</span>
+            <span className="text-xs font-semibold text-green-700">{r.badge}</span>
           </div>
         )}
         {r.rating && (
@@ -331,42 +364,42 @@ export default function ClientMenuPage({
     >
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ─ GREEN HEADER ─ */}
+      {/* ─ HEADER (couleur tenant dynamique) ─ */}
       <div
         className="px-5 pt-14 pb-5"
         style={{
-          background: 'linear-gradient(180deg, #b5e2a0 0%, #c9edba 50%, #e4f5db 80%, #f4f4f0 100%)',
+          background: `linear-gradient(180deg, ${primary}55 0%, ${primary}30 50%, ${primary}10 80%, #f4f4f0 100%)`,
         }}
       >
         <button
           onClick={() => setIsTablePickerOpen(true)}
           className="flex items-center justify-center gap-1.5 mb-4 w-full"
         >
-          <MapPin size={14} className="text-green-700" fill="#3a8a3e" strokeWidth={0} />
-          <span className="text-sm font-medium text-gray-800">
+          <MapPin size={14} style={{ color: primary }} fill={primary} strokeWidth={0} />
+          <span className="text-sm font-medium text-gray-800 truncate max-w-[280px]">
             {tableNumber ? `Table ${tableNumber} - ${tenant.name}` : tenant.name}
           </span>
           <ChevronDown size={14} className="text-gray-800" strokeWidth={2.5} />
         </button>
         <h1 className="text-3xl font-extrabold text-gray-900 leading-tight tracking-tight">
-          {lang === 'en' ? 'Welcome' : 'Bienvenue'} 👋
+          {lang === 'en' ? 'Welcome' : 'Bienvenue'}
         </h1>
-        <p className="text-base text-green-700 mt-1 mb-4 font-medium leading-snug">
+        <p className="text-base mt-1 mb-4 font-medium leading-snug" style={{ color: primary }}>
           {tenant.description || txt.welcomeSubtitle}
         </p>
         <div className="flex gap-2.5 items-center">
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="flex-1 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
+            className="flex-1 min-w-0 flex items-center gap-2.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <Search size={18} className="text-gray-300" strokeWidth={2.2} />
-            <span className="text-sm text-gray-300">{txt.searchMenu}</span>
+            <Search size={18} className="text-gray-300 flex-shrink-0" strokeWidth={2.2} />
+            <span className="text-sm text-gray-300 truncate">{txt.searchMenu}</span>
           </button>
           <button
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-            className="flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
+            className="flex-shrink-0 flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <div className="w-2 h-2 rounded-full bg-green-500" />
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
             <span className="text-sm font-semibold text-gray-900">
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
@@ -395,9 +428,9 @@ export default function ClientMenuPage({
                   <div
                     className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
                     style={{
-                      background: isActive ? '#e8f5e9' : '#fff',
+                      background: isActive ? `${primary}15` : '#fff',
                       boxShadow: isActive
-                        ? '0 0 0 2px #4caf50, 0 2px 8px rgba(0,0,0,.06)'
+                        ? `0 0 0 2px ${primary}, 0 2px 8px rgba(0,0,0,.06)`
                         : '0 2px 8px rgba(0,0,0,.05)',
                       transition: 'all .2s ease',
                     }}
@@ -407,12 +440,13 @@ export default function ClientMenuPage({
                       src={getCatImg(c.name)}
                       alt={catName}
                       className="w-[32px] h-[32px]"
-                      style={{ imageRendering: 'auto' }}
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                   <span
-                    className="text-[11px] font-medium"
-                    style={{ color: isActive ? '#2e7d32' : '#777' }}
+                    className="text-xs font-medium"
+                    style={{ color: isActive ? primary : '#777' }}
                   >
                     {catName}
                   </span>
@@ -499,7 +533,10 @@ export default function ClientMenuPage({
 
       {/* ─ FLOATING CART BAR ─ */}
       {totalCartItems > 0 && (
-        <div className="absolute left-4 right-4 z-40" style={{ bottom: '80px' }}>
+        <div
+          className="fixed left-4 right-4 z-40 max-w-[430px] mx-auto"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
           <Link
             href={`/sites/${tenant.slug}/cart`}
             className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white shadow-xl"

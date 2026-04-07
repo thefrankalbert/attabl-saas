@@ -200,6 +200,10 @@ SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx,
 - Si une adaptation est necessaire (typage TS, imports manquants), la faire a la marge sans toucher au rendu visuel.
 - En cas de doute, demander confirmation AVANT de modifier.
 
+## Design
+
+Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
+
 ## Documentation supplementaire
 
 - `agent_docs/architecture.md` : Details sur l'architecture en couches
