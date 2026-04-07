@@ -178,14 +178,14 @@ function RestaurantCard({ r }: { r: RestaurantCardData }) {
         )}
         {r.badge && (
           <div className="absolute top-2 left-2 flex items-center gap-1 bg-white/90 backdrop-blur-sm rounded-full px-2.5 py-1">
-            <span className="text-[11px]">{'\uD83D\uDEF5'}</span>
+            <span className="text-xs">{'\uD83D\uDEF5'}</span>
             <span className="text-xs font-semibold text-green-700">{r.badge}</span>
           </div>
         )}
         {r.rating && (
           <div className="absolute top-2 right-2 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1">
             <span className="text-xs text-amber-500">{'\u2605'}</span>
-            <span className="text-[11px] font-bold">{r.rating}</span>
+            <span className="text-xs font-bold">{r.rating}</span>
           </div>
         )}
       </div>
