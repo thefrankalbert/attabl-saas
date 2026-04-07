@@ -364,18 +364,18 @@ export default function ClientMenuPage({
     >
       <FullscreenSplash tenantName={tenant.name} logoUrl={tenant.logo_url} primaryColor={primary} />
 
-      {/* ─ HEADER (couleur tenant dynamique) ─ */}
+      {/* ─ GREEN HEADER ─ */}
       <div
         className="px-5 pt-14 pb-5"
         style={{
-          background: `linear-gradient(180deg, ${primary}55 0%, ${primary}30 50%, ${primary}10 80%, #f4f4f0 100%)`,
+          background: 'linear-gradient(180deg, #b5e2a0 0%, #c9edba 50%, #e4f5db 80%, #f4f4f0 100%)',
         }}
       >
         <button
           onClick={() => setIsTablePickerOpen(true)}
           className="flex items-center justify-center gap-1.5 mb-4 w-full"
         >
-          <MapPin size={14} style={{ color: primary }} fill={primary} strokeWidth={0} />
+          <MapPin size={14} className="text-green-700" fill="#3a8a3e" strokeWidth={0} />
           <span className="text-sm font-medium text-gray-800 truncate max-w-[280px]">
             {tableNumber ? `Table ${tableNumber} - ${tenant.name}` : tenant.name}
           </span>
@@ -384,7 +384,7 @@ export default function ClientMenuPage({
         <h1 className="text-3xl font-extrabold text-gray-900 leading-tight tracking-tight">
           {lang === 'en' ? 'Welcome' : 'Bienvenue'}
         </h1>
-        <p className="text-base mt-1 mb-4 font-medium leading-snug" style={{ color: primary }}>
+        <p className="text-base text-green-700 mt-1 mb-4 font-medium leading-snug">
           {tenant.description || txt.welcomeSubtitle}
         </p>
         <div className="flex gap-2.5 items-center">
@@ -399,7 +399,7 @@ export default function ClientMenuPage({
             onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
             className="flex-shrink-0 flex items-center gap-1.5 bg-white rounded-2xl px-4 py-3 shadow-sm"
           >
-            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
+            <div className="w-2 h-2 rounded-full bg-green-500" />
             <span className="text-sm font-semibold text-gray-900">
               {lang === 'en' ? 'Now' : 'Menu'}
             </span>
@@ -428,9 +428,9 @@ export default function ClientMenuPage({
                   <div
                     className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
                     style={{
-                      background: isActive ? `${primary}15` : '#fff',
+                      background: isActive ? '#e8f5e9' : '#fff',
                       boxShadow: isActive
-                        ? `0 0 0 2px ${primary}, 0 2px 8px rgba(0,0,0,.06)`
+                        ? '0 0 0 2px #4caf50, 0 2px 8px rgba(0,0,0,.06)'
                         : '0 2px 8px rgba(0,0,0,.05)',
                       transition: 'all .2s ease',
                     }}
@@ -446,7 +446,7 @@ export default function ClientMenuPage({
                   </div>
                   <span
                     className="text-xs font-medium"
-                    style={{ color: isActive ? primary : '#777' }}
+                    style={{ color: isActive ? '#2e7d32' : '#777' }}
                   >
                     {catName}
                   </span>
