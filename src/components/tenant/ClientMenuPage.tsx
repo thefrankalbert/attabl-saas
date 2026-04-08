@@ -487,20 +487,14 @@ export default function ClientMenuPage({
                   className="flex flex-col items-center gap-1.5 min-w-[62px] cursor-pointer"
                 >
                   <div
-                    className="w-[54px] h-[54px] rounded-full flex items-center justify-center"
-                    style={{
-                      background: isActive ? '#e8f5e9' : '#fff',
-                      boxShadow: isActive
-                        ? '0 0 0 2px #4caf50, 0 2px 8px rgba(0,0,0,.06)'
-                        : '0 2px 8px rgba(0,0,0,.05)',
-                      transition: 'all .2s ease',
-                    }}
+                    className="w-[54px] h-[54px] flex items-center justify-center"
+                    style={{ transition: 'all .2s ease' }}
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={getCatImg(c.name)}
                       alt={catName}
-                      className="w-[32px] h-[32px]"
+                      className="w-[44px] h-[44px] object-contain"
                       loading="lazy"
                       decoding="async"
                     />
