@@ -41,94 +41,155 @@ const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   loading: () => <div className="h-64 animate-pulse rounded-2xl" style={{ background: '#eee' }} />,
 });
 
-/* ── Twemoji CDN (Twitter high-quality emoji icons) ── */
-const twemoji = (code: string) =>
-  `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/72x72/${code}.png`;
-
-const CATEGORY_TWEMOJI: Record<string, string> = {
-  entree: '1f957',
-  entrees: '1f957',
-  starters: '1f957',
-  'pour commencer': '1f957',
-  burger: '1f354',
-  burgers: '1f354',
-  hamburger: '1f354',
-  hamburgers: '1f354',
-  pizza: '1f355',
-  pizzas: '1f355',
-  pates: '1f35d',
-  pasta: '1f35d',
-  pastas: '1f35d',
-  lasagna: '1f35d',
-  grillade: '1f356',
-  grills: '1f356',
-  grille: '1f356',
-  bbq: '1f356',
-  plats: '1f37d',
-  'plat principal': '1f37d',
-  'plats principaux': '1f37d',
-  'main course': '1f37d',
-  vegetarien: '1f96c',
-  vegetarian: '1f96c',
-  vegan: '1f96c',
-  veggie: '1f96c',
-  dessert: '1f370',
-  desserts: '1f370',
-  douceurs: '1f370',
-  patisserie: '1f370',
-  boisson: '1f379',
-  boissons: '1f379',
-  drinks: '1f379',
-  beverages: '1f379',
-  'boissons chaudes': '2615',
-  cocktail: '1f378',
-  cocktails: '1f378',
-  'cocktails alcoolises': '1f378',
-  'cocktails sans alcool': '1f379',
-  aperitif: '1fad2',
-  aperitifs: '1fad2',
-  cafe: '2615',
-  coffee: '2615',
-  the: '1f375',
-  tea: '1f375',
-  africain: '1f372',
-  african: '1f372',
-  'plats africains': '1f372',
-  poisson: '1f41f',
-  fish: '1f41f',
-  seafood: '1f990',
-  'fruits de mer': '1f990',
-  salade: '1f957',
-  salad: '1f957',
-  salades: '1f957',
-  soupe: '1f35c',
-  soup: '1f35c',
-  soupes: '1f35c',
-  noodles: '1f35c',
-  vin: '1f377',
-  vins: '1f377',
-  wine: '1f377',
-  biere: '1f37a',
-  bieres: '1f37a',
-  beer: '1f37a',
-  snack: '1f96a',
-  snacks: '1f96a',
-  sandwich: '1f96a',
-  sandwiches: '1f96a',
-  sushi: '1f363',
-  sushis: '1f363',
-  tart: '1f967',
-  arancini: '1f9c6',
-  accompagnement: '1f955',
-  accompagnements: '1f955',
-  sides: '1f955',
-  petit_dejeuner: '1f95e',
-  breakfast: '1f95e',
-  glace: '1f368',
-  glaces: '1f368',
-  jus: '1f9c3',
-  juice: '1f9c3',
-  smoothie: '1f9c3',
+/* ── Category icons — real images from /public/category-icons/ ── */
+const CATEGORY_ICONS: Record<string, string> = {
+  // Burger
+  burger: 'burger.png',
+  burgers: 'burger.png',
+  hamburger: 'burger.png',
+  hamburgers: 'burger.png',
+  // Africain / Caribeen / Epice
+  africain: 'caribbean.png',
+  african: 'caribbean.png',
+  'plats africains': 'caribbean.png',
+  caribeen: 'caribbean.png',
+  caribbean: 'caribbean.png',
+  epice: 'caribbean.png',
+  // Asiatique
+  asiatique: 'asian.png',
+  asian: 'asian.png',
+  noodles: 'asian.png',
+  sushi: 'asian.png',
+  sushis: 'asian.png',
+  soupe: 'asian.png',
+  soup: 'asian.png',
+  soupes: 'asian.png',
+  // Courses / Grocery
+  courses: 'grocery.png',
+  grocery: 'grocery.png',
+  epicerie: 'grocery.png',
+  // Snacks / Convenience
+  snack: 'convenience.png',
+  snacks: 'convenience.png',
+  sandwich: 'convenience.png',
+  sandwiches: 'convenience.png',
+  convenience: 'convenience.png',
+  // Indien / Curry
+  indien: 'indian.png',
+  indian: 'indian.png',
+  curry: 'indian.png',
+  // Glace / Ice cream
+  glace: 'ice-cream.png',
+  glaces: 'ice-cream.png',
+  'ice cream': 'ice-cream.png',
+  // Americain
+  americain: 'american.png',
+  american: 'american.png',
+  'hot dog': 'american.png',
+  // Alcool / Vins / Bieres / Cocktails
+  alcool: 'alcohol.png',
+  alcohol: 'alcohol.png',
+  vin: 'alcohol.png',
+  vins: 'alcohol.png',
+  wine: 'alcohol.png',
+  biere: 'alcohol.png',
+  bieres: 'alcohol.png',
+  beer: 'alcohol.png',
+  cocktail: 'alcohol.png',
+  cocktails: 'alcohol.png',
+  'cocktails alcoolises': 'alcohol.png',
+  aperitif: 'alcohol.png',
+  aperitifs: 'alcohol.png',
+  // Chinois / Dim sum
+  chinois: 'chinese.png',
+  chinese: 'chinese.png',
+  'dim sum': 'chinese.png',
+  // Francais / Grillade
+  francais: 'french.png',
+  french: 'french.png',
+  grillade: 'french.png',
+  grills: 'french.png',
+  grille: 'french.png',
+  bbq: 'french.png',
+  // Halal / Poulet
+  halal: 'halal.png',
+  poulet: 'halal.png',
+  chicken: 'halal.png',
+  // Specialite / Epicerie fine
+  specialite: 'specialty.png',
+  specialty: 'specialty.png',
+  // Dessert / Patisserie
+  dessert: 'dessert.png',
+  desserts: 'dessert.png',
+  douceurs: 'dessert.png',
+  patisserie: 'dessert.png',
+  // Fast food / Frites
+  'fast food': 'fast-food.png',
+  'fast-food': 'fast-food.png',
+  rapide: 'fast-food.png',
+  frites: 'fast-food.png',
+  // Retail / Commerce
+  retail: 'retail.png',
+  commerce: 'retail.png',
+  // A emporter / Takeout
+  emporter: 'takeout.png',
+  'a emporter': 'takeout.png',
+  takeout: 'takeout.png',
+  takeaway: 'takeout.png',
+  // Entrees / Starters / Salade
+  entree: 'asian.png',
+  entrees: 'asian.png',
+  starters: 'asian.png',
+  'pour commencer': 'asian.png',
+  salade: 'asian.png',
+  salad: 'asian.png',
+  salades: 'asian.png',
+  // Plats principaux
+  plats: 'french.png',
+  'plat principal': 'french.png',
+  'plats principaux': 'french.png',
+  'main course': 'french.png',
+  // Vegetarien
+  vegetarien: 'asian.png',
+  vegetarian: 'asian.png',
+  vegan: 'asian.png',
+  veggie: 'asian.png',
+  // Boissons (non-alcool)
+  boisson: 'alcohol.png',
+  boissons: 'alcohol.png',
+  drinks: 'alcohol.png',
+  beverages: 'alcohol.png',
+  'boissons chaudes': 'specialty.png',
+  'cocktails sans alcool': 'alcohol.png',
+  cafe: 'specialty.png',
+  coffee: 'specialty.png',
+  the: 'specialty.png',
+  tea: 'specialty.png',
+  // Pizza / Pasta
+  pizza: 'burger.png',
+  pizzas: 'burger.png',
+  pates: 'asian.png',
+  pasta: 'asian.png',
+  pastas: 'asian.png',
+  lasagna: 'asian.png',
+  // Poisson / Fruits de mer
+  poisson: 'halal.png',
+  fish: 'halal.png',
+  seafood: 'halal.png',
+  'fruits de mer': 'halal.png',
+  // Autres
+  accompagnement: 'convenience.png',
+  accompagnements: 'convenience.png',
+  sides: 'convenience.png',
+  petit_dejeuner: 'convenience.png',
+  breakfast: 'convenience.png',
+  jus: 'ice-cream.png',
+  juice: 'ice-cream.png',
+  smoothie: 'ice-cream.png',
+  tart: 'dessert.png',
+  arancini: 'chinese.png',
+  fleurs: 'flowers.png',
+  flowers: 'flowers.png',
 };
 
 function getCatImg(name: string): string {
@@ -137,11 +198,11 @@ function getCatImg(name: string): string {
     .trim()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '');
-  if (CATEGORY_TWEMOJI[lower]) return twemoji(CATEGORY_TWEMOJI[lower]);
-  for (const [key, code] of Object.entries(CATEGORY_TWEMOJI)) {
-    if (lower.includes(key) || key.includes(lower)) return twemoji(code);
+  if (CATEGORY_ICONS[lower]) return `/category-icons/${CATEGORY_ICONS[lower]}`;
+  for (const [key, file] of Object.entries(CATEGORY_ICONS)) {
+    if (lower.includes(key) || key.includes(lower)) return `/category-icons/${file}`;
   }
-  return twemoji('1f37d');
+  return '/category-icons/french.png';
 }
 
 const getTranslatedContent = (lang: string, fr: string, en?: string | null) =>
