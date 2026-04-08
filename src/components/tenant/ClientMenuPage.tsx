@@ -41,52 +41,78 @@ const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   loading: () => <div className="h-64 animate-pulse rounded-2xl" style={{ background: '#eee' }} />,
 });
 
-/* ── Category icons — real images from /public/category-icons/ ── */
+/* ── Category icons — real images from /public/category-icons/ ──
+   REGLE: mapper UNIQUEMENT quand l'image correspond REELLEMENT au nom.
+   Si aucune icone ne correspond, ne PAS mapper (fallback sera utilise).
+
+   Images disponibles et ce qu'elles representent REELLEMENT:
+   - burger.png     = burger / hamburger
+   - caribbean.png  = assiette grillee avec legumes (plat principal, grillade)
+   - asian.png      = bol de soupe / ramen (soupe, noodles, asiatique)
+   - indian.png     = marmite de curry (curry, indien, mijote)
+   - ice-cream.png  = glace avec cerise (glace, sorbet)
+   - american.png   = hot dog (hot dog, americain)
+   - alcohol.png    = bouteille + verre (alcool, vin, biere, cocktail)
+   - chinese.png    = dim sum / panier vapeur (chinois, dim sum)
+   - french.png     = cote de boeuf (viande, steak, grillade)
+   - halal.png      = brochette + riz (brochette, halal, kebab)
+   - dessert.png    = part de gateau myrtille (dessert, patisserie, gateau)
+   - fast-food.png  = frites + boisson (fast food, frites)
+   - specialty.png  = sac epicerie (epicerie, specialite)
+   - convenience.png = produits emballes (snack, convenience)
+   - grocery.png    = panier de courses (courses)
+   - takeout.png    = boite a emporter
+   - flowers.png    = bouquet de fleurs
+   - retail.png     = produits divers
+   - ride.png       = voiture
+   - pet-supplies.png = animaux
+*/
 const CATEGORY_ICONS: Record<string, string> = {
-  // Burger
+  // burger.png = burger
   burger: 'burger.png',
   burgers: 'burger.png',
   hamburger: 'burger.png',
   hamburgers: 'burger.png',
-  // Africain / Caribeen / Epice
-  africain: 'caribbean.png',
-  african: 'caribbean.png',
-  'plats africains': 'caribbean.png',
-  caribeen: 'caribbean.png',
-  caribbean: 'caribbean.png',
-  epice: 'caribbean.png',
-  // Asiatique
+  // caribbean.png = assiette grillee = plat principal, grillade, entrees
+  entree: 'caribbean.png',
+  entrees: 'caribbean.png',
+  starters: 'caribbean.png',
+  'pour commencer': 'caribbean.png',
+  plats: 'caribbean.png',
+  'plat principal': 'caribbean.png',
+  'plats principaux': 'caribbean.png',
+  'main course': 'caribbean.png',
+  grillade: 'caribbean.png',
+  grills: 'caribbean.png',
+  grille: 'caribbean.png',
+  bbq: 'caribbean.png',
+  // asian.png = bol de soupe/ramen
   asiatique: 'asian.png',
   asian: 'asian.png',
   noodles: 'asian.png',
-  sushi: 'asian.png',
-  sushis: 'asian.png',
   soupe: 'asian.png',
   soup: 'asian.png',
   soupes: 'asian.png',
-  // Courses / Grocery
-  courses: 'grocery.png',
-  grocery: 'grocery.png',
-  epicerie: 'grocery.png',
-  // Snacks / Convenience
-  snack: 'convenience.png',
-  snacks: 'convenience.png',
-  sandwich: 'convenience.png',
-  sandwiches: 'convenience.png',
-  convenience: 'convenience.png',
-  // Indien / Curry
+  pates: 'asian.png',
+  pasta: 'asian.png',
+  pastas: 'asian.png',
+  lasagna: 'asian.png',
+  // indian.png = marmite curry
   indien: 'indian.png',
   indian: 'indian.png',
   curry: 'indian.png',
-  // Glace / Ice cream
+  africain: 'indian.png',
+  african: 'indian.png',
+  'plats africains': 'indian.png',
+  // ice-cream.png = glace
   glace: 'ice-cream.png',
   glaces: 'ice-cream.png',
   'ice cream': 'ice-cream.png',
-  // Americain
+  // american.png = hot dog
   americain: 'american.png',
   american: 'american.png',
   'hot dog': 'american.png',
-  // Alcool / Vins / Bieres / Cocktails
+  // alcohol.png = bouteille + verre
   alcool: 'alcohol.png',
   alcohol: 'alcohol.png',
   vin: 'alcohol.png',
@@ -98,96 +124,64 @@ const CATEGORY_ICONS: Record<string, string> = {
   cocktail: 'alcohol.png',
   cocktails: 'alcohol.png',
   'cocktails alcoolises': 'alcohol.png',
+  'cocktails sans alcool': 'alcohol.png',
   aperitif: 'alcohol.png',
   aperitifs: 'alcohol.png',
-  // Chinois / Dim sum
-  chinois: 'chinese.png',
-  chinese: 'chinese.png',
-  'dim sum': 'chinese.png',
-  // Francais / Grillade
-  francais: 'french.png',
-  french: 'french.png',
-  grillade: 'french.png',
-  grills: 'french.png',
-  grille: 'french.png',
-  bbq: 'french.png',
-  // Halal / Poulet
-  halal: 'halal.png',
-  poulet: 'halal.png',
-  chicken: 'halal.png',
-  // Specialite / Epicerie fine
-  specialite: 'specialty.png',
-  specialty: 'specialty.png',
-  // Dessert / Patisserie
-  dessert: 'dessert.png',
-  desserts: 'dessert.png',
-  douceurs: 'dessert.png',
-  patisserie: 'dessert.png',
-  // Fast food / Frites
-  'fast food': 'fast-food.png',
-  'fast-food': 'fast-food.png',
-  rapide: 'fast-food.png',
-  frites: 'fast-food.png',
-  // Retail / Commerce
-  retail: 'retail.png',
-  commerce: 'retail.png',
-  // A emporter / Takeout
-  emporter: 'takeout.png',
-  'a emporter': 'takeout.png',
-  takeout: 'takeout.png',
-  takeaway: 'takeout.png',
-  // Entrees / Starters / Salade
-  entree: 'asian.png',
-  entrees: 'asian.png',
-  starters: 'asian.png',
-  'pour commencer': 'asian.png',
-  salade: 'asian.png',
-  salad: 'asian.png',
-  salades: 'asian.png',
-  // Plats principaux
-  plats: 'french.png',
-  'plat principal': 'french.png',
-  'plats principaux': 'french.png',
-  'main course': 'french.png',
-  // Vegetarien
-  vegetarien: 'asian.png',
-  vegetarian: 'asian.png',
-  vegan: 'asian.png',
-  veggie: 'asian.png',
-  // Boissons (non-alcool)
   boisson: 'alcohol.png',
   boissons: 'alcohol.png',
   drinks: 'alcohol.png',
   beverages: 'alcohol.png',
-  'boissons chaudes': 'specialty.png',
-  'cocktails sans alcool': 'alcohol.png',
+  // chinese.png = dim sum / vapeur
+  chinois: 'chinese.png',
+  chinese: 'chinese.png',
+  'dim sum': 'chinese.png',
+  // french.png = cote de boeuf / viande
+  francais: 'french.png',
+  french: 'french.png',
+  viande: 'french.png',
+  steak: 'french.png',
+  // halal.png = brochette + riz
+  halal: 'halal.png',
+  brochette: 'halal.png',
+  kebab: 'halal.png',
+  poulet: 'halal.png',
+  chicken: 'halal.png',
+  // dessert.png = gateau myrtille
+  dessert: 'dessert.png',
+  desserts: 'dessert.png',
+  douceurs: 'dessert.png',
+  patisserie: 'dessert.png',
+  gateau: 'dessert.png',
+  tart: 'dessert.png',
+  // fast-food.png = frites + boisson
+  'fast food': 'fast-food.png',
+  'fast-food': 'fast-food.png',
+  rapide: 'fast-food.png',
+  frites: 'fast-food.png',
+  // specialty.png = sac epicerie
+  specialite: 'specialty.png',
+  specialty: 'specialty.png',
+  epicerie: 'specialty.png',
   cafe: 'specialty.png',
   coffee: 'specialty.png',
   the: 'specialty.png',
   tea: 'specialty.png',
-  // Pizza / Pasta
-  pizza: 'burger.png',
-  pizzas: 'burger.png',
-  pates: 'asian.png',
-  pasta: 'asian.png',
-  pastas: 'asian.png',
-  lasagna: 'asian.png',
-  // Poisson / Fruits de mer
-  poisson: 'halal.png',
-  fish: 'halal.png',
-  seafood: 'halal.png',
-  'fruits de mer': 'halal.png',
-  // Autres
-  accompagnement: 'convenience.png',
-  accompagnements: 'convenience.png',
-  sides: 'convenience.png',
-  petit_dejeuner: 'convenience.png',
-  breakfast: 'convenience.png',
-  jus: 'ice-cream.png',
-  juice: 'ice-cream.png',
-  smoothie: 'ice-cream.png',
-  tart: 'dessert.png',
-  arancini: 'chinese.png',
+  'boissons chaudes': 'specialty.png',
+  // convenience.png = produits emballes
+  snack: 'convenience.png',
+  snacks: 'convenience.png',
+  convenience: 'convenience.png',
+  sandwich: 'convenience.png',
+  sandwiches: 'convenience.png',
+  // grocery.png = panier courses
+  courses: 'grocery.png',
+  grocery: 'grocery.png',
+  // takeout.png = boite a emporter
+  emporter: 'takeout.png',
+  'a emporter': 'takeout.png',
+  takeout: 'takeout.png',
+  takeaway: 'takeout.png',
+  // flowers.png = fleurs
   fleurs: 'flowers.png',
   flowers: 'flowers.png',
 };
@@ -202,7 +196,7 @@ function getCatImg(name: string): string {
   for (const [key, file] of Object.entries(CATEGORY_ICONS)) {
     if (lower.includes(key) || key.includes(lower)) return `/category-icons/${file}`;
   }
-  return '/category-icons/french.png';
+  return '/category-icons/caribbean.png';
 }
 
 const getTranslatedContent = (lang: string, fr: string, en?: string | null) =>
