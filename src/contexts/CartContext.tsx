@@ -409,6 +409,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
               const modifiersTotal = item.modifiers?.reduce((s, m) => s + m.price, 0) || 0;
               return acc + (item.price + modifiersTotal) * item.quantity;
             }, 0),
+            // Fallback for dev/localhost when middleware subdomain routing
+            // doesn't inject x-tenant-slug. Server still prefers the header when set.
+            tenantSlug: tenantSlug || undefined,
           }),
         });
 
@@ -426,10 +429,10 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
         return { success: true };
       } catch {
-        return { success: false, error: 'Erreur de connexion. Veuillez réessayer.' };
+        return { success: false, error: 'Erreur de connexion. Veuillez reessayer.' };
       }
     },
-    [items],
+    [items, tenantSlug],
   );
 
   const removeCoupon = useCallback(() => {

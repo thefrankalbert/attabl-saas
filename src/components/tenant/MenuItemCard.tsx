@@ -1,7 +1,6 @@
 'use client';
 
-import { toast } from 'sonner';
-import { Plus, Leaf, Flame, Utensils, Martini, ChevronDown, AlertTriangle } from 'lucide-react';
+import { Plus, Utensils, Martini, ChevronDown, AlertTriangle, Star } from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
@@ -134,7 +133,7 @@ export default function MenuItemCard({
       navigator.vibrate(10);
     }
 
-    toast.success(`${item.name} ajoute au panier`);
+    // No toast per UberEats pattern - cart badge update is sufficient feedback
     setTimeout(() => {
       setIsAnimating(false);
       setIsAdding(false);
@@ -164,6 +163,19 @@ export default function MenuItemCard({
     !item.image_url.includes('default') &&
     !imageError;
 
+  // Compute "new" flag: created within the last 14 days.
+  // Date.now() is impure so we compute once on mount via useEffect.
+  const [isNew, setIsNew] = useState(false);
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (!item.created_at) return;
+    const created = new Date(item.created_at).getTime();
+    if (Number.isNaN(created)) return;
+    const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
+    setIsNew(Date.now() - created < fourteenDaysMs);
+  }, [item.created_at]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
   const description = getTranslatedContent(language, item.description || '', item.description_en);
   const formattedPrice =
     currentPrice > 0
@@ -175,115 +187,220 @@ export default function MenuItemCard({
 
   return (
     <div
-      className={`relative flex gap-4 py-4 px-4 cursor-pointer active:bg-app-elevated/50 transition-colors border-b border-app-border/30 ${isUnavailable ? 'opacity-50' : ''}`}
+      className={cn(
+        'relative flex bg-white cursor-pointer active:bg-[#FAFAFA] transition-colors border-b border-[#F0F0F0] last:border-b-0',
+        isUnavailable && 'opacity-50',
+      )}
       onClick={onOpenDetail}
     >
-      {/* TEXT — Left */}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-base font-semibold text-app-text leading-snug">
-          {getTranslatedContent(language, item.name, item.name_en)}
-        </h3>
-
-        {description && (
-          <p className="text-sm text-app-text-secondary leading-relaxed mt-1 line-clamp-3">
-            {description}
-          </p>
-        )}
-
-        <div className="flex items-center flex-wrap gap-2 mt-2">
-          <span className="text-base font-bold" style={{ color: 'var(--tenant-primary)' }}>
-            {formattedPrice}
-          </span>
-
-          {item.is_vegetarian && (
-            <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-green-50 text-green-700">
-              <Leaf className="w-3 h-3" />
-            </span>
+      {/* TEXT - Left side */}
+      <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+        <div>
+          {/* Badges row: POPULAR / NEW / VEGGIE / SPICY */}
+          {(item.is_featured || isNew || item.is_vegetarian || item.is_spicy) && (
+            <div className="flex flex-wrap items-center gap-1 mb-1">
+              {item.is_featured && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '1px',
+                    color: '#737373',
+                    backgroundColor: '#F6F6F6',
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tt('popularBadge')}
+                </span>
+              )}
+              {isNew && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '1px',
+                    color: '#737373',
+                    backgroundColor: '#F6F6F6',
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tt('newBadge')}
+                </span>
+              )}
+              {item.is_vegetarian && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '1px',
+                    color: '#737373',
+                    backgroundColor: '#F6F6F6',
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tt('veggieBadge')}
+                </span>
+              )}
+              {item.is_spicy && (
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    letterSpacing: '1px',
+                    color: '#737373',
+                    backgroundColor: '#F6F6F6',
+                    padding: '2px 6px',
+                    borderRadius: '8px',
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {tt('spicyBadge')}
+                </span>
+              )}
+            </div>
           )}
-          {item.is_spicy && (
-            <span className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-red-50 text-red-600">
-              <Flame className="w-3 h-3" />
-            </span>
-          )}
-          {item.allergens && item.allergens.length > 0 && (
+          {/* Category label */}
+          {category && (
             <span
-              className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-full bg-amber-50 text-amber-600"
-              title={item.allergens.join(', ')}
+              className="text-[11px] font-medium uppercase leading-[1.4] tracking-[1px]"
+              style={{ color: '#B0B0B0' }}
             >
-              <AlertTriangle className="w-3 h-3" />
+              {category}
             </span>
+          )}
+
+          {/* Item name - 16px SemiBold #1A1A1A max 2 lines */}
+          <h3
+            className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5"
+            style={{ color: '#1A1A1A' }}
+          >
+            {getTranslatedContent(language, item.name, item.name_en)}
+          </h3>
+
+          {/* Description - 13px Regular #737373 max 2 lines */}
+          {description && (
+            <p
+              className="text-[13px] font-normal leading-[1.4] line-clamp-2 mt-1"
+              style={{ color: '#737373' }}
+            >
+              {description}
+            </p>
+          )}
+
+          {/* Rating row - renders when rating data is available */}
+          {item.rating != null && item.rating > 0 && (
+            <div className="flex items-center gap-1 mt-1.5">
+              <Star className="w-3 h-3 fill-[#FFB800]" style={{ color: '#FFB800' }} />
+              <span className="text-[13px] font-medium leading-[1.4]" style={{ color: '#1A1A1A' }}>
+                {item.rating.toFixed(1)}
+              </span>
+              {item.rating_count != null && (
+                <span
+                  className="text-[13px] font-normal leading-[1.4]"
+                  style={{ color: '#B0B0B0' }}
+                >
+                  ({item.rating_count}+)
+                </span>
+              )}
+            </div>
           )}
         </div>
 
-        {hasModifiersOrVariants && (
-          <span className="text-[11px] text-app-text-muted mt-1 block">Personnalisable</span>
-        )}
+        {/* Bottom section: price, badges, variants */}
+        <div className="mt-2">
+          <div className="flex items-center flex-wrap gap-2">
+            {/* Price - 15px Bold #1A1A1A (NOT green) */}
+            <span className="text-[15px] font-bold leading-[1.4]" style={{ color: '#1A1A1A' }}>
+              {formattedPrice}
+            </span>
 
-        {/* Variant dropdown */}
-        {hasVariants && (
-          <div className="mt-2 relative" ref={dropdownRef}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowVariantDropdown(!showVariantDropdown);
-              }}
-              className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors"
-              style={{
-                color: 'var(--tenant-primary)',
-                backgroundColor: 'var(--tenant-primary-10)',
-              }}
-            >
-              {getVariantName(selectedVariant!)}
-              <ChevronDown
-                className={cn('w-3 h-3 transition-transform', showVariantDropdown && 'rotate-180')}
-              />
-            </button>
-            {showVariantDropdown && (
-              <div className="absolute top-full left-0 mt-1 bg-app-card rounded-xl shadow-xl border border-app-border/30 py-1 z-20 min-w-[160px]">
-                {item.price_variants?.map((variant) => (
-                  <button
-                    key={variant.id}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedVariant(variant);
-                      setShowVariantDropdown(false);
-                    }}
-                    className={cn(
-                      'w-full px-3 py-2.5 text-left text-sm hover:bg-app-elevated',
-                      selectedVariant?.id === variant.id ? 'font-bold' : 'text-app-text-secondary',
-                    )}
-                    style={
-                      selectedVariant?.id === variant.id
-                        ? {
-                            color: 'var(--tenant-primary)',
-                            backgroundColor: 'var(--tenant-primary-10)',
-                          }
-                        : undefined
-                    }
-                  >
-                    {getVariantName(variant)} -{' '}
-                    {resolveAndFormatPrice(variant.price, variant.prices, currency)}
-                  </button>
-                ))}
-              </div>
+            {item.allergens && item.allergens.length > 0 && (
+              <span
+                className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg"
+                style={{ backgroundColor: '#F6F6F6', color: '#737373' }}
+                title={item.allergens.join(', ')}
+              >
+                <AlertTriangle className="w-3 h-3" />
+              </span>
             )}
           </div>
-        )}
+
+          {hasModifiersOrVariants && (
+            <span
+              className="text-[11px] font-medium leading-[1.4] mt-1 block"
+              style={{ color: '#B0B0B0' }}
+            >
+              {tt('customizable')}
+            </span>
+          )}
+
+          {/* Variant dropdown */}
+          {hasVariants && (
+            <div className="mt-2 relative" ref={dropdownRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVariantDropdown(!showVariantDropdown);
+                }}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-[#E6F9F0]"
+                style={{ color: '#06C167' }}
+              >
+                {getVariantName(selectedVariant!)}
+                <ChevronDown
+                  className={cn(
+                    'w-3 h-3 transition-transform',
+                    showVariantDropdown && 'rotate-180',
+                  )}
+                />
+              </button>
+              {showVariantDropdown && (
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-[#EEEEEE] py-1 z-20 min-w-[160px]">
+                  {item.price_variants?.map((variant) => (
+                    <button
+                      key={variant.id}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedVariant(variant);
+                        setShowVariantDropdown(false);
+                      }}
+                      className={cn(
+                        'w-full px-3 py-2.5 text-left text-sm',
+                        selectedVariant?.id === variant.id
+                          ? 'font-bold bg-[#E6F9F0]'
+                          : 'text-[#737373]',
+                      )}
+                      style={selectedVariant?.id === variant.id ? { color: '#06C167' } : undefined}
+                    >
+                      {getVariantName(variant)} -{' '}
+                      {resolveAndFormatPrice(variant.price, variant.prices, currency)}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* IMAGE — Right */}
-      <div className="relative w-24 h-24 sm:w-[120px] sm:h-[120px] flex-shrink-0">
-        <div className="w-full h-full rounded-xl overflow-hidden bg-app-elevated border border-app-border/50 flex items-center justify-center">
+      {/* IMAGE - Right side: 90x90px */}
+      <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
+        <div className="w-full h-full rounded-xl overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
           {hasValidImage ? (
             <>
               {!imageLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-xl" />
+                <div className="absolute inset-0 animate-pulse bg-[#F6F6F6] rounded-xl" />
               )}
               <Image
                 src={item.image_url!}
                 alt={item.name}
                 fill
-                sizes="120px"
+                sizes="90px"
                 className={cn(
                   'object-cover transition-opacity duration-300',
                   imageLoaded ? 'opacity-100' : 'opacity-0',
@@ -294,18 +411,22 @@ export default function MenuItemCard({
               />
             </>
           ) : isDrinkCategory ? (
-            <Martini className="w-8 h-8 text-app-text-muted" />
+            <Martini className="w-8 h-8" style={{ color: '#B0B0B0' }} />
           ) : (
-            <Utensils className="w-8 h-8 text-app-text-muted" />
+            <Utensils className="w-8 h-8" style={{ color: '#B0B0B0' }} />
           )}
         </div>
 
-        {/* Add button or quantity badge */}
-        <div className="absolute bottom-1.5 right-1.5" onClick={(e) => e.stopPropagation()}>
+        {/* Add button or quantity badge - absolute bottom-right offset -8px */}
+        <div
+          className="absolute"
+          style={{ bottom: '-8px', right: '-8px' }}
+          onClick={(e) => e.stopPropagation()}
+        >
           {cartItem ? (
             <div
-              className="min-w-7 h-7 rounded-full bg-white shadow-md flex items-center justify-center text-sm font-bold"
-              style={{ color: 'var(--tenant-primary)' }}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
+              style={{ backgroundColor: '#06C167' }}
             >
               {cartItem.quantity}
             </div>
@@ -316,10 +437,11 @@ export default function MenuItemCard({
                 handleAdd();
               }}
               disabled={isAdding}
-              aria-label="Ajouter au panier"
-              className="w-8 h-8 rounded-full bg-white shadow-md flex items-center justify-center focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-90 transition-transform"
+              aria-label={tt('addShort')}
+              className="w-7 h-7 rounded-full flex items-center justify-center focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-85 transition-transform"
+              style={{ backgroundColor: '#06C167' }}
             >
-              <Plus className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
+              <Plus className="w-4 h-4 text-white" />
             </button>
           ) : null}
         </div>
@@ -327,7 +449,10 @@ export default function MenuItemCard({
         {/* Unavailable overlay */}
         {isUnavailable && (
           <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
-            <span className="bg-neutral-900 text-white px-3 py-1 rounded-full text-[11px] font-semibold">
+            <span
+              className="px-3 py-1 rounded-full text-[11px] font-semibold text-white"
+              style={{ backgroundColor: '#1A1A1A' }}
+            >
               {tt('unavailable')}
             </span>
           </div>

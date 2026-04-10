@@ -57,7 +57,7 @@ export type PaymentMethod = 'cash' | 'card' | 'mobile_money';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
-export type CurrencyCode = 'XAF' | 'EUR' | 'USD';
+export type CurrencyCode = 'XAF' | 'XOF' | 'EUR' | 'USD';
 
 // ─── Types principaux (avec tenant_id) ─────────────────────
 
@@ -239,6 +239,8 @@ export interface MenuItem {
   is_drink?: boolean;
   allergens?: string[];
   calories?: number;
+  rating?: number;
+  rating_count?: number;
   category_id: string;
   category?: Category;
   display_order?: number;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -22,7 +22,9 @@ import SearchOverlay from '@/components/tenant/SearchOverlay';
 
 const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
   ssr: false,
-  loading: () => <div className="h-64 animate-pulse bg-app-elevated rounded-lg" />,
+  loading: () => (
+    <div className="h-64 animate-pulse rounded-lg" style={{ backgroundColor: '#F6F6F6' }} />
+  ),
 });
 
 // ─── Helpers ────────────────────────────────────────────
@@ -76,8 +78,6 @@ export default function ClientMenuDetailPage({
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [, setTableNumber] = useState<string | null>(initialTable || null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchSticky, setIsSearchSticky] = useState(false);
-  const searchBarRef = useRef<HTMLDivElement>(null);
 
   // Menu navigation state - auto-select menu containing the target section
   const [activeMenuSlug, setActiveMenuSlug] = useState<string | null>(() => {
@@ -127,6 +127,10 @@ export default function ClientMenuDetailPage({
   // Realtime availability
   const [disabledItemIds, setDisabledItemIds] = useState<Set<string>>(new Set());
 
+  // Filter chips (client-side)
+  type DietFilter = 'all' | 'vegetarian' | 'spicy' | 'under';
+  const [dietFilter, setDietFilter] = useState<DietFilter>('all');
+
   // ─── Table from localStorage ────────────────────────────
   useEffect(() => {
     if (!initialTable && typeof window !== 'undefined') {
@@ -162,19 +166,6 @@ export default function ClientMenuDetailPage({
 
     return () => clearTimeout(t1);
   }, [initialSection, categories]);
-
-  // ─── Sticky search on scroll ───────────────────────────
-  const handleScroll = useCallback(() => {
-    if (searchBarRef.current) {
-      const rect = searchBarRef.current.getBoundingClientRect();
-      setIsSearchSticky(rect.top <= 0);
-    }
-  }, []);
-
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
 
   // ─── Realtime subscriptions ────────────────────────────
   const handleRealtimeRefresh = useCallback(() => {
@@ -223,7 +214,7 @@ export default function ClientMenuDetailPage({
   const activeMenu = filteredMenus.find((m) => m.slug === activeMenuSlug) || null;
 
   // Filter items by menu/submenu
-  const filteredItemsByCategory =
+  const menuFilteredByCategory =
     menus.length <= 1
       ? itemsByCategory
       : itemsByCategory.filter((cat) => {
@@ -236,6 +227,32 @@ export default function ClientMenuDetailPage({
           const category = categories.find((c) => c.id === cat.id);
           return !category?.menu_id || activeMenuIds.includes(category.menu_id);
         });
+
+  // Compute "under" threshold as median price of current (menu-filtered) items
+  const underThreshold = useMemo(() => {
+    const allPrices = menuFilteredByCategory
+      .flatMap((c) => c.items.map((i) => i.price))
+      .filter((p): p is number => typeof p === 'number' && p > 0)
+      .sort((a, b) => a - b);
+    if (allPrices.length === 0) return 0;
+    return allPrices[Math.floor(allPrices.length / 2)];
+  }, [menuFilteredByCategory]);
+
+  // Apply diet filter chips
+  const filteredItemsByCategory = useMemo(() => {
+    if (dietFilter === 'all') return menuFilteredByCategory;
+    return menuFilteredByCategory
+      .map((cat) => ({
+        ...cat,
+        items: cat.items.filter((item) => {
+          if (dietFilter === 'vegetarian') return !!item.is_vegetarian;
+          if (dietFilter === 'spicy') return !!item.is_spicy;
+          if (dietFilter === 'under') return item.price > 0 && item.price <= underThreshold;
+          return true;
+        }),
+      }))
+      .filter((cat) => cat.items.length > 0);
+  }, [menuFilteredByCategory, dietFilter, underThreshold]);
 
   // Filter categories for CategoryNav
   const filteredCategories =
@@ -339,90 +356,73 @@ export default function ClientMenuDetailPage({
   return (
     <div
       className="flex-1 w-full"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      style={{
+        backgroundColor: '#FFFFFF',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+      }}
     >
-      {/* ═══ STICKY HEADER - appears when scrolled past search bar ═══ */}
-      {isSearchSticky && (
-        <div className="fixed top-0 left-0 right-0 z-50">
-          <div className="bg-app-card border-b border-app-border">
-            <div className="w-full p-3 px-4">
-              <div className="flex items-center gap-3">
-                <div className="flex-1 relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-app-text-muted">
-                    <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
-                  </div>
-                  <input
-                    type="text"
-                    placeholder={t('searchMenu')}
-                    className="w-full bg-app-elevated border border-app-border rounded-3xl py-2.5 pl-11 pr-4 text-sm font-medium text-app-text outline-none"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
-                <Link
-                  href={`/sites/${tenant.slug}/cart`}
-                  className="relative w-10 h-10 rounded-full flex items-center justify-center text-app-text-muted no-underline"
-                >
-                  <ShoppingCart className="w-5 h-5" />
-                  {totalCartItems > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center border-2 border-app-card">
-                      {totalCartItems}
-                    </span>
-                  )}
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ═══ PAGE HEADER ═══ */}
-      <div className="p-4 flex items-center gap-3 bg-app-card border-b border-app-border">
+      {/* ═══ HEADER + SEARCH (same row) ═══ */}
+      <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FFFFFF' }}>
         <button
           onClick={() => router.push(`/sites/${tenant.slug}`)}
-          className="w-9 h-9 rounded-full bg-app-elevated flex items-center justify-center border-none cursor-pointer"
+          className="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer flex-shrink-0"
+          style={{ backgroundColor: '#F6F6F6' }}
+          aria-label={t('ariaGoBack')}
         >
-          <ChevronLeft className="w-5 h-5 text-app-text" />
+          <ChevronLeft className="w-5 h-5" style={{ color: '#1A1A1A' }} />
         </button>
-        <h1 className="text-lg font-bold text-app-text flex-1">{t('ourMenu')}</h1>
-        <Link
-          href={`/sites/${tenant.slug}/cart`}
-          className="relative w-9 h-9 rounded-full flex items-center justify-center text-app-text-muted no-underline"
-        >
-          <ShoppingCart className="w-5 h-5" />
-          {totalCartItems > 0 && (
-            <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border-2 border-app-card">
-              {totalCartItems}
-            </span>
-          )}
-        </Link>
-      </div>
-
-      {/* ═══ SEARCH BAR ═══ */}
-      <div ref={searchBarRef} className="py-3 px-4 bg-app-card sm:px-6">
-        <div className="relative">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-app-text-muted">
-            <Search className="w-[18px] h-[18px]" strokeWidth={1.5} />
+        <div className="relative flex-1 min-w-0">
+          <div
+            className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+            style={{ color: '#B0B0B0' }}
+          >
+            <Search className="w-4 h-4" strokeWidth={1.5} />
           </div>
           <input
             type="text"
             placeholder={t('searchMenu')}
-            className="w-full bg-app-elevated border border-app-border rounded-3xl py-2.5 pl-11 pr-4 text-sm font-medium text-app-text outline-none"
+            className="w-full pl-9 pr-3 text-sm font-medium outline-none"
+            style={{
+              backgroundColor: '#F6F6F6',
+              border: 'none',
+              borderRadius: '10px',
+              height: '40px',
+              color: '#1A1A1A',
+            }}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
+      </div>
 
+      {/* ═══ SEARCH RESULTS DROPDOWN ═══ */}
+      <div className="px-4" style={{ backgroundColor: '#FFFFFF' }}>
         {/* Inline search results */}
         {searchQuery.length >= 2 && searchResults.length === 0 && (
-          <p className="text-center text-sm text-app-text-muted py-8">
-            Aucun plat trouve pour &quot;{searchQuery}&quot;
+          <p className="text-center text-sm py-8" style={{ color: '#B0B0B0' }}>
+            {t('noSearchResults', { query: searchQuery })}
           </p>
         )}
         {searchQuery.length >= 2 && searchResults.length > 0 && (
-          <div className="mt-2 bg-app-card rounded-2xl border border-app-border shadow-lg overflow-hidden z-50 relative">
+          <div
+            className="mt-2 rounded-xl overflow-hidden z-50 relative"
+            style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #EEEEEE',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+            }}
+          >
             <div className="p-2">
-              <h3 className="text-[10px] font-bold text-app-text-muted uppercase tracking-widest px-3 py-2">
+              <h3
+                className="px-3 py-2"
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  color: '#B0B0B0',
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                }}
+              >
                 {t('dishesFound')}
               </h3>
               {searchResults.map((item) => (
@@ -432,20 +432,24 @@ export default function ClientMenuDetailPage({
                     setSelectedItem(item);
                     setSearchQuery('');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-3 hover:bg-app-elevated rounded-xl transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-left"
+                  style={{ backgroundColor: 'transparent' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#F6F6F6';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                  }}
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-app-text">
+                    <p className="text-sm font-bold" style={{ color: '#1A1A1A' }}>
                       {lang === 'en' && item.name_en ? item.name_en : item.name}
                     </p>
                   </div>
-                  <span
-                    className="text-sm font-bold flex-shrink-0"
-                    style={{ color: 'var(--tenant-primary)' }}
-                  >
+                  <span className="text-sm font-bold flex-shrink-0" style={{ color: '#1A1A1A' }}>
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-app-text-muted" />
+                  <ChevronRight className="w-3.5 h-3.5" style={{ color: '#B0B0B0' }} />
                 </button>
               ))}
             </div>
@@ -455,14 +459,25 @@ export default function ClientMenuDetailPage({
 
       {/* ═══ VENUE FILTER PILLS ═══ */}
       {venues && venues.length > 1 && (
-        <div className="px-4 pb-3 bg-app-card flex gap-2 overflow-x-auto scrollbar-hide">
+        <div
+          className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
+          style={{ backgroundColor: '#FFFFFF' }}
+        >
           <button
             onClick={() => setActiveVenueId(null)}
             className={cn(
-              'flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap border-none cursor-pointer',
-              !activeVenueId ? 'text-white' : 'bg-app-elevated text-app-text-secondary',
+              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer',
+              !activeVenueId ? 'text-white' : '',
             )}
-            style={!activeVenueId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
+            style={{
+              fontSize: 11,
+              fontWeight: 500,
+              textTransform: 'uppercase' as const,
+              letterSpacing: 1,
+              ...(!activeVenueId
+                ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                : { backgroundColor: '#F6F6F6', color: '#737373' }),
+            }}
           >
             {t('allFilter')}
           </button>
@@ -471,16 +486,17 @@ export default function ClientMenuDetailPage({
               key={venue.id}
               onClick={() => setActiveVenueId(venue.id)}
               className={cn(
-                'flex-shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-semibold whitespace-nowrap border-none cursor-pointer',
-                activeVenueId === venue.id
-                  ? 'text-white'
-                  : 'bg-app-elevated text-app-text-secondary',
+                'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer',
               )}
-              style={
-                activeVenueId === venue.id
-                  ? { backgroundColor: 'var(--tenant-primary)' }
-                  : undefined
-              }
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                textTransform: 'uppercase' as const,
+                letterSpacing: 1,
+                ...(activeVenueId === venue.id
+                  ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                  : { backgroundColor: '#F6F6F6', color: '#737373' }),
+              }}
             >
               {venue.name}
             </button>
@@ -496,17 +512,16 @@ export default function ClientMenuDetailPage({
               <button
                 key={menu.slug}
                 onClick={() => handleMenuChange(menu.slug)}
-                className={cn(
-                  'flex-shrink-0 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap border-none cursor-pointer',
-                  activeMenuSlug === menu.slug
-                    ? 'text-white'
-                    : 'bg-app-elevated text-app-text-secondary',
-                )}
-                style={
-                  activeMenuSlug === menu.slug
-                    ? { backgroundColor: 'var(--tenant-primary)' }
-                    : undefined
-                }
+                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: 1,
+                  ...(activeMenuSlug === menu.slug
+                    ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                    : { backgroundColor: '#F6F6F6', color: '#737373' }),
+                }}
               >
                 {menu.name}
               </button>
@@ -521,13 +536,16 @@ export default function ClientMenuDetailPage({
           <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
             <button
               onClick={() => setActiveSubMenuId(null)}
-              className={cn(
-                'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
-                !activeSubMenuId
-                  ? 'text-white'
-                  : 'bg-app-elevated text-app-text-muted hover:bg-app-bg',
-              )}
-              style={!activeSubMenuId ? { backgroundColor: 'var(--tenant-primary)' } : undefined}
+              className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
+              style={{
+                fontSize: 11,
+                fontWeight: 500,
+                textTransform: 'uppercase' as const,
+                letterSpacing: 1,
+                ...(!activeSubMenuId
+                  ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                  : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
+              }}
             >
               {t('all')}
             </button>
@@ -537,17 +555,16 @@ export default function ClientMenuDetailPage({
                 <button
                   key={child.slug}
                   onClick={() => setActiveSubMenuId(child.id)}
-                  className={cn(
-                    'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap',
-                    activeSubMenuId === child.id
-                      ? 'text-white'
-                      : 'bg-app-elevated text-app-text-muted hover:bg-app-bg',
-                  )}
-                  style={
-                    activeSubMenuId === child.id
-                      ? { backgroundColor: 'var(--tenant-primary)' }
-                      : undefined
-                  }
+                  className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
+                  style={{
+                    fontSize: 11,
+                    fontWeight: 500,
+                    textTransform: 'uppercase' as const,
+                    letterSpacing: 1,
+                    ...(activeSubMenuId === child.id
+                      ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                      : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
+                  }}
                 >
                   {child.name}
                 </button>
@@ -556,12 +573,55 @@ export default function ClientMenuDetailPage({
         </div>
       )}
 
-      {/* ═══ CATEGORY NAVIGATION (sticky pills) ═══ */}
+      {/* ═══ FILTER CHIPS (diet / price) ═══ */}
+      <div
+        className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
+        style={{ backgroundColor: '#FFFFFF' }}
+      >
+        {(
+          [
+            { key: 'all', label: t('filterAll') },
+            { key: 'vegetarian', label: t('filterVegetarian') },
+            { key: 'spicy', label: t('filterSpicy') },
+            {
+              key: 'under',
+              label: t('filterUnder', {
+                price:
+                  underThreshold > 0 ? formatDisplayPrice(underThreshold, tenant.currency) : '',
+              }),
+            },
+          ] as { key: DietFilter; label: string }[]
+        ).map((chip) => {
+          const isActive = dietFilter === chip.key;
+          return (
+            <button
+              key={chip.key}
+              onClick={() => setDietFilter(chip.key)}
+              className="flex-shrink-0 whitespace-nowrap border-none cursor-pointer"
+              style={{
+                padding: '8px 16px',
+                borderRadius: '24px',
+                fontSize: '11px',
+                fontWeight: 500,
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                lineHeight: 1.4,
+                backgroundColor: isActive ? '#06C167' : '#F6F6F6',
+                color: isActive ? '#FFFFFF' : '#737373',
+              }}
+            >
+              {chip.label}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* ═══ CATEGORY NAVIGATION (sticky breadcrumb) ═══ */}
       {filteredCategories && filteredCategories.length > 0 && (
         <CategoryNav
           categories={filteredCategories}
-          visible={isSearchSticky}
           itemCounts={categoryItemCounts}
+          topOffset={0}
         />
       )}
 
@@ -571,16 +631,36 @@ export default function ClientMenuDetailPage({
           {filteredItemsByCategory.map(
             (category, catIndex) =>
               category.items.length > 0 && (
-                <section key={category.id} id={`cat-${category.id}`} className="scroll-mt-[120px]">
-                  {/* Section header */}
-                  <div className="p-3 sm:p-4 bg-app-bg">
-                    <h2 className="text-lg font-bold text-app-text dark:text-app-text uppercase tracking-tight">
+                <section
+                  key={category.id}
+                  id={`cat-${category.id}`}
+                  style={{ scrollMarginTop: '112px' }}
+                >
+                  {/* Sticky section header - sits below sticky category nav */}
+                  <div
+                    style={{
+                      position: 'sticky',
+                      top: '48px',
+                      zIndex: 20,
+                      backgroundColor: '#FFFFFF',
+                      borderBottom: '1px solid #EEEEEE',
+                      padding: '16px 16px 14px',
+                    }}
+                  >
+                    <h2
+                      style={{
+                        fontSize: '20px',
+                        fontWeight: 700,
+                        color: '#1A1A1A',
+                        lineHeight: 1.4,
+                      }}
+                    >
                       {category.name}
                     </h2>
                   </div>
 
                   {/* Items list */}
-                  <div className="bg-app-card border-y border-app-border">
+                  <div style={{ backgroundColor: '#FFFFFF', paddingTop: '12px' }}>
                     <div>
                       {category.items.map((item: MenuItem, index: number) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
@@ -605,7 +685,7 @@ export default function ClientMenuDetailPage({
 
                   {/* Spacer between sections */}
                   {catIndex < filteredItemsByCategory.length - 1 && (
-                    <div className="h-4 bg-app-bg" />
+                    <div className="h-5" style={{ backgroundColor: '#FFFFFF' }} />
                   )}
                 </section>
               ),
@@ -613,34 +693,67 @@ export default function ClientMenuDetailPage({
         </div>
       ) : (
         <div className="text-center py-20">
-          <div className="bg-app-card rounded-2xl shadow-sm p-6 sm:p-8 max-w-sm mx-auto">
-            <p className="text-app-text-muted font-medium">{t('noMenuAvailable')}</p>
+          <div
+            className="rounded-xl p-6 sm:p-8 max-w-sm mx-auto"
+            style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #EEEEEE',
+            }}
+          >
+            <p className="font-medium" style={{ color: '#B0B0B0' }}>
+              {t('noMenuAvailable')}
+            </p>
           </div>
         </div>
       )}
 
-      {/* ═══ FLOATING CART BAR ═══ */}
+      {/* ═══ FLOATING CART BAR (compact, fit-content, centered) ═══ */}
       {totalCartItems > 0 && (
-        <div className="fixed bottom-18 left-4 right-4 z-40 max-w-lg mx-auto">
+        <div
+          className="fixed left-0 right-0 z-40 flex justify-center px-4"
+          style={{ bottom: 'calc(60px + env(safe-area-inset-bottom, 0px) + 16px)' }}
+        >
           <Link
             href={`/sites/${tenant.slug}/cart`}
-            className="flex items-center justify-between w-full py-3.5 px-5 rounded-2xl text-white no-underline shadow-xl"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            className="inline-flex items-center gap-2.5 px-4 no-underline"
+            style={{
+              backgroundColor: '#1A1A1A',
+              borderRadius: '999px',
+              height: '48px',
+              color: '#FFFFFF',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+              maxWidth: 'calc(100% - 32px)',
+            }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center">
-                <ShoppingCart className="w-4 h-4" />
-              </div>
-              <span className="font-semibold text-sm">
-                {t('cartItemCount', { count: totalCartItems })}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-sm">
-                {formatDisplayPrice(grandTotal, tenant.currency)}
-              </span>
-              <ChevronRight className="w-4 h-4" />
-            </div>
+            <ShoppingCart className="w-5 h-5 flex-shrink-0" style={{ color: '#FFFFFF' }} />
+            <span
+              style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: '#FFFFFF',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {t('viewCart')} ({totalCartItems})
+            </span>
+            <span
+              style={{
+                width: 1,
+                height: 18,
+                backgroundColor: 'rgba(255,255,255,0.25)',
+              }}
+              aria-hidden="true"
+            />
+            <span
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {formatDisplayPrice(grandTotal, tenant.currency)}
+            </span>
           </Link>
         </div>
       )}

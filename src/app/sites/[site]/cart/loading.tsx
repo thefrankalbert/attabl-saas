@@ -2,8 +2,8 @@ import { LoadingIndicator } from '@/components/application/loading-indicator/Loa
 
 export default function Loading() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-app-bg">
-      <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
+    <div className="flex h-full items-center justify-center bg-white">
+      <LoadingIndicator type="dot-circle" size="lg" style={{ color: '#B0B0B0' }} />
     </div>
   );
 }

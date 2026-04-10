@@ -234,6 +234,79 @@
   }
 }
 
+/* ===== TENANT CLIENT THEME (DESIGN.md - UberEats-inspired) ===== */
+/* Per 2025/2026 market research: food ordering apps stay light-mode-only
+   (UberEats, Deliveroo, Just Eat, Grubhub). Food photography performs better
+   on white backgrounds. DoorDash is the only outlier with dark mode.
+   Admin dashboard keeps dark mode for productivity. */
+/* Scoped to .tenant-client class on the tenant layout wrapper.
+   Overrides app-* variables with DESIGN.md exact tokens.
+   FORCED LIGHT MODE - ignores any parent .dark class or prefers-color-scheme. */
+.tenant-client,
+.dark .tenant-client,
+:root .tenant-client {
+  /* Force-override any inherited --app-* variables from parent scope */
+  --app-bg: #ffffff !important;
+  --app-card: #ffffff !important;
+  --app-elevated: #f6f6f6 !important;
+  --app-hover: #f6f6f6 !important;
+
+  --app-border: #eeeeee !important;
+  --app-border-hover: #dddddd !important;
+
+  --app-text: #1a1a1a !important;
+  --app-text-secondary: #737373 !important;
+  --app-text-muted: #b0b0b0 !important;
+
+  --app-accent: #06c167 !important;
+  --app-accent-hover: #05a557 !important;
+  --app-accent-muted: #e6f9f0 !important;
+  --app-accent-text: #ffffff !important;
+
+  --app-status-success-bg: #e6f9f0 !important;
+  --app-status-warning-bg: #fff8e1 !important;
+  --app-status-error-bg: #ffebee !important;
+  --app-status-info-bg: #e6f9f0 !important;
+
+  --color-danger: #ff3008 !important;
+  --color-danger-hover: #e02b07 !important;
+
+  color-scheme: light !important;
+  background-color: #ffffff !important;
+  color: #1a1a1a !important;
+  /* Font is injected dynamically by src/app/sites/[site]/layout.tsx via an
+     inline style using the tenant's curated font CSS variable
+     (see src/lib/config/fonts.ts). This rule is only the safe fallback if
+     no inline style is applied (e.g. SSR before hydration). */
+  font-family:
+    var(--font-inter),
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+}
+
+/* Neutralize any system dark preference inside the tenant client scope */
+@media (prefers-color-scheme: dark) {
+  .tenant-client {
+    --app-bg: #ffffff !important;
+    --app-card: #ffffff !important;
+    --app-elevated: #f6f6f6 !important;
+    --app-hover: #f6f6f6 !important;
+    --app-border: #eeeeee !important;
+    --app-border-hover: #dddddd !important;
+    --app-text: #1a1a1a !important;
+    --app-text-secondary: #737373 !important;
+    --app-text-muted: #b0b0b0 !important;
+    --app-accent: #06c167 !important;
+    --app-accent-hover: #05a557 !important;
+    --app-accent-muted: #e6f9f0 !important;
+    --app-accent-text: #ffffff !important;
+    color-scheme: light !important;
+    background-color: #ffffff !important;
+    color: #1a1a1a !important;
+  }
+}
+
 html,
 body {
   height: 100%;
