@@ -49,7 +49,7 @@ export default async function SiteLayout({
           initialColors={{
             // Tenant can customize ONLY the primary (brand) color per 2025/2026
             // market research. Secondary/text stays locked to #1A1A1A.
-            primaryColor: tenant?.primary_color || '#06C167',
+            primaryColor: tenant?.primary_color || '#1A1A1A',
             secondaryColor: '#1A1A1A',
           }}
         >

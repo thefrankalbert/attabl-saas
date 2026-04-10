@@ -492,6 +492,10 @@ export default function CartPage() {
             category_name: item.category_name ?? undefined,
             selectedOption: item.selectedOption ?? undefined,
             selectedVariant: item.selectedVariant ?? undefined,
+            // Forward modifiers + per-item notes so ItemDetailSheet selections actually
+            // persist on the order (server re-validates modifier prices anti-fraud).
+            modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : undefined,
+            customerNotes: item.customerNotes || undefined,
           })),
           notes: notes || undefined,
           display_currency: displayCurrency,

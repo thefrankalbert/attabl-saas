@@ -1,17 +1,18 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { ShoppingBag, X, MapPin, Phone, Building2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import type {
-  Venue,
+  Menu,
   Category,
   Ad,
   Tenant,
@@ -26,22 +27,14 @@ import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import TablePicker from '@/components/tenant/TablePicker';
-import type { QRScanResult } from '@/components/tenant/QRScanner';
-
-const QRScanner = dynamic(() => import('@/components/tenant/QRScanner'), {
-  ssr: false,
-  loading: () => (
-    <div className="h-64 animate-pulse" style={{ borderRadius: 12, background: C.surfaceAlt }} />
-  ),
-});
 
 /* =================================================
    DESIGN SYSTEM - all tokens from DESIGN.md
    ================================================= */
 const C = {
-  primary: '#06C167',
-  primaryDark: '#05A557',
-  primaryLight: '#E6F9F0',
+  primary: '#1A1A1A',
+  primaryDark: '#000000',
+  primaryLight: '#F6F6F6',
   background: '#FFFFFF',
   surface: '#FFFFFF',
   surfaceAlt: '#F6F6F6',
@@ -530,15 +523,16 @@ function HScroll({ children }: { children: React.ReactNode }) {
   );
 }
 
-/* -- Venue Card (horizontal scroll) -- */
-function VenueCard({ venue, lang, onClick }: { venue: Venue; lang: string; onClick: () => void }) {
-  const name = tr(lang, venue.name, venue.name_en);
-  const desc = tr(lang, venue.description || '', venue.description_en);
+/* -- Menu Card (horizontal scroll) -- larger than VenueCard, used when tenant has
+   multiple cartes (menus). Click navigates to /sites/[slug]/menu?menu=[slug]. */
+function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: () => void }) {
+  const name = tr(lang, menu.name, menu.name_en);
+  const desc = tr(lang, menu.description || '', menu.description_en);
   return (
     <button
       onClick={onClick}
       style={{
-        width: 200,
+        width: 240,
         flexShrink: 0,
         background: C.surface,
         border: `1px solid ${C.divider}`,
@@ -554,17 +548,17 @@ function VenueCard({ venue, lang, onClick }: { venue: Venue; lang: string; onCli
       <div
         style={{
           width: '100%',
-          height: 120,
+          height: 140,
           position: 'relative',
           background: C.surfaceAlt,
         }}
       >
-        {venue.image_url ? (
+        {menu.image_url ? (
           <Image
-            src={venue.image_url}
+            src={menu.image_url}
             alt={name}
             fill
-            sizes="200px"
+            sizes="240px"
             style={{ objectFit: 'cover' }}
           />
         ) : (
@@ -576,7 +570,7 @@ function VenueCard({ venue, lang, onClick }: { venue: Venue; lang: string; onCli
               alignItems: 'center',
               justifyContent: 'center',
               color: C.textMuted,
-              fontSize: 28,
+              fontSize: 32,
               fontWeight: 700,
             }}
           >
@@ -584,11 +578,11 @@ function VenueCard({ venue, lang, onClick }: { venue: Venue; lang: string; onCli
           </div>
         )}
       </div>
-      <div style={{ padding: 12 }}>
+      <div style={{ padding: '12px 14px 14px' }}>
         <p
           style={{
             fontSize: 16,
-            fontWeight: 600,
+            fontWeight: 700,
             color: C.textPrimary,
             margin: 0,
             overflow: 'hidden',
@@ -606,8 +600,11 @@ function VenueCard({ venue, lang, onClick }: { venue: Venue; lang: string; onCli
               color: C.textSecondary,
               margin: '4px 0 0',
               overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              lineHeight: 1.4,
+              minHeight: 'calc(1.4em * 2)',
             }}
           >
             {desc}
@@ -930,82 +927,53 @@ function FloatingCartBar({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        bottom: 'calc(60px + env(safe-area-inset-bottom, 0px) + 16px)',
-        left: 16,
-        right: 16,
-        zIndex: 40,
-        maxWidth: 430,
-        margin: '0 auto',
-      }}
+      className="fixed left-0 right-0 z-40 flex justify-center px-4"
+      style={{ bottom: 'calc(60px + env(safe-area-inset-bottom, 0px) + 16px)' }}
     >
       <Link
         href={href}
+        className="inline-flex items-center gap-2.5 px-4 no-underline"
         style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          height: 56,
-          padding: '0 16px',
-          borderRadius: 12,
-          background: C.cartBg,
-          textDecoration: 'none',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          backgroundColor: C.cartBg,
+          borderRadius: '999px',
+          height: '48px',
+          color: C.textOnPrimary,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
+          maxWidth: 'calc(100% - 32px)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ position: 'relative' }}>
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={C.textOnPrimary}
-              strokeWidth="2"
-            >
-              <path
-                d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span
-              style={{
-                position: 'absolute',
-                top: -6,
-                right: -8,
-                background: C.primary,
-                color: C.textOnPrimary,
-                fontSize: 11,
-                fontWeight: 700,
-                borderRadius: 50,
-                minWidth: 16,
-                height: 16,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: '0 4px',
-              }}
-            >
-              {totalItems}
-            </span>
-          </div>
-        </div>
+        <ShoppingBag size={20} strokeWidth={2} color={C.textOnPrimary} />
         <span
           style={{
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: 600,
             color: C.textOnPrimary,
+            whiteSpace: 'nowrap',
           }}
         >
           {viewCartLabel}
         </span>
         <span
           style={{
-            fontSize: 15,
+            fontSize: 14,
             fontWeight: 700,
             color: C.textOnPrimary,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {totalItems}
+        </span>
+        <span
+          aria-hidden="true"
+          className="inline-block rounded-full"
+          style={{ width: 5, height: 5, backgroundColor: C.textOnPrimary }}
+        />
+        <span
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: C.textOnPrimary,
+            whiteSpace: 'nowrap',
           }}
         >
           {totalPrice}
@@ -1021,7 +989,7 @@ function FloatingCartBar({
 
 interface ClientMenuPageProps {
   tenant: Tenant;
-  venues: Venue[];
+  menus?: Menu[];
   initialTable?: string;
   categories: Category[];
   ads: Ad[];
@@ -1039,9 +1007,204 @@ interface ClientMenuPageProps {
    MAIN COMPONENT
    ================================================= */
 
+/* -- Tenant Info Sheet (full-page, slide from right, opened from header avatar) -- */
+function TenantInfoSheet({
+  tenant,
+  isOpen,
+  onClose,
+}: {
+  tenant: Tenant;
+  isOpen: boolean;
+  onClose: () => void;
+}) {
+  // Build address line from city/country (omit empty parts)
+  const addressLine = [tenant.address, tenant.city, tenant.country].filter(Boolean).join(', ');
+
+  return (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          key="tenant-info-sheet"
+          className="fixed inset-0 z-[62] flex h-dvh max-h-dvh flex-col bg-white"
+          initial={{ x: '100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '100%' }}
+          transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
+        >
+          {/* Top close button */}
+          <div className="flex-shrink-0 flex justify-end p-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-9 h-9 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: C.surfaceAlt, border: 'none', cursor: 'pointer' }}
+              aria-label="Fermer"
+            >
+              <X size={18} color={C.textPrimary} />
+            </button>
+          </div>
+
+          {/* Hero: large logo + name */}
+          <div className="flex-shrink-0 flex flex-col items-center px-6 pb-4">
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: 24,
+                overflow: 'hidden',
+                backgroundColor: C.surfaceAlt,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              {tenant.logo_url ? (
+                <Image
+                  src={tenant.logo_url}
+                  alt={tenant.name}
+                  width={96}
+                  height={96}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : (
+                <span
+                  style={{
+                    fontSize: 36,
+                    fontWeight: 700,
+                    color: C.textMuted,
+                  }}
+                >
+                  {tenant.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <h2
+              className="mt-4 text-center font-bold"
+              style={{ fontSize: 24, lineHeight: '32px', color: C.textPrimary }}
+            >
+              {tenant.name}
+            </h2>
+            {tenant.establishment_type && (
+              <p
+                className="mt-1 text-center font-medium uppercase"
+                style={{
+                  fontSize: 11,
+                  letterSpacing: '1px',
+                  color: C.textMuted,
+                }}
+              >
+                {tenant.establishment_type}
+              </p>
+            )}
+          </div>
+
+          {/* Body: description + contact rows */}
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            {tenant.description && (
+              <p
+                className="mt-2"
+                style={{ fontSize: 15, lineHeight: '22px', color: C.textSecondary }}
+              >
+                {tenant.description}
+              </p>
+            )}
+
+            {/* Contact rows */}
+            <div className="mt-6 flex flex-col gap-3">
+              {addressLine && (
+                <div className="flex items-start gap-3">
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 999,
+                      backgroundColor: C.surfaceAlt,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <MapPin size={16} color={C.textPrimary} />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      lineHeight: '36px',
+                      color: C.textPrimary,
+                    }}
+                  >
+                    {addressLine}
+                  </span>
+                </div>
+              )}
+              {tenant.phone && (
+                <a href={`tel:${tenant.phone}`} className="flex items-center gap-3 no-underline">
+                  <div
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 999,
+                      backgroundColor: C.surfaceAlt,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Phone size={16} color={C.textPrimary} />
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 14,
+                      color: C.textPrimary,
+                      fontWeight: 600,
+                    }}
+                  >
+                    {tenant.phone}
+                  </span>
+                </a>
+              )}
+              {tenant.establishment_type &&
+                !tenant.description &&
+                !addressLine &&
+                !tenant.phone && (
+                  <div className="flex items-center gap-3 mt-2">
+                    <div
+                      style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: 999,
+                        backgroundColor: C.surfaceAlt,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Building2 size={16} color={C.textPrimary} />
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 14,
+                        color: C.textPrimary,
+                      }}
+                    >
+                      {tenant.establishment_type}
+                    </span>
+                  </div>
+                )}
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 export default function ClientMenuPage({
   tenant,
-  venues,
+  menus = [],
   initialTable,
   categories,
   ads,
@@ -1067,7 +1230,7 @@ export default function ClientMenuPage({
   void coupons;
 
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isTenantInfoOpen, setIsTenantInfoOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
@@ -1118,36 +1281,6 @@ export default function ClientMenuPage({
     });
   };
 
-  const handleQRScan = (result: QRScanResult) => {
-    if (result.tableNumber) {
-      const matchedTable = tables.find(
-        (tb) =>
-          tb.table_number === result.tableNumber ||
-          tb.table_number === result.tableNumber?.toUpperCase() ||
-          tb.display_name === result.tableNumber,
-      );
-      if (matchedTable) {
-        handleTableSelect(matchedTable);
-      } else {
-        setTableNumber(result.tableNumber);
-        localStorage.setItem(`attabl_${tenant.slug}_table`, result.tableNumber);
-        toast({
-          title: t('tableIdentified'),
-          description: t('seatedAtTable', { table: result.tableNumber }),
-        });
-      }
-    } else {
-      toast({
-        title: t('qrScanned'),
-        description: t('noTableDetected'),
-        variant: 'destructive',
-      });
-    }
-    if (result.menuSlug) {
-      router.push(`/sites/${tenant.slug}/menu?menu=${result.menuSlug}`);
-    }
-  };
-
   const locationName = tableNumber ? t('dineInTable', { number: tableNumber }) : tenant.name;
 
   // Merge announcement + announcements array (keep backward compat)
@@ -1196,7 +1329,7 @@ export default function ClientMenuPage({
           logoUrl={tenant.logo_url ?? null}
           tenantName={tenant.name}
           onLocationPress={() => setIsTablePickerOpen(true)}
-          onAvatarPress={() => setIsQRScannerOpen(true)}
+          onAvatarPress={() => setIsTenantInfoOpen(true)}
         />
 
         {/* 2. Search */}
@@ -1208,17 +1341,19 @@ export default function ClientMenuPage({
         {/* 3. Promo banner carousel */}
         <PromoBanner announcements={allAnnouncements} ads={ads} lang={lang} />
 
-        {/* 4. Nos Restaurants (only if > 1 venue) */}
-        {venues.length > 1 && (
+        {/* 4. Nos Cartes (only if > 1 menu - tenants with a single carte rely on the
+            categories grid below as the main entry point). Click navigates to the
+            menu detail page filtered by the chosen carte via ?menu=<slug>. */}
+        {menus.length > 1 && (
           <>
-            <SectionHeader title={t('ourRestaurants')} />
+            <SectionHeader title={t('ourMenus')} />
             <HScroll>
-              {venues.map((venue) => (
-                <VenueCard
-                  key={venue.id}
-                  venue={venue}
+              {menus.map((menu) => (
+                <MenuCard
+                  key={menu.id}
+                  menu={menu}
                   lang={lang}
-                  onClick={() => router.push(`/sites/${tenant.slug}/menu?v=${venue.slug}`)}
+                  onClick={() => router.push(`/sites/${tenant.slug}/menu?menu=${menu.slug}`)}
                 />
               ))}
             </HScroll>
@@ -1343,7 +1478,7 @@ export default function ClientMenuPage({
         totalItems={totalCartItems}
         totalPrice={formatDisplayPrice(grandTotal, tenant.currency)}
         href={`/sites/${tenant.slug}/cart`}
-        viewCartLabel={`${t('viewCart')} - ${totalCartItems}`}
+        viewCartLabel={t('viewCart')}
       />
 
       {/* Modals */}
@@ -1354,12 +1489,10 @@ export default function ClientMenuPage({
         zones={zones}
         tables={tables}
       />
-      <QRScanner
-        isOpen={isQRScannerOpen}
-        onClose={() => setIsQRScannerOpen(false)}
-        onScan={handleQRScan}
-        onManualEntry={() => setIsTablePickerOpen(true)}
-        tables={tables}
+      <TenantInfoSheet
+        tenant={tenant}
+        isOpen={isTenantInfoOpen}
+        onClose={() => setIsTenantInfoOpen(false)}
       />
       <InstallPrompt
         appName={tenant.name}

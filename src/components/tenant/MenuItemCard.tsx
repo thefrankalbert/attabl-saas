@@ -265,16 +265,6 @@ export default function MenuItemCard({
               )}
             </div>
           )}
-          {/* Category label */}
-          {category && (
-            <span
-              className="text-[11px] font-medium uppercase leading-[1.4] tracking-[1px]"
-              style={{ color: '#B0B0B0' }}
-            >
-              {category}
-            </span>
-          )}
-
           {/* Item name - 16px SemiBold #1A1A1A max 2 lines */}
           <h3
             className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5"
@@ -348,8 +338,8 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   setShowVariantDropdown(!showVariantDropdown);
                 }}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-[#E6F9F0]"
-                style={{ color: '#06C167' }}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-[#F6F6F6]"
+                style={{ color: '#1A1A1A' }}
               >
                 {getVariantName(selectedVariant!)}
                 <ChevronDown
@@ -372,10 +362,10 @@ export default function MenuItemCard({
                       className={cn(
                         'w-full px-3 py-2.5 text-left text-sm',
                         selectedVariant?.id === variant.id
-                          ? 'font-bold bg-[#E6F9F0]'
+                          ? 'font-bold bg-[#F6F6F6]'
                           : 'text-[#737373]',
                       )}
-                      style={selectedVariant?.id === variant.id ? { color: '#06C167' } : undefined}
+                      style={selectedVariant?.id === variant.id ? { color: '#1A1A1A' } : undefined}
                     >
                       {getVariantName(variant)} -{' '}
                       {resolveAndFormatPrice(variant.price, variant.prices, currency)}
@@ -426,7 +416,7 @@ export default function MenuItemCard({
           {cartItem ? (
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ backgroundColor: '#06C167' }}
+              style={{ backgroundColor: '#1A1A1A' }}
             >
               {cartItem.quantity}
             </div>
@@ -439,7 +429,7 @@ export default function MenuItemCard({
               disabled={isAdding}
               aria-label={tt('addShort')}
               className="w-7 h-7 rounded-full flex items-center justify-center focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-85 transition-transform"
-              style={{ backgroundColor: '#06C167' }}
+              style={{ backgroundColor: '#1A1A1A' }}
             >
               <Plus className="w-4 h-4 text-white" />
             </button>

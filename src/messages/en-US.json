@@ -1930,6 +1930,7 @@
     "poweredBy": "Powered by ATTABL",
     "appVersion": "Version 1.1.1",
     "ourRestaurants": "Our restaurants",
+    "ourMenus": "Our menus",
     "viewCart": "View cart",
     "bannerPromoLabel": "Deal",
     "dineInTable": "Dine-in - Table {number}"
@@ -2310,7 +2311,7 @@
   },
   "installPrompt": {
     "installApp": "Install {name}",
-    "subtitle": "Quick access & easy ordering",
+    "subtitle": "Order in one tap, right from your home screen",
     "install": "Install",
     "howTo": "How?",
     "close": "Close",

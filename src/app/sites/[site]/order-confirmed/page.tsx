@@ -168,10 +168,10 @@ function OrderConfirmedContent() {
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{
-              backgroundColor: '#E6F9F0',
+              backgroundColor: '#F6F6F6',
             }}
           >
-            <Check className="w-7 h-7" style={{ color: '#06C167' }} strokeWidth={2.5} />
+            <Check className="w-7 h-7" style={{ color: '#1A1A1A' }} strokeWidth={2.5} />
           </div>
           <p className="mt-5 text-lg font-bold" style={{ color: '#1A1A1A' }}>
             {t('orderSent')}
@@ -222,7 +222,7 @@ function OrderConfirmedContent() {
         <Link
           href={menuPath}
           className="text-white px-6 py-3 rounded-xl font-medium"
-          style={{ backgroundColor: '#06C167' }}
+          style={{ backgroundColor: '#1A1A1A' }}
         >
           {t('backToMenu')}
         </Link>
@@ -262,7 +262,7 @@ function OrderConfirmedContent() {
         {showReadyBanner && (
           <div
             className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 animate-pulse-once"
-            style={{ backgroundColor: '#06C167' }}
+            style={{ backgroundColor: '#1A1A1A' }}
           >
             <BellRing className="w-6 h-6 shrink-0" />
             <div className="flex-1 min-w-0">
@@ -289,7 +289,7 @@ function OrderConfirmedContent() {
             <button
               onClick={requestPermission}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors"
-              style={{ backgroundColor: '#E6F9F0', color: '#06C167' }}
+              style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
             >
               <Bell className="w-4 h-4 shrink-0" />
               <span>{t('enableNotifications')}</span>
@@ -367,7 +367,7 @@ function OrderConfirmedContent() {
         <Link href={menuPath} className="block">
           <button
             className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{ backgroundColor: '#06C167' }}
+            style={{ backgroundColor: '#1A1A1A' }}
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
@@ -393,13 +393,13 @@ function OrderStatusMessage({ status }: { status: string }) {
     },
     preparing: {
       message: t('orderStatusInKitchen'),
-      bg: '#E6F9F0',
-      color: '#06C167',
+      bg: '#F6F6F6',
+      color: '#1A1A1A',
     },
     ready: {
       message: t('orderStatusReady'),
-      bg: '#E6F9F0',
-      color: '#06C167',
+      bg: '#F6F6F6',
+      color: '#1A1A1A',
     },
     delivered: {
       message: t('orderStatusServed'),

@@ -83,7 +83,7 @@ export default function TablePicker({
                     )}
                     style={
                       selectedZone?.id === zone.id
-                        ? { backgroundColor: '#06C167' }
+                        ? { backgroundColor: '#1A1A1A' }
                         : { color: '#737373' }
                     }
                   >
@@ -121,7 +121,7 @@ export default function TablePicker({
                     )}
                     style={
                       selectedTable?.id === table.id
-                        ? { backgroundColor: '#06C167' }
+                        ? { backgroundColor: '#1A1A1A' }
                         : { color: '#737373' }
                     }
                   >
@@ -147,7 +147,7 @@ export default function TablePicker({
               className="w-full text-base text-white rounded-xl"
               style={{
                 height: 52,
-                backgroundColor: selectedTable ? '#06C167' : undefined,
+                backgroundColor: selectedTable ? '#1A1A1A' : undefined,
                 borderRadius: 12,
               }}
               onClick={handleConfirm}

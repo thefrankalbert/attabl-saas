@@ -53,7 +53,7 @@ function useShouldShowSplash(isStandalone: boolean): boolean {
 export default function FullscreenSplash({
   tenantName,
   logoUrl,
-  primaryColor = '#06C167',
+  primaryColor = '#1A1A1A',
 }: FullscreenSplashProps) {
   const t = useTranslations('tenant');
   const isStandalone = useIsStandalone();

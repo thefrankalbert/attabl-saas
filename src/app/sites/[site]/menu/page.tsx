@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { getMessages } from 'next-intl/server';
+import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuDetailPage from '@/components/tenant/ClientMenuDetailPage';
 import { getCachedTenant } from '@/lib/cache';
 import type { Menu, Category, MenuItem, Venue, Zone, Table } from '@/types/admin.types';
@@ -53,6 +55,7 @@ export default async function MenuDetailPage({
   const initialMenuSlug = resolvedSearchParams.menu || undefined;
   const initialVenueSlug = resolvedSearchParams.v || undefined;
   const initialSection = resolvedSearchParams.section || undefined;
+  const messages = await getMessages();
 
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
@@ -139,18 +142,20 @@ export default async function MenuDetailPage({
   }));
 
   return (
-    <ClientMenuDetailPage
-      tenant={tenant}
-      venues={venues}
-      menus={menus}
-      initialMenuSlug={initialMenuSlug}
-      initialTable={initialTable}
-      initialVenueSlug={initialVenueSlug}
-      initialSection={initialSection}
-      categories={categories}
-      itemsByCategory={itemsByCategory}
-      zones={zones}
-      tables={tables}
-    />
+    <NextIntlClientProvider messages={messages}>
+      <ClientMenuDetailPage
+        tenant={tenant}
+        venues={venues}
+        menus={menus}
+        initialMenuSlug={initialMenuSlug}
+        initialTable={initialTable}
+        initialVenueSlug={initialVenueSlug}
+        initialSection={initialSection}
+        categories={categories}
+        itemsByCategory={itemsByCategory}
+        zones={zones}
+        tables={tables}
+      />
+    </NextIntlClientProvider>
   );
 }

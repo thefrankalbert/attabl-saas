@@ -146,7 +146,7 @@ export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: C
                 lineHeight: 1.4,
                 border: 'none',
                 cursor: 'pointer',
-                backgroundColor: isActive ? '#06C167' : '#F6F6F6',
+                backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
                 color: isActive ? '#FFFFFF' : '#737373',
                 transition: 'background-color 0.15s ease, color 0.15s ease',
               }}

@@ -64,7 +64,7 @@ export default function OrderTracker({ status, compact = false }: OrderTrackerPr
 
           // Current step keeps accent green; past steps go neutral gray;
           // future steps stay light.
-          const circleBg = isCurrent ? '#06C167' : isPast ? '#B0B0B0' : '#F6F6F6';
+          const circleBg = isCurrent ? '#1A1A1A' : isPast ? '#B0B0B0' : '#F6F6F6';
           const iconColor = isCurrent || isPast ? '#FFFFFF' : '#B0B0B0';
           const labelColor = isCurrent ? '#1A1A1A' : isPast ? '#737373' : '#B0B0B0';
 
@@ -105,7 +105,7 @@ export default function OrderTracker({ status, compact = false }: OrderTrackerPr
                   <motion.span
                     aria-hidden
                     className="absolute inset-0 rounded-full"
-                    style={{ backgroundColor: '#06C167', opacity: 0.35 }}
+                    style={{ backgroundColor: '#1A1A1A', opacity: 0.35 }}
                     animate={{ scale: [1, 1.35, 1], opacity: [0.35, 0, 0.35] }}
                     transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
                   />

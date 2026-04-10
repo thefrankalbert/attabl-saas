@@ -209,10 +209,9 @@ export default function ItemDetailSheet({
             exit={{ x: '100%' }}
             transition={{ duration: 0.28, ease: [0.25, 0.1, 0.25, 1] }}
           >
-            {/* Content scrollable area (image + text) */}
-            <div className="flex-1 overflow-y-auto overscroll-contain">
-              {/* Hero image - large, takes prominent vertical space */}
-              <div className="relative h-[260px] w-full" style={{ backgroundColor: '#F6F6F6' }}>
+            {/* Hero image - flex-shrink-0 so it doesn't squeeze, sized for no-scroll fit */}
+            <div className="flex-shrink-0">
+              <div className="relative h-[200px] w-full" style={{ backgroundColor: '#F6F6F6' }}>
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
@@ -238,9 +237,11 @@ export default function ItemDetailSheet({
                   <ChevronLeft className="h-5 w-5" style={{ color: '#1A1A1A' }} />
                 </button>
               </div>
+            </div>
 
-              {/* Content */}
-              <div className="px-6 pb-6 pt-5">
+            {/* Scrollable content (flex-1) - scroll inside this area only, button stays put */}
+            <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+              <div className="px-6 pb-3 pt-4">
                 {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #06C167 */}
                 {category && (
                   <p
@@ -249,7 +250,7 @@ export default function ItemDetailSheet({
                       fontSize: 11,
                       lineHeight: '15.4px',
                       letterSpacing: '1px',
-                      color: '#06C167',
+                      color: '#1A1A1A',
                     }}
                   >
                     {category}
@@ -298,7 +299,7 @@ export default function ItemDetailSheet({
                             fontSize: 11,
                             borderRadius: 8,
                             backgroundColor: '#F6F6F6',
-                            color: '#06C167',
+                            color: '#1A1A1A',
                           }}
                         >
                           <Leaf className="h-3 w-3" />
@@ -365,7 +366,7 @@ export default function ItemDetailSheet({
                                 onClick={() => setSelectedVariant(variant)}
                                 className="flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all"
                                 style={{
-                                  borderColor: isActive ? '#06C167' : '#EEEEEE',
+                                  borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
                                 }}
                               >
                                 <div className="flex items-center gap-3">
@@ -373,13 +374,13 @@ export default function ItemDetailSheet({
                                   <div
                                     className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors"
                                     style={{
-                                      borderColor: isActive ? '#06C167' : '#EEEEEE',
+                                      borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
                                     }}
                                   >
                                     {isActive && (
                                       <div
                                         className="h-2.5 w-2.5 rounded-full"
-                                        style={{ backgroundColor: '#06C167' }}
+                                        style={{ backgroundColor: '#1A1A1A' }}
                                       />
                                     )}
                                   </div>
@@ -431,7 +432,7 @@ export default function ItemDetailSheet({
                                 onClick={() => toggleModifier(modifier)}
                                 className="flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all"
                                 style={{
-                                  borderColor: isActive ? '#06C167' : '#EEEEEE',
+                                  borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
                                 }}
                               >
                                 <div className="flex items-center gap-3">
@@ -439,8 +440,8 @@ export default function ItemDetailSheet({
                                   <div
                                     className="flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors"
                                     style={{
-                                      borderColor: isActive ? '#06C167' : '#EEEEEE',
-                                      backgroundColor: isActive ? '#06C167' : 'transparent',
+                                      borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
+                                      backgroundColor: isActive ? '#1A1A1A' : 'transparent',
                                     }}
                                   >
                                     {isActive && <Check className="h-3 w-3 text-white" />}
@@ -480,7 +481,47 @@ export default function ItemDetailSheet({
                   </>
                 )}
 
-                {/* --- Special instructions (single-row, expands on focus via resize-none stays 1 row) --- */}
+                {/* --- Quantity selector - compact pill, LEFT-aligned, above instructions --- */}
+                <div className="mb-3 flex justify-start">
+                  <div
+                    className="inline-flex items-center"
+                    style={{
+                      height: 40,
+                      borderRadius: 999,
+                      border: '1px solid #EEEEEE',
+                      backgroundColor: '#F6F6F6',
+                      padding: '0 4px',
+                    }}
+                  >
+                    <button
+                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                      className="flex items-center justify-center transition-colors active:opacity-60 disabled:opacity-40"
+                      style={{ width: 36, height: 36, background: 'transparent', border: 'none' }}
+                      disabled={quantity <= 1}
+                      aria-label="Diminuer la quantite"
+                    >
+                      <Minus className="h-4 w-4" style={{ color: '#1A1A1A' }} />
+                    </button>
+
+                    <span
+                      className="font-bold text-center"
+                      style={{ fontSize: 16, color: '#1A1A1A', minWidth: 32 }}
+                    >
+                      {quantity}
+                    </span>
+
+                    <button
+                      onClick={() => setQuantity((q) => q + 1)}
+                      className="flex items-center justify-center transition-colors active:opacity-60"
+                      style={{ width: 36, height: 36, background: 'transparent', border: 'none' }}
+                      aria-label="Augmenter la quantite"
+                    >
+                      <Plus className="h-4 w-4" style={{ color: '#1A1A1A' }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* --- Special instructions (pushed down by quantity selector) --- */}
                 <div>
                   <h3 className="mb-1.5 font-semibold" style={{ fontSize: 13, color: '#1A1A1A' }}>
                     {t('specialInstructions')}
@@ -502,53 +543,13 @@ export default function ItemDetailSheet({
               </div>
             </div>
 
-            {/* --- Sticky footer ----------------------------------------- */}
+            {/* --- Add to cart button - independent zone (flex-shrink-0), bouton avec respiration autour, meme fond blanc continu --- */}
             <div
-              className="bg-white px-6 py-3"
+              className="flex-shrink-0 bg-white px-6 pt-2"
               style={{
-                borderTop: '1px solid #EEEEEE',
-                paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
               }}
             >
-              {/* Quantity row - single unified pill, full-width of this area, no green */}
-              <div
-                className="mb-3 flex items-center justify-between w-full"
-                style={{
-                  height: 48,
-                  borderRadius: 999,
-                  border: '1px solid #EEEEEE',
-                  backgroundColor: '#F6F6F6',
-                  padding: '0 8px',
-                }}
-              >
-                <button
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex items-center justify-center transition-colors active:opacity-60 disabled:opacity-40"
-                  style={{ width: 44, height: 44, background: 'transparent', border: 'none' }}
-                  disabled={quantity <= 1}
-                  aria-label="Diminuer la quantite"
-                >
-                  <Minus className="h-5 w-5" style={{ color: '#1A1A1A' }} />
-                </button>
-
-                <span
-                  className="font-bold flex-1 text-center"
-                  style={{ fontSize: 18, color: '#1A1A1A' }}
-                >
-                  {quantity}
-                </span>
-
-                <button
-                  onClick={() => setQuantity((q) => q + 1)}
-                  className="flex items-center justify-center transition-colors active:opacity-60"
-                  style={{ width: 44, height: 44, background: 'transparent', border: 'none' }}
-                  aria-label="Augmenter la quantite"
-                >
-                  <Plus className="h-5 w-5" style={{ color: '#1A1A1A' }} />
-                </button>
-              </div>
-
-              {/* Add to cart button - black (matches other pages), not green */}
               <button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
@@ -557,7 +558,7 @@ export default function ItemDetailSheet({
                   height: 52,
                   borderRadius: 12,
                   fontSize: 15,
-                  backgroundColor: showSuccess ? '#1A1A1A' : '#1A1A1A',
+                  backgroundColor: '#1A1A1A',
                 }}
               >
                 {showSuccess ? (
@@ -571,7 +572,11 @@ export default function ItemDetailSheet({
                 ) : (
                   <>
                     <span>{t('addToCart')}</span>
-                    <span>-</span>
+                    <span
+                      aria-hidden="true"
+                      className="inline-block rounded-full bg-white"
+                      style={{ width: 5, height: 5 }}
+                    />
                     <span style={{ color: '#FFFFFF' }}>
                       {formatDisplayPrice(currentPrice, currency)}
                     </span>
