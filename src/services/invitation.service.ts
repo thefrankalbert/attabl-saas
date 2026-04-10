@@ -17,7 +17,9 @@ interface AcceptInvitationInput {
   password?: string;
 }
 
-const TOKEN_EXPIRY_HOURS = 72;
+// Reduced from 72h to 24h per security audit — shorter window limits exposure
+// if the token leaks via browser history, CDN logs, or Referer headers.
+const TOKEN_EXPIRY_HOURS = 24;
 
 function generateToken(): string {
   return randomBytes(32).toString('hex');
