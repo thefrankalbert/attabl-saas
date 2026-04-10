@@ -318,18 +318,6 @@ export default function ClientOrders({
 
   const activeOrders = useMemo(() => orders.filter((o) => ACTIVE_STATUSES.has(o.status)), [orders]);
 
-  const historyOrders = useMemo(
-    () => orders.filter((o) => TERMINAL_STATUSES.has(o.status)),
-    [orders],
-  );
-
-  const activeOrder = useMemo(
-    () => activeOrders.find((o) => o.status !== 'ready') || null,
-    [activeOrders],
-  );
-
-  const [showHistory, setShowHistory] = useState(false);
-
   // --- Loading state ----------------------------------------
 
   if (loading) {
@@ -338,7 +326,7 @@ export default function ClientOrders({
 
   // --- Empty state (no active orders) -----------------------
 
-  if (activeOrders.length === 0 && historyOrders.length === 0) {
+  if (activeOrders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
         <div
@@ -404,404 +392,224 @@ export default function ClientOrders({
         </div>
       )}
 
-      {/* Active order banner: prominent card with mini tracker */}
-      {activeOrder && activeOrder.status !== 'ready' && (
-        <ActiveOrderBanner order={activeOrder} onClick={() => setExpandedOrderId(activeOrder.id)} />
-      )}
+      {/* ALL active orders as expandable cards — no separate banner,
+          every order shows its tracker + can be expanded to see items */}
+      {activeOrders.map((order) => {
+        const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
+        const isEditing = editingOrderId === order.id;
+        const isExpanded = expandedOrderId === order.id;
+        const isTerminal = TERMINAL_STATUSES.has(order.status);
 
-      {/* Show only ACTIVE orders that aren't the banner order */}
-      {activeOrders.length === 0 && historyOrders.length > 0 && (
-        <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+        return (
           <div
-            className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
-            style={{ backgroundColor: '#F6F6F6' }}
+            key={order.id}
+            className="rounded-xl overflow-hidden"
+            style={{
+              backgroundColor: '#FFFFFF',
+              border: '1px solid #EEEEEE',
+            }}
           >
-            <ShoppingBag className="w-9 h-9" style={{ color: '#B0B0B0' }} />
-          </div>
-          <p style={{ fontSize: '15px', fontWeight: 600, color: '#1A1A1A' }}>{t('noOrders')}</p>
-          <p className="mt-1" style={{ fontSize: '13px', color: '#737373' }}>
-            {t('noOrdersBrowse')}
-          </p>
-        </div>
-      )}
-
-      {activeOrders
-        .filter((order) => order.id !== activeOrder?.id)
-        .map((order) => {
-          const canEdit =
-            EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
-          const isEditing = editingOrderId === order.id;
-          const isExpanded = expandedOrderId === order.id;
-          const isTerminal = TERMINAL_STATUSES.has(order.status);
-
-          return (
-            <div
-              key={order.id}
-              className="rounded-xl overflow-hidden"
-              style={{
-                backgroundColor: '#FFFFFF',
-                border: '1px solid #EEEEEE',
-              }}
+            {/* Collapsed header */}
+            <button
+              type="button"
+              onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+              className="w-full text-left p-4"
+              aria-expanded={isExpanded}
             >
-              {/* Collapsed header */}
-              <button
-                type="button"
-                onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                className="w-full text-left p-4"
-                aria-expanded={isExpanded}
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="whitespace-nowrap"
-                        style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}
-                      >
-                        {shortOrderNumber(order)}
-                      </span>
-                      <BadgeStatus status={order.status} />
-                    </div>
-
-                    {/* Meta row: table + ETA */}
-                    <div
-                      className="mt-1.5 flex items-center gap-3 flex-wrap"
-                      style={{ fontSize: '13px', color: '#737373' }}
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span
+                      className="whitespace-nowrap"
+                      style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}
                     >
-                      {order.table_number && order.service_type === 'dine-in' && (
-                        <span className="inline-flex items-center gap-1">
-                          <Users className="w-3.5 h-3.5" />
-                          {t('tableLabel', { num: order.table_number })}
-                        </span>
-                      )}
-                      {isTerminal && (
-                        <span>
-                          {format(new Date(order.created_at), 'dd MMM, HH:mm', {
-                            locale: dateLocale,
-                          })}
-                        </span>
-                      )}
-                    </div>
+                      {shortOrderNumber(order)}
+                    </span>
+                    <BadgeStatus status={order.status} />
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                      {formatDisplayPrice(order.total, currency)}
-                    </span>
-                    <ChevronDown
-                      className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')}
-                      style={{ color: '#B0B0B0' }}
-                    />
+                  {/* Meta row: table + ETA */}
+                  <div
+                    className="mt-1.5 flex items-center gap-3 flex-wrap"
+                    style={{ fontSize: '13px', color: '#737373' }}
+                  >
+                    {order.table_number && order.service_type === 'dine-in' && (
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {t('tableLabel', { num: order.table_number })}
+                      </span>
+                    )}
+                    {isTerminal && (
+                      <span>
+                        {format(new Date(order.created_at), 'dd MMM, HH:mm', {
+                          locale: dateLocale,
+                        })}
+                      </span>
+                    )}
                   </div>
                 </div>
 
-                {/* Mini tracker in collapsed view for active orders only */}
-                {!isExpanded && ACTIVE_STATUSES.has(order.status) && (
-                  <div className="mt-4">
-                    <OrderTracker status={order.status} createdAt={order.created_at} compact />
-                  </div>
-                )}
-              </button>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                    {formatDisplayPrice(order.total, currency)}
+                  </span>
+                  <ChevronDown
+                    className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')}
+                    style={{ color: '#B0B0B0' }}
+                  />
+                </div>
+              </div>
 
-              {/* Expanded details */}
-              <AnimatePresence initial={false}>
-                {isExpanded && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div style={{ borderTop: '1px solid #EEEEEE' }}>
-                      {/* Items with thumbnails */}
-                      <div>
-                        {(order.items || []).map((item, idx) => (
-                          <div
-                            key={`${item.menu_item_id || item.name}-${idx}`}
-                            className="px-4 py-3 flex items-center gap-3"
-                            style={{
-                              borderBottom:
-                                idx < order.items.length - 1 ? '1px solid #EEEEEE' : 'none',
-                            }}
-                          >
-                            {/* Thumbnail placeholder 48x48 */}
-                            <div
-                              className="shrink-0 rounded-xl flex items-center justify-center"
-                              style={{
-                                width: 48,
-                                height: 48,
-                                backgroundColor: '#F6F6F6',
-                                border: '1px solid #EEEEEE',
-                              }}
-                              aria-hidden
-                            >
-                              <ShoppingBag className="w-5 h-5" style={{ color: '#B0B0B0' }} />
-                            </div>
+              {/* Mini tracker in collapsed view for active orders only */}
+              {!isExpanded && ACTIVE_STATUSES.has(order.status) && (
+                <div className="mt-4">
+                  <OrderTracker status={order.status} createdAt={order.created_at} compact />
+                </div>
+              )}
+            </button>
 
-                            <div className="flex-1 min-w-0">
-                              <p
-                                className="truncate"
-                                style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}
-                              >
-                                {item.name}
-                              </p>
-                              <p style={{ fontSize: '12px', color: '#737373' }}>
-                                {item.quantity} x {formatDisplayPrice(item.price, currency)}
-                              </p>
-                            </div>
-
-                            <span
-                              className="whitespace-nowrap"
-                              style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}
-                            >
-                              {formatDisplayPrice(item.price * item.quantity, currency)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Total */}
-                      <div
-                        className="px-4 py-3 flex items-center justify-between"
-                        style={{ borderTop: '1px solid #EEEEEE' }}
-                      >
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                          {t('total')}
-                        </span>
-                        <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                          {formatDisplayPrice(order.total, currency)}
-                        </span>
-                      </div>
-
-                      {/* Date */}
-                      <div className="px-4 pb-3" style={{ fontSize: '11px', color: '#B0B0B0' }}>
-                        {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
-                          locale: dateLocale,
-                        })}
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="px-4 pb-4 space-y-2">
-                        {canEdit && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditOrder(order);
-                            }}
-                            disabled={isEditing}
-                            className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                            style={{
-                              backgroundColor: '#1A1A1A',
-                              fontSize: '15px',
-                              fontWeight: 600,
-                            }}
-                          >
-                            {isEditing ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <>
-                                <Pencil className="w-4 h-4" />
-                                {t('editOrder')}
-                              </>
-                            )}
-                          </button>
-                        )}
-
-                        {/* Reorder button for terminal orders */}
-                        {isTerminal && order.items.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleReorder(order);
-                            }}
-                            className="w-full h-12 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                            style={{
-                              backgroundColor: '#FFFFFF',
-                              border: '1px solid #EEEEEE',
-                              color: '#1A1A1A',
-                              fontSize: '15px',
-                              fontWeight: 600,
-                            }}
-                          >
-                            <RotateCcw className="w-4 h-4" />
-                            {t('reorder')}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-
-      {/* History section (collapsed by default) */}
-      {historyOrders.length > 0 && (
-        <div className="pt-2">
-          <button
-            type="button"
-            onClick={() => setShowHistory(!showHistory)}
-            className="w-full flex items-center justify-between py-3 px-1"
-            style={{ fontSize: '14px', fontWeight: 600, color: '#737373' }}
-          >
-            <span className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              {t('previousOrders')} ({historyOrders.length})
-            </span>
-            <ChevronDown
-              className={cn('w-4 h-4 transition-transform', showHistory && 'rotate-180')}
-            />
-          </button>
-
-          {showHistory &&
-            historyOrders.map((order) => {
-              const isExpanded = expandedOrderId === order.id;
-              return (
-                <div
-                  key={order.id}
-                  className="rounded-xl overflow-hidden mb-2"
-                  style={{
-                    backgroundColor: '#FFFFFF',
-                    border: '1px solid #EEEEEE',
-                  }}
+            {/* Expanded details */}
+            <AnimatePresence initial={false}>
+              {isExpanded && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="overflow-hidden"
                 >
-                  <button
-                    type="button"
-                    onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-                    className="w-full text-left p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}>
-                          {shortOrderNumber(order)}
-                        </span>
-                        <span style={{ fontSize: '12px', color: '#737373' }}>
-                          {format(new Date(order.created_at), 'dd MMM, HH:mm', {
-                            locale: dateLocale,
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}>
-                          {formatDisplayPrice(order.total, currency)}
-                        </span>
-                        <ChevronDown
-                          className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')}
-                          style={{ color: '#B0B0B0' }}
-                        />
-                      </div>
-                    </div>
-                  </button>
-
-                  {isExpanded && (
-                    <div style={{ borderTop: '1px solid #EEEEEE' }}>
+                  <div style={{ borderTop: '1px solid #EEEEEE' }}>
+                    {/* Items with thumbnails */}
+                    <div>
                       {(order.items || []).map((item, idx) => (
                         <div
                           key={`${item.menu_item_id || item.name}-${idx}`}
-                          className="px-4 py-2.5 flex items-center justify-between"
+                          className="px-4 py-3 flex items-center gap-3"
                           style={{
                             borderBottom:
-                              idx < order.items.length - 1 ? '1px solid #F6F6F6' : 'none',
+                              idx < order.items.length - 1 ? '1px solid #EEEEEE' : 'none',
                           }}
                         >
-                          <span style={{ fontSize: '13px', color: '#1A1A1A' }}>
-                            {item.quantity}x {item.name}
-                          </span>
-                          <span style={{ fontSize: '13px', fontWeight: 600, color: '#1A1A1A' }}>
+                          {/* Thumbnail placeholder 48x48 */}
+                          <div
+                            className="shrink-0 rounded-xl flex items-center justify-center"
+                            style={{
+                              width: 48,
+                              height: 48,
+                              backgroundColor: '#F6F6F6',
+                              border: '1px solid #EEEEEE',
+                            }}
+                            aria-hidden
+                          >
+                            <ShoppingBag className="w-5 h-5" style={{ color: '#B0B0B0' }} />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p
+                              className="truncate"
+                              style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}
+                            >
+                              {item.name}
+                            </p>
+                            <p style={{ fontSize: '12px', color: '#737373' }}>
+                              {item.quantity} x {formatDisplayPrice(item.price, currency)}
+                            </p>
+                          </div>
+
+                          <span
+                            className="whitespace-nowrap"
+                            style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}
+                          >
                             {formatDisplayPrice(item.price * item.quantity, currency)}
                           </span>
                         </div>
                       ))}
-                      <div
-                        className="px-4 py-3 flex items-center justify-between"
-                        style={{ borderTop: '1px solid #EEEEEE' }}
-                      >
-                        <span style={{ fontSize: '14px', fontWeight: 700 }}>{t('total')}</span>
-                        <span style={{ fontSize: '14px', fontWeight: 700 }}>
-                          {formatDisplayPrice(order.total, currency)}
-                        </span>
-                      </div>
-                      <div className="px-4 pb-3">
+                    </div>
+
+                    {/* Total */}
+                    <div
+                      className="px-4 py-3 flex items-center justify-between"
+                      style={{ borderTop: '1px solid #EEEEEE' }}
+                    >
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                        {t('total')}
+                      </span>
+                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                        {formatDisplayPrice(order.total, currency)}
+                      </span>
+                    </div>
+
+                    {/* Date */}
+                    <div className="px-4 pb-3" style={{ fontSize: '11px', color: '#B0B0B0' }}>
+                      {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
+                        locale: dateLocale,
+                      })}
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="px-4 pb-4 space-y-2">
+                      {canEdit && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditOrder(order);
+                          }}
+                          disabled={isEditing}
+                          className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
+                          style={{
+                            backgroundColor: '#1A1A1A',
+                            fontSize: '15px',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {isEditing ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <Pencil className="w-4 h-4" />
+                              {t('editOrder')}
+                            </>
+                          )}
+                        </button>
+                      )}
+
+                      {/* Reorder button for terminal orders */}
+                      {isTerminal && order.items.length > 0 && (
                         <button
                           type="button"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleReorder(order);
                           }}
-                          className="w-full h-10 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+                          className="w-full h-12 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
                           style={{
+                            backgroundColor: '#FFFFFF',
                             border: '1px solid #EEEEEE',
                             color: '#1A1A1A',
-                            fontSize: '13px',
+                            fontSize: '15px',
                             fontWeight: 600,
                           }}
                         >
-                          <RotateCcw className="w-3.5 h-3.5" />
+                          <RotateCcw className="w-4 h-4" />
                           {t('reorder')}
                         </button>
-                      </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              );
-            })}
-        </div>
-      )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        );
+      })}
+
+      {/* Terminal orders accessible from Account > Order History only */}
     </div>
   );
 }
 
 // --- Sub-components ------------------------------------------
-
-function ActiveOrderBanner({ order, onClick }: { order: OrderRecord; onClick: () => void }) {
-  const t = useTranslations('tenant');
-  const minutesRemaining = getMinutesRemaining(order.created_at, order.status);
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="w-full text-left rounded-xl overflow-hidden transition-transform active:scale-[0.99]"
-      style={{
-        backgroundColor: '#FFFFFF',
-        border: '1px solid #1A1A1A',
-      }}
-    >
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3 mb-3">
-          <div className="flex-1 min-w-0">
-            <p style={{ fontSize: '16px', fontWeight: 700, color: '#1A1A1A' }}>
-              {t('activeOrderBannerTitle')}
-            </p>
-            <p className="mt-0.5" style={{ fontSize: '13px', color: '#737373' }}>
-              {shortOrderNumber(order)}
-            </p>
-          </div>
-          <div
-            className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg"
-            style={{
-              backgroundColor: order.status === 'ready' ? '#F6F6F6' : '#F6F6F6',
-              color: order.status === 'ready' ? '#1A1A1A' : '#737373',
-            }}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span style={{ fontSize: '12px', fontWeight: 600 }}>
-              {order.status === 'ready'
-                ? t('readyNow')
-                : t('readyInMin', { min: minutesRemaining })}
-            </span>
-          </div>
-        </div>
-
-        {/* Full tracker inside banner */}
-        <OrderTracker status={order.status} createdAt={order.created_at} />
-      </div>
-    </button>
-  );
-}
 
 function OrdersSkeleton() {
   return (
