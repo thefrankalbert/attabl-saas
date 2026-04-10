@@ -75,6 +75,7 @@ export default function SearchOverlay({
           >
             <button
               onClick={onClose}
+              aria-label={t('ariaGoBack')}
               className="p-2 rounded-full hover:bg-[#F6F6F6] transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
@@ -93,7 +94,7 @@ export default function SearchOverlay({
                 className="flex-1 bg-transparent text-sm outline-none"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="p-0.5">
+                <button onClick={() => setQuery('')} aria-label="Effacer" className="p-0.5">
                   <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
                 </button>
               )}

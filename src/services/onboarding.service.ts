@@ -423,6 +423,11 @@ export function createOnboardingService(supabase: SupabaseClient) {
         throw new ServiceError('Tenant non trouvé', 'NOT_FOUND');
       }
 
+      // Guard empty array (theoretically impossible since admin_users requires
+      // a tenant, but defensive coding per audit recommendation).
+      if (Array.isArray(adminUser.tenants) && adminUser.tenants.length === 0) {
+        throw new ServiceError('Tenant non trouvé', 'NOT_FOUND');
+      }
       const tenant = Array.isArray(adminUser.tenants) ? adminUser.tenants[0] : adminUser.tenants;
 
       // Get onboarding progress INCLUDING the draft
