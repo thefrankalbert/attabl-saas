@@ -216,17 +216,19 @@ export default function ClientSettings({
         paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Back button - detached, no background bar */}
-      <div className="max-w-lg mx-auto px-3 py-2">
-        <button
-          type="button"
-          onClick={() => router.push(`/sites/${tenantSlug}`)}
-          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-          style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
-          aria-label="Retour"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
+      {/* Back button - fixed at top, same bg as page, content scrolls beneath */}
+      <div className="sticky top-0 z-40 bg-white">
+        <div className="max-w-lg mx-auto px-3 py-2">
+          <button
+            type="button"
+            onClick={() => router.push(`/sites/${tenantSlug}`)}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
+            aria-label="Retour"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+        </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 space-y-5">
