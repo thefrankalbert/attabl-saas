@@ -1341,8 +1341,24 @@ export default function ClientMenuPage({
         {/* 3. Promo banner carousel */}
         <PromoBanner announcements={allAnnouncements} ads={ads} lang={lang} />
 
-        {/* 4. Nos Cartes (only if > 1 menu - tenants with a single carte rely on the
-            categories grid below as the main entry point). Click navigates to the
+        {/* 4. Categories visual grid - primary entry point, shown first */}
+        {categories.length > 0 && (
+          <>
+            <SectionHeader title={t('browseCategories')} />
+            <CategoryGrid
+              categories={categories}
+              lang={lang}
+              onSelect={(cat) =>
+                router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
+              }
+              onSeeAll={() => router.push(`/sites/${tenant.slug}/menu`)}
+              seeAllLabel={t('seeAll')}
+            />
+          </>
+        )}
+
+        {/* 5. Nos Cartes (only if > 1 menu - tenants with a single carte rely on the
+            categories grid above as the main entry point). Click navigates to the
             menu detail page filtered by the chosen carte via ?menu=<slug>. */}
         {menus.length > 1 && (
           <>
@@ -1357,22 +1373,6 @@ export default function ClientMenuPage({
                 />
               ))}
             </HScroll>
-          </>
-        )}
-
-        {/* 5. Categories visual grid */}
-        {categories.length > 0 && (
-          <>
-            <SectionHeader title={t('browseCategories')} />
-            <CategoryGrid
-              categories={categories}
-              lang={lang}
-              onSelect={(cat) =>
-                router.push(`/sites/${tenant.slug}/menu?section=${encodeURIComponent(cat.name)}`)
-              }
-              onSeeAll={() => router.push(`/sites/${tenant.slug}/menu`)}
-              seeAllLabel={t('seeAll')}
-            />
           </>
         )}
 

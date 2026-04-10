@@ -138,6 +138,26 @@ export default function InstallPrompt({
     }
   }, [deferredPrompt, handleDismiss]);
 
+  // iOS Safari does NOT allow programmatic install. The closest we can do is
+  // open the system Share sheet (where "Add to Home Screen" lives) directly via
+  // navigator.share(). The user still has to tap that one entry, but they don't
+  // have to find the Share button themselves first.
+  const handleIOSInstall = useCallback(async () => {
+    if (typeof navigator !== 'undefined' && 'share' in navigator) {
+      try {
+        await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({
+          title: appName,
+          text: `Installer ${appName} sur votre ecran d'accueil`,
+          url: window.location.href,
+        });
+        return;
+      } catch {
+        // User cancelled or share failed - fall back to inline instructions
+      }
+    }
+    setIsExpanded(true);
+  }, [appName]);
+
   if (!show || isStandalone) return null;
 
   return (
@@ -175,23 +195,13 @@ export default function InstallPrompt({
           </p>
         </div>
 
-        {isIOS ? (
-          <button
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
-            style={{ color: '#1A1A1A' }}
-          >
-            <Download size={14} /> {t('install')}
-          </button>
-        ) : (
-          <button
-            onClick={handleInstall}
-            className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
-            style={{ color: '#1A1A1A' }}
-          >
-            <Download size={14} /> {t('install')}
-          </button>
-        )}
+        <button
+          onClick={isIOS ? handleIOSInstall : handleInstall}
+          className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
+          style={{ color: '#1A1A1A' }}
+        >
+          <Download size={14} /> {t('install')}
+        </button>
 
         <button onClick={handleDismiss} className="p-1" style={{ color: '#737373' }}>
           <X size={16} />
