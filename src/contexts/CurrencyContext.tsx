@@ -69,7 +69,11 @@ const DEFAULT_RATES_TO_XAF: Record<string, number> = {
 
 function readStored(fallback: string): DisplayCurrency {
   if (typeof window === 'undefined') return fallback as DisplayCurrency;
-  return (localStorage.getItem(STORAGE_KEY) as DisplayCurrency) || (fallback as DisplayCurrency);
+  const stored = localStorage.getItem(STORAGE_KEY) as DisplayCurrency | null;
+  // Normalize: XAF and XOF are both "FCFA" — treat legacy XAF stored values
+  // as XOF so the currency selector shows the correct active state.
+  if (stored === 'XAF') return 'XOF' as DisplayCurrency;
+  return stored || (fallback as DisplayCurrency);
 }
 
 function convert(amount: number, from: string, to: string, rates: Record<string, number>): number {

@@ -152,10 +152,9 @@ describe('ClientSettings', () => {
 
   // ─── Currency Selector ──────────────────────────────
 
-  it('renders all 4 currency buttons', () => {
+  it('renders all 3 currency buttons', () => {
     renderSettings();
-    // XOF "FCFA" + XAF "FCFA (BEAC)" both match /FCFA/, so use getAllByText
-    expect(screen.getAllByText(/FCFA/).length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText(/FCFA/)).toBeInTheDocument();
     expect(screen.getByText(/Euro/)).toBeInTheDocument();
     expect(screen.getByText(/Dollar/)).toBeInTheDocument();
   });

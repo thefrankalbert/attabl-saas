@@ -40,7 +40,6 @@ interface ClientSettingsProps {
 
 const CURRENCY_OPTIONS: { code: DisplayCurrency; label: string }[] = [
   { code: 'XOF', label: 'FCFA' },
-  { code: 'XAF', label: 'FCFA (BEAC)' },
   { code: 'EUR', label: 'Euro' },
   { code: 'USD', label: 'Dollar' },
 ];
