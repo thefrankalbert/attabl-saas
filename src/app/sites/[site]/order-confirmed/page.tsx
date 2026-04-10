@@ -122,6 +122,12 @@ function OrderConfirmedContent() {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
+          // NOTE: Supabase Realtime filter only supports single-column conditions.
+          // Cross-tenant eavesdropping is mitigated by:
+          // 1) UUIDs are unguessable (122 bits of entropy)
+          // 2) The orders table SELECT policy is intentionally public (customers
+          //    track their order without auth — same as Uber Eats/Deliveroo)
+          // 3) Order data is non-sensitive (status + table number, no PII)
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
