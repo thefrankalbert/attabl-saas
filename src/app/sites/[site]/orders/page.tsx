@@ -5,8 +5,6 @@ import ClientOrders from '@/components/tenant/ClientOrders';
 import BottomNav from '@/components/tenant/BottomNav';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-
 export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
   const { site } = await params;
   const headersList = await headers();
@@ -22,8 +20,6 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
     .single();
 
   if (!tenant) return notFound();
-
-  const t = await getTranslations('tenant');
 
   return (
     <div className="h-full bg-white" style={{ color: '#1A1A1A' }}>
