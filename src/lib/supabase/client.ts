@@ -10,7 +10,7 @@ export function createClient() {
           process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN
             ? `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`
             : undefined,
-        sameSite: 'lax',
+        sameSite: 'strict',
       },
     },
   );
