@@ -3,34 +3,131 @@
 import { useState, useCallback, useSyncExternalStore } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
-import { Globe, ChevronRight, Bell, Shield, Info, X, DollarSign, ArrowLeft } from 'lucide-react';
+import {
+  Globe,
+  ChevronRight,
+  Bell,
+  Shield,
+  Info,
+  X,
+  DollarSign,
+  ArrowLeft,
+  Clock,
+  Mail,
+  MapPin,
+  Phone,
+  HelpCircle,
+} from 'lucide-react';
 import { logger } from '@/lib/logger';
 import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
 import BottomNav from './BottomNav';
 
-// ─── Types ──────────────────────────────────────────────
+// Types
 
 interface ClientSettingsProps {
   tenantSlug: string;
   tenantName: string;
   tenantLogo: string | null;
+  tenantDescription?: string | null;
+  tenantAddress?: string | null;
+  tenantCity?: string | null;
+  tenantCountry?: string | null;
+  tenantPhone?: string | null;
   currency: string;
   supportedCurrencies?: string[];
 }
 
-const CURRENCY_OPTIONS: { code: DisplayCurrency; label: string; flag: string }[] = [
-  { code: 'XAF', label: 'F CFA', flag: '🇹🇩' },
-  { code: 'EUR', label: 'Euro', flag: '🇪🇺' },
-  { code: 'USD', label: 'Dollar', flag: '🇺🇸' },
+const CURRENCY_OPTIONS: { code: DisplayCurrency; label: string }[] = [
+  { code: 'XAF', label: 'F CFA' },
+  { code: 'EUR', label: 'Euro' },
+  { code: 'USD', label: 'Dollar' },
 ];
 
-// ─── Component ──────────────────────────────────────────
+// Reusable row subcomponent - kept inside file to preserve single-file structure
+function SettingsRow({
+  icon,
+  iconBg = '#F6F6F6',
+  iconColor = '#737373',
+  label,
+  subtitle,
+  onClick,
+  right,
+  disabled,
+}: {
+  icon: React.ReactNode;
+  iconBg?: string;
+  iconColor?: string;
+  label: string;
+  subtitle: string;
+  onClick?: () => void;
+  right?: React.ReactNode;
+  disabled?: boolean;
+}) {
+  const content = (
+    <>
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div
+          className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
+          style={{ backgroundColor: iconBg }}
+        >
+          <span style={{ color: iconColor }} aria-hidden>
+            {icon}
+          </span>
+        </div>
+        <div className="text-left min-w-0">
+          <p className="text-[13px] font-bold truncate" style={{ color: '#1A1A1A' }}>
+            {label}
+          </p>
+          <p className="text-[12px] font-medium truncate" style={{ color: '#737373' }}>
+            {subtitle}
+          </p>
+        </div>
+      </div>
+      <div className="flex-shrink-0 ml-3">
+        {right ?? <ChevronRight className="w-[18px] h-[18px]" style={{ color: '#B0B0B0' }} />}
+      </div>
+    </>
+  );
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={cn(
+          'w-full min-h-[44px] px-4 py-3.5 flex items-center justify-between',
+          disabled && 'opacity-50 cursor-not-allowed',
+        )}
+      >
+        {content}
+      </button>
+    );
+  }
+
+  return (
+    <div className="w-full min-h-[44px] px-4 py-3.5 flex items-center justify-between">
+      {content}
+    </div>
+  );
+}
+
+function SectionDivider() {
+  return <div className="mx-4" style={{ height: '1px', backgroundColor: '#EEEEEE' }} />;
+}
+
+// Component
 
 export default function ClientSettings({
   tenantSlug,
   tenantName,
   tenantLogo,
+  tenantDescription,
+  tenantAddress,
+  tenantCity,
+  tenantCountry,
+  tenantPhone,
   supportedCurrencies,
 }: ClientSettingsProps) {
   const locale = useLocale();
@@ -39,7 +136,7 @@ export default function ClientSettings({
   const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
   const lang = locale.startsWith('fr') ? 'fr' : 'en';
 
-  // Use useSyncExternalStore to read browser Notification API without hydration mismatch
+  // Notifications
   const noopSubscribe = useCallback(() => () => {}, []);
   const notificationsSupported = useSyncExternalStore(
     noopSubscribe,
@@ -53,8 +150,23 @@ export default function ClientSettings({
   );
   const [userToggled, setUserToggled] = useState<boolean | null>(null);
   const notificationsEnabled = userToggled ?? browserGranted;
+
+  // Current table from localStorage (stable default for SSR to avoid hydration mismatch)
+  const currentTable = useSyncExternalStore(
+    noopSubscribe,
+    () => {
+      try {
+        return localStorage.getItem(`attabl_${tenantSlug}_table`);
+      } catch {
+        return null;
+      }
+    },
+    () => null,
+  );
+
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showAboutModal, setShowAboutModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   const setLanguage = useCallback((l: string) => {
     const newLocale = l === 'fr' ? 'fr-FR' : 'en-US';
@@ -86,95 +198,188 @@ export default function ClientSettings({
     }
   }, [notificationsEnabled, notificationsSupported]);
 
-  // ─── Render ─────────────────────────────────────────────
+  const goToOrders = useCallback(() => {
+    router.push(`/sites/${tenantSlug}/orders`);
+  }, [router, tenantSlug]);
+
+  const fullAddress = [tenantAddress, tenantCity].filter(Boolean).join(', ');
+  const hasAddress = Boolean(tenantAddress || tenantCity || tenantCountry);
+
+  // Render
 
   return (
     <main
-      className="min-h-screen bg-app-bg"
-      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      className="h-full bg-white"
+      style={{
+        color: '#1A1A1A',
+        paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+      }}
     >
-      {/* ─── HEADER - matching cart page ─────────────── */}
-      <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
+      {/* Header */}
+      <div className="sticky top-0 z-40 bg-white" style={{ height: 56 }}>
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
           <button
+            type="button"
             onClick={() => router.push(`/sites/${tenantSlug}`)}
-            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
+            className="p-2 -ml-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
+            style={{ color: '#737373' }}
+            aria-label="Retour"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-app-text">{t('settingsTitle')}</h1>
+            <h1 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
+              {t('settingsTitle')}
+            </h1>
           </div>
           <div className="w-9" />
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
-        {/* ── SECTION: PREFERENCES ──────────────────── */}
+      <div className="max-w-lg mx-auto px-4 pt-4 space-y-5">
+        {/* 1. Restaurant Profile Card */}
+        <section
+          className="bg-white rounded-xl overflow-hidden"
+          style={{ border: '1px solid #EEEEEE' }}
+        >
+          <div className="px-4 py-6 flex flex-col items-center text-center">
+            <div
+              className="w-20 h-20 rounded-full overflow-hidden flex items-center justify-center mb-3"
+              style={{ backgroundColor: '#F6F6F6' }}
+            >
+              {tenantLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={tenantLogo} alt={tenantName} className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-2xl font-bold" style={{ color: '#B0B0B0' }}>
+                  {tenantName.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <h2 className="text-[20px] font-bold leading-tight" style={{ color: '#1A1A1A' }}>
+              {tenantName}
+            </h2>
+            {tenantDescription ? (
+              <p
+                className="text-[13px] mt-1.5 line-clamp-2 max-w-xs"
+                style={{ color: '#737373', lineHeight: 1.4 }}
+              >
+                {tenantDescription}
+              </p>
+            ) : null}
+          </div>
+        </section>
+
+        {/* 2. MES COMMANDES */}
         <div>
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted pl-1 mb-2.5">
+          <h2 className="text-[13px] font-bold pl-1 mb-2.5" style={{ color: '#B0B0B0' }}>
+            {t('ordersSection')}
+          </h2>
+
+          <section
+            className="bg-white rounded-xl overflow-hidden"
+            style={{ border: '1px solid #EEEEEE' }}
+          >
+            <SettingsRow
+              icon={<Clock className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#E6F9F0"
+              iconColor="#06C167"
+              label={t('orderHistoryLabel')}
+              subtitle={t('orderHistorySubtitle')}
+              onClick={goToOrders}
+            />
+            <SectionDivider />
+            <SettingsRow
+              icon={<MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#F6F6F6"
+              iconColor="#737373"
+              label={t('currentTableLabel')}
+              subtitle={
+                currentTable
+                  ? t('currentTableSubtitle', { number: currentTable })
+                  : t('currentTableNone')
+              }
+              onClick={() => router.push(`/sites/${tenantSlug}`)}
+            />
+          </section>
+        </div>
+
+        {/* 3. PREFERENCES */}
+        <div>
+          <h2 className="text-[13px] font-bold pl-1 mb-2.5" style={{ color: '#B0B0B0' }}>
             {t('preferencesSection')}
           </h2>
 
-          <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+          <section
+            className="bg-white rounded-xl overflow-hidden"
+            style={{ border: '1px solid #EEEEEE' }}
+          >
             {/* Language */}
-            <div className="px-4 py-3.5 flex items-center justify-between">
+            <div className="px-4 py-3.5 flex items-center justify-between min-h-[44px]">
               <div className="flex items-center gap-3.5">
                 <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 10%, transparent)',
-                  }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: '#E6F9F0' }}
                 >
                   <Globe
                     className="w-[18px] h-[18px]"
-                    style={{ color: 'var(--tenant-primary)' }}
+                    style={{ color: '#06C167' }}
                     strokeWidth={1.5}
                   />
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-app-text">{t('languageLabel')}</p>
-                  <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wide">
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A1A' }}>
+                    {t('languageLabel')}
+                  </p>
+                  <p className="text-[12px] font-medium" style={{ color: '#737373' }}>
                     {t('currentLanguage')}
                   </p>
                 </div>
               </div>
-              {/* FR / EN pill */}
-              <div className="flex bg-app-elevated p-0.5 rounded-lg">
+              <div className="flex p-0.5 rounded-lg" style={{ backgroundColor: '#F6F6F6' }}>
                 <button
                   onClick={() => setLanguage('fr')}
                   className={cn(
-                    'text-[10px] font-bold px-3 py-1.5 rounded-md transition-all',
-                    lang === 'fr' ? 'bg-app-card shadow-sm' : 'text-app-text-muted',
+                    'text-[11px] font-bold px-3 py-1.5 rounded-md transition-all',
+                    lang === 'fr' ? 'bg-white' : '',
                   )}
-                  style={lang === 'fr' ? { color: 'var(--tenant-primary)' } : undefined}
+                  style={lang === 'fr' ? { color: '#06C167' } : { color: '#737373' }}
                 >
                   FR
                 </button>
                 <button
                   onClick={() => setLanguage('en')}
                   className={cn(
-                    'text-[10px] font-bold px-3 py-1.5 rounded-md transition-all',
-                    lang === 'en' ? 'bg-app-card shadow-sm' : 'text-app-text-muted',
+                    'text-[11px] font-bold px-3 py-1.5 rounded-md transition-all',
+                    lang === 'en' ? 'bg-white' : '',
                   )}
-                  style={lang === 'en' ? { color: 'var(--tenant-primary)' } : undefined}
+                  style={lang === 'en' ? { color: '#06C167' } : { color: '#737373' }}
                 >
                   EN
                 </button>
               </div>
             </div>
 
-            <div className="h-px bg-app-border/50 mx-4" />
+            <SectionDivider />
 
             {/* Currency */}
             <div className="px-4 py-3.5">
               <div className="flex items-center gap-3.5 mb-3">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <DollarSign className="w-[18px] h-[18px] text-emerald-600" strokeWidth={1.5} />
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: '#E6F9F0' }}
+                >
+                  <DollarSign
+                    className="w-[18px] h-[18px]"
+                    style={{ color: '#06C167' }}
+                    strokeWidth={1.5}
+                  />
                 </div>
                 <div>
-                  <p className="text-[13px] font-bold text-app-text">{t('currencyLabel')}</p>
-                  <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wide">
+                  <p className="text-[13px] font-bold" style={{ color: '#1A1A1A' }}>
+                    {t('currencyLabel')}
+                  </p>
+                  <p className="text-[12px] font-medium" style={{ color: '#737373' }}>
                     {t('priceDisplay')}
                   </p>
                 </div>
@@ -190,18 +395,15 @@ export default function ClientSettings({
                     key={c.code}
                     onClick={() => handleCurrencyChange(c.code)}
                     className={cn(
-                      'flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wide transition-all',
-                      displayCurrency === c.code
-                        ? 'text-white shadow-sm'
-                        : 'bg-app-card border border-app-border text-app-text-muted',
+                      'flex-1 min-h-[44px] py-2.5 rounded-xl text-[13px] font-semibold transition-all',
+                      displayCurrency === c.code ? 'text-white' : 'bg-white',
                     )}
                     style={
                       displayCurrency === c.code
-                        ? { backgroundColor: 'var(--tenant-primary)' }
-                        : undefined
+                        ? { backgroundColor: '#06C167' }
+                        : { border: '1px solid #EEEEEE', color: '#737373' }
                     }
                   >
-                    <span className="mr-1 opacity-70">{c.flag}</span>
                     {c.label}
                   </button>
                 ))}
@@ -210,219 +412,326 @@ export default function ClientSettings({
           </section>
         </div>
 
-        {/* ── SECTION: SUPPORT & INFOS ─────────────── */}
+        {/* 4. NOTIFICATIONS */}
         <div>
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-app-text-muted pl-1 mb-2.5">
-            {t('supportSection')}
+          <h2 className="text-[13px] font-bold pl-1 mb-2.5" style={{ color: '#B0B0B0' }}>
+            {t('notificationsSection')}
           </h2>
 
-          <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-            {/* Notifications */}
-            <button
+          <section
+            className="bg-white rounded-xl overflow-hidden"
+            style={{ border: '1px solid #EEEEEE' }}
+          >
+            <SettingsRow
+              icon={<Bell className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#F6F6F6"
+              iconColor="#737373"
+              label={t('notificationsLabel')}
+              subtitle={
+                !notificationsSupported
+                  ? t('notificationsNotSupported')
+                  : notificationsEnabled
+                    ? t('notificationsEnabled')
+                    : t('notificationsDisabled')
+              }
               onClick={toggleNotifications}
               disabled={!notificationsSupported}
-              className={cn(
-                'w-full px-4 py-3.5 flex items-center justify-between',
-                !notificationsSupported && 'opacity-50 cursor-not-allowed',
-              )}
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center">
-                  <Bell className="w-[18px] h-[18px] text-orange-500" strokeWidth={1.5} />
-                </div>
-                <div className="text-left">
-                  <p className="text-[13px] font-bold text-app-text">{t('notificationsLabel')}</p>
-                  <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wide">
-                    {!notificationsSupported
-                      ? t('notificationsNotSupported')
-                      : notificationsEnabled
-                        ? t('notificationsEnabled')
-                        : t('notificationsDisabled')}
-                  </p>
-                </div>
-              </div>
-              {/* Toggle switch */}
-              <div
-                className="w-11 h-6 rounded-full p-1 transition-colors flex-shrink-0"
-                style={{
-                  backgroundColor: notificationsEnabled ? 'var(--tenant-primary)' : '#e5e7eb',
-                }}
-              >
+              right={
                 <div
-                  className="w-4 h-4 bg-white rounded-full shadow-sm transition-transform"
+                  className="w-11 h-6 rounded-full p-1 transition-colors flex-shrink-0"
                   style={{
-                    transform: notificationsEnabled ? 'translateX(20px)' : 'translateX(0)',
-                  }}
-                />
-              </div>
-            </button>
-
-            <div className="h-px bg-app-border/50 mx-4" />
-
-            {/* Privacy */}
-            <button
-              onClick={() => setShowPrivacyModal(true)}
-              className="w-full px-4 py-3.5 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3.5">
-                <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <Shield className="w-[18px] h-[18px] text-purple-600" strokeWidth={1.5} />
-                </div>
-                <div className="text-left">
-                  <p className="text-[13px] font-bold text-app-text">{t('privacyPolicy')}</p>
-                  <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wide">
-                    {t('yourData')}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-[18px] h-[18px] text-app-text-muted/40" />
-            </button>
-
-            <div className="h-px bg-app-border/50 mx-4" />
-
-            {/* About */}
-            <button
-              onClick={() => setShowAboutModal(true)}
-              className="w-full px-4 py-3.5 flex items-center justify-between"
-            >
-              <div className="flex items-center gap-3.5">
-                <div
-                  className="w-9 h-9 rounded-xl flex items-center justify-center"
-                  style={{
-                    backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 10%, transparent)',
+                    backgroundColor: notificationsEnabled ? '#06C167' : '#EEEEEE',
                   }}
                 >
-                  <Info
-                    className="w-[18px] h-[18px]"
-                    style={{ color: 'var(--tenant-primary)' }}
-                    strokeWidth={1.5}
+                  <div
+                    className="w-4 h-4 bg-white rounded-full transition-transform"
+                    style={{
+                      transform: notificationsEnabled ? 'translateX(20px)' : 'translateX(0)',
+                    }}
                   />
                 </div>
-                <div className="text-left">
-                  <p className="text-[13px] font-bold text-app-text">{t('aboutLabel')}</p>
-                  <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wide">
-                    {tenantName}
-                  </p>
-                </div>
-              </div>
-              <ChevronRight className="w-[18px] h-[18px] text-app-text-muted/40" />
-            </button>
+              }
+            />
           </section>
         </div>
 
-        {/* Version */}
-        <div className="text-center pt-2 pb-4">
-          <p className="text-[10px] font-bold text-app-text-muted/40 uppercase tracking-[0.25em]">
-            ATTABL v1.0
+        {/* 5. LE RESTAURANT */}
+        {(hasAddress || tenantPhone) && (
+          <div>
+            <h2 className="text-[13px] font-bold pl-1 mb-2.5" style={{ color: '#B0B0B0' }}>
+              {t('restaurantSection')}
+            </h2>
+
+            <section
+              className="bg-white rounded-xl overflow-hidden"
+              style={{ border: '1px solid #EEEEEE' }}
+            >
+              {hasAddress && (
+                <>
+                  <SettingsRow
+                    icon={<MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                    iconBg="#E6F9F0"
+                    iconColor="#06C167"
+                    label={t('addressLabel')}
+                    subtitle={fullAddress || tenantCountry || t('notAvailable')}
+                    right={<span />}
+                  />
+                  {tenantPhone && <SectionDivider />}
+                </>
+              )}
+              {tenantPhone && (
+                <SettingsRow
+                  icon={<Phone className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                  iconBg="#E6F9F0"
+                  iconColor="#06C167"
+                  label={t('phoneLabel')}
+                  subtitle={tenantPhone}
+                  onClick={() => {
+                    window.location.href = `tel:${tenantPhone}`;
+                  }}
+                />
+              )}
+            </section>
+          </div>
+        )}
+
+        {/* 6. SUPPORT */}
+        <div>
+          <h2 className="text-[13px] font-bold pl-1 mb-2.5" style={{ color: '#B0B0B0' }}>
+            {t('supportSection')}
+          </h2>
+
+          <section
+            className="bg-white rounded-xl overflow-hidden"
+            style={{ border: '1px solid #EEEEEE' }}
+          >
+            <SettingsRow
+              icon={<HelpCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#E6F9F0"
+              iconColor="#06C167"
+              label={t('helpAndSupport')}
+              subtitle={t('helpAndSupportSubtitle')}
+              onClick={() => setShowHelpModal(true)}
+            />
+            <SectionDivider />
+            <SettingsRow
+              icon={<Shield className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#F6F6F6"
+              iconColor="#737373"
+              label={t('privacyPolicy')}
+              subtitle={t('privacySubtitle')}
+              onClick={() => setShowPrivacyModal(true)}
+            />
+            <SectionDivider />
+            <SettingsRow
+              icon={<Info className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+              iconBg="#E6F9F0"
+              iconColor="#06C167"
+              label={t('aboutLabel')}
+              subtitle={tenantName}
+              onClick={() => setShowAboutModal(true)}
+            />
+          </section>
+        </div>
+
+        {/* 7. Footer */}
+        <div className="text-center pt-4 pb-6 space-y-1">
+          <p className="text-[11px] font-medium" style={{ color: '#B0B0B0' }}>
+            {t('poweredBy')}
+          </p>
+          <p className="text-[11px] font-medium" style={{ color: '#B0B0B0' }}>
+            {t('appVersion')}
           </p>
         </div>
       </div>
 
-      {/* ─── BOTTOM NAV ──────────────────────────── */}
+      {/* Bottom Nav */}
       <BottomNav tenantSlug={tenantSlug} />
 
-      {/* ─── PRIVACY MODAL ───────────────────────── */}
+      {/* Privacy Modal */}
       {showPrivacyModal && (
         <div className="fixed inset-0 z-[1001] flex items-end justify-center">
           <div
             onClick={() => setShowPrivacyModal(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0"
+            style={{ backgroundColor: 'rgba(26,26,26,0.6)' }}
           />
-          <div className="relative bg-app-card w-full max-w-lg max-h-[85vh] rounded-t-2xl overflow-hidden shadow-xl">
-            <div className="px-4 py-4 flex items-center justify-between border-b border-app-border/50">
+          <div
+            className="relative bg-white w-full max-w-lg max-h-[85vh] rounded-t-2xl overflow-hidden"
+            style={{ boxShadow: '0 -2px 16px rgba(0,0,0,0.08)' }}
+          >
+            <div
+              className="px-4 py-4 flex items-center justify-between"
+              style={{ borderBottom: '1px solid #EEEEEE' }}
+            >
               <div className="w-8" />
-              <h2 className="text-sm font-black text-app-text uppercase tracking-widest">
+              <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                 {t('privacyTitle')}
               </h2>
               <button
                 onClick={() => setShowPrivacyModal(false)}
-                className="p-2 bg-app-elevated rounded-full"
+                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
+                style={{ backgroundColor: '#F6F6F6' }}
+                aria-label="Fermer"
               >
-                <X className="w-4 h-4 text-app-text-muted" />
+                <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
               </button>
             </div>
             <div className="p-6 pb-24 overflow-y-auto max-h-[75vh] space-y-5">
               <section>
-                <h3 className="text-sm font-bold text-app-text mb-1.5">
+                <h3 className="text-sm font-bold mb-1.5" style={{ color: '#1A1A1A' }}>
                   {t('dataCollectionTitle')}
                 </h3>
-                <p className="text-[13px] text-app-text-muted leading-relaxed">
+                <p className="text-[13px] leading-relaxed" style={{ color: '#737373' }}>
                   {t('dataCollectionDesc')}
                 </p>
               </section>
               <section>
-                <h3 className="text-sm font-bold text-app-text mb-1.5">{t('usageTitle')}</h3>
-                <p className="text-[13px] text-app-text-muted leading-relaxed">{t('usageDesc')}</p>
+                <h3 className="text-sm font-bold mb-1.5" style={{ color: '#1A1A1A' }}>
+                  {t('usageTitle')}
+                </h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: '#737373' }}>
+                  {t('usageDesc')}
+                </p>
               </section>
               <section>
-                <h3 className="text-sm font-bold text-app-text mb-1.5">{t('storageTitle')}</h3>
-                <p className="text-[13px] text-app-text-muted leading-relaxed">
+                <h3 className="text-sm font-bold mb-1.5" style={{ color: '#1A1A1A' }}>
+                  {t('storageTitle')}
+                </h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: '#737373' }}>
                   {t('storageDesc')}
                 </p>
               </section>
-              <div className="pt-6 mt-6 border-t border-app-border/50">
-                <p className="text-[10px] text-app-text-muted font-bold uppercase tracking-widest">
-                  {tenantName} • privacy@attabl.com
+              <section>
+                <h3 className="text-sm font-bold mb-1.5" style={{ color: '#1A1A1A' }}>
+                  {t('rightsTitle')}
+                </h3>
+                <p className="text-[13px] leading-relaxed" style={{ color: '#737373' }}>
+                  {t('rightsDesc')}
                 </p>
-              </div>
+              </section>
             </div>
           </div>
         </div>
       )}
 
-      {/* ─── ABOUT MODAL ─────────────────────────── */}
+      {/* About Modal */}
       {showAboutModal && (
         <div className="fixed inset-0 z-[1001] flex items-end justify-center">
           <div
             onClick={() => setShowAboutModal(false)}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0"
+            style={{ backgroundColor: 'rgba(26,26,26,0.6)' }}
           />
-          <div className="relative bg-app-card w-full max-w-lg rounded-t-2xl overflow-hidden shadow-xl">
-            <div className="px-4 py-4 flex items-center justify-between border-b border-app-border/50">
+          <div
+            className="relative bg-white w-full max-w-lg rounded-t-2xl overflow-hidden"
+            style={{ boxShadow: '0 -2px 16px rgba(0,0,0,0.08)' }}
+          >
+            <div
+              className="px-4 py-4 flex items-center justify-between"
+              style={{ borderBottom: '1px solid #EEEEEE' }}
+            >
               <div className="w-8" />
-              <h2 className="text-sm font-black text-app-text uppercase tracking-widest">
+              <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                 {t('aboutTitle')}
               </h2>
               <button
                 onClick={() => setShowAboutModal(false)}
-                className="p-2 bg-app-elevated rounded-full"
+                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
+                style={{ backgroundColor: '#F6F6F6' }}
+                aria-label="Fermer"
               >
-                <X className="w-4 h-4 text-app-text-muted" />
+                <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
               </button>
             </div>
             <div className="px-10 py-10 pb-20 overflow-y-auto max-h-[85vh]">
               <div className="text-center mb-10">
-                {tenantLogo && (
-                  <div className="mb-6 h-16 flex items-center justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={tenantLogo}
-                      alt={tenantName}
-                      className="h-full w-auto object-contain"
-                    />
-                  </div>
-                )}
-                <h3
-                  className="text-[11px] font-black uppercase tracking-[0.3em]"
-                  style={{ color: 'var(--tenant-primary)' }}
-                >
-                  {tenantName}
+                <h3 className="text-[11px] font-medium" style={{ color: '#06C167' }}>
+                  ATTABL
                 </h3>
               </div>
               <div className="text-center max-w-xs mx-auto">
-                <p className="text-[15px] text-app-text font-bold leading-relaxed mb-4">
-                  {t('aboutAppDesc', { name: tenantName })}
-                </p>
-                <p className="text-[13px] text-app-text-muted leading-relaxed">
-                  {t('aboutAppSubtext')}
+                <p className="text-[15px] font-bold leading-relaxed" style={{ color: '#1A1A1A' }}>
+                  {t('aboutAppDesc')}
                 </p>
               </div>
-              <div className="mt-12 text-center">
-                <div className="h-px bg-gradient-to-r from-transparent via-app-border to-transparent mb-6" />
-                <p className="text-[9px] text-app-text-muted/40 font-bold uppercase tracking-widest">
-                  Powered by ATTABL • v1.0
-                </p>
-              </div>
+              <p className="text-center text-[11px] mt-4" style={{ color: '#B0B0B0' }}>
+                {t('appVersion')}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 z-[1001] flex items-end justify-center">
+          <div
+            onClick={() => setShowHelpModal(false)}
+            className="absolute inset-0"
+            style={{ backgroundColor: 'rgba(26,26,26,0.6)' }}
+          />
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white w-full max-w-lg rounded-t-2xl overflow-hidden"
+            style={{ boxShadow: '0 -2px 16px rgba(0,0,0,0.08)' }}
+          >
+            <div
+              className="px-4 py-4 flex items-center justify-between"
+              style={{ borderBottom: '1px solid #EEEEEE' }}
+            >
+              <div className="w-8" />
+              <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
+                {t('helpModalTitle')}
+              </h2>
+              <button
+                onClick={() => setShowHelpModal(false)}
+                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
+                style={{ backgroundColor: '#F6F6F6' }}
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
+              </button>
+            </div>
+
+            <div className="py-2">
+              <SettingsRow
+                icon={<Mail className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                iconBg="#E6F9F0"
+                iconColor="#06C167"
+                label={t('helpEmailLabel')}
+                subtitle={t('helpEmailSubtitle')}
+                onClick={() => {
+                  window.location.href = `mailto:support@attabl.com?subject=${encodeURIComponent(
+                    `[${tenantName}] Demande d'assistance`,
+                  )}`;
+                  setShowHelpModal(false);
+                }}
+              />
+              <SectionDivider />
+              <SettingsRow
+                icon={<Phone className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                iconBg="#F6F6F6"
+                iconColor="#737373"
+                label={t('helpCallBurkinaLabel')}
+                subtitle={t('helpCallBurkinaSubtitle')}
+                onClick={() => {
+                  window.location.href = 'tel:+22665565411';
+                  setShowHelpModal(false);
+                }}
+              />
+              <SectionDivider />
+              <SettingsRow
+                icon={<Phone className="w-[18px] h-[18px]" strokeWidth={1.5} />}
+                iconBg="#F6F6F6"
+                iconColor="#737373"
+                label={t('helpCallChadLabel')}
+                subtitle={t('helpCallChadSubtitle')}
+                onClick={() => {
+                  window.location.href = 'tel:+23564940372';
+                  setShowHelpModal(false);
+                }}
+              />
             </div>
           </div>
         </div>

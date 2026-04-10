@@ -5,6 +5,7 @@ import { CurrencyProvider } from '@/contexts/CurrencyContext';
 import { ThemeProvider as TenantBrandProvider } from '@/components/theme/ThemeProvider';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { getCachedTenant } from '@/lib/cache';
+import { getFontById } from '@/lib/config/fonts';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -36,13 +37,20 @@ export default async function SiteLayout({
 
   const tenantId = tenant?.id || null;
 
+  // Resolve the tenant font (curated list - see src/lib/config/fonts.ts).
+  // Falls back to Inter when the stored id is null or not in the curated list.
+  const tenantFont = getFontById(tenant?.font_family);
+  const tenantFontFamily = `var(${tenantFont.cssVariable}), 'Inter', -apple-system, BlinkMacSystemFont, sans-serif`;
+
   return (
     <NextThemesProvider attribute="class" forcedTheme="light">
       <TenantProvider slug={site} tenantId={tenantId} tenant={tenant}>
         <TenantBrandProvider
           initialColors={{
-            primaryColor: tenant?.primary_color || '#000000',
-            secondaryColor: tenant?.secondary_color || '#FFFFFF',
+            // Tenant can customize ONLY the primary (brand) color per 2025/2026
+            // market research. Secondary/text stays locked to #1A1A1A.
+            primaryColor: tenant?.primary_color || '#06C167',
+            secondaryColor: '#1A1A1A',
           }}
         >
           <CartProvider>
@@ -52,7 +60,12 @@ export default async function SiteLayout({
                 (tenant?.supported_currencies as string[]) || [tenant?.currency || 'XAF']
               }
             >
-              <div className="h-full overflow-y-auto">{children}</div>
+              <div
+                className="tenant-client h-full overflow-y-auto"
+                style={{ fontFamily: tenantFontFamily }}
+              >
+                {children}
+              </div>
             </CurrencyProvider>
           </CartProvider>
         </TenantBrandProvider>

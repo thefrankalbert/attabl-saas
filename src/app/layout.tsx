@@ -1,5 +1,19 @@
 import type { Metadata, Viewport } from 'next';
-import { Geist, Geist_Mono, DM_Serif_Display } from 'next/font/google';
+import {
+  Geist,
+  Geist_Mono,
+  DM_Serif_Display,
+  Inter,
+  Poppins,
+  Montserrat,
+  Playfair_Display,
+  Raleway,
+  Nunito,
+  Roboto,
+  Lato,
+  Open_Sans,
+  Source_Sans_3,
+} from 'next/font/google';
 import './globals.css';
 import { Suspense } from 'react';
 import { ThemeProvider } from '@/components/ThemeProvider';
@@ -24,6 +38,80 @@ const dmSerifDisplay = DM_Serif_Display({
   variable: '--font-dm-serif-display',
   subsets: ['latin'],
   weight: ['400'],
+  display: 'swap',
+});
+
+// ===== Curated tenant fonts (see src/lib/config/fonts.ts) =====
+// All 10 fonts are preloaded here so tenant layouts can swap between them
+// by CSS variable without triggering additional network requests.
+
+const inter = Inter({
+  variable: '--font-inter',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const poppins = Poppins({
+  variable: '--font-poppins',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const montserrat = Montserrat({
+  variable: '--font-montserrat',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: '--font-playfair-display',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const raleway = Raleway({
+  variable: '--font-raleway',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const nunito = Nunito({
+  variable: '--font-nunito',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const roboto = Roboto({
+  variable: '--font-roboto',
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  display: 'swap',
+});
+
+const lato = Lato({
+  variable: '--font-lato',
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  display: 'swap',
+});
+
+const openSans = Open_Sans({
+  variable: '--font-open-sans',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  display: 'swap',
+});
+
+const sourceSans3 = Source_Sans_3({
+  variable: '--font-source-sans-3',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
@@ -60,6 +148,16 @@ export default async function RootLayout({
           geistSans.variable,
           geistMono.variable,
           dmSerifDisplay.variable,
+          inter.variable,
+          poppins.variable,
+          montserrat.variable,
+          playfairDisplay.variable,
+          raleway.variable,
+          nunito.variable,
+          roboto.variable,
+          lato.variable,
+          openSans.variable,
+          sourceSans3.variable,
           'antialiased font-sans',
         )}
         suppressHydrationWarning

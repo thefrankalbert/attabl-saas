@@ -111,18 +111,21 @@ describe('POST /api/coupons/validate', () => {
     expect(json.error).toContain('Trop de requ');
   });
 
-  it('returns 400 when x-tenant-slug header is missing', async () => {
+  it('returns 400 with masked error when x-tenant-slug header is missing and no body fallback', async () => {
     mockRateLimit(true);
     vi.mocked(headers).mockResolvedValue(new Headers() as never);
 
+    // No tenantSlug in body either - should fall through to masked error
     const res = await POST(buildRequest({ code: 'SAVE10', subtotal: 5000 }));
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(400);
-    expect(json.error).toContain('Tenant non identifi');
+    // Internal "Tenant non identifie" is masked as a generic invalid-code message
+    // so we don't leak architecture details to end users.
+    expect(json.error).toBe('Code promo invalide');
   });
 
-  it('returns 404 when tenant is not found', async () => {
+  it('returns 404 with masked error when tenant is not found', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase({ tenant: null, tenantError: { message: 'Not found' } });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
@@ -131,7 +134,8 @@ describe('POST /api/coupons/validate', () => {
     const json = (await res.json()) as { error: string };
 
     expect(res.status).toBe(404);
-    expect(json.error).toContain('Tenant non trouv');
+    // "Tenant non trouve" is masked as a generic invalid-code message.
+    expect(json.error).toBe('Code promo invalide');
   });
 
   it('returns 400 when body is malformed JSON', async () => {
