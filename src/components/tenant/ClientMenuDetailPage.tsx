@@ -744,6 +744,16 @@ export default function ClientMenuDetailPage({
               {t('viewCart')}
             </span>
             <span
+              style={{
+                fontSize: '14px',
+                fontWeight: 700,
+                color: '#FFFFFF',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {totalCartItems}
+            </span>
+            <span
               aria-hidden="true"
               className="inline-block rounded-full bg-white"
               style={{ width: 5, height: 5 }}
