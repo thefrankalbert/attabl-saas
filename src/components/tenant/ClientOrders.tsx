@@ -51,6 +51,8 @@ interface ClientOrdersProps {
   tenantSlug: string;
   tenantId: string;
   currency?: string;
+  /** When true, shows terminal orders (history) instead of active ones */
+  showHistory?: boolean;
 }
 
 // --- Constants ----------------------------------------------
@@ -85,6 +87,7 @@ export default function ClientOrders({
   tenantSlug,
   tenantId,
   currency = 'XAF',
+  showHistory = false,
 }: ClientOrdersProps) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -304,9 +307,15 @@ export default function ClientOrders({
     [addToCart, router, tenantId, tenantSlug],
   );
 
-  // --- Derive active vs history -------
+  // --- Derive displayed orders based on mode -------
 
-  const activeOrders = useMemo(() => orders.filter((o) => ACTIVE_STATUSES.has(o.status)), [orders]);
+  const displayedOrders = useMemo(
+    () =>
+      showHistory
+        ? orders.filter((o) => TERMINAL_STATUSES.has(o.status))
+        : orders.filter((o) => ACTIVE_STATUSES.has(o.status)),
+    [orders, showHistory],
+  );
 
   // --- Loading state ----------------------------------------
 
@@ -314,9 +323,9 @@ export default function ClientOrders({
     return <OrdersSkeleton />;
   }
 
-  // --- Empty state (no active orders) -----------------------
+  // --- Empty state -----------------------
 
-  if (activeOrders.length === 0) {
+  if (displayedOrders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
         <div
@@ -329,24 +338,26 @@ export default function ClientOrders({
           className="mb-2"
           style={{ fontSize: '20px', lineHeight: '28px', fontWeight: 700, color: '#1A1A1A' }}
         >
-          {t('noOrders')}
+          {showHistory ? t('noOrdersDesc') : t('noOrders')}
         </h2>
         <p
           className="text-center mb-8 max-w-xs"
           style={{ fontSize: '13px', lineHeight: '18px', color: '#737373' }}
         >
-          {t('noOrdersBrowse')}
+          {showHistory ? t('noOrdersBrowse') : t('noOrdersBrowse')}
         </p>
-        <Link href={`/sites/${tenantSlug}/menu`}>
-          <button
-            type="button"
-            className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: '#1A1A1A', fontSize: '15px', fontWeight: 600 }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            {t('viewMenu')}
-          </button>
-        </Link>
+        {!showHistory && (
+          <Link href={`/sites/${tenantSlug}/menu`}>
+            <button
+              type="button"
+              className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
+              style={{ backgroundColor: '#1A1A1A', fontSize: '15px', fontWeight: 600 }}
+            >
+              <ArrowLeft className="w-4 h-4" />
+              {t('viewMenu')}
+            </button>
+          </Link>
+        )}
       </div>
     );
   }
@@ -358,8 +369,8 @@ export default function ClientOrders({
       className="space-y-3"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* Order ready banner: #06C167, no shadow */}
-      {showReadyBanner && (
+      {/* Order ready banner (active mode only) */}
+      {!showHistory && showReadyBanner && (
         <div
           className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3"
           style={{ backgroundColor: '#1A1A1A' }}
@@ -384,7 +395,7 @@ export default function ClientOrders({
 
       {/* ALL active orders as expandable cards — no separate banner,
           every order shows its tracker + can be expanded to see items */}
-      {activeOrders.map((order) => {
+      {displayedOrders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
         const isEditing = editingOrderId === order.id;
         const isExpanded = expandedOrderId === order.id;

@@ -198,8 +198,8 @@ export default function ClientSettings({
     }
   }, [notificationsEnabled, notificationsSupported]);
 
-  const goToOrders = useCallback(() => {
-    router.push(`/sites/${tenantSlug}/orders`);
+  const goToOrderHistory = useCallback(() => {
+    router.push(`/sites/${tenantSlug}/orders?history=true`);
   }, [router, tenantSlug]);
 
   const fullAddress = [tenantAddress, tenantCity].filter(Boolean).join(', ');
@@ -280,7 +280,7 @@ export default function ClientSettings({
               iconColor="#1A1A1A"
               label={t('orderHistoryLabel')}
               subtitle={t('orderHistorySubtitle')}
-              onClick={goToOrders}
+              onClick={goToOrderHistory}
             />
             <SectionDivider />
             <SettingsRow

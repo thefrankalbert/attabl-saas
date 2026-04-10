@@ -5,8 +5,16 @@ import ClientOrders from '@/components/tenant/ClientOrders';
 import BottomNav from '@/components/tenant/BottomNav';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function OrdersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ history?: string }>;
+}) {
   const { site } = await params;
+  const resolvedSearch = await searchParams;
+  const showHistory = resolvedSearch.history === 'true';
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -27,7 +35,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
       <div className="sticky top-0 z-40 bg-white">
         <div className="max-w-lg mx-auto px-3 py-2">
           <Link
-            href={`/sites/${tenantSlug}`}
+            href={showHistory ? `/sites/${tenantSlug}/settings` : `/sites/${tenantSlug}`}
             className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
             style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
           >
@@ -41,6 +49,7 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
           tenantSlug={tenantSlug}
           tenantId={tenant.id}
           currency={tenant.currency || 'XAF'}
+          showHistory={showHistory}
         />
       </main>
 
