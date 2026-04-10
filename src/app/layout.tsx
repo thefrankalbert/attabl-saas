@@ -131,6 +131,12 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  // Prevent Chrome/Edge auto-translate from mangling the UI (the app handles
+  // i18n internally via next-intl, browser translation produces garbage like
+  // "Accueil" → "Maison", "Panier" → "Chariot").
+  other: {
+    google: 'notranslate',
+  },
 };
 
 export default async function RootLayout({
@@ -142,7 +148,7 @@ export default async function RootLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} translate="no" suppressHydrationWarning>
       <body
         className={cn(
           geistSans.variable,
