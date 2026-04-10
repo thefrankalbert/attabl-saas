@@ -279,7 +279,7 @@ Voir `src/proxy.ts` pour le détail.
 - **Vercel project** : https://vercel.com/<team>/attabl-saas
 - **Stripe dashboard** : https://dashboard.stripe.com (test + live)
 - **Sentry project** : https://sentry.io/organizations/<org>/projects/attabl-saas
-- **Upstash console** : https://console.upstash.com
+- **Upstash console** : https://console.upstash.com — instance Redis `attabl-ratelimit` sur `amusing-quetzal-78385.upstash.io` (Free Tier, AWS Frankfurt). Compte lie au GitHub `thefrankalbert`. Utilise pour le rate limiting de toutes les API routes en production (fail-closed sur les endpoints auth/signup/checkout).
 - **Resend dashboard** : https://resend.com
 
 Documentation interne :
