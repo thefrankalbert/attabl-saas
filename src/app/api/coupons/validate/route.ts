@@ -91,11 +91,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : t('validationError');
-    const statusCode =
-      error instanceof Error && 'statusCode' in error
-        ? (error as { statusCode: number }).statusCode
-        : 400;
-    return NextResponse.json({ valid: false, error: message }, { status: statusCode });
+    // Mask internal error details from the client — log the real message
+    // server-side only. Raw error.message can leak DB errors, timeouts, etc.
+    logger.error('Coupon validate unexpected error', error);
+    return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
   }
 }
