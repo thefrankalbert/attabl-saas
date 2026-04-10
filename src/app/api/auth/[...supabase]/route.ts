@@ -13,8 +13,11 @@ export async function GET(request: Request) {
     decoded.startsWith('/') &&
     !decoded.startsWith('//') &&
     !decoded.includes('\\') &&
-    !decoded.includes('%2f') &&
-    !/^\/[^/]*:/.test(decoded); // blocks /foo:bar@evil.com
+    !decoded.includes('@') &&
+    !decoded.includes('%') &&
+    !decoded.includes('\0') &&
+    !/\s/.test(decoded) &&
+    !/^\/[^/]*:/.test(decoded);
   const next = isSafe ? decoded : '/';
 
   if (code) {
