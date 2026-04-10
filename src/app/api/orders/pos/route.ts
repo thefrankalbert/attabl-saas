@@ -332,9 +332,7 @@ export async function POST(request: Request) {
       );
     }
     const errMsg = error instanceof Error ? error.message : String(error);
-    const errStack =
-      error instanceof Error ? error.stack?.split('\n').slice(0, 5).join(' | ') : undefined;
-    logger.error('POS order creation error', error, { message: errMsg, stack: errStack });
+    logger.error('POS order creation error', error, { message: errMsg });
     return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
   }
 }

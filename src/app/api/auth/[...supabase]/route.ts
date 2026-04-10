@@ -5,8 +5,17 @@ import { logger } from '@/lib/logger';
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
   const code = searchParams.get('code');
+  // Strict open-redirect prevention: only allow relative paths that start with
+  // a single forward slash and contain no protocol-relative bypasses (// \\ %2f etc.)
   const rawNext = searchParams.get('next') ?? '/';
-  const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '/';
+  const decoded = decodeURIComponent(rawNext);
+  const isSafe =
+    decoded.startsWith('/') &&
+    !decoded.startsWith('//') &&
+    !decoded.includes('\\') &&
+    !decoded.includes('%2f') &&
+    !/^\/[^/]*:/.test(decoded); // blocks /foo:bar@evil.com
+  const next = isSafe ? decoded : '/';
 
   if (code) {
     const supabase = await createClient();
