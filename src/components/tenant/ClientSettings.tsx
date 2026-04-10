@@ -39,7 +39,8 @@ interface ClientSettingsProps {
 }
 
 const CURRENCY_OPTIONS: { code: DisplayCurrency; label: string }[] = [
-  { code: 'XAF', label: 'F CFA' },
+  { code: 'XOF', label: 'FCFA' },
+  { code: 'XAF', label: 'FCFA (BEAC)' },
   { code: 'EUR', label: 'Euro' },
   { code: 'USD', label: 'Dollar' },
 ];
@@ -215,28 +216,20 @@ export default function ClientSettings({
         paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
       }}
     >
-      {/* Header */}
-      <div className="sticky top-0 z-40 bg-white" style={{ height: 56 }}>
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
-          <button
-            type="button"
-            onClick={() => router.push(`/sites/${tenantSlug}`)}
-            className="p-2 -ml-2 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
-            style={{ color: '#737373' }}
-            aria-label="Retour"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
-              {t('settingsTitle')}
-            </h1>
-          </div>
-          <div className="w-9" />
-        </div>
+      {/* Back button - detached, no background bar */}
+      <div className="max-w-lg mx-auto px-3 py-2">
+        <button
+          type="button"
+          onClick={() => router.push(`/sites/${tenantSlug}`)}
+          className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+          style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
+          aria-label="Retour"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 pt-4 space-y-5">
+      <div className="max-w-lg mx-auto px-4 space-y-5">
         {/* 1. Restaurant Profile Card */}
         <section
           className="bg-white rounded-xl overflow-hidden"
