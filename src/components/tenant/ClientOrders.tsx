@@ -174,8 +174,7 @@ export default function ClientOrders({
     if (activeOrderIds.length === 0) return;
 
     const supabase = supabaseRef.current;
-    // Unique channel name per mount to avoid collision on React strict-mode double-mount
-    const channelName = `order-status-${Date.now()}`;
+    const channelName = `order-status-${tenantId}`;
 
     const channel = supabase
       .channel(channelName)

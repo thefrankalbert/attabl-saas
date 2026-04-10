@@ -18,10 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
-
-const getTranslatedContent = (language: string, fr: string, en?: string | null) => {
-  return language === 'en' && en ? en : fr;
-};
+import { getTranslatedContent } from '@/lib/utils/translate';
 
 // --- Props ---------------------------------------------------------------
 
