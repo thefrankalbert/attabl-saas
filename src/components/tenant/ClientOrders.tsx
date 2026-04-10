@@ -13,7 +13,6 @@ import {
   ArrowLeft,
   BellRing,
   X,
-  Clock,
   Users,
   RotateCcw,
 } from 'lucide-react';
@@ -61,9 +60,6 @@ const EDITABLE_STATUSES = new Set(['pending']);
 const ACTIVE_STATUSES = new Set(['pending', 'confirmed', 'preparing', 'ready']);
 const TERMINAL_STATUSES = new Set(['delivered', 'served', 'cancelled']);
 
-// Rough ETA per status (minutes remaining from created_at)
-const ETA_TOTAL_MINUTES = 15;
-
 // --- Helpers ------------------------------------------------
 
 function getStoredOrderIds(): string[] {
@@ -77,13 +73,6 @@ function getStoredOrderIds(): string[] {
 
 function isWithinEditWindow(createdAt: string): boolean {
   return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
-}
-
-function getMinutesRemaining(createdAt: string, status: string): number {
-  if (status === 'ready' || TERMINAL_STATUSES.has(status)) return 0;
-  const elapsedMs = Date.now() - new Date(createdAt).getTime();
-  const remainingMs = ETA_TOTAL_MINUTES * 60 * 1000 - elapsedMs;
-  return Math.max(1, Math.ceil(remainingMs / 60000));
 }
 
 function shortOrderNumber(order: Pick<OrderRecord, 'order_number' | 'id'>): string {
@@ -171,16 +160,22 @@ export default function ClientOrders({
     };
   }, [tenantId]);
 
-  // --- Realtime: listen for status changes on ALL tracked orders --
+  // --- Realtime: listen for status changes on ACTIVE orders only --
+
+  const activeOrderIds = useMemo(
+    () => orders.filter((o) => ACTIVE_STATUSES.has(o.status)).map((o) => o.id),
+    [orders],
+  );
 
   useEffect(() => {
-    const supabase = supabaseRef.current;
-    const orderIds = orders.map((o) => o.id);
+    if (activeOrderIds.length === 0) return;
 
-    if (orderIds.length === 0) return;
+    const supabase = supabaseRef.current;
+    // Unique channel name per mount to avoid collision on React strict-mode double-mount
+    const channelName = `order-status-${Date.now()}`;
 
     const channel = supabase
-      .channel('order-status-updates')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -192,7 +187,6 @@ export default function ClientOrders({
         (payload) => {
           const updated = payload.new as { id: string; status: string };
           setOrders((prev) => {
-            // Detect transition to "ready" and notify
             const existing = prev.find((o) => o.id === updated.id);
             const prevStatus = previousStatusesRef.current.get(updated.id) || existing?.status;
             if (updated.status === 'ready' && prevStatus !== 'ready' && existing) {
@@ -203,16 +197,12 @@ export default function ClientOrders({
           });
         },
       )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          logger.error('ClientOrders realtime channel error');
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orders.length, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeOrderIds.length, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // --- Countdown timer: edit window + ETA ------------------
 
