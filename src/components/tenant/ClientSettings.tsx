@@ -282,8 +282,8 @@ export default function ClientSettings({
           >
             <SettingsRow
               icon={<Clock className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-              iconBg="#E6F9F0"
-              iconColor="#06C167"
+              iconBg="#F6F6F6"
+              iconColor="#1A1A1A"
               label={t('orderHistoryLabel')}
               subtitle={t('orderHistorySubtitle')}
               onClick={goToOrders}
@@ -319,11 +319,11 @@ export default function ClientSettings({
               <div className="flex items-center gap-3.5">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: '#E6F9F0' }}
+                  style={{ backgroundColor: '#F6F6F6' }}
                 >
                   <Globe
                     className="w-[18px] h-[18px]"
-                    style={{ color: '#06C167' }}
+                    style={{ color: '#1A1A1A' }}
                     strokeWidth={1.5}
                   />
                 </div>
@@ -343,7 +343,7 @@ export default function ClientSettings({
                     'text-[11px] font-bold px-3 py-1.5 rounded-md transition-all',
                     lang === 'fr' ? 'bg-white' : '',
                   )}
-                  style={lang === 'fr' ? { color: '#06C167' } : { color: '#737373' }}
+                  style={lang === 'fr' ? { color: '#1A1A1A' } : { color: '#737373' }}
                 >
                   FR
                 </button>
@@ -353,7 +353,7 @@ export default function ClientSettings({
                     'text-[11px] font-bold px-3 py-1.5 rounded-md transition-all',
                     lang === 'en' ? 'bg-white' : '',
                   )}
-                  style={lang === 'en' ? { color: '#06C167' } : { color: '#737373' }}
+                  style={lang === 'en' ? { color: '#1A1A1A' } : { color: '#737373' }}
                 >
                   EN
                 </button>
@@ -367,11 +367,11 @@ export default function ClientSettings({
               <div className="flex items-center gap-3.5 mb-3">
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: '#E6F9F0' }}
+                  style={{ backgroundColor: '#F6F6F6' }}
                 >
                   <DollarSign
                     className="w-[18px] h-[18px]"
-                    style={{ color: '#06C167' }}
+                    style={{ color: '#1A1A1A' }}
                     strokeWidth={1.5}
                   />
                 </div>
@@ -400,7 +400,7 @@ export default function ClientSettings({
                     )}
                     style={
                       displayCurrency === c.code
-                        ? { backgroundColor: '#06C167' }
+                        ? { backgroundColor: '#1A1A1A' }
                         : { border: '1px solid #EEEEEE', color: '#737373' }
                     }
                   >
@@ -440,7 +440,7 @@ export default function ClientSettings({
                 <div
                   className="w-11 h-6 rounded-full p-1 transition-colors flex-shrink-0"
                   style={{
-                    backgroundColor: notificationsEnabled ? '#06C167' : '#EEEEEE',
+                    backgroundColor: notificationsEnabled ? '#1A1A1A' : '#EEEEEE',
                   }}
                 >
                   <div
@@ -470,8 +470,8 @@ export default function ClientSettings({
                 <>
                   <SettingsRow
                     icon={<MapPin className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-                    iconBg="#E6F9F0"
-                    iconColor="#06C167"
+                    iconBg="#F6F6F6"
+                    iconColor="#1A1A1A"
                     label={t('addressLabel')}
                     subtitle={fullAddress || tenantCountry || t('notAvailable')}
                     right={<span />}
@@ -482,8 +482,8 @@ export default function ClientSettings({
               {tenantPhone && (
                 <SettingsRow
                   icon={<Phone className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-                  iconBg="#E6F9F0"
-                  iconColor="#06C167"
+                  iconBg="#F6F6F6"
+                  iconColor="#1A1A1A"
                   label={t('phoneLabel')}
                   subtitle={tenantPhone}
                   onClick={() => {
@@ -507,8 +507,8 @@ export default function ClientSettings({
           >
             <SettingsRow
               icon={<HelpCircle className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-              iconBg="#E6F9F0"
-              iconColor="#06C167"
+              iconBg="#F6F6F6"
+              iconColor="#1A1A1A"
               label={t('helpAndSupport')}
               subtitle={t('helpAndSupportSubtitle')}
               onClick={() => setShowHelpModal(true)}
@@ -525,8 +525,8 @@ export default function ClientSettings({
             <SectionDivider />
             <SettingsRow
               icon={<Info className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-              iconBg="#E6F9F0"
-              iconColor="#06C167"
+              iconBg="#F6F6F6"
+              iconColor="#1A1A1A"
               label={t('aboutLabel')}
               subtitle={tenantName}
               onClick={() => setShowAboutModal(true)}
@@ -646,7 +646,7 @@ export default function ClientSettings({
             </div>
             <div className="px-10 py-10 pb-20 overflow-y-auto max-h-[85vh]">
               <div className="text-center mb-10">
-                <h3 className="text-[11px] font-medium" style={{ color: '#06C167' }}>
+                <h3 className="text-[11px] font-medium" style={{ color: '#1A1A1A' }}>
                   ATTABL
                 </h3>
               </div>
@@ -697,8 +697,8 @@ export default function ClientSettings({
             <div className="py-2">
               <SettingsRow
                 icon={<Mail className="w-[18px] h-[18px]" strokeWidth={1.5} />}
-                iconBg="#E6F9F0"
-                iconColor="#06C167"
+                iconBg="#F6F6F6"
+                iconColor="#1A1A1A"
                 label={t('helpEmailLabel')}
                 subtitle={t('helpEmailSubtitle')}
                 onClick={() => {

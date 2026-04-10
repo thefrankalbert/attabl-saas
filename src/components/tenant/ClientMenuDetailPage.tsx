@@ -475,7 +475,7 @@ export default function ClientMenuDetailPage({
               textTransform: 'uppercase' as const,
               letterSpacing: 1,
               ...(!activeVenueId
-                ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                 : { backgroundColor: '#F6F6F6', color: '#737373' }),
             }}
           >
@@ -494,7 +494,7 @@ export default function ClientMenuDetailPage({
                 textTransform: 'uppercase' as const,
                 letterSpacing: 1,
                 ...(activeVenueId === venue.id
-                  ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                  ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                   : { backgroundColor: '#F6F6F6', color: '#737373' }),
               }}
             >
@@ -519,7 +519,7 @@ export default function ClientMenuDetailPage({
                   textTransform: 'uppercase' as const,
                   letterSpacing: 1,
                   ...(activeMenuSlug === menu.slug
-                    ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                    ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                     : { backgroundColor: '#F6F6F6', color: '#737373' }),
                 }}
               >
@@ -543,7 +543,7 @@ export default function ClientMenuDetailPage({
                 textTransform: 'uppercase' as const,
                 letterSpacing: 1,
                 ...(!activeSubMenuId
-                  ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                  ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                   : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
               }}
             >
@@ -562,7 +562,7 @@ export default function ClientMenuDetailPage({
                     textTransform: 'uppercase' as const,
                     letterSpacing: 1,
                     ...(activeSubMenuId === child.id
-                      ? { backgroundColor: '#06C167', color: '#FFFFFF' }
+                      ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                       : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
                   }}
                 >
@@ -606,7 +606,7 @@ export default function ClientMenuDetailPage({
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 lineHeight: 1.4,
-                backgroundColor: isActive ? '#06C167' : '#F6F6F6',
+                backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
                 color: isActive ? '#FFFFFF' : '#737373',
               }}
             >
@@ -660,7 +660,14 @@ export default function ClientMenuDetailPage({
                   </div>
 
                   {/* Items list */}
-                  <div style={{ backgroundColor: '#FFFFFF', paddingTop: '12px' }}>
+                  <div
+                    style={{
+                      backgroundColor: '#FFFFFF',
+                      paddingTop: '12px',
+                      paddingLeft: '16px',
+                      paddingRight: '16px',
+                    }}
+                  >
                     <div>
                       {category.items.map((item: MenuItem, index: number) => {
                         const isRealtimeDisabled = disabledItemIds.has(item.id);
@@ -734,15 +741,12 @@ export default function ClientMenuDetailPage({
                 whiteSpace: 'nowrap',
               }}
             >
-              {t('viewCart')} ({totalCartItems})
+              {t('viewCart')}
             </span>
             <span
-              style={{
-                width: 1,
-                height: 18,
-                backgroundColor: 'rgba(255,255,255,0.25)',
-              }}
               aria-hidden="true"
+              className="inline-block rounded-full bg-white"
+              style={{ width: 5, height: 5 }}
             />
             <span
               style={{

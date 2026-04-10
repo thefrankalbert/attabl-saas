@@ -29,7 +29,7 @@ export default function TenantNotFound() {
           {t('notFoundDescription')}
         </p>
 
-        <Button asChild className="mt-6 gap-2 w-full" style={{ backgroundColor: '#06C167' }}>
+        <Button asChild className="mt-6 gap-2 w-full" style={{ backgroundColor: '#1A1A1A' }}>
           <Link href={menuHref}>
             <ArrowLeft className="h-4 w-4" />
             {t('backToMenu')}

@@ -1930,6 +1930,7 @@
     "poweredBy": "Propulsé par ATTABL",
     "appVersion": "Version 1.1.1",
     "ourRestaurants": "Nos restaurants",
+    "ourMenus": "Nos cartes",
     "viewCart": "Voir le panier",
     "bannerPromoLabel": "Offre",
     "dineInTable": "Sur place - Table {number}"
@@ -2310,7 +2311,7 @@
   },
   "installPrompt": {
     "installApp": "Installer {name}",
-    "subtitle": "Accès rapide & commande simplifiée",
+    "subtitle": "Commandez en un clic, depuis votre ecran d'accueil",
     "install": "Installer",
     "howTo": "Comment ?",
     "close": "Fermer",

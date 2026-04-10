@@ -354,7 +354,7 @@ export default function ClientOrders({
           <button
             type="button"
             className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: '#06C167', fontSize: '15px', fontWeight: 600 }}
+            style={{ backgroundColor: '#1A1A1A', fontSize: '15px', fontWeight: 600 }}
           >
             <ArrowLeft className="w-4 h-4" />
             {t('viewMenu')}
@@ -375,7 +375,7 @@ export default function ClientOrders({
       {showReadyBanner && (
         <div
           className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3"
-          style={{ backgroundColor: '#06C167' }}
+          style={{ backgroundColor: '#1A1A1A' }}
         >
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
@@ -568,7 +568,7 @@ export default function ClientOrders({
                             disabled={isEditing}
                             className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
                             style={{
-                              backgroundColor: '#06C167',
+                              backgroundColor: '#1A1A1A',
                               fontSize: '15px',
                               fontWeight: 600,
                             }}
@@ -630,7 +630,7 @@ function ActiveOrderBanner({ order, onClick }: { order: OrderRecord; onClick: ()
       className="w-full text-left rounded-xl overflow-hidden transition-transform active:scale-[0.99]"
       style={{
         backgroundColor: '#FFFFFF',
-        border: '1px solid #06C167',
+        border: '1px solid #1A1A1A',
       }}
     >
       <div className="p-4">
@@ -646,8 +646,8 @@ function ActiveOrderBanner({ order, onClick }: { order: OrderRecord; onClick: ()
           <div
             className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-lg"
             style={{
-              backgroundColor: order.status === 'ready' ? '#E6F9F0' : '#F6F6F6',
-              color: order.status === 'ready' ? '#06C167' : '#737373',
+              backgroundColor: order.status === 'ready' ? '#F6F6F6' : '#F6F6F6',
+              color: order.status === 'ready' ? '#1A1A1A' : '#737373',
             }}
           >
             <Clock className="w-3.5 h-3.5" />
@@ -723,7 +723,7 @@ function BadgeStatus({ status }: { status: string }) {
     pending: { bg: '#F6F6F6', color: '#737373' },
     confirmed: { bg: '#F6F6F6', color: '#737373' },
     preparing: { bg: '#F6F6F6', color: '#737373' },
-    ready: { bg: '#E6F9F0', color: '#06C167' },
+    ready: { bg: '#F6F6F6', color: '#1A1A1A' },
     delivered: { bg: '#F6F6F6', color: '#737373' },
     served: { bg: '#F6F6F6', color: '#737373' },
     cancelled: { bg: '#FFEBEE', color: '#FF3008' },

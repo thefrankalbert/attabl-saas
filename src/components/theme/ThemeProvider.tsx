@@ -27,7 +27,7 @@ interface ThemeContextType {
   applyTheme: (colors: ThemeColors) => void;
 }
 
-const DEFAULT_PRIMARY = '#06C167';
+const DEFAULT_PRIMARY = '#1A1A1A';
 
 const defaultColors: ThemeColors = {
   primaryColor: DEFAULT_PRIMARY,

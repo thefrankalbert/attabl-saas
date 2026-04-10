@@ -9,7 +9,7 @@ import { getCachedTenant } from '@/lib/cache';
 import type {
   Announcement,
   MenuItem,
-  Venue,
+  Menu,
   Category,
   Ad,
   Zone,
@@ -99,7 +99,7 @@ export default async function MenuPage({
 
   // Parallel queries for all home page data
   const [
-    venuesResult,
+    menusResult,
     categoriesResult,
     adsResult,
     announcementsResult,
@@ -107,13 +107,16 @@ export default async function MenuPage({
     recentResult,
     couponsResult,
   ] = await Promise.all([
+    // Root menus only (parent_menu_id IS NULL) - sub-menus are fetched on demand
+    // by the menu detail page when a parent is selected.
     supabase
-      .from('venues')
+      .from('menus')
       .select(
-        'id, tenant_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at',
+        'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at',
       )
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
+      .is('parent_menu_id', null)
       .order('display_order', { ascending: true }),
 
     supabase
@@ -174,7 +177,7 @@ export default async function MenuPage({
       .or(`valid_until.is.null,valid_until.gte.${now}`),
   ]);
 
-  const venues = (venuesResult.data || []) as unknown as Venue[];
+  const menus = (menusResult.data || []) as unknown as Menu[];
   const categories = (categoriesResult.data || []) as unknown as Category[];
   const ads = (adsResult.data || []) as unknown as Ad[];
   const announcements = (announcementsResult.data || []) as unknown as Announcement[];
@@ -206,7 +209,7 @@ export default async function MenuPage({
     <NextIntlClientProvider messages={messages}>
       <ClientMenuPage
         tenant={tenant}
-        venues={venues}
+        menus={menus}
         initialTable={initialTable}
         categories={categories}
         ads={ads}

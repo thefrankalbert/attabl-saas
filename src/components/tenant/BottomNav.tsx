@@ -7,7 +7,7 @@ import { useCart } from '@/contexts/CartContext';
 
 /* Design tokens from DESIGN.md */
 const C = {
-  primary: '#06C167',
+  primary: '#1A1A1A',
   background: '#FFFFFF',
   divider: '#EEEEEE',
   textMuted: '#B0B0B0',

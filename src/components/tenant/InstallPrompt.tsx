@@ -169,7 +169,7 @@ export default function InstallPrompt({
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-sm leading-tight">{t('installApp', { name: appName })}</h3>
+          <h3 className="font-bold text-sm leading-tight truncate">{appName}</h3>
           <p className="text-[11px] mt-0.5" style={{ color: '#B0B0B0' }}>
             {t('subtitle')}
           </p>
