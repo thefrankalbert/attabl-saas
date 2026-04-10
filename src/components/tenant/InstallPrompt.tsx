@@ -203,7 +203,12 @@ export default function InstallPrompt({
           <Download size={14} /> {t('install')}
         </button>
 
-        <button onClick={handleDismiss} className="p-1" style={{ color: '#737373' }}>
+        <button
+          onClick={handleDismiss}
+          aria-label={t('close')}
+          className="p-1"
+          style={{ color: '#737373' }}
+        >
           <X size={16} />
         </button>
       </div>

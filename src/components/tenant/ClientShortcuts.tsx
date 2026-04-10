@@ -80,6 +80,7 @@ function ShortcutButton({
     <button
       onClick={onClick}
       disabled={disabled}
+      aria-label={label}
       className="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
     >
       <div
