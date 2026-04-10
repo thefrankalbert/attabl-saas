@@ -27,6 +27,7 @@ import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { getTranslatedContent } from '@/lib/utils/translate';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import BottomNav from '@/components/tenant/BottomNav';
@@ -42,20 +43,10 @@ interface UpsellItem {
   category_name?: string;
 }
 
-interface CartRecommendation {
-  type: 'pairing' | 'drinks' | 'desserts' | 'featured' | 'complement';
-  title: string;
-  icon: 'pairing' | 'drinks' | 'desserts' | 'featured';
-}
-
 type TipPreset = 0 | 500 | 1000 | 1500 | 2000 | 'custom';
 
 // --- Helpers -------------------------------------------------
 const NOTES_MAX_LENGTH = 200;
-
-const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
-  return lang === 'en' && en ? en : fr;
-};
 
 const getCartItemKey = (item: {
   id: string;
@@ -126,8 +117,6 @@ export default function CartPage() {
   // Title is now fixed ("Vous aimerez aussi") regardless of which strategy returned
   // items, so the strategies no longer need to track which recommendation type is
   // active. This shim preserves the in-effect call sites without dead-state warnings.
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const setActiveRecommendation = useCallback((_rec: CartRecommendation | null) => {}, []);
 
   // --- Tip computation (absolute amounts, not percentages) --
   const tipAmount = useMemo(() => {
@@ -159,7 +148,6 @@ export default function CartPage() {
 
       const fetchSmartSuggestions = async () => {
         if (!currentRestaurantId || items.length === 0) {
-          setActiveRecommendation(null);
           setUpsellItems([]);
           return;
         }
@@ -198,11 +186,6 @@ export default function CartPage() {
               );
 
               if (thisFetchId !== fetchIdRef.current) return;
-              setActiveRecommendation({
-                type: 'pairing',
-                title: t('upsellPairings'),
-                icon: 'pairing',
-              });
               setUpsellItems(
                 sorted.slice(0, 6).map((mi) => ({
                   id: mi.id,
@@ -249,11 +232,6 @@ export default function CartPage() {
 
           if (collected.length >= 3) {
             if (thisFetchId !== fetchIdRef.current) return;
-            setActiveRecommendation({
-              type: 'pairing',
-              title: t('upsellPairings'),
-              icon: 'pairing',
-            });
             setUpsellItems(collected.slice(0, 6));
             setIsLoadingUpsell(false);
             return;
@@ -285,7 +263,6 @@ export default function CartPage() {
           });
 
           let complementCategoryIds: string[] = [];
-          let recommendation: CartRecommendation | null = null;
 
           if (!hasDrinkCategory) {
             complementCategoryIds = (allCategories || [])
@@ -295,11 +272,6 @@ export default function CartPage() {
                 ),
               )
               .map((c) => c.id);
-            recommendation = {
-              type: 'drinks',
-              title: t('upsellDrinks'),
-              icon: 'drinks',
-            };
           } else if (!hasDessertCategory) {
             complementCategoryIds = (allCategories || [])
               .filter((c) =>
@@ -308,14 +280,9 @@ export default function CartPage() {
                 ),
               )
               .map((c) => c.id);
-            recommendation = {
-              type: 'desserts',
-              title: t('upsellDesserts'),
-              icon: 'desserts',
-            };
           }
 
-          if (complementCategoryIds.length > 0 && recommendation) {
+          if (complementCategoryIds.length > 0) {
             const { data: complementItems } = await supabase
               .from('menu_items')
               .select('id, name, name_en, price, image_url, category_id, is_featured')
@@ -348,7 +315,6 @@ export default function CartPage() {
                   return true;
                 });
 
-                setActiveRecommendation(recommendation);
                 setUpsellItems(deduped.slice(0, 6));
                 setIsLoadingUpsell(false);
                 return;
@@ -387,11 +353,6 @@ export default function CartPage() {
                 return true;
               });
 
-              setActiveRecommendation({
-                type: 'featured',
-                title: t('upsellFeatured'),
-                icon: 'featured',
-              });
               setUpsellItems(deduped.slice(0, 6));
               setIsLoadingUpsell(false);
               return;
@@ -428,11 +389,6 @@ export default function CartPage() {
 
                 if (extras.length > 0) {
                   if (thisFetchId !== fetchIdRef.current) return;
-                  setActiveRecommendation({
-                    type: 'complement',
-                    title: t('upsellComplement'),
-                    icon: 'pairing',
-                  });
                   setUpsellItems(extras.slice(0, 6));
                   setIsLoadingUpsell(false);
                   return;
@@ -443,14 +399,8 @@ export default function CartPage() {
 
           if (thisFetchId !== fetchIdRef.current) return;
           if (collected.length > 0) {
-            setActiveRecommendation({
-              type: 'pairing',
-              title: t('upsellPairings'),
-              icon: 'pairing',
-            });
             setUpsellItems(collected);
           } else {
-            setActiveRecommendation(null);
             setUpsellItems([]);
           }
         } catch (err) {

@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
+import { getTranslatedContent } from '@/lib/utils/translate';
 
 interface MenuItemCardProps {
   item: MenuItem;
@@ -19,10 +20,6 @@ interface MenuItemCardProps {
   currency?: string;
   onOpenDetail?: () => void;
 }
-
-const getTranslatedContent = (language: string, fr: string, en?: string | null) => {
-  return language === 'en' && en ? en : fr;
-};
 
 export default function MenuItemCard({
   item,
