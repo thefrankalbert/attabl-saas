@@ -11,8 +11,6 @@ import {
   Loader2,
   Trash2,
   ShoppingBag,
-  Coffee,
-  IceCreamCone,
   ChevronLeft,
   ChevronRight,
   AlertCircle,
@@ -123,9 +121,13 @@ export default function CartPage() {
 
   // Upsell
   const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
-  const [activeRecommendation, setActiveRecommendation] = useState<CartRecommendation | null>(null);
   const [isLoadingUpsell, setIsLoadingUpsell] = useState(false);
   const [upsellImageErrors, setUpsellImageErrors] = useState<Set<string>>(new Set());
+  // Title is now fixed ("Vous aimerez aussi") regardless of which strategy returned
+  // items, so the strategies no longer need to track which recommendation type is
+  // active. This shim preserves the in-effect call sites without dead-state warnings.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const setActiveRecommendation = useCallback((_rec: CartRecommendation | null) => {}, []);
 
   // --- Tip computation (absolute amounts, not percentages) --
   const tipAmount = useMemo(() => {
@@ -166,7 +168,54 @@ export default function CartPage() {
         try {
           const supabase = createClient();
           const cartIds = new Set(items.map((i) => i.id));
+          const cartIdsArray = Array.from(cartIds);
           const collected: UpsellItem[] = [];
+
+          // Strategy 0 (highest priority): Co-occurrence from past orders.
+          // "People who ordered X also ordered Y" — uses the tenant's own order
+          // history via the get_co_ordered_items RPC. No external service.
+          const { data: coOrdered } = await supabase.rpc('get_co_ordered_items', {
+            p_tenant_id: currentRestaurantId,
+            p_cart_ids: cartIdsArray,
+            p_limit: 6,
+          });
+
+          if (coOrdered && Array.isArray(coOrdered) && coOrdered.length >= 3) {
+            // Hydrate the menu_item rows for the suggestions returned by the RPC
+            const coIds = (coOrdered as { menu_item_id: string }[]).map((r) => r.menu_item_id);
+            const { data: coItems } = await supabase
+              .from('menu_items')
+              .select('id, name, name_en, price, image_url, is_available, category_id')
+              .in('id', coIds)
+              .eq('tenant_id', currentRestaurantId)
+              .eq('is_available', true);
+
+            if (coItems && coItems.length >= 3) {
+              // Preserve the frequency-sorted order from the RPC
+              const orderMap = new Map(coIds.map((id, i) => [id, i]));
+              const sorted = [...coItems].sort(
+                (a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99),
+              );
+
+              if (thisFetchId !== fetchIdRef.current) return;
+              setActiveRecommendation({
+                type: 'pairing',
+                title: t('upsellPairings'),
+                icon: 'pairing',
+              });
+              setUpsellItems(
+                sorted.slice(0, 6).map((mi) => ({
+                  id: mi.id,
+                  name: mi.name,
+                  name_en: mi.name_en ?? undefined,
+                  price: mi.price,
+                  image_url: mi.image_url ?? undefined,
+                })),
+              );
+              setIsLoadingUpsell(false);
+              return;
+            }
+          }
 
           // Strategy 1: Admin-configured pairings
           const { data: pairings } = await supabase
@@ -751,104 +800,85 @@ export default function CartPage() {
           </section>
         )}
 
-        {/* UPSELL SUGGESTIONS */}
-        <AnimatePresence>
-          {(activeRecommendation && upsellItems.length > 0) ||
-          (isLoadingUpsell && upsellItems.length === 0) ? (
-            <motion.section
-              key="upsell-section"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  {activeRecommendation?.icon === 'drinks' ? (
-                    <Coffee className="w-5 h-5 text-[#1A1A1A]" />
-                  ) : activeRecommendation?.icon === 'desserts' ? (
-                    <IceCreamCone className="w-5 h-5 text-[#1A1A1A]" />
-                  ) : (
-                    <Utensils className="w-5 h-5 text-[#1A1A1A]" />
-                  )}
-                  <h2 className="text-[20px] font-bold text-[#1A1A1A]">
-                    {isLoadingUpsell && !activeRecommendation ? (
-                      <div className="h-5 w-32 bg-[#F6F6F6] rounded animate-pulse" />
-                    ) : (
-                      activeRecommendation?.title
-                    )}
-                  </h2>
-                </div>
-                <Link href={menuPath} className="text-[14px] font-semibold text-[#1A1A1A]">
-                  {t('seeAll') || 'See all'}
-                </Link>
+        {/* UPSELL SUGGESTIONS - stable section: visible whenever the cart has items.
+            Title is fixed ("Vous aimerez aussi") so the user never sees the heading
+            change as suggestions recompute on cart edits. */}
+        {items.length > 0 && (upsellItems.length > 0 || isLoadingUpsell) && (
+          <section className="overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-[#1A1A1A]" />
+                <h2 className="text-[20px] font-bold text-[#1A1A1A]">{t('upsellYouMayLike')}</h2>
               </div>
+              <Link href={menuPath} className="text-[14px] font-semibold text-[#1A1A1A]">
+                {t('seeAll') || 'See all'}
+              </Link>
+            </div>
 
-              <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
-                <div className="flex gap-3 min-w-max">
-                  {isLoadingUpsell && upsellItems.length === 0
-                    ? [1, 2, 3].map((i) => (
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-3 min-w-max">
+                {isLoadingUpsell && upsellItems.length === 0
+                  ? [1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] animate-pulse overflow-hidden"
+                      >
+                        <div className="w-full h-[110px] bg-[#F6F6F6]" />
+                        <div className="p-2.5">
+                          <div className="h-4 w-3/4 bg-[#F6F6F6] rounded mb-2" />
+                          <div className="h-3 w-1/2 bg-[#F6F6F6] rounded" />
+                        </div>
+                      </div>
+                    ))
+                  : upsellItems.map((item) => {
+                      const hasImage =
+                        item.image_url &&
+                        !item.image_url.includes('placeholder') &&
+                        !upsellImageErrors.has(item.id);
+
+                      return (
                         <div
-                          key={i}
-                          className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] animate-pulse overflow-hidden"
+                          key={item.id}
+                          className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] overflow-hidden"
                         >
-                          <div className="w-full h-[110px] bg-[#F6F6F6]" />
+                          <div className="w-full h-[110px] overflow-hidden relative bg-[#F6F6F6] flex items-center justify-center">
+                            {hasImage ? (
+                              <Image
+                                src={item.image_url!}
+                                alt={item.name}
+                                fill
+                                sizes="160px"
+                                className="object-cover"
+                                onError={() =>
+                                  setUpsellImageErrors((prev) => new Set(prev).add(item.id))
+                                }
+                              />
+                            ) : (
+                              <Utensils className="w-6 h-6 text-[#B0B0B0]" />
+                            )}
+                            <button
+                              onClick={() => handleAddUpsellItem(item)}
+                              className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] flex items-center justify-center active:scale-90 transition-all hover:bg-black"
+                              aria-label={t('ariaAddUpsell', { name: item.name })}
+                            >
+                              <Plus className="w-4 h-4 text-white" />
+                            </button>
+                          </div>
                           <div className="p-2.5">
-                            <div className="h-4 w-3/4 bg-[#F6F6F6] rounded mb-2" />
-                            <div className="h-3 w-1/2 bg-[#F6F6F6] rounded" />
+                            <h3 className="text-[15px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
+                              {getTranslatedContent(language, item.name, item.name_en)}
+                            </h3>
+                            <span className="text-[14px] font-bold text-[#1A1A1A]">
+                              {resolveAndFormatPrice(item.price, item.prices, currencyCode)}
+                            </span>
                           </div>
                         </div>
-                      ))
-                    : upsellItems.map((item) => {
-                        const hasImage =
-                          item.image_url &&
-                          !item.image_url.includes('placeholder') &&
-                          !upsellImageErrors.has(item.id);
-
-                        return (
-                          <div
-                            key={item.id}
-                            className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] overflow-hidden"
-                          >
-                            <div className="w-full h-[110px] overflow-hidden relative bg-[#F6F6F6] flex items-center justify-center">
-                              {hasImage ? (
-                                <Image
-                                  src={item.image_url!}
-                                  alt={item.name}
-                                  fill
-                                  sizes="160px"
-                                  className="object-cover"
-                                  onError={() =>
-                                    setUpsellImageErrors((prev) => new Set(prev).add(item.id))
-                                  }
-                                />
-                              ) : (
-                                <Utensils className="w-6 h-6 text-[#B0B0B0]" />
-                              )}
-                              <button
-                                onClick={() => handleAddUpsellItem(item)}
-                                className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] flex items-center justify-center active:scale-90 transition-all hover:bg-black"
-                                aria-label={t('ariaAddUpsell', { name: item.name })}
-                              >
-                                <Plus className="w-4 h-4 text-white" />
-                              </button>
-                            </div>
-                            <div className="p-2.5">
-                              <h3 className="text-[15px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
-                                {getTranslatedContent(language, item.name, item.name_en)}
-                              </h3>
-                              <span className="text-[14px] font-bold text-[#1A1A1A]">
-                                {resolveAndFormatPrice(item.price, item.prices, currencyCode)}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                </div>
+                      );
+                    })}
               </div>
-            </motion.section>
-          ) : null}
-        </AnimatePresence>
+            </div>
+          </section>
+        )}
 
         {/* PROMO CODE - collapsible, hidden until user clicks "Add code" */}
         {appliedCoupon ? (
@@ -1117,9 +1147,13 @@ export default function CartPage() {
                   {formatDisplayPrice(finalTotal, currencyCode)}
                 </span>
               </div>
-              <div className="text-[11px] text-right" style={{ color: '#B0B0B0' }}>
-                {t('totalHint')}
-              </div>
+              {/* Hint only meaningful when tax or service charge is actually applied */}
+              {((enableTax && taxAmount > 0) ||
+                (enableServiceCharge && serviceChargeAmount > 0)) && (
+                <div className="text-[11px] text-right" style={{ color: '#B0B0B0' }}>
+                  {t('totalHint')}
+                </div>
+              )}
             </div>
           </div>
         </section>
