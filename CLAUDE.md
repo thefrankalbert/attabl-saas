@@ -204,6 +204,68 @@ SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx,
 
 Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
 
+## Regles de securite - OBLIGATOIRES
+
+### Secrets & Cles API
+
+- JAMAIS de cle API, token, ou mot de passe en dur dans le code
+- TOUS les secrets vont dans un fichier .env.local (jamais commite)
+- Le fichier .env doit etre dans le .gitignore AVANT le premier commit
+- Cote client (React, Next, etc.) : utiliser UNIQUEMENT les variables prefixees correctement (NEXT*PUBLIC*, VITE\_, etc.)
+- Cote serveur : les cles sensibles (Stripe secret, Supabase service key) ne sont JAMAIS exposees au frontend
+
+### Base de donnees (Supabase / Firebase)
+
+- Row Level Security (RLS) ACTIVE sur TOUTES les tables sans exception
+- Chaque table a au minimum 1 policy SELECT, 1 UPDATE, 1 DELETE
+- Policy par defaut = RESTRICTIVE (tout est bloque sauf ce qui est explicitement autorise)
+- Utiliser UNIQUEMENT auth.uid() dans les policies (JAMAIS user_metadata, l'utilisateur peut le modifier)
+- La service key Supabase = BACKEND UNIQUEMENT, jamais dans le code client
+- En client-side, utiliser UNIQUEMENT la anon key
+- Ajouter WITH CHECK sur toutes les policies UPDATE et INSERT
+- Creer un index sur user_id pour chaque table avec RLS
+
+### Authentification
+
+- Toute page protegee redirige vers /login si l'utilisateur n'est pas connecte
+- Les tokens JWT sont valides cote serveur, pas uniquement cote client
+- Le logout invalide la session completement (pas juste un redirect)
+- Les cookies de session : Secure, HttpOnly, SameSite=Strict
+- Implementer un refresh token avec expiration courte (15 min access, 7 jours refresh)
+
+### Inputs utilisateur (injections)
+
+- JAMAIS de concatenation directe dans les requetes SQL -> parameterized queries
+  - INTERDIT : `db.query("SELECT * FROM users WHERE id = " + userId)`
+  - CORRECT : `db.query("SELECT * FROM users WHERE id = $1", [userId])`
+- JAMAIS de innerHTML ou dangerouslySetInnerHTML avec du contenu utilisateur
+- Valider ET sanitizer chaque input cote serveur (pas seulement cote client)
+- Echapper tout output affiche dans le HTML
+
+### API & Reseau
+
+- HTTPS obligatoire en production (jamais HTTP)
+- CORS restreint : lister les domaines autorises explicitement
+  - INTERDIT : `Access-Control-Allow-Origin: *`
+  - CORRECT : `Access-Control-Allow-Origin: https://monapp.com`
+- Rate limiting sur les endpoints sensibles (login, signup, paiement)
+- Pas de secrets dans les URLs (`?apiKey=xxx` -> interdit)
+
+### Dependances & Packages
+
+- Verifier chaque package ajoute par l'IA dans package.json AVANT de commit
+- Lancer `npm audit` (ou `pip audit`) regulierement
+- Se mefier des packages peu connus ou recents suggeres par l'IA
+- Pas de `eval()`, pas de `Function()`, pas d'execution dynamique de code
+
+### Deploiement
+
+- Variables d'environnement configurees dans le dashboard d'hebergement
+- Le fichier .env n'est PAS dans le repo Git
+- Tester le parcours complet en staging avant production
+- Verifier qu'aucune erreur n'affiche de stack trace en production
+- Headers de securite : Content-Security-Policy, X-Frame-Options, Strict-Transport-Security
+
 ## Documentation supplementaire
 
 - `agent_docs/architecture.md` : Details sur l'architecture en couches
