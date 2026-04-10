@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { toast } from 'sonner';
+
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   ChevronLeft,
@@ -163,13 +163,12 @@ export default function ItemDetailSheet({
       navigator.vibrate(10);
     }
 
-    toast.success(`${item.name} ajoute au panier`);
     setShowSuccess(true);
 
     setTimeout(() => {
       setShowSuccess(false);
       onClose();
-    }, 600);
+    }, 400);
   }, [
     item,
     selectedVariant,
