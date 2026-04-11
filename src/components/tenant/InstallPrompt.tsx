@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useSyncExternalStore } from 'react';
 import { Share, X, Download, Plus } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -195,22 +196,24 @@ export default function InstallPrompt({
           </p>
         </div>
 
-        <button
+        <Button
+          variant="outline"
+          size="sm"
           onClick={isIOS ? handleIOSInstall : handleInstall}
-          className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap flex items-center gap-1"
-          style={{ color: '#1A1A1A' }}
+          className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap text-[#1A1A1A] h-auto border-none"
         >
           <Download size={14} /> {t('install')}
-        </button>
+        </Button>
 
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleDismiss}
           aria-label={t('close')}
-          className="p-1"
-          style={{ color: '#737373' }}
+          className="p-1 text-[#737373] h-8 w-8"
         >
           <X size={16} />
-        </button>
+        </Button>
       </div>
 
       {isIOS && isExpanded && (

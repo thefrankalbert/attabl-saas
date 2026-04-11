@@ -22,6 +22,7 @@ import type {
   MenuItem,
   Coupon,
 } from '@/types/admin.types';
+import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/tenant/BottomNav';
 import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';
@@ -840,15 +841,15 @@ function TenantInfoSheet({
         >
           {/* Top close button */}
           <div className="flex-shrink-0 flex justify-end p-3">
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: C.surfaceAlt }}
+              className="w-9 h-9 rounded-full bg-[#F6F6F6]"
               aria-label="Fermer"
             >
               <X size={18} color={C.textPrimary} />
-            </button>
+            </Button>
           </div>
 
           {/* Hero: large logo + name */}

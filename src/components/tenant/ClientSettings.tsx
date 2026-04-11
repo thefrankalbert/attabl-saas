@@ -21,6 +21,7 @@ import {
 import { logger } from '@/lib/logger';
 import { useDisplayCurrency, type DisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import BottomNav from './BottomNav';
 
 // Types
@@ -92,17 +93,17 @@ function SettingsRow({
 
   if (onClick) {
     return (
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         onClick={onClick}
         disabled={disabled}
         className={cn(
-          'w-full min-h-[44px] px-4 py-3.5 flex items-center justify-between',
+          'w-full min-h-[44px] px-4 py-3.5 flex items-center justify-between rounded-none h-auto',
           disabled && 'opacity-50 cursor-not-allowed',
         )}
       >
         {content}
-      </button>
+      </Button>
     );
   }
 
@@ -218,15 +219,15 @@ export default function ClientSettings({
       {/* Back button - fixed at top, same bg as page, content scrolls beneath */}
       <div className="sticky top-0 z-40 bg-white">
         <div className="max-w-lg mx-auto px-3 py-2">
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.push(`/sites/${tenantSlug}`)}
-            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
-            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
+            className="w-9 h-9 rounded-full bg-[#F6F6F6] text-[#1A1A1A]"
             aria-label="Retour"
           >
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -562,14 +563,15 @@ export default function ClientSettings({
               <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                 {t('privacyTitle')}
               </h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowPrivacyModal(false)}
-                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
-                style={{ backgroundColor: '#F6F6F6' }}
+                className="rounded-full min-h-[44px] min-w-[44px] bg-[#F6F6F6]"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
-              </button>
+              </Button>
             </div>
             <div className="p-6 pb-24 overflow-y-auto max-h-[75vh] space-y-5">
               <section>
@@ -629,14 +631,15 @@ export default function ClientSettings({
               <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                 {t('aboutTitle')}
               </h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowAboutModal(false)}
-                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
-                style={{ backgroundColor: '#F6F6F6' }}
+                className="rounded-full min-h-[44px] min-w-[44px] bg-[#F6F6F6]"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
-              </button>
+              </Button>
             </div>
             <div className="px-10 py-10 pb-20 overflow-y-auto max-h-[85vh]">
               <div className="text-center mb-10">
@@ -678,14 +681,15 @@ export default function ClientSettings({
               <h2 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
                 {t('helpModalTitle')}
               </h2>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => setShowHelpModal(false)}
-                className="p-2 rounded-full min-h-[44px] min-w-[44px] flex items-center justify-center"
-                style={{ backgroundColor: '#F6F6F6' }}
+                className="rounded-full min-h-[44px] min-w-[44px] bg-[#F6F6F6]"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
-              </button>
+              </Button>
             </div>
 
             <div className="py-2">

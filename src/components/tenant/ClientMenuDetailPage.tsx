@@ -12,6 +12,7 @@ import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import BottomNav from '@/components/tenant/BottomNav';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
@@ -363,14 +364,15 @@ export default function ClientMenuDetailPage({
     >
       {/* ═══ HEADER + SEARCH (same row) ═══ */}
       <div className="px-3 py-2 flex items-center gap-2" style={{ backgroundColor: '#FFFFFF' }}>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => router.push(`/sites/${tenant.slug}`)}
-          className="w-9 h-9 rounded-full flex items-center justify-center border-none cursor-pointer flex-shrink-0"
-          style={{ backgroundColor: '#F6F6F6' }}
+          className="w-9 h-9 rounded-full bg-[#F6F6F6] flex-shrink-0"
           aria-label={t('ariaGoBack')}
         >
           <ChevronLeft className="w-5 h-5" style={{ color: '#1A1A1A' }} />
-        </button>
+        </Button>
         <div className="relative flex-1 min-w-0">
           <div
             className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"

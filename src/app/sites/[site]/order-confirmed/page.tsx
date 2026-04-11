@@ -241,26 +241,16 @@ function OrderConfirmedContent() {
   return (
     <main className="h-full bg-white pb-24" style={{ color: '#1A1A1A' }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-white" style={{ height: 56 }}>
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+      {/* Header: sticky back button, no title */}
+      <div className="sticky top-0 z-40 bg-white">
+        <div className="max-w-lg mx-auto px-3 py-2">
           <Link
             href={menuPath}
-            className="p-2 -ml-2 transition-colors"
-            style={{ color: '#737373' }}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold" style={{ color: '#1A1A1A' }}>
-              {t('orderSent')}
-            </h1>
-            <p className="text-xs" style={{ color: '#B0B0B0' }}>
-              {t('orderNumber', {
-                number: (order.order_number || order.id).slice(-5).toUpperCase(),
-              })}
-            </p>
-          </div>
-          <div className="w-9" />
         </div>
       </div>
 

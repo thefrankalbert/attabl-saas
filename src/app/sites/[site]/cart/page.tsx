@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/tenant/BottomNav';
@@ -540,13 +541,15 @@ export default function CartPage() {
     return (
       <main className="h-full bg-white pb-20">
         <div className="max-w-lg mx-auto h-14 px-4 flex items-center">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.back()}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[#B0B0B0] hover:text-[#1A1A1A] transition-colors"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A]"
             aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-6 h-6" />
-          </button>
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
@@ -559,12 +562,15 @@ export default function CartPage() {
           <p className="text-[13px] text-[#737373] text-center mb-8 max-w-[280px]">
             {t('emptyCartDesc')}
           </p>
-          <Link href={menuPath}>
-            <button className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98] hover:bg-black">
+          <Button
+            asChild
+            className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+          >
+            <Link href={menuPath}>
               <ArrowLeft className="w-4 h-4" />
               {t('browseMenu')}
-            </button>
-          </Link>
+            </Link>
+          </Button>
         </div>
         {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
       </main>
@@ -651,23 +657,27 @@ export default function CartPage() {
                       </p>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
-                      <button
+                      <Button
+                        variant="outline"
+                        size="icon"
                         onClick={() => updateQuantity(itemKey, item.quantity - 1)}
                         aria-label={t('ariaDecrease')}
-                        className="w-9 h-9 rounded-full border border-[#EEEEEE] flex items-center justify-center text-[#1A1A1A] hover:bg-[#F6F6F6] transition-colors min-h-[36px] min-w-[36px]"
+                        className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
                       >
                         <Minus className="w-4 h-4" />
-                      </button>
+                      </Button>
                       <span className="text-[16px] font-bold text-[#1A1A1A] w-6 text-center">
                         {item.quantity}
                       </span>
-                      <button
+                      <Button
+                        variant="outline"
+                        size="icon"
                         onClick={() => updateQuantity(itemKey, item.quantity + 1)}
                         aria-label={t('ariaIncrease')}
-                        className="w-9 h-9 rounded-full border border-[#EEEEEE] flex items-center justify-center text-[#1A1A1A] hover:bg-[#F6F6F6] transition-colors min-h-[36px] min-w-[36px]"
+                        className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
                       >
                         <Plus className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </div>
                   </div>
 
@@ -688,13 +698,15 @@ export default function CartPage() {
                         <Utensils className="w-6 h-6 text-[#B0B0B0]" />
                       )}
                     </div>
-                    <button
+                    <Button
+                      variant="outline"
+                      size="icon"
                       onClick={() => removeFromCart(itemKey)}
-                      className="absolute -bottom-2 -right-2 z-10 w-7 h-7 rounded-full bg-white border border-[#EEEEEE] flex items-center justify-center text-[#B0B0B0] hover:text-[#FF3008] transition-colors"
+                      className="absolute -bottom-2 -right-2 z-10 w-7 h-7 rounded-full bg-white border-[#EEEEEE] text-[#B0B0B0] hover:text-[#FF3008]"
                       aria-label={t('ariaRemoveItem')}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 </motion.div>
               );
@@ -705,15 +717,15 @@ export default function CartPage() {
         {/* KITCHEN NOTES - collapsible (hidden until user clicks) */}
         {!notesOpen && !notes ? (
           <section>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => setNotesOpen(true)}
-              className="w-full flex items-center gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 transition-colors hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
             >
               <ChefHat className="w-4 h-4" />
               <span>{t('cartNotesLabel')}</span>
               <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
-            </button>
+            </Button>
           </section>
         ) : (
           <section>
@@ -721,17 +733,18 @@ export default function CartPage() {
               <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
                 {t('cartNotesLabel')}
               </Label>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setNotesOpen(false);
                   setNotes('');
                 }}
-                className="text-[#737373] hover:text-[#1A1A1A]"
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
             <div className="relative">
               <Textarea
@@ -808,13 +821,14 @@ export default function CartPage() {
                             ) : (
                               <Utensils className="w-6 h-6 text-[#B0B0B0]" />
                             )}
-                            <button
+                            <Button
+                              size="icon"
                               onClick={() => handleAddUpsellItem(item)}
-                              className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] flex items-center justify-center active:scale-90 transition-all hover:bg-black"
+                              className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] hover:bg-black active:scale-90"
                               aria-label={t('ariaAddUpsell', { name: item.name })}
                             >
                               <Plus className="w-4 h-4 text-white" />
-                            </button>
+                            </Button>
                           </div>
                           <div className="p-2.5">
                             <h3 className="text-[15px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
@@ -853,26 +867,28 @@ export default function CartPage() {
                   </p>
                 </div>
               </div>
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={handleRemovePromo}
                 aria-label={t('ariaRemovePromo')}
-                className="p-2 min-h-[36px] min-w-[36px] flex items-center justify-center text-[#737373] hover:text-[#FF3008] transition-colors"
+                className="p-2 min-h-[36px] min-w-[36px] text-[#737373] hover:text-[#FF3008]"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </motion.div>
           </section>
         ) : !promoOpen ? (
           <section>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => setPromoOpen(true)}
-              className="w-full flex items-center gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 transition-colors hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
             >
               <Tag className="w-4 h-4" />
               <span>{t('promoCode')}</span>
               <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
-            </button>
+            </Button>
           </section>
         ) : (
           <section>
@@ -880,17 +896,18 @@ export default function CartPage() {
               <Label htmlFor="promo-input" className="text-[13px] font-semibold text-[#1A1A1A]">
                 {t('promoCode')}
               </Label>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setPromoOpen(false);
                   setPromoInput('');
                   setPromoError(null);
                 }}
-                className="text-[12px] text-[#737373] hover:text-[#1A1A1A]"
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
             <div className="flex items-stretch gap-2">
               <div className="flex-1 relative">
@@ -914,13 +931,13 @@ export default function CartPage() {
                   className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl pl-9 pr-3 text-[14px] font-medium text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
                 />
               </div>
-              <button
+              <Button
                 onClick={handleApplyPromo}
                 disabled={!promoInput.trim() || promoApplying}
-                className="h-[44px] px-4 rounded-xl bg-[#1A1A1A] text-white text-[14px] font-semibold transition-all hover:bg-black active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center min-w-[90px]"
+                className="h-[44px] px-4 rounded-xl bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-black min-w-[90px]"
               >
                 {promoApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('apply')}
-              </button>
+              </Button>
             </div>
             <AnimatePresence>
               {promoError && (
@@ -952,32 +969,33 @@ export default function CartPage() {
         {/* TIP SELECTOR - collapsible (hidden until user clicks "Add tip") */}
         {!tipOpen && tipAmount === 0 ? (
           <section>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
               onClick={() => setTipOpen(true)}
-              className="w-full flex items-center gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 transition-colors hover:text-black"
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
             >
               <HandCoins className="w-4 h-4" />
               <span>{t('tip')}</span>
               <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
-            </button>
+            </Button>
           </section>
         ) : (
           <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-[13px] font-semibold text-[#1A1A1A]">{t('tip')}</Label>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setTipOpen(false);
                   setTipPreset(0);
                   setCustomTipInput('');
                 }}
-                className="text-[#737373] hover:text-[#1A1A1A]"
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
                 aria-label="Fermer"
               >
                 <X className="w-4 h-4" />
-              </button>
+              </Button>
             </div>
             <div className="grid grid-cols-3 gap-2">
               {(
@@ -992,21 +1010,22 @@ export default function CartPage() {
               ).map((opt) => {
                 const active = tipPreset === opt.key;
                 return (
-                  <button
+                  <Button
                     key={String(opt.key)}
+                    variant={active ? 'default' : 'outline'}
                     onClick={() => {
                       setTipPreset(opt.key);
                       if (opt.key !== 'custom') setCustomTipInput('');
                     }}
                     className={cn(
-                      'min-h-[44px] rounded-xl text-[13px] font-semibold transition-all active:scale-[0.97] flex items-center justify-center px-1',
+                      'min-h-[44px] rounded-xl text-[13px] font-semibold px-1',
                       active
-                        ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A]'
-                        : 'bg-white text-[#737373] border border-[#EEEEEE] hover:border-[#B0B0B0]',
+                        ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A] hover:bg-black'
+                        : 'bg-white text-[#737373] border-[#EEEEEE] hover:border-[#B0B0B0]',
                     )}
                   >
                     {opt.label}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -1117,10 +1136,10 @@ export default function CartPage() {
         style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 12px)' }}
       >
         <div className="max-w-lg mx-auto pointer-events-auto">
-          <button
+          <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] transition-all flex items-center justify-center gap-2.5 active:scale-[0.98] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)]"
+            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />
@@ -1135,7 +1154,7 @@ export default function CartPage() {
                 <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
       {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}

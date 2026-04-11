@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
+import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { getTranslatedContent } from '@/lib/utils/translate';
 
@@ -225,13 +226,15 @@ export default function ItemDetailSheet({
                   </div>
                 )}
                 {/* Back button - top-left, full-page style */}
-                <button
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={onClose}
-                  className="absolute top-3 left-3 z-10 flex items-center justify-center rounded-full bg-white transition-colors active:bg-neutral-100 w-9 h-9 border border-[#EEEEEE]"
+                  className="absolute top-3 left-3 z-10 rounded-full bg-white w-9 h-9 border-[#EEEEEE] active:bg-neutral-100"
                   aria-label="Retour"
                 >
                   <ChevronLeft className="h-5 w-5 text-[#1A1A1A]" />
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -418,26 +421,30 @@ export default function ItemDetailSheet({
                 {/* --- Quantity selector - compact pill, LEFT-aligned, above instructions --- */}
                 <div className="mb-3 flex justify-start">
                   <div className="inline-flex items-center h-10 rounded-full border border-[#EEEEEE] bg-[#F6F6F6] px-1">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="flex items-center justify-center transition-colors active:opacity-60 disabled:opacity-40 w-9 h-9 bg-transparent border-none"
+                      className="w-9 h-9 active:opacity-60"
                       disabled={quantity <= 1}
                       aria-label="Diminuer la quantite"
                     >
                       <Minus className="h-4 w-4 text-[#1A1A1A]" />
-                    </button>
+                    </Button>
 
                     <span className="font-bold text-center text-base text-[#1A1A1A] min-w-8">
                       {quantity}
                     </span>
 
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => setQuantity((q) => q + 1)}
-                      className="flex items-center justify-center transition-colors active:opacity-60 w-9 h-9 bg-transparent border-none"
+                      className="w-9 h-9 active:opacity-60"
                       aria-label="Augmenter la quantite"
                     >
                       <Plus className="h-4 w-4 text-[#1A1A1A]" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -464,10 +471,10 @@ export default function ItemDetailSheet({
                 paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
               }}
             >
-              <button
+              <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="flex w-full items-center justify-center gap-1.5 font-semibold text-white transition-all active:scale-[0.98] h-[52px] rounded-xl text-[15px] bg-[#1A1A1A]"
+                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-[#1A1A1A] hover:bg-black"
               >
                 {showSuccess ? (
                   <motion.div
@@ -487,7 +494,7 @@ export default function ItemDetailSheet({
                     <span className="text-white">{formatDisplayPrice(currentPrice, currency)}</span>
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </motion.div>
         </>

@@ -6,6 +6,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -330,13 +331,14 @@ export default function MenuItemCard({
           {/* Variant dropdown */}
           {hasVariants && (
             <div className="mt-2 relative" ref={dropdownRef}>
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowVariantDropdown(!showVariantDropdown);
                 }}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg transition-colors bg-[#F6F6F6]"
-                style={{ color: '#1A1A1A' }}
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#F6F6F6] text-[#1A1A1A] h-auto"
               >
                 {getVariantName(selectedVariant!)}
                 <ChevronDown
@@ -345,7 +347,7 @@ export default function MenuItemCard({
                     showVariantDropdown && 'rotate-180',
                   )}
                 />
-              </button>
+              </Button>
               {showVariantDropdown && (
                 <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-[#EEEEEE] py-1 z-20 min-w-[160px]">
                   {item.price_variants?.map((variant) => (
@@ -418,18 +420,18 @@ export default function MenuItemCard({
               {cartItem.quantity}
             </div>
           ) : !isUnavailable ? (
-            <button
+            <Button
+              size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 handleAdd();
               }}
               disabled={isAdding}
               aria-label={tt('addShort')}
-              className="w-7 h-7 rounded-full flex items-center justify-center focus-visible:ring-2 focus-visible:ring-offset-2 active:scale-85 transition-transform"
-              style={{ backgroundColor: '#1A1A1A' }}
+              className="w-7 h-7 rounded-full bg-[#1A1A1A] hover:bg-black active:scale-85"
             >
               <Plus className="w-4 h-4 text-white" />
-            </button>
+            </Button>
           ) : null}
         </div>
 
