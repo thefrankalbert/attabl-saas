@@ -374,18 +374,19 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       {CTA_PRESETS.map((preset) => {
                         const isActive = data.qrCta === preset.value;
                         return (
-                          <button
+                          <Button
                             key={preset.key}
                             type="button"
+                            variant={isActive ? 'default' : 'outline'}
                             onClick={() => updateData({ qrCta: preset.value })}
-                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
                               isActive
                                 ? 'bg-accent text-accent-text'
                                 : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
                             }`}
                           >
                             {t(preset.key)}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>

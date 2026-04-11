@@ -195,17 +195,19 @@ export function ScreenLock({
                         autoFocus
                         className="h-12 pr-12 bg-app-elevated/50 border-app-border text-app-text placeholder:text-app-text-muted/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-auto w-auto p-0 text-app-text-muted hover:text-app-text-secondary transition-colors"
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 

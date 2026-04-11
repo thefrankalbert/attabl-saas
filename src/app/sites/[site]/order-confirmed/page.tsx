@@ -7,6 +7,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { Check, Loader2, ArrowLeft, ChefHat, Bell, BellRing, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
@@ -277,13 +278,15 @@ function OrderConfirmedContent() {
                 {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
               </p>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={dismissBanner}
-              className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+              className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0 h-8 w-8 text-white"
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         )}
 
@@ -292,14 +295,15 @@ function OrderConfirmedContent() {
           permissionState === 'default' &&
           order.status !== 'ready' &&
           order.status !== 'delivered' && (
-            <button
+            <Button
+              variant="ghost"
               onClick={requestPermission}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors h-auto justify-start"
               style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
             >
               <Bell className="w-4 h-4 shrink-0" />
               <span>{t('enableNotifications')}</span>
-            </button>
+            </Button>
           )}
 
         {/* Simple status message - no detailed tracking visible to customer */}
@@ -371,13 +375,13 @@ function OrderConfirmedContent() {
 
         {/* Back to menu */}
         <Link href={menuPath} className="block">
-          <button
+          <Button
             className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
             style={{ backgroundColor: '#1A1A1A' }}
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
-          </button>
+          </Button>
         </Link>
       </div>
 

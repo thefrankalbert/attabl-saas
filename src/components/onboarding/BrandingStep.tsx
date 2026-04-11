@@ -257,16 +257,17 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   {colorPresets.map((preset) => {
                     const isSelected = isPresetSelected(preset);
                     return (
-                      <button
+                      <Button
                         key={preset.name}
                         type="button"
+                        variant="outline"
                         onClick={() => {
                           updateData({
                             primaryColor: preset.primary,
                             secondaryColor: preset.secondary,
                           });
                         }}
-                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all ${
+                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all h-auto ${
                           isSelected
                             ? 'border-accent bg-accent/5'
                             : 'border-app-border hover:border-app-border-hover'
@@ -284,7 +285,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         <span className="text-[7px] font-semibold text-app-text-muted truncate w-full text-center">
                           {preset.name}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -333,14 +334,15 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {showPickerFor === 'primary' && (
                       <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
-                          <button
+                          <Button
                             key={color}
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               updateData({ primaryColor: color });
                               setShowPickerFor(null);
                             }}
-                            className={`w-9 h-9 rounded-lg border transition-all ${
+                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
                               data.primaryColor === color
                                 ? 'border-accent scale-110'
                                 : 'border-transparent hover:border-app-border-hover'
@@ -386,14 +388,15 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {showPickerFor === 'secondary' && (
                       <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
-                          <button
+                          <Button
                             key={color}
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               updateData({ secondaryColor: color });
                               setShowPickerFor(null);
                             }}
-                            className={`w-9 h-9 rounded-lg border transition-all ${
+                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
                               data.secondaryColor === color
                                 ? 'border-accent scale-110'
                                 : 'border-transparent hover:border-app-border-hover'

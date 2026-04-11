@@ -175,11 +175,12 @@ export function EstablishmentStep({
                   const Icon = type.icon;
                   const isSelected = data.establishmentType === type.id;
                   return (
-                    <button
+                    <Button
                       key={type.id}
                       type="button"
+                      variant="outline"
                       onClick={() => updateData({ establishmentType: type.id })}
-                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 ${
+                      className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border transition-all duration-200 h-auto ${
                         isSelected
                           ? 'border-accent bg-accent/5'
                           : 'border-app-border hover:border-app-border-hover'
@@ -201,7 +202,7 @@ export function EstablishmentStep({
                       >
                         {t(type.titleKey)}
                       </span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -397,18 +398,19 @@ export function EstablishmentStep({
                             </Label>
                             <div className="flex gap-1.5">
                               {[1, 2, 3, 4, 5].map((star) => (
-                                <button
+                                <Button
                                   key={star}
                                   type="button"
+                                  variant="outline"
                                   onClick={() => updateData({ starRating: star })}
-                                  className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all ${
+                                  className={`w-10 h-10 rounded-xl border text-lg flex items-center justify-center transition-all p-0 ${
                                     (data.starRating || 0) >= star
                                       ? 'border-amber-400 bg-amber-400/10 text-amber-400'
                                       : 'border-app-border text-app-text-muted hover:border-app-border-hover'
                                   }`}
                                 >
                                   ★
-                                </button>
+                                </Button>
                               ))}
                             </div>
                           </div>

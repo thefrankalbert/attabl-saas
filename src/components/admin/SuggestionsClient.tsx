@@ -311,17 +311,19 @@ export default function SuggestionsClient({
                         selectedIds.has(suggestion.id) && 'bg-accent/5',
                       )}
                     >
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => toggleSelect(suggestion.id)}
-                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0"
+                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0 h-auto w-auto p-1"
                       >
                         {selectedIds.has(suggestion.id) ? (
                           <CheckSquare className="w-4 h-4 text-accent" />
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
-                      </button>
+                      </Button>
                       <span
                         className={cn(
                           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0',
@@ -404,12 +406,13 @@ export default function SuggestionsClient({
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {SUGGESTION_TYPES.map((st) => (
-                    <button
+                    <Button
                       key={st.value}
                       type="button"
+                      variant="outline"
                       onClick={() => setSuggestionType(st.value)}
                       className={cn(
-                        'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
+                        'flex flex-col items-center gap-1 p-2 h-auto rounded-lg border text-xs font-medium transition-all',
                         suggestionType === st.value
                           ? 'border-accent bg-accent-muted text-app-text'
                           : 'border-app-border text-app-text-secondary hover:bg-app-bg',
@@ -417,7 +420,7 @@ export default function SuggestionsClient({
                     >
                       <span>{st.emoji}</span>
                       <span>{st.label}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

@@ -519,13 +519,14 @@ export default function OnboardingPage() {
             const Icon = phaseDef.icon;
 
             return (
-              <button
+              <Button
                 key={phaseNum}
                 type="button"
+                variant="ghost"
                 onClick={() => {
                   if (isCompleted && phaseIsComplete(phaseNum)) goToPhase(phaseNum);
                 }}
-                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors h-auto ${
                   isActive
                     ? 'text-accent'
                     : isCompleted
@@ -541,7 +542,7 @@ export default function OnboardingPage() {
                 {isActive && (
                   <span className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -598,13 +599,15 @@ export default function OnboardingPage() {
                   <Alert variant="destructive">
                     <AlertDescription className="flex items-center justify-between">
                       <span>{error}</span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setError(null)}
-                        className="text-destructive/60 hover:text-destructive ml-3 shrink-0"
+                        className="text-destructive/60 hover:text-destructive ml-3 shrink-0 h-8 w-8"
                       >
                         <span className="sr-only">Close</span>
                         &times;
-                      </button>
+                      </Button>
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -620,14 +623,15 @@ export default function OnboardingPage() {
             <div className="flex items-center justify-between">
               {/* Back button */}
               {canGoBack ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
-                </button>
+                </Button>
               ) : (
                 <span />
               )}
