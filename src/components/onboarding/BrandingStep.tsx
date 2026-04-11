@@ -4,6 +4,7 @@
 import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -200,13 +201,14 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <div className="pt-3">
                     <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
                     {data.logoUrl && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-2 text-xs text-accent hover:underline"
+                        className="mt-2 text-xs text-accent hover:underline h-auto p-0"
                       >
                         {t('logoChange')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>

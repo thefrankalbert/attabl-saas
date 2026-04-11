@@ -590,23 +590,25 @@ export default function MenuDetailClient({
                             )}
 
                             {/* Action buttons */}
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => openEditItemModal(item)}
-                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('editItem')}
                             >
                               <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingModifiersItem(item);
                               }}
-                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('manageModifiers')}
                             >
                               <Settings2 className="w-4 h-4" />
-                            </button>
+                            </Button>
                             <button
                               onClick={() => toggleItemAvailable(item)}
                               className={cn(

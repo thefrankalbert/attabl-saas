@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useNotifications, type Notification } from '@/hooks/useNotifications';
 import { useSound } from '@/contexts/SoundContext';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 const TYPE_ICONS: Record<Notification['type'], typeof Info> = {
@@ -43,13 +44,9 @@ export function NotificationCenter({ tenantId, userId }: NotificationCenterProps
   // to avoid NextIntlClientProvider context errors during SSR→client fallback
   if (!mounted) {
     return (
-      <button
-        type="button"
-        className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted"
-        aria-label="Notifications"
-      >
+      <Button variant="ghost" size="icon" className="w-9 h-9" aria-label="Notifications">
         <Bell className="w-4 h-4" />
-      </button>
+      </Button>
     );
   }
 
@@ -122,13 +119,15 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
         <div className="flex items-center justify-between border-b border-app-border px-4 py-3">
           <h3 className="text-sm font-semibold text-app-text">{t('title')}</h3>
           {unreadCount > 0 && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => markAllAsRead()}
-              className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-app-text transition-colors"
+              className="gap-1 text-xs text-app-text-secondary hover:text-app-text"
             >
               <CheckCheck className="h-3.5 w-3.5" />
               {t('markAllRead')}
-            </button>
+            </Button>
           )}
         </div>
 

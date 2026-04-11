@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface Testimonial {
   quote: string;
@@ -112,12 +113,13 @@ export function TestimonialCarousel() {
       {/* Dot indicators */}
       <div className="flex items-center gap-1.5 mt-3">
         {testimonials.map((_, i) => (
-          <button
+          <Button
             key={i}
             type="button"
+            variant="ghost"
             onClick={() => setCurrent(i)}
             aria-label={`Temoignage ${i + 1}`}
-            className={`h-1 rounded-full transition-all duration-300 ${
+            className={`h-1 rounded-full transition-all duration-300 p-0 min-w-0 ${
               i === current ? 'bg-[#CCFF00] w-5' : 'bg-white/20 hover:bg-white/40 w-1'
             }`}
           />

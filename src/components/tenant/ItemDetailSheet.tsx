@@ -18,6 +18,7 @@ import { useTranslations } from 'next-intl';
 import { useCart } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import type { MenuItem, ItemPriceVariant, ItemModifier } from '@/types/admin.types';
+import { Textarea } from '@/components/ui/textarea';
 import { getTranslatedContent } from '@/lib/utils/translate';
 
 // --- Props ---------------------------------------------------------------
@@ -445,7 +446,7 @@ export default function ItemDetailSheet({
                   <h3 className="mb-1.5 font-semibold text-[13px] text-[#1A1A1A]">
                     {t('specialInstructions')}
                   </h3>
-                  <textarea
+                  <Textarea
                     value={customerNotes}
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}

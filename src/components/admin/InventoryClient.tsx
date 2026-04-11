@@ -10,6 +10,7 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -492,9 +493,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             >
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                     {tc('name')}
-                  </label>
+                  </Label>
                   <Input
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
@@ -505,9 +506,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {tc('unit')}
-                    </label>
+                    </Label>
                     <select
                       value={formUnit}
                       onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
@@ -522,9 +523,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                   </div>
                   {modalMode === 'add' && (
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('currentStock')}
-                      </label>
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -538,9 +539,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {t('minAlert')}
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -550,9 +551,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {t('costPerUnit')}
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -564,9 +565,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                     {t('categoryOptional')}
-                  </label>
+                  </Label>
                   <Input
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
@@ -613,9 +614,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('movementType')}
-                      </label>
+                      </Label>
                       <select
                         value={adjustType}
                         onChange={(e) => setAdjustType(e.target.value as MovementType)}
@@ -632,9 +633,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {tc('quantity')}
-                      </label>
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -647,9 +648,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                     {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
                       <div>
-                        <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                           {t('supplierOptional')}
-                        </label>
+                        </Label>
                         <select
                           value={adjustSupplierId}
                           onChange={(e) => setAdjustSupplierId(e.target.value)}
@@ -666,9 +667,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     )}
 
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('notesOptional')}
-                      </label>
+                      </Label>
                       <Input
                         value={adjustNotes}
                         onChange={(e) => setAdjustNotes(e.target.value)}

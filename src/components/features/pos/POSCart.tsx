@@ -23,6 +23,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -169,17 +171,19 @@ export default function POSCart({
             {String(orderNumber).padStart(2, '0')}
           </span>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => {
             if (cart.length === 0 || window.confirm(t('confirmClearCart'))) {
               onClearCart();
             }
           }}
           title={tc('delete')}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation"
+          className="w-9 h-9 text-app-text-muted hover:text-status-error"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* ━━━ SCROLLABLE AREA (service type + cart items) ━━━ */}
@@ -226,7 +230,7 @@ export default function POSCart({
           )}
 
           {serviceType === 'delivery' && (
-            <textarea
+            <Textarea
               placeholder={t('deliveryAddressPlaceholder')}
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
@@ -354,13 +358,14 @@ export default function POSCart({
                         : formatCurrency(appliedCoupon.discountAmount, currency)}
                     </span>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={onRemoveCoupon}
-                    className="w-6 h-6 flex items-center justify-center rounded text-app-text-muted hover:text-status-error transition-colors touch-manipulation shrink-0"
+                    className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
                   >
                     <X className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="flex gap-1">
@@ -395,7 +400,7 @@ export default function POSCart({
 
         {/* Expandable notes textarea */}
         {showOrderNotes && (
-          <textarea
+          <Textarea
             value={orderNotes}
             onChange={(e) => setOrderNotes(e.target.value)}
             maxLength={500}
@@ -513,9 +518,9 @@ export default function POSCart({
               <div className="flex gap-4 h-72">
                 {/* Zone Column */}
                 <div className="w-36 flex flex-col shrink-0">
-                  <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Zone
-                  </label>
+                  </Label>
                   <div className="flex-1 overflow-y-auto space-y-1">
                     {zones.map((zone) => (
                       <button
@@ -540,9 +545,9 @@ export default function POSCart({
 
                 {/* Tables Grid */}
                 <div className="flex-1 flex flex-col min-w-0">
-                  <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Tables
-                  </label>
+                  </Label>
                   <div className="flex-1 overflow-y-auto">
                     {pickerTables.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2">

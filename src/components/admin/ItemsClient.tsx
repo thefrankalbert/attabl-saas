@@ -318,7 +318,9 @@ export default function ItemsClient({
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
               <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
               <div className="flex-1" />
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={async () => {
                   const targetAvailability = [...selectedIds].some((id) => {
                     const item = items.find((i) => i.id === id);
@@ -345,16 +347,12 @@ export default function ItemsClient({
                   router.refresh();
                   revalidateMenuCache();
                 }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
               >
                 Toggle availability
-              </button>
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
-              >
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
                 Clear
-              </button>
+              </Button>
             </div>
           )}
 
@@ -525,12 +523,9 @@ export default function ItemsClient({
               {/* Panel Header */}
               <div className="flex items-center justify-between p-5 border-b border-app-border">
                 <h2 className="text-base font-bold text-app-text">{t('details')}</h2>
-                <button
-                  onClick={closePanel}
-                  className="p-2.5 rounded-lg hover:bg-app-bg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-                >
+                <Button variant="ghost" size="icon" onClick={closePanel}>
                   <X className="w-4 h-4 text-app-text-secondary" />
-                </button>
+                </Button>
               </div>
 
               {/* Panel Content */}

@@ -376,26 +376,28 @@ export function TablesClient({
                         }}
                         autoFocus
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSaveZoneName(zone.id);
                         }}
-                        className="p-1 text-emerald-600 hover:text-emerald-700"
+                        className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                       >
                         <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingZoneId(null);
                         }}
-                        className="p-1 text-app-text-muted hover:text-app-text-secondary"
+                        className="h-7 w-7 text-app-text-muted hover:text-app-text-secondary"
                       >
                         <X className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -411,27 +413,29 @@ export function TablesClient({
                       </span>
                       <span className="text-xs text-app-text-muted font-mono">{zone.prefix}</span>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleStartEditZone(zone);
                           }}
-                          className="p-1 text-app-text-muted hover:text-app-text-secondary"
+                          className="h-7 w-7 text-app-text-muted hover:text-app-text-secondary"
                         >
                           <Pencil className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteZone(zone);
                           }}
                           title="Supprimer"
-                          className="p-1 text-red-400 hover:text-red-600"
+                          className="h-7 w-7 text-red-400 hover:text-red-600"
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -507,14 +511,15 @@ export function TablesClient({
                             {table.table_number}
                           </span>
                         </div>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDeleteTable(table)}
                           title="Supprimer"
-                          className="p-1 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-7 w-7 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Display name (editable) */}
@@ -530,13 +535,14 @@ export function TablesClient({
                             }}
                             autoFocus
                           />
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleSaveTableName(table.id)}
-                            className="p-1 text-emerald-600 hover:text-emerald-700"
+                            className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                           >
                             <Check className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                         </div>
                       ) : (
                         <button

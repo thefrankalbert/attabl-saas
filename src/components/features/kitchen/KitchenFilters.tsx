@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Maximize, Minimize, ChefHat, Wine, Search, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { KDSZoneFilter } from '@/types/admin.types';
 
@@ -67,13 +68,9 @@ export default function KitchenFilters({
       {/* Left: back / search */}
       <div className="flex items-center gap-1">
         {!isFullscreen && (
-          <button
-            onClick={goBack}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
-            title={t('backToDashboard')}
-          >
+          <Button variant="ghost" size="icon" onClick={goBack} title={t('backToDashboard')}>
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
         )}
         {searchOpen ? (
           <div className="flex items-center gap-1 bg-app-elevated rounded-lg px-2 py-1">
@@ -87,27 +84,30 @@ export default function KitchenFilters({
               className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56"
               autoFocus
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 onSearchChange('');
                 setSearchOpen(false);
               }}
-              className="p-1 min-h-[32px] min-w-[32px] flex items-center justify-center rounded text-app-text-muted hover:text-app-text transition-colors"
+              className="h-8 w-8"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setSearchOpen(true);
               requestAnimationFrame(() => searchInputRef.current?.focus());
             }}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
             aria-label={t('searchLabel')}
           >
             <Search className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -181,12 +181,9 @@ export default function KitchenFilters({
           <span className="capitalize">{dateStr}</span>
           <span>{timeStr}</span>
         </div>
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
-        >
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-        </button>
+        </Button>
       </div>
     </header>
   );
