@@ -271,3 +271,114 @@ Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
 - `agent_docs/architecture.md` : Details sur l'architecture en couches
 - `agent_docs/database-conventions.md` : Conventions base de donnees et migrations
 - `agent_docs/security-patterns.md` : Patterns de securite detailles
+
+---
+
+## REGLES ANTI-REGRESSION - OBLIGATOIRES
+
+REGLE ABSOLUE : Toute modification de code doit respecter les contraintes ci-dessous. Ces regles existent parce que des regressions ont ete introduites a plusieurs reprises par des agents IA qui modifiaient du code fonctionnel sans le vouloir.
+
+### Principe fondamental
+
+AVANT de modifier un fichier, lire le fichier EN ENTIER. Ne JAMAIS modifier un fichier sans l'avoir lu completement. Ne JAMAIS modifier une partie du fichier qui n'est pas directement liee a la tache demandee.
+
+### Checklist pre-modification (OBLIGATOIRE avant chaque edit)
+
+Avant de modifier un fichier, se poser ces questions :
+
+1. Est-ce que cette modification est DIRECTEMENT demandee par l'utilisateur ?
+2. Est-ce que je modifie UNIQUEMENT les lignes necessaires, sans toucher au reste ?
+3. Est-ce que les imports existants sont preserves ?
+4. Est-ce que les classes Tailwind existantes sont preservees (pas de remplacement "equivalent") ?
+5. Est-ce que la structure JSX existante est preservee (pas de reorganisation) ?
+6. Est-ce que les handlers existants (onClick, onChange, etc.) sont preserves ?
+
+Si la reponse a l'une de ces questions est NON, demander confirmation a l'utilisateur AVANT de modifier.
+
+### Fichiers proteges — NE JAMAIS MODIFIER sans demande explicite
+
+Ces fichiers contiennent des logiques critiques qui ont ete debuggees et stabilisees. Ne les modifier QUE si l'utilisateur le demande explicitement :
+
+| Fichier                                | Raison de la protection                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------ |
+| `src/proxy.ts`                         | Middleware central : routing multi-tenant, auth guards, anti-spoofing header   |
+| `src/app/globals.css`                  | Theme Tailwind v4, contrat viewport (html/body overflow:hidden), design tokens |
+| `src/lib/supabase/admin.ts`            | Client service_role, desactive autoRefresh et persistSession                   |
+| `src/lib/supabase/middleware.ts`       | Refresh session, cookies auth                                                  |
+| `src/lib/rate-limit.ts`                | 24 limiters, fail-closed/fail-open, protection anti-brute-force                |
+| `src/app/api/webhooks/stripe/route.ts` | Webhook Stripe avec signature verification et idempotency                      |
+| `src/services/order.service.ts`        | Verification prix serveur, validation commandes                                |
+| `src/services/signup.service.ts`       | Signup avec rollback, creation tenant/user/venue                               |
+| `src/contexts/CartContext.tsx`         | Logique panier, cle items avec modifiers, localStorage                         |
+| `next.config.mjs`                      | CSP headers, Sentry, PWA, security headers                                     |
+
+### Patterns critiques — NE JAMAIS CASSER
+
+#### 1. Viewport & Scroll Chain
+
+```
+html (height: 100%, overflow: hidden)  -- globals.css
+  body (height: 100%, overflow: hidden)  -- globals.css
+    AdminLayoutClient (h-dvh overflow-hidden flex)
+      Sidebar + Main (h-full, flex-1)
+        <main#main-content> (flex-1 overflow-y-auto)  <-- SEUL element scrollable
+```
+
+- INTERDIT : `h-screen`, `100vh`, `min-h-screen` sur tout element
+- INTERDIT : `overflow-y-auto` ou `overflow-y-scroll` en dehors de `main#main-content` ou listes scrollables explicites
+- INTERDIT : Retirer `overflow: hidden` de html ou body
+- INTERDIT : Ajouter `overflow: auto/scroll` sur des conteneurs intermediaires
+- h-dvh est reserve UNIQUEMENT a AdminLayoutClient
+- Les pages enfants utilisent `h-full` pour remplir leur parent
+
+#### 2. Design System shadcn/ui
+
+- INTERDIT : Utiliser `<button>` natif — utiliser `<Button>` de `@/components/ui/button`
+- INTERDIT : Utiliser `<input>` natif — utiliser `<Input>` de `@/components/ui/input`
+- INTERDIT : Utiliser `<select>` natif — utiliser `<Select>` de `@/components/ui/select`
+- INTERDIT : Utiliser `<textarea>` natif — utiliser `<Textarea>` de `@/components/ui/textarea`
+- INTERDIT : Utiliser `<table>` natif — utiliser `<Table>` de `@/components/ui/table`
+- INTERDIT : Utiliser `<label>` natif — utiliser `<Label>` de `@/components/ui/label`
+- EXCEPTION : `<input type="file">` et `<input type="color">` (pas d'equivalent shadcn direct)
+- EXCEPTION : `<a href="tel:">`, `<a href="mailto:">`, `<a download>` (pas d'equivalent Link)
+- Ne JAMAIS modifier les fichiers dans `src/components/ui/` — ce sont les composants shadcn/ui generes
+
+#### 3. Securite
+
+- INTERDIT : Retirer ou affaiblir les headers CSP dans `next.config.mjs`
+- INTERDIT : Utiliser `getSession()` au lieu de `getUser()` pour l'authentification
+- INTERDIT : Accepter `tenant_id` comme parametre dans une Server Action protegee (le deriver de la session)
+- INTERDIT : Exposer `SUPABASE_SERVICE_ROLE_KEY` cote client
+- INTERDIT : Retirer le rate limiting d'un endpoint public
+- INTERDIT : Utiliser `supabaseAdmin` en dehors de signup, webhooks, ou operations admin
+- INTERDIT : Desactiver ou supprimer des policies RLS
+
+#### 4. Multi-tenant
+
+- INTERDIT : Requete DB sans filtre `tenant_id` (sauf tables globales comme `plans`)
+- INTERDIT : Faire confiance au header `x-tenant-slug` sans que le middleware l'ait injecte
+- INTERDIT : Passer `tenant_id` depuis le client dans une requete authentifiee
+
+#### 5. Tailwind v4
+
+- INTERDIT : Construction dynamique de classes Tailwind : `` `text-${size}` `` — utiliser des noms complets `text-sm`, `text-lg`
+- INTERDIT : Remplacer les classes Tailwind existantes par des "equivalents preferes"
+- INTERDIT : Ajouter des breakpoints custom dans `@theme` sans justification
+- OBLIGATOIRE : Tester avec `pnpm build && pnpm start` apres toute modification responsive
+
+### Checklist post-modification (OBLIGATOIRE apres chaque tache)
+
+Apres avoir termine une tache, executer systematiquement :
+
+```bash
+pnpm typecheck    # Types TypeScript
+pnpm lint         # ESLint
+pnpm test         # Tests unitaires
+pnpm build        # Build production (detecte les erreurs Turbopack vs Webpack)
+```
+
+Si l'un de ces checks echoue, corriger AVANT de considerer la tache terminee.
+
+### En cas de doute
+
+Si une tache necessite de modifier un fichier protege ou de casser un pattern critique, demander confirmation a l'utilisateur AVANT de proceder. Ne JAMAIS prendre l'initiative de "refactorer", "nettoyer", ou "ameliorer" du code qui n'est pas directement lie a la tache demandee.

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { Input } from '@/components/ui/input';
 import type { MenuItem } from '@/types/admin.types';
 import MenuItemCard from './MenuItemCard';
 
@@ -85,13 +86,13 @@ export default function SearchOverlay({
               style={{ backgroundColor: '#F6F6F6' }}
             >
               <Search className="w-4 h-4" style={{ color: '#B0B0B0' }} />
-              <input
+              <Input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('searchMenu')}
-                className="flex-1 bg-transparent text-sm outline-none"
+                className="flex-1 bg-transparent text-sm outline-none border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               />
               {query && (
                 <button onClick={() => setQuery('')} aria-label="Effacer" className="p-0.5">

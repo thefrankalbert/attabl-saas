@@ -298,19 +298,20 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         {/* ── Period pills ── */}
         <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
-            <button
+            <Button
               key={pill.value}
               type="button"
+              variant="outline"
               onClick={() => setPeriod(pill.value)}
               className={cn(
-                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
                 period === pill.value
                   ? 'bg-app-text text-app-bg border-app-text shadow-sm'
                   : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
               )}
             >
               {t(pill.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
 

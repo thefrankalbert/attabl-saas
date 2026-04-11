@@ -4,6 +4,7 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -318,12 +319,12 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                   </Button>
                                 </div>
                               ) : (
-                                <label
+                                <Label
                                   htmlFor={`photo-${item.id}`}
                                   className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
                                 >
                                   <Camera className="h-3.5 w-3.5 text-app-text-muted" />
-                                </label>
+                                </Label>
                               )}
                             </div>
                             <Input

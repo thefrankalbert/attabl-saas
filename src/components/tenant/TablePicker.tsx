@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { Zone, Table } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 interface TablePickerProps {
@@ -64,12 +65,12 @@ export default function TablePicker({
           <div className="flex gap-4 h-64">
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
-              <label
+              <Label
                 className="text-[13px] font-semibold mb-2 text-center"
                 style={{ color: '#737373' }}
               >
                 {t('zone')}
-              </label>
+              </Label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
                 {zones.map((zone) => (
                   <button
@@ -102,12 +103,12 @@ export default function TablePicker({
 
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
-              <label
+              <Label
                 className="text-[13px] font-semibold mb-2 text-center"
                 style={{ color: '#737373' }}
               >
                 {t('table')}
-              </label>
+              </Label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
                 {availableTables.map((table) => (
                   <button

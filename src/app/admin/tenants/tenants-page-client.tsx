@@ -552,25 +552,27 @@ export default function TenantsPageClient({
           <div className="px-1 pt-1 pb-1.5 flex items-center justify-between shrink-0">
             <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
               {(['revenue', 'orders'] as const).map((m) => (
-                <button
+                <Button
                   key={m}
+                  variant="ghost"
                   onClick={() => setChartMode(m)}
-                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartMode === m ? 'bg-app-card text-accent shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
+                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md h-auto ${chartMode === m ? 'bg-app-card text-accent shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
                 >
                   {m === 'revenue' ? 'CA' : 'Commandes'}
-                </button>
+                </Button>
               ))}
             </div>
             <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
               {(['day', 'month'] as const).map((p) => (
-                <button
+                <Button
                   key={p}
+                  variant="ghost"
                   onClick={() => setChartPeriod(p)}
-                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartPeriod === p ? 'bg-app-card text-app-text shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
+                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md h-auto ${chartPeriod === p ? 'bg-app-card text-app-text shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
                 >
                   <CalendarDays className="h-2.5 w-2.5" />
                   {p === 'day' ? 'Jour' : 'Mois'}
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -759,13 +761,14 @@ export default function TenantsPageClient({
               <h2 className="text-xs font-bold uppercase tracking-wider text-app-text-muted">
                 Mes etablissements
               </h2>
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setShowWizard(true)}
-                className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
+                className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover h-auto px-1 py-0.5"
               >
                 <Plus className="h-3 w-3" />
                 Ajouter
-              </button>
+              </Button>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-hide">
               <div className="divide-y divide-app-border">

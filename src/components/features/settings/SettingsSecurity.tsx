@@ -2,6 +2,7 @@
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
@@ -37,7 +38,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
             <Label className="text-sm font-medium text-app-text">{t('enableAutoLock')}</Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('screenLockedAfterIdle')}</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
+          <Label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
               checked={watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined}
@@ -47,7 +48,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent-text after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-accent-text after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-          </label>
+          </Label>
         </div>
 
         {/* Timeout duration + lock mode (shown only when enabled) */}
@@ -85,10 +86,11 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
             <div className="space-y-2">
               <Label className="text-sm text-app-text-secondary">{t('screenLockMode')}</Label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setValue('screenLockMode', 'overlay')}
-                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
+                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left h-auto flex flex-col items-start whitespace-normal ${
                     watchScreenLockMode === 'overlay'
                       ? 'border-accent bg-accent-muted ring-1 ring-accent/20'
                       : 'border-app-border hover:border-app-text-muted'
@@ -96,11 +98,12 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
                 >
                   <div className="font-medium text-sm text-app-text">{t('overlaySimple')}</div>
                   <div className="text-xs text-app-text-secondary mt-0.5">{t('clickToUnlock')}</div>
-                </button>
-                <button
+                </Button>
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => setValue('screenLockMode', 'password')}
-                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left transition-all ${
+                  className={`p-3 min-h-[44px] rounded-lg border-2 text-left h-auto flex flex-col items-start whitespace-normal ${
                     watchScreenLockMode === 'password'
                       ? 'border-accent bg-accent-muted ring-1 ring-accent/20'
                       : 'border-app-border hover:border-app-text-muted'
@@ -110,7 +113,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
                   <div className="text-xs text-app-text-secondary mt-0.5">
                     {t('reenterPassword')}
                   </div>
-                </button>
+                </Button>
               </div>
             </div>
           </div>

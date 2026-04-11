@@ -2,6 +2,7 @@
 
 import { CreditCard } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 
 export function PastDueBanner() {
@@ -30,13 +31,14 @@ export function PastDueBanner() {
           Votre paiement a échoué. Mettez à jour votre carte.
         </p>
       </div>
-      <button
+      <Button
+        variant="default"
         onClick={handleManageCard}
         disabled={loading}
-        className="shrink-0 bg-status-warning text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
+        className="shrink-0 bg-status-warning text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-90 disabled:opacity-50 h-auto"
       >
         {loading ? 'Chargement...' : 'Mettre à jour'}
-      </button>
+      </Button>
     </div>
   );
 }

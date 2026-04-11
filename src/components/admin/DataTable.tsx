@@ -41,11 +41,12 @@ export function SortableHeader<TData, TValue>({
   const sorted = column.getIsSorted();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={() => column.toggleSorting(sorted === 'asc')}
       className={cn(
-        'inline-flex items-center gap-1 hover:text-app-text transition-colors',
+        'inline-flex items-center gap-1 hover:text-app-text h-auto px-1 py-0.5',
         className,
       )}
     >
@@ -57,7 +58,7 @@ export function SortableHeader<TData, TValue>({
       ) : (
         <ArrowUpDown className="w-3 h-3 text-app-text-muted" />
       )}
-    </button>
+    </Button>
   );
 }
 

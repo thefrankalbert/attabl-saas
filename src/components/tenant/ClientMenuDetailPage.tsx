@@ -13,6 +13,7 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { Venue, Category, MenuItem, Tenant, Zone, Table, Menu } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import BottomNav from '@/components/tenant/BottomNav';
 import MenuItemCard from '@/components/tenant/MenuItemCard';
 import CategoryNav from '@/components/tenant/CategoryNav';
@@ -380,13 +381,12 @@ export default function ClientMenuDetailPage({
           >
             <Search className="w-4 h-4" strokeWidth={1.5} />
           </div>
-          <input
+          <Input
             type="text"
             placeholder={t('searchMenu')}
-            className="w-full pl-9 pr-3 text-sm font-medium outline-none"
+            className="w-full pl-9 pr-3 text-sm font-medium outline-none border-0 shadow-none focus-visible:ring-0"
             style={{
               backgroundColor: '#F6F6F6',
-              border: 'none',
               borderRadius: '10px',
               height: '40px',
               color: '#1A1A1A',

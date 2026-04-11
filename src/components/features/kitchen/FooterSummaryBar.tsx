@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { Order, OrderStatus } from '@/types/admin.types';
 
@@ -124,8 +125,9 @@ function FooterSummaryBarInner({
           if (isDelayedTab && tab.count === 0) return null;
 
           return (
-            <button
+            <Button
               key={tab.key}
+              variant="ghost"
               role="tab"
               aria-selected={isActive}
               onClick={() => {
@@ -135,7 +137,7 @@ function FooterSummaryBarInner({
                 }
               }}
               className={cn(
-                'px-3 py-2 min-h-[40px] rounded-md text-xs font-bold uppercase tracking-wider transition-colors',
+                'px-3 py-2 min-h-[40px] rounded-md text-xs font-bold uppercase tracking-wider h-auto',
                 isActive ? tab.activeColor : tab.baseColor,
                 !isActive && !isDelayedTab && 'hover:bg-app-elevated/50',
                 isDelayedTab && 'cursor-default animate-pulse',
@@ -143,32 +145,36 @@ function FooterSummaryBarInner({
             >
               {tab.label}
               <span className="ml-1.5 tabular-nums">{tab.count}</span>
-            </button>
+            </Button>
           );
         })}
       </nav>
 
       {/* Right: pagination */}
       <div className="flex items-center gap-2 shrink-0">
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange('prev')}
           disabled={currentPage <= 1}
           aria-label="Previous page"
-          className="p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronUp className="w-4 h-4" />
-        </button>
+        </Button>
         <span className="text-xs font-medium text-app-text-secondary tabular-nums whitespace-nowrap">
           {t('footerPage')} {currentPage}/{totalPages}
         </span>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => onPageChange('next')}
           disabled={currentPage >= totalPages}
           aria-label="Next page"
-          className="p-1.5 min-h-[36px] min-w-[36px] flex items-center justify-center rounded text-app-text-secondary hover:text-app-text disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
+          className="p-1.5 min-h-[36px] min-w-[36px] text-app-text-secondary hover:text-app-text disabled:opacity-30"
         >
           <ChevronDown className="w-4 h-4" />
-        </button>
+        </Button>
       </div>
     </footer>
   );

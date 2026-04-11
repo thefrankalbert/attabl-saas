@@ -2,6 +2,13 @@
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
@@ -48,15 +55,21 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
         {/* Currency Selector */}
         <div className="space-y-2">
           <Label htmlFor="currency">{t('currency')}</Label>
-          <select
-            id="currency"
-            {...register('currency')}
-            className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-app-border bg-app-elevated text-app-text px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <Select
+            value={watchCurrency}
+            onValueChange={(val) =>
+              setValue('currency', val as CurrencyCode, { shouldDirty: true })
+            }
           >
-            <option value="XAF">{t('currencyXAF')}</option>
-            <option value="EUR">{t('currencyEUR')}</option>
-            <option value="USD">{t('currencyUSD')}</option>
-          </select>
+            <SelectTrigger id="currency" className="h-10 min-h-[44px] w-full sm:max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="XAF">{t('currencyXAF')}</SelectItem>
+              <SelectItem value="EUR">{t('currencyEUR')}</SelectItem>
+              <SelectItem value="USD">{t('currencyUSD')}</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="text-xs text-app-text-secondary">{t('currencyUsedForPriceDisplay')}</p>
         </div>
 

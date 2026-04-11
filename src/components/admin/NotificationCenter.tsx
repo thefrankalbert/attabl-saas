@@ -139,11 +139,12 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
             notifications.map((notification) => {
               const Icon = TYPE_ICONS[notification.type];
               return (
-                <button
+                <Button
                   key={notification.id}
+                  variant="ghost"
                   onClick={() => handleClick(notification)}
                   className={cn(
-                    'flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-app-hover',
+                    'flex w-full items-start gap-3 px-4 py-3 text-left h-auto rounded-none whitespace-normal',
                     !notification.read && 'bg-accent/5',
                   )}
                 >
@@ -171,7 +172,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
                       {formatTime(notification.created_at)}
                     </p>
                   </div>
-                </button>
+                </Button>
               );
             })
           )}

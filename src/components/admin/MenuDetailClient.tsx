@@ -381,10 +381,11 @@ export default function MenuDetailClient({
           <span className="text-app-text-secondary">/</span>
           <h1 className="text-app-text font-semibold break-words">{menu.name}</h1>
         </div>
-        <button
+        <Button
+          variant="outline"
           onClick={toggleMenuActive}
           className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0',
+            'px-3 py-1.5 rounded-full text-xs font-semibold h-auto shrink-0',
             menu.is_active
               ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
               : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -401,7 +402,7 @@ export default function MenuDetailClient({
               {t('inactive')}
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
@@ -438,13 +439,14 @@ export default function MenuDetailClient({
                       />
                       <div className="absolute right-0 top-full mt-1 z-50 w-64 max-h-60 overflow-y-auto bg-app-card border border-app-border rounded-lg shadow-lg">
                         {availableCategories.map((cat) => (
-                          <button
+                          <Button
                             key={cat.id}
+                            variant="ghost"
                             onClick={() => handleAssignCategory(cat)}
-                            className="w-full text-left px-3 py-2 text-sm text-app-text hover:bg-app-bg transition-colors first:rounded-t-lg last:rounded-b-lg"
+                            className="w-full justify-start px-3 py-2 text-sm text-app-text hover:bg-app-bg rounded-none first:rounded-t-lg last:rounded-b-lg h-auto"
                           >
                             {cat.name}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </>
@@ -560,10 +562,10 @@ export default function MenuDetailClient({
 
                             {/* Inline price editing */}
                             {editingPriceId === item.id ? (
-                              <input
+                              <Input
                                 ref={priceInputRef}
                                 type="number"
-                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30 h-auto shadow-none"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
                                 onBlur={() => saveInlinePrice(item)}
@@ -574,13 +576,14 @@ export default function MenuDetailClient({
                                 min={0}
                               />
                             ) : (
-                              <button
+                              <Button
+                                variant="ghost"
                                 onClick={() => startEditingPrice(item)}
-                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline transition-colors cursor-pointer"
+                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline h-auto px-1 py-0"
                                 title={t('editItem')}
                               >
                                 {t('priceFcfa', { count: item.price })}
-                              </button>
+                              </Button>
                             )}
 
                             {(item.modifiers?.length ?? 0) > 0 && (
@@ -609,10 +612,11 @@ export default function MenuDetailClient({
                             >
                               <Settings2 className="w-4 h-4" />
                             </Button>
-                            <button
+                            <Button
+                              variant="outline"
                               onClick={() => toggleItemAvailable(item)}
                               className={cn(
-                                'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
+                                'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
                                 item.is_available
                                   ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                   : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -629,7 +633,7 @@ export default function MenuDetailClient({
                                   {t('exhaustedLabel')}
                                 </>
                               )}
-                            </button>
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -740,11 +744,12 @@ export default function MenuDetailClient({
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setItemFormAvailable(!itemFormAvailable)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                  'px-3 py-1.5 rounded-full text-xs font-semibold h-auto',
                   itemFormAvailable
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -761,7 +766,7 @@ export default function MenuDetailClient({
                     {t('exhaustedLabel')}
                   </>
                 )}
-              </button>
+              </Button>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>

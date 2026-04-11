@@ -7,6 +7,8 @@ import { actionSubmitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -83,13 +85,14 @@ export default function ContactPage() {
                 <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                   {formState.message}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => window.location.reload()}
-                  className="mt-6 rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
+                  className="mt-6 rounded-lg border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
                 >
                   {t('newMessage')}
-                </button>
+                </Button>
               </motion.div>
             ) : (
               <form action={formAction} className="mt-8 flex flex-col gap-5">
@@ -106,7 +109,7 @@ export default function ContactPage() {
                     >
                       {t('labelName')}
                     </Label>
-                    <input
+                    <Input
                       type="text"
                       name="name"
                       id="name"
@@ -125,7 +128,7 @@ export default function ContactPage() {
                     >
                       {t('labelCompany')}
                     </Label>
-                    <input
+                    <Input
                       type="text"
                       name="company"
                       id="company"
@@ -142,7 +145,7 @@ export default function ContactPage() {
                   >
                     {t('labelEmail')}
                   </Label>
-                  <input
+                  <Input
                     type="email"
                     name="email"
                     id="email"

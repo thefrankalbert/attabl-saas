@@ -7,6 +7,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
@@ -386,18 +393,18 @@ export default function SuggestionsClient({
                 <Label className="text-sm font-medium text-app-text mb-1.5 block">
                   {t('sourceDish')}
                 </Label>
-                <select
-                  value={sourceItemId}
-                  onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={sourceItemId || undefined} onValueChange={setSourceItemId}>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder={tc('selectPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menuItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -429,18 +436,18 @@ export default function SuggestionsClient({
                 <Label className="text-sm font-medium text-app-text mb-1.5 block">
                   {t('suggestedDish')}
                 </Label>
-                <select
-                  value={targetItemId}
-                  onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={targetItemId || undefined} onValueChange={setTargetItemId}>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder={tc('selectPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menuItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

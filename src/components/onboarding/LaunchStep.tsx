@@ -14,6 +14,8 @@ import {
   Download,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { LaunchQR } from '@/components/qr/LaunchQR';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
@@ -390,7 +392,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         );
                       })}
                     </div>
-                    <input
+                    <Input
                       type="text"
                       value={data.qrCta}
                       onChange={(e) => updateData({ qrCta: e.target.value })}
@@ -405,7 +407,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     <p className="text-xs font-semibold text-app-text-secondary mb-3">
                       {t('qrDescriptionLabel')}
                     </p>
-                    <textarea
+                    <Textarea
                       value={data.qrDescription}
                       onChange={(e) => updateData({ qrDescription: e.target.value })}
                       placeholder={t('qrDescriptionLabel')}

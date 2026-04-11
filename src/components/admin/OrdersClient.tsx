@@ -499,9 +499,10 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                         const isLocked = sound.isPremium && !isPremium;
                         const isActive = currentSoundId === sound.id;
                         return (
-                          <button
+                          <Button
                             key={sound.id}
                             type="button"
+                            variant="ghost"
                             disabled={isLocked}
                             onClick={() => {
                               if (!isLocked) {
@@ -510,7 +511,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                               }
                             }}
                             className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
+                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm h-auto whitespace-normal',
                               isActive
                                 ? 'bg-accent-muted text-accent'
                                 : 'text-app-text hover:bg-app-hover',
@@ -527,7 +528,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                             </span>
                             {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
                             {isLocked && <Lock className="w-3 h-3 shrink-0 text-app-text-muted" />}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
