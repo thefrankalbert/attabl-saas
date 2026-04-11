@@ -104,7 +104,7 @@ function AdminLayoutInner({
           tenant={tenant}
           userName={userName}
           userTenants={userTenants}
-          className="hidden md:flex"
+          className="hidden lg:flex"
           collapsed={sidebarCollapsed}
           onToggleCollapsed={handleToggleCollapsed}
         />
@@ -131,7 +131,7 @@ function AdminLayoutInner({
           {children}
         </main>
 
-        {isMobile && !isHome && (
+        {(isMobile || isTablet) && !isHome && (
           <AdminBottomNav
             basePath={basePath}
             role={role}
