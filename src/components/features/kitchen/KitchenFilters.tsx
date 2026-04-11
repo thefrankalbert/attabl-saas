@@ -63,7 +63,7 @@ export default function KitchenFilters({
   });
 
   return (
-    <header className="h-12 border-b border-app-border flex items-center justify-between px-2 sm:px-4 bg-app-bg shrink-0">
+    <header className="h-12 border-b border-app-border flex items-center justify-between px-2 @sm:px-4 bg-app-bg shrink-0">
       {/* Left: back / search */}
       <div className="flex items-center gap-1">
         {!isFullscreen && (
@@ -84,7 +84,7 @@ export default function KitchenFilters({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 sm:w-56"
+              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56"
               autoFocus
             />
             <button
@@ -177,7 +177,7 @@ export default function KitchenFilters({
 
       {/* Right: date/time + fullscreen */}
       <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-3 text-xs text-app-text-muted tabular-nums">
+        <div className="hidden @sm:flex items-center gap-3 text-xs text-app-text-muted tabular-nums">
           <span className="capitalize">{dateStr}</span>
           <span>{timeStr}</span>
         </div>

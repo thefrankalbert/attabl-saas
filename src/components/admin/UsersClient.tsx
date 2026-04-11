@@ -107,7 +107,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
-            <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+            <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               <UserPlus className="w-6 h-6" />
               {t('teamTitle')}
             </h1>
@@ -115,7 +115,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
               <Button
                 variant="default"
                 onClick={() => data.setIsModalOpen(true)}
-                className="gap-2 lg:ml-auto shrink-0"
+                className="gap-2 @lg:ml-auto shrink-0"
               >
                 <UserPlus className="w-4 h-4" /> {t('newMember')}
               </Button>
@@ -123,7 +123,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6 space-y-6">
+        <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6 space-y-6">
           <UsersTable
             users={data.users}
             canManageUsers={data.canManageUsers}

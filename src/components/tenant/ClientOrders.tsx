@@ -327,30 +327,20 @@ export default function ClientOrders({
   if (displayedOrders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
-        <div
-          className="w-24 h-24 rounded-full flex items-center justify-center mb-6"
-          style={{ backgroundColor: '#F6F6F6' }}
-        >
-          <ShoppingBag className="w-11 h-11" style={{ color: '#B0B0B0' }} />
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-[#F6F6F6]">
+          <ShoppingBag className="w-11 h-11 text-[#B0B0B0]" />
         </div>
-        <h2
-          className="mb-2"
-          style={{ fontSize: '20px', lineHeight: '28px', fontWeight: 700, color: '#1A1A1A' }}
-        >
+        <h2 className="mb-2 text-xl leading-[28px] font-bold text-[#1A1A1A]">
           {showHistory ? t('noOrdersDesc') : t('noOrders')}
         </h2>
-        <p
-          className="text-center mb-8 max-w-xs"
-          style={{ fontSize: '13px', lineHeight: '18px', color: '#737373' }}
-        >
+        <p className="text-center mb-8 max-w-xs text-[13px] leading-[18px] text-[#737373]">
           {showHistory ? t('noOrdersBrowse') : t('noOrdersBrowse')}
         </p>
         {!showHistory && (
           <Link href={`/sites/${tenantSlug}/menu`}>
             <button
               type="button"
-              className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
-              style={{ backgroundColor: '#1A1A1A', fontSize: '15px', fontWeight: 600 }}
+              className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98] bg-[#1A1A1A] text-[15px] font-semibold"
             >
               <ArrowLeft className="w-4 h-4" />
               {t('viewMenu')}
@@ -370,10 +360,7 @@ export default function ClientOrders({
     >
       {/* Order ready banner (active mode only) */}
       {!showHistory && showReadyBanner && (
-        <div
-          className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3"
-          style={{ backgroundColor: '#1A1A1A' }}
-        >
+        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-[#1A1A1A]">
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -403,11 +390,7 @@ export default function ClientOrders({
         return (
           <div
             key={order.id}
-            className="rounded-xl overflow-hidden"
-            style={{
-              backgroundColor: '#FFFFFF',
-              border: '1px solid #EEEEEE',
-            }}
+            className="rounded-xl overflow-hidden bg-white border border-[#EEEEEE]"
           >
             {/* Collapsed header */}
             <button
@@ -419,20 +402,14 @@ export default function ClientOrders({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span
-                      className="whitespace-nowrap"
-                      style={{ fontSize: '16px', fontWeight: 600, color: '#1A1A1A' }}
-                    >
+                    <span className="whitespace-nowrap text-base font-semibold text-[#1A1A1A]">
                       {shortOrderNumber(order)}
                     </span>
                     <BadgeStatus status={order.status} />
                   </div>
 
                   {/* Meta row: table + ETA */}
-                  <div
-                    className="mt-1.5 flex items-center gap-3 flex-wrap"
-                    style={{ fontSize: '13px', color: '#737373' }}
-                  >
+                  <div className="mt-1.5 flex items-center gap-3 flex-wrap text-[13px] text-[#737373]">
                     {order.table_number && order.service_type === 'dine-in' && (
                       <span className="inline-flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" />
@@ -450,12 +427,14 @@ export default function ClientOrders({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                  <span className="text-[15px] font-bold text-[#1A1A1A]">
                     {formatDisplayPrice(order.total, currency)}
                   </span>
                   <ChevronDown
-                    className={cn('w-4 h-4 transition-transform', isExpanded && 'rotate-180')}
-                    style={{ color: '#B0B0B0' }}
+                    className={cn(
+                      'w-4 h-4 transition-transform text-[#B0B0B0]',
+                      isExpanded && 'rotate-180',
+                    )}
                   />
                 </div>
               </div>
@@ -478,7 +457,7 @@ export default function ClientOrders({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div style={{ borderTop: '1px solid #EEEEEE' }}>
+                  <div className="border-t border-[#EEEEEE]">
                     {/* Items with thumbnails */}
                     <div>
                       {(order.items || []).map((item, idx) => (
@@ -492,34 +471,22 @@ export default function ClientOrders({
                         >
                           {/* Thumbnail placeholder 48x48 */}
                           <div
-                            className="shrink-0 rounded-xl flex items-center justify-center"
-                            style={{
-                              width: 48,
-                              height: 48,
-                              backgroundColor: '#F6F6F6',
-                              border: '1px solid #EEEEEE',
-                            }}
+                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-[#F6F6F6] border border-[#EEEEEE]"
                             aria-hidden
                           >
-                            <ShoppingBag className="w-5 h-5" style={{ color: '#B0B0B0' }} />
+                            <ShoppingBag className="w-5 h-5 text-[#B0B0B0]" />
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p
-                              className="truncate"
-                              style={{ fontSize: '14px', fontWeight: 600, color: '#1A1A1A' }}
-                            >
+                            <p className="truncate text-sm font-semibold text-[#1A1A1A]">
                               {item.name}
                             </p>
-                            <p style={{ fontSize: '12px', color: '#737373' }}>
+                            <p className="text-xs text-[#737373]">
                               {item.quantity} x {formatDisplayPrice(item.price, currency)}
                             </p>
                           </div>
 
-                          <span
-                            className="whitespace-nowrap"
-                            style={{ fontSize: '14px', fontWeight: 700, color: '#1A1A1A' }}
-                          >
+                          <span className="whitespace-nowrap text-sm font-bold text-[#1A1A1A]">
                             {formatDisplayPrice(item.price * item.quantity, currency)}
                           </span>
                         </div>
@@ -527,20 +494,15 @@ export default function ClientOrders({
                     </div>
 
                     {/* Total */}
-                    <div
-                      className="px-4 py-3 flex items-center justify-between"
-                      style={{ borderTop: '1px solid #EEEEEE' }}
-                    >
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
-                        {t('total')}
-                      </span>
-                      <span style={{ fontSize: '15px', fontWeight: 700, color: '#1A1A1A' }}>
+                    <div className="px-4 py-3 flex items-center justify-between border-t border-[#EEEEEE]">
+                      <span className="text-[15px] font-bold text-[#1A1A1A]">{t('total')}</span>
+                      <span className="text-[15px] font-bold text-[#1A1A1A]">
                         {formatDisplayPrice(order.total, currency)}
                       </span>
                     </div>
 
                     {/* Date */}
-                    <div className="px-4 pb-3" style={{ fontSize: '11px', color: '#B0B0B0' }}>
+                    <div className="px-4 pb-3 text-[11px] text-[#B0B0B0]">
                       {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
                         locale: dateLocale,
                       })}
@@ -556,12 +518,7 @@ export default function ClientOrders({
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                          style={{
-                            backgroundColor: '#1A1A1A',
-                            fontSize: '15px',
-                            fontWeight: 600,
-                          }}
+                          className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 bg-[#1A1A1A] text-[15px] font-semibold"
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -582,14 +539,7 @@ export default function ClientOrders({
                             e.stopPropagation();
                             handleReorder(order);
                           }}
-                          className="w-full h-12 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-                          style={{
-                            backgroundColor: '#FFFFFF',
-                            border: '1px solid #EEEEEE',
-                            color: '#1A1A1A',
-                            fontSize: '15px',
-                            fontWeight: 600,
-                          }}
+                          className="w-full h-12 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-white border border-[#EEEEEE] text-[#1A1A1A] text-[15px] font-semibold"
                         >
                           <RotateCcw className="w-4 h-4" />
                           {t('reorder')}
@@ -620,38 +570,19 @@ function OrdersSkeleton() {
       aria-live="polite"
     >
       {[0, 1, 2].map((i) => (
-        <div
-          key={i}
-          className="rounded-xl p-4"
-          style={{ backgroundColor: '#FFFFFF', border: '1px solid #EEEEEE' }}
-        >
+        <div key={i} className="rounded-xl p-4 bg-white border border-[#EEEEEE]">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div
-                className="h-5 w-20 rounded-md animate-pulse"
-                style={{ backgroundColor: '#F6F6F6' }}
-              />
-              <div
-                className="h-5 w-16 rounded-md animate-pulse"
-                style={{ backgroundColor: '#F6F6F6' }}
-              />
+              <div className="h-5 w-20 rounded-md animate-pulse bg-[#F6F6F6]" />
+              <div className="h-5 w-16 rounded-md animate-pulse bg-[#F6F6F6]" />
             </div>
-            <div
-              className="h-5 w-14 rounded-md animate-pulse"
-              style={{ backgroundColor: '#F6F6F6' }}
-            />
+            <div className="h-5 w-14 rounded-md animate-pulse bg-[#F6F6F6]" />
           </div>
-          <div
-            className="h-3 w-32 rounded-md animate-pulse mb-4"
-            style={{ backgroundColor: '#F6F6F6' }}
-          />
+          <div className="h-3 w-32 rounded-md animate-pulse mb-4 bg-[#F6F6F6]" />
           <div className="flex items-center justify-between">
             {[0, 1, 2, 3].map((j) => (
               <div key={j} className="flex flex-col items-center flex-1">
-                <div
-                  className="w-7 h-7 rounded-full animate-pulse"
-                  style={{ backgroundColor: '#F6F6F6' }}
-                />
+                <div className="w-7 h-7 rounded-full animate-pulse bg-[#F6F6F6]" />
               </div>
             ))}
           </div>
@@ -689,11 +620,8 @@ function BadgeStatus({ status }: { status: string }) {
 
   return (
     <span
-      className="px-2.5 py-1 rounded-lg"
+      className="px-2.5 py-1 rounded-lg text-[11px] leading-[15px] font-medium"
       style={{
-        fontSize: '11px',
-        lineHeight: '15px',
-        fontWeight: 500,
         backgroundColor: colors.bg,
         color: colors.color,
       }}

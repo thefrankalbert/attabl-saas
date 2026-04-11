@@ -325,7 +325,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {/* Row 1: Title + Search + Filters + Add - all on one line (desktop) */}
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 {/* Title */}
-                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Package className="w-5 h-5" />
                   {t('inventory')}
                   <span className="text-sm font-normal text-app-text-muted">
@@ -397,7 +397,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
 
                 {/* Add button - pushed right */}
-                <div className="lg:ml-auto shrink-0">
+                <div className="@lg:ml-auto shrink-0">
                   <Button onClick={openAdd} variant="default" className="gap-2 h-9">
                     <Plus className="w-4 h-4" />
                     {t('addIngredient')}
@@ -407,7 +407,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             </div>
 
             {/* Table / Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
               <ResponsiveDataTable
                 columns={columns}
                 data={filtered}
