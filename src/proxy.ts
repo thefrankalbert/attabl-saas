@@ -2,6 +2,7 @@ import { createMiddlewareClient } from '@/lib/supabase/middleware';
 import { getCachedTenantByDomain, getCachedTenant } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { buildCspHeader } from '@/lib/csp';
 
 // Routes qui nécessitent une authentification
 // Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
@@ -54,6 +55,15 @@ function isPublicMainDomainPath(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  // SECURITY: Block x-middleware-subrequest header to prevent middleware bypass (CVE-2025-29927)
+  if (request.headers.get('x-middleware-subrequest')) {
+    return new NextResponse(null, { status: 403 });
+  }
+
+  // Generate a per-request CSP nonce (replaces static unsafe-inline in script-src)
+  const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
+  request.headers.set('x-csp-nonce', nonce);
+
   // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this
   request.headers.delete('x-tenant-slug');
 
@@ -104,7 +114,9 @@ export async function proxy(request: NextRequest) {
   //    n'ont pas besoin de rafraîchir la session → skip createMiddlewareClient entièrement
   if (!subdomain || subdomain === 'www') {
     if (isPublicMainDomainPath(pathname)) {
-      return NextResponse.next();
+      const resp = NextResponse.next({ request: { headers: request.headers } });
+      resp.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+      return resp;
     }
   }
 
@@ -250,6 +262,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 8. Pas de subdomain → retourner la réponse avec session rafraîchie
+  sessionResponse.headers.set('Content-Security-Policy', buildCspHeader(nonce));
   return sessionResponse;
 }
 

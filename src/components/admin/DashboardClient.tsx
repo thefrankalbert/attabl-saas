@@ -12,6 +12,7 @@ import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
 import { ChevronRight, Clock, ShoppingBag, QrCode, BarChart3, Package } from 'lucide-react';
 import type { CSSProperties } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // Lazy-load recharts for faster initial paint
@@ -333,7 +334,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           {/* Stats gauge - compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="shrink-0 w-[80px] sm:w-[110px]">
+              <div className="shrink-0 w-20 sm:w-28">
                 <Suspense
                   fallback={
                     <div className="h-[60px] rounded-lg bg-app-elevated/20 animate-pulse" />
@@ -430,28 +431,32 @@ export default function DashboardClient(props: DashboardClientProps) {
                   {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
                 </p>
                 <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('revenue')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'revenue'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('revenueLabel')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('orders')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'orders'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('ordersLabel')}
-                  </button>
+                  </Button>
                 </div>
               </div>
               {/* Value + period */}

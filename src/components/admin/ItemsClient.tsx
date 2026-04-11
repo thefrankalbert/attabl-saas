@@ -318,7 +318,9 @@ export default function ItemsClient({
             <div className="flex items-center gap-3 px-4 py-2 mb-2 rounded-xl bg-accent-muted border border-accent/20">
               <span className="text-sm font-medium text-app-text">{selectedIds.size} selected</span>
               <div className="flex-1" />
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={async () => {
                   const targetAvailability = [...selectedIds].some((id) => {
                     const item = items.find((i) => i.id === id);
@@ -345,16 +347,12 @@ export default function ItemsClient({
                   router.refresh();
                   revalidateMenuCache();
                 }}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text transition-colors"
               >
                 Toggle availability
-              </button>
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="text-xs font-medium px-3 py-1.5 rounded-lg bg-app-card border border-app-border hover:bg-app-hover text-app-text-muted transition-colors"
-              >
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds(new Set())}>
                 Clear
-              </button>
+              </Button>
             </div>
           )}
 
@@ -433,13 +431,14 @@ export default function ItemsClient({
                       {formatCurrency(item.price, currency)}
                     </p>
                   </div>
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleAvailable(item);
                     }}
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 whitespace-nowrap',
+                      'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
                       item.is_available
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -456,7 +455,7 @@ export default function ItemsClient({
                         {t('exhausted')}
                       </>
                     )}
-                  </button>
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -525,12 +524,9 @@ export default function ItemsClient({
               {/* Panel Header */}
               <div className="flex items-center justify-between p-5 border-b border-app-border">
                 <h2 className="text-base font-bold text-app-text">{t('details')}</h2>
-                <button
-                  onClick={closePanel}
-                  className="p-2.5 rounded-lg hover:bg-app-bg transition-colors min-h-[36px] min-w-[36px] flex items-center justify-center"
-                >
+                <Button variant="ghost" size="icon" onClick={closePanel}>
                   <X className="w-4 h-4 text-app-text-secondary" />
-                </button>
+                </Button>
               </div>
 
               {/* Panel Content */}
@@ -694,15 +690,16 @@ export default function ItemsClient({
                 const isCompleted = formStep > step;
                 const labels = [t('stepBasicInfo'), t('stepPricing'), t('stepPhotoDetails')];
                 return (
-                  <button
+                  <Button
                     key={step}
                     type="button"
+                    variant="outline"
                     onClick={() => {
                       // Allow navigating back to completed steps freely
                       if (step < formStep) setFormStep(step);
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium h-auto',
                       isActive
                         ? 'bg-accent/10 text-accent border-accent/30'
                         : isCompleted
@@ -723,7 +720,7 @@ export default function ItemsClient({
                       </span>
                     )}
                     <span className="hidden sm:inline">{labels[step - 1]}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -871,23 +868,24 @@ export default function ItemsClient({
                     {ALLERGENS.map((a) => {
                       const selected = allergens.includes(a);
                       return (
-                        <button
+                        <Button
                           key={a}
                           type="button"
+                          variant="outline"
                           onClick={() =>
                             setAllergens((prev) =>
                               selected ? prev.filter((x) => x !== a) : [...prev, a],
                             )
                           }
                           className={cn(
-                            'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                            'px-2.5 py-1 rounded-full text-xs font-medium h-auto',
                             selected
                               ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                               : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
                           )}
                         >
                           {ta(a)}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>

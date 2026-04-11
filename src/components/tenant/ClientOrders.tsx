@@ -1,22 +1,33 @@
 'use client';
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { logger } from '@/lib/logger';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag, Loader2, ChevronDown, Pencil, ArrowLeft, BellRing, X } from 'lucide-react';
+import {
+  ShoppingBag,
+  Loader2,
+  ChevronDown,
+  Pencil,
+  ArrowLeft,
+  BellRing,
+  X,
+  Users,
+  RotateCcw,
+} from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
+import OrderTracker from './OrderTracker';
 
-// ─── Types ──────────────────────────────────────────────
+// --- Types --------------------------------------------------
 
 interface OrderItem {
   name: string;
@@ -41,14 +52,18 @@ interface ClientOrdersProps {
   tenantSlug: string;
   tenantId: string;
   currency?: string;
+  /** When true, shows terminal orders (history) instead of active ones */
+  showHistory?: boolean;
 }
 
-// ─── Constants ──────────────────────────────────────────
+// --- Constants ----------------------------------------------
 
 const EDIT_WINDOW_MS = 3 * 60 * 1000; // 3 minutes
 const EDITABLE_STATUSES = new Set(['pending']);
+const ACTIVE_STATUSES = new Set(['pending', 'confirmed', 'preparing', 'ready']);
+const TERMINAL_STATUSES = new Set(['delivered', 'served', 'cancelled']);
 
-// ─── Helpers ────────────────────────────────────────────
+// --- Helpers ------------------------------------------------
 
 function getStoredOrderIds(): string[] {
   if (typeof window === 'undefined') return [];
@@ -63,12 +78,17 @@ function isWithinEditWindow(createdAt: string): boolean {
   return Date.now() - new Date(createdAt).getTime() < EDIT_WINDOW_MS;
 }
 
-// ─── Component ──────────────────────────────────────────
+function shortOrderNumber(order: Pick<OrderRecord, 'order_number' | 'id'>): string {
+  return `#${(order.order_number || order.id).slice(-5).toUpperCase()}`;
+}
+
+// --- Component ----------------------------------------------
 
 export default function ClientOrders({
   tenantSlug,
   tenantId,
   currency = 'XAF',
+  showHistory = false,
 }: ClientOrdersProps) {
   const [orders, setOrders] = useState<OrderRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,7 +98,6 @@ export default function ClientOrders({
   const supabaseRef = useRef(createClient());
   const previousStatusesRef = useRef<Map<string, string>>(new Map());
   const t = useTranslations('tenant');
-  const seg = useSegmentTerms();
   const { notifyOrderReady, showReadyBanner, dismissBanner, readyOrderNumber } =
     useClientOrderNotification();
   const locale = useLocale();
@@ -88,7 +107,7 @@ export default function ClientOrders({
   const { addToCart, clearCart } = useCart();
   const { formatDisplayPrice } = useDisplayCurrency();
 
-  // ─── Load orders ────────────────────────────────────────
+  // --- Load orders ------------------------------------------
 
   useEffect(() => {
     let cancelled = false;
@@ -145,16 +164,21 @@ export default function ClientOrders({
     };
   }, [tenantId]);
 
-  // ─── Realtime: listen for status changes on ALL tracked orders ──
+  // --- Realtime: listen for status changes on ACTIVE orders only --
+
+  const activeOrderIds = useMemo(
+    () => orders.filter((o) => ACTIVE_STATUSES.has(o.status)).map((o) => o.id),
+    [orders],
+  );
 
   useEffect(() => {
-    const supabase = supabaseRef.current;
-    const orderIds = orders.map((o) => o.id);
+    if (activeOrderIds.length === 0) return;
 
-    if (orderIds.length === 0) return;
+    const supabase = supabaseRef.current;
+    const channelName = `order-status-${tenantId}`;
 
     const channel = supabase
-      .channel('order-status-updates')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
@@ -166,7 +190,6 @@ export default function ClientOrders({
         (payload) => {
           const updated = payload.new as { id: string; status: string };
           setOrders((prev) => {
-            // Detect transition to "ready" and notify
             const existing = prev.find((o) => o.id === updated.id);
             const prevStatus = previousStatusesRef.current.get(updated.id) || existing?.status;
             if (updated.status === 'ready' && prevStatus !== 'ready' && existing) {
@@ -177,30 +200,27 @@ export default function ClientOrders({
           });
         },
       )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR') {
-          logger.error('ClientOrders realtime channel error');
-        }
-      });
+      .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orders.length, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeOrderIds.length, tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ─── Countdown timer for edit window ───────────────────
+  // --- Countdown timer: edit window + ETA ------------------
 
   useEffect(() => {
     const hasEditable = orders.some(
       (o) => EDITABLE_STATUSES.has(o.status) && isWithinEditWindow(o.created_at),
     );
-    if (!hasEditable) return;
+    const hasActive = orders.some((o) => ACTIVE_STATUSES.has(o.status));
+    if (!hasEditable && !hasActive) return;
 
     const interval = setInterval(() => setTick((n) => n + 1), 1000);
     return () => clearInterval(interval);
   }, [orders]);
 
-  // ─── Track initial statuses for transition detection ───
+  // --- Track initial statuses for transition detection ------
 
   useEffect(() => {
     for (const o of orders) {
@@ -210,7 +230,7 @@ export default function ClientOrders({
     }
   }, [orders]);
 
-  // ─── Edit order handler ────────────────────────────────
+  // --- Edit order handler -----------------------------------
 
   const handleEditOrder = useCallback(
     async (order: OrderRecord) => {
@@ -238,8 +258,6 @@ export default function ClientOrders({
         await new Promise((resolve) => setTimeout(resolve, 50));
 
         for (const item of order.items) {
-          // addToCart sets quantity=1 on first add, then increments
-          // So we call it once per unit to restore the original quantity
           for (let i = 0; i < item.quantity; i++) {
             addToCart(
               {
@@ -265,49 +283,85 @@ export default function ClientOrders({
     [tenantId, tenantSlug, clearCart, addToCart, router],
   );
 
-  // ─── Loading state ────────────────────────────────────
+  // --- Reorder handler: add all items to cart without cancelling --
+
+  const handleReorder = useCallback(
+    (order: OrderRecord) => {
+      for (const item of order.items) {
+        for (let i = 0; i < item.quantity; i++) {
+          addToCart(
+            {
+              id: item.menu_item_id || item.name,
+              name: item.name,
+              name_en: item.name_en,
+              price: item.price,
+              quantity: 1,
+            },
+            tenantId,
+            true,
+          );
+        }
+      }
+      router.push(`/sites/${tenantSlug}/cart`);
+    },
+    [addToCart, router, tenantId, tenantSlug],
+  );
+
+  // --- Derive displayed orders based on mode -------
+
+  const displayedOrders = useMemo(
+    () =>
+      showHistory
+        ? orders.filter((o) => TERMINAL_STATUSES.has(o.status))
+        : orders.filter((o) => ACTIVE_STATUSES.has(o.status)),
+    [orders, showHistory],
+  );
+
+  // --- Loading state ----------------------------------------
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[40vh]">
-        <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
-      </div>
-    );
+    return <OrdersSkeleton />;
   }
 
-  // ─── Empty state ──────────────────────────────────────
+  // --- Empty state -----------------------
 
-  if (orders.length === 0) {
+  if (displayedOrders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] text-center px-4">
-        <div className="w-20 h-20 bg-app-elevated rounded-full flex items-center justify-center mb-6">
-          <ShoppingBag className="w-10 h-10 text-app-text-muted/40" />
+      <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-[#F6F6F6]">
+          <ShoppingBag className="w-11 h-11 text-[#B0B0B0]" />
         </div>
-        <h2 className="text-xl font-bold text-app-text mb-2">{t('noOrders')}</h2>
-        <p className="text-sm text-app-text-muted text-center mb-8 max-w-xs">{t('noOrdersDesc')}</p>
-        <Link href={`/sites/${tenantSlug}/menu`}>
-          <button
-            className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+        <h2 className="mb-2 text-xl leading-[28px] font-bold text-[#1A1A1A]">
+          {showHistory ? t('noOrdersDesc') : t('noOrders')}
+        </h2>
+        <p className="text-center mb-8 max-w-xs text-[13px] leading-[18px] text-[#737373]">
+          {showHistory ? t('noOrdersBrowse') : t('noOrdersBrowse')}
+        </p>
+        {!showHistory && (
+          <Button
+            asChild
+            className="h-12 px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
           >
-            <ArrowLeft className="w-4 h-4" />
-            {t('viewMenu')}
-          </button>
-        </Link>
+            <Link href={`/sites/${tenantSlug}/menu`}>
+              <ArrowLeft className="w-4 h-4" />
+              {t('viewMenu')}
+            </Link>
+          </Button>
+        )}
       </div>
     );
   }
 
-  // ─── Orders history list ──────────────────────────────
+  // --- Orders history list ----------------------------------
 
   return (
     <div
-      className="space-y-3 px-4"
+      className="space-y-3"
       style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
     >
-      {/* Order ready banner */}
-      {showReadyBanner && (
-        <div className="relative bg-emerald-500 text-white rounded-xl px-4 py-4 flex items-center gap-3 shadow-lg">
+      {/* Order ready banner (active mode only) */}
+      {!showHistory && showReadyBanner && (
+        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-[#1A1A1A]">
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -315,53 +369,90 @@ export default function ClientOrders({
               {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={dismissBanner}
-            className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+            className="rounded-full hover:bg-white/20 shrink-0 min-h-[44px] min-w-[44px] text-white"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       )}
 
-      {orders.map((order) => {
+      {/* ALL active orders as expandable cards — no separate banner,
+          every order shows its tracker + can be expanded to see items */}
+      {displayedOrders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);
         const isEditing = editingOrderId === order.id;
+        const isExpanded = expandedOrderId === order.id;
+        const isTerminal = TERMINAL_STATUSES.has(order.status);
 
         return (
-          <motion.div
+          <div
             key={order.id}
-            layout
-            className="bg-app-card rounded-xl border border-app-border overflow-hidden"
+            className="rounded-xl overflow-hidden bg-white border border-[#EEEEEE]"
           >
             {/* Collapsed header */}
-            <button
-              onClick={() => setExpandedOrderId(expandedOrderId === order.id ? null : order.id)}
-              className="w-full flex items-center justify-between p-4"
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
+              className="w-full text-left p-4 h-auto whitespace-normal rounded-none"
+              aria-expanded={isExpanded}
             >
-              <div className="flex items-center gap-3">
-                <BadgeStatus status={order.status} />
-                <span className="text-sm font-semibold text-app-text">
-                  #{order.order_number || order.id.slice(0, 5)}
-                </span>
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="whitespace-nowrap text-base font-semibold text-[#1A1A1A]">
+                      {shortOrderNumber(order)}
+                    </span>
+                    <BadgeStatus status={order.status} />
+                  </div>
+
+                  {/* Meta row: table + ETA */}
+                  <div className="mt-1.5 flex items-center gap-3 flex-wrap text-[13px] text-[#737373]">
+                    {order.table_number && order.service_type === 'dine-in' && (
+                      <span className="inline-flex items-center gap-1">
+                        <Users className="w-3.5 h-3.5" />
+                        {t('tableLabel', { num: order.table_number })}
+                      </span>
+                    )}
+                    {isTerminal && (
+                      <span>
+                        {format(new Date(order.created_at), 'dd MMM, HH:mm', {
+                          locale: dateLocale,
+                        })}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[15px] font-bold text-[#1A1A1A]">
+                    {formatDisplayPrice(order.total, currency)}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'w-4 h-4 transition-transform text-[#B0B0B0]',
+                      isExpanded && 'rotate-180',
+                    )}
+                  />
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold" style={{ color: 'var(--tenant-primary)' }}>
-                  {formatDisplayPrice(order.total, currency)}
-                </span>
-                <ChevronDown
-                  className={cn(
-                    'w-4 h-4 text-app-text-muted transition-transform',
-                    expandedOrderId === order.id && 'rotate-180',
-                  )}
-                />
-              </div>
-            </button>
+
+              {/* Mini tracker in collapsed view for active orders only */}
+              {!isExpanded && ACTIVE_STATUSES.has(order.status) && (
+                <div className="mt-4">
+                  <OrderTracker status={order.status} createdAt={order.created_at} compact />
+                </div>
+              )}
+            </Button>
 
             {/* Expanded details */}
-            <AnimatePresence>
-              {expandedOrderId === order.id && (
+            <AnimatePresence initial={false}>
+              {isExpanded && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
                   animate={{ height: 'auto', opacity: 1 }}
@@ -369,53 +460,67 @@ export default function ClientOrders({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="border-t border-app-border/50">
-                    {/* Items - matching cart item layout */}
-                    <div className="divide-y divide-app-border/50">
-                      {(order.items || []).map((item: OrderItem, idx: number) => (
-                        <div key={idx} className="px-4 py-3 flex items-center gap-3">
-                          <span
-                            className="text-sm font-bold w-6 text-center"
-                            style={{ color: 'var(--tenant-primary)' }}
+                  <div className="border-t border-[#EEEEEE]">
+                    {/* Items with thumbnails */}
+                    <div>
+                      {(order.items || []).map((item, idx) => (
+                        <div
+                          key={`${item.menu_item_id || item.name}-${idx}`}
+                          className="px-4 py-3 flex items-center gap-3"
+                          style={{
+                            borderBottom:
+                              idx < order.items.length - 1 ? '1px solid #EEEEEE' : 'none',
+                          }}
+                        >
+                          {/* Thumbnail placeholder 48x48 */}
+                          <div
+                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-[#F6F6F6] border border-[#EEEEEE]"
+                            aria-hidden
                           >
-                            {item.quantity}
-                          </span>
-                          <span className="flex-1 text-sm text-app-text">{item.name}</span>
-                          <span className="text-sm font-bold text-app-text whitespace-nowrap">
+                            <ShoppingBag className="w-5 h-5 text-[#B0B0B0]" />
+                          </div>
+
+                          <div className="flex-1 min-w-0">
+                            <p className="truncate text-sm font-semibold text-[#1A1A1A]">
+                              {item.name}
+                            </p>
+                            <p className="text-xs text-[#737373]">
+                              {item.quantity} x {formatDisplayPrice(item.price, currency)}
+                            </p>
+                          </div>
+
+                          <span className="whitespace-nowrap text-sm font-bold text-[#1A1A1A]">
                             {formatDisplayPrice(item.price * item.quantity, currency)}
                           </span>
                         </div>
                       ))}
                     </div>
 
-                    {/* Total - matching cart style */}
-                    <div className="px-4 py-3 border-t border-app-border">
-                      <div className="flex items-center justify-between">
-                        <span className="text-base font-bold text-app-text">{t('total')}</span>
-                        <span className="text-xl font-black text-app-text">
-                          {formatDisplayPrice(order.total, currency)}
-                        </span>
-                      </div>
+                    {/* Total */}
+                    <div className="px-4 py-3 flex items-center justify-between border-t border-[#EEEEEE]">
+                      <span className="text-[15px] font-bold text-[#1A1A1A]">{t('total')}</span>
+                      <span className="text-[15px] font-bold text-[#1A1A1A]">
+                        {formatDisplayPrice(order.total, currency)}
+                      </span>
                     </div>
 
                     {/* Date */}
-                    <div className="px-4 pb-3 text-xs text-app-text-muted">
+                    <div className="px-4 pb-3 text-[11px] text-[#B0B0B0]">
                       {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
                         locale: dateLocale,
                       })}
                     </div>
 
-                    {/* Edit button - visible only for pending orders within 3 min */}
-                    {canEdit && (
-                      <div className="px-4 pb-4">
-                        <button
+                    {/* Action buttons */}
+                    <div className="px-4 pb-4 space-y-2">
+                      {canEdit && (
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full h-12 rounded-xl text-white font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2"
-                          style={{ backgroundColor: 'var(--tenant-primary)' }}
+                          className="w-full h-12 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -425,49 +530,87 @@ export default function ClientOrders({
                               {t('editOrder')}
                             </>
                           )}
-                        </button>
-                      </div>
-                    )}
+                        </Button>
+                      )}
 
-                    {/* "En preparation" message when kitchen has started */}
-                    {!canEdit && order.status === 'preparing' && (
-                      <div className="px-4 pb-4">
-                        <div className="w-full h-10 rounded-xl bg-blue-50 text-blue-700 text-sm font-semibold flex items-center justify-center gap-2">
-                          {seg.inProduction}
-                        </div>
-                      </div>
-                    )}
+                      {/* Reorder button for terminal orders */}
+                      {isTerminal && order.items.length > 0 && (
+                        <Button
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReorder(order);
+                          }}
+                          className="w-full h-12 rounded-xl bg-white border-[#EEEEEE] text-[#1A1A1A] text-[15px] font-semibold"
+                        >
+                          <RotateCcw className="w-4 h-4" />
+                          {t('reorder')}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </motion.div>
               )}
             </AnimatePresence>
-          </motion.div>
+          </div>
         );
       })}
+
+      {/* Terminal orders accessible from Account > Order History only */}
     </div>
   );
 }
 
-// ─── Sub-components ──────────────────────────────────────
+// --- Sub-components ------------------------------------------
+
+function OrdersSkeleton() {
+  return (
+    <div
+      className="space-y-3"
+      style={{ paddingBottom: 'calc(6rem + env(safe-area-inset-bottom, 0px))' }}
+      aria-busy="true"
+      aria-live="polite"
+    >
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="rounded-xl p-4 bg-white border border-[#EEEEEE]">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-20 rounded-md animate-pulse bg-[#F6F6F6]" />
+              <div className="h-5 w-16 rounded-md animate-pulse bg-[#F6F6F6]" />
+            </div>
+            <div className="h-5 w-14 rounded-md animate-pulse bg-[#F6F6F6]" />
+          </div>
+          <div className="h-3 w-32 rounded-md animate-pulse mb-4 bg-[#F6F6F6]" />
+          <div className="flex items-center justify-between">
+            {[0, 1, 2, 3].map((j) => (
+              <div key={j} className="flex flex-col items-center flex-1">
+                <div className="w-7 h-7 rounded-full animate-pulse bg-[#F6F6F6]" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function BadgeStatus({ status }: { status: string }) {
   const t = useTranslations('tenant');
-  const seg = useSegmentTerms();
 
-  const styles: Record<string, string> = {
-    pending: 'bg-amber-50 text-amber-700',
-    confirmed: 'bg-blue-50 text-blue-700',
-    preparing: 'bg-blue-50 text-blue-700',
-    ready: 'bg-emerald-50 text-emerald-700',
-    delivered: 'bg-app-elevated text-app-text-muted',
-    served: 'bg-app-elevated text-app-text-muted',
-    cancelled: 'bg-red-50 text-red-600',
+  const badgeStyles: Record<string, { bg: string; color: string }> = {
+    pending: { bg: '#F6F6F6', color: '#737373' },
+    confirmed: { bg: '#F6F6F6', color: '#737373' },
+    preparing: { bg: '#F6F6F6', color: '#737373' },
+    ready: { bg: '#F6F6F6', color: '#1A1A1A' },
+    delivered: { bg: '#F6F6F6', color: '#737373' },
+    served: { bg: '#F6F6F6', color: '#737373' },
+    cancelled: { bg: '#FFEBEE', color: '#FF3008' },
   };
 
   const labels: Record<string, string> = {
     pending: t('statusPending'),
     confirmed: t('statusConfirmed'),
-    preparing: seg.inProduction,
+    preparing: t('trackerPreparing'),
     ready: t('statusReady'),
     delivered: t('statusDelivered'),
     served: t('statusServed'),
@@ -475,10 +618,15 @@ function BadgeStatus({ status }: { status: string }) {
   };
 
   const label = labels[status] || t('statusPending');
+  const colors = badgeStyles[status] || badgeStyles.pending;
 
   return (
     <span
-      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide ${styles[status] || styles.pending}`}
+      className="px-2.5 py-1 rounded-lg text-[11px] leading-[15px] font-medium"
+      style={{
+        backgroundColor: colors.bg,
+        color: colors.color,
+      }}
     >
       {label}
     </span>

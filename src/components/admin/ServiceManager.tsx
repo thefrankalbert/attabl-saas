@@ -27,6 +27,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Table, Zone, AdminUser, TableAssignment, Order } from '@/types/admin.types';
@@ -167,19 +168,20 @@ function VisualTable({
               {table.display_name || table.table_number}
             </span>
             {isAssigned && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => onRelease(assignment.id)}
                 className={cn(
-                  'p-1 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg',
-                  'opacity-0 group-hover:opacity-100 transition-all duration-150',
+                  'h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-150',
                   'hover:bg-status-error/10 text-app-text-muted hover:text-status-error',
-                  'focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:opacity-100',
+                  'focus-visible:opacity-100',
                 )}
                 title={releaseLabel}
                 aria-label={releaseAriaLabel}
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -637,14 +639,14 @@ export default function ServiceManager({ tenantId }: Props) {
                             {order.table_number}
                           </span>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleMarkDelivered(order.id)}
                           aria-label={t('markDelivered')}
-                          className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                          className="w-full mt-1 gap-1.5 min-h-[44px] bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98]"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {t('markDelivered')}
-                        </button>
+                        </Button>
                       </div>
                     );
                   })
@@ -702,10 +704,11 @@ export default function ServiceManager({ tenantId }: Props) {
               className="flex items-center gap-1 overflow-x-auto"
               style={{ scrollbarWidth: 'none' }}
             >
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setActiveZoneId(null)}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                   !activeZoneId
                     ? 'text-app-text'
                     : 'text-app-text-muted hover:text-app-text-secondary',
@@ -715,7 +718,7 @@ export default function ServiceManager({ tenantId }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-app-elevated font-bold tabular-nums">
                   {stats.occupied}/{stats.total}
                 </span>
-              </button>
+              </Button>
               {zones.map((zone, idx) => {
                 const zs = zoneStats[zone.id];
                 const isActive = activeZoneId === zone.id;
@@ -728,11 +731,12 @@ export default function ServiceManager({ tenantId }: Props) {
                 ];
                 const dotColor = dotColors[idx % dotColors.length];
                 return (
-                  <button
+                  <Button
                     key={zone.id}
+                    variant="ghost"
                     onClick={() => setActiveZoneId(isActive ? null : zone.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                       isActive
                         ? 'text-app-text'
                         : 'text-app-text-muted hover:text-app-text-secondary',
@@ -745,7 +749,7 @@ export default function ServiceManager({ tenantId }: Props) {
                         {zs.occupied}/{zs.total}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -836,14 +840,14 @@ export default function ServiceManager({ tenantId }: Props) {
                               </span>
                             </div>
                           </div>
-                          <button
+                          <Button
                             onClick={() => handleMarkDelivered(order.id)}
                             aria-label={t('markDelivered')}
-                            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold"
+                            className="shrink-0 gap-1.5 min-h-[44px] bg-status-success text-white text-xs font-bold hover:bg-status-success/90"
                           >
                             <CheckCircle2 className="w-3 h-3" />
                             {t('markDelivered')}
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}

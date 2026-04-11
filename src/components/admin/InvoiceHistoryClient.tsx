@@ -6,6 +6,14 @@ import { Download, ExternalLink, Loader2, FileX2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 interface StripeInvoice {
@@ -157,53 +165,53 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
         ) : (
           <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
             {/* Desktop table */}
-            <div className="hidden @md:block overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-app-border/60 bg-app-bg/50">
-                    <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+            <div className="hidden @md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-b border-app-border/60 bg-app-bg/50">
+                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colNumber')}
-                    </th>
-                    <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    </TableHead>
+                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colDate')}
-                    </th>
-                    <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    </TableHead>
+                    <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colPeriod')}
-                    </th>
-                    <th className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    </TableHead>
+                    <TableHead className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colAmount')}
-                    </th>
-                    <th className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    </TableHead>
+                    <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colStatus')}
-                    </th>
-                    <th className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
+                    </TableHead>
+                    <TableHead className="text-right text-xs font-semibold text-app-text-secondary px-4 py-3">
                       {t('colActions')}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {invoices.map((inv) => (
-                    <tr
+                    <TableRow
                       key={inv.id}
                       className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                     >
-                      <td className="px-4 py-3">
+                      <TableCell className="px-4 py-3">
                         <span className="text-sm font-medium text-app-text">
                           {inv.number || ' - '}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-app-text-secondary">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-app-text-secondary">
                         {formatDate(inv.created)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-app-text-secondary">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-sm text-app-text-secondary">
                         {formatDate(inv.period_start)} → {formatDate(inv.period_end)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
                         <span className="text-sm font-bold text-app-text tabular-nums">
                           {formatAmount(inv.amount_paid, inv.currency)}
                         </span>
-                      </td>
-                      <td className="px-4 py-3 text-center">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-center">
                         <Badge
                           variant={statusVariant(inv.status)}
                           className={cn(
@@ -214,8 +222,8 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                         >
                           {statusLabel(inv.status)}
                         </Badge>
-                      </td>
-                      <td className="px-4 py-3 text-right">
+                      </TableCell>
+                      <TableCell className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {inv.invoice_pdf && (
                             <a
@@ -240,11 +248,11 @@ export default function InvoiceHistoryClient({ hasStripeCustomer }: InvoiceHisto
                             </a>
                           )}
                         </div>
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
 
             {/* Mobile cards */}

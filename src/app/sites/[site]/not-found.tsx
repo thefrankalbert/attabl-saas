@@ -13,23 +13,23 @@ export default function TenantNotFound() {
   const t = useTranslations('tenant');
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">
+    <div className="flex h-full items-center justify-center bg-white px-4">
       <div className="text-center max-w-sm">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-app-card shadow-sm border border-app-border">
-          <UtensilsCrossed className="h-7 w-7 text-app-text-muted" />
+        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-sm border border-[#EEEEEE]">
+          <UtensilsCrossed className="h-7 w-7" style={{ color: '#B0B0B0' }} />
         </div>
 
-        <p className="text-5xl font-black text-app-text-muted">404</p>
-        <h1 className="mt-3 text-lg font-semibold text-app-text">{t('notFoundTitle')}</h1>
-        <p className="mt-2 text-sm text-app-text-secondary leading-relaxed">
+        <p className="text-5xl font-black" style={{ color: '#B0B0B0' }}>
+          404
+        </p>
+        <h1 className="mt-3 text-lg font-semibold" style={{ color: '#1A1A1A' }}>
+          {t('notFoundTitle')}
+        </h1>
+        <p className="mt-2 text-sm leading-relaxed" style={{ color: '#737373' }}>
           {t('notFoundDescription')}
         </p>
 
-        <Button
-          asChild
-          className="mt-6 gap-2 w-full"
-          style={{ backgroundColor: 'var(--tenant-primary, #000)' }}
-        >
+        <Button asChild className="mt-6 gap-2 w-full" style={{ backgroundColor: '#1A1A1A' }}>
           <Link href={menuHref}>
             <ArrowLeft className="h-4 w-4" />
             {t('backToMenu')}

@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { Input } from '@/components/ui/input';
 import type { MenuItem } from '@/types/admin.types';
 import MenuItemCard from './MenuItemCard';
 
@@ -66,29 +67,36 @@ export default function SearchOverlay({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: 20 }}
-          className="fixed inset-0 z-[55] bg-app-bg flex flex-col"
+          className="fixed inset-0 z-[55] bg-white flex flex-col"
         >
           {/* Search header */}
-          <div className="sticky top-0 z-10 bg-app-card border-b border-app-border/50 px-4 py-3 flex items-center gap-3">
+          <div
+            className="sticky top-0 z-10 bg-white px-4 py-3 flex items-center gap-3"
+            style={{ borderBottom: '1px solid rgba(238,238,238,0.5)' }}
+          >
             <button
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-app-elevated transition-colors"
+              aria-label={t('ariaGoBack')}
+              className="p-2 rounded-full hover:bg-[#F6F6F6] transition-colors"
             >
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div className="flex-1 flex items-center gap-2 bg-app-elevated rounded-xl px-3 py-2.5">
-              <Search className="w-4 h-4 text-app-text-muted" />
-              <input
+            <div
+              className="flex-1 flex items-center gap-2 rounded-xl px-3 py-2.5"
+              style={{ backgroundColor: '#F6F6F6' }}
+            >
+              <Search className="w-4 h-4" style={{ color: '#B0B0B0' }} />
+              <Input
                 ref={inputRef}
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t('searchMenu')}
-                className="flex-1 bg-transparent text-sm outline-none"
+                className="flex-1 bg-transparent text-sm outline-none border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               />
               {query && (
-                <button onClick={() => setQuery('')} className="p-0.5">
-                  <X className="w-4 h-4 text-app-text-muted" />
+                <button onClick={() => setQuery('')} aria-label="Effacer" className="p-0.5">
+                  <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
                 </button>
               )}
             </div>
@@ -98,8 +106,10 @@ export default function SearchOverlay({
           <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-3">
             {query && results.length === 0 && (
               <div className="text-center py-12">
-                <Search className="w-12 h-12 text-app-text-muted mx-auto mb-3" />
-                <p className="text-sm text-app-text-secondary">{t('noSearchResults', { query })}</p>
+                <Search className="w-12 h-12 mx-auto mb-3" style={{ color: '#B0B0B0' }} />
+                <p className="text-sm" style={{ color: '#737373' }}>
+                  {t('noSearchResults', { query })}
+                </p>
               </div>
             )}
             {results.map((item) => (

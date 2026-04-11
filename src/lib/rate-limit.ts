@@ -108,8 +108,9 @@ export const oauthSignupLimiter = createLimiter(
 /** Orders: 20 requests / minute per IP */
 export const orderLimiter = createLimiter('orders', Ratelimit.slidingWindow(20, '1 m'));
 
-/** Checkout: 5 requests / 10 minutes per IP */
-export const checkoutLimiter = createLimiter('checkout', Ratelimit.slidingWindow(5, '10 m'));
+/** Checkout: 5 requests / 10 minutes per IP. Fail-closed: block if Redis is down
+ * in production to prevent unbounded checkout sessions during an outage. */
+export const checkoutLimiter = createLimiter('checkout', Ratelimit.slidingWindow(5, '10 m'), true);
 
 /** Verify checkout: 10 requests / minute per IP */
 export const verifyCheckoutLimiter = createLimiter(

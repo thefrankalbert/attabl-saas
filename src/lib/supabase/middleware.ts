@@ -25,7 +25,7 @@ export async function createMiddlewareClient(
         set(name: string, value: string, options: CookieOptions) {
           if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
             options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
-            options.sameSite = 'lax';
+            options.sameSite = 'strict';
           }
           // Mettre à jour le cookie sur la request (pour les lectures suivantes)
           request.cookies.set({ name, value, ...options });

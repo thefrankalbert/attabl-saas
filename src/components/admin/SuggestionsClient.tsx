@@ -7,6 +7,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import AdminModal from '@/components/admin/AdminModal';
@@ -311,17 +318,19 @@ export default function SuggestionsClient({
                         selectedIds.has(suggestion.id) && 'bg-accent/5',
                       )}
                     >
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => toggleSelect(suggestion.id)}
-                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0"
+                        className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0 h-auto w-auto p-1"
                       >
                         {selectedIds.has(suggestion.id) ? (
                           <CheckSquare className="w-4 h-4 text-accent" />
                         ) : (
                           <Square className="w-4 h-4" />
                         )}
-                      </button>
+                      </Button>
                       <span
                         className={cn(
                           'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0',
@@ -384,18 +393,18 @@ export default function SuggestionsClient({
                 <Label className="text-sm font-medium text-app-text mb-1.5 block">
                   {t('sourceDish')}
                 </Label>
-                <select
-                  value={sourceItemId}
-                  onChange={(e) => setSourceItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={sourceItemId || undefined} onValueChange={setSourceItemId}>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder={tc('selectPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menuItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -404,12 +413,13 @@ export default function SuggestionsClient({
                 </Label>
                 <div className="grid grid-cols-3 gap-2">
                   {SUGGESTION_TYPES.map((st) => (
-                    <button
+                    <Button
                       key={st.value}
                       type="button"
+                      variant="outline"
                       onClick={() => setSuggestionType(st.value)}
                       className={cn(
-                        'flex flex-col items-center gap-1 p-2 rounded-lg border text-xs font-medium transition-all',
+                        'flex flex-col items-center gap-1 p-2 h-auto rounded-lg border text-xs font-medium transition-all',
                         suggestionType === st.value
                           ? 'border-accent bg-accent-muted text-app-text'
                           : 'border-app-border text-app-text-secondary hover:bg-app-bg',
@@ -417,7 +427,7 @@ export default function SuggestionsClient({
                     >
                       <span>{st.emoji}</span>
                       <span>{st.label}</span>
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -426,18 +436,18 @@ export default function SuggestionsClient({
                 <Label className="text-sm font-medium text-app-text mb-1.5 block">
                   {t('suggestedDish')}
                 </Label>
-                <select
-                  value={targetItemId}
-                  onChange={(e) => setTargetItemId(e.target.value)}
-                  className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-card text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  <option value="">{tc('selectPlaceholder')}</option>
-                  {menuItems.map((item) => (
-                    <option key={item.id} value={item.id}>
-                      {item.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={targetItemId || undefined} onValueChange={setTargetItemId}>
+                  <SelectTrigger className="w-full h-10">
+                    <SelectValue placeholder={tc('selectPlaceholder')} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menuItems.map((item) => (
+                      <SelectItem key={item.id} value={item.id}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>

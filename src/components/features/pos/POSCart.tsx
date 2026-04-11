@@ -23,6 +23,8 @@ import {
   Loader2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
@@ -169,17 +171,19 @@ export default function POSCart({
             {String(orderNumber).padStart(2, '0')}
           </span>
         </div>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={() => {
             if (cart.length === 0 || window.confirm(t('confirmClearCart'))) {
               onClearCart();
             }
           }}
           title={tc('delete')}
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-status-error hover:bg-app-hover transition-colors touch-manipulation"
+          className="w-9 h-9 text-app-text-muted hover:text-status-error"
         >
           <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        </Button>
       </div>
 
       {/* ━━━ SCROLLABLE AREA (service type + cart items) ━━━ */}
@@ -188,32 +192,34 @@ export default function POSCart({
         <div className="p-3 border-b border-app-border space-y-2">
           <div className="flex gap-1.5 overflow-x-auto scrollbar-hide">
             {SERVICE_TYPES.map((st) => (
-              <button
+              <Button
                 key={st.value}
                 type="button"
+                variant={serviceType === st.value ? 'default' : 'outline'}
                 onClick={() => setServiceType(st.value)}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] transition-all whitespace-nowrap text-xs font-medium',
+                  'flex items-center gap-1.5 rounded-lg px-3 py-2 min-h-[44px] whitespace-nowrap text-xs font-medium',
                   serviceType === st.value
                     ? 'bg-accent text-accent-text'
-                    : 'border border-app-border text-app-text-secondary hover:bg-app-hover',
+                    : 'text-app-text-secondary hover:bg-app-hover',
                 )}
               >
                 {st.icon}
                 <span>{st.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
           {serviceType === 'dine_in' && (
-            <button
+            <Button
               type="button"
+              variant="outline"
               onClick={() => setShowTablePicker(true)}
-              className="flex items-center gap-2 h-9 px-3 rounded-lg border border-app-border bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text transition-colors animate-in fade-in slide-in-from-top-1"
+              className="flex items-center gap-2 h-9 px-3 rounded-lg bg-app-elevated text-app-text-secondary text-sm hover:bg-app-hover hover:text-app-text animate-in fade-in slide-in-from-top-1"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
               <span>{selectedTable || t('selectTable')}</span>
-            </button>
+            </Button>
           )}
 
           {serviceType === 'room_service' && (
@@ -226,7 +232,7 @@ export default function POSCart({
           )}
 
           {serviceType === 'delivery' && (
-            <textarea
+            <Textarea
               placeholder={t('deliveryAddressPlaceholder')}
               value={deliveryAddress}
               onChange={(e) => setDeliveryAddress(e.target.value)}
@@ -285,28 +291,33 @@ export default function POSCart({
                     {/* Line 2: Quantity controls + Note button */}
                     <div className="flex items-center justify-between mt-1.5">
                       <div className="flex items-center gap-0.5 bg-app-elevated rounded-md border border-app-border">
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => onUpdateQuantity(itemKey, -1)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-l-md text-app-text-muted transition-colors touch-manipulation"
+                          className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
                         >
                           <Minus className="w-3 h-3" />
-                        </button>
+                        </Button>
                         <span className="w-7 text-center text-xs font-bold tabular-nums text-app-text">
                           {item.quantity}
                         </span>
-                        <button
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => onUpdateQuantity(itemKey, 1)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-app-hover rounded-r-md text-app-text-muted transition-colors touch-manipulation"
+                          className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation"
                         >
                           <Plus className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </div>
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={() => onEditNotes(itemKey, item.notes || '')}
-                        className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 flex items-center transition-colors touch-manipulation"
+                        className="text-[11px] text-app-text-muted hover:text-app-text font-medium h-8 px-2 touch-manipulation"
                       >
                         {item.notes ? tc('edit') : seg.productionNote}
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -326,18 +337,19 @@ export default function POSCart({
         {/* Order note + Coupon on same line */}
         <div className="flex items-center gap-2">
           {/* Order note toggle */}
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setShowOrderNotes((prev) => !prev)}
             className={cn(
-              'flex items-center gap-1 text-[11px] font-medium transition-colors shrink-0',
+              'flex items-center gap-1 text-[11px] font-medium shrink-0 h-auto px-1 py-0.5',
               orderNotes ? 'text-amber-500' : 'text-app-text-muted hover:text-app-text-secondary',
             )}
           >
             <StickyNote className="w-3 h-3" />
             <span>{t('orderNote')}</span>
             {orderNotes && <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />}
-          </button>
+          </Button>
 
           {/* Coupon inline (only if enabled in tenant settings) */}
           {enableCoupons && (
@@ -354,13 +366,14 @@ export default function POSCart({
                         : formatCurrency(appliedCoupon.discountAmount, currency)}
                     </span>
                   </div>
-                  <button
-                    type="button"
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     onClick={onRemoveCoupon}
-                    className="w-6 h-6 flex items-center justify-center rounded text-app-text-muted hover:text-status-error transition-colors touch-manipulation shrink-0"
+                    className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
                   >
                     <X className="w-3 h-3" />
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <div className="flex gap-1">
@@ -395,7 +408,7 @@ export default function POSCart({
 
         {/* Expandable notes textarea */}
         {showOrderNotes && (
-          <textarea
+          <Textarea
             value={orderNotes}
             onChange={(e) => setOrderNotes(e.target.value)}
             maxLength={500}
@@ -513,17 +526,18 @@ export default function POSCart({
               <div className="flex gap-4 h-72">
                 {/* Zone Column */}
                 <div className="w-36 flex flex-col shrink-0">
-                  <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Zone
-                  </label>
+                  </Label>
                   <div className="flex-1 overflow-y-auto space-y-1">
                     {zones.map((zone) => (
-                      <button
+                      <Button
                         key={zone.id}
                         type="button"
+                        variant={pickerZoneId === zone.id ? 'default' : 'ghost'}
                         onClick={() => setPickerZoneId(zone.id)}
                         className={cn(
-                          'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center gap-2',
+                          'w-full justify-start px-3 py-2 rounded-lg text-sm flex items-center gap-2 h-auto',
                           pickerZoneId === zone.id
                             ? 'bg-accent text-accent-text font-medium'
                             : 'text-app-text-secondary hover:bg-app-hover',
@@ -531,7 +545,7 @@ export default function POSCart({
                       >
                         <MapPin className="w-3.5 h-3.5 shrink-0" />
                         <span className="truncate">{zone.name}</span>
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -540,23 +554,24 @@ export default function POSCart({
 
                 {/* Tables Grid */}
                 <div className="flex-1 flex flex-col min-w-0">
-                  <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
+                  <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 text-center">
                     Tables
-                  </label>
+                  </Label>
                   <div className="flex-1 overflow-y-auto">
                     {pickerTables.length > 0 ? (
                       <div className="grid grid-cols-3 gap-2">
                         {pickerTables.map((table) => (
-                          <button
+                          <Button
                             key={table.id}
                             type="button"
+                            variant={selectedTable === table.table_number ? 'default' : 'outline'}
                             onClick={() => {
                               setSelectedTable(table.table_number);
                               setShowTablePicker(false);
                               setPickerZoneId(null);
                             }}
                             className={cn(
-                              'flex flex-col items-center justify-center rounded-lg border px-2 py-3 text-sm transition-all min-h-[56px]',
+                              'flex flex-col items-center justify-center rounded-lg px-2 py-3 text-sm min-h-[56px] h-auto',
                               selectedTable === table.table_number
                                 ? 'bg-accent text-accent-text border-accent font-bold'
                                 : 'border-app-border text-app-text hover:bg-app-hover hover:border-accent/30',
@@ -568,7 +583,7 @@ export default function POSCart({
                                 {table.display_name}
                               </span>
                             )}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     ) : (

@@ -140,12 +140,13 @@ export default function WizardStepCategories({
                 { value: 'both', icon: Shuffle, labelKey: 'wizardZoneBoth' as const },
               ] as const
             ).map(({ value, icon: Icon, labelKey }) => (
-              <button
+              <Button
                 key={value}
                 type="button"
+                variant="outline"
                 onClick={() => setPreparationZone(value)}
                 className={cn(
-                  'flex flex-col items-center gap-1 p-2.5 rounded-lg border text-xs font-medium transition-all',
+                  'flex flex-col items-center gap-1 p-2.5 rounded-lg text-xs font-medium h-auto',
                   preparationZone === value
                     ? 'border-accent bg-accent/10 text-accent'
                     : 'border-app-border text-app-text-muted hover:border-app-text-secondary hover:text-app-text-secondary',
@@ -153,7 +154,7 @@ export default function WizardStepCategories({
               >
                 <Icon className="w-4 h-4" />
                 {t(labelKey)}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

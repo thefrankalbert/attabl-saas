@@ -11,10 +11,14 @@ import {
   Loader2,
   Trash2,
   ShoppingBag,
-  Coffee,
-  IceCreamCone,
   ChevronLeft,
+  ChevronRight,
   AlertCircle,
+  Check,
+  X,
+  Tag,
+  HandCoins,
+  ChefHat,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -23,11 +27,16 @@ import { useRouter } from 'next/navigation';
 import { logger } from '@/lib/logger';
 import { useTranslations, useLocale } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { getTranslatedContent } from '@/lib/utils/translate';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/tenant/BottomNav';
 
-// ─── Types ───────────────────────────────────────────────────
+// --- Types ---------------------------------------------------
 interface UpsellItem {
   id: string;
   name: string;
@@ -38,20 +47,10 @@ interface UpsellItem {
   category_name?: string;
 }
 
-interface CartRecommendation {
-  type: 'pairing' | 'drinks' | 'desserts' | 'featured' | 'complement';
-  title: string;
-  icon: 'pairing' | 'drinks' | 'desserts' | 'featured';
-}
+type TipPreset = 0 | 500 | 1000 | 1500 | 2000 | 'custom';
 
-// ─── Helpers ─────────────────────────────────────────────────
-const TIP_STEP = 500;
-
-// formatPrice is now handled by useDisplayCurrency().formatDisplayPrice
-
-const getTranslatedContent = (lang: string, fr: string, en?: string | null) => {
-  return lang === 'en' && en ? en : fr;
-};
+// --- Helpers -------------------------------------------------
+const NOTES_MAX_LENGTH = 200;
 
 const getCartItemKey = (item: {
   id: string;
@@ -64,7 +63,7 @@ const getCartItemKey = (item: {
   return key;
 };
 
-// ─── Component ───────────────────────────────────────────────
+// --- Component -----------------------------------------------
 export default function CartPage() {
   const {
     items,
@@ -72,7 +71,6 @@ export default function CartPage() {
     removeFromCart,
     addToCart,
     clearCart,
-    totalItems,
     notes,
     setNotes,
     currentRestaurantId,
@@ -86,6 +84,9 @@ export default function CartPage() {
     taxRate,
     serviceChargeRate,
     currencyCode,
+    appliedCoupon,
+    applyCoupon,
+    removeCoupon,
   } = useCart();
   const { slug: tenantSlug } = useTenant();
   const { formatDisplayPrice, resolveAndFormatPrice, displayCurrency } = useDisplayCurrency();
@@ -99,17 +100,39 @@ export default function CartPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
-  const [tipAmount, setTipAmount] = useState(0);
+
+  // Tip state: preset (absolute amount) or custom
+  const [tipPreset, setTipPreset] = useState<TipPreset>(0);
+  const [customTipInput, setCustomTipInput] = useState<string>('');
+  const [tipOpen, setTipOpen] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+
+  // Promo code state
+  const [promoInput, setPromoInput] = useState<string>('');
+  const [promoError, setPromoError] = useState<string | null>(null);
+  const [promoApplying, setPromoApplying] = useState(false);
+  const [promoJustApplied, setPromoJustApplied] = useState(false);
+  const [promoOpen, setPromoOpen] = useState(false);
 
   // Upsell
   const [upsellItems, setUpsellItems] = useState<UpsellItem[]>([]);
-  const [activeRecommendation, setActiveRecommendation] = useState<CartRecommendation | null>(null);
   const [isLoadingUpsell, setIsLoadingUpsell] = useState(false);
-
-  // Image errors for upsell items
   const [upsellImageErrors, setUpsellImageErrors] = useState<Set<string>>(new Set());
+  // Title is now fixed ("Vous aimerez aussi") regardless of which strategy returned
+  // items, so the strategies no longer need to track which recommendation type is
+  // active. This shim preserves the in-effect call sites without dead-state warnings.
 
-  // ─── Stable cart fingerprint for suggestion refresh ────────
+  // --- Tip computation (absolute amounts, not percentages) --
+  const tipAmount = useMemo(() => {
+    if (tipPreset === 0) return 0;
+    if (tipPreset === 'custom') {
+      const parsed = parseFloat(customTipInput.replace(',', '.'));
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    }
+    return tipPreset;
+  }, [tipPreset, customTipInput]);
+
+  // --- Stable cart fingerprint for suggestion refresh --------
   const cartItemIds = useMemo(
     () =>
       items
@@ -119,31 +142,69 @@ export default function CartPage() {
     [items],
   );
 
-  // Ref to track the latest fetch and ignore stale results
   const fetchIdRef = useRef(0);
 
-  // ─── Smart suggestions ────────────────────────────────────
+  // --- Smart suggestions -------------------------------------
   useEffect(() => {
-    // Debounce: wait 300ms before fetching to avoid rapid re-fetches on cart changes
     const debounceTimer = setTimeout(() => {
       fetchIdRef.current += 1;
       const thisFetchId = fetchIdRef.current;
 
       const fetchSmartSuggestions = async () => {
         if (!currentRestaurantId || items.length === 0) {
-          setActiveRecommendation(null);
           setUpsellItems([]);
           return;
         }
 
-        // Don't clear previous suggestions while loading - keep stale data visible
         setIsLoadingUpsell(true);
         try {
           const supabase = createClient();
           const cartIds = new Set(items.map((i) => i.id));
+          const cartIdsArray = Array.from(cartIds);
           const collected: UpsellItem[] = [];
 
-          // ── Strategy 1: Admin-configured pairings for items in cart ──
+          // Strategy 0 (highest priority): Co-occurrence from past orders.
+          // "People who ordered X also ordered Y" — uses the tenant's own order
+          // history via the get_co_ordered_items RPC. No external service.
+          const { data: coOrdered } = await supabase.rpc('get_co_ordered_items', {
+            p_tenant_id: currentRestaurantId,
+            p_cart_ids: cartIdsArray,
+            p_limit: 6,
+          });
+
+          if (coOrdered && Array.isArray(coOrdered) && coOrdered.length >= 3) {
+            // Hydrate the menu_item rows for the suggestions returned by the RPC
+            const coIds = (coOrdered as { menu_item_id: string }[]).map((r) => r.menu_item_id);
+            const { data: coItems } = await supabase
+              .from('menu_items')
+              .select('id, name, name_en, price, image_url, is_available, category_id')
+              .in('id', coIds)
+              .eq('tenant_id', currentRestaurantId)
+              .eq('is_available', true);
+
+            if (coItems && coItems.length >= 3) {
+              // Preserve the frequency-sorted order from the RPC
+              const orderMap = new Map(coIds.map((id, i) => [id, i]));
+              const sorted = [...coItems].sort(
+                (a, b) => (orderMap.get(a.id) ?? 99) - (orderMap.get(b.id) ?? 99),
+              );
+
+              if (thisFetchId !== fetchIdRef.current) return;
+              setUpsellItems(
+                sorted.slice(0, 6).map((mi) => ({
+                  id: mi.id,
+                  name: mi.name,
+                  name_en: mi.name_en ?? undefined,
+                  price: mi.price,
+                  image_url: mi.image_url ?? undefined,
+                })),
+              );
+              setIsLoadingUpsell(false);
+              return;
+            }
+          }
+
+          // Strategy 1: Admin-configured pairings
           const { data: pairings } = await supabase
             .from('item_suggestions')
             .select(
@@ -158,7 +219,6 @@ export default function CartPage() {
           if (pairings && pairings.length > 0) {
             const seen = new Set<string>();
             for (const p of pairings) {
-              // Supabase join type gap
               const si = p.suggested_item as unknown as Record<string, unknown> | null;
               if (!si || si.is_available === false) continue;
               const id = si.id as string;
@@ -174,26 +234,18 @@ export default function CartPage() {
             }
           }
 
-          // If we got enough from pairings, use those
           if (collected.length >= 3) {
             if (thisFetchId !== fetchIdRef.current) return;
-            setActiveRecommendation({
-              type: 'pairing',
-              title: t('upsellPairings'),
-              icon: 'pairing',
-            });
             setUpsellItems(collected.slice(0, 6));
             setIsLoadingUpsell(false);
             return;
           }
 
-          // ── Strategy 2: Contextual category complement ──────────
-          // Find which categories are in the cart, suggest from others
+          // Strategy 2: Contextual category complement
           const cartCategoryIds = new Set(
             items.map((i) => i.category_id).filter(Boolean) as string[],
           );
 
-          // Fetch all categories to understand the menu structure
           const { data: allCategories } = await supabase
             .from('categories')
             .select('id, name')
@@ -203,7 +255,6 @@ export default function CartPage() {
             (allCategories || []).map((c) => [c.id, c.name.toLowerCase()]),
           );
 
-          // Detect what's missing based on actual DB categories
           const hasDrinkCategory = [...cartCategoryIds].some((id) => {
             const name = categoryMap.get(id) || '';
             return /boisson|drink|cocktail|wine|vin|bi[eè]re|beer|jus|eau|soft|soda|caf[eé]|coffee|th[eé]|tea/.test(
@@ -215,12 +266,9 @@ export default function CartPage() {
             return /dessert|douceur|sucr[eé]|sweet|glace|p[aâ]tisserie|fruit/.test(name);
           });
 
-          // Find complement categories (not in cart)
           let complementCategoryIds: string[] = [];
-          let recommendation: CartRecommendation | null = null;
 
           if (!hasDrinkCategory) {
-            // Suggest drinks
             complementCategoryIds = (allCategories || [])
               .filter((c) =>
                 /boisson|drink|cocktail|wine|vin|bi[eè]re|beer|jus|eau|soft|soda|caf[eé]|coffee|th[eé]|tea/.test(
@@ -228,13 +276,7 @@ export default function CartPage() {
                 ),
               )
               .map((c) => c.id);
-            recommendation = {
-              type: 'drinks',
-              title: t('upsellDrinks'),
-              icon: 'drinks',
-            };
           } else if (!hasDessertCategory) {
-            // Suggest desserts
             complementCategoryIds = (allCategories || [])
               .filter((c) =>
                 /dessert|douceur|sucr[eé]|sweet|glace|p[aâ]tisserie|fruit/.test(
@@ -242,14 +284,9 @@ export default function CartPage() {
                 ),
               )
               .map((c) => c.id);
-            recommendation = {
-              type: 'desserts',
-              title: t('upsellDesserts'),
-              icon: 'desserts',
-            };
           }
 
-          if (complementCategoryIds.length > 0 && recommendation) {
+          if (complementCategoryIds.length > 0) {
             const { data: complementItems } = await supabase
               .from('menu_items')
               .select('id, name, name_en, price, image_url, category_id, is_featured')
@@ -274,7 +311,6 @@ export default function CartPage() {
 
               if (extras.length > 0) {
                 if (thisFetchId !== fetchIdRef.current) return;
-                // Merge with any pairings we already found
                 const merged = [...collected, ...extras];
                 const seen = new Set<string>();
                 const deduped = merged.filter((item) => {
@@ -283,7 +319,6 @@ export default function CartPage() {
                   return true;
                 });
 
-                setActiveRecommendation(recommendation);
                 setUpsellItems(deduped.slice(0, 6));
                 setIsLoadingUpsell(false);
                 return;
@@ -291,7 +326,7 @@ export default function CartPage() {
             }
           }
 
-          // ── Strategy 3: Featured items fallback ─────────────────
+          // Strategy 3: Featured items fallback
           const { data: featured } = await supabase
             .from('menu_items')
             .select('id, name, name_en, price, image_url, category_id')
@@ -322,18 +357,13 @@ export default function CartPage() {
                 return true;
               });
 
-              setActiveRecommendation({
-                type: 'featured',
-                title: t('upsellFeatured'),
-                icon: 'featured',
-              });
               setUpsellItems(deduped.slice(0, 6));
               setIsLoadingUpsell(false);
               return;
             }
           }
 
-          // ── Strategy 4: Popular from other categories ───────────
+          // Strategy 4: Popular from other categories
           if (cartCategoryIds.size > 0) {
             const otherCatIds = (allCategories || [])
               .filter((c) => !cartCategoryIds.has(c.id))
@@ -363,11 +393,6 @@ export default function CartPage() {
 
                 if (extras.length > 0) {
                   if (thisFetchId !== fetchIdRef.current) return;
-                  setActiveRecommendation({
-                    type: 'complement',
-                    title: t('upsellComplement'),
-                    icon: 'pairing',
-                  });
                   setUpsellItems(extras.slice(0, 6));
                   setIsLoadingUpsell(false);
                   return;
@@ -376,17 +401,10 @@ export default function CartPage() {
             }
           }
 
-          // Nothing found - use pairings we collected (even if < 3)
           if (thisFetchId !== fetchIdRef.current) return;
           if (collected.length > 0) {
-            setActiveRecommendation({
-              type: 'pairing',
-              title: t('upsellPairings'),
-              icon: 'pairing',
-            });
             setUpsellItems(collected);
           } else {
-            setActiveRecommendation(null);
             setUpsellItems([]);
           }
         } catch (err) {
@@ -405,7 +423,7 @@ export default function CartPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentRestaurantId, cartItemIds]);
 
-  // ─── Handlers ──────────────────────────────────────────────
+  // --- Handlers ----------------------------------------------
   const handleAddUpsellItem = useCallback(
     (item: UpsellItem) => {
       if (!currentRestaurantId) return;
@@ -424,6 +442,34 @@ export default function CartPage() {
     },
     [addToCart, currentRestaurantId],
   );
+
+  const handleApplyPromo = useCallback(async () => {
+    const code = promoInput.trim();
+    if (!code) return;
+    setPromoApplying(true);
+    setPromoError(null);
+    try {
+      const result = await applyCoupon(code);
+      if (result.success) {
+        setPromoJustApplied(true);
+        setPromoInput('');
+        setTimeout(() => setPromoJustApplied(false), 2500);
+      } else {
+        setPromoError(result.error || t('orderError'));
+      }
+    } catch (err) {
+      logger.error('Promo apply error:', err);
+      setPromoError(t('connectionError'));
+    } finally {
+      setPromoApplying(false);
+    }
+  }, [promoInput, applyCoupon, t]);
+
+  const handleRemovePromo = useCallback(() => {
+    removeCoupon();
+    setPromoError(null);
+    setPromoJustApplied(false);
+  }, [removeCoupon]);
 
   const finalTotal = grandTotal + tipAmount;
 
@@ -449,10 +495,17 @@ export default function CartPage() {
             category_name: item.category_name ?? undefined,
             selectedOption: item.selectedOption ?? undefined,
             selectedVariant: item.selectedVariant ?? undefined,
+            // Forward modifiers + per-item notes so ItemDetailSheet selections actually
+            // persist on the order (server re-validates modifier prices anti-fraud).
+            modifiers: item.modifiers && item.modifiers.length > 0 ? item.modifiers : undefined,
+            customerNotes: item.customerNotes || undefined,
           })),
           notes: notes || undefined,
           display_currency: displayCurrency,
           tip_amount: tipAmount > 0 ? tipAmount : undefined,
+          // Forward applied coupon code so the server re-validates and applies the
+          // discount to the persisted order (otherwise the discount is purely cosmetic).
+          coupon_code: appliedCoupon?.code,
         }),
       });
 
@@ -466,7 +519,6 @@ export default function CartPage() {
         return;
       }
 
-      // Store order ID for tracking
       const storedIds: string[] = JSON.parse(localStorage.getItem('attabl_order_ids') || '[]');
       if (data.orderId && !storedIds.includes(data.orderId)) {
         storedIds.push(data.orderId);
@@ -474,7 +526,8 @@ export default function CartPage() {
       }
 
       clearCart();
-      setTipAmount(0);
+      setTipPreset(0);
+      setCustomTipInput('');
       router.push(`/sites/${tenantSlug}/order-confirmed?orderId=${data.orderId}`);
     } catch (err) {
       logger.error('Order submission error:', err);
@@ -484,84 +537,71 @@ export default function CartPage() {
     }
   };
 
-  // ─── Empty cart ────────────────────────────────────────────
+  // --- Empty cart state --------------------------------------
   if (items.length === 0) {
     return (
-      <main className="min-h-screen bg-app-bg pb-20">
-        <div className="max-w-lg mx-auto px-4 pt-10 pb-2 relative flex items-center justify-center">
-          <button
+      <main className="h-full bg-white pb-20">
+        <div className="max-w-lg mx-auto h-14 px-4 flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => router.back()}
-            className="absolute left-4 p-2 text-app-text-muted hover:text-app-text transition-colors"
+            className="p-2 -ml-2 min-h-[44px] min-w-[44px] text-[#B0B0B0] hover:text-[#1A1A1A]"
+            aria-label={t('ariaGoBack')}
           >
             <ChevronLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-lg font-bold text-app-text uppercase tracking-widest">
-            {t('yourCart')}
-          </h1>
+          </Button>
         </div>
 
         <div className="flex flex-col items-center justify-center px-4 pt-20">
-          <div className="w-28 h-28 bg-app-elevated rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-16 h-16 text-app-text-muted/40" />
+          <div className="w-32 h-32 bg-[#F6F6F6] rounded-full flex items-center justify-center mb-6">
+            <ShoppingBag className="w-16 h-16 text-[#B0B0B0]" strokeWidth={1.5} />
           </div>
-          <h2 className="text-xl font-bold text-app-text mb-2">{t('emptyCart')}</h2>
-          <p className="text-sm text-app-text-muted text-center mb-2">{t('emptyCartDesc')}</p>
-          <p className="text-xs text-app-text-muted/70 text-center mb-8">
-            {t('browseMenuEncouragement')}
+          <h2 className="text-[20px] font-bold text-[#1A1A1A] mb-2 text-center">
+            {t('emptyCart')}
+          </h2>
+          <p className="text-[13px] text-[#737373] text-center mb-8 max-w-[280px]">
+            {t('emptyCartDesc')}
           </p>
-          <Link href={menuPath}>
-            <button
-              className="h-12 px-8 rounded-xl text-white font-semibold inline-flex items-center gap-2 transition-transform active:scale-[0.98]"
-              style={{ backgroundColor: 'var(--tenant-primary)' }}
-            >
+          <Button
+            asChild
+            className="h-[52px] px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+          >
+            <Link href={menuPath}>
               <ArrowLeft className="w-4 h-4" />
               {t('browseMenu')}
-            </button>
-          </Link>
+            </Link>
+          </Button>
         </div>
         {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}
       </main>
     );
   }
 
-  // ─── Main cart ─────────────────────────────────────────────
-  return (
-    <main className="min-h-screen bg-app-bg pb-44">
-      {/* HEADER */}
-      <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
-          <button
-            onClick={() => router.back()}
-            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-app-text">{t('yourCart')}</h1>
-            <p className="text-xs text-app-text-muted">{t('itemCount', { count: totalItems })}</p>
-          </div>
-          <button
-            onClick={() => {
-              if (confirm(t('clearCartConfirm'))) clearCart();
-            }}
-            aria-label="Vider le panier"
-            className="p-2 -mr-2 text-app-text-muted hover:text-red-500 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
-          >
-            <Trash2 className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
+  // --- Main cart ---------------------------------------------
+  const notesLength = notes?.length ?? 0;
 
-      <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
+  return (
+    <main
+      className="min-h-full bg-white"
+      style={{
+        // Stop scroll just after the CTA clears the order summary. CTA top edge is
+        // at 128px from viewport bottom (76 bottom-anchor + 52 button height) so 144
+        // gives ~16px breathing — content's last line sits just above the CTA, no
+        // wasted empty space below.
+        paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))',
+      }}
+    >
+      <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+          <div className="p-4 bg-red-50 border border-[#EEEEEE] rounded-xl">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-[#FF3008] flex-shrink-0 mt-0.5" />
               <div>
-                {error && <p className="font-medium text-red-500 text-sm">{error}</p>}
+                {error && <p className="font-semibold text-[#FF3008] text-[13px]">{error}</p>}
                 {validationErrors.length > 0 && (
-                  <ul className="mt-1 text-sm text-red-400 list-disc list-inside">
+                  <ul className="mt-1 text-[13px] text-[#FF3008] list-disc list-inside">
                     {validationErrors.map((err, i) => (
                       <li key={i}>{err}</li>
                     ))}
@@ -572,217 +612,468 @@ export default function CartPage() {
           </div>
         )}
 
-        {/* CART ITEMS */}
-        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-          <div className="divide-y divide-app-border/50">
-            <AnimatePresence mode="popLayout">
-              {items.map((item) => {
-                const itemKey = getCartItemKey(item);
-                const optionLabel = item.selectedOption
-                  ? language === 'en' && item.selectedOption.name_en
-                    ? item.selectedOption.name_en
-                    : item.selectedOption.name_fr
-                  : null;
-                const variantLabel = item.selectedVariant
-                  ? language === 'en' && item.selectedVariant.name_en
-                    ? item.selectedVariant.name_en
-                    : item.selectedVariant.name_fr
-                  : null;
+        {/* CART ITEMS - flat list, disposition identical to MenuItemCard (text left, image right) */}
+        <section className="bg-white">
+          <AnimatePresence mode="popLayout">
+            {items.map((item) => {
+              const itemKey = getCartItemKey(item);
+              const optionLabel = item.selectedOption
+                ? language === 'en' && item.selectedOption.name_en
+                  ? item.selectedOption.name_en
+                  : item.selectedOption.name_fr
+                : null;
+              const variantLabel = item.selectedVariant
+                ? language === 'en' && item.selectedVariant.name_en
+                  ? item.selectedVariant.name_en
+                  : item.selectedVariant.name_fr
+                : null;
 
-                return (
-                  <motion.div
-                    key={itemKey}
-                    layout
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    className="px-4 py-3 flex items-center gap-3"
-                  >
-                    {/* Quantity controls */}
-                    <div className="flex items-center gap-1.5">
-                      <button
-                        onClick={() => updateQuantity(itemKey, item.quantity - 1)}
-                        aria-label="Diminuer la quantite"
-                        className="w-11 h-11 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
-                      >
-                        <Minus className="w-3.5 h-3.5" />
-                      </button>
-                      <span
-                        className="text-sm font-bold w-6 text-center"
-                        style={{ color: 'var(--tenant-primary)' }}
-                      >
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(itemKey, item.quantity + 1)}
-                        aria-label="Augmenter la quantite"
-                        className="w-11 h-11 rounded-full border border-app-border flex items-center justify-center text-app-text-muted hover:border-app-border hover:bg-app-hover transition-colors focus-visible:ring-2 focus-visible:ring-offset-2"
-                      >
-                        <Plus className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-
-                    {/* Name & variant */}
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-app-text leading-tight">
+              return (
+                <motion.div
+                  key={itemKey}
+                  layout
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -100 }}
+                  transition={{ duration: 0.3, ease: 'easeInOut' }}
+                  className="relative flex bg-white border-b border-[#F0F0F0] last:border-b-0"
+                >
+                  {/* TEXT - Left side */}
+                  <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+                    <div>
+                      <h3 className="text-[16px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2">
                         {getTranslatedContent(language, item.name, item.name_en)}
                       </h3>
                       {(optionLabel || variantLabel) && (
-                        <p className="text-xs text-app-text-muted mt-0.5">
-                          {[variantLabel, optionLabel].filter(Boolean).join(' · ')}
+                        <p className="mt-1 text-[13px] text-[#737373] line-clamp-2">
+                          {[variantLabel, optionLabel].filter(Boolean).join(' - ')}
                         </p>
                       )}
-                    </div>
-
-                    {/* Price + delete */}
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-app-text text-right whitespace-nowrap">
+                      <p className="mt-1.5 text-[15px] font-bold text-[#1A1A1A]">
                         {resolveAndFormatPrice(
                           item.price * item.quantity,
                           item.prices,
                           currencyCode,
                         )}
-                      </span>
-                      <button
-                        onClick={() => removeFromCart(itemKey)}
-                        className="w-8 h-8 flex items-center justify-center text-app-text-muted/40 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-                        aria-label="Supprimer"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      </p>
                     </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                    <div className="flex items-center gap-3 mt-2">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(itemKey, item.quantity - 1)}
+                        aria-label={t('ariaDecrease')}
+                        className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </Button>
+                      <span className="text-[16px] font-bold text-[#1A1A1A] w-6 text-center">
+                        {item.quantity}
+                      </span>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => updateQuantity(itemKey, item.quantity + 1)}
+                        aria-label={t('ariaIncrease')}
+                        className="w-9 h-9 rounded-full border-[#EEEEEE] text-[#1A1A1A] hover:bg-[#F6F6F6] min-h-[36px] min-w-[36px]"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
 
-          {/* Notes input */}
-          <div className="px-4 py-3 border-t border-app-border/50">
-            <input
-              type="text"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder={t('cartNotesPlaceholder')}
-              className="w-full text-sm bg-transparent text-app-text-muted placeholder:text-app-text-muted/60 focus:outline-none focus:text-app-text transition-colors"
-            />
-          </div>
+                  {/* IMAGE - Right side (identical to MenuItemCard, with trash overlay instead of add) */}
+                  <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
+                    <div className="w-full h-full rounded-xl overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
+                      {item.image_url &&
+                      !item.image_url.includes('placeholder') &&
+                      !item.image_url.includes('default') ? (
+                        <Image
+                          src={item.image_url}
+                          alt={item.name}
+                          width={90}
+                          height={90}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <Utensils className="w-6 h-6 text-[#B0B0B0]" />
+                      )}
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => removeFromCart(itemKey)}
+                      className="absolute -bottom-2 -right-2 z-10 w-7 h-7 rounded-full bg-white border-[#EEEEEE] text-[#B0B0B0] hover:text-[#FF3008]"
+                      aria-label={t('ariaRemoveItem')}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         </section>
 
-        {/* UPSELL SUGGESTIONS */}
-        {/* Show section if we have items OR if loading with no previous items (first load) */}
-        <AnimatePresence>
-          {(activeRecommendation && upsellItems.length > 0) ||
-          (isLoadingUpsell && upsellItems.length === 0) ? (
-            <motion.section
-              key="upsell-section"
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="bg-app-card rounded-xl border border-app-border overflow-hidden"
+        {/* KITCHEN NOTES - collapsible (hidden until user clicks) */}
+        {!notesOpen && !notes ? (
+          <section>
+            <Button
+              variant="ghost"
+              onClick={() => setNotesOpen(true)}
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
             >
-              <div className="px-4 py-3 border-b border-app-border/50 flex items-center gap-2">
-                {activeRecommendation?.icon === 'drinks' ? (
-                  <Coffee className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
-                ) : activeRecommendation?.icon === 'desserts' ? (
-                  <IceCreamCone className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
-                ) : (
-                  <Utensils className="w-4 h-4" style={{ color: 'var(--tenant-primary)' }} />
-                )}
-                <h2 className="text-sm font-bold text-app-text">
-                  {isLoadingUpsell && !activeRecommendation ? (
-                    <div className="h-4 w-32 bg-app-elevated rounded animate-pulse" />
-                  ) : (
-                    activeRecommendation?.title
-                  )}
-                </h2>
+              <ChefHat className="w-4 h-4" />
+              <span>{t('cartNotesLabel')}</span>
+              <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+            </Button>
+          </section>
+        ) : (
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
+                {t('cartNotesLabel')}
+              </Label>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setNotesOpen(false);
+                  setNotes('');
+                }}
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="relative">
+              <Textarea
+                id="cart-notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value.slice(0, NOTES_MAX_LENGTH))}
+                placeholder={t('cartNotesPlaceholder')}
+                maxLength={NOTES_MAX_LENGTH}
+                autoFocus
+                className="w-full min-h-[80px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-3 text-[14px] font-normal text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] resize-none transition-colors"
+              />
+              <div className="mt-1 flex justify-end">
+                <span className="text-[11px] text-[#B0B0B0]">
+                  {notesLength}/{NOTES_MAX_LENGTH}
+                </span>
               </div>
+            </div>
+          </section>
+        )}
 
-              <div className="p-3 overflow-x-auto scrollbar-hide">
-                <div className="flex gap-3 min-w-max px-1">
-                  {isLoadingUpsell && upsellItems.length === 0
-                    ? [1, 2, 3].map((i) => (
-                        <div
-                          key={i}
-                          className="w-[130px] flex-shrink-0 bg-app-elevated rounded-xl p-2.5 border border-app-border/50 animate-pulse"
-                        >
-                          <div className="w-full h-20 bg-app-hover rounded-lg mb-2" />
-                          <div className="h-3 w-3/4 bg-app-hover rounded mb-1" />
-                          <div className="h-3 w-1/2 bg-app-hover rounded" />
+        {/* UPSELL SUGGESTIONS - stable section: visible whenever the cart has items.
+            Title is fixed ("Vous aimerez aussi") so the user never sees the heading
+            change as suggestions recompute on cart edits. */}
+        {items.length > 0 && (upsellItems.length > 0 || isLoadingUpsell) && (
+          <section className="overflow-hidden">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Utensils className="w-5 h-5 text-[#1A1A1A]" />
+                <h2 className="text-[20px] font-bold text-[#1A1A1A]">{t('upsellYouMayLike')}</h2>
+              </div>
+              <Link href={menuPath} className="text-[14px] font-semibold text-[#1A1A1A]">
+                {t('seeAll') || 'See all'}
+              </Link>
+            </div>
+
+            <div className="overflow-x-auto scrollbar-hide -mx-4 px-4">
+              <div className="flex gap-3 min-w-max">
+                {isLoadingUpsell && upsellItems.length === 0
+                  ? [1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] animate-pulse overflow-hidden"
+                      >
+                        <div className="w-full h-[110px] bg-[#F6F6F6]" />
+                        <div className="p-2.5">
+                          <div className="h-4 w-3/4 bg-[#F6F6F6] rounded mb-2" />
+                          <div className="h-3 w-1/2 bg-[#F6F6F6] rounded" />
                         </div>
-                      ))
-                    : upsellItems.map((item) => {
-                        const hasImage =
-                          item.image_url &&
-                          !item.image_url.includes('placeholder') &&
-                          !upsellImageErrors.has(item.id);
+                      </div>
+                    ))
+                  : upsellItems.map((item) => {
+                      const hasImage =
+                        item.image_url &&
+                        !item.image_url.includes('placeholder') &&
+                        !upsellImageErrors.has(item.id);
 
-                        return (
-                          <div
-                            key={item.id}
-                            className="w-[130px] flex-shrink-0 bg-app-card rounded-xl p-2.5 border border-app-border/50 shadow-sm"
-                          >
-                            <div className="w-full h-20 rounded-lg mb-2.5 overflow-hidden relative bg-app-elevated flex items-center justify-center">
-                              {hasImage ? (
-                                <Image
-                                  src={item.image_url!}
-                                  alt={item.name}
-                                  fill
-                                  sizes="130px"
-                                  className="object-cover"
-                                  onError={() =>
-                                    setUpsellImageErrors((prev) => new Set(prev).add(item.id))
-                                  }
-                                />
-                              ) : (
-                                <Utensils className="w-5 h-5 text-app-text-muted/40" />
-                              )}
-                              <div className="absolute top-1 right-1 z-10">
-                                <button
-                                  onClick={() => handleAddUpsellItem(item)}
-                                  className="w-7 h-7 rounded-full bg-app-card/90 shadow-md flex items-center justify-center active:scale-90 transition-all"
-                                  style={{ color: 'var(--tenant-primary)' }}
-                                >
-                                  <Plus className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </div>
-                            <h3 className="text-[11px] font-bold text-app-text leading-tight mb-2">
+                      return (
+                        <div
+                          key={item.id}
+                          className="w-[160px] flex-shrink-0 bg-white rounded-xl border border-[#EEEEEE] overflow-hidden"
+                        >
+                          <div className="w-full h-[110px] overflow-hidden relative bg-[#F6F6F6] flex items-center justify-center">
+                            {hasImage ? (
+                              <Image
+                                src={item.image_url!}
+                                alt={item.name}
+                                fill
+                                sizes="160px"
+                                className="object-cover"
+                                onError={() =>
+                                  setUpsellImageErrors((prev) => new Set(prev).add(item.id))
+                                }
+                              />
+                            ) : (
+                              <Utensils className="w-6 h-6 text-[#B0B0B0]" />
+                            )}
+                            <Button
+                              size="icon"
+                              onClick={() => handleAddUpsellItem(item)}
+                              className="absolute bottom-2 right-2 z-10 w-7 h-7 rounded-full bg-[#1A1A1A] hover:bg-black active:scale-90"
+                              aria-label={t('ariaAddUpsell', { name: item.name })}
+                            >
+                              <Plus className="w-4 h-4 text-white" />
+                            </Button>
+                          </div>
+                          <div className="p-2.5">
+                            <h3 className="text-[15px] font-semibold text-[#1A1A1A] leading-tight line-clamp-2 mb-1.5">
                               {getTranslatedContent(language, item.name, item.name_en)}
                             </h3>
-                            <span
-                              className="text-xs font-black"
-                              style={{ color: 'var(--tenant-primary)' }}
-                            >
+                            <span className="text-[14px] font-bold text-[#1A1A1A]">
                               {resolveAndFormatPrice(item.price, item.prices, currencyCode)}
                             </span>
                           </div>
-                        );
-                      })}
+                        </div>
+                      );
+                    })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* PROMO CODE - collapsible, hidden until user clicks "Add code" */}
+        {appliedCoupon ? (
+          <section>
+            <motion.div
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center justify-between gap-3 bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 py-2.5"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="w-6 h-6 rounded-full bg-[#1A1A1A] flex items-center justify-center flex-shrink-0">
+                  <Check className="w-4 h-4 text-white" strokeWidth={3} />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[13px] font-semibold text-[#1A1A1A] truncate">
+                    {appliedCoupon.code}
+                  </p>
+                  <p className="text-[11px] text-[#737373]">
+                    -{formatDisplayPrice(appliedCoupon.discountAmount, currencyCode)}
+                  </p>
                 </div>
               </div>
-            </motion.section>
-          ) : null}
-        </AnimatePresence>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleRemovePromo}
+                aria-label={t('ariaRemovePromo')}
+                className="p-2 min-h-[36px] min-w-[36px] text-[#737373] hover:text-[#FF3008]"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          </section>
+        ) : !promoOpen ? (
+          <section>
+            <Button
+              variant="ghost"
+              onClick={() => setPromoOpen(true)}
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+            >
+              <Tag className="w-4 h-4" />
+              <span>{t('promoCode')}</span>
+              <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+            </Button>
+          </section>
+        ) : (
+          <section>
+            <div className="flex items-center justify-between mb-2">
+              <Label htmlFor="promo-input" className="text-[13px] font-semibold text-[#1A1A1A]">
+                {t('promoCode')}
+              </Label>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setPromoOpen(false);
+                  setPromoInput('');
+                  setPromoError(null);
+                }}
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex items-stretch gap-2">
+              <div className="flex-1 relative">
+                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B0B0B0]" />
+                <Input
+                  id="promo-input"
+                  type="text"
+                  value={promoInput}
+                  onChange={(e) => {
+                    setPromoInput(e.target.value.toUpperCase());
+                    if (promoError) setPromoError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyPromo();
+                    }
+                  }}
+                  placeholder={t('promoCodePlaceholder')}
+                  autoFocus
+                  className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl pl-9 pr-3 text-[14px] font-medium text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                />
+              </div>
+              <Button
+                onClick={handleApplyPromo}
+                disabled={!promoInput.trim() || promoApplying}
+                className="h-[44px] px-4 rounded-xl bg-[#1A1A1A] text-white text-[14px] font-semibold hover:bg-black min-w-[90px]"
+              >
+                {promoApplying ? <Loader2 className="w-4 h-4 animate-spin" /> : t('apply')}
+              </Button>
+            </div>
+            <AnimatePresence>
+              {promoError && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-2 text-[12px] text-[#FF3008] flex items-center gap-1"
+                >
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {promoError}
+                </motion.p>
+              )}
+              {promoJustApplied && !promoError && (
+                <motion.p
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="mt-2 text-[12px] text-[#1A1A1A] flex items-center gap-1"
+                >
+                  <Check className="w-3.5 h-3.5 flex-shrink-0" />
+                  {t('promoApplied')}
+                </motion.p>
+              )}
+            </AnimatePresence>
+          </section>
+        )}
 
-        {/* ORDER SUMMARY */}
-        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
-          <div className="px-4 py-3 space-y-3">
+        {/* TIP SELECTOR - collapsible (hidden until user clicks "Add tip") */}
+        {!tipOpen && tipAmount === 0 ? (
+          <section>
+            <Button
+              variant="ghost"
+              onClick={() => setTipOpen(true)}
+              className="w-full justify-start gap-2 text-[14px] font-semibold text-[#1A1A1A] py-3 hover:text-black"
+            >
+              <HandCoins className="w-4 h-4" />
+              <span>{t('tip')}</span>
+              <ChevronRight className="w-4 h-4 ml-auto text-[#B0B0B0]" />
+            </Button>
+          </section>
+        ) : (
+          <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-[13px] font-semibold text-[#1A1A1A]">{t('tip')}</Label>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setTipOpen(false);
+                  setTipPreset(0);
+                  setCustomTipInput('');
+                }}
+                className="text-[#737373] hover:text-[#1A1A1A] h-8 w-8"
+                aria-label="Fermer"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {(
+                [
+                  { key: 0, label: t('tipNone') || 'Aucun' },
+                  { key: 500, label: formatDisplayPrice(500, currencyCode) },
+                  { key: 1000, label: formatDisplayPrice(1000, currencyCode) },
+                  { key: 1500, label: formatDisplayPrice(1500, currencyCode) },
+                  { key: 2000, label: formatDisplayPrice(2000, currencyCode) },
+                  { key: 'custom', label: t('tipCustom') || 'Autre' },
+                ] as const
+              ).map((opt) => {
+                const active = tipPreset === opt.key;
+                return (
+                  <Button
+                    key={String(opt.key)}
+                    variant={active ? 'default' : 'outline'}
+                    onClick={() => {
+                      setTipPreset(opt.key);
+                      if (opt.key !== 'custom') setCustomTipInput('');
+                    }}
+                    className={cn(
+                      'min-h-[44px] rounded-xl text-[13px] font-semibold px-1',
+                      active
+                        ? 'bg-[#1A1A1A] text-white border border-[#1A1A1A] hover:bg-black'
+                        : 'bg-white text-[#737373] border-[#EEEEEE] hover:border-[#B0B0B0]',
+                    )}
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
+            <AnimatePresence>
+              {tipPreset === 'custom' && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-3">
+                    <Input
+                      type="number"
+                      inputMode="decimal"
+                      min={0}
+                      step={500}
+                      value={customTipInput}
+                      onChange={(e) => setCustomTipInput(e.target.value)}
+                      placeholder={t('tipCustomPlaceholder')}
+                      className="w-full h-[44px] bg-[#F6F6F6] border border-[#EEEEEE] rounded-xl px-3 text-[14px] font-semibold text-[#1A1A1A] placeholder:text-[#B0B0B0] focus:outline-none focus:border-[#1A1A1A] transition-colors"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </section>
+        )}
+
+        {/* DETAILED ORDER SUMMARY */}
+        <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
+          <div className="space-y-2.5">
             {/* Subtotal */}
-            <div className="flex justify-between text-sm">
-              <span className="text-app-text-muted">{t('subtotal')}</span>
-              <span className="text-app-text font-medium">
+            <div className="flex justify-between items-center">
+              <span className="text-[13px] font-normal text-[#737373]">{t('subtotal')}</span>
+              <span className="text-[15px] font-bold text-[#1A1A1A]">
                 {formatDisplayPrice(subtotal, currencyCode)}
               </span>
             </div>
 
             {/* Tax */}
             {enableTax && taxAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-app-text-muted">
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] font-normal text-[#737373]">
                   {t('tax')} ({taxRate}%)
                 </span>
-                <span className="text-app-text font-medium">
+                <span className="text-[15px] font-bold text-[#1A1A1A]">
                   {formatDisplayPrice(taxAmount, currencyCode)}
                 </span>
               </div>
@@ -790,11 +1081,11 @@ export default function CartPage() {
 
             {/* Service charge */}
             {enableServiceCharge && serviceChargeAmount > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-app-text-muted">
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] font-normal text-[#737373]">
                   {t('serviceCharge')} ({serviceChargeRate}%)
                 </span>
-                <span className="text-app-text font-medium">
+                <span className="text-[15px] font-bold text-[#1A1A1A]">
                   {formatDisplayPrice(serviceChargeAmount, currencyCode)}
                 </span>
               </div>
@@ -802,83 +1093,69 @@ export default function CartPage() {
 
             {/* Discount */}
             {discountAmount > 0 && (
-              <div className="flex justify-between text-sm text-green-600">
-                <span>{t('discount')}</span>
-                <span>-{formatDisplayPrice(discountAmount, currencyCode)}</span>
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] font-normal text-[#737373]">{t('discount')}</span>
+                <span className="text-[15px] font-bold text-[#1A1A1A]">
+                  -{formatDisplayPrice(discountAmount, currencyCode)}
+                </span>
               </div>
             )}
 
             {/* Tip */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-app-text-muted">{t('tip')}</span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    setTipAmount((prev) =>
-                      prev === TIP_STEP * 2 ? 0 : Math.max(0, prev - TIP_STEP),
-                    )
-                  }
-                  disabled={tipAmount === 0}
-                  aria-label="Diminuer la quantite"
-                  className={cn(
-                    'w-11 h-11 rounded-full border flex items-center justify-center transition-all focus-visible:ring-2 focus-visible:ring-offset-2',
-                    tipAmount === 0
-                      ? 'border-app-border text-app-text-muted/40 cursor-not-allowed'
-                      : 'border-app-border text-app-text-secondary hover:border-app-border hover:bg-app-hover active:scale-95',
-                  )}
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-sm font-bold text-app-text min-w-[60px] text-center">
+            {tipAmount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-[13px] font-normal text-[#737373]">{t('tip')}</span>
+                <span className="text-[15px] font-bold text-[#1A1A1A]">
                   {formatDisplayPrice(tipAmount, currencyCode)}
                 </span>
-                <button
-                  onClick={() =>
-                    setTipAmount((prev) => (prev === 0 ? TIP_STEP * 2 : prev + TIP_STEP))
-                  }
-                  aria-label="Augmenter la quantite"
-                  className="w-11 h-11 rounded-full border flex items-center justify-center transition-all active:scale-95 focus-visible:ring-2 focus-visible:ring-offset-2"
-                  style={{
-                    borderColor: 'var(--tenant-primary)',
-                    color: 'var(--tenant-primary)',
-                  }}
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
               </div>
-            </div>
+            )}
 
-            {/* Total */}
-            <div className="border-t border-app-border pt-3">
+            {/* Divider */}
+            <div className="border-t border-[#EEEEEE] pt-3 mt-1">
               <div className="flex justify-between items-center">
-                <span className="text-base font-bold text-app-text">{t('total')}</span>
-                <span className="text-xl font-black text-app-text">
+                <span className="text-[16px] font-bold text-[#1A1A1A]">{t('total')}</span>
+                <span className="text-[20px] font-bold text-[#1A1A1A]">
                   {formatDisplayPrice(finalTotal, currencyCode)}
                 </span>
               </div>
+              {/* Hint only meaningful when tax or service charge is actually applied */}
+              {((enableTax && taxAmount > 0) ||
+                (enableServiceCharge && serviceChargeAmount > 0)) && (
+                <div className="text-[11px] text-right" style={{ color: '#B0B0B0' }}>
+                  {t('totalHint')}
+                </div>
+              )}
             </div>
           </div>
         </section>
       </div>
 
-      {/* STICKY CTA - above bottom nav */}
+      {/* FLOATING CTA - no bar wrapper, just the button floating above content */}
       <div
-        className="fixed left-0 right-0 z-[60] bg-app-card border-t border-app-border p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
-        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px))' }}
+        className="fixed left-0 right-0 z-[60] px-4 pointer-events-none"
+        style={{ bottom: 'calc(64px + env(safe-area-inset-bottom, 0px) + 12px)' }}
       >
-        <div className="max-w-lg mx-auto">
-          <button
+        <div className="max-w-lg mx-auto pointer-events-auto">
+          <Button
             onClick={handleSubmitOrder}
-            disabled={isSubmitting}
-            className="w-full h-14 rounded-xl text-white font-bold text-lg transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98]"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            disabled={isSubmitting || items.length === 0}
+            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />
             ) : (
-              <span>{t('confirmOrder')}</span>
+              <>
+                <span>{t('confirmOrder')}</span>
+                <span
+                  aria-hidden="true"
+                  className="inline-block rounded-full bg-white"
+                  style={{ width: 5, height: 5 }}
+                />
+                <span>{formatDisplayPrice(finalTotal, currencyCode)}</span>
+              </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
       {tenantSlug && <BottomNav tenantSlug={tenantSlug} />}

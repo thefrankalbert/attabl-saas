@@ -26,16 +26,17 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
   if (!ads || ads.length === 0) return null;
 
   return (
-    <div className="relative mb-8 rounded-2xl overflow-hidden border border-app-border group">
+    <div className="relative mb-8 rounded-2xl overflow-hidden border border-[#EEEEEE] group">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {ads.map((ad, index) => (
             <div className="flex-[0_0_100%] min-w-0 relative" key={ad.id}>
               <div
                 className={cn(
-                  'relative w-full bg-app-elevated',
+                  'relative w-full',
                   aspectRatio === 'video' ? 'aspect-video' : 'aspect-[21/9]',
                 )}
+                style={{ backgroundColor: '#F6F6F6' }}
               >
                 <Image
                   src={ad.image_url}

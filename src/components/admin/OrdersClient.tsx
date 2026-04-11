@@ -499,9 +499,10 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                         const isLocked = sound.isPremium && !isPremium;
                         const isActive = currentSoundId === sound.id;
                         return (
-                          <button
+                          <Button
                             key={sound.id}
                             type="button"
+                            variant="ghost"
                             disabled={isLocked}
                             onClick={() => {
                               if (!isLocked) {
@@ -510,7 +511,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                               }
                             }}
                             className={cn(
-                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm transition-colors',
+                              'w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left text-sm h-auto whitespace-normal',
                               isActive
                                 ? 'bg-accent-muted text-accent'
                                 : 'text-app-text hover:bg-app-hover',
@@ -527,7 +528,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                             </span>
                             {isActive && <Check className="w-3.5 h-3.5 shrink-0" />}
                             {isLocked && <Lock className="w-3 h-3 shrink-0 text-app-text-muted" />}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -549,7 +550,9 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             {t('selected', { count: selectedIds.size })}
           </span>
           <div className="w-px h-4 bg-app-border" />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               const ids = Array.from(selectedIds);
               ids.forEach((id) => {
@@ -564,26 +567,30 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               setSelectedIds(new Set());
             }}
             title={t('advanceStatus')}
-            className="p-1.5 rounded text-accent hover:bg-accent-muted transition-colors"
+            className="h-8 w-8 text-accent hover:bg-accent-muted"
           >
             <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowDeleteConfirm(true)}
             title={tc('delete')}
-            className="p-1.5 rounded text-red-400 hover:bg-red-500/15 transition-colors"
+            className="h-8 w-8 text-red-400 hover:bg-red-500/15"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setSelectedIds(new Set());
             }}
             title={tc('cancel')}
-            className="p-1.5 rounded text-app-text-muted hover:bg-app-hover transition-colors"
+            className="h-8 w-8 text-app-text-muted"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Bulk delete confirmation dialog */}

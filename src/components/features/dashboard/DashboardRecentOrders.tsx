@@ -12,6 +12,7 @@ import {
   Package,
 } from 'lucide-react';
 import StatusBadge from '@/components/admin/StatusBadge';
+import { Button } from '@/components/ui/button';
 import type { Order } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import type { StockItem } from '@/hooks/useDashboardData';
@@ -123,31 +124,37 @@ export default function DashboardRecentOrders({
                       </p>
                       <div className="flex items-center gap-1 mt-2">
                         {order.status === 'pending' && (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => onStatusChange(order.id, 'preparing')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-blue-500/10 text-blue-600 rounded-xl hover:bg-blue-500/20 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-blue-500/10 text-blue-600 rounded-xl hover:bg-blue-500/20"
                             title={t('startPreparation')}
                           >
                             <ChefHat className="w-4 h-4" />
-                          </button>
+                          </Button>
                         )}
                         {order.status === 'preparing' && (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => onStatusChange(order.id, 'ready')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500/20 transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-emerald-500/10 text-emerald-600 rounded-xl hover:bg-emerald-500/20"
                             title={t('markReady')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         )}
                         {order.status === 'ready' && (
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => onStatusChange(order.id, 'delivered')}
-                            className="p-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated transition-colors"
+                            className="p-2.5 min-h-[44px] min-w-[44px] bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated"
                             title={t('markDelivered')}
                           >
                             <CheckCircle2 className="w-4 h-4" />
-                          </button>
+                          </Button>
                         )}
                         <Link
                           href={`${adminBase}/orders`}
@@ -179,7 +186,7 @@ export default function DashboardRecentOrders({
       {/* Stock Alerts */}
       {showStock && (
         <div
-          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 md:col-span-3' : ''}`}
+          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 @md:col-span-3' : ''}`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-2">

@@ -53,7 +53,7 @@ function useShouldShowSplash(isStandalone: boolean): boolean {
 export default function FullscreenSplash({
   tenantName,
   logoUrl,
-  primaryColor = '#000000',
+  primaryColor = '#1A1A1A',
 }: FullscreenSplashProps) {
   const t = useTranslations('tenant');
   const isStandalone = useIsStandalone();
@@ -78,7 +78,7 @@ export default function FullscreenSplash({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-app-card"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white"
       style={{ touchAction: 'none' }}
     >
       {/* Background gradient */}
@@ -92,7 +92,10 @@ export default function FullscreenSplash({
       <div className="relative flex flex-col items-center gap-6 px-8 text-center">
         {/* Logo */}
         {logoUrl ? (
-          <div className="w-24 h-24 rounded-2xl overflow-hidden shadow-lg bg-app-card">
+          <div
+            className="w-24 h-24 rounded-xl overflow-hidden bg-white"
+            style={{ border: '1px solid #EEEEEE' }}
+          >
             <Image
               src={logoUrl}
               alt={tenantName}
@@ -103,8 +106,8 @@ export default function FullscreenSplash({
           </div>
         ) : (
           <div
-            className="w-24 h-24 rounded-2xl flex items-center justify-center text-white text-4xl font-bold shadow-lg"
-            style={{ backgroundColor: primaryColor }}
+            className="w-24 h-24 rounded-xl flex items-center justify-center text-white text-4xl font-bold"
+            style={{ border: '1px solid #EEEEEE', backgroundColor: primaryColor }}
           >
             {tenantName.charAt(0).toUpperCase()}
           </div>
@@ -112,14 +115,18 @@ export default function FullscreenSplash({
 
         {/* Restaurant name */}
         <div>
-          <h1 className="text-2xl font-bold text-app-text">{tenantName}</h1>
-          <p className="text-sm text-app-text-muted mt-1">{t('splashSubtitle')}</p>
+          <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
+            {tenantName}
+          </h1>
+          <p className="text-sm mt-1" style={{ color: '#B0B0B0' }}>
+            {t('splashSubtitle')}
+          </p>
         </div>
 
         {/* Enter button */}
         <button
           onClick={handleEnter}
-          className="mt-4 px-10 py-3.5 rounded-full text-white font-semibold text-base shadow-lg active:scale-95 transition-transform"
+          className="mt-4 px-10 py-3.5 rounded-xl text-white font-semibold text-base active:scale-95 transition-transform"
           style={{ backgroundColor: primaryColor }}
         >
           {t('splashEnter')}
@@ -128,14 +135,15 @@ export default function FullscreenSplash({
         {/* Skip link */}
         <button
           onClick={handleSkip}
-          className="text-xs text-app-text-muted underline underline-offset-2"
+          className="text-xs underline underline-offset-2"
+          style={{ color: '#B0B0B0' }}
         >
           {t('splashSkip')}
         </button>
       </div>
 
       {/* Powered by */}
-      <p className="absolute bottom-8 text-[10px] text-app-text-muted tracking-wider uppercase">
+      <p className="absolute bottom-8 text-[12px]" style={{ color: '#737373' }}>
         Powered by ATTABL
       </p>
     </div>

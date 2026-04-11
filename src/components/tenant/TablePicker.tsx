@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import type { Zone, Table } from '@/types/admin.types';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 
 interface TablePickerProps {
@@ -55,7 +56,7 @@ export default function TablePicker({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-app-card gap-0">
+      <DialogContent className="sm:max-w-md p-0 overflow-hidden bg-white gap-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle>{t('selectYourTable')}</DialogTitle>
         </DialogHeader>
@@ -64,9 +65,12 @@ export default function TablePicker({
           <div className="flex gap-4 h-64">
             {/* Zone Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-app-text-secondary uppercase tracking-wider mb-2 text-center">
+              <Label
+                className="text-[13px] font-semibold mb-2 text-center"
+                style={{ color: '#737373' }}
+              >
                 {t('zone')}
-              </label>
+              </Label>
               <div className="flex-1 overflow-y-auto pr-1 space-y-1">
                 {zones.map((zone) => (
                   <button
@@ -75,26 +79,36 @@ export default function TablePicker({
                     className={cn(
                       'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedZone?.id === zone.id
-                        ? 'bg-accent text-accent-text font-medium'
-                        : 'text-app-text-secondary hover:bg-app-elevated',
+                        ? 'text-white font-medium'
+                        : 'hover:bg-[#F6F6F6]',
                     )}
+                    style={
+                      selectedZone?.id === zone.id
+                        ? { backgroundColor: '#1A1A1A' }
+                        : { color: '#737373' }
+                    }
                   >
                     {zone.name}
                   </button>
                 ))}
                 {zones.length === 0 && (
-                  <p className="text-xs text-app-text-muted text-center py-4">{t('noZone')}</p>
+                  <p className="text-xs text-center py-4" style={{ color: '#B0B0B0' }}>
+                    {t('noZone')}
+                  </p>
                 )}
               </div>
             </div>
 
-            <div className="w-px bg-app-border my-2"></div>
+            <div className="w-px bg-[#EEEEEE] my-2"></div>
 
             {/* Table Column */}
             <div className="flex-1 flex flex-col">
-              <label className="text-xs font-semibold text-app-text-secondary uppercase tracking-wider mb-2 text-center">
+              <Label
+                className="text-[13px] font-semibold mb-2 text-center"
+                style={{ color: '#737373' }}
+              >
                 {t('table')}
-              </label>
+              </Label>
               <div className="flex-1 overflow-y-auto pl-1 space-y-1">
                 {availableTables.map((table) => (
                   <button
@@ -104,22 +118,26 @@ export default function TablePicker({
                       'w-full text-center px-3 py-2 rounded-lg text-sm transition-colors',
                       selectedTable?.id === table.id
                         ? 'text-white font-bold'
-                        : 'text-app-text-secondary hover:bg-app-elevated',
+                        : 'hover:bg-[#F6F6F6]',
                     )}
                     style={
                       selectedTable?.id === table.id
-                        ? { backgroundColor: 'var(--tenant-primary)' }
-                        : undefined
+                        ? { backgroundColor: '#1A1A1A' }
+                        : { color: '#737373' }
                     }
                   >
                     {table.table_number}
                   </button>
                 ))}
                 {selectedZone && availableTables.length === 0 && (
-                  <p className="text-xs text-app-text-muted text-center py-4">{t('noTable')}</p>
+                  <p className="text-xs text-center py-4" style={{ color: '#B0B0B0' }}>
+                    {t('noTable')}
+                  </p>
                 )}
                 {!selectedZone && (
-                  <p className="text-xs text-app-text-muted text-center py-4">{t('selectZone')}</p>
+                  <p className="text-xs text-center py-4" style={{ color: '#B0B0B0' }}>
+                    {t('selectZone')}
+                  </p>
                 )}
               </div>
             </div>
@@ -127,7 +145,12 @@ export default function TablePicker({
 
           <div className="mt-6">
             <Button
-              className="w-full h-12 text-base"
+              className="w-full text-base text-white rounded-xl"
+              style={{
+                height: 52,
+                backgroundColor: selectedTable ? '#1A1A1A' : undefined,
+                borderRadius: 12,
+              }}
               onClick={handleConfirm}
               disabled={!selectedTable}
             >

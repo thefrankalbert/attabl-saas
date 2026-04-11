@@ -6,6 +6,13 @@ import { Loader2, Upload, CheckCircle2, AlertCircle, Trash2, Sparkles } from 'lu
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
 
@@ -203,21 +210,22 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
             <Label htmlFor="pdf-import-menu" className="text-app-text">
               {t('targetMenu')}
             </Label>
-            <select
-              id="pdf-import-menu"
-              value={menuId}
-              onChange={(e) => setMenuId(e.target.value)}
-              className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
-              required
+            <Select
+              value={menuId || undefined}
+              onValueChange={setMenuId}
               disabled={step === 'extracting'}
             >
-              <option value="">{t('selectTargetMenu')}</option>
-              {menus.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="pdf-import-menu" className="w-full">
+                <SelectValue placeholder={t('selectTargetMenu')} />
+              </SelectTrigger>
+              <SelectContent>
+                {menus.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* File upload drop zone */}
@@ -335,15 +343,17 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                   <span className="text-sm font-semibold text-app-text tabular-nums">
                     {formatPrice(item.price)}
                   </span>
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => removeItem(index)}
-                    className="p-1 rounded-md text-app-text-muted hover:text-red-500 hover:bg-status-error/10 transition-colors"
+                    className="p-1 h-auto w-auto text-app-text-muted hover:text-red-500 hover:bg-status-error/10"
                     title="Supprimer"
                     aria-label="Remove"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

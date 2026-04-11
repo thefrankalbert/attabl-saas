@@ -18,7 +18,7 @@ export async function createClient() {
             // En production, on force le domaine racine pour partager le cookie entre sous-domaines
             if (process.env.NODE_ENV === 'production' && process.env.NEXT_PUBLIC_APP_DOMAIN) {
               options.domain = `.${process.env.NEXT_PUBLIC_APP_DOMAIN}`;
-              options.sameSite = 'lax';
+              options.sameSite = 'strict';
             }
             cookieStore.set({ name, value, ...options });
           } catch (error) {
