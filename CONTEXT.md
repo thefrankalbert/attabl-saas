@@ -292,7 +292,62 @@ Documentation interne :
 
 ---
 
-## 7. Setup express pour un nouveau dev
+## 7. Regles de developpement — OBLIGATOIRES
+
+Ces regles ont ete etablies apres un audit complet (16 fixes). Elles empechent
+les memes problemes de revenir. **Toute PR qui viole ces regles doit etre
+bloquee.**
+
+### 7.1 Responsive & CSS
+
+- **JAMAIS de `w-[Xpx]`** sur un conteneur layout (> 64px). Utiliser `w-full max-w-[Xpx]` a la place. Les largeurs fixes sont OK uniquement pour les icones (< 64px), avatars, et la sidebar.
+- **JAMAIS de `style={{}}` avec des valeurs statiques** dans les composants. Convertir en classes Tailwind. Les styles inline sont autorises UNIQUEMENT pour les valeurs dynamiques (variables, props, tokens `C.*`).
+- **Les composants admin** (rendus dans la zone de contenu a droite de la sidebar) doivent utiliser des **`@container` queries** (`@sm:`, `@md:`, `@lg:`) et NON des media queries (`sm:`, `md:`, `lg:`). Les media queries reagissent au viewport, pas a l'espace disponible du conteneur.
+- **Toujours tester** aux 3 viewports : 375px (mobile), 768px (tablette), 1024px+ (desktop).
+- **La sidebar admin** est visible uniquement a partir de `lg:` (1024px). En dessous, c'est le `AdminBottomNav` qui prend le relais.
+
+### 7.2 Securite
+
+- **CSP dynamique** avec nonce par requete (genere dans `proxy.ts`, construit via `src/lib/csp.ts`). JAMAIS de `'unsafe-inline'` dans `script-src`.
+- **CSRF** : toute route POST publique (sans auth) doit appeler `verifyOrigin(request)` de `src/lib/csrf.ts` en premier.
+- **Rate limiting** : chaque route API doit avoir un limiter. Les endpoints auth/checkout sont `fail-closed`.
+- **Sentry** : le `beforeSend` filtre les `request.data`, `cookies`, et `query_string` avant envoi. JAMAIS de PII dans les events Sentry.
+- **Invitation tokens** : TTL = 24h (pas 72h). One-time consumption via status `accepted`.
+- **SameSite=strict** sur tous les cookies de session Supabase.
+- **RLS WITH CHECK** obligatoire sur TOUTES les policies UPDATE et INSERT.
+- **CHECK constraint** sur `orders.status` : seuls `pending/confirmed/preparing/ready/delivered/served/cancelled` sont autorises.
+
+### 7.3 Currency & i18n
+
+- **Devise par defaut = XOF (FCFA)** pour les tenants Burkina Faso. XAF et XOF s'affichent tous les deux comme "FCFA". Le `CurrencyContext.readStored()` normalise XAF → XOF automatiquement.
+- **3 options de devise** dans le selector client : FCFA, Euro, Dollar. Pas de "FCFA (BEAC)".
+- **`translate="no"`** + `<meta google notranslate>` sur `<html>` pour empecher Chrome de traduire automatiquement (produit "Maison" au lieu de "Home").
+- La fonction `getTranslatedContent()` est dans `src/lib/utils/translate.ts` — NE PAS la redefinir dans chaque fichier.
+
+### 7.4 Composants client (tenant)
+
+- **Pas de vert `#06C167`** dans l'espace client. La couleur primaire des CTAs est `#1A1A1A` (noir). Le vert est reserve au dashboard admin si le tenant le configure via `primary_color`.
+- **Pas de toast** sur "ajout au panier". Le sheet ferme directement avec un check anime.
+- **Pas de `disabled:opacity-50`** sur le bouton "Passer la commande". Le spinner suffit comme indicateur de chargement.
+- **Sections collapsibles** (code promo, pourboire, notes cuisine) : fermees par defaut, ouvrent au clic avec une icone contextuelle.
+- **Barre flottante panier** : format `[icon] Voir le panier N • Prix`. Point blanc 5x5 comme separateur, pas de barre verticale, pas de parentheses.
+- **Recommandations** : titre fixe "Vous aimerez aussi", co-occurrence RPC `get_co_ordered_items` en priorite, ne jamais cacher la section quand le panier a des items.
+
+### 7.5 Orders
+
+- **`/orders`** = commandes ACTIVES uniquement (pending/confirmed/preparing/ready)
+- **`/orders?history=true`** = commandes TERMINEES (delivered/served/cancelled), accessible depuis Compte > Historique
+- **Pas de ActiveOrderBanner** separee. Toutes les commandes actives sont des cartes depliables avec OrderTracker.
+- **Realtime** : channel name stable (`order-status-${tenantId}`), subscribe uniquement quand il y a des commandes actives.
+
+### 7.6 PWA & Service Worker
+
+- `skipWaiting: false` — les mises a jour du SW ne forcent pas le rechargement pendant l'utilisation.
+- Le manifest dynamique per-tenant (`app/sites/[site]/manifest.ts`) n'est PAS servi par Next.js. Le manifest global `/manifest.json` est utilise.
+
+---
+
+## 8. Setup express pour un nouveau dev
 
 ```bash
 git clone https://github.com/thefrankalbert/attabl-saas.git
