@@ -224,14 +224,14 @@ export default function KDSTicket({
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <div className="flex items-center gap-1 min-w-0 text-xs text-app-text-muted truncate">
             {serverName && (
-              <span className="font-medium text-app-text-secondary truncate max-w-[100px]">
+              <span className="font-medium text-app-text-secondary truncate max-w-24">
                 {serverName}
               </span>
             )}
             {order.customer_name && (
               <>
                 <span aria-hidden="true">-</span>
-                <span className="truncate max-w-[100px]">{order.customer_name}</span>
+                <span className="truncate max-w-24">{order.customer_name}</span>
               </>
             )}
             {serviceLabel && (

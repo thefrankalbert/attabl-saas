@@ -109,7 +109,7 @@ function FooterSummaryBarInner({
     <footer className="h-14 shrink-0 z-[210] bg-app-card border-t border-app-border flex items-center px-4 gap-4">
       {/* Left: tenant name */}
       {tenantName && (
-        <span className="text-sm font-semibold text-app-text truncate max-w-[160px] hidden sm:block">
+        <span className="text-sm font-semibold text-app-text truncate max-w-40 hidden sm:block">
           {tenantName}
         </span>
       )}

@@ -128,7 +128,7 @@ function AdminLayoutInner({
             isDevMode && 'pt-6',
           )}
         >
-          {children}
+          <div className="max-w-screen-2xl mx-auto h-full">{children}</div>
         </main>
 
         {(isMobile || isTablet) && !isHome && (

@@ -333,7 +333,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           {/* Stats gauge - compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="shrink-0 w-[80px] sm:w-[110px]">
+              <div className="shrink-0 w-20 sm:w-28">
                 <Suspense
                   fallback={
                     <div className="h-[60px] rounded-lg bg-app-elevated/20 animate-pulse" />

@@ -251,7 +251,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
         accessorKey: 'notes',
         header: () => t('columnNotes'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-48 truncate block">
             {row.original.notes || '\u2014'}
           </span>
         ),
