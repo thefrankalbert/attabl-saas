@@ -22,6 +22,7 @@ import Link from 'next/link';
 import { useTranslations, useLocale } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
 import OrderTracker from './OrderTracker';
@@ -337,15 +338,15 @@ export default function ClientOrders({
           {showHistory ? t('noOrdersBrowse') : t('noOrdersBrowse')}
         </p>
         {!showHistory && (
-          <Link href={`/sites/${tenantSlug}/menu`}>
-            <button
-              type="button"
-              className="h-12 px-8 rounded-xl text-white inline-flex items-center gap-2 transition-transform active:scale-[0.98] bg-[#1A1A1A] text-[15px] font-semibold"
-            >
+          <Button
+            asChild
+            className="h-12 px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+          >
+            <Link href={`/sites/${tenantSlug}/menu`}>
               <ArrowLeft className="w-4 h-4" />
               {t('viewMenu')}
-            </button>
-          </Link>
+            </Link>
+          </Button>
         )}
       </div>
     );
@@ -368,14 +369,15 @@ export default function ClientOrders({
               {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
             </p>
           </div>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={dismissBanner}
-            className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="rounded-full hover:bg-white/20 shrink-0 min-h-[44px] min-w-[44px] text-white"
             aria-label="Dismiss"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
       )}
 
@@ -511,14 +513,13 @@ export default function ClientOrders({
                     {/* Action buttons */}
                     <div className="px-4 pb-4 space-y-2">
                       {canEdit && (
-                        <button
-                          type="button"
+                        <Button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full h-12 rounded-xl text-white transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-2 bg-[#1A1A1A] text-[15px] font-semibold"
+                          className="w-full h-12 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -528,22 +529,22 @@ export default function ClientOrders({
                               {t('editOrder')}
                             </>
                           )}
-                        </button>
+                        </Button>
                       )}
 
                       {/* Reorder button for terminal orders */}
                       {isTerminal && order.items.length > 0 && (
-                        <button
-                          type="button"
+                        <Button
+                          variant="outline"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleReorder(order);
                           }}
-                          className="w-full h-12 rounded-xl transition-all active:scale-[0.98] flex items-center justify-center gap-2 bg-white border border-[#EEEEEE] text-[#1A1A1A] text-[15px] font-semibold"
+                          className="w-full h-12 rounded-xl bg-white border-[#EEEEEE] text-[#1A1A1A] text-[15px] font-semibold"
                         >
                           <RotateCcw className="w-4 h-4" />
                           {t('reorder')}
-                        </button>
+                        </Button>
                       )}
                     </div>
                   </div>
