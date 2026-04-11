@@ -179,7 +179,7 @@ export default function DashboardRecentOrders({
       {/* Stock Alerts */}
       {showStock && (
         <div
-          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 md:col-span-3' : ''}`}
+          className={`overflow-hidden bg-app-card border border-app-border rounded-2xl hover:border-app-border-hover transition-colors flex flex-col ${!showOrders ? 'col-span-1 @md:col-span-3' : ''}`}
         >
           <div className="flex items-center justify-between px-6 py-5 border-b border-app-border shrink-0">
             <div className="flex items-center gap-2">

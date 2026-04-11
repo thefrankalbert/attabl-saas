@@ -186,27 +186,14 @@ function HeaderBar({
 }) {
   return (
     <div
+      className="h-14 px-4 flex items-center justify-between"
       style={{
-        height: 56,
-        paddingLeft: 16,
-        paddingRight: 16,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
         background: C.background,
       }}
     >
       <button
         onClick={onLocationPress}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 6,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0,
-        }}
+        className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer p-0"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -215,9 +202,8 @@ function HeaderBar({
           />
         </svg>
         <span
+          className="text-[15px] font-semibold"
           style={{
-            fontSize: 15,
-            fontWeight: 600,
             color: C.textPrimary,
           }}
         >
@@ -236,15 +222,8 @@ function HeaderBar({
 
       <button
         onClick={onAvatarPress}
+        className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-none cursor-pointer p-0"
         style={{
-          width: 40,
-          height: 40,
-          borderRadius: 50,
-          overflow: 'hidden',
-          flexShrink: 0,
-          border: 'none',
-          cursor: 'pointer',
-          padding: 0,
           background: C.surfaceAlt,
         }}
       >
@@ -258,15 +237,9 @@ function HeaderBar({
           />
         ) : (
           <span
+            className="text-base font-bold flex items-center justify-center w-full h-full"
             style={{
-              fontSize: 16,
-              fontWeight: 700,
               color: C.textMuted,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              height: '100%',
             }}
           >
             {tenantName.charAt(0).toUpperCase()}
@@ -282,25 +255,18 @@ function SearchBar({ placeholder, onClick }: { placeholder: string; onClick: () 
   return (
     <button
       onClick={onClick}
+      className="flex items-center gap-2 h-12 mt-2 mx-4 px-4 rounded-[10px] border-none cursor-pointer w-[calc(100%-32px)]"
       style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 8,
-        height: 48,
-        margin: '8px 16px 0',
-        padding: '0 16px',
         background: C.surfaceAlt,
-        borderRadius: 10,
-        border: 'none',
-        cursor: 'pointer',
-        width: 'calc(100% - 32px)',
       }}
     >
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <circle cx="11" cy="11" r="7" stroke={C.textMuted} strokeWidth="2" />
         <path d="M16 16l4 4" stroke={C.textMuted} strokeWidth="2" strokeLinecap="round" />
       </svg>
-      <span style={{ fontSize: 14, color: C.textMuted }}>{placeholder}</span>
+      <span className="text-sm" style={{ color: C.textMuted }}>
+        {placeholder}
+      </span>
     </button>
   );
 }
@@ -352,7 +318,7 @@ function PromoBanner({
   if (slides.length === 0) return null;
 
   return (
-    <div style={{ marginTop: 20 }}>
+    <div className="mt-5">
       <div
         ref={scrollRef}
         onScroll={() => {
@@ -360,30 +326,16 @@ function PromoBanner({
           const idx = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
           setActiveIdx(idx);
         }}
+        className="flex overflow-x-auto snap-x snap-mandatory px-4 gap-3 scrollbar-hide"
         style={{
-          display: 'flex',
-          overflowX: 'auto',
-          scrollSnapType: 'x mandatory',
-          paddingLeft: 16,
-          paddingRight: 16,
-          gap: 12,
           scrollbarWidth: 'none',
           msOverflowStyle: 'none',
         }}
-        className="scrollbar-hide"
       >
         {slides.map((slide, i) => (
           <div
             key={i}
-            style={{
-              minWidth: 'calc(100% - 32px)',
-              scrollSnapAlign: 'start',
-              height: 160,
-              borderRadius: 12,
-              overflow: 'hidden',
-              position: 'relative',
-              flexShrink: 0,
-            }}
+            className="min-w-[calc(100%-32px)] snap-start h-40 rounded-xl overflow-hidden relative shrink-0"
           >
             {slide.imageUrl ? (
               <Image
@@ -397,20 +349,17 @@ function PromoBanner({
               <div style={{ width: '100%', height: '100%', background: C.primary }} />
             )}
             <div
+              className="absolute inset-0"
               style={{
-                position: 'absolute',
-                inset: 0,
                 background: 'linear-gradient(to top, rgba(0,0,0,0.5), transparent)',
               }}
             />
-            <div style={{ position: 'absolute', bottom: 16, left: 16, zIndex: 2 }}>
+            <div className="absolute bottom-4 left-4 z-[2]">
               {slide.label && (
                 <span
+                  className="text-[11px] font-medium tracking-[1px]"
                   style={{
-                    fontSize: 11,
-                    fontWeight: 500,
                     color: C.textOnPrimary,
-                    letterSpacing: 1,
                   }}
                 >
                   {slide.label}
@@ -418,12 +367,9 @@ function PromoBanner({
               )}
               {slide.title && (
                 <p
+                  className="text-xl font-bold mt-1 leading-[1.4]"
                   style={{
-                    fontSize: 20,
-                    fontWeight: 700,
                     color: C.textOnPrimary,
-                    marginTop: 4,
-                    lineHeight: 1.4,
                   }}
                 >
                   {slide.title}
@@ -434,16 +380,14 @@ function PromoBanner({
         ))}
       </div>
       {slides.length > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginTop: 12 }}>
+        <div className="flex justify-center gap-1.5 mt-3">
           {slides.map((_, i) => (
             <div
               key={i}
+              className="h-1.5 rounded-[3px] transition-all duration-200 ease-in-out"
               style={{
                 width: activeIdx === i ? 20 : 6,
-                height: 6,
-                borderRadius: 3,
                 background: activeIdx === i ? C.primary : C.divider,
-                transition: 'all 0.2s ease',
               }}
             />
           ))}
@@ -464,20 +408,11 @@ function SectionHeader({
   seeAllLabel?: string;
 }) {
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: '20px 16px 12px',
-      }}
-    >
+    <div className="flex justify-between items-center pt-5 px-4 pb-3">
       <h2
+        className="text-xl font-bold m-0"
         style={{
-          fontSize: 20,
-          fontWeight: 700,
           color: C.textPrimary,
-          margin: 0,
         }}
       >
         {title}
@@ -485,14 +420,9 @@ function SectionHeader({
       {onSeeAll && seeAllLabel && (
         <button
           onClick={onSeeAll}
+          className="text-sm font-semibold bg-transparent border-none cursor-pointer p-0"
           style={{
-            fontSize: 14,
-            fontWeight: 600,
             color: C.primary,
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            padding: 0,
           }}
         >
           {seeAllLabel}
@@ -506,17 +436,11 @@ function SectionHeader({
 function HScroll({ children }: { children: React.ReactNode }) {
   return (
     <div
+      className="flex overflow-x-auto gap-3 px-4 pb-1 scrollbar-hide"
       style={{
-        display: 'flex',
-        overflowX: 'auto',
-        gap: 12,
-        paddingLeft: 16,
-        paddingRight: 16,
-        paddingBottom: 4,
         scrollbarWidth: 'none',
         msOverflowStyle: 'none',
       }}
-      className="scrollbar-hide"
     >
       {children}
     </div>
@@ -531,25 +455,15 @@ function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: 
   return (
     <button
       onClick={onClick}
+      className="w-60 shrink-0 rounded-xl overflow-hidden cursor-pointer p-0 text-left flex flex-col"
       style={{
-        width: 240,
-        flexShrink: 0,
         background: C.surface,
         border: `1px solid ${C.divider}`,
-        borderRadius: 12,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        padding: 0,
-        textAlign: 'left',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       <div
+        className="w-full h-[140px] relative"
         style={{
-          width: '100%',
-          height: 140,
-          position: 'relative',
           background: C.surfaceAlt,
         }}
       >
@@ -563,47 +477,32 @@ function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: 
           />
         ) : (
           <div
+            className="w-full h-full flex items-center justify-center text-[32px] font-bold"
             style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
               color: C.textMuted,
-              fontSize: 32,
-              fontWeight: 700,
             }}
           >
             {name.charAt(0).toUpperCase()}
           </div>
         )}
       </div>
-      <div style={{ padding: '12px 14px 14px' }}>
+      <div className="py-3 px-3.5 pb-3.5">
         <p
+          className="text-base font-bold m-0 overflow-hidden text-ellipsis whitespace-nowrap"
           style={{
-            fontSize: 16,
-            fontWeight: 700,
             color: C.textPrimary,
-            margin: 0,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
           }}
         >
           {name}
         </p>
         {desc && (
           <p
+            className="text-[13px] font-normal mt-1 overflow-hidden leading-[1.4]"
             style={{
-              fontSize: 13,
-              fontWeight: 400,
               color: C.textSecondary,
-              margin: '4px 0 0',
-              overflow: 'hidden',
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
-              lineHeight: 1.4,
               minHeight: 'calc(1.4em * 2)',
             }}
           >
@@ -634,40 +533,20 @@ function CategoryGrid({
   const hasMore = categories.length > 8;
 
   return (
-    <div style={{ padding: '0 16px' }}>
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(4, 1fr)',
-          gap: 12,
-        }}
-      >
+    <div className="px-4">
+      <div className="grid grid-cols-4 gap-3">
         {visible.map((cat) => {
           const label = tr(lang, cat.name, cat.name_en);
           return (
             <button
               key={cat.id}
               onClick={() => onSelect(cat)}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: 6,
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                padding: 0,
-              }}
+              className="flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer p-0"
             >
               <div
+                className="w-full aspect-square rounded-xl flex items-center justify-center"
                 style={{
-                  width: '100%',
-                  aspectRatio: '1 / 1',
                   background: C.surfaceAlt,
-                  borderRadius: 12,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
                 }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -681,15 +560,9 @@ function CategoryGrid({
                 />
               </div>
               <span
+                className="text-[11px] font-medium text-center overflow-hidden text-ellipsis whitespace-nowrap max-w-full"
                 style={{
-                  fontSize: 11,
-                  fontWeight: 500,
                   color: C.textPrimary,
-                  textAlign: 'center',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '100%',
                 }}
               >
                 {label}
@@ -701,17 +574,9 @@ function CategoryGrid({
       {hasMore && (
         <button
           onClick={onSeeAll}
+          className="block mt-3 mx-auto bg-transparent border-none text-sm font-semibold cursor-pointer"
           style={{
-            display: 'block',
-            marginTop: 12,
-            marginLeft: 'auto',
-            marginRight: 'auto',
-            background: 'none',
-            border: 'none',
             color: C.primary,
-            fontSize: 14,
-            fontWeight: 600,
-            cursor: 'pointer',
           }}
         >
           {seeAllLabel}
@@ -746,23 +611,15 @@ function FeaturedItemCard({
   return (
     <div
       onClick={onPress}
+      className="w-[180px] shrink-0 rounded-xl overflow-hidden cursor-pointer flex flex-col"
       style={{
-        width: 180,
-        flexShrink: 0,
         background: C.surface,
         border: `1px solid ${C.divider}`,
-        borderRadius: 12,
-        overflow: 'hidden',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
       }}
     >
       <div
+        className="w-full h-[140px] relative"
         style={{
-          width: '100%',
-          height: 140,
-          position: 'relative',
           background: C.surfaceAlt,
         }}
       >
@@ -775,15 +632,7 @@ function FeaturedItemCard({
             style={{ objectFit: 'cover' }}
           />
         ) : (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-          >
+          <div className="w-full h-full flex items-center justify-center">
             <svg
               width="32"
               height="32"
@@ -798,17 +647,10 @@ function FeaturedItemCard({
         )}
         {badge === 'new' && (
           <span
+            className="absolute top-2 left-2 text-[11px] font-bold py-[3px] px-2 rounded-lg tracking-[0.5px]"
             style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
               background: C.primary,
               color: C.textOnPrimary,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 8,
-              letterSpacing: 0.5,
             }}
           >
             {lang === 'en' ? 'New' : 'Nouveau'}
@@ -816,17 +658,10 @@ function FeaturedItemCard({
         )}
         {badge === 'promo' && (
           <span
+            className="absolute top-2 left-2 text-[11px] font-bold py-[3px] px-2 rounded-lg tracking-[0.5px]"
             style={{
-              position: 'absolute',
-              top: 8,
-              left: 8,
               background: C.promo,
               color: C.textOnPrimary,
-              fontSize: 11,
-              fontWeight: 700,
-              padding: '3px 8px',
-              borderRadius: 8,
-              letterSpacing: 0.5,
             }}
           >
             {lang === 'en' ? 'Deal' : 'Offre'}
@@ -838,19 +673,9 @@ function FeaturedItemCard({
             onAdd();
           }}
           aria-label={t('addShort')}
+          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full border-none cursor-pointer flex items-center justify-center"
           style={{
-            position: 'absolute',
-            bottom: -8,
-            right: 8,
-            width: 28,
-            height: 28,
-            borderRadius: 50,
             background: C.primary,
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
           }}
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
@@ -863,33 +688,26 @@ function FeaturedItemCard({
           </svg>
         </button>
       </div>
-      <div
-        style={{ padding: 12, paddingTop: 16, display: 'flex', flexDirection: 'column', gap: 4 }}
-      >
+      <div className="p-3 pt-4 flex flex-col gap-1">
         <p
+          className="text-sm font-semibold m-0 overflow-hidden leading-[19.6px]"
           style={{
-            fontSize: 14,
-            fontWeight: 600,
             color: C.textPrimary,
-            margin: 0,
-            overflow: 'hidden',
             display: '-webkit-box',
             WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical',
-            lineHeight: '19.6px',
             minHeight: '39.2px',
           }}
         >
           {name}
         </p>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+        <div className="flex items-center gap-1">
           <svg width="12" height="12" viewBox="0 0 12 12" fill={C.rating}>
             <path d="M6 0l1.76 3.58L12 4.16 8.88 7.1l.74 4.32L6 9.27 2.38 11.42l.74-4.32L0 4.16l4.24-.58z" />
           </svg>
           <span
+            className="text-[13px] font-medium"
             style={{
-              fontSize: 13,
-              fontWeight: 500,
               color: C.textPrimary,
             }}
           >
@@ -897,11 +715,9 @@ function FeaturedItemCard({
           </span>
         </div>
         <p
+          className="text-[15px] font-bold m-0"
           style={{
-            fontSize: 15,
-            fontWeight: 700,
             color: C.textPrimary,
-            margin: 0,
           }}
         >
           {price}
@@ -932,48 +748,39 @@ function FloatingCartBar({
     >
       <Link
         href={href}
-        className="inline-flex items-center gap-2.5 px-4 no-underline"
+        className="inline-flex items-center gap-2.5 px-4 no-underline rounded-full h-12 max-w-[calc(100%-32px)]"
         style={{
           backgroundColor: C.cartBg,
-          borderRadius: '999px',
-          height: '48px',
           color: C.textOnPrimary,
           boxShadow: '0 4px 12px rgba(0,0,0,0.18)',
-          maxWidth: 'calc(100% - 32px)',
         }}
       >
         <ShoppingBag size={20} strokeWidth={2} color={C.textOnPrimary} />
         <span
+          className="text-sm font-semibold whitespace-nowrap"
           style={{
-            fontSize: 14,
-            fontWeight: 600,
             color: C.textOnPrimary,
-            whiteSpace: 'nowrap',
           }}
         >
           {viewCartLabel}
         </span>
         <span
+          className="text-sm font-bold whitespace-nowrap"
           style={{
-            fontSize: 14,
-            fontWeight: 700,
             color: C.textOnPrimary,
-            whiteSpace: 'nowrap',
           }}
         >
           {totalItems}
         </span>
         <span
           aria-hidden="true"
-          className="inline-block rounded-full"
-          style={{ width: 5, height: 5, backgroundColor: C.textOnPrimary }}
+          className="inline-block rounded-full w-[5px] h-[5px]"
+          style={{ backgroundColor: C.textOnPrimary }}
         />
         <span
+          className="text-sm font-bold whitespace-nowrap"
           style={{
-            fontSize: 14,
-            fontWeight: 700,
             color: C.textOnPrimary,
-            whiteSpace: 'nowrap',
           }}
         >
           {totalPrice}
@@ -1037,7 +844,7 @@ function TenantInfoSheet({
               type="button"
               onClick={onClose}
               className="w-9 h-9 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: C.surfaceAlt, border: 'none', cursor: 'pointer' }}
+              style={{ backgroundColor: C.surfaceAlt }}
               aria-label="Fermer"
             >
               <X size={18} color={C.textPrimary} />
@@ -1047,15 +854,9 @@ function TenantInfoSheet({
           {/* Hero: large logo + name */}
           <div className="flex-shrink-0 flex flex-col items-center px-6 pb-4">
             <div
+              className="w-24 h-24 rounded-3xl overflow-hidden flex items-center justify-center"
               style={{
-                width: 96,
-                height: 96,
-                borderRadius: 24,
-                overflow: 'hidden',
                 backgroundColor: C.surfaceAlt,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
               }}
             >
               {tenant.logo_url ? (
@@ -1068,9 +869,8 @@ function TenantInfoSheet({
                 />
               ) : (
                 <span
+                  className="text-4xl font-bold"
                   style={{
-                    fontSize: 36,
-                    fontWeight: 700,
                     color: C.textMuted,
                   }}
                 >
@@ -1079,17 +879,15 @@ function TenantInfoSheet({
               )}
             </div>
             <h2
-              className="mt-4 text-center font-bold"
-              style={{ fontSize: 24, lineHeight: '32px', color: C.textPrimary }}
+              className="mt-4 text-center font-bold text-2xl leading-[32px]"
+              style={{ color: C.textPrimary }}
             >
               {tenant.name}
             </h2>
             {tenant.establishment_type && (
               <p
-                className="mt-1 text-center font-medium uppercase"
+                className="mt-1 text-center font-medium uppercase text-[11px] tracking-[1px]"
                 style={{
-                  fontSize: 11,
-                  letterSpacing: '1px',
                   color: C.textMuted,
                 }}
               >
@@ -1101,10 +899,7 @@ function TenantInfoSheet({
           {/* Body: description + contact rows */}
           <div className="flex-1 overflow-y-auto px-6 pb-6">
             {tenant.description && (
-              <p
-                className="mt-2"
-                style={{ fontSize: 15, lineHeight: '22px', color: C.textSecondary }}
-              >
+              <p className="mt-2 text-[15px] leading-[22px]" style={{ color: C.textSecondary }}>
                 {tenant.description}
               </p>
             )}
@@ -1114,23 +909,16 @@ function TenantInfoSheet({
               {addressLine && (
                 <div className="flex items-start gap-3">
                   <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 999,
                       backgroundColor: C.surfaceAlt,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
                     }}
                   >
                     <MapPin size={16} color={C.textPrimary} />
                   </div>
                   <span
+                    className="text-sm leading-9"
                     style={{
-                      fontSize: 14,
-                      lineHeight: '36px',
                       color: C.textPrimary,
                     }}
                   >
@@ -1141,24 +929,17 @@ function TenantInfoSheet({
               {tenant.phone && (
                 <a href={`tel:${tenant.phone}`} className="flex items-center gap-3 no-underline">
                   <div
+                    className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: 999,
                       backgroundColor: C.surfaceAlt,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
                     }}
                   >
                     <Phone size={16} color={C.textPrimary} />
                   </div>
                   <span
+                    className="text-sm font-semibold"
                     style={{
-                      fontSize: 14,
                       color: C.textPrimary,
-                      fontWeight: 600,
                     }}
                   >
                     {tenant.phone}
@@ -1185,8 +966,8 @@ function TenantInfoSheet({
                       <Building2 size={16} color={C.textPrimary} />
                     </div>
                     <span
+                      className="text-sm"
                       style={{
-                        fontSize: 14,
                         color: C.textPrimary,
                       }}
                     >
@@ -1296,15 +1077,8 @@ export default function ClientMenuPage({
 
   return (
     <div
-      className="tenant-client"
+      className="tenant-client w-full max-w-[430px] mx-auto h-full relative flex flex-col"
       style={{
-        width: '100%',
-        maxWidth: 430,
-        margin: '0 auto',
-        height: '100%',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
         background: C.background,
       }}
     >
@@ -1316,10 +1090,8 @@ export default function ClientMenuPage({
 
       {/* Scrollable content */}
       <div
+        className="flex-1 overflow-y-auto pb-20"
         style={{
-          flex: 1,
-          overflowY: 'auto',
-          paddingBottom: 80,
           paddingTop: 'env(safe-area-inset-top, 0px)',
         }}
       >

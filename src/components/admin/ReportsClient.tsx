@@ -288,7 +288,7 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* ── Period pills ── */}
-        <div className="flex items-center gap-1.5 lg:gap-2.5 xl:gap-3 overflow-x-auto pb-0.5">
+        <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
             <button
               key={pill.value}

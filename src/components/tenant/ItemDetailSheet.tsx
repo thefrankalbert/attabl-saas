@@ -207,7 +207,7 @@ export default function ItemDetailSheet({
           >
             {/* Hero image - flex-shrink-0 so it doesn't squeeze, sized for no-scroll fit */}
             <div className="flex-shrink-0">
-              <div className="relative h-[200px] w-full" style={{ backgroundColor: '#F6F6F6' }}>
+              <div className="relative h-[200px] w-full bg-[#F6F6F6]">
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
@@ -220,17 +220,16 @@ export default function ItemDetailSheet({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Utensils className="h-12 w-12" style={{ color: '#B0B0B0' }} />
+                    <Utensils className="h-12 w-12 text-[#B0B0B0]" />
                   </div>
                 )}
                 {/* Back button - top-left, full-page style */}
                 <button
                   onClick={onClose}
-                  className="absolute top-3 left-3 z-10 flex items-center justify-center rounded-full bg-white transition-colors active:bg-neutral-100"
-                  style={{ width: 36, height: 36, border: '1px solid #EEEEEE' }}
+                  className="absolute top-3 left-3 z-10 flex items-center justify-center rounded-full bg-white transition-colors active:bg-neutral-100 w-9 h-9 border border-[#EEEEEE]"
                   aria-label="Retour"
                 >
-                  <ChevronLeft className="h-5 w-5" style={{ color: '#1A1A1A' }} />
+                  <ChevronLeft className="h-5 w-5 text-[#1A1A1A]" />
                 </button>
               </div>
             </div>
@@ -240,92 +239,51 @@ export default function ItemDetailSheet({
               <div className="px-6 pb-3 pt-4">
                 {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #06C167 */}
                 {category && (
-                  <p
-                    className="font-medium uppercase"
-                    style={{
-                      fontSize: 11,
-                      lineHeight: '15.4px',
-                      letterSpacing: '1px',
-                      color: '#1A1A1A',
-                    }}
-                  >
+                  <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-[#1A1A1A]">
                     {category}
                   </p>
                 )}
 
                 {/* Name - prominent title on full page */}
-                <h2
-                  className="mt-2 font-bold"
-                  style={{ fontSize: 24, lineHeight: '32px', color: '#1A1A1A' }}
-                >
+                <h2 className="mt-2 font-bold text-2xl leading-[32px] text-[#1A1A1A]">
                   {getTranslatedContent(language, item.name, item.name_en)}
                 </h2>
 
                 {/* Description - full text, readable */}
                 {(item.description || item.description_en) && (
-                  <p
-                    className="mt-2 font-normal"
-                    style={{ fontSize: 15, lineHeight: '22px', color: '#737373' }}
-                  >
+                  <p className="mt-2 font-normal text-[15px] leading-[22px] text-[#737373]">
                     {getTranslatedContent(language, item.description || '', item.description_en)}
                   </p>
                 )}
 
                 {/* Price (when no variants) - DESIGN.MD: price #1A1A1A (NOT green) */}
                 {!hasVariants && (
-                  <p
-                    className="mt-2 font-bold"
-                    style={{ fontSize: 15, lineHeight: '21px', color: '#1A1A1A' }}
-                  >
+                  <p className="mt-2 font-bold text-[15px] leading-[21px] text-[#1A1A1A]">
                     {resolveAndFormatPrice(item.price, item.prices, currency)}
                   </p>
                 )}
 
                 {/* Divider - compacted */}
-                <div className="my-3" style={{ height: 1, backgroundColor: '#EEEEEE' }} />
+                <div className="my-3 h-px bg-[#EEEEEE]" />
 
                 {/* Tags row - diet badges + allergens */}
                 {(item.is_vegetarian || item.is_spicy || hasAllergens) && (
                   <>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.is_vegetarian && (
-                        <span
-                          className="inline-flex items-center gap-1 px-2.5 py-1 font-medium"
-                          style={{
-                            fontSize: 11,
-                            borderRadius: 8,
-                            backgroundColor: '#F6F6F6',
-                            color: '#1A1A1A',
-                          }}
-                        >
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#1A1A1A]">
                           <Leaf className="h-3 w-3" />
                           {t('vegetarian')}
                         </span>
                       )}
                       {item.is_spicy && (
-                        <span
-                          className="inline-flex items-center gap-1 px-2.5 py-1 font-medium"
-                          style={{
-                            fontSize: 11,
-                            borderRadius: 8,
-                            backgroundColor: '#F6F6F6',
-                            color: '#FF3008',
-                          }}
-                        >
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#FF3008]">
                           <Flame className="h-3 w-3" />
                           {t('spicy')}
                         </span>
                       )}
                       {hasAllergens && (
-                        <span
-                          className="inline-flex items-center gap-1 px-2.5 py-1 font-medium"
-                          style={{
-                            fontSize: 11,
-                            borderRadius: 8,
-                            backgroundColor: '#F6F6F6',
-                            color: '#FFB800',
-                          }}
-                        >
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#FFB800]">
                           <AlertTriangle className="h-3 w-3" />
                           {t('allergenWarning')}
                         </span>
@@ -334,13 +292,11 @@ export default function ItemDetailSheet({
 
                     {/* Allergen detail list */}
                     {hasAllergens && (
-                      <p className="mt-1.5" style={{ fontSize: 12, color: '#FFB800' }}>
-                        {item.allergens!.join(', ')}
-                      </p>
+                      <p className="mt-1.5 text-xs text-[#FFB800]">{item.allergens!.join(', ')}</p>
                     )}
 
                     {/* Divider */}
-                    <div className="my-3" style={{ height: 1, backgroundColor: '#EEEEEE' }} />
+                    <div className="my-3 h-px bg-[#EEEEEE]" />
                   </>
                 )}
 
@@ -348,9 +304,7 @@ export default function ItemDetailSheet({
                 {hasVariants && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold" style={{ fontSize: 14, color: '#1A1A1A' }}>
-                        {t('size')}
-                      </h3>
+                      <h3 className="mb-2 font-semibold text-sm text-[#1A1A1A]">{t('size')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .price_variants!.sort((a, b) => a.display_order - b.display_order)
@@ -374,16 +328,10 @@ export default function ItemDetailSheet({
                                     }}
                                   >
                                     {isActive && (
-                                      <div
-                                        className="h-2.5 w-2.5 rounded-full"
-                                        style={{ backgroundColor: '#1A1A1A' }}
-                                      />
+                                      <div className="h-2.5 w-2.5 rounded-full bg-[#1A1A1A]" />
                                     )}
                                   </div>
-                                  <span
-                                    className="font-medium"
-                                    style={{ fontSize: 14, color: '#1A1A1A' }}
-                                  >
+                                  <span className="font-medium text-sm text-[#1A1A1A]">
                                     {getTranslatedContent(
                                       language,
                                       variant.variant_name_fr,
@@ -392,10 +340,7 @@ export default function ItemDetailSheet({
                                   </span>
                                 </div>
                                 {/* DESIGN.MD: price is #1A1A1A, NOT green */}
-                                <span
-                                  className="font-bold"
-                                  style={{ fontSize: 14, color: '#1A1A1A' }}
-                                >
+                                <span className="font-bold text-sm text-[#1A1A1A]">
                                   {resolveAndFormatPrice(variant.price, variant.prices, currency)}
                                 </span>
                               </button>
@@ -405,7 +350,7 @@ export default function ItemDetailSheet({
                     </div>
 
                     {/* Divider */}
-                    <div className="my-3" style={{ height: 1, backgroundColor: '#EEEEEE' }} />
+                    <div className="my-3 h-px bg-[#EEEEEE]" />
                   </>
                 )}
 
@@ -413,9 +358,7 @@ export default function ItemDetailSheet({
                 {hasModifiers && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold" style={{ fontSize: 14, color: '#1A1A1A' }}>
-                        {t('extras')}
-                      </h3>
+                      <h3 className="mb-2 font-semibold text-sm text-[#1A1A1A]">{t('extras')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .modifiers!.filter((m) => m.is_available)
@@ -442,10 +385,7 @@ export default function ItemDetailSheet({
                                   >
                                     {isActive && <Check className="h-3 w-3 text-white" />}
                                   </div>
-                                  <span
-                                    className="font-medium"
-                                    style={{ fontSize: 14, color: '#1A1A1A' }}
-                                  >
+                                  <span className="font-medium text-sm text-[#1A1A1A]">
                                     {getTranslatedContent(
                                       language,
                                       modifier.name,
@@ -454,10 +394,7 @@ export default function ItemDetailSheet({
                                   </span>
                                 </div>
                                 {modifier.price > 0 && (
-                                  <span
-                                    className="font-medium"
-                                    style={{ fontSize: 14, color: '#737373' }}
-                                  >
+                                  <span className="font-medium text-sm text-[#737373]">
                                     +
                                     {resolveAndFormatPrice(
                                       modifier.price,
@@ -473,53 +410,39 @@ export default function ItemDetailSheet({
                     </div>
 
                     {/* Divider */}
-                    <div className="my-3" style={{ height: 1, backgroundColor: '#EEEEEE' }} />
+                    <div className="my-3 h-px bg-[#EEEEEE]" />
                   </>
                 )}
 
                 {/* --- Quantity selector - compact pill, LEFT-aligned, above instructions --- */}
                 <div className="mb-3 flex justify-start">
-                  <div
-                    className="inline-flex items-center"
-                    style={{
-                      height: 40,
-                      borderRadius: 999,
-                      border: '1px solid #EEEEEE',
-                      backgroundColor: '#F6F6F6',
-                      padding: '0 4px',
-                    }}
-                  >
+                  <div className="inline-flex items-center h-10 rounded-full border border-[#EEEEEE] bg-[#F6F6F6] px-1">
                     <button
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      className="flex items-center justify-center transition-colors active:opacity-60 disabled:opacity-40"
-                      style={{ width: 36, height: 36, background: 'transparent', border: 'none' }}
+                      className="flex items-center justify-center transition-colors active:opacity-60 disabled:opacity-40 w-9 h-9 bg-transparent border-none"
                       disabled={quantity <= 1}
                       aria-label="Diminuer la quantite"
                     >
-                      <Minus className="h-4 w-4" style={{ color: '#1A1A1A' }} />
+                      <Minus className="h-4 w-4 text-[#1A1A1A]" />
                     </button>
 
-                    <span
-                      className="font-bold text-center"
-                      style={{ fontSize: 16, color: '#1A1A1A', minWidth: 32 }}
-                    >
+                    <span className="font-bold text-center text-base text-[#1A1A1A] min-w-8">
                       {quantity}
                     </span>
 
                     <button
                       onClick={() => setQuantity((q) => q + 1)}
-                      className="flex items-center justify-center transition-colors active:opacity-60"
-                      style={{ width: 36, height: 36, background: 'transparent', border: 'none' }}
+                      className="flex items-center justify-center transition-colors active:opacity-60 w-9 h-9 bg-transparent border-none"
                       aria-label="Augmenter la quantite"
                     >
-                      <Plus className="h-4 w-4" style={{ color: '#1A1A1A' }} />
+                      <Plus className="h-4 w-4 text-[#1A1A1A]" />
                     </button>
                   </div>
                 </div>
 
                 {/* --- Special instructions (pushed down by quantity selector) --- */}
                 <div>
-                  <h3 className="mb-1.5 font-semibold" style={{ fontSize: 13, color: '#1A1A1A' }}>
+                  <h3 className="mb-1.5 font-semibold text-[13px] text-[#1A1A1A]">
                     {t('specialInstructions')}
                   </h3>
                   <textarea
@@ -527,13 +450,7 @@ export default function ItemDetailSheet({
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}
                     rows={1}
-                    className="w-full resize-none rounded-xl border px-3 py-2 font-normal focus:outline-none focus:ring-0"
-                    style={{
-                      fontSize: 13,
-                      color: '#1A1A1A',
-                      borderColor: '#EEEEEE',
-                      backgroundColor: '#F6F6F6',
-                    }}
+                    className="w-full resize-none rounded-xl border border-[#EEEEEE] px-3 py-2 font-normal focus:outline-none focus:ring-0 text-[13px] text-[#1A1A1A] bg-[#F6F6F6]"
                   />
                 </div>
               </div>
@@ -549,13 +466,7 @@ export default function ItemDetailSheet({
               <button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="flex w-full items-center justify-center gap-1.5 font-semibold text-white transition-all active:scale-[0.98]"
-                style={{
-                  height: 52,
-                  borderRadius: 12,
-                  fontSize: 15,
-                  backgroundColor: '#1A1A1A',
-                }}
+                className="flex w-full items-center justify-center gap-1.5 font-semibold text-white transition-all active:scale-[0.98] h-[52px] rounded-xl text-[15px] bg-[#1A1A1A]"
               >
                 {showSuccess ? (
                   <motion.div
@@ -570,12 +481,9 @@ export default function ItemDetailSheet({
                     <span>{t('addToCart')}</span>
                     <span
                       aria-hidden="true"
-                      className="inline-block rounded-full bg-white"
-                      style={{ width: 5, height: 5 }}
+                      className="inline-block rounded-full bg-white w-[5px] h-[5px]"
                     />
-                    <span style={{ color: '#FFFFFF' }}>
-                      {formatDisplayPrice(currentPrice, currency)}
-                    </span>
+                    <span className="text-white">{formatDisplayPrice(currentPrice, currency)}</span>
                   </>
                 )}
               </button>
