@@ -81,20 +81,22 @@ export default function POSClient({ tenantId }: POSClientProps) {
           <>
             {/* Back button + Mobile View Toggle */}
             <div className="flex items-center border-b border-app-border shrink-0">
-              <button
-                type="button"
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => router.back()}
                 className="p-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-app-text-secondary hover:text-app-text transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-              </button>
+              </Button>
 
               {isMobile ? (
                 <div className="flex flex-1">
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={() => setMobileView('products')}
                     className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors',
+                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors rounded-none',
                       mobileView === 'products'
                         ? 'border-b-2 border-accent text-app-text'
                         : 'text-app-text-muted',
@@ -103,11 +105,12 @@ export default function POSClient({ tenantId }: POSClientProps) {
                     {t('searchProduct')
                       ? t('searchProduct').split('...')[0] || 'Produits'
                       : 'Produits'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
                     onClick={() => setMobileView('cart')}
                     className={cn(
-                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative',
+                      'flex-1 py-3 min-h-[44px] text-sm font-semibold transition-colors relative rounded-none',
                       mobileView === 'cart'
                         ? 'border-b-2 border-accent text-app-text'
                         : 'text-app-text-muted',
@@ -119,7 +122,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                         {pos.cart.length}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 </div>
               ) : (
                 <h1 className="text-sm font-semibold text-app-text">{t('title') || 'POS'}</h1>

@@ -296,12 +296,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
               const isActive = filterType === f.value;
               const style = f.value !== 'all' ? MOVEMENT_STYLES[f.value as MovementType] : null;
               return (
-                <button
+                <Button
                   key={f.value}
                   type="button"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setFilterType(f.value)}
                   className={cn(
-                    'inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                    'inline-flex items-center gap-1.5 px-3 py-1.5 h-auto text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
                     isActive
                       ? 'bg-app-text text-app-bg border-app-text shadow-sm'
                       : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
@@ -311,7 +313,7 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                     <span className={cn('w-1.5 h-1.5 rounded-full shrink-0', style.dot)} />
                   )}
                   {f.label}
-                </button>
+                </Button>
               );
             })}
           </div>

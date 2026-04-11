@@ -9,6 +9,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 interface AuditLogEntry {
@@ -315,37 +323,37 @@ export default function AuditLogClient({
           <>
             <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
               {/* Desktop table */}
-              <div className="hidden @md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-app-border/60 bg-app-bg/50">
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+              <div className="hidden @md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-app-border/60 bg-app-bg/50">
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colDate')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colUser')}
-                      </th>
-                      <th className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colAction')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colEntity')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colDetails')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {logs.map((entry) => (
-                      <tr
+                      <TableRow
                         key={entry.id}
                         className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                       >
-                        <td className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
+                        <TableCell className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
                           {formatDate(entry.created_at)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <div>
                             <span className="text-sm text-app-text">
                               {entry.user_email || ' - '}
@@ -356,18 +364,20 @@ export default function AuditLogClient({
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">{actionBadge(entry.action)}</td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-center">
+                          {actionBadge(entry.action)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <span className="text-sm font-medium text-app-text">
                             {entityLabel(entry.entity_type)}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 max-w-xs">{renderChanges(entry)}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="px-4 py-3 max-w-xs">{renderChanges(entry)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile cards */}

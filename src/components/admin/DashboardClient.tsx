@@ -12,6 +12,7 @@ import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
 import { ChevronRight, Clock, ShoppingBag, QrCode, BarChart3, Package } from 'lucide-react';
 import type { CSSProperties } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // Lazy-load recharts for faster initial paint
@@ -430,28 +431,32 @@ export default function DashboardClient(props: DashboardClientProps) {
                   {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
                 </p>
                 <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('revenue')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'revenue'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('revenueLabel')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('orders')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'orders'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('ordersLabel')}
-                  </button>
+                  </Button>
                 </div>
               </div>
               {/* Value + period */}

@@ -260,11 +260,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     const isSelected = selectedItemId === item.id;
 
                     return (
-                      <button
+                      <Button
                         key={item.id}
+                        variant="ghost"
                         onClick={() => handleSelectItem(item.id)}
                         className={cn(
-                          'w-full text-left px-4 py-3 flex items-center justify-between transition-colors',
+                          'w-full text-left px-4 py-3 h-auto flex items-center justify-between transition-colors rounded-none',
                           isSelected
                             ? 'bg-accent-muted border-l-4 border-accent'
                             : 'hover:bg-app-bg border-l-4 border-transparent',
@@ -290,7 +291,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         >
                           {hasRecipe ? t('hasRecipe') : t('noRecipe')}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                   {filteredItems.length === 0 && (
@@ -353,13 +354,15 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                                 </span>
                               </div>
                             </div>
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => removeLine(idx)}
                               title="Supprimer"
-                              className="p-1.5 text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
+                              className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
-                            </button>
+                            </Button>
                           </div>
                         ))}
 
