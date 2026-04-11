@@ -11,6 +11,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -509,17 +516,21 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {tc('unit')}
                     </Label>
-                    <select
+                    <Select
                       value={formUnit}
-                      onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                      onValueChange={(val) => setFormUnit(val as IngredientUnit)}
                     >
-                      {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
-                        <option key={u} value={u}>
-                          {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   {modalMode === 'add' && (
                     <div>
@@ -617,19 +628,28 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                       <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('movementType')}
                       </Label>
-                      <select
+                      <Select
                         value={adjustType}
-                        onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                        onValueChange={(val) => setAdjustType(val as MovementType)}
                       >
-                        {(
-                          ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
-                        ).map((mt) => (
-                          <option key={mt} value={mt}>
-                            {MOVEMENT_TYPE_LABELS[mt].label}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            [
+                              'manual_add',
+                              'manual_remove',
+                              'adjustment',
+                              'opening',
+                            ] as MovementType[]
+                          ).map((mt) => (
+                            <SelectItem key={mt} value={mt}>
+                              {MOVEMENT_TYPE_LABELS[mt].label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
@@ -651,18 +671,24 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                         <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                           {t('supplierOptional')}
                         </Label>
-                        <select
-                          value={adjustSupplierId}
-                          onChange={(e) => setAdjustSupplierId(e.target.value)}
-                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                        <Select
+                          value={adjustSupplierId || '__none__'}
+                          onValueChange={(val) =>
+                            setAdjustSupplierId(val === '__none__' ? '' : val)
+                          }
                         >
-                          <option value=""> - {tc('none')} - </option>
-                          {activeSuppliers.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__"> - {tc('none')} - </SelectItem>
+                            {activeSuppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 

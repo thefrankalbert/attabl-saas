@@ -7,6 +7,7 @@ import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useOrders } from '@/hooks/queries/useOrders';
 import { useReleaseAssignment, useClaimOrder } from '@/hooks/mutations/useAssignment';
 import { UserCheck, ShoppingCart, LogOut, ChevronDown } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils/currency';
 import { createClient } from '@/lib/supabase/client';
 import { useSound } from '@/contexts/SoundContext';
@@ -117,16 +118,17 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                           assignment.table?.table_number ??
                           'Table'}
                       </span>
-                      <button
+                      <Button
+                        variant="ghost"
                         onClick={(e) => {
                           e.stopPropagation();
                           releaseAssignment.mutate(assignment.id);
                         }}
-                        className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-red-500 transition-colors min-h-[44px] min-w-[44px] justify-center touch-manipulation"
+                        className="flex items-center gap-1 text-xs text-app-text-secondary hover:text-red-500 min-h-[44px] min-w-[44px] justify-center touch-manipulation h-auto"
                       >
                         <LogOut className="w-3.5 h-3.5" />
                         {t('release')}
-                      </button>
+                      </Button>
                     </div>
                     <div className="flex items-center justify-between text-sm text-app-text-secondary">
                       <span>{t('activeOrders', { count: tableOrders.length })}</span>
@@ -208,14 +210,15 @@ export default function ServerDashboard({ tenantId, currentServerId, currency = 
                   <span className="text-sm font-medium text-app-text">
                     {formatCurrency(order.total_price + (order.tip_amount || 0), currency)}
                   </span>
-                  <button
+                  <Button
+                    variant="default"
                     onClick={() =>
                       claimOrder.mutate({ orderId: order.id, serverId: currentServerId })
                     }
-                    className="rounded-lg bg-app-text px-3 py-1 text-xs font-semibold text-accent-text hover:bg-app-text transition-colors"
+                    className="rounded-lg bg-app-text px-3 py-1 text-xs font-semibold text-accent-text hover:bg-app-text h-auto"
                   >
                     {t('claimOrder')}
-                  </button>
+                  </Button>
                 </div>
               </div>
             ))}

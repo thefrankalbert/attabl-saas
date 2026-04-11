@@ -9,6 +9,7 @@ import { usePOSData } from '@/hooks/usePOSData';
 import { useContextualShortcuts } from '@/hooks/useContextualShortcuts';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft } from 'lucide-react';
 import POSProductBrowser from '@/components/features/pos/POSProductBrowser';
 import POSCart from '@/components/features/pos/POSCart';
@@ -202,7 +203,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
                   <h3 className="font-bold text-lg text-app-text mb-4">
                     {seg.productionNoteTitle}
                   </h3>
-                  <textarea
+                  <Textarea
                     autoFocus
                     className="w-full h-32 p-3 border border-app-border rounded-lg bg-app-elevated text-app-text placeholder:text-app-text-muted outline-none focus:border-accent/40 resize-none"
                     placeholder={seg.productionNotePlaceholder}

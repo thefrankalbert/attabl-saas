@@ -5,6 +5,7 @@ import { ArrowLeft, Maximize, Minimize, ChefHat, Wine, Search, X } from 'lucide-
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { KDSZoneFilter } from '@/types/admin.types';
 
@@ -75,13 +76,13 @@ export default function KitchenFilters({
         {searchOpen ? (
           <div className="flex items-center gap-1 bg-app-elevated rounded-lg px-2 py-1">
             <Search className="w-4 h-4 text-app-text-muted shrink-0" />
-            <input
+            <Input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56"
+              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56 border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               autoFocus
             />
             <Button
@@ -121,12 +122,13 @@ export default function KitchenFilters({
               { key: 'bar' as const, label: t('zoneBar'), icon: Wine },
             ] as const
           ).map(({ key, label, icon: Icon }) => (
-            <button
+            <Button
               key={key}
               type="button"
+              variant={zoneFilter === key ? 'default' : 'ghost'}
               onClick={() => onZoneFilterChange(key)}
               className={cn(
-                'flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-colors',
+                'flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold tracking-wide h-auto',
                 zoneFilter === key
                   ? 'bg-accent text-accent-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text',
@@ -134,7 +136,7 @@ export default function KitchenFilters({
             >
               {Icon && <Icon className="w-3 h-3" />}
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -148,12 +150,13 @@ export default function KitchenFilters({
               { mode: 'completed' as const, label: t('tabCompleted'), count: completedToday },
             ] as const
           ).map(({ mode, label, count }) => (
-            <button
+            <Button
               key={mode}
               type="button"
+              variant="ghost"
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium transition-all duration-150',
+                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium h-auto',
                 viewMode === mode
                   ? 'bg-app-bg text-app-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text-secondary',
@@ -170,7 +173,7 @@ export default function KitchenFilters({
               >
                 {count}
               </span>
-            </button>
+            </Button>
           ))}
         </nav>
       )}

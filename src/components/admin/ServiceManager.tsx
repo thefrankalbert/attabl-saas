@@ -704,10 +704,11 @@ export default function ServiceManager({ tenantId }: Props) {
               className="flex items-center gap-1 overflow-x-auto"
               style={{ scrollbarWidth: 'none' }}
             >
-              <button
+              <Button
+                variant="ghost"
                 onClick={() => setActiveZoneId(null)}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                   !activeZoneId
                     ? 'text-app-text'
                     : 'text-app-text-muted hover:text-app-text-secondary',
@@ -717,7 +718,7 @@ export default function ServiceManager({ tenantId }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-app-elevated font-bold tabular-nums">
                   {stats.occupied}/{stats.total}
                 </span>
-              </button>
+              </Button>
               {zones.map((zone, idx) => {
                 const zs = zoneStats[zone.id];
                 const isActive = activeZoneId === zone.id;
@@ -730,11 +731,12 @@ export default function ServiceManager({ tenantId }: Props) {
                 ];
                 const dotColor = dotColors[idx % dotColors.length];
                 return (
-                  <button
+                  <Button
                     key={zone.id}
+                    variant="ghost"
                     onClick={() => setActiveZoneId(isActive ? null : zone.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                       isActive
                         ? 'text-app-text'
                         : 'text-app-text-muted hover:text-app-text-secondary',
@@ -747,7 +749,7 @@ export default function ServiceManager({ tenantId }: Props) {
                         {zs.occupied}/{zs.total}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>

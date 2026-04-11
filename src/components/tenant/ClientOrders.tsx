@@ -395,10 +395,11 @@ export default function ClientOrders({
             className="rounded-xl overflow-hidden bg-white border border-[#EEEEEE]"
           >
             {/* Collapsed header */}
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onClick={() => setExpandedOrderId(isExpanded ? null : order.id)}
-              className="w-full text-left p-4"
+              className="w-full text-left p-4 h-auto whitespace-normal rounded-none"
               aria-expanded={isExpanded}
             >
               <div className="flex items-start justify-between gap-3">
@@ -447,7 +448,7 @@ export default function ClientOrders({
                   <OrderTracker status={order.status} createdAt={order.created_at} compact />
                 </div>
               )}
-            </button>
+            </Button>
 
             {/* Expanded details */}
             <AnimatePresence initial={false}>

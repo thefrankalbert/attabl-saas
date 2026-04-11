@@ -7,6 +7,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useIngredients } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -322,17 +329,21 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             className="flex items-start gap-2 p-3 bg-app-bg rounded-lg border border-app-border"
                           >
                             <div className="flex-1 space-y-2">
-                              <select
+                              <Select
                                 value={line.ingredient_id}
-                                onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                onValueChange={(val) => updateLine(idx, 'ingredient_id', val)}
                               >
-                                {ingredients.map((ing) => (
-                                  <option key={ing.id} value={ing.id}>
-                                    {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
-                                  </option>
-                                ))}
-                              </select>
+                                <SelectTrigger className="w-full h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ingredients.map((ing) => (
+                                    <SelectItem key={ing.id} value={ing.id}>
+                                      {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <div className="flex gap-2">
                                 <Input
                                   type="number"

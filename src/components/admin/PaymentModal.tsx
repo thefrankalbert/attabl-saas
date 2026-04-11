@@ -4,6 +4,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Loader2, Coins, CreditCard, Banknote, X, ArrowLeft, Delete } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { createClient } from '@/lib/supabase/client';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -344,7 +345,7 @@ export default function PaymentModal({
               </button>
             </div>
             {showCustomTip && (
-              <input
+              <Input
                 type="number"
                 placeholder="0"
                 value={customTip}

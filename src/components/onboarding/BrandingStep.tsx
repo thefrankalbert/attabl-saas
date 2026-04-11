@@ -4,6 +4,7 @@
 import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -223,7 +224,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <Type className="h-4 w-4 text-app-text-muted" />
                   {t('descriptionLabel')}
                 </Label>
-                <textarea
+                <Textarea
                   id="description"
                   placeholder={t('descriptionPlaceholder')}
                   value={data.description}

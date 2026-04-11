@@ -130,8 +130,7 @@ export default function SettingsIdentity({
     }
   };
 
-  const handleLocaleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newLocale = e.target.value;
+  const handleLocaleChange = (newLocale: string) => {
     document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
     router.refresh();
   };
@@ -314,21 +313,22 @@ export default function SettingsIdentity({
           <Label className="text-sm font-semibold text-app-text">{t('languageSection')}</Label>
           <p className="text-xs text-app-text-secondary">{t('languageDescription')}</p>
           <div className="relative flex items-center max-w-xs">
-            <Globe className="absolute left-2.5 h-3.5 w-3.5 text-app-text-muted pointer-events-none" />
-            <select
-              value={locale}
-              onChange={handleLocaleChange}
-              className="w-full h-10 min-h-[44px] pl-8 pr-3 text-sm bg-app-elevated border border-app-border text-app-text hover:bg-app-hover rounded-lg appearance-none cursor-pointer focus:outline-none focus:ring-2 focus:ring-accent/20 transition-colors"
-            >
-              {locales.map((loc) => {
-                const info = LOCALE_LABELS[loc];
-                return (
-                  <option key={loc} value={loc}>
-                    {info.label}
-                  </option>
-                );
-              })}
-            </select>
+            <Globe className="absolute left-2.5 h-3.5 w-3.5 text-app-text-muted pointer-events-none z-10" />
+            <Select value={locale} onValueChange={handleLocaleChange}>
+              <SelectTrigger className="w-full h-10 min-h-[44px] pl-8 pr-3 text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {locales.map((loc) => {
+                  const info = LOCALE_LABELS[loc];
+                  return (
+                    <SelectItem key={loc} value={loc}>
+                      {info.label}
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>

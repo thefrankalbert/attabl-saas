@@ -6,6 +6,13 @@ import { Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import type { Menu, Venue } from '@/types/admin.types';
 import type { MenuFormData } from '@/hooks/useMenusData';
 
@@ -153,40 +160,46 @@ export default function MenuForm({
           <Label htmlFor="menu-venue" className="text-app-text">
             {t('spaceOptional')}
           </Label>
-          <select
-            id="menu-venue"
-            value={formVenueId || ''}
-            onChange={(e) => setFormVenueId(e.target.value || null)}
+          <Select
+            value={formVenueId || '__none__'}
+            onValueChange={(val) => setFormVenueId(val === '__none__' ? null : val)}
             disabled={formIsShared}
-            className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400 disabled:cursor-not-allowed disabled:bg-app-elevated"
           >
-            <option value="">{t('noSpaceIndependent')}</option>
-            {venues.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.name}
-              </option>
-            ))}
-          </select>
+            <SelectTrigger id="menu-venue" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{t('noSpaceIndependent')}</SelectItem>
+              {venues.map((v) => (
+                <SelectItem key={v.id} value={v.id}>
+                  {v.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className="space-y-1.5">
           <Label htmlFor="menu-parent" className="text-app-text">
             {t('parentMenu')}
           </Label>
-          <select
-            id="menu-parent"
-            value={formParentMenuId || ''}
-            onChange={(e) => setFormParentMenuId(e.target.value || null)}
-            className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
+          <Select
+            value={formParentMenuId || '__none__'}
+            onValueChange={(val) => setFormParentMenuId(val === '__none__' ? null : val)}
           >
-            <option value="">{t('noParentMain')}</option>
-            {menus
-              .filter((m) => m.id !== editingMenu?.id)
-              .map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name}
-                </option>
-              ))}
-          </select>
+            <SelectTrigger id="menu-parent" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">{t('noParentMain')}</SelectItem>
+              {menus
+                .filter((m) => m.id !== editingMenu?.id)
+                .map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {m.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

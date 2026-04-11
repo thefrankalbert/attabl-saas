@@ -7,6 +7,14 @@ import { createClient } from '@/lib/supabase/client';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import {
@@ -227,54 +235,62 @@ export default function AuditLogClient({
           <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
             <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterAction')}
-                </label>
-                <select
-                  value={filterAction}
-                  onChange={(e) => {
-                    setFilterAction(e.target.value);
+                </Label>
+                <Select
+                  value={filterAction || '__all__'}
+                  onValueChange={(val) => {
+                    setFilterAction(val === '__all__' ? '' : val);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
-                  <option value="">{tc('all')}</option>
-                  {ACTIONS.map((a) => (
-                    <option key={a} value={a}>
-                      {t(
-                        `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
-                          | 'actionCreate'
-                          | 'actionUpdate'
-                          | 'actionDelete',
-                      ) || a}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">{tc('all')}</SelectItem>
+                    {ACTIONS.map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {t(
+                          `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
+                            | 'actionCreate'
+                            | 'actionUpdate'
+                            | 'actionDelete',
+                        ) || a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterEntity')}
-                </label>
-                <select
-                  value={filterEntity}
-                  onChange={(e) => {
-                    setFilterEntity(e.target.value);
+                </Label>
+                <Select
+                  value={filterEntity || '__all__'}
+                  onValueChange={(val) => {
+                    setFilterEntity(val === '__all__' ? '' : val);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
-                  <option value="">{tc('all')}</option>
-                  {ENTITY_TYPES.map((e) => (
-                    <option key={e} value={e}>
-                      {entityLabel(e)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">{tc('all')}</SelectItem>
+                    {ENTITY_TYPES.map((e) => (
+                      <SelectItem key={e} value={e}>
+                        {entityLabel(e)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterUser')}
-                </label>
+                </Label>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-app-text-muted" />
                   <Input

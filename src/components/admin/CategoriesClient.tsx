@@ -38,6 +38,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -457,18 +464,18 @@ export default function CategoriesClient({
                 <Label htmlFor="cat-menu" className="text-app-text">
                   {t('menu')}
                 </Label>
-                <select
-                  id="cat-menu"
-                  value={menuId}
-                  onChange={(e) => setMenuId(e.target.value)}
-                  className="w-full rounded-lg border border-app-border bg-transparent text-app-text px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-accent/30"
-                >
-                  {menus.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.name}
-                    </option>
-                  ))}
-                </select>
+                <Select value={menuId} onValueChange={setMenuId}>
+                  <SelectTrigger id="cat-menu" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {menus.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
             {/* Preparation zone selector */}

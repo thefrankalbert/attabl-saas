@@ -431,13 +431,14 @@ export default function ItemsClient({
                       {formatCurrency(item.price, currency)}
                     </p>
                   </div>
-                  <button
+                  <Button
+                    variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleAvailable(item);
                     }}
                     className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold border transition-all shrink-0 whitespace-nowrap',
+                      'px-2.5 py-1 rounded-full text-xs font-semibold shrink-0 whitespace-nowrap h-auto',
                       item.is_available
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                         : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -454,7 +455,7 @@ export default function ItemsClient({
                         {t('exhausted')}
                       </>
                     )}
-                  </button>
+                  </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <button
@@ -689,15 +690,16 @@ export default function ItemsClient({
                 const isCompleted = formStep > step;
                 const labels = [t('stepBasicInfo'), t('stepPricing'), t('stepPhotoDetails')];
                 return (
-                  <button
+                  <Button
                     key={step}
                     type="button"
+                    variant="outline"
                     onClick={() => {
                       // Allow navigating back to completed steps freely
                       if (step < formStep) setFormStep(step);
                     }}
                     className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all',
+                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium h-auto',
                       isActive
                         ? 'bg-accent/10 text-accent border-accent/30'
                         : isCompleted
@@ -718,7 +720,7 @@ export default function ItemsClient({
                       </span>
                     )}
                     <span className="hidden sm:inline">{labels[step - 1]}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -866,23 +868,24 @@ export default function ItemsClient({
                     {ALLERGENS.map((a) => {
                       const selected = allergens.includes(a);
                       return (
-                        <button
+                        <Button
                           key={a}
                           type="button"
+                          variant="outline"
                           onClick={() =>
                             setAllergens((prev) =>
                               selected ? prev.filter((x) => x !== a) : [...prev, a],
                             )
                           }
                           className={cn(
-                            'px-2.5 py-1 rounded-full text-xs font-medium border transition-all',
+                            'px-2.5 py-1 rounded-full text-xs font-medium h-auto',
                             selected
                               ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
                               : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
                           )}
                         >
                           {ta(a)}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>

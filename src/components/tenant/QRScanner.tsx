@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { X, Camera, CameraOff, CheckCircle2, Hash } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { Table } from '@/types/admin.types';
 
@@ -190,12 +191,14 @@ export default function QRScanner({
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
         <h2 className="text-white font-semibold text-lg">{t('title')}</h2>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          className="p-2 rounded-full bg-white/10 hover:bg-white/20"
         >
           <X className="w-5 h-5 text-white" />
-        </button>
+        </Button>
       </div>
 
       {/* Scanner Container */}
@@ -270,23 +273,25 @@ export default function QRScanner({
               </div>
               <div className="flex gap-3 mt-1">
                 {onManualEntry && (
-                  <button
+                  <Button
+                    variant="default"
                     onClick={() => {
                       onClose();
                       onManualEntry();
                     }}
-                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2"
+                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-white/90"
                   >
                     <Hash className="w-4 h-4" />
                     {t('enterManually')}
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  variant="ghost"
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20"
                 >
                   {t('close')}
-                </button>
+                </Button>
               </div>
             </div>
           )}

@@ -69,10 +69,11 @@ export default function UserForm({
     <div className="space-y-4">
       {/* Tab Selector */}
       <div className="flex border-b border-app-border">
-        <button
+        <Button
           type="button"
+          variant="ghost"
           className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+            'flex items-center gap-2 px-4 py-2.5 text-sm rounded-none h-auto',
             activeTab === 'invite'
               ? 'border-b-2 border-accent text-app-text font-medium'
               : 'text-app-text-muted hover:text-app-text-secondary',
@@ -81,11 +82,12 @@ export default function UserForm({
         >
           <Mail className="w-4 h-4" />
           {t('inviteByEmail')}
-        </button>
-        <button
+        </Button>
+        <Button
           type="button"
+          variant="ghost"
           className={cn(
-            'flex items-center gap-2 px-4 py-2.5 text-sm transition-colors',
+            'flex items-center gap-2 px-4 py-2.5 text-sm rounded-none h-auto',
             activeTab === 'direct'
               ? 'border-b-2 border-accent text-app-text font-medium'
               : 'text-app-text-muted hover:text-app-text-secondary',
@@ -94,7 +96,7 @@ export default function UserForm({
         >
           <UserPlus className="w-4 h-4" />
           {t('directCreation')}
-        </button>
+        </Button>
       </div>
 
       {/* Tab Content: Invite by email */}

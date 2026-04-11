@@ -31,6 +31,7 @@ import { getTranslatedContent } from '@/lib/utils/translate';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/tenant/BottomNav';
@@ -912,7 +913,7 @@ export default function CartPage() {
             <div className="flex items-stretch gap-2">
               <div className="flex-1 relative">
                 <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#B0B0B0]" />
-                <input
+                <Input
                   id="promo-input"
                   type="text"
                   value={promoInput}
@@ -1038,7 +1039,7 @@ export default function CartPage() {
                   className="overflow-hidden"
                 >
                   <div className="mt-3">
-                    <input
+                    <Input
                       type="number"
                       inputMode="decimal"
                       min={0}

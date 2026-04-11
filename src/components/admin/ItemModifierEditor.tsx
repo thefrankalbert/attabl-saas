@@ -118,17 +118,18 @@ export default function ItemModifierEditor({
               <span className="text-sm font-bold text-app-text tabular-nums shrink-0">
                 +{mod.price} FCFA
               </span>
-              <button
+              <Button
+                variant="outline"
                 onClick={() => handleToggleAvailable(mod)}
                 className={cn(
-                  'px-2 py-0.5 rounded-full text-[10px] font-bold border transition-all shrink-0',
+                  'px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 h-auto',
                   mod.is_available
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-app-elevated text-app-text-secondary border-app-border',
                 )}
               >
                 {mod.is_available ? t('available') : t('unavailable')}
-              </button>
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

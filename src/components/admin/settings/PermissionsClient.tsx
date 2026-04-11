@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import {
   Table,
@@ -302,14 +303,15 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
                       {roleLabel(role)}
                     </span>
                     {hasOverrides(role) && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => handleRestoreDefaults(role)}
-                        className="inline-flex items-center gap-1 text-[10px] text-app-text-secondary hover:text-app-text transition-colors"
+                        className="inline-flex items-center gap-1 text-[10px] text-app-text-secondary hover:text-app-text h-auto px-1 py-0"
                       >
                         <RotateCcw className="w-2.5 h-2.5" />
                         {t('reset')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </TableHead>
