@@ -12,6 +12,7 @@ import { createInventoryService } from '@/services/inventory.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
+import { verifyOrigin } from '@/lib/csrf';
 
 // Fallback translations for API routes where locale may not be resolved
 const FALLBACK_ERRORS: Record<string, string> = {
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
     t = (key: string) => FALLBACK_ERRORS[key] || key;
   }
   try {
+    // 0. CSRF origin check (public POST endpoint)
+    const originError = verifyOrigin(request);
+    if (originError) return originError;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);

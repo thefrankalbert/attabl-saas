@@ -9,7 +9,7 @@ const withPWA = withPWAInit({
   dest: 'public',
   disable: process.env.NODE_ENV === 'development',
   register: true,
-  skipWaiting: true,
+  skipWaiting: false,
 });
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
@@ -55,23 +55,15 @@ const nextConfig = {
             value: 'max-age=63072000; includeSubDomains; preload',
           },
           {
-            key: 'Content-Security-Policy',
-            value: [
-              "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' https://*.stripe.com https://*.sentry.io",
-              "style-src 'self' 'unsafe-inline'",
-              "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net https://images.unsplash.com",
-              "font-src 'self'",
-              "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.stripe.com https://*.sentry.io",
-              'frame-src https://*.stripe.com',
-              "worker-src 'self' blob:",
-              "manifest-src 'self'",
-              "object-src 'none'",
-              "base-uri 'self'",
-              "form-action 'self'",
-              'upgrade-insecure-requests',
-            ].join('; '),
+            key: 'Cross-Origin-Opener-Policy',
+            value: 'same-origin',
           },
+          {
+            key: 'Cross-Origin-Resource-Policy',
+            value: 'same-origin',
+          },
+          // Content-Security-Policy is now set dynamically in src/proxy.ts
+          // with per-request nonces (replaces 'unsafe-inline' in script-src)
         ],
       },
     ];
