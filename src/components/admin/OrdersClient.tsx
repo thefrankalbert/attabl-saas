@@ -549,7 +549,9 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             {t('selected', { count: selectedIds.size })}
           </span>
           <div className="w-px h-4 bg-app-border" />
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               const ids = Array.from(selectedIds);
               ids.forEach((id) => {
@@ -564,26 +566,30 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               setSelectedIds(new Set());
             }}
             title={t('advanceStatus')}
-            className="p-1.5 rounded text-accent hover:bg-accent-muted transition-colors"
+            className="h-8 w-8 text-accent hover:bg-accent-muted"
           >
             <ChevronRight className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setShowDeleteConfirm(true)}
             title={tc('delete')}
-            className="p-1.5 rounded text-red-400 hover:bg-red-500/15 transition-colors"
+            className="h-8 w-8 text-red-400 hover:bg-red-500/15"
           >
             <Trash2 className="w-4 h-4" />
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setSelectedIds(new Set());
             }}
             title={tc('cancel')}
-            className="p-1.5 rounded text-app-text-muted hover:bg-app-hover transition-colors"
+            className="h-8 w-8 text-app-text-muted"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Bulk delete confirmation dialog */}

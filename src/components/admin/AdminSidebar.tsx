@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { isAdminHome, getTenantUrl } from '@/lib/constants';
@@ -255,11 +256,11 @@ export function AdminSidebar({
 
         {/* Collapse toggle - directly under tenant info */}
         <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleToggleCollapsed}
             className={cn(
-              'w-full flex items-center gap-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden',
+              'w-full gap-3 py-1.5 text-app-text-muted opacity-40 hover:opacity-100 overflow-hidden',
               collapsed ? 'justify-center px-0' : 'px-3',
             )}
             title={collapsed ? t('expand') : t('collapse')}
@@ -270,7 +271,7 @@ export function AdminSidebar({
               <PanelLeftClose className="w-4 h-4 shrink-0" />
             )}
             {!collapsed && <span className="text-xs whitespace-nowrap">{t('collapse')}</span>}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -453,13 +454,14 @@ export function AdminSidebar({
             {/* Logout */}
             <div className="p-1.5 border-t border-app-border">
               <form action="/api/auth/signout" method="post">
-                <button
+                <Button
                   type="submit"
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-status-error hover:bg-status-error-bg transition-colors"
+                  variant="ghost"
+                  className="w-full justify-start gap-3 text-sm text-status-error hover:bg-status-error-bg"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
                   <span>{t('logout')}</span>
-                </button>
+                </Button>
               </form>
             </div>
           </PopoverContent>

@@ -30,6 +30,8 @@ import { cn } from '@/lib/utils';
 import { getTranslatedContent } from '@/lib/utils/translate';
 import { createClient } from '@/lib/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import BottomNav from '@/components/tenant/BottomNav';
 
 // --- Types ---------------------------------------------------
@@ -716,9 +718,9 @@ export default function CartPage() {
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label htmlFor="cart-notes" className="text-[13px] font-semibold text-[#1A1A1A]">
                 {t('cartNotesLabel')}
-              </label>
+              </Label>
               <button
                 type="button"
                 onClick={() => {
@@ -732,7 +734,7 @@ export default function CartPage() {
               </button>
             </div>
             <div className="relative">
-              <textarea
+              <Textarea
                 id="cart-notes"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value.slice(0, NOTES_MAX_LENGTH))}
@@ -875,9 +877,9 @@ export default function CartPage() {
         ) : (
           <section>
             <div className="flex items-center justify-between mb-2">
-              <label htmlFor="promo-input" className="text-[13px] font-semibold text-[#1A1A1A]">
+              <Label htmlFor="promo-input" className="text-[13px] font-semibold text-[#1A1A1A]">
                 {t('promoCode')}
-              </label>
+              </Label>
               <button
                 type="button"
                 onClick={() => {
@@ -963,7 +965,7 @@ export default function CartPage() {
         ) : (
           <section className="bg-white rounded-xl border border-[#EEEEEE] p-4">
             <div className="flex items-center justify-between mb-3">
-              <label className="text-[13px] font-semibold text-[#1A1A1A]">{t('tip')}</label>
+              <Label className="text-[13px] font-semibold text-[#1A1A1A]">{t('tip')}</Label>
               <button
                 type="button"
                 onClick={() => {

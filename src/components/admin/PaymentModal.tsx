@@ -174,13 +174,9 @@ export default function PaymentModal({
       {/* ━━━ HEADER ━━━ */}
       <header className="h-12 border-b border-app-border flex items-center justify-between px-3 sm:px-5 shrink-0">
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-2 -ml-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-secondary hover:text-app-text transition-colors"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose} className="-ml-2">
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Button>
           <h1 className="font-bold text-sm sm:text-base">{t('title')}</h1>
           {finalOrderNum && (
             <span className="text-xs font-mono text-app-text-muted">#{finalOrderNum}</span>
@@ -533,14 +529,14 @@ export default function PaymentModal({
 
           {/* Action Buttons -- always pinned at bottom */}
           <div className="flex gap-2 shrink-0">
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={onClose}
               disabled={isProcessing}
-              className="rounded-lg border border-app-border bg-app-elevated/30 px-4 py-2.5 min-h-[44px] text-sm font-medium text-app-text-secondary hover:bg-app-elevated/60 hover:text-app-text transition-all disabled:opacity-50"
+              className="rounded-lg min-h-[44px]"
             >
               {t('cancel')}
-            </button>
+            </Button>
             <Button
               variant="default"
               onClick={handleProcessPayment}

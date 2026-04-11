@@ -7,6 +7,8 @@ import { actionSubmitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -98,12 +100,12 @@ export default function ContactPage() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label
+                    <Label
                       htmlFor="name"
                       className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                     >
                       {t('labelName')}
-                    </label>
+                    </Label>
                     <input
                       type="text"
                       name="name"
@@ -117,12 +119,12 @@ export default function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label
+                    <Label
                       htmlFor="company"
                       className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                     >
                       {t('labelCompany')}
-                    </label>
+                    </Label>
                     <input
                       type="text"
                       name="company"
@@ -134,12 +136,12 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label
+                  <Label
                     htmlFor="email"
                     className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                   >
                     {t('labelEmail')}
-                  </label>
+                  </Label>
                   <input
                     type="email"
                     name="email"
@@ -154,13 +156,13 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label
+                  <Label
                     htmlFor="message"
                     className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                   >
                     {t('labelMessage')}
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
                     name="message"
                     id="message"
                     rows={3}

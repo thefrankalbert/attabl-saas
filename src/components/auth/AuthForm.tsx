@@ -235,14 +235,15 @@ function AuthForm({ mode }: AuthFormProps) {
 
             <p className="text-xs text-app-text-muted">
               Vous ne trouvez pas l&apos;email ? Vérifiez vos spams ou{' '}
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={handleResendConfirmation}
                 disabled={resendCooldown > 0}
-                className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50"
+                className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50 h-auto p-0 inline"
               >
                 {resendCooldown > 0 ? `renvoyez-le (${resendCooldown}s)` : 'renvoyez-le'}
-              </button>
+              </Button>
               .
             </p>
           </div>
@@ -384,15 +385,17 @@ function AuthForm({ mode }: AuthFormProps) {
               minLength={isLogin ? undefined : 8}
               className="h-12 pr-12 bg-app-elevated border-app-border text-app-text placeholder:text-app-text-muted focus:ring-2 focus:ring-accent/20 focus:border-accent/40 transition-all rounded-xl text-sm"
             />
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors p-1"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors h-8 w-8"
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -406,14 +409,15 @@ function AuthForm({ mode }: AuthFormProps) {
                 {error === 'email_not_confirmed' ? (
                   <span>
                     Votre adresse email n&apos;a pas encore été confirmée.{' '}
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
                       onClick={handleResendConfirmation}
                       disabled={resending}
-                      className="font-bold underline hover:no-underline"
+                      className="font-bold underline hover:no-underline h-auto p-0 inline"
                     >
                       {resending ? 'Envoi...' : 'Renvoyer le lien'}
-                    </button>
+                    </Button>
                   </span>
                 ) : (
                   error
