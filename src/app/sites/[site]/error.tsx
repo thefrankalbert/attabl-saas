@@ -3,10 +3,12 @@
 import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
-import { RefreshCw, ArrowLeft } from 'lucide-react';
+import { RefreshCw, ArrowLeft, UtensilsCrossed } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { ErrorLayout } from '@/components/shared/ErrorLayout';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 export default function TenantError({
   error,
@@ -17,6 +19,7 @@ export default function TenantError({
 }) {
   const params = useParams();
   const site = params?.site as string | undefined;
+  const t = useTranslations('tenant');
 
   useEffect(() => {
     Sentry.captureException(error);
@@ -24,46 +27,56 @@ export default function TenantError({
   }, [error]);
 
   return (
-    <div className="h-full bg-white flex items-center justify-center p-4">
-      <div className="text-center max-w-md">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white border border-[#EEEEEE] shadow-sm mb-6">
-          <span className="text-4xl">&#x1F615;</span>
-        </div>
-
-        <h2 className="text-xl font-bold mb-2" style={{ color: '#1A1A1A' }}>
-          Une erreur est survenue
-        </h2>
-        <p className="mb-6 text-sm" style={{ color: '#B0B0B0' }}>
-          Quelque chose ne s&apos;est pas passe comme prevu. Reessayez ou retournez au menu.
-        </p>
-
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-6 p-3 bg-status-error-bg rounded-xl text-left border border-[#EEEEEE]">
-            <p className="text-xs font-mono text-status-error break-all">{error.message}</p>
+    <ErrorLayout
+      variant="tenant"
+      code="500"
+      brand={
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl p-2.5" style={{ backgroundColor: '#06C167' }}>
+            <UtensilsCrossed className="h-6 w-6 text-white" />
           </div>
-        )}
-
-        <div className="flex flex-col sm:flex-row gap-3 justify-center">
+          <span className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
+            ATTABL
+          </span>
+        </div>
+      }
+      title={t('errorTitle')}
+      description={t('errorHint')}
+      debug={
+        process.env.NODE_ENV === 'development' ? (
+          <div
+            className="p-3 rounded-xl text-left border border-[#EEEEEE]"
+            style={{ backgroundColor: '#FEF2F2' }}
+          >
+            <p className="text-xs font-mono break-all" style={{ color: '#DC2626' }}>
+              {error.message}
+            </p>
+          </div>
+        ) : null
+      }
+      actions={
+        <>
           <Button
             onClick={reset}
-            className="bg-accent text-accent-text hover:bg-accent-hover gap-2"
+            className="gap-2 h-12 rounded-xl text-white font-semibold px-6"
+            style={{ backgroundColor: '#1A1A1A' }}
           >
             <RefreshCw className="w-4 h-4" />
-            Reessayer
+            {t('retry')}
           </Button>
-
-          <Link href={site ? `/sites/${site}/menu` : '/'}>
-            <Button
-              variant="outline"
-              className="border-[#EEEEEE] hover:bg-[#F6F6F6] gap-2 w-full"
-              style={{ color: '#1A1A1A' }}
-            >
+          <Button
+            asChild
+            variant="ghost"
+            className="gap-2 h-12 rounded-xl"
+            style={{ color: '#737373' }}
+          >
+            <Link href={site ? `/sites/${site}/menu` : '/'}>
               <ArrowLeft className="w-4 h-4" />
-              Retour au menu
-            </Button>
-          </Link>
-        </div>
-      </div>
-    </div>
+              {t('backToMenu')}
+            </Link>
+          </Button>
+        </>
+      }
+    />
   );
 }
