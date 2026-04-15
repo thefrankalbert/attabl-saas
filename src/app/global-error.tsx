@@ -4,11 +4,6 @@ import { useEffect } from 'react';
 import * as Sentry from '@sentry/nextjs';
 import { logger } from '@/lib/logger';
 
-/**
- * Global error boundary - catches errors in the root layout.
- * These are rare but critical (e.g., layout-level rendering failures).
- * Must include its own <html> and <body> tags since the root layout has failed.
- */
 export default function GlobalError({
   error,
   reset,
@@ -30,39 +25,85 @@ export default function GlobalError({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'system-ui, sans-serif',
-            backgroundColor: '#f9fafb',
-            padding: '1rem',
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            backgroundColor: '#0a0a0a',
+            padding: '1.5rem',
           }}
         >
-          <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-            <h2
+          <div style={{ textAlign: 'center', maxWidth: '420px' }}>
+            <div
               style={{
-                fontSize: '1.5rem',
-                fontWeight: 'bold',
-                color: '#111827',
-                marginBottom: '0.5rem',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '4px 12px',
+                borderRadius: '9999px',
+                backgroundColor: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                marginBottom: '24px',
               }}
             >
-              Une erreur critique est survenue
+              <span
+                style={{
+                  width: '6px',
+                  height: '6px',
+                  borderRadius: '9999px',
+                  backgroundColor: '#CCFF00',
+                  display: 'inline-block',
+                }}
+              />
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em',
+                  color: 'rgba(255,255,255,0.6)',
+                }}
+              >
+                Erreur critique
+              </span>
+            </div>
+
+            <h2
+              style={{
+                fontSize: '2rem',
+                fontWeight: 700,
+                color: '#ffffff',
+                marginBottom: '12px',
+                lineHeight: 1.2,
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Quelque chose s&apos;est mal passe
             </h2>
-            <p style={{ color: '#6b7280', marginBottom: '1.5rem' }}>
-              Nous nous excusons pour ce d&eacute;sagr&eacute;ment. Veuillez r&eacute;essayer.
+            <p
+              style={{
+                color: 'rgba(255,255,255,0.6)',
+                fontSize: '0.9375rem',
+                lineHeight: 1.6,
+                marginBottom: '32px',
+              }}
+            >
+              Une erreur inattendue est survenue. Nos equipes ont ete alertees. Vous pouvez
+              reessayer ou revenir plus tard.
             </p>
+            {/* eslint-disable-next-line react/forbid-elements */}
             <button
               onClick={reset}
               style={{
-                backgroundColor: '#d97706',
-                color: 'white',
+                backgroundColor: '#CCFF00',
+                color: '#0a0a0a',
                 border: 'none',
-                padding: '0.75rem 1.5rem',
-                borderRadius: '0.5rem',
-                fontSize: '1rem',
+                padding: '14px 28px',
+                borderRadius: '12px',
+                fontSize: '0.9375rem',
                 cursor: 'pointer',
-                fontWeight: '500',
+                fontWeight: 700,
+                width: '100%',
               }}
             >
-              R&eacute;essayer
+              Reessayer
             </button>
           </div>
         </div>
