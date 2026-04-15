@@ -150,6 +150,17 @@ const CATEGORY_ICONS: Record<string, string> = {
   takeaway: 'takeout.png',
   fleurs: 'flowers.png',
   flowers: 'flowers.png',
+  salade: 'specialty.png',
+  salades: 'specialty.png',
+  salad: 'specialty.png',
+  salads: 'specialty.png',
+  seafood: 'french.png',
+  'fruits de mer': 'french.png',
+  poisson: 'french.png',
+  fish: 'french.png',
+  vegetarian: 'grocery.png',
+  vegetarien: 'grocery.png',
+  vegan: 'grocery.png',
 };
 
 function getCatImg(name: string): string {
@@ -162,7 +173,8 @@ function getCatImg(name: string): string {
   for (const [key, file] of Object.entries(CATEGORY_ICONS)) {
     if (lower.includes(key) || key.includes(lower)) return `/category-icons/${file}`;
   }
-  return '/category-icons/caribbean.png';
+  // Neutral fallback for unrecognized categories (specialty is a generic food icon)
+  return '/category-icons/specialty.png';
 }
 
 const tr = (lang: string, fr: string, en?: string | null) => (lang === 'en' && en ? en : fr);
@@ -192,9 +204,10 @@ function HeaderBar({
         background: C.background,
       }}
     >
-      <button
+      <Button
+        variant="ghost"
         onClick={onLocationPress}
-        className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer p-0"
+        className="flex items-center gap-1.5 px-0 h-auto"
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
           <path
@@ -219,11 +232,12 @@ function HeaderBar({
             strokeLinejoin="round"
           />
         </svg>
-      </button>
+      </Button>
 
-      <button
+      <Button
+        variant="ghost"
         onClick={onAvatarPress}
-        className="w-10 h-10 rounded-full overflow-hidden shrink-0 border-none cursor-pointer p-0"
+        className="w-10 h-10 rounded-full overflow-hidden shrink-0 p-0"
         style={{
           background: C.surfaceAlt,
         }}
@@ -246,7 +260,7 @@ function HeaderBar({
             {tenantName.charAt(0).toUpperCase()}
           </span>
         )}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -254,9 +268,10 @@ function HeaderBar({
 /* -- Search Bar -- */
 function SearchBar({ placeholder, onClick }: { placeholder: string; onClick: () => void }) {
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onClick}
-      className="flex items-center gap-2 h-12 mt-2 mx-4 px-4 rounded-[10px] border-none cursor-pointer w-[calc(100%-32px)]"
+      className="flex items-center gap-2 h-12 mt-2 mx-4 px-4 rounded-[10px] w-[calc(100%-32px)] justify-start"
       style={{
         background: C.surfaceAlt,
       }}
@@ -268,7 +283,7 @@ function SearchBar({ placeholder, onClick }: { placeholder: string; onClick: () 
       <span className="text-sm" style={{ color: C.textMuted }}>
         {placeholder}
       </span>
-    </button>
+    </Button>
   );
 }
 
@@ -419,15 +434,16 @@ function SectionHeader({
         {title}
       </h2>
       {onSeeAll && seeAllLabel && (
-        <button
+        <Button
+          variant="ghost"
           onClick={onSeeAll}
-          className="text-sm font-semibold bg-transparent border-none cursor-pointer p-0"
+          className="text-sm font-semibold px-0 h-auto"
           style={{
             color: C.primary,
           }}
         >
           {seeAllLabel}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -454,9 +470,10 @@ function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: 
   const name = tr(lang, menu.name, menu.name_en);
   const desc = tr(lang, menu.description || '', menu.description_en);
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onClick}
-      className="w-60 shrink-0 rounded-xl overflow-hidden cursor-pointer p-0 text-left flex flex-col"
+      className="w-60 shrink-0 rounded-xl overflow-hidden px-0 py-0 text-left flex flex-col justify-start h-auto"
       style={{
         background: C.surface,
         border: `1px solid ${C.divider}`,
@@ -511,7 +528,7 @@ function MenuCard({ menu, lang, onClick }: { menu: Menu; lang: string; onClick: 
           </p>
         )}
       </div>
-    </button>
+    </Button>
   );
 }
 
@@ -539,10 +556,11 @@ function CategoryGrid({
         {visible.map((cat) => {
           const label = tr(lang, cat.name, cat.name_en);
           return (
-            <button
+            <Button
               key={cat.id}
+              variant="ghost"
               onClick={() => onSelect(cat)}
-              className="flex flex-col items-center gap-1.5 bg-transparent border-none cursor-pointer p-0"
+              className="flex flex-col items-center gap-1.5 px-0 py-0 h-auto"
             >
               <div
                 className="w-full aspect-square rounded-xl flex items-center justify-center"
@@ -568,20 +586,21 @@ function CategoryGrid({
               >
                 {label}
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>
       {hasMore && (
-        <button
+        <Button
+          variant="ghost"
           onClick={onSeeAll}
-          className="block mt-3 mx-auto bg-transparent border-none text-sm font-semibold cursor-pointer"
+          className="block mt-3 mx-auto text-sm font-semibold px-0 h-auto"
           style={{
             color: C.primary,
           }}
         >
           {seeAllLabel}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -668,13 +687,14 @@ function FeaturedItemCard({
             {lang === 'en' ? 'Deal' : 'Offre'}
           </span>
         )}
-        <button
+        <Button
+          variant="ghost"
           onClick={(e) => {
             e.stopPropagation();
             onAdd();
           }}
           aria-label={t('addShort')}
-          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full border-none cursor-pointer flex items-center justify-center"
+          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7"
           style={{
             background: C.primary,
           }}
@@ -687,7 +707,7 @@ function FeaturedItemCard({
               strokeLinecap="round"
             />
           </svg>
-        </button>
+        </Button>
       </div>
       <div className="p-3 pt-4 flex flex-col gap-1">
         <p
@@ -845,7 +865,7 @@ function TenantInfoSheet({
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-[#F6F6F6]"
+              className="w-9 h-9 rounded-full bg-app-elevated"
               aria-label="Fermer"
             >
               <X size={18} color={C.textPrimary} />

@@ -51,6 +51,7 @@ export async function actionCreateMenu(
     parent_menu_id?: string | null;
     image_url?: string;
     is_active?: boolean;
+    is_transversal_menu?: boolean;
     display_order?: number;
   },
 ): Promise<ActionResponse> {
@@ -120,6 +121,7 @@ export async function actionUpdateMenu(
     parent_menu_id?: string | null;
     image_url?: string;
     is_active?: boolean;
+    is_transversal_menu?: boolean;
     display_order?: number;
   },
 ): Promise<ActionResponse> {

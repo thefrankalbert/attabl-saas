@@ -8,6 +8,11 @@ interface MiddlewareClientResult {
   supabase: SupabaseClient;
 }
 
+// KNOWN LIMITATION: Logout in one tab may not immediately invalidate
+// other tabs. The middleware refreshes the session cookie on each request,
+// so the other tab will be logged out on its next navigation/API call.
+// For immediate cross-tab sync, consider adding Supabase onAuthStateChange
+// listener in a client-side provider.
 export async function createMiddlewareClient(
   request: NextRequest,
 ): Promise<MiddlewareClientResult> {

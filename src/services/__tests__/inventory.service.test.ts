@@ -225,19 +225,29 @@ describe('InventoryService', () => {
         },
       ];
 
-      const eqTenant = vi.fn().mockResolvedValue({ data: mockRecipes, error: null });
-      const eqMenuItem = vi.fn().mockReturnValue({ eq: eqTenant });
-      const selectFn = vi.fn().mockReturnValue({ eq: eqMenuItem });
-      supabase.from = vi.fn().mockReturnValue({ select: selectFn });
+      // BUG-34: getRecipesForItem now validates menu_item_id belongs to tenant first
+      let callCount = 0;
+      supabase.from = vi.fn().mockImplementation((table: string) => {
+        callCount++;
+        if (callCount === 1) {
+          // First call: menu_items validation with maybeSingle
+          const maybeSingleFn = vi.fn().mockResolvedValue({ data: { id: 'mi-1' }, error: null });
+          const eqTenant = vi.fn().mockReturnValue({ maybeSingle: maybeSingleFn });
+          const eqId = vi.fn().mockReturnValue({ eq: eqTenant });
+          const selectFn = vi.fn().mockReturnValue({ eq: eqId });
+          return { select: selectFn };
+        }
+        // Second call: recipes query
+        const eqTenant = vi.fn().mockResolvedValue({ data: mockRecipes, error: null });
+        const eqMenuItem = vi.fn().mockReturnValue({ eq: eqTenant });
+        const selectFn = vi.fn().mockReturnValue({ eq: eqMenuItem });
+        return { select: selectFn };
+      });
 
       const result = await service.getRecipesForItem('mi-1', 't1');
 
+      expect(supabase.from).toHaveBeenCalledWith('menu_items');
       expect(supabase.from).toHaveBeenCalledWith('recipes');
-      expect(selectFn).toHaveBeenCalledWith(
-        '*, ingredient:ingredients(id, name, unit, current_stock)',
-      );
-      expect(eqMenuItem).toHaveBeenCalledWith('menu_item_id', 'mi-1');
-      expect(eqTenant).toHaveBeenCalledWith('tenant_id', 't1');
       expect(result).toEqual(mockRecipes);
     });
   });

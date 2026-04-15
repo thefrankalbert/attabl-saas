@@ -192,6 +192,7 @@ export interface Menu {
   description_en?: string;
   image_url?: string;
   is_active: boolean;
+  is_transversal_menu?: boolean;
   display_order: number;
   created_at: string;
   updated_at?: string;
@@ -215,6 +216,7 @@ export interface Category {
   name_en?: string;
   display_order?: number;
   is_active?: boolean;
+  is_featured_on_home?: boolean;
   preparation_zone?: PreparationZone;
   created_at: string;
 }
@@ -284,6 +286,7 @@ export interface ItemModifier {
   price: number;
   prices?: MultiCurrencyPrices;
   is_available: boolean;
+  is_required?: boolean;
   display_order: number;
   created_at: string;
 }

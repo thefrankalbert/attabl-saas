@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { Loader2, Eye, EyeOff, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -41,11 +41,35 @@ function AcceptInviteForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [tokenExpired, setTokenExpired] = useState(false);
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Validate token on mount
+  useEffect(() => {
+    if (!token) return;
+    async function validateToken() {
+      try {
+        const res = await fetch('/api/invitations/accept', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, validate_only: true }),
+        });
+        if (!res.ok) {
+          const data: { error?: string } = await res.json().catch(() => ({}));
+          if (data.error?.toLowerCase().includes('expir') || res.status === 410) {
+            setTokenExpired(true);
+          }
+        }
+      } catch {
+        // Network error - let the actual submit handle it
+      }
+    }
+    validateToken();
+  }, [token]);
 
   // No token in URL
   if (!token) {
@@ -59,6 +83,31 @@ function AcceptInviteForm() {
           >
             <AlertDescription className="text-sm">
               Lien d&apos;invitation invalide. Verifiez le lien dans votre email.
+            </AlertDescription>
+          </Alert>
+          <p className="mt-6 text-center text-sm text-app-text-secondary">
+            <Link href="/login" className="font-semibold text-app-text hover:underline">
+              Retour a la connexion
+            </Link>
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Token expired state
+  if (tokenExpired) {
+    return (
+      <div className="w-full">
+        <AttablLogo />
+        <div className="mt-10 bg-app-card rounded-xl border border-app-border p-8">
+          <Alert
+            variant="destructive"
+            className="bg-red-500/10 text-red-500 border-red-500/20 rounded-lg"
+          >
+            <AlertDescription className="text-sm">
+              Ce lien d&apos;invitation a expire. Demandez a l&apos;administrateur de vous renvoyer
+              une invitation.
             </AlertDescription>
           </Alert>
           <p className="mt-6 text-center text-sm text-app-text-secondary">

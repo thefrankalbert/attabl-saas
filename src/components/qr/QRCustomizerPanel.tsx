@@ -412,7 +412,6 @@ export function QRCustomizerPanel({
                     <div className="space-y-1">
                       <Label className="text-xs text-app-text-muted">Ou entrer une URL</Label>
                       <Input
-                        type="url"
                         value={config.logo.src.startsWith('data:') ? '' : config.logo.src}
                         onChange={(e) => updateLogo('src', e.target.value)}
                         placeholder="https://example.com/logo.png"
@@ -608,7 +607,6 @@ export function QRCustomizerPanel({
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Texte personnalis\u00e9</Label>
                   <Input
-                    type="text"
                     value={config.ctaText}
                     onChange={(e) => {
                       updateField('ctaText', e.target.value);
@@ -645,7 +643,6 @@ export function QRCustomizerPanel({
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Texte de pied de page</Label>
                   <Input
-                    type="text"
                     value={config.footerText}
                     onChange={(e) => updateField('footerText', e.target.value)}
                     placeholder="Ex: Wi-Fi: MonReseau / mdp123"
@@ -724,7 +721,6 @@ export function QRCustomizerPanel({
                       <div className="space-y-1">
                         <Label className="text-xs text-app-text-muted">URL de l&apos;image</Label>
                         <Input
-                          type="url"
                           value={config.backgroundImage.src}
                           onChange={(e) => updateBackgroundImage('src', e.target.value)}
                           placeholder="https://example.com/bg.jpg"

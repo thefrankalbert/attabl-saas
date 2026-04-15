@@ -112,17 +112,18 @@ export default async function MenuPage({
     supabase
       .from('menus')
       .select(
-        'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at',
+        'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at',
       )
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
+      .eq('is_transversal_menu', false)
       .is('parent_menu_id', null)
       .order('display_order', { ascending: true }),
 
     supabase
       .from('categories')
       .select(
-        'id, tenant_id, menu_id, name, name_en, display_order, is_active, created_at, preparation_zone',
+        'id, tenant_id, menu_id, name, name_en, display_order, is_active, is_featured_on_home, created_at, preparation_zone',
       )
       .eq('tenant_id', tenant.id)
       .eq('is_active', true)
@@ -178,7 +179,27 @@ export default async function MenuPage({
   ]);
 
   const menus = (menusResult.data || []) as unknown as Menu[];
-  const categories = (categoriesResult.data || []) as unknown as Category[];
+  const allCategories = (categoriesResult.data || []) as unknown as Category[];
+  // When a tenant has multiple cartes (e.g. Panorama + Lobby + Pool), the home
+  // must only show the categories of the primary carte. Otherwise categories
+  // from different cartes would appear mixed in the CategoryGrid.
+  // Primary carte = first root menu (ordered by display_order, already filtered
+  // with parent_menu_id IS NULL in the query above).
+  const primaryMenu = menus[0];
+  // Step 1: restrict to primary carte when multiple cartes exist (task #1).
+  const categoriesForPrimaryMenu =
+    menus.length > 1 && primaryMenu
+      ? allCategories.filter((cat) => cat.menu_id === primaryMenu.id)
+      : allCategories;
+  // Step 2: if the restaurateur has explicitly flagged categories via
+  // is_featured_on_home, show only those on the home shortcut grid. Otherwise
+  // fall back to the legacy behaviour (first N by display_order, capped in the
+  // client CategoryGrid).
+  const explicitlyFeatured = categoriesForPrimaryMenu.filter(
+    (cat) => cat.is_featured_on_home === true,
+  );
+  const categories =
+    explicitlyFeatured.length > 0 ? explicitlyFeatured.slice(0, 8) : categoriesForPrimaryMenu;
   const ads = (adsResult.data || []) as unknown as Ad[];
   const announcements = (announcementsResult.data || []) as unknown as Announcement[];
   const announcement = announcements[0] || null;

@@ -64,6 +64,11 @@ const nextConfig = {
           },
           // Content-Security-Policy is now set dynamically in src/proxy.ts
           // with per-request nonces (replaces 'unsafe-inline' in script-src)
+          // CORS: /api/* routes are same-origin (called from *.attabl.com subdomains).
+          // Cross-Origin-Resource-Policy: same-origin (above) restricts cross-origin
+          // embedding. No Access-Control-Allow-Origin header is needed because all
+          // API calls are first-party. If third-party API access is added later,
+          // add explicit CORS headers scoped to those routes only.
         ],
       },
     ];

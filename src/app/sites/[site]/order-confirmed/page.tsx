@@ -20,6 +20,10 @@ interface OrderData {
   table_number: string | null;
   total: number;
   tip_amount: number;
+  subtotal: number | null;
+  discount_amount: number;
+  tax_amount: number;
+  service_charge_amount: number;
   status: string;
   created_at: string;
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
@@ -79,7 +83,7 @@ function OrderConfirmedContent() {
     supabase
       .from('orders')
       .select(
-        'id, order_number, table_number, total, tip_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
+        'id, order_number, table_number, total, tip_amount, subtotal, discount_amount, tax_amount, service_charge_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
       )
       .eq('id', orderId)
       .eq('tenant_id', tenantId)
@@ -89,6 +93,10 @@ function OrderConfirmedContent() {
           const mapped: OrderData = {
             ...data,
             tip_amount: data.tip_amount ?? 0,
+            subtotal: data.subtotal ?? null,
+            discount_amount: data.discount_amount ?? 0,
+            tax_amount: data.tax_amount ?? 0,
+            service_charge_amount: data.service_charge_amount ?? 0,
             items: (data.order_items || []).map(
               (oi: {
                 item_name: string;
@@ -344,6 +352,38 @@ function OrderConfirmedContent() {
 
           {/* Tip + Total */}
           <div className="px-4 py-3 space-y-2" style={{ borderTop: '1px solid #EEEEEE' }}>
+            {order.subtotal && order.subtotal !== order.total && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('subtotal')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.subtotal)}
+                </span>
+              </div>
+            )}
+            {order.discount_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('discount')}</span>
+                <span className="font-medium" style={{ color: '#22C55E' }}>
+                  -{formatDisplayPrice(order.discount_amount)}
+                </span>
+              </div>
+            )}
+            {order.tax_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('tax')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.tax_amount)}
+                </span>
+              </div>
+            )}
+            {order.service_charge_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('serviceCharge')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.service_charge_amount)}
+                </span>
+              </div>
+            )}
             {order.tip_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
                 <span style={{ color: '#B0B0B0' }}>{t('tip')}</span>
@@ -388,18 +428,23 @@ function OrderStatusMessage({ status }: { status: string }) {
   const config: Record<string, { message: string; bg: string; color: string }> = {
     pending: {
       message: t('orderStatusSent'),
-      bg: '#F6F6F6',
-      color: '#B0B0B0',
+      bg: '#FFF7ED',
+      color: '#D97706',
+    },
+    confirmed: {
+      message: t('orderStatusConfirmed') || t('orderStatusSent'),
+      bg: '#EFF6FF',
+      color: '#2563EB',
     },
     preparing: {
       message: t('orderStatusInKitchen'),
-      bg: '#F6F6F6',
-      color: '#1A1A1A',
+      bg: '#EFF6FF',
+      color: '#2563EB',
     },
     ready: {
       message: t('orderStatusReady'),
-      bg: '#F6F6F6',
-      color: '#1A1A1A',
+      bg: '#F0FDF4',
+      color: '#16A34A',
     },
     delivered: {
       message: t('orderStatusServed'),

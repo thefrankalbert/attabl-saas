@@ -35,6 +35,16 @@ import { cn } from '@/lib/utils';
 import { actionUpdateMenu } from '@/app/actions/menus';
 import { actionToggleCategoryActive } from '@/app/actions/categories';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
 import { createCategoryService } from '@/services/category.service';
 import { createMenuItemService } from '@/services/menu-item.service';
@@ -96,6 +106,7 @@ export default function MenuDetailClient({
 
   // Modifier editor state
   const [editingModifiersItem, setEditingModifiersItem] = useState<MenuItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { toast } = useToast();
   const t = useTranslations('menus');
@@ -213,7 +224,7 @@ export default function MenuDetailClient({
     }
   };
 
-  const handleDeleteCategory = async (cat: Category) => {
+  const handleDeleteCategory = (cat: Category) => {
     const catItems = items.filter((it) => it.category_id === cat.id);
     if (catItems.length > 0) {
       toast({
@@ -222,14 +233,20 @@ export default function MenuDetailClient({
       });
       return;
     }
-    if (!confirm(tCat('deleteCategoryConfirm', { name: cat.name }))) return;
+    setDeleteTarget({ id: cat.id, name: cat.name });
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deleteTarget) return;
     try {
       const categoryService = createCategoryService(supabase);
-      await categoryService.deleteCategory(cat.id);
+      await categoryService.deleteCategory(deleteTarget.id);
       toast({ title: t('categoryDeleted') });
       loadData();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -798,6 +815,30 @@ export default function MenuDetailClient({
           />
         )}
       </AdminModal>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tc('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? tCat('deleteCategoryConfirm', { name: deleteTarget.name }) : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCategory}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {tc('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

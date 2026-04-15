@@ -6,6 +6,7 @@ import { motion, useInView, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 export interface Testimonial {
   id: number;
@@ -162,13 +163,13 @@ export function SinglePricingCard({
                       {primaryButton.text}
                     </Link>
                   ) : (
-                    <button
+                    <Button
                       type="button"
                       onClick={primaryButton.onClick}
-                      className="block w-full text-center rounded-lg py-3 text-sm font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition-colors cursor-pointer"
+                      className="block w-full text-center rounded-lg py-3 text-sm font-semibold bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
                     >
                       {primaryButton.text}
-                    </button>
+                    </Button>
                   )}
 
                   {secondaryButton &&
@@ -180,13 +181,13 @@ export function SinglePricingCard({
                         {secondaryButton.text}
                       </Link>
                     ) : (
-                      <button
+                      <Button
                         type="button"
                         onClick={secondaryButton.onClick}
-                        className="block w-full text-center rounded-lg border border-neutral-300 dark:border-neutral-600 py-3 text-sm font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700 cursor-pointer"
+                        className="block w-full text-center rounded-lg border border-neutral-300 dark:border-neutral-600 py-3 text-sm font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-700"
                       >
                         {secondaryButton.text}
-                      </button>
+                      </Button>
                     ))}
                 </div>
               </div>
@@ -273,12 +274,14 @@ export function SinglePricingCard({
                     {testimonials.length > 1 && (
                       <div className="flex justify-center mt-4 gap-1">
                         {testimonials.map((_, index) => (
-                          <button
+                          <Button
                             key={index}
-                            className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                            size="icon"
+                            variant="ghost"
+                            className={`h-1.5 rounded-full transition-all p-0 ${
                               index === currentTestimonialIndex
                                 ? 'w-4 bg-neutral-900 dark:bg-white'
-                                : 'w-1.5 bg-neutral-300 dark:bg-neutral-600'
+                                : 'w-1.5 bg-neutral-300 dark:bg-neutral-600 hover:bg-neutral-300 dark:hover:bg-neutral-600'
                             }`}
                             onClick={() => setCurrentTestimonialIndex(index)}
                             aria-label={`Temoignage ${index + 1}`}

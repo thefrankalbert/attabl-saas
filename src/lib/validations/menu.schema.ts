@@ -11,6 +11,7 @@ export const createMenuSchema = z.object({
   parent_menu_id: z.string().uuid().nullable().optional(),
   image_url: z.string().url().optional().or(z.literal('')),
   is_active: z.boolean().default(true),
+  is_transversal_menu: z.boolean().optional().default(false),
   display_order: z.number().int().min(0).default(0),
 });
 

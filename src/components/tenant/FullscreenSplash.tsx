@@ -3,6 +3,7 @@
 import { useState, useCallback, useSyncExternalStore } from 'react';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 
 interface FullscreenSplashProps {
   tenantName: string;
@@ -78,7 +79,7 @@ export default function FullscreenSplash({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-white"
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-app-bg"
       style={{ touchAction: 'none' }}
     >
       {/* Background gradient */}
@@ -92,10 +93,7 @@ export default function FullscreenSplash({
       <div className="relative flex flex-col items-center gap-6 px-8 text-center">
         {/* Logo */}
         {logoUrl ? (
-          <div
-            className="w-24 h-24 rounded-xl overflow-hidden bg-white"
-            style={{ border: '1px solid #EEEEEE' }}
-          >
+          <div className="w-24 h-24 rounded-xl overflow-hidden bg-app-bg border border-app-border">
             <Image
               src={logoUrl}
               alt={tenantName}
@@ -106,8 +104,8 @@ export default function FullscreenSplash({
           </div>
         ) : (
           <div
-            className="w-24 h-24 rounded-xl flex items-center justify-center text-white text-4xl font-bold"
-            style={{ border: '1px solid #EEEEEE', backgroundColor: primaryColor }}
+            className="w-24 h-24 rounded-xl flex items-center justify-center text-white text-4xl font-bold border border-app-border"
+            style={{ backgroundColor: primaryColor }}
           >
             {tenantName.charAt(0).toUpperCase()}
           </div>
@@ -115,37 +113,31 @@ export default function FullscreenSplash({
 
         {/* Restaurant name */}
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
-            {tenantName}
-          </h1>
-          <p className="text-sm mt-1" style={{ color: '#B0B0B0' }}>
-            {t('splashSubtitle')}
-          </p>
+          <h1 className="text-2xl font-bold text-app-text">{tenantName}</h1>
+          <p className="text-sm mt-1 text-app-text-muted">{t('splashSubtitle')}</p>
         </div>
 
         {/* Enter button */}
-        <button
+        <Button
           onClick={handleEnter}
-          className="mt-4 px-10 py-3.5 rounded-xl text-white font-semibold text-base active:scale-95 transition-transform"
+          className="mt-4 px-10 py-3.5 rounded-xl text-white font-semibold text-base active:scale-95 h-auto"
           style={{ backgroundColor: primaryColor }}
         >
           {t('splashEnter')}
-        </button>
+        </Button>
 
         {/* Skip link */}
-        <button
+        <Button
+          variant="ghost"
           onClick={handleSkip}
-          className="text-xs underline underline-offset-2"
-          style={{ color: '#B0B0B0' }}
+          className="text-xs underline underline-offset-2 text-app-text-muted h-auto px-0"
         >
           {t('splashSkip')}
-        </button>
+        </Button>
       </div>
 
       {/* Powered by */}
-      <p className="absolute bottom-8 text-[12px]" style={{ color: '#737373' }}>
-        Powered by ATTABL
-      </p>
+      <p className="absolute bottom-8 text-[12px] text-app-text-secondary">Powered by ATTABL</p>
     </div>
   );
 }

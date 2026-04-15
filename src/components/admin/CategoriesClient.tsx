@@ -38,6 +38,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -49,6 +50,16 @@ import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import RoleGuard from '@/components/admin/RoleGuard';
 import type { Category, Menu, PreparationZone } from '@/types/admin.types';
@@ -173,8 +184,11 @@ export default function CategoriesClient({
   const [nameEn, setNameEn] = useState('');
   const [displayOrder, setDisplayOrder] = useState<number | string>(0);
   const [preparationZone, setPreparationZone] = useState<PreparationZone>('kitchen');
+  const [isFeaturedOnHome, setIsFeaturedOnHome] = useState<boolean>(false);
   const [menuId, setMenuId] = useState<string>(menus[0]?.id || '');
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const [isReordering, setIsReordering] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
   const { toast } = useToast();
   const supabase = createClient();
   const queryClient = useQueryClient();
@@ -213,6 +227,8 @@ export default function CategoriesClient({
         return;
       }
 
+      if (isReordering) return;
+
       const oldIndex = categories.findIndex((cat) => cat.id === active.id);
       const newIndex = categories.findIndex((cat) => cat.id === over.id);
 
@@ -227,6 +243,7 @@ export default function CategoriesClient({
       queryClient.setQueryData(['categories', tenantId, true], reordered);
 
       // Persist to database
+      setIsReordering(true);
       try {
         const previousIndexMap = new Map(previous.map((c, i) => [c.id, i]));
         const updatePromises = reordered
@@ -248,10 +265,15 @@ export default function CategoriesClient({
         queryClient.setQueryData(['categories', tenantId, true], previous);
         logger.error('Failed to reorder categories', err);
         toast({ title: tc('updateError'), variant: 'destructive' });
+      } finally {
+        setIsReordering(false);
       }
     },
-    [categories, supabase, tenantId, queryClient, toast, tc],
+    [categories, supabase, tenantId, queryClient, toast, tc, isReordering],
   );
+
+  const featuredCount = categories.filter((c) => c.is_featured_on_home === true).length;
+  const FEATURED_LIMIT = 8;
 
   const openNewModal = () => {
     setEditingCategory(null);
@@ -259,6 +281,7 @@ export default function CategoriesClient({
     setNameEn('');
     setDisplayOrder(categories.length);
     setPreparationZone('kitchen');
+    setIsFeaturedOnHome(false);
     setMenuId(menus[0]?.id || '');
     setShowModal(true);
   };
@@ -269,6 +292,7 @@ export default function CategoriesClient({
     setNameEn(cat.name_en || '');
     setDisplayOrder(cat.display_order || 0);
     setPreparationZone(cat.preparation_zone || 'kitchen');
+    setIsFeaturedOnHome(cat.is_featured_on_home === true);
     setMenuId(cat.menu_id || menus[0]?.id || '');
     setShowModal(true);
   };
@@ -283,6 +307,7 @@ export default function CategoriesClient({
         name_en: nameEn.trim() || null,
         display_order: Number(displayOrder) || 0,
         preparation_zone: preparationZone,
+        is_featured_on_home: isFeaturedOnHome,
         tenant_id: tenantId,
         menu_id: menuId || null,
       };
@@ -312,15 +337,37 @@ export default function CategoriesClient({
       });
       return;
     }
-    if (!confirm(t('deleteCategoryConfirm', { name: cat.name }))) return;
+
+    // Check if category is linked to any menu
+    const { data: menuLinks } = await supabase
+      .from('menu_categories')
+      .select('id')
+      .eq('category_id', cat.id)
+      .limit(1);
+
+    if (menuLinks && menuLinks.length > 0) {
+      toast({
+        title: t('categoryLinkedToMenu') || 'Cette categorie est liee a un menu',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setDeleteTarget({ id: cat.id, name: cat.name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
       const categoryService = createCategoryService(supabase);
-      await categoryService.deleteCategory(cat.id);
+      await categoryService.deleteCategory(deleteTarget.id);
       toast({ title: t('categoryDeleted') });
       loadCategories();
       revalidateMenuCache();
     } catch {
       toast({ title: tc('deleteError'), variant: 'destructive' });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -396,7 +443,7 @@ export default function CategoriesClient({
             </DndContext>
           ) : (
             <div className="p-12 text-center">
-              <div className="w-14 h-14 bg-app-elevated rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="w-14 h-14 bg-app-elevated rounded-xl flex items-center justify-center mx-auto mb-4">
                 <Folder className="w-7 h-7 text-app-text-muted" />
               </div>
               <h3 className="text-base font-bold text-app-text">{t('noCategories')}</h3>
@@ -478,6 +525,30 @@ export default function CategoriesClient({
                 </Select>
               </div>
             )}
+            {/* Featured on home toggle */}
+            <div className="space-y-1.5 rounded-lg border border-app-border p-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor="cat-featured" className="text-app-text">
+                    {t('featuredOnHome')}
+                  </Label>
+                  <p className="text-xs text-app-text-muted mt-1">{t('featuredOnHomeDesc')}</p>
+                </div>
+                <Switch
+                  id="cat-featured"
+                  checked={isFeaturedOnHome}
+                  onCheckedChange={setIsFeaturedOnHome}
+                />
+              </div>
+              {isFeaturedOnHome &&
+                featuredCount >= FEATURED_LIMIT &&
+                !(editingCategory && editingCategory.is_featured_on_home === true) && (
+                  <p className="text-xs text-amber-500 font-medium mt-2">
+                    {t('featuredOnHomeLimit', { count: FEATURED_LIMIT })}
+                  </p>
+                )}
+            </div>
+
             {/* Preparation zone selector */}
             <div className="space-y-1.5">
               <Label className="text-app-text">{t('preparationZone')}</Label>
@@ -519,6 +590,30 @@ export default function CategoriesClient({
             </div>
           </form>
         </AdminModal>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog
+          open={!!deleteTarget}
+          onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{tc('confirmDelete')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget ? t('deleteCategoryConfirm', { name: deleteTarget.name }) : ''}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {tc('delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </RoleGuard>
   );

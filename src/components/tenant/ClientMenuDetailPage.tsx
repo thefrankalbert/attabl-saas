@@ -39,6 +39,7 @@ interface ClientMenuDetailPageProps {
   tenant: Tenant;
   venues: Venue[];
   menus: Menu[];
+  transversalMenus?: Menu[];
   initialMenuSlug?: string;
   initialTable?: string;
   initialVenueSlug?: string;
@@ -55,6 +56,7 @@ export default function ClientMenuDetailPage({
   tenant,
   venues,
   menus,
+  transversalMenus = [],
   initialMenuSlug,
   initialTable,
   initialVenueSlug,
@@ -216,19 +218,22 @@ export default function ClientMenuDetailPage({
   const activeMenu = filteredMenus.find((m) => m.slug === activeMenuSlug) || null;
 
   // Filter items by menu/submenu
-  const menuFilteredByCategory =
-    menus.length <= 1
-      ? itemsByCategory
-      : itemsByCategory.filter((cat) => {
-          if (!activeMenu) return true;
-          const activeMenuIds = [activeMenu.id, ...(activeMenu.children?.map((c) => c.id) || [])];
-          if (activeSubMenuId) {
-            const category = categories.find((c) => c.id === cat.id);
-            return category?.menu_id === activeSubMenuId;
-          }
-          const category = categories.find((c) => c.id === cat.id);
-          return !category?.menu_id || activeMenuIds.includes(category.menu_id);
-        });
+  // When multiple menus exist (or transversal menus are present), only show
+  // categories explicitly linked to the active menu. Categories with no menu_id
+  // are excluded (they must be assigned to a menu in admin).
+  const hasMultipleMenus = menus.length > 1 || transversalMenus.length > 0;
+  const menuFilteredByCategory = !hasMultipleMenus
+    ? itemsByCategory
+    : itemsByCategory.filter((cat) => {
+        if (!activeMenu) return true;
+        const category = categories.find((c) => c.id === cat.id);
+        if (!category?.menu_id) return false;
+        if (activeSubMenuId) {
+          return category.menu_id === activeSubMenuId;
+        }
+        const activeMenuIds = [activeMenu.id, ...(activeMenu.children?.map((c) => c.id) || [])];
+        return activeMenuIds.includes(category.menu_id);
+      });
 
   // Compute "under" threshold as median price of current (menu-filtered) items
   const underThreshold = useMemo(() => {
@@ -256,16 +261,16 @@ export default function ClientMenuDetailPage({
       .filter((cat) => cat.items.length > 0);
   }, [menuFilteredByCategory, dietFilter, underThreshold]);
 
-  // Filter categories for CategoryNav
-  const filteredCategories =
-    menus.length <= 1
-      ? categories
-      : categories.filter((c) => {
-          if (!activeMenu) return true;
-          const activeMenuIds = [activeMenu.id, ...(activeMenu.children?.map((ch) => ch.id) || [])];
-          if (activeSubMenuId) return c.menu_id === activeSubMenuId;
-          return !c.menu_id || activeMenuIds.includes(c.menu_id);
-        });
+  // Filter categories for CategoryNav - must match menuFilteredByCategory logic
+  const filteredCategories = !hasMultipleMenus
+    ? categories
+    : categories.filter((c) => {
+        if (!activeMenu) return true;
+        if (!c.menu_id) return false;
+        if (activeSubMenuId) return c.menu_id === activeSubMenuId;
+        const activeMenuIds = [activeMenu.id, ...(activeMenu.children?.map((ch) => ch.id) || [])];
+        return activeMenuIds.includes(c.menu_id);
+      });
 
   const allItems = useMemo(() => itemsByCategory.flatMap((cat) => cat.items), [itemsByCategory]);
 
@@ -369,10 +374,10 @@ export default function ClientMenuDetailPage({
           variant="ghost"
           size="icon"
           onClick={() => router.push(`/sites/${tenant.slug}`)}
-          className="w-9 h-9 rounded-full bg-[#F6F6F6] flex-shrink-0"
+          className="w-9 h-9 rounded-full bg-app-elevated flex-shrink-0"
           aria-label={t('ariaGoBack')}
         >
-          <ChevronLeft className="w-5 h-5" style={{ color: '#1A1A1A' }} />
+          <ChevronLeft className="w-5 h-5" style={{ color: 'rgb(26, 26, 26)' }} />
         </Button>
         <div className="relative flex-1 min-w-0">
           <div
@@ -428,13 +433,14 @@ export default function ClientMenuDetailPage({
                 {t('dishesFound')}
               </h3>
               {searchResults.map((item) => (
-                <button
+                <Button
                   key={item.id}
+                  variant="ghost"
                   onClick={() => {
                     setSelectedItem(item);
                     setSearchQuery('');
                   }}
-                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-left"
+                  className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left justify-start h-auto"
                   style={{ backgroundColor: 'transparent' }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = '#F6F6F6';
@@ -452,7 +458,7 @@ export default function ClientMenuDetailPage({
                     {resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
                   </span>
                   <ChevronRight className="w-3.5 h-3.5" style={{ color: '#B0B0B0' }} />
-                </button>
+                </Button>
               ))}
             </div>
           </div>
@@ -465,10 +471,11 @@ export default function ClientMenuDetailPage({
           className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
           style={{ backgroundColor: '#FFFFFF' }}
         >
-          <button
+          <Button
+            variant="ghost"
             onClick={() => setActiveVenueId(null)}
             className={cn(
-              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer',
+              'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto',
               !activeVenueId ? 'text-white' : '',
             )}
             style={{
@@ -482,14 +489,13 @@ export default function ClientMenuDetailPage({
             }}
           >
             {t('allFilter')}
-          </button>
+          </Button>
           {venues.map((venue) => (
-            <button
+            <Button
               key={venue.id}
+              variant="ghost"
               onClick={() => setActiveVenueId(venue.id)}
-              className={cn(
-                'flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer',
-              )}
+              className={cn('flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto')}
               style={{
                 fontSize: 11,
                 fontWeight: 500,
@@ -501,7 +507,7 @@ export default function ClientMenuDetailPage({
               }}
             >
               {venue.name}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -511,10 +517,11 @@ export default function ClientMenuDetailPage({
         <div className="px-4 mb-3">
           <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide" data-tab-pane>
             {filteredMenus.map((menu) => (
-              <button
+              <Button
                 key={menu.slug}
+                variant="ghost"
                 onClick={() => handleMenuChange(menu.slug)}
-                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
+                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
                 style={{
                   fontSize: 11,
                   fontWeight: 500,
@@ -526,54 +533,77 @@ export default function ClientMenuDetailPage({
                 }}
               >
                 {menu.name}
-              </button>
+              </Button>
             ))}
           </div>
         </div>
       )}
 
       {/* ═══ SUB-MENU TABS ═══ */}
-      {activeMenu?.children && activeMenu.children.length > 0 && (
-        <div className="px-4 mb-3">
-          <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
-            <button
-              onClick={() => setActiveSubMenuId(null)}
-              className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                textTransform: 'uppercase' as const,
-                letterSpacing: 1,
-                ...(!activeSubMenuId
-                  ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
-                  : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
-              }}
-            >
-              {t('all')}
-            </button>
-            {activeMenu.children
-              .filter((c) => c.is_active)
-              .map((child) => (
-                <button
-                  key={child.slug}
-                  onClick={() => setActiveSubMenuId(child.id)}
-                  className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap border-none cursor-pointer"
+      {activeMenu &&
+        ((activeMenu.children && activeMenu.children.length > 0) ||
+          transversalMenus.length > 0) && (
+          <div className="px-4 mb-3">
+            <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+              <Button
+                variant="ghost"
+                onClick={() => setActiveSubMenuId(null)}
+                className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
+                style={{
+                  fontSize: 11,
+                  fontWeight: 500,
+                  textTransform: 'uppercase' as const,
+                  letterSpacing: 1,
+                  ...(!activeSubMenuId
+                    ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
+                    : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
+                }}
+              >
+                {t('all')}
+              </Button>
+              {(activeMenu.children || [])
+                .filter((c) => c.is_active)
+                .map((child) => (
+                  <Button
+                    key={child.slug}
+                    variant="ghost"
+                    onClick={() => setActiveSubMenuId(child.id)}
+                    className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 500,
+                      textTransform: 'uppercase' as const,
+                      letterSpacing: 1,
+                      ...(activeSubMenuId === child.id
+                        ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
+                        : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
+                    }}
+                  >
+                    {child.name}
+                  </Button>
+                ))}
+              {transversalMenus.map((tm) => (
+                <Button
+                  key={tm.slug}
+                  variant="ghost"
+                  onClick={() => setActiveSubMenuId(tm.id)}
+                  className="flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap h-auto"
                   style={{
                     fontSize: 11,
                     fontWeight: 500,
                     textTransform: 'uppercase' as const,
                     letterSpacing: 1,
-                    ...(activeSubMenuId === child.id
+                    ...(activeSubMenuId === tm.id
                       ? { backgroundColor: '#1A1A1A', color: '#FFFFFF' }
                       : { backgroundColor: '#F6F6F6', color: '#B0B0B0' }),
                   }}
                 >
-                  {child.name}
-                </button>
+                  {lang === 'en' && tm.name_en ? tm.name_en : tm.name}
+                </Button>
               ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
       {/* ═══ FILTER CHIPS (diet / price) ═══ */}
       <div
@@ -596,10 +626,11 @@ export default function ClientMenuDetailPage({
         ).map((chip) => {
           const isActive = dietFilter === chip.key;
           return (
-            <button
+            <Button
               key={chip.key}
+              variant="ghost"
               onClick={() => setDietFilter(chip.key)}
-              className="flex-shrink-0 whitespace-nowrap border-none cursor-pointer"
+              className="flex-shrink-0 whitespace-nowrap h-auto"
               style={{
                 padding: '8px 16px',
                 borderRadius: '24px',
@@ -613,7 +644,7 @@ export default function ClientMenuDetailPage({
               }}
             >
               {chip.label}
-            </button>
+            </Button>
           );
         })}
       </div>

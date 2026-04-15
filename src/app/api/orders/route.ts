@@ -190,7 +190,13 @@ export async function POST(request: Request) {
     } catch (orderError) {
       // Rollback coupon usage if order creation fails
       if (couponResult?.couponId) {
-        await couponService.unclaimUsage(couponResult.couponId);
+        try {
+          await couponService.unclaimUsage(couponResult.couponId);
+        } catch (unclaimError) {
+          logger.error('CRITICAL: Failed to unclaim coupon after order failure', unclaimError, {
+            couponId: couponResult.couponId,
+          });
+        }
       }
       throw orderError;
     }

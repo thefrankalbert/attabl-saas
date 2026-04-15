@@ -70,9 +70,9 @@ export function DatePickerField({
             caption_label: 'text-sm font-medium',
             nav: 'flex items-center gap-1',
             button_previous:
-              'absolute left-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center',
+              'absolute left-1 h-7 w-7 bg-transparent p-0 text-app-text-muted hover:bg-app-hover hover:text-app-text rounded-md inline-flex items-center justify-center',
             button_next:
-              'absolute right-1 h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100 inline-flex items-center justify-center',
+              'absolute right-1 h-7 w-7 bg-transparent p-0 text-app-text-muted hover:bg-app-hover hover:text-app-text rounded-md inline-flex items-center justify-center',
             month_grid: 'w-full border-collapse',
             weekdays: 'flex',
             weekday: 'text-app-text-muted rounded-md w-9 font-normal text-[0.8rem]',

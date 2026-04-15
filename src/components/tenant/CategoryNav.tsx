@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Category {
   id: string;
@@ -123,8 +124,9 @@ export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: C
         {categories.map((category) => {
           const isActive = activeCategory === category.id;
           return (
-            <button
+            <Button
               key={category.id}
+              variant="ghost"
               ref={(el) => {
                 if (el) {
                   buttonRefs.current.set(category.id, el);
@@ -133,19 +135,16 @@ export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: C
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
-              className="active:scale-[0.98]"
+              className="active:scale-[0.98] h-auto px-4 py-2"
               style={{
                 flexShrink: 0,
                 whiteSpace: 'nowrap',
-                padding: '8px 16px',
                 borderRadius: '24px',
                 fontSize: '11px',
                 fontWeight: 500,
                 textTransform: 'uppercase',
                 letterSpacing: '1px',
                 lineHeight: 1.4,
-                border: 'none',
-                cursor: 'pointer',
                 backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
                 color: isActive ? '#FFFFFF' : '#737373',
                 transition: 'background-color 0.15s ease, color 0.15s ease',
@@ -155,7 +154,7 @@ export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: C
               {itemCounts && itemCounts[category.id] !== undefined && (
                 <span style={{ opacity: 0.7, marginLeft: '4px' }}>({itemCounts[category.id]})</span>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>
