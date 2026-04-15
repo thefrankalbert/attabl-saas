@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import {
   Palette,
@@ -107,6 +107,33 @@ export interface OnboardingData {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
+}
+
+// ─── Step Error Boundary ──────────────────────────────────────────────────────
+
+class StepErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        this.props.fallback || (
+          <div className="p-8 text-center">
+            <p className="text-red-500">Une erreur est survenue. Rechargez la page.</p>
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -290,7 +317,12 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (loading || phase === 0) return;
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Warn user about unsaved data when they have progressed past welcome
+      if (phase > 0) {
+        e.preventDefault();
+      }
+      // Persist draft via beacon regardless
       const draftPayload = {
         ...data,
         _phase: phase,
@@ -592,7 +624,9 @@ export default function OnboardingPage() {
                   : 'animate-in slide-in-from-left-4 fade-in duration-200'
               }
             >
-              {renderScreen()}
+              <StepErrorBoundary key={`eb-${phase}-${subScreen}`}>
+                {renderScreen()}
+              </StepErrorBoundary>
 
               {error && (
                 <div className="px-4 sm:px-6 lg:px-8 pb-2">

@@ -16,8 +16,17 @@ import {
   Star,
   Shield,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { SinglePricingCard, type Testimonial } from '@/components/ui/single-pricing-card';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 // ─── Types ──────────────────────────────────
 type BillingPeriod = 'monthly' | 'yearly';
@@ -233,10 +242,11 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
   return (
     <div className="border-b border-neutral-200 dark:border-neutral-800">
-      <button
+      <Button
         type="button"
+        variant="ghost"
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-5 text-left cursor-pointer"
+        className="w-full flex items-center justify-between py-5 text-left h-auto px-0 justify-between hover:bg-transparent"
       >
         <span className="font-semibold text-neutral-900 dark:text-white text-sm sm:text-base pr-4">
           {q}
@@ -247,7 +257,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
             open && 'rotate-180',
           )}
         />
-      </button>
+      </Button>
       <div
         className={cn(
           'overflow-hidden transition-all duration-200',
@@ -291,31 +301,33 @@ export default function PricingPage() {
 
             {/* Billing toggle */}
             <div className="inline-flex bg-neutral-100 dark:bg-neutral-800 rounded-full p-1 mt-8">
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setPeriod('monthly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium cursor-pointer transition-all rounded-full',
+                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
                   period === 'monthly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-500 dark:text-neutral-400',
+                    : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
                 )}
               >
                 Mensuel
-              </button>
-              <button
+              </Button>
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setPeriod('yearly')}
                 className={cn(
-                  'px-5 py-2 text-sm font-medium cursor-pointer transition-all rounded-full',
+                  'px-5 py-2 text-sm font-medium transition-all rounded-full h-auto',
                   period === 'yearly'
                     ? 'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white shadow-sm'
-                    : 'text-neutral-500 dark:text-neutral-400',
+                    : 'text-neutral-500 dark:text-neutral-400 hover:bg-transparent',
                 )}
               >
                 Annuel
                 <span className="ml-1.5 text-xs text-green-600 font-semibold">-20%</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -460,59 +472,59 @@ export default function PricingPage() {
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px]">
-              <thead>
-                <tr className="border-b-2 border-neutral-200 dark:border-neutral-700">
-                  <th className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-b-2 border-neutral-200 dark:border-neutral-700">
+                  <TableHead className="text-left py-4 pr-4 text-sm font-medium text-neutral-500 dark:text-neutral-400 w-[40%]">
                     Fonctionnalite
-                  </th>
+                  </TableHead>
                   {['STARTER', 'PRO', 'BUSINESS', 'ENTERPRISE'].map((name) => (
-                    <th
+                    <TableHead
                       key={name}
                       className="text-center py-4 px-2 text-sm font-bold text-neutral-900 dark:text-white w-[15%]"
                     >
                       {name}
-                    </th>
+                    </TableHead>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {featureCategories.map((cat) => (
                   <Fragment key={cat.title}>
-                    <tr>
-                      <td
+                    <TableRow>
+                      <TableCell
                         colSpan={5}
                         className="pt-8 pb-3 text-xs font-semibold uppercase tracking-widest text-neutral-400 dark:text-neutral-500"
                       >
                         {cat.title}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                     {cat.features.map((f) => (
-                      <tr
+                      <TableRow
                         key={f.label}
                         className="border-b border-neutral-100 dark:border-neutral-800"
                       >
-                        <td className="py-3 pr-4 text-sm text-neutral-700 dark:text-neutral-300">
+                        <TableCell className="py-3 pr-4 text-sm text-neutral-700 dark:text-neutral-300">
                           {f.label}
-                        </td>
-                        <td className="py-3 px-2 text-center">
+                        </TableCell>
+                        <TableCell className="py-3 px-2 text-center">
                           <FeatureCell value={f.starter} />
-                        </td>
-                        <td className="py-3 px-2 text-center">
+                        </TableCell>
+                        <TableCell className="py-3 px-2 text-center">
                           <FeatureCell value={f.pro} />
-                        </td>
-                        <td className="py-3 px-2 text-center">
+                        </TableCell>
+                        <TableCell className="py-3 px-2 text-center">
                           <FeatureCell value={f.business} />
-                        </td>
-                        <td className="py-3 px-2 text-center">
+                        </TableCell>
+                        <TableCell className="py-3 px-2 text-center">
                           <FeatureCell value={f.enterprise} />
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
                   </Fragment>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       </section>

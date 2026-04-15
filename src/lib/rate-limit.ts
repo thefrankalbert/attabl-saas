@@ -32,6 +32,14 @@ const redis = isConfigured
     })
   : null;
 
+// Log rate limiting status at module load (startup)
+// Using console.warn to avoid circular dependency with logger at module level
+if (!isConfigured) {
+  console.warn(
+    '[rate-limit] WARN: Redis not configured - rate limiting disabled in this environment',
+  );
+}
+
 // --- Rate limit result type ---
 
 interface RateLimitResult {

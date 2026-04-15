@@ -78,8 +78,8 @@ export default function RuptureButton({
         className={cn(
           'p-2.5 rounded shrink-0 min-h-[48px] min-w-[48px]',
           confirming
-            ? 'bg-red-500/30 text-red-300 animate-pulse'
-            : 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10',
+            ? 'bg-status-error-bg text-status-error animate-pulse'
+            : 'text-status-error/60 hover:text-status-error hover:bg-status-error-bg',
         )}
       >
         <XCircle className="w-4 h-4" />
@@ -97,8 +97,8 @@ export default function RuptureButton({
       className={cn(
         'p-2.5 rounded shrink-0 min-h-[48px] min-w-[48px]',
         confirming
-          ? 'bg-green-500/30 text-green-300 animate-pulse'
-          : 'text-green-400/60 hover:text-green-400 hover:bg-green-500/10',
+          ? 'bg-status-success-bg text-status-success animate-pulse'
+          : 'text-status-success/60 hover:text-status-success hover:bg-status-success-bg',
       )}
     >
       <RotateCcw className="w-4 h-4" />

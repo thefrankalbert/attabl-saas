@@ -24,6 +24,7 @@ export interface MenuFormData {
   venue_id: string | null;
   parent_menu_id: string | null;
   is_active: boolean;
+  is_transversal_menu?: boolean;
 }
 
 interface UseMenusDataParams {
@@ -76,6 +77,7 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
       venue_id: data.venue_id,
       parent_menu_id: data.parent_menu_id,
       is_active: data.is_active,
+      is_transversal_menu: data.is_transversal_menu ?? false,
       display_order: menus.length,
     });
     if (result.error) {
@@ -97,6 +99,7 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
       venue_id: data.venue_id,
       parent_menu_id: data.parent_menu_id,
       is_active: data.is_active,
+      is_transversal_menu: data.is_transversal_menu ?? false,
     });
     if (result.error) {
       toast({ title: result.error, variant: 'destructive' });

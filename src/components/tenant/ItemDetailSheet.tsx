@@ -129,6 +129,21 @@ export default function ItemDetailSheet({
   const handleAddToCart = useCallback(() => {
     if (!item) return;
 
+    // Validate required modifiers
+    if (item.modifiers && item.modifiers.length > 0) {
+      const requiredModifiers = item.modifiers.filter((m) => m.is_required);
+      const missingRequired = requiredModifiers.filter(
+        (req) =>
+          !selectedModifiers.some(
+            (sel) => sel.menu_item_id === req.menu_item_id && sel.id === req.id,
+          ),
+      );
+      if (missingRequired.length > 0) {
+        // Shake effect or visual feedback - for now just return
+        return;
+      }
+    }
+
     const cartItem = {
       id: item.id,
       name: item.name,
@@ -209,7 +224,7 @@ export default function ItemDetailSheet({
           >
             {/* Hero image - flex-shrink-0 so it doesn't squeeze, sized for no-scroll fit */}
             <div className="flex-shrink-0">
-              <div className="relative h-[200px] w-full bg-[#F6F6F6]">
+              <div className="relative h-[200px] w-full bg-app-elevated">
                 {hasValidImage ? (
                   <Image
                     src={item.image_url!}
@@ -222,7 +237,7 @@ export default function ItemDetailSheet({
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center">
-                    <Utensils className="h-12 w-12 text-[#B0B0B0]" />
+                    <Utensils className="h-12 w-12 text-app-text-muted" />
                   </div>
                 )}
                 {/* Back button - top-left, full-page style */}
@@ -230,10 +245,10 @@ export default function ItemDetailSheet({
                   variant="outline"
                   size="icon"
                   onClick={onClose}
-                  className="absolute top-3 left-3 z-10 rounded-full bg-white w-9 h-9 border-[#EEEEEE] active:bg-neutral-100"
+                  className="absolute top-3 left-3 z-10 rounded-full bg-app-bg w-9 h-9 border-app-border active:bg-neutral-100"
                   aria-label="Retour"
                 >
-                  <ChevronLeft className="h-5 w-5 text-[#1A1A1A]" />
+                  <ChevronLeft className="h-5 w-5 text-app-text" />
                 </Button>
               </div>
             </div>
@@ -243,51 +258,51 @@ export default function ItemDetailSheet({
               <div className="px-6 pb-3 pt-4">
                 {/* Category label - DESIGN.MD: 11px Medium UPPERCASE, #06C167 */}
                 {category && (
-                  <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-[#1A1A1A]">
+                  <p className="font-medium uppercase text-[11px] leading-[15.4px] tracking-[1px] text-app-text">
                     {category}
                   </p>
                 )}
 
                 {/* Name - prominent title on full page */}
-                <h2 className="mt-2 font-bold text-2xl leading-[32px] text-[#1A1A1A]">
+                <h2 className="mt-2 font-bold text-2xl leading-[32px] text-app-text">
                   {getTranslatedContent(language, item.name, item.name_en)}
                 </h2>
 
                 {/* Description - full text, readable */}
                 {(item.description || item.description_en) && (
-                  <p className="mt-2 font-normal text-[15px] leading-[22px] text-[#737373]">
+                  <p className="mt-2 font-normal text-[15px] leading-[22px] text-app-text-secondary">
                     {getTranslatedContent(language, item.description || '', item.description_en)}
                   </p>
                 )}
 
                 {/* Price (when no variants) - DESIGN.MD: price #1A1A1A (NOT green) */}
                 {!hasVariants && (
-                  <p className="mt-2 font-bold text-[15px] leading-[21px] text-[#1A1A1A]">
+                  <p className="mt-2 font-bold text-[15px] leading-[21px] text-app-text">
                     {resolveAndFormatPrice(item.price, item.prices, currency)}
                   </p>
                 )}
 
                 {/* Divider - compacted */}
-                <div className="my-3 h-px bg-[#EEEEEE]" />
+                <div className="my-3 h-px bg-app-border" />
 
                 {/* Tags row - diet badges + allergens */}
                 {(item.is_vegetarian || item.is_spicy || hasAllergens) && (
                   <>
                     <div className="flex flex-wrap items-center gap-2">
                       {item.is_vegetarian && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#1A1A1A]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-app-text">
                           <Leaf className="h-3 w-3" />
                           {t('vegetarian')}
                         </span>
                       )}
                       {item.is_spicy && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#FF3008]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-danger">
                           <Flame className="h-3 w-3" />
                           {t('spicy')}
                         </span>
                       )}
                       {hasAllergens && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-[#F6F6F6] text-[#FFB800]">
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 font-medium text-[11px] rounded-lg bg-app-elevated text-allergen">
                           <AlertTriangle className="h-3 w-3" />
                           {t('allergenWarning')}
                         </span>
@@ -296,11 +311,11 @@ export default function ItemDetailSheet({
 
                     {/* Allergen detail list */}
                     {hasAllergens && (
-                      <p className="mt-1.5 text-xs text-[#FFB800]">{item.allergens!.join(', ')}</p>
+                      <p className="mt-1.5 text-xs text-allergen">{item.allergens!.join(', ')}</p>
                     )}
 
                     {/* Divider */}
-                    <div className="my-3 h-px bg-[#EEEEEE]" />
+                    <div className="my-3 h-px bg-app-border" />
                   </>
                 )}
 
@@ -308,34 +323,29 @@ export default function ItemDetailSheet({
                 {hasVariants && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold text-sm text-[#1A1A1A]">{t('size')}</h3>
+                      <h3 className="mb-2 font-semibold text-sm text-app-text">{t('size')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .price_variants!.sort((a, b) => a.display_order - b.display_order)
                           .map((variant) => {
                             const isActive = selectedVariant?.id === variant.id;
                             return (
-                              <button
+                              <Button
                                 key={variant.id}
+                                variant="outline"
                                 onClick={() => setSelectedVariant(variant)}
-                                className="flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all"
-                                style={{
-                                  borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
-                                }}
+                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Radio dot */}
                                   <div
-                                    className="flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors"
-                                    style={{
-                                      borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
-                                    }}
+                                    className={`flex h-5 w-5 items-center justify-center rounded-full border-2 transition-colors ${isActive ? 'border-app-text' : 'border-app-border'}`}
                                   >
                                     {isActive && (
-                                      <div className="h-2.5 w-2.5 rounded-full bg-[#1A1A1A]" />
+                                      <div className="h-2.5 w-2.5 rounded-full bg-app-text" />
                                     )}
                                   </div>
-                                  <span className="font-medium text-sm text-[#1A1A1A]">
+                                  <span className="font-medium text-sm text-app-text">
                                     {getTranslatedContent(
                                       language,
                                       variant.variant_name_fr,
@@ -344,17 +354,17 @@ export default function ItemDetailSheet({
                                   </span>
                                 </div>
                                 {/* DESIGN.MD: price is #1A1A1A, NOT green */}
-                                <span className="font-bold text-sm text-[#1A1A1A]">
+                                <span className="font-bold text-sm text-app-text">
                                   {resolveAndFormatPrice(variant.price, variant.prices, currency)}
                                 </span>
-                              </button>
+                              </Button>
                             );
                           })}
                       </div>
                     </div>
 
                     {/* Divider */}
-                    <div className="my-3 h-px bg-[#EEEEEE]" />
+                    <div className="my-3 h-px bg-app-border" />
                   </>
                 )}
 
@@ -362,7 +372,7 @@ export default function ItemDetailSheet({
                 {hasModifiers && (
                   <>
                     <div>
-                      <h3 className="mb-2 font-semibold text-sm text-[#1A1A1A]">{t('extras')}</h3>
+                      <h3 className="mb-2 font-semibold text-sm text-app-text">{t('extras')}</h3>
                       <div className="flex flex-col gap-2">
                         {item
                           .modifiers!.filter((m) => m.is_available)
@@ -370,26 +380,20 @@ export default function ItemDetailSheet({
                           .map((modifier) => {
                             const isActive = selectedModifiers.some((m) => m.id === modifier.id);
                             return (
-                              <button
+                              <Button
                                 key={modifier.id}
+                                variant="outline"
                                 onClick={() => toggleModifier(modifier)}
-                                className="flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left transition-all"
-                                style={{
-                                  borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
-                                }}
+                                className={`flex items-center justify-between rounded-xl border-2 px-4 py-3 text-left h-auto ${isActive ? 'border-app-text' : 'border-app-border'}`}
                               >
                                 <div className="flex items-center gap-3">
                                   {/* Checkbox */}
                                   <div
-                                    className="flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors"
-                                    style={{
-                                      borderColor: isActive ? '#1A1A1A' : '#EEEEEE',
-                                      backgroundColor: isActive ? '#1A1A1A' : 'transparent',
-                                    }}
+                                    className={`flex h-5 w-5 items-center justify-center rounded-md border-2 transition-colors ${isActive ? 'border-app-text bg-app-text' : 'border-app-border bg-transparent'}`}
                                   >
                                     {isActive && <Check className="h-3 w-3 text-white" />}
                                   </div>
-                                  <span className="font-medium text-sm text-[#1A1A1A]">
+                                  <span className="font-medium text-sm text-app-text">
                                     {getTranslatedContent(
                                       language,
                                       modifier.name,
@@ -398,7 +402,7 @@ export default function ItemDetailSheet({
                                   </span>
                                 </div>
                                 {modifier.price > 0 && (
-                                  <span className="font-medium text-sm text-[#737373]">
+                                  <span className="font-medium text-sm text-app-text-secondary">
                                     +
                                     {resolveAndFormatPrice(
                                       modifier.price,
@@ -407,20 +411,20 @@ export default function ItemDetailSheet({
                                     )}
                                   </span>
                                 )}
-                              </button>
+                              </Button>
                             );
                           })}
                       </div>
                     </div>
 
                     {/* Divider */}
-                    <div className="my-3 h-px bg-[#EEEEEE]" />
+                    <div className="my-3 h-px bg-app-border" />
                   </>
                 )}
 
                 {/* --- Quantity selector - compact pill, LEFT-aligned, above instructions --- */}
                 <div className="mb-3 flex justify-start">
-                  <div className="inline-flex items-center h-10 rounded-full border border-[#EEEEEE] bg-[#F6F6F6] px-1">
+                  <div className="inline-flex items-center h-10 rounded-full border border-app-border bg-app-elevated px-1">
                     <Button
                       variant="ghost"
                       size="icon"
@@ -429,10 +433,10 @@ export default function ItemDetailSheet({
                       disabled={quantity <= 1}
                       aria-label="Diminuer la quantite"
                     >
-                      <Minus className="h-4 w-4 text-[#1A1A1A]" />
+                      <Minus className="h-4 w-4 text-app-text" />
                     </Button>
 
-                    <span className="font-bold text-center text-base text-[#1A1A1A] min-w-8">
+                    <span className="font-bold text-center text-base text-app-text min-w-8">
                       {quantity}
                     </span>
 
@@ -443,14 +447,14 @@ export default function ItemDetailSheet({
                       className="w-9 h-9 active:opacity-60"
                       aria-label="Augmenter la quantite"
                     >
-                      <Plus className="h-4 w-4 text-[#1A1A1A]" />
+                      <Plus className="h-4 w-4 text-app-text" />
                     </Button>
                   </div>
                 </div>
 
                 {/* --- Special instructions (pushed down by quantity selector) --- */}
                 <div>
-                  <h3 className="mb-1.5 font-semibold text-[13px] text-[#1A1A1A]">
+                  <h3 className="mb-1.5 font-semibold text-[13px] text-app-text">
                     {t('specialInstructions')}
                   </h3>
                   <Textarea
@@ -458,7 +462,7 @@ export default function ItemDetailSheet({
                     onChange={(e) => setCustomerNotes(e.target.value)}
                     placeholder={t('specialInstructionsPlaceholder')}
                     rows={1}
-                    className="w-full resize-none rounded-xl border border-[#EEEEEE] px-3 py-2 font-normal focus:outline-none focus:ring-0 text-[13px] text-[#1A1A1A] bg-[#F6F6F6]"
+                    className="w-full resize-none rounded-xl border border-app-border px-3 py-2 font-normal focus:outline-none focus:ring-0 text-[13px] text-app-text bg-app-elevated"
                   />
                 </div>
               </div>
@@ -466,7 +470,7 @@ export default function ItemDetailSheet({
 
             {/* --- Add to cart button - independent zone (flex-shrink-0), bouton avec respiration autour, meme fond blanc continu --- */}
             <div
-              className="flex-shrink-0 bg-white px-6 pt-2"
+              className="flex-shrink-0 bg-app-bg px-6 pt-2"
               style={{
                 paddingBottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))',
               }}
@@ -474,7 +478,7 @@ export default function ItemDetailSheet({
               <Button
                 onClick={handleAddToCart}
                 disabled={showSuccess}
-                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-[#1A1A1A] hover:bg-black"
+                className="w-full gap-1.5 font-semibold text-white h-[52px] rounded-xl text-[15px] bg-app-text hover:bg-black"
               >
                 {showSuccess ? (
                   <motion.div
@@ -489,7 +493,7 @@ export default function ItemDetailSheet({
                     <span>{t('addToCart')}</span>
                     <span
                       aria-hidden="true"
-                      className="inline-block rounded-full bg-white w-[5px] h-[5px]"
+                      className="inline-block rounded-full bg-app-bg w-[5px] h-[5px]"
                     />
                     <span className="text-white">{formatDisplayPrice(currentPrice, currency)}</span>
                   </>

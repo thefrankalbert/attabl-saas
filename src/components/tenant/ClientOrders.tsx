@@ -328,19 +328,19 @@ export default function ClientOrders({
   if (displayedOrders.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[55vh] text-center px-4">
-        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-[#F6F6F6]">
-          <ShoppingBag className="w-11 h-11 text-[#B0B0B0]" />
+        <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6 bg-app-elevated">
+          <ShoppingBag className="w-11 h-11 text-app-text-muted" />
         </div>
-        <h2 className="mb-2 text-xl leading-[28px] font-bold text-[#1A1A1A]">
+        <h2 className="mb-2 text-xl leading-[28px] font-bold text-app-text">
           {showHistory ? t('noOrdersDesc') : t('noOrders')}
         </h2>
-        <p className="text-center mb-8 max-w-xs text-[13px] leading-[18px] text-[#737373]">
+        <p className="text-center mb-8 max-w-xs text-[13px] leading-[18px] text-app-text-secondary">
           {showHistory ? t('noOrdersBrowse') : t('noOrdersBrowse')}
         </p>
         {!showHistory && (
           <Button
             asChild
-            className="h-12 px-8 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+            className="h-12 px-8 rounded-xl bg-app-text text-white text-[15px] font-semibold hover:bg-black"
           >
             <Link href={`/sites/${tenantSlug}/menu`}>
               <ArrowLeft className="w-4 h-4" />
@@ -361,7 +361,7 @@ export default function ClientOrders({
     >
       {/* Order ready banner (active mode only) */}
       {!showHistory && showReadyBanner && (
-        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-[#1A1A1A]">
+        <div className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 bg-app-text">
           <BellRing className="w-6 h-6 shrink-0" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -392,7 +392,7 @@ export default function ClientOrders({
         return (
           <div
             key={order.id}
-            className="rounded-xl overflow-hidden bg-white border border-[#EEEEEE]"
+            className="rounded-xl overflow-hidden bg-white border border-app-border"
           >
             {/* Collapsed header */}
             <Button
@@ -405,14 +405,14 @@ export default function ClientOrders({
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="whitespace-nowrap text-base font-semibold text-[#1A1A1A]">
+                    <span className="whitespace-nowrap text-base font-semibold text-app-text">
                       {shortOrderNumber(order)}
                     </span>
                     <BadgeStatus status={order.status} />
                   </div>
 
                   {/* Meta row: table + ETA */}
-                  <div className="mt-1.5 flex items-center gap-3 flex-wrap text-[13px] text-[#737373]">
+                  <div className="mt-1.5 flex items-center gap-3 flex-wrap text-[13px] text-app-text-secondary">
                     {order.table_number && order.service_type === 'dine-in' && (
                       <span className="inline-flex items-center gap-1">
                         <Users className="w-3.5 h-3.5" />
@@ -430,12 +430,12 @@ export default function ClientOrders({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="text-[15px] font-bold text-[#1A1A1A]">
+                  <span className="text-[15px] font-bold text-app-text">
                     {formatDisplayPrice(order.total, currency)}
                   </span>
                   <ChevronDown
                     className={cn(
-                      'w-4 h-4 transition-transform text-[#B0B0B0]',
+                      'w-4 h-4 transition-transform text-app-text-muted',
                       isExpanded && 'rotate-180',
                     )}
                   />
@@ -460,7 +460,7 @@ export default function ClientOrders({
                   transition={{ duration: 0.2 }}
                   className="overflow-hidden"
                 >
-                  <div className="border-t border-[#EEEEEE]">
+                  <div className="border-t border-app-border">
                     {/* Items with thumbnails */}
                     <div>
                       {(order.items || []).map((item, idx) => (
@@ -469,27 +469,29 @@ export default function ClientOrders({
                           className="px-4 py-3 flex items-center gap-3"
                           style={{
                             borderBottom:
-                              idx < order.items.length - 1 ? '1px solid #EEEEEE' : 'none',
+                              idx < order.items.length - 1
+                                ? '1px solid rgb(238, 238, 238)'
+                                : 'none',
                           }}
                         >
                           {/* Thumbnail placeholder 48x48 */}
                           <div
-                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-[#F6F6F6] border border-[#EEEEEE]"
+                            className="shrink-0 rounded-xl flex items-center justify-center w-12 h-12 bg-app-elevated border border-app-border"
                             aria-hidden
                           >
-                            <ShoppingBag className="w-5 h-5 text-[#B0B0B0]" />
+                            <ShoppingBag className="w-5 h-5 text-app-text-muted" />
                           </div>
 
                           <div className="flex-1 min-w-0">
-                            <p className="truncate text-sm font-semibold text-[#1A1A1A]">
+                            <p className="truncate text-sm font-semibold text-app-text">
                               {item.name}
                             </p>
-                            <p className="text-xs text-[#737373]">
+                            <p className="text-xs text-app-text-secondary">
                               {item.quantity} x {formatDisplayPrice(item.price, currency)}
                             </p>
                           </div>
 
-                          <span className="whitespace-nowrap text-sm font-bold text-[#1A1A1A]">
+                          <span className="whitespace-nowrap text-sm font-bold text-app-text">
                             {formatDisplayPrice(item.price * item.quantity, currency)}
                           </span>
                         </div>
@@ -497,15 +499,15 @@ export default function ClientOrders({
                     </div>
 
                     {/* Total */}
-                    <div className="px-4 py-3 flex items-center justify-between border-t border-[#EEEEEE]">
-                      <span className="text-[15px] font-bold text-[#1A1A1A]">{t('total')}</span>
-                      <span className="text-[15px] font-bold text-[#1A1A1A]">
+                    <div className="px-4 py-3 flex items-center justify-between border-t border-app-border">
+                      <span className="text-[15px] font-bold text-app-text">{t('total')}</span>
+                      <span className="text-[15px] font-bold text-app-text">
                         {formatDisplayPrice(order.total, currency)}
                       </span>
                     </div>
 
                     {/* Date */}
-                    <div className="px-4 pb-3 text-[11px] text-[#B0B0B0]">
+                    <div className="px-4 pb-3 text-[11px] text-app-text-muted">
                       {format(new Date(order.created_at), 'dd MMM yyyy HH:mm', {
                         locale: dateLocale,
                       })}
@@ -520,7 +522,7 @@ export default function ClientOrders({
                             handleEditOrder(order);
                           }}
                           disabled={isEditing}
-                          className="w-full h-12 rounded-xl bg-[#1A1A1A] text-white text-[15px] font-semibold hover:bg-black"
+                          className="w-full h-12 rounded-xl bg-app-text text-white text-[15px] font-semibold hover:bg-black"
                         >
                           {isEditing ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -541,7 +543,7 @@ export default function ClientOrders({
                             e.stopPropagation();
                             handleReorder(order);
                           }}
-                          className="w-full h-12 rounded-xl bg-white border-[#EEEEEE] text-[#1A1A1A] text-[15px] font-semibold"
+                          className="w-full h-12 rounded-xl bg-white border-app-border text-app-text text-[15px] font-semibold"
                         >
                           <RotateCcw className="w-4 h-4" />
                           {t('reorder')}
@@ -572,19 +574,19 @@ function OrdersSkeleton() {
       aria-live="polite"
     >
       {[0, 1, 2].map((i) => (
-        <div key={i} className="rounded-xl p-4 bg-white border border-[#EEEEEE]">
+        <div key={i} className="rounded-xl p-4 bg-white border border-app-border">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <div className="h-5 w-20 rounded-md animate-pulse bg-[#F6F6F6]" />
-              <div className="h-5 w-16 rounded-md animate-pulse bg-[#F6F6F6]" />
+              <div className="h-5 w-20 rounded-md animate-pulse bg-app-elevated" />
+              <div className="h-5 w-16 rounded-md animate-pulse bg-app-elevated" />
             </div>
-            <div className="h-5 w-14 rounded-md animate-pulse bg-[#F6F6F6]" />
+            <div className="h-5 w-14 rounded-md animate-pulse bg-app-elevated" />
           </div>
-          <div className="h-3 w-32 rounded-md animate-pulse mb-4 bg-[#F6F6F6]" />
+          <div className="h-3 w-32 rounded-md animate-pulse mb-4 bg-app-elevated" />
           <div className="flex items-center justify-between">
             {[0, 1, 2, 3].map((j) => (
               <div key={j} className="flex flex-col items-center flex-1">
-                <div className="w-7 h-7 rounded-full animate-pulse bg-[#F6F6F6]" />
+                <div className="w-7 h-7 rounded-full animate-pulse bg-app-elevated" />
               </div>
             ))}
           </div>
@@ -598,13 +600,13 @@ function BadgeStatus({ status }: { status: string }) {
   const t = useTranslations('tenant');
 
   const badgeStyles: Record<string, { bg: string; color: string }> = {
-    pending: { bg: '#F6F6F6', color: '#737373' },
-    confirmed: { bg: '#F6F6F6', color: '#737373' },
-    preparing: { bg: '#F6F6F6', color: '#737373' },
-    ready: { bg: '#F6F6F6', color: '#1A1A1A' },
-    delivered: { bg: '#F6F6F6', color: '#737373' },
-    served: { bg: '#F6F6F6', color: '#737373' },
-    cancelled: { bg: '#FFEBEE', color: '#FF3008' },
+    pending: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
+    confirmed: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
+    preparing: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
+    ready: { bg: 'rgb(246, 246, 246)', color: 'rgb(26, 26, 26)' },
+    delivered: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
+    served: { bg: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' },
+    cancelled: { bg: 'rgb(255, 235, 238)', color: 'rgb(255, 48, 8)' },
   };
 
   const labels: Record<string, string> = {

@@ -74,6 +74,7 @@
     "expired": "Expiré",
     "tenantNotFound": "Établissement non trouvé",
     "tenantNotFoundDesc": "Cet établissement n'existe pas ou vous n'y avez pas accès.",
+    "backToDashboard": "Retour au tableau de bord",
     "subtotal": "Sous-total",
     "tax": "TVA",
     "service": "Service",
@@ -1346,7 +1347,10 @@
     "preparationZoneDesc": "Où les articles de cette catégorie sont préparés. Les commandes bar-only ne s'affichent pas en cuisine.",
     "zoneKitchen": "Cuisine",
     "zoneBar": "Bar",
-    "zoneBoth": "Les deux"
+    "zoneBoth": "Les deux",
+    "featuredOnHome": "Mettre en avant sur l'accueil",
+    "featuredOnHomeDesc": "Affiche cette catégorie dans la grille de raccourcis sur la page d'accueil client.",
+    "featuredOnHomeLimit": "Limite recommandée de {count} catégories atteinte. Au-delà, seules les {count} premières seront affichées."
   },
   "items": {
     "title": "Plats & Articles",
@@ -1511,6 +1515,8 @@
     "sharedMenu": "Menu partagé (visible dans tous les espaces)",
     "sharedMenuBadge": "Partagé",
     "sharedMenuHint": "Ce menu sera visible dans tous vos espaces (ex : Carte des Boissons)",
+    "transversalMenu": "Carte transversale (disponible partout)",
+    "transversalMenuHint": "Cette carte apparaitra comme sous-onglet sur toutes les autres cartes (ex : Boissons disponibles depuis n'importe quelle carte).",
     "wizardMenuCreatedMessage": "Carte \"{name}\" creee",
     "wizardAddCategoriesPrompt": "Souhaitez-vous ajouter des catégories maintenant ?",
     "wizardAddCategories": "Ajouter des catégories",
@@ -1777,7 +1783,11 @@
     "orderSentDesc": "Votre commande #{number} a été transmise.",
     "trackOrder": "Suivre ma commande",
     "backToMenu": "Retour au menu",
+    "errorTitle": "Oups, une erreur est survenue",
+    "errorHint": "Quelque chose ne s'est pas passe comme prevu. Reessayez ou retournez au menu.",
+    "retry": "Reessayer",
     "searchMenu": "Rechercher un plat, une boisson...",
+    "clearSearch": "Effacer",
     "seeAll": "Voir tout",
     "editOrder": "Modifier",
     "addressLabel": "Adresse",
@@ -1896,6 +1906,7 @@
     "aboutAppSubtext": "Explorez notre carte et commandez directement depuis votre table.",
     "orderBeingPrepared": "Merci ! On transmet votre commande en cuisine.",
     "orderStatusSent": "Votre commande a été envoyée",
+    "orderStatusConfirmed": "Commande confirmee",
     "orderStatusInKitchen": "Votre commande est en cuisine",
     "orderStatusReady": "Votre commande est prête",
     "orderStatusServed": "Votre commande a été servie",
@@ -2312,12 +2323,13 @@
   },
   "installPrompt": {
     "installApp": "Installer {name}",
-    "subtitle": "Commandez en un clic, depuis votre ecran d'accueil",
+    "subtitle": "Acces rapide en un clic",
     "install": "Installer",
     "howTo": "Comment ?",
     "close": "Fermer",
     "iosStep1": "1. Appuyez sur Partager",
-    "iosStep2": "2. Sélectionnez Sur l'écran d'accueil"
+    "iosStep2": "2. Sélectionnez Sur l'écran d'accueil",
+    "installOnHomeScreen": "Installer {appName} sur votre ecran d'accueil"
   },
   "contact": {
     "back": "Retour",

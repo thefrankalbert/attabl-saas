@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
@@ -68,10 +68,18 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
   const [search, setSearch] = useSessionState('orders:search', '');
+  const [debouncedSearch, setDebouncedSearch] = useState(search);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearch(search), 300);
+    return () => clearTimeout(timer);
+  }, [search]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 50;
 
   const { data: tenantSettings } = useTenantSettings(tenantId);
 
@@ -120,8 +128,8 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const updateOrderStatus = useUpdateOrderStatus(tenantId);
 
   // TanStack Query for orders - use || to handle empty arrays from persistent cache
-  const { data: queryOrders } = useOrders(tenantId);
-  const orders = queryOrders?.length ? queryOrders : initialOrders;
+  const { data: queryOrders } = useOrders(tenantId, undefined, page, PAGE_SIZE);
+  const orders = queryOrders?.length ? queryOrders : page === 0 ? initialOrders : [];
 
   // Realtime subscription via shared hook
   useRealtimeSubscription<Record<string, unknown>>({
@@ -173,14 +181,14 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
       }
     }
 
-    // Search filter
-    if (search.trim()) {
-      const q = search.toLowerCase();
+    // Search filter (debounced)
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase();
       result = result.filter((o) => o.table_number.toLowerCase().includes(q) || o.id.includes(q));
     }
 
     return result;
-  }, [orders, statusFilter, search]);
+  }, [orders, statusFilter, debouncedSearch]);
 
   // Status badge config - uses semantic design tokens for colors
   const statusConfig: Record<
@@ -374,6 +382,8 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     updateOrderStatus.mutate({ orderId, status: newStatus });
   };
 
+  // NOTE: order_items and related records are deleted via ON DELETE CASCADE
+  // in the database schema. No manual cleanup needed.
   const handleBulkDelete = useCallback(async () => {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
@@ -555,13 +565,35 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
             size="icon"
             onClick={() => {
               const ids = Array.from(selectedIds);
-              ids.forEach((id) => {
-                const order = orders.find((o) => o.id === id);
-                if (order) {
-                  const config = statusConfig[order.status];
-                  if (config.nextStatus) {
-                    handleStatusChange(id, config.nextStatus);
-                  }
+              const selectedOrders = ids
+                .map((id) => orders.find((o) => o.id === id))
+                .filter(Boolean) as Order[];
+
+              // Filter out orders that can't be advanced (already delivered/cancelled)
+              const eligibleOrders = selectedOrders.filter(
+                (o) => o.status !== 'delivered' && o.status !== 'cancelled',
+              );
+              if (eligibleOrders.length === 0) {
+                toast({
+                  title: t('noEligibleOrders') || 'Aucune commande eligible',
+                  variant: 'destructive',
+                });
+                return;
+              }
+              if (eligibleOrders.length < selectedOrders.length) {
+                toast({
+                  title:
+                    t('someOrdersSkipped', {
+                      count: selectedOrders.length - eligibleOrders.length,
+                    }) ||
+                    `${selectedOrders.length - eligibleOrders.length} commande(s) non-eligible(s) ignoree(s)`,
+                });
+              }
+
+              eligibleOrders.forEach((order) => {
+                const config = statusConfig[order.status];
+                if (config.nextStatus) {
+                  handleStatusChange(order.id, config.nextStatus);
                 }
               });
               setSelectedIds(new Set());
@@ -739,6 +771,29 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               }}
             />
           )}
+        </div>
+
+        {/* Pagination controls */}
+        <div className="flex items-center justify-center gap-2 py-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            disabled={page === 0}
+          >
+            {tc('previous') || 'Precedent'}
+          </Button>
+          <span className="text-xs text-app-text-muted">
+            {t('pageOf', { page: page + 1 }) || `Page ${page + 1}`}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setPage((p) => p + 1)}
+            disabled={orders.length < PAGE_SIZE}
+          >
+            {tc('next') || 'Suivant'}
+          </Button>
         </div>
 
         {/* Detail Modal */}

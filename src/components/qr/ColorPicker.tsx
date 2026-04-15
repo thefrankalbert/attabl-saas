@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
@@ -84,12 +85,12 @@ export function ColorPicker({
       {/* Preset Swatches */}
       <div className="flex flex-wrap gap-2 mb-3">
         {presets.map((preset) => (
-          <button
+          <Button
             key={preset}
-            type="button"
+            variant="ghost"
             onClick={() => handlePresetClick(preset)}
             className={`
-              h-6 w-6 rounded-full border border-app-border cursor-pointer
+              h-6 w-6 rounded-full border border-app-border px-0 py-0
               transition-all duration-150
               ${
                 value.toLowerCase() === preset.toLowerCase()

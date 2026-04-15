@@ -27,7 +27,7 @@ export default function StatsCard({
   sparklineData,
 }: StatsCardProps) {
   return (
-    <div className="bg-app-card rounded-2xl border border-app-border p-6 flex flex-col justify-between hover:border-accent/40 transition-all duration-200 group">
+    <div className="bg-app-card rounded-xl border border-app-border p-6 flex flex-col justify-between hover:border-accent/40 transition-all duration-200 group">
       {/* Label */}
       <div className="flex items-center justify-between">
         <p className="text-[11px] uppercase tracking-[0.1em] text-app-text-muted font-semibold">
@@ -97,7 +97,7 @@ export default function StatsCard({
 
 export function StatsCardSkeleton() {
   return (
-    <div className="bg-app-card rounded-2xl border border-app-border p-6 animate-pulse">
+    <div className="bg-app-card rounded-xl border border-app-border p-6 animate-pulse">
       <div className="h-3 w-20 bg-app-elevated rounded" />
       <div className="h-12 w-28 bg-app-elevated rounded mt-3" />
       <div className="h-4 w-16 bg-app-bg rounded-full mt-3" />

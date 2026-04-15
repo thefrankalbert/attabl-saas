@@ -293,56 +293,56 @@ export default function PaymentModal({
               {t('tip')}
             </p>
             <div className="flex gap-1.5">
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 onClick={() => {
                   setTipFixed(0);
                   setShowCustomTip(false);
                   setCustomTip('');
                 }}
                 className={cn(
-                  'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all',
+                  'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
                   !showCustomTip && tipFixed === 0
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
                 )}
               >
                 0
-              </button>
+              </Button>
               {TIP_AMOUNTS.map((amount) => (
-                <button
+                <Button
                   key={amount}
-                  type="button"
+                  variant="outline"
                   onClick={() => {
                     setTipFixed(amount);
                     setShowCustomTip(false);
                     setCustomTip('');
                   }}
                   className={cn(
-                    'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all tabular-nums',
+                    'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold tabular-nums',
                     !showCustomTip && tipFixed === amount
                       ? 'border-accent/40 bg-accent/10 text-accent'
                       : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
                   )}
                 >
                   {amount.toLocaleString()}
-                </button>
+                </Button>
               ))}
-              <button
-                type="button"
+              <Button
+                variant="outline"
                 onClick={() => {
                   setShowCustomTip(true);
                   setTipFixed(0);
                 }}
                 className={cn(
-                  'flex-1 rounded-lg border py-2 min-h-[40px] text-xs font-bold transition-all',
+                  'flex-1 rounded-lg py-2 min-h-[40px] text-xs font-bold',
                   showCustomTip
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-secondary hover:bg-app-elevated/60',
                 )}
               >
                 {t('customTip')}
-              </button>
+              </Button>
             </div>
             {showCustomTip && (
               <Input
@@ -377,12 +377,12 @@ export default function PaymentModal({
                 { key: 'mobile_money' as const, icon: Coins, label: t('mobile') },
               ] as const
             ).map((pm) => (
-              <button
+              <Button
                 key={pm.key}
-                type="button"
+                variant="outline"
                 onClick={() => setMethod(pm.key)}
                 className={cn(
-                  'flex items-center justify-center gap-1.5 rounded-lg border p-2 min-h-[44px] transition-all',
+                  'flex items-center justify-center gap-1.5 rounded-lg p-2 min-h-[44px]',
                   method === pm.key
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-muted hover:bg-app-elevated/60 hover:text-app-text-secondary',
@@ -390,62 +390,62 @@ export default function PaymentModal({
               >
                 <pm.icon className="h-4 w-4" />
                 <span className="text-xs font-medium">{pm.label}</span>
-              </button>
+              </Button>
             ))}
           </div>
 
           {/* Mobile: inline tip row (hidden on desktop where tips are in left col) */}
           <div className="flex gap-1.5 mb-3 @md:hidden shrink-0">
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={() => {
                 setTipFixed(0);
                 setShowCustomTip(false);
                 setCustomTip('');
               }}
               className={cn(
-                'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all',
+                'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold',
                 !showCustomTip && tipFixed === 0
                   ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
               )}
             >
               0
-            </button>
+            </Button>
             {TIP_AMOUNTS.map((amount) => (
-              <button
+              <Button
                 key={amount}
-                type="button"
+                variant="outline"
                 onClick={() => {
                   setTipFixed(amount);
                   setShowCustomTip(false);
                   setCustomTip('');
                 }}
                 className={cn(
-                  'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all tabular-nums',
+                  'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold tabular-nums',
                   !showCustomTip && tipFixed === amount
                     ? 'border-accent/40 bg-accent/10 text-accent'
                     : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
                 )}
               >
                 {amount.toLocaleString()}
-              </button>
+              </Button>
             ))}
-            <button
-              type="button"
+            <Button
+              variant="outline"
               onClick={() => {
                 setShowCustomTip(true);
                 setTipFixed(0);
               }}
               className={cn(
-                'flex-1 rounded-lg border py-1.5 min-h-[36px] text-[10px] font-bold transition-all',
+                'flex-1 rounded-lg py-1.5 min-h-[36px] text-[10px] font-bold',
                 showCustomTip
                   ? 'border-accent/40 bg-accent/10 text-accent'
                   : 'border-app-border bg-app-elevated/30 text-app-text-secondary',
               )}
             >
               {t('customTip')}
-            </button>
+            </Button>
           </div>
 
           {/* Cash: Received amount */}
@@ -466,12 +466,12 @@ export default function PaymentModal({
           {method === 'cash' && (
             <div className="flex-1 min-h-0 grid grid-cols-4 gap-1.5 sm:gap-2 mb-2 sm:mb-3">
               {NUMPAD_KEYS.map((key) => (
-                <button
+                <Button
                   key={key}
-                  type="button"
+                  variant="outline"
                   onClick={() => handleKeypadPress(key)}
                   className={cn(
-                    'flex items-center justify-center rounded-lg border border-app-border bg-app-elevated/40 text-lg sm:text-xl font-bold text-app-text transition-all active:scale-95 hover:bg-app-elevated/80',
+                    'flex items-center justify-center rounded-lg border-app-border bg-app-elevated/40 text-lg sm:text-xl font-bold text-app-text active:scale-95 hover:bg-app-elevated/80',
                     key === 'C' && 'text-red-400',
                     key === '⌫' && 'text-amber-400',
                     key === '0' && 'col-span-2',
@@ -487,7 +487,7 @@ export default function PaymentModal({
                   ) : (
                     key
                   )}
-                </button>
+                </Button>
               ))}
             </div>
           )}

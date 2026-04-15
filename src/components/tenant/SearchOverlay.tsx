@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, X, ArrowLeft } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { MenuItem } from '@/types/admin.types';
 import MenuItemCard from './MenuItemCard';
@@ -70,22 +71,18 @@ export default function SearchOverlay({
           className="fixed inset-0 z-[55] bg-white flex flex-col"
         >
           {/* Search header */}
-          <div
-            className="sticky top-0 z-10 bg-white px-4 py-3 flex items-center gap-3"
-            style={{ borderBottom: '1px solid rgba(238,238,238,0.5)' }}
-          >
-            <button
+          <div className="sticky top-0 z-10 bg-app-bg px-4 py-3 flex items-center gap-3 border-b border-app-border/50">
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
               aria-label={t('ariaGoBack')}
-              className="p-2 rounded-full hover:bg-[#F6F6F6] transition-colors"
+              className="h-auto w-auto p-2"
             >
               <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div
-              className="flex-1 flex items-center gap-2 rounded-xl px-3 py-2.5"
-              style={{ backgroundColor: '#F6F6F6' }}
-            >
-              <Search className="w-4 h-4" style={{ color: '#B0B0B0' }} />
+            </Button>
+            <div className="flex-1 flex items-center gap-2 rounded-xl px-3 py-2.5 bg-app-elevated">
+              <Search className="w-4 h-4 text-app-text-muted" />
               <Input
                 ref={inputRef}
                 type="text"
@@ -95,9 +92,15 @@ export default function SearchOverlay({
                 className="flex-1 bg-transparent text-sm outline-none border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               />
               {query && (
-                <button onClick={() => setQuery('')} aria-label="Effacer" className="p-0.5">
-                  <X className="w-4 h-4" style={{ color: '#B0B0B0' }} />
-                </button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setQuery('')}
+                  aria-label={t('clearSearch')}
+                  className="h-auto w-auto p-0.5"
+                >
+                  <X className="w-4 h-4 text-app-text-muted" />
+                </Button>
               )}
             </div>
           </div>
@@ -106,10 +109,8 @@ export default function SearchOverlay({
           <div className="flex-1 overflow-y-auto px-4 py-4 pb-28 space-y-3">
             {query && results.length === 0 && (
               <div className="text-center py-12">
-                <Search className="w-12 h-12 mx-auto mb-3" style={{ color: '#B0B0B0' }} />
-                <p className="text-sm" style={{ color: '#737373' }}>
-                  {t('noSearchResults', { query })}
-                </p>
+                <Search className="w-12 h-12 mx-auto mb-3 text-app-text-muted" />
+                <p className="text-sm text-app-text-secondary">{t('noSearchResults', { query })}</p>
               </div>
             )}
             {results.map((item) => (

@@ -56,10 +56,18 @@ const getCartItemKey = (item: {
   id: string;
   selectedOption?: { name_fr: string } | null;
   selectedVariant?: { name_fr: string } | null;
+  modifiers?: { name: string }[] | null;
 }): string => {
   let key = item.id;
   if (item.selectedOption) key += `-opt-${item.selectedOption.name_fr}`;
   if (item.selectedVariant) key += `-var-${item.selectedVariant.name_fr}`;
+  if (item.modifiers && item.modifiers.length > 0) {
+    const modKey = item.modifiers
+      .map((m) => m.name)
+      .sort()
+      .join(',');
+    key += `-mod-${modKey}`;
+  }
   return key;
 };
 
@@ -143,6 +151,7 @@ export default function CartPage() {
   );
 
   const fetchIdRef = useRef(0);
+  const submitLock = useRef(false);
 
   // --- Smart suggestions -------------------------------------
   useEffect(() => {
@@ -474,6 +483,8 @@ export default function CartPage() {
   const finalTotal = grandTotal + tipAmount;
 
   const handleSubmitOrder = async () => {
+    if (submitLock.current) return;
+    submitLock.current = true;
     setIsSubmitting(true);
     setError(null);
     setValidationErrors([]);
@@ -533,6 +544,7 @@ export default function CartPage() {
       logger.error('Order submission error:', err);
       setError(t('connectionError'));
     } finally {
+      submitLock.current = false;
       setIsSubmitting(false);
     }
   };
@@ -595,9 +607,9 @@ export default function CartPage() {
       <div className="max-w-lg mx-auto px-4 pt-5 space-y-5">
         {/* Errors */}
         {(error || validationErrors.length > 0) && (
-          <div className="p-4 bg-red-50 border border-[#EEEEEE] rounded-xl">
+          <div className="p-4 bg-[#FEF2F2] border border-[#EEEEEE] rounded-xl">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-[#FF3008] flex-shrink-0 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-[#FF3008] shrink-0 mt-0.5" />
               <div>
                 {error && <p className="font-semibold text-[#FF3008] text-[13px]">{error}</p>}
                 {validationErrors.length > 0 && (
@@ -1140,7 +1152,7 @@ export default function CartPage() {
           <Button
             onClick={handleSubmitOrder}
             disabled={isSubmitting || items.length === 0}
-            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5"
+            className="w-full h-[52px] rounded-xl bg-[#1A1A1A] text-white font-semibold text-[15px] hover:bg-black shadow-[0_4px_16px_rgba(0,0,0,0.2)] gap-2.5 disabled:opacity-100 disabled:bg-[#1A1A1A]"
           >
             {isSubmitting ? (
               <Loader2 className="w-6 h-6 animate-spin" />

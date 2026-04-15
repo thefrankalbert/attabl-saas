@@ -5,6 +5,7 @@ import Image from 'next/image';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Ad } from '@/types/admin.types';
 
@@ -26,7 +27,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
   if (!ads || ads.length === 0) return null;
 
   return (
-    <div className="relative mb-8 rounded-2xl overflow-hidden border border-[#EEEEEE] group">
+    <div className="relative mb-8 rounded-2xl overflow-hidden border border-app-border group">
       <div className="overflow-hidden" ref={emblaRef}>
         <div className="flex">
           {ads.map((ad, index) => (
@@ -36,7 +37,7 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
                   'relative w-full',
                   aspectRatio === 'video' ? 'aspect-video' : 'aspect-[21/9]',
                 )}
-                style={{ backgroundColor: '#F6F6F6' }}
+                style={{ backgroundColor: 'rgb(246, 246, 246)' }}
               >
                 <Image
                   src={ad.image_url}
@@ -63,10 +64,12 @@ export default function AdsSlider({ ads, aspectRatio = 'video' }: AdsSliderProps
       {/* Dots */}
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5 z-20">
         {ads.map((_, index) => (
-          <button
+          <Button
             key={index}
+            variant="ghost"
+            size="icon"
             className={cn(
-              'w-2.5 h-2.5 rounded-full transition-all duration-300',
+              'w-2.5 h-2.5 rounded-full p-0',
               index === selectedIndex ? 'bg-white w-5' : 'bg-white/50 hover:bg-white/80',
             )}
             onClick={() => emblaApi?.scrollTo(index)}

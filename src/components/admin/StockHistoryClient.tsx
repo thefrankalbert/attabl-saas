@@ -19,6 +19,7 @@ import { useStockMovements } from '@/hooks/queries';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { MOVEMENT_STYLES as MOVEMENT_TOKENS } from '@/lib/design-tokens';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
 import type { ColumnDef } from '@tanstack/react-table';
 import type { StockMovement, MovementType } from '@/types/inventory.types';
@@ -33,37 +34,37 @@ const MOVEMENT_STYLES: Record<
   order_destock: {
     labelKey: 'filterOrders',
     icon: ClipboardList,
-    bg: 'bg-blue-500/10',
-    text: 'text-blue-600 dark:text-blue-400',
-    dot: 'bg-blue-500',
+    bg: MOVEMENT_TOKENS.order_destock.bg,
+    text: MOVEMENT_TOKENS.order_destock.text,
+    dot: 'bg-status-info',
   },
   manual_add: {
     labelKey: 'filterAdditions',
     icon: Package,
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-600 dark:text-emerald-400',
-    dot: 'bg-emerald-500',
+    bg: MOVEMENT_TOKENS.manual_add.bg,
+    text: MOVEMENT_TOKENS.manual_add.text,
+    dot: 'bg-status-success',
   },
   manual_remove: {
     labelKey: 'filterWithdrawals',
     icon: Package,
-    bg: 'bg-red-500/10',
-    text: 'text-red-600 dark:text-red-400',
-    dot: 'bg-red-500',
+    bg: MOVEMENT_TOKENS.manual_remove.bg,
+    text: MOVEMENT_TOKENS.manual_remove.text,
+    dot: 'bg-status-error',
   },
   adjustment: {
     labelKey: 'filterAdjustments',
     icon: RefreshCw,
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-600 dark:text-amber-400',
-    dot: 'bg-amber-500',
+    bg: MOVEMENT_TOKENS.adjustment.bg,
+    text: MOVEMENT_TOKENS.adjustment.text,
+    dot: 'bg-status-warning',
   },
   opening: {
     labelKey: 'filterOpening',
     icon: Truck,
-    bg: 'bg-violet-500/10',
-    text: 'text-violet-600 dark:text-violet-400',
-    dot: 'bg-violet-500',
+    bg: MOVEMENT_TOKENS.opening.bg,
+    text: MOVEMENT_TOKENS.opening.text,
+    dot: 'bg-status-info',
   },
 };
 
@@ -216,16 +217,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
           return (
             <div className="flex items-center justify-end gap-1">
               {isPositive ? (
-                <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
+                <ArrowUpRight className="w-3.5 h-3.5 text-status-success" />
               ) : (
-                <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
+                <ArrowDownRight className="w-3.5 h-3.5 text-status-error" />
               )}
               <span
                 className={cn(
                   'font-mono text-sm font-bold tabular-nums',
-                  isPositive
-                    ? 'text-emerald-600 dark:text-emerald-400'
-                    : 'text-red-600 dark:text-red-400',
+                  isPositive ? 'text-status-success' : 'text-status-error',
                 )}
               >
                 {isPositive ? '+' : ''}
@@ -320,10 +319,10 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
 
           {/* ── Quick stats strip ── */}
           <div className="grid grid-cols-3 gap-2">
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-lg">
-              <ArrowUpRight className="w-4 h-4 text-emerald-500 shrink-0" />
+            <div className="flex items-center gap-2.5 px-3 py-2 bg-status-success-bg border border-status-success/10 rounded-lg">
+              <ArrowUpRight className="w-4 h-4 text-status-success shrink-0" />
               <div className="min-w-0">
-                <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 tabular-nums leading-tight">
+                <p className="text-lg font-bold text-status-success tabular-nums leading-tight">
                   +{stats.additions}
                 </p>
                 <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
@@ -331,10 +330,10 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2.5 px-3 py-2 bg-red-500/5 border border-red-500/10 rounded-lg">
-              <ArrowDownRight className="w-4 h-4 text-red-500 shrink-0" />
+            <div className="flex items-center gap-2.5 px-3 py-2 bg-status-error-bg border border-status-error/10 rounded-lg">
+              <ArrowDownRight className="w-4 h-4 text-status-error shrink-0" />
               <div className="min-w-0">
-                <p className="text-lg font-bold text-red-600 dark:text-red-400 tabular-nums leading-tight">
+                <p className="text-lg font-bold text-status-error tabular-nums leading-tight">
                   -{stats.removals}
                 </p>
                 <p className="text-[10px] font-medium text-app-text-muted uppercase tracking-wider">
@@ -419,16 +418,14 @@ export default function StockHistoryClient({ tenantId }: StockHistoryClientProps
                         </div>
                         <div className="flex items-center gap-1 shrink-0">
                           {isPositive ? (
-                            <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
+                            <ArrowUpRight className="w-3.5 h-3.5 text-status-success" />
                           ) : (
-                            <ArrowDownRight className="w-3.5 h-3.5 text-red-500" />
+                            <ArrowDownRight className="w-3.5 h-3.5 text-status-error" />
                           )}
                           <span
                             className={cn(
                               'font-mono text-sm font-bold tabular-nums',
-                              isPositive
-                                ? 'text-emerald-600 dark:text-emerald-400'
-                                : 'text-red-600 dark:text-red-400',
+                              isPositive ? 'text-status-success' : 'text-status-error',
                             )}
                           >
                             {isPositive ? '+' : ''}

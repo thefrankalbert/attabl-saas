@@ -3,15 +3,8 @@
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ShoppingBag, Home, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
-
-/* Design tokens from DESIGN.md */
-const C = {
-  primary: '#1A1A1A',
-  background: '#FFFFFF',
-  divider: '#EEEEEE',
-  textMuted: '#B0B0B0',
-} as const;
 
 interface BottomNavProps {
   tenantSlug: string;
@@ -36,7 +29,11 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
         pathname === `${basePath}/menu/`,
       /* Home icon (Lucide) */
       icon: (active: boolean) => (
-        <Home size={24} strokeWidth={2} color={active ? C.primary : C.textMuted} />
+        <Home
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
       ),
     },
     {
@@ -46,7 +43,11 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
       badge: totalItems > 0,
       /* Shopping bag icon (Lucide) */
       icon: (active: boolean) => (
-        <ShoppingBag size={24} strokeWidth={2} color={active ? C.primary : C.textMuted} />
+        <ShoppingBag
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
       ),
     },
     {
@@ -55,7 +56,11 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
       isActive: pathname?.includes('/orders'),
       /* Clock / orders icon (Lucide) */
       icon: (active: boolean) => (
-        <Clock size={24} strokeWidth={2} color={active ? C.primary : C.textMuted} />
+        <Clock
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
       ),
     },
     {
@@ -64,82 +69,42 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
       isActive: pathname?.includes('/settings'),
       /* User icon (Lucide) */
       icon: (active: boolean) => (
-        <User size={24} strokeWidth={2} color={active ? C.primary : C.textMuted} />
+        <User
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
       ),
     },
   ];
 
   return (
     <nav
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        background: C.background,
-        borderTop: `1px solid ${C.divider}`,
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-app-bg border-t border-app-border"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: 60,
-          maxWidth: 430,
-          margin: '0 auto',
-          padding: '0 8px',
-        }}
-      >
+      <div className="flex justify-around items-center h-[60px] max-w-[430px] mx-auto px-2">
         {tabs.map((tab) => (
-          <button
+          <Button
             key={tab.label}
+            variant="ghost"
             onClick={() => router.push(tab.path)}
             aria-label={tab.label}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 4,
-              flex: 1,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              padding: '8px 0',
-              position: 'relative',
-            }}
+            className="flex flex-col items-center justify-center gap-1 flex-1 px-0 py-2 relative h-auto"
           >
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               {tab.icon(!!tab.isActive)}
               {/* Green dot badge for cart */}
               {'badge' in tab && tab.badge && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    top: -2,
-                    right: -4,
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    background: C.primary,
-                    border: `2px solid ${C.background}`,
-                  }}
-                />
+                <div className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-app-text border-2 border-app-bg" />
               )}
             </div>
             <span
-              style={{
-                fontSize: 11,
-                fontWeight: 500,
-                color: tab.isActive ? C.primary : C.textMuted,
-              }}
+              className={`text-[11px] font-medium ${tab.isActive ? 'text-app-text' : 'text-app-text-muted'}`}
             >
               {tab.label}
             </span>
-          </button>
+          </Button>
         ))}
       </div>
     </nav>

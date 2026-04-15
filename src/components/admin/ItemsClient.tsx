@@ -49,6 +49,16 @@ import ImageUpload from '@/components/shared/ImageUpload';
 import { ALLERGENS } from '@/lib/config/allergens';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 import { createMenuItemService } from '@/services/menu-item.service';
@@ -78,6 +88,7 @@ export default function ItemsClient({
   const [filterAvailable, setFilterAvailable] = useSessionState('items:filterAvailable', 'all');
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   // Form state
   const [name, setName] = useState('');
@@ -104,6 +115,17 @@ export default function ItemsClient({
   const queryClient = useQueryClient();
 
   const closePanel = useCallback(() => setSelectedItem(null), []);
+
+  // Warn before leaving with unsaved form data
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (showModal || saving) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [showModal, saving]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -201,6 +223,7 @@ export default function ItemsClient({
         const limitCheck = await actionCheckCanAddMenuItem(tenantId);
         if (limitCheck.error) {
           toast({ title: limitCheck.error, variant: 'destructive' });
+          setSaving(false);
           return;
         }
         await menuItemService.createMenuItem(payload);
@@ -225,17 +248,23 @@ export default function ItemsClient({
     }
   };
 
-  const handleDelete = async (item: MenuItem) => {
-    if (!confirm(t('deleteConfirm', { name: item.name }))) return;
+  const handleDelete = (item: MenuItem) => {
+    setDeleteTarget({ id: item.id, name: item.name });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
       const menuItemService = createMenuItemService(supabase);
-      await menuItemService.deleteMenuItem(item.id);
+      await menuItemService.deleteMenuItem(deleteTarget.id);
       toast({ title: t('itemDeleted') });
       loadItems();
       router.refresh();
       revalidateMenuCache();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -458,12 +487,14 @@ export default function ItemsClient({
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 rounded-lg hover:bg-app-hover text-app-text-muted"
+                        className="h-auto w-auto p-1.5 text-app-text-muted"
                       >
                         <MoreVertical className="w-4 h-4" />
-                      </button>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
@@ -967,6 +998,30 @@ export default function ItemsClient({
             </div>
           </div>
         </AdminModal>
+
+        {/* Delete confirmation dialog */}
+        <AlertDialog
+          open={!!deleteTarget}
+          onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{tc('confirmDelete')}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {deleteTarget ? t('deleteConfirm', { name: deleteTarget.name }) : ''}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDelete}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                {tc('delete')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </RoleGuard>
   );

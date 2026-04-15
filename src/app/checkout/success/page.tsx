@@ -23,18 +23,29 @@ function CheckoutSuccessContent() {
         return;
       }
 
-      try {
-        const response = await fetch(`/api/verify-checkout?session_id=${sessionId}`);
-        const data = await response.json();
+      // Poll for up to 30 seconds (15 attempts, 2s apart)
+      for (let attempt = 0; attempt < 15; attempt++) {
+        try {
+          const response = await fetch(`/api/verify-checkout?session_id=${sessionId}`);
+          const data = await response.json();
 
-        if (data.slug) {
-          setTenantSlug(data.slug);
+          if (data.slug) {
+            setTenantSlug(data.slug);
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          logger.error('Checkout verification error', error);
         }
-        setLoading(false);
-      } catch (error) {
-        logger.error('Checkout verification error', error);
-        setLoading(false);
+
+        // Wait 2 seconds before next attempt
+        if (attempt < 14) {
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
       }
+
+      // After all attempts, stop loading (show fallback UI)
+      setLoading(false);
     }
 
     verifySession();

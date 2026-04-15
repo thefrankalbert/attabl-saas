@@ -139,7 +139,7 @@ export function ScreenLock({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 className="mb-8"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
+                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/20">
                   <Lock className="h-9 w-9 text-accent" />
                 </div>
               </motion.div>

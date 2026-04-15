@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { UtensilsCrossed, Hotel, Zap, Wine, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 import DashboardPreview from './DashboardPreview';
 
 type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
@@ -52,10 +53,11 @@ export default function VideoHero() {
           {/* Segment pills */}
           <div className="mt-8 flex flex-wrap justify-center gap-2">
             {segments.map(({ key, label, icon: Icon }) => (
-              <button
+              <Button
                 key={key}
+                variant="ghost"
                 onClick={() => setActiveSegment(key)}
-                className={`flex cursor-pointer items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium h-auto ${
                   activeSegment === key
                     ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700'
@@ -63,7 +65,7 @@ export default function VideoHero() {
               >
                 <Icon className="h-4 w-4" />
                 {label}
-              </button>
+              </Button>
             ))}
           </div>
         </div>

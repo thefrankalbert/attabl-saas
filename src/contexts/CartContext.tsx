@@ -397,6 +397,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     setDeliveryAddressState(addr);
   }, []);
 
+  // Client-side coupon is optimistic - server re-validates tenant ownership
+  // and usage limits during order creation (see /api/orders/route.ts).
   const applyCoupon = useCallback(
     async (code: string): Promise<{ success: boolean; error?: string }> => {
       try {

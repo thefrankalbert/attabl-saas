@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 const steps = [
   {
@@ -58,10 +59,11 @@ export default function PhoneAnimation() {
         {/* Timeline nav */}
         <div className="mx-auto mt-14 flex max-w-md items-center justify-between">
           {steps.map((step, i) => (
-            <button
+            <Button
               key={step.time}
+              variant="ghost"
               onClick={() => handleClick(i)}
-              className="group relative flex flex-col items-center"
+              className="group relative flex flex-col items-center px-0 py-0 h-auto"
             >
               {/* Connector line (left) */}
               {i > 0 && (
@@ -85,7 +87,7 @@ export default function PhoneAnimation() {
               >
                 {step.time} - {step.label}
               </span>
-            </button>
+            </Button>
           ))}
         </div>
 

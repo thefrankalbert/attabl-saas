@@ -250,7 +250,6 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                       </Button>
 
                       <Input
-                        type="text"
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
@@ -328,7 +327,6 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                               )}
                             </div>
                             <Input
-                              type="text"
                               placeholder={t('articleNamePlaceholder')}
                               value={item.name}
                               onChange={(e) =>

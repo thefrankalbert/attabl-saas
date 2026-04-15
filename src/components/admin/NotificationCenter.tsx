@@ -100,9 +100,10 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:bg-app-hover hover:text-app-text transition-colors touch-manipulation relative"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-app-text-muted"
           aria-label={t('title')}
         >
           <Bell className="w-4 h-4" />
@@ -111,7 +112,7 @@ function NotificationCenterInner({ tenantId, userId }: NotificationCenterProps) 
               {unreadCount > 99 ? '99+' : unreadCount}
             </span>
           )}
-        </button>
+        </Button>
       </DropdownMenuTrigger>
 
       <DropdownMenuContent align="end" className="w-80 p-0 bg-app-card border border-app-border">

@@ -64,6 +64,16 @@ export default function InstallPrompt({
     if (isStandalone) return;
 
     // ─── Check dismiss limits ──────────────────────────
+    // BUG-36: Reset dismiss counter after 30 days so the prompt can reappear
+    const lastDismissedAt = localStorage.getItem(STORAGE_DISMISSED_AT);
+    if (lastDismissedAt) {
+      const daysSinceLast = (Date.now() - parseInt(lastDismissedAt)) / 86400000;
+      if (daysSinceLast > 30) {
+        localStorage.removeItem(STORAGE_DISMISS_COUNT);
+        localStorage.removeItem(STORAGE_DISMISSED_AT);
+      }
+    }
+
     const dismissCount = parseInt(localStorage.getItem(STORAGE_DISMISS_COUNT) || '0');
     if (dismissCount >= MAX_DISMISSALS) return;
 
@@ -148,7 +158,7 @@ export default function InstallPrompt({
       try {
         await (navigator as Navigator & { share: (data: ShareData) => Promise<void> }).share({
           title: appName,
-          text: `Installer ${appName} sur votre ecran d'accueil`,
+          text: t('installOnHomeScreen', { appName }),
           url: window.location.href,
         });
         return;
@@ -157,16 +167,14 @@ export default function InstallPrompt({
       }
     }
     setIsExpanded(true);
-  }, [appName]);
+  }, [appName, t]);
 
   if (!show || isStandalone) return null;
 
   return (
     <div
-      className="fixed left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm max-w-sm mx-auto z-[55] bg-white rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom]"
+      className="fixed left-4 right-4 lg:left-auto lg:right-8 lg:max-w-sm max-w-sm mx-auto z-[55] bg-app-bg rounded-xl overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 transition-[bottom] border border-app-border text-app-text"
       style={{
-        border: '1px solid #EEEEEE',
-        color: '#1A1A1A',
         bottom: hasFloatingCart
           ? 'calc(140px + env(safe-area-inset-bottom, 0px))'
           : 'calc(96px + env(safe-area-inset-bottom, 0px))',
@@ -179,28 +187,23 @@ export default function InstallPrompt({
             alt={appName}
             width={40}
             height={40}
-            className="rounded-lg bg-white p-1"
+            className="rounded-lg bg-app-bg p-1"
           />
         ) : (
-          <div
-            className="w-10 h-10 bg-white rounded-lg flex items-center justify-center font-bold text-xl"
-            style={{ color: '#1A1A1A' }}
-          >
+          <div className="w-10 h-10 bg-app-bg rounded-lg flex items-center justify-center font-bold text-xl text-app-text">
             {appName.charAt(0)}
           </div>
         )}
         <div className="flex-1 min-w-0">
           <h3 className="font-bold text-sm leading-tight truncate">{appName}</h3>
-          <p className="text-[11px] mt-0.5" style={{ color: '#B0B0B0' }}>
-            {t('subtitle')}
-          </p>
+          <p className="text-[11px] mt-0.5 text-app-text-muted">{t('subtitle')}</p>
         </div>
 
         <Button
           variant="outline"
           size="sm"
           onClick={isIOS ? handleIOSInstall : handleInstall}
-          className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold whitespace-nowrap text-[#1A1A1A] h-auto border-none"
+          className="px-3 py-1.5 bg-app-bg rounded-lg text-xs font-bold whitespace-nowrap text-app-text h-auto border-none"
         >
           <Download size={14} /> {t('install')}
         </Button>
@@ -210,17 +213,14 @@ export default function InstallPrompt({
           size="icon"
           onClick={handleDismiss}
           aria-label={t('close')}
-          className="p-1 text-[#737373] h-8 w-8"
+          className="p-1 text-app-text-secondary h-8 w-8"
         >
           <X size={16} />
         </Button>
       </div>
 
       {isIOS && isExpanded && (
-        <div
-          className="px-3 pb-3 pt-0 border-t border-[#EEEEEE] text-xs space-y-2"
-          style={{ color: '#737373' }}
-        >
+        <div className="px-3 pb-3 pt-0 border-t border-app-border text-xs space-y-2 text-app-text-secondary">
           <p className="flex items-center gap-2 pt-2">
             <Share size={14} className="shrink-0" /> {t('iosStep1')}
           </p>

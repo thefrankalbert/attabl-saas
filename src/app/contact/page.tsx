@@ -16,10 +16,13 @@ function SubmitButton() {
   const { pending } = useFormStatus();
   const t = useTranslations('contact');
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+      className="w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white hover:bg-neutral-800 dark:hover:bg-neutral-100"
+      style={{
+        backgroundColor: pending ? 'rgba(0, 0, 0, 0.5)' : undefined,
+      }}
     >
       {pending ? (
         <span className="flex items-center justify-center gap-2">
@@ -32,7 +35,7 @@ function SubmitButton() {
           <ArrowRight className="h-4 w-4" />
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -44,7 +47,7 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-white dark:bg-neutral-950">
+    <div className="flex min-h-dvh w-full bg-white dark:bg-neutral-950">
       {/* Left - Form on white */}
       <div className="flex w-full items-center justify-center bg-white px-4 dark:bg-neutral-950 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">

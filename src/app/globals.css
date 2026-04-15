@@ -47,6 +47,9 @@
   --color-danger: #ef4444;
   --color-danger-hover: #dc2626;
 
+  /* Allergen (amber/warning for food allergens in tenant client) */
+  --color-allergen: #ffb800;
+
   /* Status text colors (same in both themes) */
   --color-status-success: #059669;
   --color-status-warning: #d97706;
@@ -270,6 +273,7 @@
 
   --color-danger: #ff3008 !important;
   --color-danger-hover: #e02b07 !important;
+  --color-allergen: #ffb800 !important;
 
   color-scheme: light !important;
   background-color: #ffffff !important;

@@ -186,7 +186,7 @@ export default function MenuItemCard({
   return (
     <div
       className={cn(
-        'relative flex bg-white cursor-pointer active:bg-[#FAFAFA] transition-colors border-b border-[#F0F0F0] last:border-b-0',
+        'relative flex bg-white cursor-pointer active:bg-app-elevated transition-colors border-b border-app-border last:border-b-0',
         isUnavailable && 'opacity-50',
       )}
       onClick={onOpenDetail}
@@ -203,8 +203,8 @@ export default function MenuItemCard({
                     fontSize: '11px',
                     fontWeight: 500,
                     letterSpacing: '1px',
-                    color: '#737373',
-                    backgroundColor: '#F6F6F6',
+                    color: 'rgb(115, 115, 115)',
+                    backgroundColor: 'rgb(246, 246, 246)',
                     padding: '2px 6px',
                     borderRadius: '8px',
                     lineHeight: 1.4,
@@ -219,8 +219,8 @@ export default function MenuItemCard({
                     fontSize: '11px',
                     fontWeight: 500,
                     letterSpacing: '1px',
-                    color: '#737373',
-                    backgroundColor: '#F6F6F6',
+                    color: 'rgb(115, 115, 115)',
+                    backgroundColor: 'rgb(246, 246, 246)',
                     padding: '2px 6px',
                     borderRadius: '8px',
                     lineHeight: 1.4,
@@ -235,8 +235,8 @@ export default function MenuItemCard({
                     fontSize: '11px',
                     fontWeight: 500,
                     letterSpacing: '1px',
-                    color: '#737373',
-                    backgroundColor: '#F6F6F6',
+                    color: 'rgb(115, 115, 115)',
+                    backgroundColor: 'rgb(246, 246, 246)',
                     padding: '2px 6px',
                     borderRadius: '8px',
                     lineHeight: 1.4,
@@ -251,8 +251,8 @@ export default function MenuItemCard({
                     fontSize: '11px',
                     fontWeight: 500,
                     letterSpacing: '1px',
-                    color: '#737373',
-                    backgroundColor: '#F6F6F6',
+                    color: 'rgb(115, 115, 115)',
+                    backgroundColor: 'rgb(246, 246, 246)',
                     padding: '2px 6px',
                     borderRadius: '8px',
                     lineHeight: 1.4,
@@ -266,7 +266,7 @@ export default function MenuItemCard({
           {/* Item name - 16px SemiBold #1A1A1A max 2 lines */}
           <h3
             className="text-base font-semibold leading-[1.4] line-clamp-2 mt-0.5"
-            style={{ color: '#1A1A1A' }}
+            style={{ color: 'rgb(26, 26, 26)' }}
           >
             {getTranslatedContent(language, item.name, item.name_en)}
           </h3>
@@ -275,7 +275,7 @@ export default function MenuItemCard({
           {description && (
             <p
               className="text-[13px] font-normal leading-[1.4] line-clamp-2 mt-1"
-              style={{ color: '#737373' }}
+              style={{ color: 'rgb(115, 115, 115)' }}
             >
               {description}
             </p>
@@ -284,14 +284,17 @@ export default function MenuItemCard({
           {/* Rating row - renders when rating data is available */}
           {item.rating != null && item.rating > 0 && (
             <div className="flex items-center gap-1 mt-1.5">
-              <Star className="w-3 h-3 fill-[#FFB800]" style={{ color: '#FFB800' }} />
-              <span className="text-[13px] font-medium leading-[1.4]" style={{ color: '#1A1A1A' }}>
+              <Star className="w-3 h-3 fill-allergen" style={{ color: 'rgb(255, 184, 0)' }} />
+              <span
+                className="text-[13px] font-medium leading-[1.4]"
+                style={{ color: 'rgb(26, 26, 26)' }}
+              >
                 {item.rating.toFixed(1)}
               </span>
               {item.rating_count != null && (
                 <span
                   className="text-[13px] font-normal leading-[1.4]"
-                  style={{ color: '#B0B0B0' }}
+                  style={{ color: 'rgb(176, 176, 176)' }}
                 >
                   ({item.rating_count}+)
                 </span>
@@ -304,14 +307,17 @@ export default function MenuItemCard({
         <div className="mt-2">
           <div className="flex items-center flex-wrap gap-2">
             {/* Price - 15px Bold #1A1A1A (NOT green) */}
-            <span className="text-[15px] font-bold leading-[1.4]" style={{ color: '#1A1A1A' }}>
+            <span
+              className="text-[15px] font-bold leading-[1.4]"
+              style={{ color: 'rgb(26, 26, 26)' }}
+            >
               {formattedPrice}
             </span>
 
             {item.allergens && item.allergens.length > 0 && (
               <span
                 className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg"
-                style={{ backgroundColor: '#F6F6F6', color: '#737373' }}
+                style={{ backgroundColor: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' }}
                 title={item.allergens.join(', ')}
               >
                 <AlertTriangle className="w-3 h-3" />
@@ -322,7 +328,7 @@ export default function MenuItemCard({
           {hasModifiersOrVariants && (
             <span
               className="text-[11px] font-medium leading-[1.4] mt-1 block"
-              style={{ color: '#B0B0B0' }}
+              style={{ color: 'rgb(176, 176, 176)' }}
             >
               {tt('customizable')}
             </span>
@@ -338,7 +344,7 @@ export default function MenuItemCard({
                   e.stopPropagation();
                   setShowVariantDropdown(!showVariantDropdown);
                 }}
-                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-[#F6F6F6] text-[#1A1A1A] h-auto"
+                className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-app-elevated text-app-text h-auto"
               >
                 {getVariantName(selectedVariant!)}
                 <ChevronDown
@@ -349,26 +355,31 @@ export default function MenuItemCard({
                 />
               </Button>
               {showVariantDropdown && (
-                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-[#EEEEEE] py-1 z-20 min-w-[160px]">
+                <div className="absolute top-full left-0 mt-1 bg-white rounded-xl border border-app-border py-1 z-20 min-w-[160px]">
                   {item.price_variants?.map((variant) => (
-                    <button
+                    <Button
                       key={variant.id}
+                      variant="ghost"
                       onClick={(e) => {
                         e.stopPropagation();
                         setSelectedVariant(variant);
                         setShowVariantDropdown(false);
                       }}
                       className={cn(
-                        'w-full px-3 py-2.5 text-left text-sm',
+                        'w-full px-3 py-2.5 text-left text-sm h-auto rounded-none',
                         selectedVariant?.id === variant.id
-                          ? 'font-bold bg-[#F6F6F6]'
-                          : 'text-[#737373]',
+                          ? 'font-bold bg-app-elevated'
+                          : 'text-app-text-secondary',
                       )}
-                      style={selectedVariant?.id === variant.id ? { color: '#1A1A1A' } : undefined}
+                      style={
+                        selectedVariant?.id === variant.id
+                          ? { color: 'rgb(26, 26, 26)' }
+                          : undefined
+                      }
                     >
                       {getVariantName(variant)} -{' '}
                       {resolveAndFormatPrice(variant.price, variant.prices, currency)}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               )}
@@ -379,11 +390,11 @@ export default function MenuItemCard({
 
       {/* IMAGE - Right side: 90x90px */}
       <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
-        <div className="w-full h-full rounded-xl overflow-hidden bg-[#F6F6F6] flex items-center justify-center">
+        <div className="w-full h-full rounded-xl overflow-hidden bg-app-elevated flex items-center justify-center">
           {hasValidImage ? (
             <>
               {!imageLoaded && (
-                <div className="absolute inset-0 animate-pulse bg-[#F6F6F6] rounded-xl" />
+                <div className="absolute inset-0 animate-pulse bg-app-elevated rounded-xl" />
               )}
               <Image
                 src={item.image_url!}
@@ -400,9 +411,9 @@ export default function MenuItemCard({
               />
             </>
           ) : isDrinkCategory ? (
-            <Martini className="w-8 h-8" style={{ color: '#B0B0B0' }} />
+            <Martini className="w-8 h-8" style={{ color: 'rgb(176, 176, 176)' }} />
           ) : (
-            <Utensils className="w-8 h-8" style={{ color: '#B0B0B0' }} />
+            <Utensils className="w-8 h-8" style={{ color: 'rgb(176, 176, 176)' }} />
           )}
         </div>
 
@@ -415,7 +426,7 @@ export default function MenuItemCard({
           {cartItem ? (
             <div
               className="w-7 h-7 rounded-full flex items-center justify-center text-sm font-bold text-white"
-              style={{ backgroundColor: '#1A1A1A' }}
+              style={{ backgroundColor: 'rgb(26, 26, 26)' }}
             >
               {cartItem.quantity}
             </div>
@@ -428,7 +439,7 @@ export default function MenuItemCard({
               }}
               disabled={isAdding}
               aria-label={tt('addShort')}
-              className="w-7 h-7 rounded-full bg-[#1A1A1A] hover:bg-black active:scale-85"
+              className="w-7 h-7 rounded-full bg-app-text hover:bg-black active:scale-85"
             >
               <Plus className="w-4 h-4 text-white" />
             </Button>
@@ -440,7 +451,7 @@ export default function MenuItemCard({
           <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
             <span
               className="px-3 py-1 rounded-full text-[11px] font-semibold text-white"
-              style={{ backgroundColor: '#1A1A1A' }}
+              style={{ backgroundColor: 'rgb(26, 26, 26)' }}
             >
               {tt('unavailable')}
             </span>

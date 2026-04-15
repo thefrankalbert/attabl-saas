@@ -74,6 +74,7 @@
     "expired": "Expired",
     "tenantNotFound": "Establishment not found",
     "tenantNotFoundDesc": "This establishment does not exist or you don't have access.",
+    "backToDashboard": "Back to dashboard",
     "subtotal": "Subtotal",
     "tax": "Tax",
     "service": "Service",
@@ -1346,7 +1347,10 @@
     "preparationZoneDesc": "Where items in this category are prepared. Bar-only orders won't appear in the kitchen display.",
     "zoneKitchen": "Kitchen",
     "zoneBar": "Bar",
-    "zoneBoth": "Both"
+    "zoneBoth": "Both",
+    "featuredOnHome": "Feature on home",
+    "featuredOnHomeDesc": "Show this category in the shortcut grid on the client home page.",
+    "featuredOnHomeLimit": "Recommended limit of {count} categories reached. Only the first {count} will be shown."
   },
   "items": {
     "title": "Dishes & Items",
@@ -1511,6 +1515,8 @@
     "sharedMenu": "Shared menu (visible in all spaces)",
     "sharedMenuBadge": "Shared",
     "sharedMenuHint": "This menu will be visible in all your spaces (e.g., Drinks Menu)",
+    "transversalMenu": "Transversal menu (available everywhere)",
+    "transversalMenuHint": "This menu will appear as a sub-tab on every other menu (e.g., Drinks available from any menu).",
     "wizardMenuCreatedMessage": "Menu \"{name}\" created",
     "wizardAddCategoriesPrompt": "Would you like to add categories now?",
     "wizardAddCategories": "Add categories",
@@ -1777,7 +1783,11 @@
     "orderSentDesc": "Your order #{number} has been sent.",
     "trackOrder": "Track order",
     "backToMenu": "Back to menu",
+    "errorTitle": "Oops, something went wrong",
+    "errorHint": "Something didn't go as planned. Try again or go back to the menu.",
+    "retry": "Try again",
     "searchMenu": "Search dishes, drinks...",
+    "clearSearch": "Clear",
     "seeAll": "See all",
     "editOrder": "Edit",
     "addressLabel": "Address",
@@ -1896,6 +1906,7 @@
     "aboutAppSubtext": "Explore our menu and order directly from your table.",
     "orderBeingPrepared": "Thank you! We're sending it to the kitchen.",
     "orderStatusSent": "Your order has been sent",
+    "orderStatusConfirmed": "Order confirmed",
     "orderStatusInKitchen": "Your order is being prepared",
     "orderStatusReady": "Your order is ready",
     "orderStatusServed": "Your order has been served",
@@ -2312,12 +2323,13 @@
   },
   "installPrompt": {
     "installApp": "Install {name}",
-    "subtitle": "Order in one tap, right from your home screen",
+    "subtitle": "Quick one-tap access",
     "install": "Install",
     "howTo": "How?",
     "close": "Close",
     "iosStep1": "1. Tap Share",
-    "iosStep2": "2. Select Add to Home Screen"
+    "iosStep2": "2. Select Add to Home Screen",
+    "installOnHomeScreen": "Install {appName} on your home screen"
   },
   "contact": {
     "back": "Back",

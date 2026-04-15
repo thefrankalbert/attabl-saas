@@ -74,3 +74,36 @@ export function generateChartColors(count: number, startHue = 128): string[] {
 
 /** Default 8-color palette for reports/charts */
 export const CHART_PALETTE = generateChartColors(8);
+
+/** Chart colors for dashboard gauges and line charts */
+export const CHART_COLORS = {
+  revenue: '#4ade80',
+  orders: '#60a5fa',
+  activeItems: '#f97316',
+  activeTables: '#a78bfa',
+} as const;
+
+/** Stock movement type styles using semantic tokens */
+export const MOVEMENT_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  order_destock: {
+    bg: 'bg-status-info-bg',
+    text: 'text-status-info',
+    border: 'border-status-info/20',
+  },
+  manual_add: {
+    bg: 'bg-status-success-bg',
+    text: 'text-status-success',
+    border: 'border-status-success/20',
+  },
+  manual_remove: {
+    bg: 'bg-status-error-bg',
+    text: 'text-status-error',
+    border: 'border-status-error/20',
+  },
+  adjustment: {
+    bg: 'bg-status-warning-bg',
+    text: 'text-status-warning',
+    border: 'border-status-warning/20',
+  },
+  opening: { bg: 'bg-status-info-bg', text: 'text-status-info', border: 'border-status-info/20' },
+};

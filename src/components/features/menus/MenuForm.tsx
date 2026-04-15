@@ -6,6 +6,7 @@ import { Globe, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -52,6 +53,9 @@ export default function MenuForm({
     editingMenu ? !editingMenu.venue_id : false,
   );
   const [formIsActive, setFormIsActive] = useState(editingMenu?.is_active ?? true);
+  const [formIsTransversal, setFormIsTransversal] = useState<boolean>(
+    editingMenu?.is_transversal_menu ?? false,
+  );
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,6 +72,7 @@ export default function MenuForm({
         venue_id: formVenueId,
         parent_menu_id: formParentMenuId,
         is_active: formIsActive,
+        is_transversal_menu: formIsTransversal,
       });
     } catch {
       // Error already handled by parent via toast
@@ -214,6 +219,21 @@ export default function MenuForm({
         <Label htmlFor="menu-active" className="text-app-text">
           {t('activeVisibleToClients')}
         </Label>
+      </div>
+
+      <div className="flex items-start gap-3 p-3 bg-accent/5 border border-accent/15 rounded-lg">
+        <Switch
+          id="menu-transversal"
+          checked={formIsTransversal}
+          onCheckedChange={setFormIsTransversal}
+          className="mt-0.5"
+        />
+        <div>
+          <Label htmlFor="menu-transversal" className="text-app-text font-medium">
+            {t('transversalMenu')}
+          </Label>
+          <p className="text-xs text-app-text-secondary mt-0.5">{t('transversalMenuHint')}</p>
+        </div>
       </div>
 
       <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
