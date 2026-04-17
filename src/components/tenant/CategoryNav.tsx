@@ -24,7 +24,7 @@ interface CategoryNavProps {
   topOffset?: number;
 }
 
-export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: CategoryNavProps) {
+export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavProps) {
   const [activeCategory, setActiveCategory] = React.useState<string>('');
   const navRef = React.useRef<HTMLDivElement>(null);
   const scrollerRef = React.useRef<HTMLDivElement>(null);
@@ -151,9 +151,6 @@ export default function CategoryNav({ categories, itemCounts, topOffset = 0 }: C
               }}
             >
               {category.name}
-              {itemCounts && itemCounts[category.id] !== undefined && (
-                <span style={{ opacity: 0.7, marginLeft: '4px' }}>({itemCounts[category.id]})</span>
-              )}
             </Button>
           );
         })}

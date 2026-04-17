@@ -357,7 +357,23 @@ export default function ClientMenuDetailPage({
   const handleMenuChange = (slug: string) => {
     setActiveMenuSlug(slug);
     setActiveSubMenuId(null);
+    // Auto-sync venue when the selected menu is bound to one.
+    // Prevents a stale venue filter when the venue tabs row is hidden.
+    const next = menus.find((m) => m.slug === slug);
+    if (next?.venue_id) setActiveVenueId(next.venue_id);
   };
+
+  // Hide the venue-tabs row when the menu-tabs row already covers venues.
+  // Rule: if every carte is bound to a venue (menu.venue_id IS NOT NULL),
+  // picking a carte implicitly picks its venue, so showing both rows is
+  // a redundant duplication (see CONTEXT.md section "Venue/Carte UI rule").
+  const hideVenueRow = filteredMenus.length > 1 && filteredMenus.every((m) => !!m.venue_id);
+
+  // Hide the menu-tabs row when the user entered via a specific carte URL
+  // (?menu=slug). They already chose a carte — showing all the other cartes
+  // again is navigation noise. A back link to the cartes list is offered
+  // instead via the header back button.
+  const hideMenuTabsRow = !!initialMenuSlug && filteredMenus.length > 1;
 
   // ─── Render ────────────────────────────────────────────
   return (
@@ -466,7 +482,7 @@ export default function ClientMenuDetailPage({
       </div>
 
       {/* ═══ VENUE FILTER PILLS ═══ */}
-      {venues && venues.length > 1 && (
+      {venues && venues.length > 1 && !hideVenueRow && (
         <div
           className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
           style={{ backgroundColor: '#FFFFFF' }}
@@ -513,7 +529,7 @@ export default function ClientMenuDetailPage({
       )}
 
       {/* ═══ MENU TABS (multiple menus) ═══ */}
-      {filteredMenus.length > 1 && (
+      {filteredMenus.length > 1 && !hideMenuTabsRow && (
         <div className="px-4 mb-3">
           <div className="flex gap-1 overflow-x-auto pb-2 scrollbar-hide" data-tab-pane>
             {filteredMenus.map((menu) => (
@@ -605,49 +621,53 @@ export default function ClientMenuDetailPage({
           </div>
         )}
 
-      {/* ═══ FILTER CHIPS (diet / price) ═══ */}
-      <div
-        className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
-        style={{ backgroundColor: '#FFFFFF' }}
-      >
-        {(
-          [
-            { key: 'all', label: t('filterAll') },
-            { key: 'vegetarian', label: t('filterVegetarian') },
-            { key: 'spicy', label: t('filterSpicy') },
-            {
-              key: 'under',
-              label: t('filterUnder', {
-                price:
-                  underThreshold > 0 ? formatDisplayPrice(underThreshold, tenant.currency) : '',
-              }),
-            },
-          ] as { key: DietFilter; label: string }[]
-        ).map((chip) => {
-          const isActive = dietFilter === chip.key;
-          return (
-            <Button
-              key={chip.key}
-              variant="ghost"
-              onClick={() => setDietFilter(chip.key)}
-              className="flex-shrink-0 whitespace-nowrap h-auto"
-              style={{
-                padding: '8px 16px',
-                borderRadius: '24px',
-                fontSize: '11px',
-                fontWeight: 500,
-                textTransform: 'uppercase',
-                letterSpacing: '1px',
-                lineHeight: 1.4,
-                backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
-                color: isActive ? '#FFFFFF' : '#737373',
-              }}
-            >
-              {chip.label}
-            </Button>
-          );
-        })}
-      </div>
+      {/* ═══ FILTER CHIPS (diet / price) — hidden on carte-detail view ═══
+          Rule: on a specific ?menu=X view we keep a SINGLE navigation row
+          (CategoryNav). Diet filters stay accessible via the search overlay. */}
+      {!initialMenuSlug && (
+        <div
+          className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide"
+          style={{ backgroundColor: '#FFFFFF' }}
+        >
+          {(
+            [
+              { key: 'all', label: t('filterAll') },
+              { key: 'vegetarian', label: t('filterVegetarian') },
+              { key: 'spicy', label: t('filterSpicy') },
+              {
+                key: 'under',
+                label: t('filterUnder', {
+                  price:
+                    underThreshold > 0 ? formatDisplayPrice(underThreshold, tenant.currency) : '',
+                }),
+              },
+            ] as { key: DietFilter; label: string }[]
+          ).map((chip) => {
+            const isActive = dietFilter === chip.key;
+            return (
+              <Button
+                key={chip.key}
+                variant="ghost"
+                onClick={() => setDietFilter(chip.key)}
+                className="flex-shrink-0 whitespace-nowrap h-auto"
+                style={{
+                  padding: '8px 16px',
+                  borderRadius: '24px',
+                  fontSize: '11px',
+                  fontWeight: 500,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  lineHeight: 1.4,
+                  backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
+                  color: isActive ? '#FFFFFF' : '#737373',
+                }}
+              >
+                {chip.label}
+              </Button>
+            );
+          })}
+        </div>
+      )}
 
       {/* ═══ CATEGORY NAVIGATION (sticky breadcrumb) ═══ */}
       {filteredCategories && filteredCategories.length > 0 && (

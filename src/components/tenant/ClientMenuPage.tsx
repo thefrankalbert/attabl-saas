@@ -5,7 +5,17 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { ShoppingBag, X, MapPin, Phone, Building2 } from 'lucide-react';
+import {
+  ShoppingBag,
+  X,
+  MapPin,
+  Phone,
+  Building2,
+  UtensilsCrossed,
+  Clock,
+  Star,
+  TrendingUp,
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
@@ -28,6 +38,18 @@ import InstallPrompt from '@/components/tenant/InstallPrompt';
 import FullscreenSplash from '@/components/tenant/FullscreenSplash';
 import ItemDetailSheet from '@/components/tenant/ItemDetailSheet';
 import TablePicker from '@/components/tenant/TablePicker';
+import SearchOverlay from '@/components/tenant/SearchOverlay';
+import EmptyState from '@/components/shared/EmptyState';
+
+const triggerAddFeedback = () => {
+  if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    try {
+      navigator.vibrate(10);
+    } catch {
+      // Silent: vibration not supported or blocked
+    }
+  }
+};
 
 /* =================================================
    DESIGN SYSTEM - all tokens from DESIGN.md
@@ -691,10 +713,11 @@ function FeaturedItemCard({
           variant="ghost"
           onClick={(e) => {
             e.stopPropagation();
+            triggerAddFeedback();
             onAdd();
           }}
           aria-label={t('addShort')}
-          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7"
+          className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7 active:scale-95 transition-transform"
           style={{
             background: C.primary,
           }}
@@ -817,6 +840,7 @@ function FloatingCartBar({
 
 interface ClientMenuPageProps {
   tenant: Tenant;
+  openingState?: { isOpen: boolean; nextOpenAt: string | null };
   menus?: Menu[];
   initialTable?: string;
   categories: Category[];
@@ -829,6 +853,9 @@ interface ClientMenuPageProps {
   recentItems?: MenuItem[];
   discountedItems?: MenuItem[];
   coupons?: Coupon[];
+  ordersThisWeek?: number | null;
+  ratingAgg?: { avg: number; count: number } | null;
+  recommendedItems?: MenuItem[];
 }
 
 /* =================================================
@@ -1006,6 +1033,7 @@ function TenantInfoSheet({
 
 export default function ClientMenuPage({
   tenant,
+  openingState = { isOpen: true, nextOpenAt: null },
   menus = [],
   initialTable,
   categories,
@@ -1018,6 +1046,9 @@ export default function ClientMenuPage({
   recentItems = [],
   discountedItems = [],
   coupons = [],
+  ordersThisWeek = null,
+  ratingAgg = null,
+  recommendedItems = [],
 }: ClientMenuPageProps) {
   const t = useTranslations('tenant');
   const lang = typeof window !== 'undefined' && navigator.language?.startsWith('en') ? 'en' : 'fr';
@@ -1033,7 +1064,29 @@ export default function ClientMenuPage({
 
   const [isTablePickerOpen, setIsTablePickerOpen] = useState(false);
   const [isTenantInfoOpen, setIsTenantInfoOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  type HomeDietFilter = 'all' | 'vegetarian' | 'spicy' | 'glutenFree' | 'vegan';
+  const [dietFilter, setDietFilter] = useState<HomeDietFilter>('all');
+  const matchesDiet = (item: MenuItem): boolean => {
+    if (dietFilter === 'all') return true;
+    if (dietFilter === 'vegetarian') return !!item.is_vegetarian;
+    if (dietFilter === 'spicy') return !!item.is_spicy;
+    if (dietFilter === 'glutenFree') {
+      const a = (item.allergens || []).map((x) => x.toLowerCase());
+      return !a.some((x) => x.includes('gluten') || x.includes('wheat'));
+    }
+    if (dietFilter === 'vegan') {
+      const a = (item.allergens || []).map((x) => x.toLowerCase());
+      const hasAnimal = a.some((x) =>
+        ['milk', 'lait', 'lactose', 'egg', 'oeuf', 'fish', 'poisson', 'meat', 'viande'].some((k) =>
+          x.includes(k),
+        ),
+      );
+      return !!item.is_vegetarian && !hasAnimal;
+    }
+    return true;
+  };
   const [tableNumber, setTableNumber] = useState<string | null>(() => {
     if (initialTable) return initialTable;
     if (typeof window !== 'undefined') {
@@ -1096,6 +1149,34 @@ export default function ClientMenuPage({
     return featuredItems.filter((it) => ids.has(it.id)).slice(0, 10);
   })();
 
+  const filteredFeatured = featuredItems.filter(matchesDiet);
+  const filteredRecent = recentItems.filter(matchesDiet);
+  const filteredDiscounted = discountedItems.filter(matchesDiet);
+  const filteredReorder = reorderItems.filter(matchesDiet);
+  const filteredRecommended = recommendedItems.filter(matchesDiet);
+
+  // Deduped flat list of items for inline search overlay
+  const searchableItems: MenuItem[] = (() => {
+    const seen = new Set<string>();
+    const out: MenuItem[] = [];
+    for (const item of [...featuredItems, ...recentItems, ...discountedItems]) {
+      if (!seen.has(item.id)) {
+        seen.add(item.id);
+        out.push(item);
+      }
+    }
+    return out;
+  })();
+
+  const hasAnyContent =
+    categories.length > 0 ||
+    menus.length > 0 ||
+    featuredItems.length > 0 ||
+    recentItems.length > 0 ||
+    discountedItems.length > 0 ||
+    ads.length > 0 ||
+    allAnnouncements.length > 0;
+
   return (
     <div
       className="tenant-client w-full max-w-[430px] mx-auto h-full relative flex flex-col"
@@ -1125,14 +1206,55 @@ export default function ClientMenuPage({
           onAvatarPress={() => setIsTenantInfoOpen(true)}
         />
 
+        {/* Closed banner (when tenant is outside opening hours) */}
+        {!openingState.isOpen && (
+          <div className="bg-gray-900 text-white px-4 py-2 flex items-center justify-center gap-2 text-sm font-medium">
+            <Clock size={16} />
+            <span>{t('closedNow')}</span>
+            {openingState.nextOpenAt && (
+              <span className="text-gray-300">
+                {t('opensAt', { time: openingState.nextOpenAt })}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Trust signals: tenant-wide rating + social proof */}
+        {(ratingAgg || ordersThisWeek) && (
+          <div className="px-4 pt-1 pb-2 flex items-center gap-3 text-[12px] text-gray-600">
+            {ratingAgg && (
+              <span className="flex items-center gap-1">
+                <Star size={13} className="fill-amber-500 text-amber-500" />
+                <span className="font-semibold text-gray-900">{ratingAgg.avg}</span>
+                <span className="text-gray-500">({ratingAgg.count})</span>
+              </span>
+            )}
+            {ratingAgg && ordersThisWeek ? <span className="text-gray-300">-</span> : null}
+            {ordersThisWeek && (
+              <span className="flex items-center gap-1">
+                <TrendingUp size={13} className="text-emerald-600" />
+                <span>{t('ordersThisWeek', { count: ordersThisWeek })}</span>
+              </span>
+            )}
+          </div>
+        )}
+
         {/* 2. Search */}
-        <SearchBar
-          placeholder={t('searchPlaceholder')}
-          onClick={() => router.push(`/sites/${tenant.slug}/menu`)}
-        />
+        <SearchBar placeholder={t('searchPlaceholder')} onClick={() => setIsSearchOpen(true)} />
 
         {/* 3. Promo banner carousel */}
         <PromoBanner announcements={allAnnouncements} ads={ads} lang={lang} />
+
+        {/* Global empty state when tenant has no content at all */}
+        {!hasAnyContent && (
+          <div className="px-4 pt-10">
+            <EmptyState
+              icon={UtensilsCrossed}
+              title={t('emptyMenu.title')}
+              description={t('emptyMenu.description')}
+            />
+          </div>
+        )}
 
         {/* 4. Categories visual grid - primary entry point, shown first */}
         {categories.length > 0 && (
@@ -1169,8 +1291,39 @@ export default function ClientMenuPage({
           </>
         )}
 
+        {/* Diet chips filter row - shown only when we have items to filter */}
+        {(featuredItems.length > 0 || recentItems.length > 0 || discountedItems.length > 0) && (
+          <div className="px-4 pb-3 flex gap-2 overflow-x-auto scrollbar-hide">
+            {(
+              [
+                { key: 'all', label: t('dietAll') },
+                { key: 'vegetarian', label: t('dietVegetarian') },
+                { key: 'spicy', label: t('dietSpicy') },
+                { key: 'glutenFree', label: t('dietGlutenFree') },
+                { key: 'vegan', label: t('dietVegan') },
+              ] as { key: HomeDietFilter; label: string }[]
+            ).map((chip) => {
+              const isActive = dietFilter === chip.key;
+              return (
+                <Button
+                  key={chip.key}
+                  variant="ghost"
+                  onClick={() => setDietFilter(chip.key)}
+                  className="flex-shrink-0 whitespace-nowrap h-auto px-4 py-2 rounded-full text-[11px] font-medium uppercase tracking-wider"
+                  style={{
+                    backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
+                    color: isActive ? '#FFFFFF' : '#737373',
+                  }}
+                >
+                  {chip.label}
+                </Button>
+              );
+            })}
+          </div>
+        )}
+
         {/* 6. Populaires */}
-        {featuredItems.length > 0 && (
+        {filteredFeatured.length > 0 && (
           <>
             <SectionHeader
               title={t('mostOrdered')}
@@ -1178,7 +1331,7 @@ export default function ClientMenuPage({
               seeAllLabel={t('seeAll')}
             />
             <HScroll>
-              {featuredItems.map((item) => (
+              {filteredFeatured.map((item) => (
                 <FeaturedItemCard
                   key={item.id}
                   item={item}
@@ -1194,7 +1347,7 @@ export default function ClientMenuPage({
         )}
 
         {/* 7. Nouveautes */}
-        {recentItems.length > 0 && (
+        {filteredRecent.length > 0 && (
           <>
             <SectionHeader
               title={t('newOnMenu')}
@@ -1202,7 +1355,7 @@ export default function ClientMenuPage({
               seeAllLabel={t('seeAll')}
             />
             <HScroll>
-              {recentItems.map((item) => (
+              {filteredRecent.map((item) => (
                 <FeaturedItemCard
                   key={item.id}
                   item={item}
@@ -1218,7 +1371,7 @@ export default function ClientMenuPage({
         )}
 
         {/* 8. Promotions (only if coupons active and discounted items) */}
-        {discountedItems.length > 0 && (
+        {filteredDiscounted.length > 0 && (
           <>
             <SectionHeader
               title={t('todayDeals')}
@@ -1226,7 +1379,7 @@ export default function ClientMenuPage({
               seeAllLabel={t('seeAll')}
             />
             <HScroll>
-              {discountedItems.map((item) => (
+              {filteredDiscounted.map((item) => (
                 <FeaturedItemCard
                   key={`promo-${item.id}`}
                   item={item}
@@ -1242,7 +1395,7 @@ export default function ClientMenuPage({
         )}
 
         {/* 9. Commander a nouveau */}
-        {reorderItems.length > 0 && (
+        {filteredReorder.length > 0 && (
           <>
             <SectionHeader
               title={t('orderAgain')}
@@ -1250,9 +1403,33 @@ export default function ClientMenuPage({
               seeAllLabel={t('seeAll')}
             />
             <HScroll>
-              {reorderItems.map((item) => (
+              {filteredReorder.map((item) => (
                 <FeaturedItemCard
                   key={`reorder-${item.id}`}
+                  item={item}
+                  lang={lang}
+                  badge="none"
+                  price={resolveAndFormatPrice(item.price, item.prices, tenant.currency)}
+                  onPress={() => setSelectedItem(item)}
+                  onAdd={() => setSelectedItem(item)}
+                />
+              ))}
+            </HScroll>
+          </>
+        )}
+
+        {/* 10. Recommande pour vous (co-ordered items from order history) */}
+        {filteredRecommended.length > 0 && (
+          <>
+            <SectionHeader
+              title={t('recommendedTitle')}
+              onSeeAll={() => router.push(`/sites/${tenant.slug}/menu`)}
+              seeAllLabel={t('seeAll')}
+            />
+            <HScroll>
+              {filteredRecommended.map((item) => (
+                <FeaturedItemCard
+                  key={`reco-${item.id}`}
                   item={item}
                   lang={lang}
                   badge="none"
@@ -1300,6 +1477,17 @@ export default function ClientMenuPage({
         category={selectedItem?.category?.name}
         currency={tenant.currency || 'XAF'}
         language={lang}
+      />
+      <SearchOverlay
+        isOpen={isSearchOpen}
+        onClose={() => setIsSearchOpen(false)}
+        items={searchableItems}
+        restaurantId={tenant.id}
+        currency={tenant.currency ?? undefined}
+        onOpenDetail={(item) => {
+          setIsSearchOpen(false);
+          setSelectedItem(item);
+        }}
       />
       <BottomNav tenantSlug={tenant.slug} />
     </div>
