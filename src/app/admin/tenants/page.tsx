@@ -46,13 +46,11 @@ export default async function TenantsPage() {
       .order('name');
 
     return (
-      <div className="max-w-7xl mx-auto">
-        <TenantsPageClient
-          serverMode="superadmin"
-          serverUserName={userName}
-          serverTenants={allTenants || []}
-        />
-      </div>
+      <TenantsPageClient
+        serverMode="superadmin"
+        serverUserName={userName}
+        serverTenants={allTenants || []}
+      />
     );
   }
 
@@ -79,12 +77,10 @@ export default async function TenantsPage() {
   }));
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <TenantsPageClient
-        serverMode="owner"
-        serverUserName={userName}
-        serverRestaurants={serverRestaurants}
-      />
-    </div>
+    <TenantsPageClient
+      serverMode="owner"
+      serverUserName={userName}
+      serverRestaurants={serverRestaurants}
+    />
   );
 }
