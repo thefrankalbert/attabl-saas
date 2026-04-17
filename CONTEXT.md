@@ -332,6 +332,8 @@ bloquee.**
 - **Sections collapsibles** (code promo, pourboire, notes cuisine) : fermees par defaut, ouvrent au clic avec une icone contextuelle.
 - **Barre flottante panier** : format `[icon] Voir le panier N • Prix`. Point blanc 5x5 comme separateur, pas de barre verticale, pas de parentheses.
 - **Recommandations** : titre fixe "Vous aimerez aussi", co-occurrence RPC `get_co_ordered_items` en priorite, ne jamais cacher la section quand le panier a des items.
+- **Venue/Carte UI rule (ClientMenuDetailPage)** : si chaque carte est liee a une venue (`menus.venue_id IS NOT NULL` pour toutes les cartes actives), la rangee "Venue tabs" doit etre masquee. Raison : les noms venue/carte sont souvent identiques en 1:1, ce qui empile deux rangees doublonnees et cree une confusion visuelle sur mobile 375px. Cliquer une carte-tab doit auto-synchroniser `activeVenueId` via `handleMenuChange`. Voir `ClientMenuDetailPage.tsx` flag `hideVenueRow`. Ne jamais re-afficher la rangee venue tant que toutes les cartes ont un `venue_id`.
+- **Menu tabs single-row rule (ClientMenuDetailPage)** : quand l'utilisateur entre dans une carte via `?menu=<slug>`, la rangee "Menu tabs" (liste de toutes les cartes) doit etre masquee. Raison : l'utilisateur a deja choisi une carte, re-afficher toutes les autres cartes est du bruit de navigation. Le bouton retour du header sert de sortie vers la liste des cartes. Voir flag `hideMenuTabsRow`. La cible UX est UNE SEULE rangee de navigation au-dessus des items : la CategoryNav de la carte active.
 
 ### 7.5 Orders
 

@@ -1,12 +1,13 @@
 'use client';
 
-import { Plus, Utensils, Martini, ChevronDown, AlertTriangle, Star } from 'lucide-react';
+import { Plus, Utensils, Martini, ChevronDown, Star, Heart } from 'lucide-react';
 import { useCartActions, useCartData } from '@/contexts/CartContext';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { useFavorites } from '@/hooks/useFavorites';
 
 import { MenuItem, ItemOption, ItemPriceVariant } from '@/types/admin.types';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -34,6 +35,8 @@ export default function MenuItemCard({
   const { addToCart } = useCartActions();
   const { items } = useCartData();
   const tt = useTranslations('tenant');
+  const { isFavorite, toggle: toggleFavorite } = useFavorites(restaurantId);
+  const isFav = isFavorite(item.id);
   const { resolveAndFormatPrice } = useDisplayCurrency();
   const [, setIsAnimating] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -187,8 +190,8 @@ export default function MenuItemCard({
     <div
       className={cn(
         'relative flex bg-white cursor-pointer active:bg-app-elevated transition-colors border-b border-app-border last:border-b-0',
-        isUnavailable && 'opacity-50',
       )}
+      aria-disabled={isUnavailable || undefined}
       onClick={onOpenDetail}
     >
       {/* TEXT - Left side */}
@@ -281,6 +284,15 @@ export default function MenuItemCard({
             </p>
           )}
 
+          {/* Allergens - text line */}
+          {item.allergens && item.allergens.length > 0 && (
+            <p className="text-[11px] text-gray-500 mt-1 leading-[1.4]">
+              {item.allergens.slice(0, 3).join(' | ')}
+              {item.allergens.length > 3 &&
+                ' ' + tt('allergenMore', { n: item.allergens.length - 3 })}
+            </p>
+          )}
+
           {/* Rating row - renders when rating data is available */}
           {item.rating != null && item.rating > 0 && (
             <div className="flex items-center gap-1 mt-1.5">
@@ -314,13 +326,13 @@ export default function MenuItemCard({
               {formattedPrice}
             </span>
 
-            {item.allergens && item.allergens.length > 0 && (
+            {item.calories != null && item.calories > 0 && (
               <span
-                className="inline-flex items-center gap-0.5 text-[11px] px-2 py-0.5 rounded-lg"
-                style={{ backgroundColor: 'rgb(246, 246, 246)', color: 'rgb(115, 115, 115)' }}
-                title={item.allergens.join(', ')}
+                className="text-[13px] font-normal leading-[1.4]"
+                style={{ color: 'rgb(115, 115, 115)' }}
               >
-                <AlertTriangle className="w-3 h-3" />
+                {' - '}
+                {tt('calories', { n: item.calories })}
               </span>
             )}
           </div>
@@ -388,6 +400,31 @@ export default function MenuItemCard({
         </div>
       </div>
 
+      {/* Favorite heart toggle - top-right of image area */}
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
+        disabled={isUnavailable}
+        aria-label={isFav ? tt('removeFavorite') : tt('addFavorite')}
+        aria-pressed={isFav}
+        onClick={(e) => {
+          e.stopPropagation();
+          e.preventDefault();
+          if (isUnavailable) return;
+          toggleFavorite(item.id);
+        }}
+        className={cn(
+          'absolute top-2 right-2 z-10 w-8 h-8 rounded-full bg-white/90 backdrop-blur hover:bg-white',
+          'shadow-sm transition-transform active:scale-90',
+        )}
+      >
+        <Heart
+          size={16}
+          className={cn('transition-colors', isFav ? 'fill-red-500 text-red-500' : 'text-gray-400')}
+        />
+      </Button>
+
       {/* IMAGE - Right side: 90x90px */}
       <div className="relative w-[90px] h-[90px] flex-shrink-0 m-3">
         <div className="w-full h-full rounded-xl overflow-hidden bg-app-elevated flex items-center justify-center">
@@ -445,19 +482,16 @@ export default function MenuItemCard({
             </Button>
           ) : null}
         </div>
-
-        {/* Unavailable overlay */}
-        {isUnavailable && (
-          <div className="absolute inset-0 bg-white/70 backdrop-blur-[1px] flex items-center justify-center rounded-xl">
-            <span
-              className="px-3 py-1 rounded-full text-[11px] font-semibold text-white"
-              style={{ backgroundColor: 'rgb(26, 26, 26)' }}
-            >
-              {tt('unavailable')}
-            </span>
-          </div>
-        )}
       </div>
+
+      {/* Unavailable overlay - covers entire card */}
+      {isUnavailable && (
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center pointer-events-none">
+          <span className="text-white text-xs font-semibold uppercase tracking-wide">
+            {tt('unavailable')}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

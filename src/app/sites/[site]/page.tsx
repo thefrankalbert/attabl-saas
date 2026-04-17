@@ -6,6 +6,7 @@ import { getTranslations, getMessages } from 'next-intl/server';
 import { NextIntlClientProvider } from 'next-intl';
 import ClientMenuPage from '@/components/tenant/ClientMenuPage';
 import { getCachedTenant } from '@/lib/cache';
+import { computeOpeningState } from '@/lib/opening-hours';
 import type {
   Announcement,
   MenuItem,
@@ -210,7 +211,9 @@ export default async function MenuPage({
   // Discounted items = featured items if there are active coupons, else empty
   const discountedItems: MenuItem[] = coupons.length > 0 ? featuredItems.slice(0, 10) : [];
 
-  const [zonesResult, tablesResult] = await Promise.all([
+  const sevenDaysAgo = new Date(new Date().getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [zonesResult, tablesResult, ordersCountResult, ratingAggResult] = await Promise.all([
     supabase
       .from('zones')
       .select('id, venue_id, name, name_en, prefix, display_order, created_at')
@@ -221,15 +224,89 @@ export default async function MenuPage({
         'id, zone_id, table_number, display_name, capacity, is_active, qr_code_url, created_at',
       )
       .eq('tenant_id', tenant.id),
+    // Social proof: orders count in the last 7 days for this tenant.
+    // Uses head + count to avoid fetching rows. No PII.
+    supabase
+      .from('orders')
+      .select('id', { count: 'exact', head: true })
+      .eq('tenant_id', tenant.id)
+      .in('status', ['delivered', 'served'])
+      .gte('created_at', sevenDaysAgo),
+    // Tenant-wide rating: aggregate of menu_items.rating for this tenant.
+    supabase
+      .from('menu_items')
+      .select('rating, rating_count')
+      .eq('tenant_id', tenant.id)
+      .not('rating', 'is', null),
   ]);
 
   const zones = (zonesResult.data || []) as unknown as Zone[];
   const tables = (tablesResult.data || []) as unknown as Table[];
 
+  // Social proof: only display if >= 10 to avoid weak signals.
+  const ordersThisWeek =
+    typeof ordersCountResult.count === 'number' && ordersCountResult.count >= 10
+      ? ordersCountResult.count
+      : null;
+
+  // Rating aggregate: weighted by rating_count when available.
+  const ratedItems = (ratingAggResult.data || []) as Array<{
+    rating: number | null;
+    rating_count: number | null;
+  }>;
+  const ratingAgg = (() => {
+    let totalWeighted = 0;
+    let totalWeight = 0;
+    let totalCount = 0;
+    for (const it of ratedItems) {
+      if (typeof it.rating !== 'number') continue;
+      const w = typeof it.rating_count === 'number' && it.rating_count > 0 ? it.rating_count : 1;
+      totalWeighted += it.rating * w;
+      totalWeight += w;
+      totalCount += w;
+    }
+    if (totalWeight === 0 || totalCount < 5) return null;
+    return { avg: Math.round((totalWeighted / totalWeight) * 10) / 10, count: totalCount };
+  })();
+
+  // Recommended-for-you: uses the tenant's own order history via
+  // get_co_ordered_items RPC. On the home (no cart), we seed the query with
+  // the featured items so the RPC returns items frequently co-ordered with
+  // the tenant's popular dishes. Items already returned as "featured" are
+  // excluded by the RPC itself (see migration 20260411000000).
+  let recommendedItems: MenuItem[] = [];
+  if (featuredItems.length > 0) {
+    const seedIds = featuredItems.map((it) => it.id);
+    const { data: coData } = await supabase.rpc('get_co_ordered_items', {
+      p_tenant_id: tenant.id,
+      p_cart_ids: seedIds,
+      p_limit: 8,
+    });
+    const coIds = (coData || []).map((r: { menu_item_id: string }) => r.menu_item_id);
+    if (coIds.length > 0) {
+      const { data: recoData } = await supabase
+        .from('menu_items')
+        .select(
+          'id, tenant_id, category_id, name, name_en, description, description_en, price, image_url, is_available, is_featured, rating, rating_count, allergens, calories, created_at, category:categories(id, name, name_en)',
+        )
+        .eq('tenant_id', tenant.id)
+        .eq('is_available', true)
+        .in('id', coIds);
+      const recoRows = (recoData || []) as unknown as MenuItem[];
+      const byId = new Map<string, MenuItem>(recoRows.map((it) => [it.id, it]));
+      recommendedItems = coIds
+        .map((id: string) => byId.get(id))
+        .filter((it: MenuItem | undefined): it is MenuItem => !!it);
+    }
+  }
+
+  const openingState = computeOpeningState(tenant.opening_hours, new Date());
+
   return (
     <NextIntlClientProvider messages={messages}>
       <ClientMenuPage
         tenant={tenant}
+        openingState={openingState}
         menus={menus}
         initialTable={initialTable}
         categories={categories}
@@ -242,6 +319,9 @@ export default async function MenuPage({
         recentItems={recentItems}
         discountedItems={discountedItems}
         coupons={coupons}
+        ordersThisWeek={ordersThisWeek}
+        ratingAgg={ratingAgg}
+        recommendedItems={recommendedItems}
       />
     </NextIntlClientProvider>
   );

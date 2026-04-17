@@ -100,7 +100,13 @@ export interface Tenant {
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
   bar_display_enabled?: boolean;
+  // ─── Opening hours ─────────────────────────────────────
+  opening_hours?: OpeningHoursMap | null;
 }
+
+export type OpeningHoursDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export type OpeningHoursMap = Partial<Record<OpeningHoursDay, { open: string; close: string }>>;
 
 export interface AdminUser {
   id: string;
