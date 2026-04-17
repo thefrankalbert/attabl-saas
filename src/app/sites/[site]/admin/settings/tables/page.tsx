@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
-import { redirect } from 'next/navigation';
 import { TablesClient } from '@/components/admin/settings/TablesClient';
+import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,14 +15,14 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   // Resolve tenant from URL slug
   const tenant = await getTenant(site);
 
   if (!tenant) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   // Verify user belongs to this tenant
@@ -34,7 +34,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
     .single();
 
   if (!adminUser) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   const tenantId = tenant.id;
