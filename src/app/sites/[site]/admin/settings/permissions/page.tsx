@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
-import { redirect } from 'next/navigation';
 import { ShieldCheck } from 'lucide-react';
+import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 import { PermissionsClient } from '@/components/admin/settings/PermissionsClient';
 import type { PermissionMap } from '@/types/permission.types';
 
@@ -17,14 +17,14 @@ export default async function PermissionsPage({ params }: { params: Promise<{ si
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   // Resolve tenant from URL slug
   const tenant = await getTenant(site);
 
   if (!tenant) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   // Check role - must be owner for this specific tenant

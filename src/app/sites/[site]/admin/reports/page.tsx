@@ -1,8 +1,8 @@
 import { getTenant } from '@/lib/cache';
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import TenantNotFound from '@/components/admin/TenantNotFound';
+import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import ReportsClient from '@/components/admin/ReportsClient';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/login');
+    redirectToLogin();
   }
   const { data: adminUser } = await supabase
     .from('admin_users')
@@ -33,7 +33,7 @@ export default async function ReportsPage({ params }: { params: Promise<{ site: 
     .eq('tenant_id', tenant.id)
     .single();
   if (!adminUser || !['owner', 'admin', 'manager'].includes(adminUser.role)) {
-    redirect('/unauthorized');
+    redirectToUnauthorized();
   }
 
   return (
