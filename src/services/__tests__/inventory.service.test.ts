@@ -227,6 +227,7 @@ describe('InventoryService', () => {
 
       // BUG-34: getRecipesForItem now validates menu_item_id belongs to tenant first
       let callCount = 0;
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars -- test mock keeps the `table` signature even though this branch doesn't use it
       supabase.from = vi.fn().mockImplementation((table: string) => {
         callCount++;
         if (callCount === 1) {

@@ -107,6 +107,7 @@ export function ColorPicker({
 
       {/* Native Color Input + Hex Text Input */}
       <div className="flex items-center gap-2">
+        {/* eslint-disable-next-line react/forbid-elements -- <input type="color"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
         <input
           type="color"
           value={value}

@@ -91,8 +91,11 @@ interface KDSTicketProps {
 export default function KDSTicket({
   order,
   onStatusChange,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
   onUpdateItemStatus: _onUpdateItemStatus,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
   onMarkAllReady: _onMarkAllReady,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- deprecated prop retained for API compatibility; will be removed once all callers stop passing it
   onUpdate: _onUpdate,
   isMock = false,
   zoneFilter = 'all',

@@ -25,6 +25,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Authenticate user + derive tenant from session (IDOR prevention)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- role kept in destructure to force auth assertion; POS endpoint doesn't gate by role yet
     const { tenantId: tenant_id, user, role } = await getAuthenticatedUserWithTenant();
 
     // 3. Parse and validate input with Zod

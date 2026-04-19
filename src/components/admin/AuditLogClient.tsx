@@ -110,7 +110,7 @@ export default function AuditLogClient({
     } finally {
       setLoading(false);
     }
-  }, [tenantId, page, filterAction, filterEntity, searchEmail]);
+  }, [tenantId, page, filterAction, filterEntity, searchEmail, t]);
 
   useEffect(() => {
     fetchLogs();

@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     }
 
     // 2. Authenticate user and derive tenant from session (not from header)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- user kept in destructure to force auth assertion; remove when auth helper exposes a void-return variant
     const { user, tenantId, supabase } = await getAuthenticatedUserWithTenant();
 
     // 3. Parse FormData and extract file

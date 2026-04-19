@@ -181,6 +181,7 @@ export default function MenuImportExcel({
             : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
         )}
       >
+        {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
         <input
           ref={fileInputRef}
           type="file"

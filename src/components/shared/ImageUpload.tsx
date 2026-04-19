@@ -374,6 +374,7 @@ export default function ImageUpload({
           />
 
           {/* Hidden file input for replacing */}
+          {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
           <input
             type="file"
             ref={replaceInputRef}
@@ -404,6 +405,7 @@ export default function ImageUpload({
         )}
         onClick={() => fileInputRef.current?.click()}
       >
+        {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
         <input
           type="file"
           ref={fileInputRef}
