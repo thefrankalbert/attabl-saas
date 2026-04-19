@@ -8,6 +8,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
@@ -376,26 +383,28 @@ export function TablesClient({
                         }}
                         autoFocus
                       />
-                      <button
-                        type="button"
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSaveZoneName(zone.id);
                         }}
-                        className="p-1 text-emerald-600 hover:text-emerald-700"
+                        className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                       >
                         <Check className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingZoneId(null);
                         }}
-                        className="p-1 text-app-text-muted hover:text-app-text-secondary"
+                        className="h-7 w-7 text-app-text-muted hover:text-app-text-secondary"
                       >
                         <X className="w-3.5 h-3.5" />
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -411,27 +420,29 @@ export function TablesClient({
                       </span>
                       <span className="text-xs text-app-text-muted font-mono">{zone.prefix}</span>
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleStartEditZone(zone);
                           }}
-                          className="p-1 text-app-text-muted hover:text-app-text-secondary"
+                          className="h-7 w-7 text-app-text-muted hover:text-app-text-secondary"
                         >
                           <Pencil className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteZone(zone);
                           }}
                           title="Supprimer"
-                          className="p-1 text-red-400 hover:text-red-600"
+                          className="h-7 w-7 text-red-400 hover:text-red-600"
                         >
                           <Trash2 className="w-3 h-3" />
-                        </button>
+                        </Button>
                       </div>
                     </>
                   )}
@@ -507,14 +518,15 @@ export function TablesClient({
                             {table.table_number}
                           </span>
                         </div>
-                        <button
-                          type="button"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => handleDeleteTable(table)}
                           title="Supprimer"
-                          className="p-1 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className="h-7 w-7 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        </Button>
                       </div>
 
                       {/* Display name (editable) */}
@@ -530,44 +542,48 @@ export function TablesClient({
                             }}
                             autoFocus
                           />
-                          <button
-                            type="button"
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleSaveTableName(table.id)}
-                            className="p-1 text-emerald-600 hover:text-emerald-700"
+                            className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                           >
                             <Check className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                         </div>
                       ) : (
-                        <button
+                        <Button
                           type="button"
-                          className="text-sm font-semibold text-app-text mb-2 hover:text-app-text-secondary text-left"
+                          variant="ghost"
+                          className="text-sm font-semibold text-app-text mb-2 hover:text-app-text-secondary text-left h-auto px-0 py-0"
                           onClick={() => handleStartEditTable(table)}
                         >
                           {table.display_name}
-                        </button>
+                        </Button>
                       )}
 
                       {/* Capacity */}
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-xs text-app-text-secondary">{t('capacity')}</span>
-                        <select
-                          value={table.capacity}
-                          onChange={(e) =>
-                            handleUpdateCapacity(table, parseInt(e.target.value, 10))
-                          }
-                          className="text-xs border border-app-border rounded-lg px-1.5 py-0.5 text-app-text bg-app-card focus:ring-accent focus:outline-none"
+                        <Select
+                          value={String(table.capacity)}
+                          onValueChange={(val) => handleUpdateCapacity(table, parseInt(val, 10))}
                         >
-                          {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
-                            <option key={n} value={n}>
-                              {n}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="text-xs h-7 w-16 px-1.5 py-0.5">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 10, 12, 14, 16, 20].map((n) => (
+                              <SelectItem key={n} value={String(n)}>
+                                {n}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Active toggle */}
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <Label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={table.is_active}
@@ -577,7 +593,7 @@ export function TablesClient({
                         <span className="text-xs text-app-text-secondary">
                           {table.is_active ? t('active') : t('inactive')}
                         </span>
-                      </label>
+                      </Label>
                     </div>
                   ))}
                 </div>

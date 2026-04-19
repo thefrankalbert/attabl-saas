@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { getTenant } from '@/lib/cache';
+import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { SubscriptionProvider } from '@/contexts/SubscriptionContext';
 import { PermissionsProvider } from '@/contexts/PermissionsContext';
@@ -51,7 +51,7 @@ export default async function AdminLayout({
   ] = await Promise.all([getTenant(tenantSlug), supabase.auth.getUser()]);
 
   if (!tenant) {
-    redirect('/login');
+    redirectToLogin();
   }
 
   const showOnboardingResume = tenant.onboarding_completed === false;
@@ -59,7 +59,7 @@ export default async function AdminLayout({
   let adminUser: AdminUser | null = null;
 
   if (authError || !user) {
-    redirect(`/login`);
+    redirectToLogin();
   } else {
     // First, check if the user is a direct member of this tenant
     const { data: adminData } = await supabase
@@ -82,7 +82,7 @@ export default async function AdminLayout({
         .single();
 
       if (!superAdminCheck) {
-        redirect(`/unauthorized`);
+        redirectToUnauthorized();
       }
 
       // Super admin: create a virtual admin entry with owner-level access

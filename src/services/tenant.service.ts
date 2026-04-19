@@ -45,6 +45,15 @@ export function createTenantService(supabase: SupabaseClient) {
      * Maps camelCase input to snake_case database columns.
      */
     async updateSettings(tenantId: string, settings: TenantSettings): Promise<void> {
+      // Validate hex color format
+      const hexColorRegex = /^#[0-9A-Fa-f]{6}$/;
+      if (settings.primaryColor && !hexColorRegex.test(settings.primaryColor)) {
+        throw new ServiceError('Format de couleur invalide', 'VALIDATION');
+      }
+      if (settings.secondaryColor && !hexColorRegex.test(settings.secondaryColor)) {
+        throw new ServiceError('Format de couleur invalide', 'VALIDATION');
+      }
+
       const { error } = await supabase
         .from('tenants')
         .update({

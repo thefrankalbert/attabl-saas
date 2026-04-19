@@ -194,13 +194,15 @@ function ResetPasswordContent() {
                     autoFocus
                     className="min-h-[44px] pr-10"
                   />
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text h-auto w-auto p-0"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                  </Button>
                 </div>
               </div>
 

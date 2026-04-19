@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { isAdminHome, getTenantUrl } from '@/lib/constants';
@@ -193,10 +194,10 @@ export function AdminSidebar({
           {!collapsed && (
             <Popover>
               <PopoverTrigger asChild>
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
                   suppressHydrationWarning
-                  className="flex-1 flex items-center gap-2 min-w-0 px-2 py-1 rounded-lg hover:bg-app-hover transition-colors text-left"
+                  className="flex-1 flex items-center gap-2 min-w-0 px-2 py-1 rounded-lg text-left justify-start"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-app-text truncate">{tenant.name}</p>
@@ -205,7 +206,7 @@ export function AdminSidebar({
                     </p>
                   </div>
                   <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
-                </button>
+                </Button>
               </PopoverTrigger>
               <PopoverContent
                 side="bottom"
@@ -218,14 +219,14 @@ export function AdminSidebar({
                     userTenants.map((t) => {
                       const isCurrent = t.slug === tenant.slug;
                       return (
-                        <button
+                        <Button
                           key={t.id}
-                          type="button"
+                          variant="ghost"
                           onClick={() => {
                             if (!isCurrent) switchTenant(t.slug);
                           }}
                           className={cn(
-                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left',
+                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left justify-start',
                             isCurrent
                               ? 'bg-accent-muted text-accent'
                               : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
@@ -241,7 +242,7 @@ export function AdminSidebar({
                             </p>
                           </div>
                           {isCurrent && <Check className="w-4 h-4 shrink-0" />}
-                        </button>
+                        </Button>
                       );
                     })
                   ) : (
@@ -255,11 +256,11 @@ export function AdminSidebar({
 
         {/* Collapse toggle - directly under tenant info */}
         <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
-          <button
-            type="button"
+          <Button
+            variant="ghost"
             onClick={handleToggleCollapsed}
             className={cn(
-              'w-full flex items-center gap-3 py-1.5 rounded-lg text-app-text-muted opacity-40 hover:opacity-100 hover:bg-app-hover transition-colors overflow-hidden',
+              'w-full gap-3 py-1.5 text-app-text-muted opacity-40 hover:opacity-100 overflow-hidden',
               collapsed ? 'justify-center px-0' : 'px-3',
             )}
             title={collapsed ? t('expand') : t('collapse')}
@@ -270,7 +271,7 @@ export function AdminSidebar({
               <PanelLeftClose className="w-4 h-4 shrink-0" />
             )}
             {!collapsed && <span className="text-xs whitespace-nowrap">{t('collapse')}</span>}
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -295,10 +296,10 @@ export function AdminSidebar({
           {!collapsed ? (
             <div className="px-3 pb-3 pt-2">
               <PopoverTrigger asChild>
-                <button
-                  type="button"
+                <Button
+                  variant="outline"
                   suppressHydrationWarning
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-app-border bg-app-elevated/50 hover:bg-app-hover transition-colors text-left"
+                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border-app-border bg-app-elevated/50 hover:bg-app-hover text-left justify-start"
                 >
                   {/* Scannable QR code */}
                   <div className="w-11 h-11 rounded-lg bg-white shrink-0 flex items-center justify-center p-1">
@@ -317,7 +318,7 @@ export function AdminSidebar({
                     <span className="text-[9px] font-semibold text-accent">{planLabel}</span>
                   </div>
                   <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
-                </button>
+                </Button>
               </PopoverTrigger>
               <div className="hidden qr-download-source">
                 <QRCodeSVG
@@ -331,15 +332,15 @@ export function AdminSidebar({
             </div>
           ) : (
             <PopoverTrigger asChild>
-              <button
-                type="button"
+              <Button
+                variant="ghost"
                 suppressHydrationWarning
-                className="w-full py-3 flex justify-center hover:bg-app-hover transition-colors"
+                className="w-full py-3 flex justify-center hover:bg-app-hover px-0"
               >
                 <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center">
                   <QrCode className="w-5 h-5 text-accent" />
                 </div>
-              </button>
+              </Button>
             </PopoverTrigger>
           )}
           <PopoverContent
@@ -453,13 +454,14 @@ export function AdminSidebar({
             {/* Logout */}
             <div className="p-1.5 border-t border-app-border">
               <form action="/api/auth/signout" method="post">
-                <button
+                <Button
                   type="submit"
-                  className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-status-error hover:bg-status-error-bg transition-colors"
+                  variant="ghost"
+                  className="w-full justify-start gap-3 text-sm text-status-error hover:bg-status-error-bg"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
                   <span>{t('logout')}</span>
-                </button>
+                </Button>
               </form>
             </div>
           </PopoverContent>

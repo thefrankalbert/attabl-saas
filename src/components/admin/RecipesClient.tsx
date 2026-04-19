@@ -7,6 +7,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useIngredients } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -260,11 +267,12 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                     const isSelected = selectedItemId === item.id;
 
                     return (
-                      <button
+                      <Button
                         key={item.id}
+                        variant="ghost"
                         onClick={() => handleSelectItem(item.id)}
                         className={cn(
-                          'w-full text-left px-4 py-3 flex items-center justify-between transition-colors',
+                          'w-full text-left px-4 py-3 h-auto flex items-center justify-between transition-colors rounded-none',
                           isSelected
                             ? 'bg-accent-muted border-l-4 border-accent'
                             : 'hover:bg-app-bg border-l-4 border-transparent',
@@ -290,7 +298,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                         >
                           {hasRecipe ? t('hasRecipe') : t('noRecipe')}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                   {filteredItems.length === 0 && (
@@ -321,17 +329,21 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             className="flex items-start gap-2 p-3 bg-app-bg rounded-lg border border-app-border"
                           >
                             <div className="flex-1 space-y-2">
-                              <select
+                              <Select
                                 value={line.ingredient_id}
-                                onChange={(e) => updateLine(idx, 'ingredient_id', e.target.value)}
-                                className="w-full h-9 px-2 border border-app-border rounded-lg text-sm bg-app-card focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                onValueChange={(val) => updateLine(idx, 'ingredient_id', val)}
                               >
-                                {ingredients.map((ing) => (
-                                  <option key={ing.id} value={ing.id}>
-                                    {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
-                                  </option>
-                                ))}
-                              </select>
+                                <SelectTrigger className="w-full h-9">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {ingredients.map((ing) => (
+                                    <SelectItem key={ing.id} value={ing.id}>
+                                      {ing.name} ({INGREDIENT_UNITS[ing.unit]?.labelShort})
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
                               <div className="flex gap-2">
                                 <Input
                                   type="number"
@@ -353,13 +365,15 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                                 </span>
                               </div>
                             </div>
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => removeLine(idx)}
                               title="Supprimer"
-                              className="p-1.5 text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
+                              className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
-                            </button>
+                            </Button>
                           </div>
                         ))}
 

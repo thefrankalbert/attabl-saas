@@ -216,14 +216,16 @@ export default function ImageUpload({
               {isRecrop ? 'Recadrer' : 'Ajuster la photo'}
             </span>
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={resetCrop}
             disabled={isLoading}
-            className="p-1.5 rounded-lg text-app-text-muted hover:text-app-text hover:bg-app-elevated transition-colors"
+            className="p-1.5 rounded-lg text-app-text-muted hover:text-app-text hover:bg-app-elevated transition-colors h-8 w-8"
           >
             <X className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
 
         {/* Cropper area */}
@@ -248,13 +250,15 @@ export default function ImageUpload({
         {/* Zoom controls */}
         <div className="px-4 py-4 border-t border-app-border bg-app-bg/50">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setZoom((z) => Math.max(1, z - 0.2))}
-              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors"
+              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
             >
               <ZoomOut className="h-4 w-4" />
-            </button>
+            </Button>
 
             <Slider
               min={100}
@@ -265,27 +269,31 @@ export default function ImageUpload({
               className="flex-1"
             />
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
-              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors"
+              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
             >
               <ZoomIn className="h-4 w-4" />
-            </button>
+            </Button>
 
             <div className="w-px h-5 bg-app-border" />
 
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 setCrop({ x: 0, y: 0 });
                 setZoom(1);
               }}
-              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors"
+              className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
               title="Reinitialiser"
             >
               <RotateCcw className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
 
           {/* Zoom percentage label */}
@@ -442,13 +450,13 @@ function ActionButton({
   variant?: 'default' | 'danger';
 }) {
   return (
-    <button
+    <Button
       type="button"
+      variant={variant === 'danger' ? 'ghost' : 'ghost'}
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
-        'disabled:opacity-50 disabled:pointer-events-none',
+        'inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors h-auto',
         variant === 'danger'
           ? 'text-red-400 hover:bg-red-500/10 hover:text-red-300'
           : 'text-app-text-secondary hover:bg-app-elevated hover:text-app-text',
@@ -456,6 +464,6 @@ function ActionButton({
     >
       {icon}
       {label}
-    </button>
+    </Button>
   );
 }

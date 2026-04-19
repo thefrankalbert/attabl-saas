@@ -4,6 +4,8 @@
 import { useState, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Camera, ChevronDown, ChevronRight, Plus, X, UtensilsCrossed, Loader2 } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 import { compressImage, uploadToStorage } from '@/lib/image-compress';
@@ -232,10 +234,12 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                   >
                     {/* Category Header */}
                     <div className="flex items-center gap-3 p-4 bg-app-elevated/50">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => toggleCategory(category.id)}
-                        className="p-1.5 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
+                        className="p-1.5 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-8 w-8"
                         aria-label={category.expanded ? 'Collapse' : 'Expand'}
                       >
                         {category.expanded ? (
@@ -243,10 +247,9 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         ) : (
                           <ChevronRight className="h-4 w-4" />
                         )}
-                      </button>
+                      </Button>
 
                       <Input
-                        type="text"
                         placeholder={t('categoryNamePlaceholder')}
                         value={category.name}
                         onChange={(e) => updateCategoryName(category.id, e.target.value)}
@@ -257,14 +260,16 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                         {t('articlesCount', { count: articleCount })}
                       </span>
 
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => deleteCategory(category.id)}
-                        className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                        className="p-2 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors h-8 w-8"
                         aria-label={t('deleteCategory')}
                       >
                         <X className="h-4 w-4" />
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Category Body */}
@@ -300,27 +305,28 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                     alt=""
                                     className="w-9 h-9 rounded-xl object-cover"
                                   />
-                                  <button
+                                  <Button
                                     type="button"
+                                    variant="destructive"
+                                    size="icon"
                                     onClick={() =>
                                       updateArticle(category.id, item.id, 'imageUrl', '')
                                     }
-                                    className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full flex items-center justify-center"
+                                    className="absolute -top-1 -right-1 w-4 h-4 rounded-full p-0 min-w-0 min-h-0"
                                   >
                                     <X className="h-2.5 w-2.5 text-white" />
-                                  </button>
+                                  </Button>
                                 </div>
                               ) : (
-                                <label
+                                <Label
                                   htmlFor={`photo-${item.id}`}
                                   className="w-9 h-9 rounded-xl border border-dashed border-app-border flex items-center justify-center cursor-pointer hover:border-accent/40 transition-colors"
                                 >
                                   <Camera className="h-3.5 w-3.5 text-app-text-muted" />
-                                </label>
+                                </Label>
                               )}
                             </div>
                             <Input
-                              type="text"
                               placeholder={t('articleNamePlaceholder')}
                               value={item.name}
                               onChange={(e) =>
@@ -344,26 +350,29 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                 {data.currency || 'EUR'}
                               </span>
                             </div>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => deleteArticle(category.id, item.id)}
-                              className="p-1.5 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0"
+                              className="p-1.5 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors shrink-0 h-7 w-7"
                               aria-label={t('deleteArticle')}
                             >
                               <X className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         ))}
 
                         {category.items.length < 10 ? (
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
                             onClick={() => addArticle(category.id)}
-                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
+                            className="flex items-center gap-2 px-4 py-2.5 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                           >
                             <Plus className="h-3.5 w-3.5" />
                             {t('addArticle')}
-                          </button>
+                          </Button>
                         ) : (
                           <p className="text-xs text-app-text-muted text-center py-1">
                             {t('maxArticles')}
@@ -377,14 +386,15 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
 
               {/* Add Category Button */}
               {categories.length < 5 ? (
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={addCategory}
-                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                 >
                   <Plus className="h-4 w-4" />
                   {t('addCategory')}
-                </button>
+                </Button>
               ) : (
                 <p className="text-xs text-app-text-muted text-center">{t('maxCategories')}</p>
               )}

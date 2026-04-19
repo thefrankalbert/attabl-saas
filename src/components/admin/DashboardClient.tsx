@@ -7,11 +7,12 @@ import type { UseDashboardDataParams } from '@/hooks/useDashboardData';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
-import { STATUS_STYLES } from '@/lib/design-tokens';
+import { STATUS_STYLES, CHART_COLORS } from '@/lib/design-tokens';
 import type { OrderStatus } from '@/lib/design-tokens';
 import Link from 'next/link';
 import { ChevronRight, Clock, ShoppingBag, QrCode, BarChart3, Package } from 'lucide-react';
 import type { CSSProperties } from 'react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 // Lazy-load recharts for faster initial paint
@@ -37,16 +38,16 @@ const DashboardChart = lazy(() =>
       const gradId = mode === 'revenue' ? 'rev-grad' : 'ord-grad';
       const label = mode === 'revenue' ? revenueLabel : ordersLabel;
       const fmt = mode === 'revenue' ? fmtF : (n: number) => String(n);
-      // Filled Line Chart: green #4ade80, linear segments, subtle gradient fill
-      const strokeColor = '#4ade80';
+      // Filled Line Chart: green, linear segments, subtle gradient fill
+      const strokeColor = CHART_COLORS.revenue;
 
       return (
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 8, right: 12, left: 0, bottom: 0 }}>
             <defs>
               <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#4ade80" stopOpacity={0.15} />
-                <stop offset="100%" stopColor="#4ade80" stopOpacity={0} />
+                <stop offset="0%" stopColor={CHART_COLORS.revenue} stopOpacity={0.15} />
+                <stop offset="100%" stopColor={CHART_COLORS.revenue} stopOpacity={0} />
               </linearGradient>
             </defs>
             <XAxis
@@ -302,7 +303,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     stats.ordersToday > 0 ? Math.round(stats.revenueToday / stats.ordersToday) : 0;
 
   return (
-    <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 xl:p-8 2xl:p-10 overflow-hidden">
+    <div className="h-full flex flex-col p-3 sm:p-5 lg:p-6 xl:p-8 2xl:p-10">
       {/* Greeting + date + time */}
       <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-1 sm:gap-2">
         <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap min-w-0">
@@ -327,13 +328,13 @@ export default function DashboardClient(props: DashboardClientProps) {
       </div>
 
       {/* ── Two-column: left (gauge + chart + shortcuts), right (orders from top) ─── */}
-      <div className="flex-1 min-h-0 flex flex-col @md:flex-row @lg:flex-row gap-3 overflow-y-auto @lg:overflow-hidden">
+      <div className="flex-1 min-h-0 flex flex-col @md:flex-row @lg:flex-row gap-3 overflow-hidden">
         {/* ── Left column ──────────────────────────────────── */}
         <div className="shrink-0 @md:shrink @md:w-[48%] @lg:shrink @lg:w-[50%] flex flex-col gap-2">
           {/* Stats gauge - compact */}
           <div className="border border-app-border rounded-xl px-2 sm:px-3 py-2 bg-app-card">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="shrink-0 w-[80px] sm:w-[110px]">
+              <div className="shrink-0 w-20 sm:w-28">
                 <Suspense
                   fallback={
                     <div className="h-[60px] rounded-lg bg-app-elevated/20 animate-pulse" />
@@ -347,7 +348,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                               name: t('revenueToday'),
                               value: Math.max(stats.revenueToday, 1),
                               displayValue: fmtF(stats.revenueToday),
-                              color: '#4ade80',
+                              color: CHART_COLORS.revenue,
                             },
                           ]
                         : []),
@@ -355,19 +356,19 @@ export default function DashboardClient(props: DashboardClientProps) {
                         name: t('ordersToday'),
                         value: Math.max(stats.ordersToday, 1),
                         displayValue: String(stats.ordersToday),
-                        color: '#60a5fa',
+                        color: CHART_COLORS.orders,
                       },
                       {
                         name: t('activeItems'),
                         value: Math.max(stats.activeItems, 1),
                         displayValue: String(stats.activeItems),
-                        color: '#f97316',
+                        color: CHART_COLORS.activeItems,
                       },
                       {
                         name: t('activeTables'),
                         value: Math.max(stats.activeCards, 1),
                         displayValue: String(stats.activeCards),
-                        color: '#a78bfa',
+                        color: CHART_COLORS.activeTables,
                       },
                     ]}
                   />
@@ -379,7 +380,7 @@ export default function DashboardClient(props: DashboardClientProps) {
                   ...(showFin
                     ? [
                         {
-                          color: '#4ade80',
+                          color: CHART_COLORS.revenue,
                           label: t('revenueToday'),
                           value: fmtF(stats.revenueToday),
                           trend: stats.revenueTrend,
@@ -387,13 +388,21 @@ export default function DashboardClient(props: DashboardClientProps) {
                       ]
                     : []),
                   {
-                    color: '#60a5fa',
+                    color: CHART_COLORS.orders,
                     label: t('ordersToday'),
                     value: String(stats.ordersToday),
                     trend: stats.ordersTrend,
                   },
-                  { color: '#f97316', label: t('activeItems'), value: String(stats.activeItems) },
-                  { color: '#a78bfa', label: t('activeTables'), value: String(stats.activeCards) },
+                  {
+                    color: CHART_COLORS.activeItems,
+                    label: t('activeItems'),
+                    value: String(stats.activeItems),
+                  },
+                  {
+                    color: CHART_COLORS.activeTables,
+                    label: t('activeTables'),
+                    value: String(stats.activeCards),
+                  },
                 ].map((item) => (
                   <div key={item.label} className="flex items-center gap-1 min-w-0">
                     <span
@@ -430,28 +439,32 @@ export default function DashboardClient(props: DashboardClientProps) {
                   {chartMode === 'revenue' ? t('dashboardOverview') : t('ordersLabel')}
                 </p>
                 <div className="flex items-center bg-app-elevated rounded-lg p-0.5 border border-app-border shrink-0">
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('revenue')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'revenue'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('revenueLabel')}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setChartMode('orders')}
                     className={cn(
-                      'px-2 py-1 rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
+                      'px-2 py-1 h-auto rounded-md text-[10px] font-semibold transition-all whitespace-nowrap',
                       chartMode === 'orders'
                         ? 'bg-accent text-accent-text shadow-sm'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {t('ordersLabel')}
-                  </button>
+                  </Button>
                 </div>
               </div>
               {/* Value + period */}
@@ -535,7 +548,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
 
         {/* ── Right column - orders (full height, scrollable) ── */}
-        <div className="flex-1 min-h-[200px] @lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl overflow-hidden">
+        <div className="flex-1 min-h-[200px] @lg:min-h-0 flex flex-col min-w-0 border border-app-border rounded-xl">
           <div className="flex items-center justify-between px-3 sm:px-4 py-2 sm:py-2.5 border-b border-app-border shrink-0">
             <p className="text-[10px] font-semibold text-app-text-muted uppercase tracking-widest">
               {t('recentOrders')}
@@ -550,7 +563,7 @@ export default function DashboardClient(props: DashboardClientProps) {
           </div>
 
           {recentOrders.length > 0 ? (
-            <div className="overflow-hidden flex-1 min-h-0 flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
               <div className="overflow-y-auto flex-1 scrollbar-hide">
                 {recentOrders.slice(0, 15).map((order) => {
                   const sc = STATUS_STYLES[order.status as OrderStatus] || STATUS_STYLES.pending;

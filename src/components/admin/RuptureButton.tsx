@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { XCircle, RotateCcw } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface RuptureButtonProps {
@@ -69,34 +70,38 @@ export default function RuptureButton({
   // Item currently available → show "Rupture" button
   if (isAvailable) {
     return (
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={handleToggle}
         title={confirming ? t('confirmRupture') : t('markRupture')}
         className={cn(
-          'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
+          'p-2.5 rounded shrink-0 min-h-[48px] min-w-[48px]',
           confirming
-            ? 'bg-red-500/30 text-red-300 animate-pulse'
-            : 'text-red-400/60 hover:text-red-400 hover:bg-red-500/10',
+            ? 'bg-status-error-bg text-status-error animate-pulse'
+            : 'text-status-error/60 hover:text-status-error hover:bg-status-error-bg',
         )}
       >
         <XCircle className="w-4 h-4" />
-      </button>
+      </Button>
     );
   }
 
   // Item currently unavailable → show "Remettre en service" button
   return (
-    <button
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={handleToggle}
       title={confirming ? t('confirmBackInStock') : t('backInStock')}
       className={cn(
-        'p-2.5 rounded transition-all shrink-0 min-h-[48px] min-w-[48px] flex items-center justify-center',
+        'p-2.5 rounded shrink-0 min-h-[48px] min-w-[48px]',
         confirming
-          ? 'bg-green-500/30 text-green-300 animate-pulse'
-          : 'text-green-400/60 hover:text-green-400 hover:bg-green-500/10',
+          ? 'bg-status-success-bg text-status-success animate-pulse'
+          : 'text-status-success/60 hover:text-status-success hover:bg-status-success-bg',
       )}
     >
       <RotateCcw className="w-4 h-4" />
-    </button>
+    </Button>
   );
 }

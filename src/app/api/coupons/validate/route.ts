@@ -44,27 +44,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Derive tenantId from middleware header (not from client body)
-    const headersList = await headers();
-    const tenantSlug = headersList.get('x-tenant-slug');
-
-    if (!tenantSlug) {
-      return NextResponse.json({ valid: false, error: t('tenantNotIdentified') }, { status: 400 });
-    }
-
-    const supabase = createAdminClient();
-
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenants')
-      .select('id')
-      .eq('slug', tenantSlug)
-      .single();
-
-    if (tenantError || !tenant) {
-      return NextResponse.json({ valid: false, error: t('tenantNotFound') }, { status: 404 });
-    }
-
-    // 3. Parse and validate input
+    // 2. Parse body first (may contain tenantSlug fallback)
     let body: unknown;
     try {
       body = await request.json();
@@ -78,7 +58,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: firstError }, { status: 400 });
     }
 
-    const { code, subtotal } = parseResult.data;
+    const { code, subtotal, tenantSlug: bodyTenantSlug } = parseResult.data;
+
+    // 3. Resolve tenant: prefer middleware header (production subdomain routing),
+    //    fall back to body tenantSlug (localhost dev without subdomain).
+    //    Coupon validation is a public, read-only endpoint (no user data, just checks
+    //    whether a code exists for a tenant) so trusting the client slug here is OK.
+    const headersList = await headers();
+    const tenantSlug = headersList.get('x-tenant-slug') || bodyTenantSlug;
+
+    if (!tenantSlug) {
+      // Mask this internal error with a generic "invalid code" message for users
+      return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
+    }
+
+    const supabase = createAdminClient();
+
+    const { data: tenant, error: tenantError } = await supabase
+      .from('tenants')
+      .select('id')
+      .eq('slug', tenantSlug)
+      .single();
+
+    if (tenantError || !tenant) {
+      // Same masking
+      return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 404 });
+    }
 
     // 4. Validate coupon using server-derived tenantId
     const couponService = createCouponService(supabase);
@@ -86,11 +91,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : t('validationError');
-    const statusCode =
-      error instanceof Error && 'statusCode' in error
-        ? (error as { statusCode: number }).statusCode
-        : 400;
-    return NextResponse.json({ valid: false, error: message }, { status: statusCode });
+    // Mask internal error details from the client — log the real message
+    // server-side only. Raw error.message can leak DB errors, timeouts, etc.
+    logger.error('Coupon validate unexpected error', error);
+    return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
   }
 }

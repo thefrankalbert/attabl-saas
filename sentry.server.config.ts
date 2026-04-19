@@ -16,4 +16,18 @@ Sentry.init({
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
+
+  // Strip sensitive data from events before sending to Sentry
+  beforeSend(event) {
+    if (event.request?.data) {
+      event.request.data = '[Filtered]';
+    }
+    if (event.request?.cookies) {
+      event.request.cookies = {};
+    }
+    if (event.request?.query_string) {
+      event.request.query_string = '[Filtered]';
+    }
+    return event;
+  },
 });

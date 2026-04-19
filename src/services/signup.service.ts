@@ -54,8 +54,7 @@ export function createSignupService(supabase: SupabaseClient) {
      * Creates a tenant with a 14-day trial period.
      */
     async createTenantWithTrial(input: CreateTenantInput): Promise<{ id: string; slug: string }> {
-      const trialEndsAt = new Date();
-      trialEndsAt.setDate(trialEndsAt.getDate() + 14);
+      const trialEndsAt = new Date(Date.now() + 14 * 86400000);
 
       const { data: tenant, error: tenantError } = await supabase
         .from('tenants')
@@ -121,6 +120,11 @@ export function createSignupService(supabase: SupabaseClient) {
      * 5. Create default venue
      */
     async completeEmailSignup(input: EmailSignupInput): Promise<SignupResult> {
+      // Defensive email validation before any DB operations
+      if (!input.email || !input.email.includes('@')) {
+        throw new ServiceError('Email invalide', 'VALIDATION');
+      }
+
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(input.restaurantName);
 
@@ -189,10 +193,32 @@ export function createSignupService(supabase: SupabaseClient) {
         throw err;
       }
 
-      // 5. Create default venue (best-effort, no rollback)
-      await this.createDefaultVenue(tenant.id);
+      // 5. Create default venue (with rollback on failure)
+      try {
+        await this.createDefaultVenue(tenant.id);
+      } catch (venueError) {
+        logger.error('Failed to create default venue, rolling back signup', venueError);
+        // Rollback: delete admin_user, restaurant_group, tenant, auth user
+        try {
+          await supabase.from('admin_users').delete().eq('user_id', userId);
+          if (group) {
+            await supabase.from('restaurant_groups').delete().eq('id', group.id);
+          }
+          await supabase.from('tenants').delete().eq('id', tenant.id);
+          await supabase.auth.admin.deleteUser(userId);
+        } catch (rollbackError) {
+          logger.error('Signup rollback also failed', rollbackError);
+        }
+        throw new ServiceError(
+          'Erreur lors de la creation de la venue par defaut',
+          'INTERNAL',
+          venueError,
+        );
+      }
 
       // 6. Generate confirmation link and send welcome email
+      // Note: generateLink('signup') is idempotent - calling it again replaces the previous token.
+      // Rate limiting (3 req/10min per IP) on the signup endpoint prevents abuse.
       try {
         const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
           type: 'signup',
@@ -228,6 +254,11 @@ export function createSignupService(supabase: SupabaseClient) {
      * 4. Create default venue
      */
     async completeOAuthSignup(input: OAuthSignupInput): Promise<SignupResult> {
+      // Defensive email validation (OAuth providers may return unexpected values)
+      if (!input.email || !input.email.includes('@')) {
+        throw new ServiceError('Email invalide', 'VALIDATION');
+      }
+
       // 1. Generate unique slug
       const slug = await slugService.generateUniqueSlug(input.restaurantName);
 

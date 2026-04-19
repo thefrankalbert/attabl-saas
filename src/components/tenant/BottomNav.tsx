@@ -1,8 +1,9 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, ShoppingBag, Clock, User } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { ShoppingBag, Home, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useCart } from '@/contexts/CartContext';
 
 interface BottomNavProps {
@@ -17,100 +18,94 @@ export default function BottomNav({ tenantSlug }: BottomNavProps) {
 
   const basePath = `/sites/${tenantSlug}`;
 
-  const navItems = [
+  const tabs = [
     {
-      label: t('navMenu'),
-      icon: Home,
-      onClick: () => router.push(basePath),
+      label: t('navHome'),
+      path: basePath,
       isActive:
         pathname === basePath ||
         pathname === `${basePath}/` ||
         pathname === `${basePath}/menu` ||
         pathname === `${basePath}/menu/`,
+      /* Home icon (Lucide) */
+      icon: (active: boolean) => (
+        <Home
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
+      ),
     },
     {
       label: t('navCart'),
-      icon: ShoppingBag,
-      onClick: () => router.push(`${basePath}/cart`),
+      path: `${basePath}/cart`,
       isActive: pathname?.includes('/cart'),
-      badge: totalItems > 0 ? totalItems : null,
+      badge: totalItems > 0,
+      /* Shopping bag icon (Lucide) */
+      icon: (active: boolean) => (
+        <ShoppingBag
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
+      ),
     },
     {
       label: t('navOrders'),
-      icon: Clock,
-      onClick: () => router.push(`${basePath}/orders`),
+      path: `${basePath}/orders`,
       isActive: pathname?.includes('/orders'),
+      /* Clock / orders icon (Lucide) */
+      icon: (active: boolean) => (
+        <Clock
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
+      ),
     },
     {
-      label: t('navProfile'),
-      icon: User,
-      onClick: () => router.push(`${basePath}/settings`),
+      label: t('navAccount'),
+      path: `${basePath}/settings`,
       isActive: pathname?.includes('/settings'),
+      /* User icon (Lucide) */
+      icon: (active: boolean) => (
+        <User
+          size={24}
+          strokeWidth={2}
+          className={active ? 'text-app-text' : 'text-app-text-muted'}
+        />
+      ),
     },
   ];
 
   return (
     <nav
-      className="fixed bottom-0 left-0 right-0 z-50 bg-app-card border-t border-app-border"
-      style={{
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
+      className="fixed bottom-0 left-0 right-0 z-50 bg-app-bg border-t border-app-border"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-around',
-          alignItems: 'center',
-          height: '64px',
-          maxWidth: '512px',
-          margin: '0 auto',
-          padding: '0 8px',
-        }}
-      >
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.label}
-              onClick={item.onClick}
-              aria-label={item.label}
-              className={`relative flex flex-col items-center justify-center gap-1 px-3 py-2 flex-1 bg-transparent border-none cursor-pointer ${
-                item.isActive ? '' : 'text-app-text-secondary'
-              }`}
-              style={item.isActive ? { color: 'var(--tenant-primary)' } : undefined}
-            >
-              {/* Active indicator top bar */}
-              {item.isActive && (
-                <span
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 rounded-b-sm"
-                  style={{ backgroundColor: 'var(--tenant-primary)' }}
-                />
+      <div className="flex justify-around items-center h-[60px] max-w-[430px] mx-auto px-2">
+        {tabs.map((tab) => (
+          <Button
+            key={tab.label}
+            variant="ghost"
+            onClick={() => router.push(tab.path)}
+            aria-label={tab.label}
+            className="flex flex-col items-center justify-center gap-1 flex-1 px-0 py-2 relative h-auto"
+          >
+            <div className="relative">
+              {tab.icon(!!tab.isActive)}
+              {/* Green dot badge for cart */}
+              {'badge' in tab && tab.badge && (
+                <div className="absolute -top-0.5 -right-1 w-2 h-2 rounded-full bg-app-text border-2 border-app-bg" />
               )}
-
-              <div style={{ position: 'relative' }}>
-                <Icon
-                  style={{ width: '24px', height: '24px', position: 'relative', zIndex: 10 }}
-                  strokeWidth={item.isActive ? 2.5 : 2}
-                />
-                {/* Badge for cart */}
-                {'badge' in item && item.badge && (
-                  <span className="absolute -top-2 -right-2 z-20 bg-red-500 text-white text-[10px] font-bold h-4 min-w-4 px-1 flex items-center justify-center rounded-full border-2 border-app-card">
-                    {item.badge > 9 ? '9+' : item.badge}
-                  </span>
-                )}
-              </div>
-              <span
-                style={{
-                  fontSize: '12px',
-                  fontWeight: item.isActive ? 600 : 500,
-                  letterSpacing: '0.02em',
-                }}
-              >
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+            </div>
+            <span
+              className={`text-[11px] font-medium ${tab.isActive ? 'text-app-text' : 'text-app-text-muted'}`}
+            >
+              {tab.label}
+            </span>
+          </Button>
+        ))}
       </div>
     </nav>
   );

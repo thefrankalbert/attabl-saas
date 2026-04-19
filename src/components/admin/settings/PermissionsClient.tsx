@@ -5,7 +5,16 @@ import { useTranslations } from 'next-intl';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { Switch } from '@/components/ui/switch';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { logger } from '@/lib/logger';
 import {
   DEFAULT_PERMISSIONS,
@@ -259,144 +268,141 @@ export function PermissionsClient({ tenantId, initialOverrides }: PermissionsCli
 
       {/* Permissions Matrix */}
       <div className="border border-app-border rounded-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            {/* Sticky Header Row */}
-            <thead>
-              <tr className="bg-app-bg border-b border-app-border">
-                <th className="text-left text-sm font-semibold text-app-text px-5 py-3.5 min-w-[180px] @lg:min-w-[220px] sticky left-0 bg-app-bg z-10">
-                  {t('permissionColumn')}
-                </th>
-                {/* Owner column (locked) */}
-                <th className="text-center px-3 py-3.5 min-w-[100px]">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
-                    {roleLabel('owner')}
-                  </span>
-                </th>
-                {/* Editable role columns with individual restore */}
-                {EDITABLE_ROLES.map((role) => (
-                  <th key={role} className="text-center px-3 py-3.5 min-w-20 @lg:min-w-28">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span
-                        className={cn(
-                          'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
-                          role === 'admin' &&
-                            'bg-purple-500/10 text-purple-500 border border-purple-500/20',
-                          role === 'manager' &&
-                            'bg-blue-500/10 text-blue-500 border border-blue-500/20',
-                          role === 'cashier' &&
-                            'bg-green-500/10 text-green-500 border border-green-500/20',
-                          role === 'chef' &&
-                            'bg-orange-500/10 text-orange-500 border border-orange-500/20',
-                          role === 'waiter' &&
-                            'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20',
-                        )}
-                      >
-                        {roleLabel(role)}
-                      </span>
-                      {hasOverrides(role) && (
-                        <button
-                          type="button"
-                          onClick={() => handleRestoreDefaults(role)}
-                          className="inline-flex items-center gap-1 text-[10px] text-app-text-secondary hover:text-app-text transition-colors"
-                        >
-                          <RotateCcw className="w-2.5 h-2.5" />
-                          {t('reset')}
-                        </button>
+        <Table>
+          {/* Sticky Header Row */}
+          <TableHeader>
+            <TableRow className="bg-app-bg border-b border-app-border">
+              <TableHead className="text-left text-sm font-semibold text-app-text px-5 py-3.5 min-w-[180px] @lg:min-w-[220px] sticky left-0 bg-app-bg z-10">
+                {t('permissionColumn')}
+              </TableHead>
+              {/* Owner column (locked) */}
+              <TableHead className="text-center px-3 py-3.5 min-w-[100px]">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                  {roleLabel('owner')}
+                </span>
+              </TableHead>
+              {/* Editable role columns with individual restore */}
+              {EDITABLE_ROLES.map((role) => (
+                <TableHead key={role} className="text-center px-3 py-3.5 min-w-20 @lg:min-w-28">
+                  <div className="flex flex-col items-center gap-1.5">
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold',
+                        role === 'admin' &&
+                          'bg-purple-500/10 text-purple-500 border border-purple-500/20',
+                        role === 'manager' &&
+                          'bg-blue-500/10 text-blue-500 border border-blue-500/20',
+                        role === 'cashier' &&
+                          'bg-green-500/10 text-green-500 border border-green-500/20',
+                        role === 'chef' &&
+                          'bg-orange-500/10 text-orange-500 border border-orange-500/20',
+                        role === 'waiter' &&
+                          'bg-cyan-500/10 text-cyan-500 border border-cyan-500/20',
                       )}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-
-            {/* Body: grouped by category */}
-            <tbody>
-              {PERMISSION_CATEGORIES.map((category) => {
-                const rows = category.permissions.map((perm) => {
-                  const rowIdx = globalRowIndex++;
-                  return { perm, rowIdx };
-                });
-
-                return (
-                  <React.Fragment key={category.key}>
-                    {/* Category header row */}
-                    <tr className="border-b border-app-border">
-                      <td
-                        colSpan={2 + EDITABLE_ROLES.length}
-                        className="px-5 py-2.5 bg-app-card sticky left-0"
+                    >
+                      {roleLabel(role)}
+                    </span>
+                    {hasOverrides(role) && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={() => handleRestoreDefaults(role)}
+                        className="inline-flex items-center gap-1 text-[10px] text-app-text-secondary hover:text-app-text h-auto px-1 py-0"
                       >
-                        <span className="text-xs font-medium text-app-text-secondary uppercase tracking-wide">
-                          {categoryLabel(category.key)}
-                        </span>
-                      </td>
-                    </tr>
+                        <RotateCcw className="w-2.5 h-2.5" />
+                        {t('reset')}
+                      </Button>
+                    )}
+                  </div>
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
 
-                    {/* Permission rows in this category */}
-                    {rows.map(({ perm, rowIdx }) => (
-                      <tr
-                        key={perm}
-                        className={cn(
-                          'border-b border-app-border transition-colors hover:bg-app-bg/80',
-                          rowIdx % 2 === 0 ? 'bg-app-card' : 'bg-app-bg/50',
-                        )}
-                      >
-                        {/* Permission label (no code column) */}
-                        <td className="text-sm text-app-text px-5 py-3 sticky left-0 bg-inherit z-10">
-                          <span className="font-medium">{permissionLabel(perm)}</span>
-                        </td>
+          {/* Body: grouped by category */}
+          <TableBody>
+            {PERMISSION_CATEGORIES.map((category) => {
+              const rows = category.permissions.map((perm) => {
+                const rowIdx = globalRowIndex++;
+                return { perm, rowIdx };
+              });
 
-                        {/* Owner cell (always on, locked) */}
-                        <td className="text-center px-3 py-3">
-                          <div className="flex justify-center opacity-40 pointer-events-none">
-                            <Switch
-                              checked={true}
-                              aria-label={`${permissionLabel(perm)} - ${roleLabel('owner')}`}
-                            />
-                          </div>
-                        </td>
+              return (
+                <React.Fragment key={category.key}>
+                  {/* Category header row */}
+                  <TableRow className="border-b border-app-border">
+                    <TableCell
+                      colSpan={2 + EDITABLE_ROLES.length}
+                      className="px-5 py-2.5 bg-app-card sticky left-0"
+                    >
+                      <span className="text-xs font-medium text-app-text-secondary uppercase tracking-wide">
+                        {categoryLabel(category.key)}
+                      </span>
+                    </TableCell>
+                  </TableRow>
 
-                        {/* Editable role cells */}
-                        {EDITABLE_ROLES.map((role) => {
-                          const isEnabled = getEffectiveValue(role, perm);
-                          const defaultVal = DEFAULT_PERMISSIONS[role]?.[perm] ?? false;
-                          const isOverridden = roleOverrides[role]?.[perm] !== undefined;
+                  {/* Permission rows in this category */}
+                  {rows.map(({ perm, rowIdx }) => (
+                    <TableRow
+                      key={perm}
+                      className={cn(
+                        'border-b border-app-border transition-colors hover:bg-app-bg/80',
+                        rowIdx % 2 === 0 ? 'bg-app-card' : 'bg-app-bg/50',
+                      )}
+                    >
+                      {/* Permission label (no code column) */}
+                      <TableCell className="text-sm text-app-text px-5 py-3 sticky left-0 bg-inherit z-10">
+                        <span className="font-medium">{permissionLabel(perm)}</span>
+                      </TableCell>
 
-                          return (
-                            <td key={role} className="text-center px-3 py-3">
-                              <div className="flex flex-col items-center gap-1">
-                                <Switch
-                                  checked={isEnabled}
-                                  onCheckedChange={() => handleToggle(role, perm)}
+                      {/* Owner cell (always on, locked) */}
+                      <TableCell className="text-center px-3 py-3">
+                        <div className="flex justify-center opacity-40 pointer-events-none">
+                          <Switch
+                            checked={true}
+                            aria-label={`${permissionLabel(perm)} - ${roleLabel('owner')}`}
+                          />
+                        </div>
+                      </TableCell>
+
+                      {/* Editable role cells */}
+                      {EDITABLE_ROLES.map((role) => {
+                        const isEnabled = getEffectiveValue(role, perm);
+                        const defaultVal = DEFAULT_PERMISSIONS[role]?.[perm] ?? false;
+                        const isOverridden = roleOverrides[role]?.[perm] !== undefined;
+
+                        return (
+                          <TableCell key={role} className="text-center px-3 py-3">
+                            <div className="flex flex-col items-center gap-1">
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={() => handleToggle(role, perm)}
+                                className={cn(isEnabled ? 'data-[state=checked]:bg-lime-400' : '')}
+                                aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
+                              />
+                              {isOverridden && (
+                                <span
                                   className={cn(
-                                    isEnabled ? 'data-[state=checked]:bg-lime-400' : '',
+                                    'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
+                                    isEnabled !== defaultVal
+                                      ? 'bg-amber-500/10 text-amber-500'
+                                      : 'bg-app-bg text-app-text-muted',
                                   )}
-                                  aria-label={`${permissionLabel(perm)} - ${roleLabel(role)}`}
-                                />
-                                {isOverridden && (
-                                  <span
-                                    className={cn(
-                                      'text-[10px] font-medium px-1.5 py-0.5 rounded-full',
-                                      isEnabled !== defaultVal
-                                        ? 'bg-amber-500/10 text-amber-500'
-                                        : 'bg-app-bg text-app-text-muted',
-                                    )}
-                                  >
-                                    {t('modified')}
-                                  </span>
-                                )}
-                              </div>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </React.Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                                >
+                                  {t('modified')}
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  ))}
+                </React.Fragment>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
 
       {/* Legend */}

@@ -70,6 +70,11 @@ jobs:
           fi
           echo "All critical files present."
 
+      # Gate 0.5: Dependency vulnerability audit (non-blocking warning for now,
+      # upgrade to --fail-on-high once all known CVEs are triaged)
+      - name: Security audit
+        run: pnpm audit --prod || echo "::warning::npm audit found vulnerabilities — review before release"
+
       # Gate 1: TypeScript type checking
       - name: Typecheck
         run: pnpm typecheck

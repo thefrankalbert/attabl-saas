@@ -167,12 +167,13 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                   </div>
 
                   {/* Status Toggle */}
-                  <button
+                  <Button
+                    variant="ghost"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleActive(coupon);
                     }}
-                    className="flex items-center gap-1.5 group"
+                    className="flex items-center gap-1.5 group h-auto p-0"
                     title={coupon.is_active ? t('deactivate') : t('activate')}
                   >
                     {coupon.is_active ? (
@@ -190,7 +191,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                         </span>
                       </>
                     )}
-                  </button>
+                  </Button>
 
                   {/* Delete */}
                   <div className="flex justify-end" onClick={(e) => e.stopPropagation()}>

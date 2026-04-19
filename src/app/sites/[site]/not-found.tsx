@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ArrowLeft, UtensilsCrossed } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { ErrorLayout } from '@/components/shared/ErrorLayout';
 import { useTranslations } from 'next-intl';
 
 export default function TenantNotFound() {
@@ -13,29 +14,33 @@ export default function TenantNotFound() {
   const t = useTranslations('tenant');
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-app-bg px-4">
-      <div className="text-center max-w-sm">
-        <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-app-card shadow-sm border border-app-border">
-          <UtensilsCrossed className="h-7 w-7 text-app-text-muted" />
+    <ErrorLayout
+      variant="tenant"
+      code="404"
+      brand={
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl p-2.5" style={{ backgroundColor: '#06C167' }}>
+            <UtensilsCrossed className="h-6 w-6 text-white" />
+          </div>
+          <span className="text-2xl font-bold" style={{ color: '#1A1A1A' }}>
+            ATTABL
+          </span>
         </div>
-
-        <p className="text-5xl font-black text-app-text-muted">404</p>
-        <h1 className="mt-3 text-lg font-semibold text-app-text">{t('notFoundTitle')}</h1>
-        <p className="mt-2 text-sm text-app-text-secondary leading-relaxed">
-          {t('notFoundDescription')}
-        </p>
-
+      }
+      title={t('notFoundTitle')}
+      description={t('notFoundDescription')}
+      actions={
         <Button
           asChild
-          className="mt-6 gap-2 w-full"
-          style={{ backgroundColor: 'var(--tenant-primary, #000)' }}
+          className="gap-2 h-12 rounded-xl text-white font-semibold px-6"
+          style={{ backgroundColor: '#1A1A1A' }}
         >
           <Link href={menuHref}>
             <ArrowLeft className="h-4 w-4" />
             {t('backToMenu')}
           </Link>
         </Button>
-      </div>
-    </div>
+      }
+    />
   );
 }

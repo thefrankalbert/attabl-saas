@@ -247,12 +247,13 @@ export function SoundSettings({
           const isCustom = isCustomSound(sound.id);
 
           return (
-            <button
+            <Button
               key={sound.id}
               type="button"
+              variant="outline"
               onClick={() => !isLocked && handleSelect(sound)}
               disabled={isLocked}
-              className={`flex items-center gap-2.5 p-2.5 rounded-lg border transition-all text-left group ${
+              className={`flex items-center gap-2.5 p-2.5 rounded-lg border text-left group h-auto whitespace-normal ${
                 isSelected
                   ? 'border-amber-500/40 bg-amber-500/10 ring-1 ring-amber-500/20'
                   : isLocked
@@ -342,7 +343,7 @@ export function SoundSettings({
                   <Check className="w-3 h-3 text-white" />
                 </div>
               )}
-            </button>
+            </Button>
           );
         })}
       </div>

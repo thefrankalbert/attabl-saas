@@ -22,8 +22,8 @@ interface TaxConfig {
  */
 export function calculateTax(subtotal: number, config: TaxConfig): number {
   if (!config.enable_tax || !config.tax_rate || config.tax_rate <= 0) return 0;
-  // Round to 2 decimal places
-  return Math.round(((subtotal * config.tax_rate) / 100) * 100) / 100;
+  // BUG-35: Use toFixed(2) for precise rounding on large amounts
+  return Number(((subtotal * config.tax_rate) / 100).toFixed(2));
 }
 
 /**
@@ -36,7 +36,8 @@ export function calculateServiceCharge(subtotal: number, config: TaxConfig): num
     config.service_charge_rate <= 0
   )
     return 0;
-  return Math.round(((subtotal * config.service_charge_rate) / 100) * 100) / 100;
+  // BUG-35: Use toFixed(2) for precise rounding on large amounts
+  return Number(((subtotal * config.service_charge_rate) / 100).toFixed(2));
 }
 
 /**

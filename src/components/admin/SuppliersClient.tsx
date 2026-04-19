@@ -109,7 +109,7 @@ export default function SuppliersClient({ tenantId }: SuppliersClientProps) {
         accessorKey: 'address',
         header: () => t('address'),
         cell: ({ row }) => (
-          <span className="text-app-text-secondary max-w-[200px] truncate block">
+          <span className="text-app-text-secondary max-w-48 truncate block">
             {row.original.address || '\u2014'}
           </span>
         ),

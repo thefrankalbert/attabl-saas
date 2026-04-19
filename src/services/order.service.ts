@@ -160,6 +160,11 @@ export function createOrderService(supabase: SupabaseClient) {
       const verifiedPrices = new Map<string, number>();
 
       for (const item of items) {
+        // BUG-33: Reject negative or zero quantities
+        if (item.quantity < 1) {
+          throw new ServiceError(`Quantite invalide pour "${item.name}"`, 'VALIDATION');
+        }
+
         const menuItem = menuItemsMap.get(item.id);
 
         if (!menuItem) {
@@ -188,7 +193,7 @@ export function createOrderService(supabase: SupabaseClient) {
         }
 
         // 1% tolerance for rounding
-        if (Math.abs(item.price - expectedPrice) > expectedPrice * 0.01) {
+        if (Math.abs(item.price - expectedPrice) > 1) {
           validationErrors.push(`Prix de "${menuItem.name}" a changé`);
         }
 

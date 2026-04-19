@@ -41,12 +41,18 @@ export async function POST(request: Request) {
 
     const { email } = parseResult.data;
 
+    // Design decision: Always return 200 to prevent email enumeration.
+    // Email sending failures are logged (see logger.warn calls below) and
+    // should be monitored via Sentry/log aggregation for operational awareness.
     const successResponse = NextResponse.json({
       success: true,
       message: 'Si un compte existe avec cet email, vous recevrez un lien de reinitialisation.',
     });
 
     // 3. Generate recovery link via admin API (O(1) lookup, no listUsers pagination issues)
+    //    Security note: generateLink('recovery') will fail for unconfirmed emails,
+    //    which is handled below by sending a confirmation link instead.
+    //    This prevents password reset for accounts that haven't verified their email.
     const supabase = createAdminClient();
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://attabl.com';
 
@@ -56,8 +62,11 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      // Recovery failed -- user may not exist or email may be unconfirmed.
-      // Try generating a confirmation link as fallback for unconfirmed emails.
+      // FALLBACK STRATEGY:
+      // If recovery link generation fails (user not found or email unconfirmed),
+      // we attempt to send a confirmation email instead. This handles the case
+      // where a user tries "forgot password" before confirming their email.
+      // We always return success (200) to prevent email enumeration attacks.
       const { data: confirmLinkData, error: confirmError } = await supabase.auth.admin.generateLink(
         {
           type: 'signup',

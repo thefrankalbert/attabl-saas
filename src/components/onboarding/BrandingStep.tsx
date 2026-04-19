@@ -4,6 +4,8 @@
 import { useRef, useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Type } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { OnboardingData } from '@/app/onboarding/page';
@@ -200,13 +202,14 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <div className="pt-3">
                     <p className="text-xs text-app-text-muted">{t('logoMaxSize')}</p>
                     {data.logoUrl && (
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
                         onClick={() => fileInputRef.current?.click()}
-                        className="mt-2 text-xs text-accent hover:underline"
+                        className="mt-2 text-xs text-accent hover:underline h-auto p-0"
                       >
                         {t('logoChange')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -221,7 +224,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <Type className="h-4 w-4 text-app-text-muted" />
                   {t('descriptionLabel')}
                 </Label>
-                <textarea
+                <Textarea
                   id="description"
                   placeholder={t('descriptionPlaceholder')}
                   value={data.description}
@@ -255,16 +258,17 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   {colorPresets.map((preset) => {
                     const isSelected = isPresetSelected(preset);
                     return (
-                      <button
+                      <Button
                         key={preset.name}
                         type="button"
+                        variant="outline"
                         onClick={() => {
                           updateData({
                             primaryColor: preset.primary,
                             secondaryColor: preset.secondary,
                           });
                         }}
-                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all ${
+                        className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all h-auto ${
                           isSelected
                             ? 'border-accent bg-accent/5'
                             : 'border-app-border hover:border-app-border-hover'
@@ -282,7 +286,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                         <span className="text-[7px] font-semibold text-app-text-muted truncate w-full text-center">
                           {preset.name}
                         </span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>
@@ -331,14 +335,15 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {showPickerFor === 'primary' && (
                       <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
-                          <button
+                          <Button
                             key={color}
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               updateData({ primaryColor: color });
                               setShowPickerFor(null);
                             }}
-                            className={`w-9 h-9 rounded-lg border transition-all ${
+                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
                               data.primaryColor === color
                                 ? 'border-accent scale-110'
                                 : 'border-transparent hover:border-app-border-hover'
@@ -384,14 +389,15 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                     {showPickerFor === 'secondary' && (
                       <div className="mt-2 grid grid-cols-5 gap-2 p-3 rounded-xl bg-app-elevated/50 border border-app-border">
                         {colorGrid.map((color) => (
-                          <button
+                          <Button
                             key={color}
                             type="button"
+                            variant="ghost"
                             onClick={() => {
                               updateData({ secondaryColor: color });
                               setShowPickerFor(null);
                             }}
-                            className={`w-9 h-9 rounded-lg border transition-all ${
+                            className={`w-9 h-9 rounded-lg border transition-all p-0 min-w-0 ${
                               data.secondaryColor === color
                                 ? 'border-accent scale-110'
                                 : 'border-transparent hover:border-app-border-hover'

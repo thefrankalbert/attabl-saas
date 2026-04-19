@@ -102,14 +102,16 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-app-border">
           <h3 className="font-bold text-app-text">Recadrer le logo</h3>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onCancel}
             disabled={applying}
-            className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors"
+            className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors h-8 w-8"
           >
             <X className="h-5 w-5" />
-          </button>
+          </Button>
         </div>
 
         {/* Cropper Area */}
@@ -130,13 +132,15 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
         {/* Zoom Controls */}
         <div className="px-5 py-4 border-b border-app-border">
           <div className="flex items-center gap-3">
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
-              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors"
+              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >
               <ZoomOut className="h-4 w-4" />
-            </button>
+            </Button>
             <input
               type="range"
               min={1}
@@ -146,13 +150,15 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               onChange={(e) => setZoom(Number(e.target.value))}
               className="flex-1 accent-accent"
             />
-            <button
+            <Button
               type="button"
+              variant="outline"
+              size="icon"
               onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
-              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors"
+              className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >
               <ZoomIn className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         </div>
 

@@ -68,6 +68,10 @@ export function createCouponService(supabase: SupabaseClient) {
       }
 
       // Calculate discount
+      // Discount is capped in two passes:
+      // 1. First by max_discount_amount (coupon's own ceiling, e.g. "max 5000 XOF off")
+      // 2. Then by orderSubtotal (discount cannot exceed the order value)
+      // Both caps are necessary: (1) protects the merchant, (2) prevents negative totals.
       let discountAmount = 0;
       if (coupon.discount_type === 'fixed') {
         discountAmount = coupon.discount_value;

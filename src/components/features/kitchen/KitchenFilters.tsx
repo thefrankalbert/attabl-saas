@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Maximize, Minimize, ChefHat, Wine, Search, X } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import type { KDSZoneFilter } from '@/types/admin.types';
 
@@ -63,51 +65,50 @@ export default function KitchenFilters({
   });
 
   return (
-    <header className="h-12 border-b border-app-border flex items-center justify-between px-2 sm:px-4 bg-app-bg shrink-0">
+    <header className="h-12 border-b border-app-border flex items-center justify-between px-2 @sm:px-4 bg-app-bg shrink-0">
       {/* Left: back / search */}
       <div className="flex items-center gap-1">
         {!isFullscreen && (
-          <button
-            onClick={goBack}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
-            title={t('backToDashboard')}
-          >
+          <Button variant="ghost" size="icon" onClick={goBack} title={t('backToDashboard')}>
             <ArrowLeft className="w-4 h-4" />
-          </button>
+          </Button>
         )}
         {searchOpen ? (
           <div className="flex items-center gap-1 bg-app-elevated rounded-lg px-2 py-1">
             <Search className="w-4 h-4 text-app-text-muted shrink-0" />
-            <input
+            <Input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder={t('searchPlaceholder')}
-              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 sm:w-56"
+              className="bg-transparent text-xs text-app-text placeholder:text-app-text-muted outline-none w-40 @sm:w-56 border-0 shadow-none focus-visible:ring-0 p-0 h-auto"
               autoFocus
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => {
                 onSearchChange('');
                 setSearchOpen(false);
               }}
-              className="p-1 min-h-[32px] min-w-[32px] flex items-center justify-center rounded text-app-text-muted hover:text-app-text transition-colors"
+              className="h-8 w-8"
             >
               <X className="w-3.5 h-3.5" />
-            </button>
+            </Button>
           </div>
         ) : (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => {
               setSearchOpen(true);
               requestAnimationFrame(() => searchInputRef.current?.focus());
             }}
-            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
             aria-label={t('searchLabel')}
           >
             <Search className="w-4 h-4" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -121,12 +122,13 @@ export default function KitchenFilters({
               { key: 'bar' as const, label: t('zoneBar'), icon: Wine },
             ] as const
           ).map(({ key, label, icon: Icon }) => (
-            <button
+            <Button
               key={key}
               type="button"
+              variant={zoneFilter === key ? 'default' : 'ghost'}
               onClick={() => onZoneFilterChange(key)}
               className={cn(
-                'flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold tracking-wide transition-colors',
+                'flex items-center gap-1 px-2.5 py-1 rounded text-xs font-bold tracking-wide h-auto',
                 zoneFilter === key
                   ? 'bg-accent text-accent-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text',
@@ -134,7 +136,7 @@ export default function KitchenFilters({
             >
               {Icon && <Icon className="w-3 h-3" />}
               {label}
-            </button>
+            </Button>
           ))}
         </div>
       )}
@@ -148,12 +150,13 @@ export default function KitchenFilters({
               { mode: 'completed' as const, label: t('tabCompleted'), count: completedToday },
             ] as const
           ).map(({ mode, label, count }) => (
-            <button
+            <Button
               key={mode}
               type="button"
+              variant="ghost"
               onClick={() => onViewModeChange(mode)}
               className={cn(
-                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium transition-all duration-150',
+                'flex items-center gap-1.5 px-4 py-1 rounded-full text-xs font-medium h-auto',
                 viewMode === mode
                   ? 'bg-app-bg text-app-text shadow-sm'
                   : 'text-app-text-muted hover:text-app-text-secondary',
@@ -170,23 +173,20 @@ export default function KitchenFilters({
               >
                 {count}
               </span>
-            </button>
+            </Button>
           ))}
         </nav>
       )}
 
       {/* Right: date/time + fullscreen */}
       <div className="flex items-center gap-2">
-        <div className="hidden sm:flex items-center gap-3 text-xs text-app-text-muted tabular-nums">
+        <div className="hidden @sm:flex items-center gap-3 text-xs text-app-text-muted tabular-nums">
           <span className="capitalize">{dateStr}</span>
           <span>{timeStr}</span>
         </div>
-        <button
-          onClick={toggleFullscreen}
-          className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text transition-colors"
-        >
+        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-        </button>
+        </Button>
       </div>
     </header>
   );

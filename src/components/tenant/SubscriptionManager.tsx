@@ -98,7 +98,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
         window.location.href = url;
       }
     } catch (error) {
-      logger.error('Erreur lors de la création de la session', error);
+      logger.error('Erreur lors de la creation de la session', error);
       toast({
         title: t('subscription.paymentError'),
         variant: 'destructive',
@@ -121,7 +121,7 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
       case 'frozen':
         return 'bg-status-error-bg text-status-error';
       default:
-        return 'bg-app-elevated text-app-text-secondary';
+        return 'text-sm';
     }
   };
 
@@ -169,19 +169,24 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
       <div className="shrink-0 space-y-4">
         <div className="flex items-center gap-1.5">
           {tabs.map((tab) => (
-            <button
+            <Button
               key={tab.id}
-              type="button"
+              variant="outline"
               onClick={() => setActiveTab(tab.id)}
               className={cn(
-                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
                 activeTab === tab.id
-                  ? 'bg-app-text text-app-bg border-app-text shadow-sm'
-                  : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
+                  ? 'bg-app-text text-white border-app-text shadow-sm'
+                  : 'bg-white border-app-border hover:bg-app-elevated',
               )}
+              style={
+                activeTab !== tab.id
+                  ? { color: 'rgb(115, 115, 115)', borderColor: 'rgba(238,238,238,0.5)' }
+                  : undefined
+              }
             >
               {tab.label}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
@@ -192,18 +197,23 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
           /* Tab 1: Current plan info */
           <div className="space-y-4">
             {/* Plan status card */}
-            <div className="border border-app-border/60 rounded-xl p-6 bg-app-card">
+            <div
+              className="rounded-xl p-6 bg-white"
+              style={{ border: '1px solid rgba(238,238,238,0.6)' }}
+            >
               <div className="flex items-center gap-2 mb-4">
-                <Shield className="h-5 w-5 text-app-text-secondary" />
-                <h3 className="text-lg font-semibold text-app-text">
+                <Shield className="h-5 w-5" style={{ color: 'rgb(115, 115, 115)' }} />
+                <h3 className="text-lg font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
                   {t('subscription.currentSubscription')}
                 </h3>
               </div>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="text-sm text-app-text-secondary">{t('subscription.plan')}</p>
-                    <p className="text-2xl font-bold text-app-text">
+                    <p className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
+                      {t('subscription.plan')}
+                    </p>
+                    <p className="text-2xl font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                       {PLAN_NAMES[currentPlan] || currentPlan}
                     </p>
                   </div>
@@ -218,10 +228,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                 </div>
 
                 <div>
-                  <p className="text-sm text-app-text-secondary">
+                  <p className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.billingCycle')}
                   </p>
-                  <p className="font-medium text-app-text">
+                  <p className="font-medium" style={{ color: 'rgb(26, 26, 26)' }}>
                     {tenant.billing_interval === 'yearly'
                       ? t('subscription.yearly')
                       : t('subscription.monthly')}
@@ -230,10 +240,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
 
                 {tenant.subscription_current_period_end && (
                   <div>
-                    <p className="text-sm text-app-text-secondary">
+                    <p className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                       {t('subscription.nextRenewal')}
                     </p>
-                    <p className="font-medium text-app-text">
+                    <p className="font-medium" style={{ color: 'rgb(26, 26, 26)' }}>
                       {new Date(tenant.subscription_current_period_end).toLocaleDateString(locale, {
                         day: 'numeric',
                         month: 'long',
@@ -246,24 +256,27 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
             </div>
 
             {/* Limits card */}
-            <div className="border border-app-border/60 rounded-xl p-6 bg-app-card">
-              <h3 className="text-lg font-semibold text-app-text mb-4">
+            <div
+              className="rounded-xl p-6 bg-white"
+              style={{ border: '1px solid rgba(238,238,238,0.6)' }}
+            >
+              <h3 className="text-lg font-semibold mb-4" style={{ color: 'rgb(26, 26, 26)' }}>
                 {t('subscription.usageLimits')}
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-app-text-secondary">
+                  <span className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.administrators')}
                   </span>
-                  <span className="font-semibold text-app-text">
+                  <span className="font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {limits.admins > 50 ? t('subscription.unlimited') : limits.admins}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-app-text-secondary">
+                  <span className="text-sm" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('subscription.venues')}
                   </span>
-                  <span className="font-semibold text-app-text">
+                  <span className="font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {limits.venues > 50 ? t('subscription.unlimited') : limits.venues}
                   </span>
                 </div>
@@ -275,32 +288,40 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
           <div className="space-y-4">
             {/* Interval toggle */}
             <div className="flex items-center justify-center">
-              <div className="relative inline-flex bg-app-elevated p-1 rounded-full border border-app-border/60">
-                <button
+              <div
+                className="relative inline-flex p-1 rounded-full"
+                style={{
+                  backgroundColor: 'rgb(246, 246, 246)',
+                  border: '1px solid rgba(238,238,238,0.6)',
+                }}
+              >
+                <Button
+                  variant="ghost"
                   onClick={() => setBillingInterval('monthly')}
                   className={cn(
-                    'px-4 py-2 rounded-full text-sm font-semibold transition-colors',
-                    billingInterval === 'monthly'
-                      ? 'bg-app-text text-app-bg'
-                      : 'text-app-text-secondary hover:text-app-text',
+                    'px-4 py-2 rounded-full text-sm font-semibold h-auto',
+                    billingInterval === 'monthly' ? 'bg-app-text text-white' : '',
                   )}
+                  style={
+                    billingInterval !== 'monthly' ? { color: 'rgb(115, 115, 115)' } : undefined
+                  }
                 >
                   {t('subscription.monthly')}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="ghost"
                   onClick={() => setBillingInterval('yearly')}
                   className={cn(
-                    'px-4 py-2 rounded-full text-sm font-semibold transition-colors flex items-center gap-1',
-                    billingInterval === 'yearly'
-                      ? 'bg-app-text text-app-bg'
-                      : 'text-app-text-secondary hover:text-app-text',
+                    'px-4 py-2 rounded-full text-sm font-semibold flex items-center gap-1 h-auto',
+                    billingInterval === 'yearly' ? 'bg-app-text text-white' : '',
                   )}
+                  style={billingInterval !== 'yearly' ? { color: 'rgb(115, 115, 115)' } : undefined}
                 >
                   {t('subscription.yearly')}{' '}
                   <span className="text-[10px] bg-status-success-bg text-status-success px-1.5 rounded-full">
                     -20%
                   </span>
-                </button>
+                </Button>
               </div>
             </div>
 
@@ -316,9 +337,10 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                   <div
                     key={plan}
                     className={cn(
-                      'border rounded-xl p-6 flex flex-col bg-app-card',
-                      isCurrent ? 'border-2 border-lime-400' : 'border border-app-border/60',
+                      'border rounded-xl p-6 flex flex-col bg-white',
+                      isCurrent ? 'border-2 border-lime-400' : '',
                     )}
+                    style={!isCurrent ? { border: '1px solid rgba(238,238,238,0.6)' } : undefined}
                   >
                     {/* Plan header */}
                     <div className="mb-6">
@@ -328,18 +350,23 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                         </span>
                       )}
                       <div className="flex items-center gap-2">
-                        <PlanIcon className="h-5 w-5 text-app-text-secondary" />
-                        <h3 className="text-xl font-semibold text-app-text">{PLAN_NAMES[plan]}</h3>
+                        <PlanIcon className="h-5 w-5" style={{ color: 'rgb(115, 115, 115)' }} />
+                        <h3 className="text-xl font-semibold" style={{ color: 'rgb(26, 26, 26)' }}>
+                          {PLAN_NAMES[plan]}
+                        </h3>
                       </div>
                     </div>
 
                     {/* Price */}
                     <div className="mb-6">
                       <div className="flex items-baseline gap-1">
-                        <span className="text-3xl font-bold text-app-text">
+                        <span className="text-3xl font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                           {price.toLocaleString(locale)}
                         </span>
-                        <span className="text-app-text-secondary text-sm font-medium">
+                        <span
+                          className="text-sm font-medium"
+                          style={{ color: 'rgb(115, 115, 115)' }}
+                        >
                           {t('subscription.perMonth')}
                         </span>
                       </div>
@@ -349,8 +376,13 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                     <div className="space-y-3 flex-grow mb-6">
                       {featureKeys.map((key) => (
                         <div key={key} className="flex items-start gap-3">
-                          <Check className="h-4 w-4 shrink-0 mt-0.5 text-app-text" />
-                          <span className="text-sm text-app-text">{t(`subscription.${key}`)}</span>
+                          <Check
+                            className="h-4 w-4 shrink-0 mt-0.5"
+                            style={{ color: 'rgb(26, 26, 26)' }}
+                          />
+                          <span className="text-sm" style={{ color: 'rgb(26, 26, 26)' }}>
+                            {t(`subscription.${key}`)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -362,11 +394,21 @@ export function SubscriptionManager({ tenant }: SubscriptionManagerProps) {
                       className={cn(
                         'w-full h-11 rounded-lg font-semibold text-sm transition-colors',
                         isCurrent
-                          ? 'bg-app-elevated text-app-text-muted cursor-not-allowed'
+                          ? 'cursor-not-allowed'
                           : plan === 'pro'
-                            ? 'bg-app-text text-app-bg hover:bg-app-text/90'
-                            : 'bg-app-card text-app-text border border-app-border/60 hover:bg-app-elevated',
+                            ? 'bg-app-text text-white hover:bg-app-text/90'
+                            : 'bg-white hover:bg-app-elevated',
                       )}
+                      style={
+                        isCurrent
+                          ? { backgroundColor: 'rgb(246, 246, 246)', color: 'rgb(176, 176, 176)' }
+                          : plan !== 'pro'
+                            ? {
+                                color: 'rgb(26, 26, 26)',
+                                border: '1px solid rgba(238,238,238,0.6)',
+                              }
+                            : undefined
+                      }
                     >
                       {isLoading === plan ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

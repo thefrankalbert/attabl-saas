@@ -27,6 +27,7 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import type { Table, Zone, AdminUser, TableAssignment, Order } from '@/types/admin.types';
@@ -90,19 +91,13 @@ function ChairRow({
   const isH = direction === 'horizontal';
   return (
     <div
-      className={cn('flex items-center justify-center', isH ? 'flex-row' : 'flex-col')}
-      style={{ gap: isH ? 5 : 4 }}
+      className={cn(
+        'flex items-center justify-center',
+        isH ? 'flex-row gap-[5px]' : 'flex-col gap-1',
+      )}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className={color}
-          style={
-            isH
-              ? { width: 24, height: 8, borderRadius: 4 }
-              : { width: 8, height: 24, borderRadius: 4 }
-          }
-        />
+        <div key={i} className={cn(color, isH ? 'w-6 h-2 rounded' : 'w-2 h-6 rounded')} />
       ))}
     </div>
   );
@@ -139,27 +134,29 @@ function VisualTable({
 }: VisualTableProps) {
   const chairs = getChairLayout(table.capacity);
   const isAssigned = !!assignment;
-  const chairColor = isAssigned ? 'bg-emerald-400' : 'bg-gray-500/40';
-  const borderColor = isAssigned ? 'border-l-emerald-400' : 'border-l-transparent';
-  const statusText = isAssigned ? 'text-emerald-400' : 'text-app-text-muted';
+  const chairColor = isAssigned ? 'bg-status-success' : 'bg-gray-500/40';
+  const borderColor = isAssigned ? 'border-l-status-success' : 'border-l-transparent';
+  const statusText = isAssigned ? 'text-status-success' : 'text-app-text-muted';
 
   return (
     <div className="group flex flex-col items-center">
       {/* Chairs top - quasi collees a la carte (2px gap) */}
-      <div className="flex items-end justify-center" style={{ marginBottom: 2 }}>
+      <div className="flex items-end justify-center mb-0.5">
         <ChairRow count={chairs.top} direction="horizontal" color={chairColor} />
       </div>
 
       {/* Middle row: left chairs + card + right chairs */}
-      <div className="flex items-stretch w-full" style={{ gap: 2 }}>
+      <div className="flex items-stretch w-full gap-0.5">
         <div className="flex items-center shrink-0">
           <ChairRow count={chairs.left} direction="vertical" color={chairColor} />
         </div>
 
         {/* Table surface */}
         <div
-          className={cn('relative flex-1 flex flex-col border-l-[3px]', borderColor)}
-          style={{ backgroundColor: 'rgba(38, 42, 56, 0.9)', borderRadius: 8, minHeight: 120 }}
+          className={cn(
+            'relative flex-1 flex flex-col border-l-[3px] bg-app-card rounded-lg min-h-[120px]',
+            borderColor,
+          )}
         >
           {/* Table number + release */}
           <div className="flex items-start justify-between px-3 pt-3">
@@ -167,19 +164,20 @@ function VisualTable({
               {table.display_name || table.table_number}
             </span>
             {isAssigned && (
-              <button
+              <Button
+                variant="ghost"
+                size="icon"
                 onClick={() => onRelease(assignment.id)}
                 className={cn(
-                  'p-1 min-h-[32px] min-w-[32px] flex items-center justify-center rounded-lg',
-                  'opacity-0 group-hover:opacity-100 transition-all duration-150',
+                  'h-8 w-8 opacity-0 group-hover:opacity-100 transition-all duration-150',
                   'hover:bg-status-error/10 text-app-text-muted hover:text-status-error',
-                  'focus-visible:ring-2 focus-visible:ring-accent/40 focus-visible:outline-none focus-visible:opacity-100',
+                  'focus-visible:opacity-100',
                 )}
                 title={releaseLabel}
                 aria-label={releaseAriaLabel}
               >
                 <X className="w-3.5 h-3.5" />
-              </button>
+              </Button>
             )}
           </div>
 
@@ -197,8 +195,7 @@ function VisualTable({
                 <p className={cn('text-[11px] font-bold mb-2', statusText)}>{vacantLabel}</p>
                 <Select onValueChange={(val) => onAssign(table.id, val)}>
                   <SelectTrigger
-                    className="min-h-[36px] text-xs border-0 rounded"
-                    style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                    className="min-h-[36px] text-xs border-0 rounded bg-white/5"
                     aria-label={assignAriaLabel}
                   >
                     <SelectValue placeholder={assignLabel} />
@@ -222,7 +219,7 @@ function VisualTable({
       </div>
 
       {/* Chairs bottom - quasi collees a la carte (2px gap) */}
-      <div className="flex items-start justify-center" style={{ marginTop: 2 }}>
+      <div className="flex items-start justify-center mt-0.5">
         <ChairRow count={chairs.bottom} direction="horizontal" color={chairColor} />
       </div>
     </div>
@@ -241,18 +238,20 @@ function SidebarEntry({
   variant?: 'seated' | 'ready';
 }) {
   const isReady = variant === 'ready';
-  const barColor = isReady ? 'border-l-amber-400' : 'border-l-emerald-400';
+  const barColor = isReady ? 'border-l-status-warning' : 'border-l-status-success';
   const badgeClass = isReady
-    ? 'bg-amber-400/20 text-amber-400 border-amber-400/30'
-    : 'bg-emerald-400/20 text-emerald-400 border-emerald-400/30';
+    ? 'bg-status-warning-bg text-status-warning border-status-warning/30'
+    : 'bg-status-success-bg text-status-success border-status-success/30';
 
   return (
     <div
-      className={cn('flex items-center gap-2.5 py-2.5 px-2 border-l-[3px] rounded-r-md', barColor)}
-      style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
+      className={cn(
+        'flex items-center gap-2.5 py-2.5 px-2 border-l-[3px] rounded-r-md bg-white/[0.02]',
+        barColor,
+      )}
     >
       {/* Time */}
-      <div className="shrink-0 text-center" style={{ minWidth: 42 }}>
+      <div className="shrink-0 text-center min-w-[42px]">
         <p className="text-xs font-bold text-app-text leading-tight tabular-nums">
           {formatTime(assignment.started_at)}
         </p>
@@ -533,13 +532,7 @@ export default function ServiceManager({ tenantId }: Props) {
       {/* ═══ CONTENT: Sidebar + Main ════════════════════════════ */}
       <div className="flex-1 flex min-h-0">
         {/* ─── SIDEBAR ──────────────────────────────────────── */}
-        <aside
-          className="hidden @md:flex w-72 @lg:w-80 shrink-0 flex-col overflow-hidden"
-          style={{
-            borderRight: '1px solid rgba(255,255,255,0.06)',
-            backgroundColor: 'rgba(13, 16, 23, 0.95)',
-          }}
-        >
+        <aside className="hidden @md:flex w-72 @lg:w-80 shrink-0 flex-col overflow-hidden border-r border-app-border bg-app-bg/95">
           {/* Search */}
           <div className="p-3">
             <div className="relative">
@@ -549,23 +542,22 @@ export default function ServiceManager({ tenantId }: Props) {
                 onChange={(e) => setSidebarSearch(e.target.value)}
                 placeholder={t('searchPlaceholder')}
                 aria-label={t('searchAssignments')}
-                className="pl-8 h-9 text-xs border-0 rounded-lg text-app-text placeholder:text-app-text-muted"
-                style={{ backgroundColor: 'rgba(255,255,255,0.05)' }}
+                className="pl-8 h-9 text-xs border-0 rounded-lg bg-white/5 text-app-text placeholder:text-app-text-muted"
               />
             </div>
           </div>
 
           {/* Scrollable list */}
-          <div className="flex-1 overflow-y-auto px-3 pb-3" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex-1 overflow-y-auto px-3 pb-3 [scrollbar-width:none]">
             {/* SEATED */}
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-status-error">
                   {t('onDuty')}
                 </span>
                 <div className="ml-auto flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-rose-400/20 text-rose-400 text-[9px] font-bold px-1.5">
+                  <Users className="w-3.5 h-3.5 text-status-error" />
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-status-error-bg text-status-error text-[9px] font-bold px-1.5">
                     {filteredAssignments.length}
                   </span>
                 </div>
@@ -590,12 +582,12 @@ export default function ServiceManager({ tenantId }: Props) {
             {/* UPCOMING (ready orders) */}
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-2.5">
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-rose-400">
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-status-error">
                   {t('readyOrders')}
                 </span>
                 <div className="ml-auto flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5 text-rose-400" />
-                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-rose-400/20 text-rose-400 text-[9px] font-bold px-1.5">
+                  <Users className="w-3.5 h-3.5 text-status-error" />
+                  <span className="inline-flex items-center justify-center min-w-[20px] h-5 rounded-full bg-status-error-bg text-status-error text-[9px] font-bold px-1.5">
                     {readyOrders.length}
                   </span>
                 </div>
@@ -616,11 +608,8 @@ export default function ServiceManager({ tenantId }: Props) {
                     );
                     return (
                       <div key={order.id}>
-                        <div
-                          className="flex items-center gap-2.5 py-2.5 px-2 border-l-[3px] border-l-amber-400 rounded-r-md"
-                          style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
-                        >
-                          <div className="shrink-0 text-center" style={{ minWidth: 42 }}>
+                        <div className="flex items-center gap-2.5 py-2.5 px-2 border-l-[3px] border-l-status-warning rounded-r-md bg-white/[0.02]">
+                          <div className="shrink-0 text-center min-w-[42px]">
                             <p className="text-xs font-bold text-app-text tabular-nums">
                               {minutesAgo}m
                             </p>
@@ -633,18 +622,18 @@ export default function ServiceManager({ tenantId }: Props) {
                               {t('itemsCount', { count: items.length })}
                             </p>
                           </div>
-                          <span className="shrink-0 inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg text-[10px] font-bold px-1.5 border bg-amber-400/20 text-amber-400 border-amber-400/30">
+                          <span className="shrink-0 inline-flex items-center justify-center min-w-[28px] h-7 rounded-lg text-[10px] font-bold px-1.5 border bg-status-warning-bg text-status-warning border-status-warning/30">
                             {order.table_number}
                           </span>
                         </div>
-                        <button
+                        <Button
                           onClick={() => handleMarkDelivered(order.id)}
                           aria-label={t('markDelivered')}
-                          className="w-full mt-1 flex items-center justify-center gap-1.5 px-3 py-2 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98] transition-all"
+                          className="w-full mt-1 gap-1.5 min-h-[44px] bg-status-success text-white text-xs font-bold hover:bg-status-success/90 active:scale-[0.98]"
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
                           {t('markDelivered')}
-                        </button>
+                        </Button>
                       </div>
                     );
                   })
@@ -671,8 +660,7 @@ export default function ServiceManager({ tenantId }: Props) {
                   availableServers.map((server) => (
                     <div
                       key={server.id}
-                      className="flex items-center gap-3 py-2.5 px-2 rounded-md"
-                      style={{ backgroundColor: 'rgba(255,255,255,0.02)' }}
+                      className="flex items-center gap-3 py-2.5 px-2 rounded-md bg-white/[0.02]"
                     >
                       <div className="w-7 h-7 rounded-full bg-status-info/10 flex items-center justify-center shrink-0">
                         <User className="w-3.5 h-3.5 text-status-info" />
@@ -694,18 +682,13 @@ export default function ServiceManager({ tenantId }: Props) {
         {/* ─── MAIN CONTENT ─────────────────────────────────── */}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Zone tabs + Stats */}
-          <div
-            className="shrink-0 flex items-center gap-4 px-5 py-3"
-            style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}
-          >
-            <div
-              className="flex items-center gap-1 overflow-x-auto"
-              style={{ scrollbarWidth: 'none' }}
-            >
-              <button
+          <div className="shrink-0 flex items-center gap-4 px-5 py-3 border-b border-app-border">
+            <div className="flex items-center gap-1 overflow-x-auto [scrollbar-width:none]">
+              <Button
+                variant="ghost"
                 onClick={() => setActiveZoneId(null)}
                 className={cn(
-                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                  'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                   !activeZoneId
                     ? 'text-app-text'
                     : 'text-app-text-muted hover:text-app-text-secondary',
@@ -715,37 +698,38 @@ export default function ServiceManager({ tenantId }: Props) {
                 <span className="text-[10px] px-1.5 py-0.5 rounded bg-app-elevated font-bold tabular-nums">
                   {stats.occupied}/{stats.total}
                 </span>
-              </button>
+              </Button>
               {zones.map((zone, idx) => {
                 const zs = zoneStats[zone.id];
                 const isActive = activeZoneId === zone.id;
                 const dotColors = [
-                  'bg-emerald-400',
-                  'bg-blue-400',
-                  'bg-rose-400',
-                  'bg-purple-400',
-                  'bg-orange-400',
+                  'bg-status-success',
+                  'bg-status-info',
+                  'bg-status-error',
+                  'bg-accent',
+                  'bg-status-warning',
                 ];
                 const dotColor = dotColors[idx % dotColors.length];
                 return (
-                  <button
+                  <Button
                     key={zone.id}
+                    variant="ghost"
                     onClick={() => setActiveZoneId(isActive ? null : zone.id)}
                     className={cn(
-                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium transition-colors',
+                      'flex items-center gap-2 px-3 py-1.5 min-h-[44px] rounded-md text-sm font-medium h-auto',
                       isActive
                         ? 'text-app-text'
                         : 'text-app-text-muted hover:text-app-text-secondary',
                     )}
                   >
                     {zone.name}
-                    <span className={cn('w-3 h-3 rounded-sm', dotColor)} />
+                    <span className={cn('w-3 h-3 rounded-lg', dotColor)} />
                     {zs && (
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-app-elevated font-bold tabular-nums">
                         {zs.occupied}/{zs.total}
                       </span>
                     )}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -763,7 +747,7 @@ export default function ServiceManager({ tenantId }: Props) {
           </div>
 
           {/* Table grid */}
-          <div className="flex-1 overflow-y-auto p-5" style={{ scrollbarWidth: 'none' }}>
+          <div className="flex-1 overflow-y-auto p-5 [scrollbar-width:none]">
             {zones.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center">
                 <LayoutGrid className="w-12 h-12 text-app-text-muted mb-3" />
@@ -836,14 +820,14 @@ export default function ServiceManager({ tenantId }: Props) {
                               </span>
                             </div>
                           </div>
-                          <button
+                          <Button
                             onClick={() => handleMarkDelivered(order.id)}
                             aria-label={t('markDelivered')}
-                            className="shrink-0 flex items-center gap-1.5 px-3 py-2.5 min-h-[44px] rounded-lg bg-status-success text-white text-xs font-bold"
+                            className="shrink-0 gap-1.5 min-h-[44px] bg-status-success text-white text-xs font-bold hover:bg-status-success/90"
                           >
                             <CheckCircle2 className="w-3 h-3" />
                             {t('markDelivered')}
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}

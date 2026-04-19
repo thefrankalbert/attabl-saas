@@ -139,7 +139,7 @@ export function ScreenLock({
                 transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 className="mb-8"
               >
-                <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 ring-1 ring-accent/20">
+                <div className="flex h-20 w-20 items-center justify-center rounded-xl bg-accent/10 ring-1 ring-accent/20">
                   <Lock className="h-9 w-9 text-accent" />
                 </div>
               </motion.div>
@@ -195,17 +195,19 @@ export function ScreenLock({
                         autoFocus
                         className="h-12 pr-12 bg-app-elevated/50 border-app-border text-app-text placeholder:text-app-text-muted/30 focus:border-accent/50 focus:ring-accent/20 rounded-lg"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 h-auto w-auto p-0 text-app-text-muted hover:text-app-text-secondary transition-colors"
                       >
                         {showPassword ? (
                           <EyeOff className="h-4 w-4" />
                         ) : (
                           <Eye className="h-4 w-4" />
                         )}
-                      </button>
+                      </Button>
                     </div>
                   </div>
 

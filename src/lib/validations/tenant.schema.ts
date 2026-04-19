@@ -28,9 +28,9 @@ export const updateTenantSettingsSchema = z.object({
   establishmentType: z.string().max(50).optional(),
   tableCount: z.number().int().min(0).max(500).optional(),
   // ─── Production upgrade: business config ─────────────────
-  currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+  currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   supportedCurrencies: z
-    .array(z.enum(['XAF', 'EUR', 'USD']))
+    .array(z.enum(['XAF', 'XOF', 'EUR', 'USD']))
     .min(1)
     .optional(),
   taxRate: z

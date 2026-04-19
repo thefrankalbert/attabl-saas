@@ -12,6 +12,7 @@ import { createInventoryService } from '@/services/inventory.service';
 import { canAccessFeature } from '@/lib/plans/features';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { getTranslations } from 'next-intl/server';
+import { verifyOrigin } from '@/lib/csrf';
 
 // Fallback translations for API routes where locale may not be resolved
 const FALLBACK_ERRORS: Record<string, string> = {
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
     t = (key: string) => FALLBACK_ERRORS[key] || key;
   }
   try {
+    // 0. CSRF origin check (public POST endpoint)
+    const originError = verifyOrigin(request);
+    if (originError) return originError;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);
@@ -185,7 +190,13 @@ export async function POST(request: Request) {
     } catch (orderError) {
       // Rollback coupon usage if order creation fails
       if (couponResult?.couponId) {
-        await couponService.unclaimUsage(couponResult.couponId);
+        try {
+          await couponService.unclaimUsage(couponResult.couponId);
+        } catch (unclaimError) {
+          logger.error('CRITICAL: Failed to unclaim coupon after order failure', unclaimError, {
+            couponId: couponResult.couponId,
+          });
+        }
       }
       throw orderError;
     }
@@ -249,10 +260,11 @@ export async function POST(request: Request) {
         { status: serviceErrorToStatus(error.code) },
       );
     }
+    // Log the error object (Sentry captures the full stack automatically).
+    // Do NOT log raw stack traces as structured JSON fields — they leak file
+    // paths and internal structure in log aggregators.
     const errMsg = error instanceof Error ? error.message : String(error);
-    const errStack =
-      error instanceof Error ? error.stack?.split('\n').slice(0, 5).join(' | ') : undefined;
-    logger.error('Order creation error', error, { message: errMsg, stack: errStack });
+    logger.error('Order creation error', error, { message: errMsg });
     return NextResponse.json({ error: t('serverError') }, { status: 500 });
   }
 }

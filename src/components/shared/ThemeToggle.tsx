@@ -3,6 +3,7 @@
 import { useTheme } from 'next-themes';
 import { Sun, Moon } from 'lucide-react';
 import { useSyncExternalStore } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface ThemeToggleProps {
   /** Additional CSS classes for the button */
@@ -52,8 +53,8 @@ export function ThemeToggle({ className, iconSize = 16, label }: ThemeToggleProp
   const isDark = resolvedTheme === 'dark';
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className={className ?? defaultClass}
       title={isDark ? 'Mode clair' : 'Mode sombre'}
@@ -65,6 +66,6 @@ export function ThemeToggle({ className, iconSize = 16, label }: ThemeToggleProp
         <Moon className="shrink-0" style={{ width: iconSize, height: iconSize }} />
       )}
       {label && <span>{label}</span>}
-    </button>
+    </Button>
   );
 }

@@ -2,6 +2,7 @@
 
 import { Utensils, ShoppingBag, Bell, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useState } from 'react';
 
@@ -77,20 +78,25 @@ function ShortcutButton({
   color: string;
 }) {
   return (
-    <button
+    <Button
+      variant="ghost"
       onClick={onClick}
       disabled={disabled}
-      className="flex flex-col items-center gap-2 group active:scale-95 transition-transform"
+      aria-label={label}
+      className="flex flex-col items-center gap-2 group active:scale-95 h-auto px-0 py-0"
     >
       <div
-        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-app-border group-hover:shadow-md transition-all bg-app-card"
+        className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-sm border border-app-border group-hover:shadow-md transition-all bg-white"
         style={{ color: color }}
       >
         {icon}
       </div>
-      <span className="text-[10px] font-semibold text-app-text-secondary uppercase tracking-wide text-center leading-tight">
+      <span
+        className="text-[10px] font-semibold uppercase tracking-wide text-center leading-tight"
+        style={{ color: 'rgb(115, 115, 115)' }}
+      >
         {label}
       </span>
-    </button>
+    </Button>
   );
 }

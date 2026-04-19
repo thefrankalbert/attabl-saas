@@ -10,6 +10,14 @@ import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
 import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import AdminModal from '@/components/admin/AdminModal';
 import { ResponsiveDataTable, SortableHeader } from '@/components/admin/ResponsiveDataTable';
@@ -325,7 +333,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
               {/* Row 1: Title + Search + Filters + Add - all on one line (desktop) */}
               <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
                 {/* Title */}
-                <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
+                <h1 className="text-lg @sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
                   <Package className="w-5 h-5" />
                   {t('inventory')}
                   <span className="text-sm font-normal text-app-text-muted">
@@ -397,7 +405,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
 
                 {/* Add button - pushed right */}
-                <div className="lg:ml-auto shrink-0">
+                <div className="@lg:ml-auto shrink-0">
                   <Button onClick={openAdd} variant="default" className="gap-2 h-9">
                     <Plus className="w-4 h-4" />
                     {t('addIngredient')}
@@ -407,7 +415,7 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             </div>
 
             {/* Table / Cards */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 sm:mt-6">
+            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide mt-4 @sm:mt-6">
               <ResponsiveDataTable
                 columns={columns}
                 data={filtered}
@@ -492,9 +500,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
             >
               <div className="space-y-4">
                 <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                     {tc('name')}
-                  </label>
+                  </Label>
                   <Input
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
@@ -505,26 +513,30 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {tc('unit')}
-                    </label>
-                    <select
+                    </Label>
+                    <Select
                       value={formUnit}
-                      onChange={(e) => setFormUnit(e.target.value as IngredientUnit)}
-                      className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                      onValueChange={(val) => setFormUnit(val as IngredientUnit)}
                     >
-                      {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
-                        <option key={u} value={u}>
-                          {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
-                        </option>
-                      ))}
-                    </select>
+                      <SelectTrigger className="w-full h-10">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(Object.keys(INGREDIENT_UNITS) as IngredientUnit[]).map((u) => (
+                          <SelectItem key={u} value={u}>
+                            {(INGREDIENT_UNITS as typeof UNITS_TYPE)[u].label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   {modalMode === 'add' && (
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('currentStock')}
-                      </label>
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -538,9 +550,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {t('minAlert')}
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -550,9 +562,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                     />
                   </div>
                   <div>
-                    <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                    <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                       {t('costPerUnit')}
-                    </label>
+                    </Label>
                     <Input
                       type="number"
                       step="0.01"
@@ -564,9 +576,9 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
                 </div>
 
                 <div>
-                  <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                  <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                     {t('categoryOptional')}
-                  </label>
+                  </Label>
                   <Input
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
@@ -613,28 +625,37 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('movementType')}
-                      </label>
-                      <select
+                      </Label>
+                      <Select
                         value={adjustType}
-                        onChange={(e) => setAdjustType(e.target.value as MovementType)}
-                        className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                        onValueChange={(val) => setAdjustType(val as MovementType)}
                       >
-                        {(
-                          ['manual_add', 'manual_remove', 'adjustment', 'opening'] as MovementType[]
-                        ).map((mt) => (
-                          <option key={mt} value={mt}>
-                            {MOVEMENT_TYPE_LABELS[mt].label}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full h-10">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(
+                            [
+                              'manual_add',
+                              'manual_remove',
+                              'adjustment',
+                              'opening',
+                            ] as MovementType[]
+                          ).map((mt) => (
+                            <SelectItem key={mt} value={mt}>
+                              {MOVEMENT_TYPE_LABELS[mt].label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {tc('quantity')}
-                      </label>
+                      </Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -647,28 +668,34 @@ export default function InventoryClient({ tenantId, currency }: InventoryClientP
 
                     {adjustType === 'manual_add' && activeSuppliers.length > 0 && (
                       <div>
-                        <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                        <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                           {t('supplierOptional')}
-                        </label>
-                        <select
-                          value={adjustSupplierId}
-                          onChange={(e) => setAdjustSupplierId(e.target.value)}
-                          className="w-full h-10 px-3 border border-app-border rounded-lg text-sm bg-app-elevated text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                        </Label>
+                        <Select
+                          value={adjustSupplierId || '__none__'}
+                          onValueChange={(val) =>
+                            setAdjustSupplierId(val === '__none__' ? '' : val)
+                          }
                         >
-                          <option value=""> - {tc('none')} - </option>
-                          {activeSuppliers.map((s) => (
-                            <option key={s.id} value={s.id}>
-                              {s.name}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger className="w-full h-10">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__"> - {tc('none')} - </SelectItem>
+                            {activeSuppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     )}
 
                     <div>
-                      <label className="text-xs font-medium text-app-text-secondary mb-1 block">
+                      <Label className="text-xs font-medium text-app-text-secondary mb-1 block">
                         {t('notesOptional')}
-                      </label>
+                      </Label>
                       <Input
                         value={adjustNotes}
                         onChange={(e) => setAdjustNotes(e.target.value)}

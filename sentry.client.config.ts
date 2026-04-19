@@ -26,12 +26,19 @@ Sentry.init({
 
   // Filter out non-essential breadcrumbs
   beforeBreadcrumb(breadcrumb) {
-    // Only keep console breadcrumbs for warn and error
     if (breadcrumb.category === 'console') {
       if (breadcrumb.level !== 'warning' && breadcrumb.level !== 'error') {
         return null;
       }
     }
     return breadcrumb;
+  },
+
+  // Strip sensitive data from client events
+  beforeSend(event) {
+    if (event.request?.data) {
+      event.request.data = '[Filtered]';
+    }
+    return event;
   },
 });

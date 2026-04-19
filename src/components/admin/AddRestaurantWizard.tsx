@@ -141,12 +141,14 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
       <div className="relative w-full max-w-lg rounded-xl border border-app-border bg-app-card">
         {/* Close button */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="absolute right-4 top-4 rounded-lg p-1 text-app-text-muted transition-colors hover:bg-app-elevated hover:text-app-text-secondary"
+          className="absolute right-4 top-4 rounded-lg text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary"
         >
           <X className="h-5 w-5" />
-        </button>
+        </Button>
 
         {/* Header */}
         <div className="border-b border-app-border px-6 pt-6 pb-4">
@@ -238,10 +240,11 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
               {PLAN_OPTIONS.map((p) => {
                 const keys = PLAN_KEYS[p];
                 return (
-                  <button
+                  <Button
                     key={p}
+                    variant="outline"
                     onClick={() => setPlan(p)}
-                    className={`w-full rounded-xl border-2 p-4 text-left transition-all ${
+                    className={`w-full rounded-xl border-2 p-4 text-left h-auto whitespace-normal ${
                       plan === p
                         ? 'border-accent bg-accent/5'
                         : 'border-app-border hover:border-app-border-hover'
@@ -261,7 +264,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
                         )}
                       </div>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>

@@ -13,6 +13,9 @@ import {
   Type,
   Download,
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { LaunchQR } from '@/components/qr/LaunchQR';
 import { TEMPLATE_REGISTRY } from '@/components/qr/templates';
 import type { QRTemplateId } from '@/types/qr-design.types';
@@ -216,9 +219,11 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <div className="flex-1 px-4 py-2.5 bg-app-bg rounded-xl border border-app-border font-mono text-xs text-app-text break-all">
                   {menuUrl}
                 </div>
-                <button
+                <Button
+                  variant="outline"
+                  size="icon"
                   onClick={handleCopyUrl}
-                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors"
+                  className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
                   title={t('copyUrl')}
                 >
                   {copied ? (
@@ -226,7 +231,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                   ) : (
                     <Copy className="h-4 w-4 text-app-text-secondary" />
                   )}
-                </button>
+                </Button>
                 <a
                   href={menuUrl}
                   target="_blank"
@@ -269,11 +274,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                   const Icon = tab.icon;
                   const isActive = activeTab === tab.id;
                   return (
-                    <button
+                    <Button
                       key={tab.id}
                       type="button"
+                      variant={isActive ? 'default' : 'ghost'}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 ${
+                      className={`flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-semibold transition-all duration-200 h-auto ${
                         isActive
                           ? 'bg-accent text-accent-text'
                           : 'text-app-text-muted hover:text-app-text-secondary hover:bg-app-hover'
@@ -281,7 +287,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     >
                       <Icon className="h-3.5 w-3.5" />
                       {tab.label}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -296,11 +302,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       {TEMPLATES.map((tmpl) => {
                         const isSelected = data.qrTemplate === tmpl.id;
                         return (
-                          <button
+                          <Button
                             key={tmpl.id}
                             type="button"
+                            variant="outline"
                             onClick={() => updateData({ qrTemplate: tmpl.id })}
-                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden ${
+                            className={`rounded-xl border text-center transition-all duration-200 overflow-hidden h-auto p-0 flex flex-col ${
                               isSelected
                                 ? 'border-accent bg-accent/5 '
                                 : 'border-app-border hover:border-app-border-hover'
@@ -316,7 +323,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                                 {t(tmpl.labelKey)}
                               </span>
                             </div>
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -333,11 +340,12 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                         const previewFg =
                           style.fg === 'primary' ? data.primaryColor || '#000' : style.fg;
                         return (
-                          <button
+                          <Button
                             key={style.id}
                             type="button"
+                            variant="outline"
                             onClick={() => updateData({ qrStyle: style.id })}
-                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all ${
+                            className={`w-12 h-12 rounded-xl border flex items-center justify-center transition-all p-0 ${
                               isActive
                                 ? 'border-accent '
                                 : 'border-app-border hover:border-app-border-hover'
@@ -348,7 +356,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                               className="w-5 h-5 rounded-md"
                               style={{ backgroundColor: previewFg }}
                             />
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
@@ -368,22 +376,23 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                       {CTA_PRESETS.map((preset) => {
                         const isActive = data.qrCta === preset.value;
                         return (
-                          <button
+                          <Button
                             key={preset.key}
                             type="button"
+                            variant={isActive ? 'default' : 'outline'}
                             onClick={() => updateData({ qrCta: preset.value })}
-                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                            className={`px-4 py-2 rounded-xl text-xs font-medium transition-all h-auto ${
                               isActive
                                 ? 'bg-accent text-accent-text'
                                 : 'bg-app-elevated text-app-text-secondary hover:bg-app-hover border border-app-border'
                             }`}
                           >
                             {t(preset.key)}
-                          </button>
+                          </Button>
                         );
                       })}
                     </div>
-                    <input
+                    <Input
                       type="text"
                       value={data.qrCta}
                       onChange={(e) => updateData({ qrCta: e.target.value })}
@@ -398,7 +407,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                     <p className="text-xs font-semibold text-app-text-secondary mb-3">
                       {t('qrDescriptionLabel')}
                     </p>
-                    <textarea
+                    <Textarea
                       value={data.qrDescription}
                       onChange={(e) => updateData({ qrDescription: e.target.value })}
                       placeholder={t('qrDescriptionLabel')}

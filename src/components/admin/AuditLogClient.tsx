@@ -7,8 +7,24 @@ import { createClient } from '@/lib/supabase/client';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 
 interface AuditLogEntry {
@@ -219,54 +235,62 @@ export default function AuditLogClient({
           <div className="bg-app-card rounded-xl border border-app-border/60 p-4 space-y-3 animate-in fade-in slide-in-from-top-1">
             <div className="grid grid-cols-1 @sm:grid-cols-3 gap-3">
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterAction')}
-                </label>
-                <select
-                  value={filterAction}
-                  onChange={(e) => {
-                    setFilterAction(e.target.value);
+                </Label>
+                <Select
+                  value={filterAction || '__all__'}
+                  onValueChange={(val) => {
+                    setFilterAction(val === '__all__' ? '' : val);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
-                  <option value="">{tc('all')}</option>
-                  {ACTIONS.map((a) => (
-                    <option key={a} value={a}>
-                      {t(
-                        `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
-                          | 'actionCreate'
-                          | 'actionUpdate'
-                          | 'actionDelete',
-                      ) || a}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">{tc('all')}</SelectItem>
+                    {ACTIONS.map((a) => (
+                      <SelectItem key={a} value={a}>
+                        {t(
+                          `action${a.charAt(0).toUpperCase()}${a.slice(1)}` as
+                            | 'actionCreate'
+                            | 'actionUpdate'
+                            | 'actionDelete',
+                        ) || a}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterEntity')}
-                </label>
-                <select
-                  value={filterEntity}
-                  onChange={(e) => {
-                    setFilterEntity(e.target.value);
+                </Label>
+                <Select
+                  value={filterEntity || '__all__'}
+                  onValueChange={(val) => {
+                    setFilterEntity(val === '__all__' ? '' : val);
                     setPage(0);
                   }}
-                  className="w-full h-9 px-3 text-sm border border-app-border/60 rounded-lg bg-app-elevated text-app-text"
                 >
-                  <option value="">{tc('all')}</option>
-                  {ENTITY_TYPES.map((e) => (
-                    <option key={e} value={e}>
-                      {entityLabel(e)}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger className="w-full h-9">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">{tc('all')}</SelectItem>
+                    {ENTITY_TYPES.map((e) => (
+                      <SelectItem key={e} value={e}>
+                        {entityLabel(e)}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <label className="text-xs font-semibold text-app-text mb-1 block">
+                <Label className="text-xs font-semibold text-app-text mb-1 block">
                   {t('filterUser')}
-                </label>
+                </Label>
                 <div className="relative">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-app-text-muted" />
                   <Input
@@ -315,37 +339,37 @@ export default function AuditLogClient({
           <>
             <div className="bg-app-card rounded-xl border border-app-border/60 overflow-hidden">
               {/* Desktop table */}
-              <div className="hidden @md:block overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-app-border/60 bg-app-bg/50">
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+              <div className="hidden @md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-b border-app-border/60 bg-app-bg/50">
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colDate')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colUser')}
-                      </th>
-                      <th className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-center text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colAction')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colEntity')}
-                      </th>
-                      <th className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
+                      </TableHead>
+                      <TableHead className="text-left text-xs font-semibold text-app-text-secondary px-4 py-3">
                         {t('colDetails')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {logs.map((entry) => (
-                      <tr
+                      <TableRow
                         key={entry.id}
                         className="border-b border-app-border/60 last:border-0 hover:bg-app-bg transition-colors"
                       >
-                        <td className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
+                        <TableCell className="px-4 py-3 text-xs text-app-text-secondary whitespace-nowrap">
                           {formatDate(entry.created_at)}
-                        </td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <div>
                             <span className="text-sm text-app-text">
                               {entry.user_email || ' - '}
@@ -356,18 +380,20 @@ export default function AuditLogClient({
                               </span>
                             )}
                           </div>
-                        </td>
-                        <td className="px-4 py-3 text-center">{actionBadge(entry.action)}</td>
-                        <td className="px-4 py-3">
+                        </TableCell>
+                        <TableCell className="px-4 py-3 text-center">
+                          {actionBadge(entry.action)}
+                        </TableCell>
+                        <TableCell className="px-4 py-3">
                           <span className="text-sm font-medium text-app-text">
                             {entityLabel(entry.entity_type)}
                           </span>
-                        </td>
-                        <td className="px-4 py-3 max-w-xs">{renderChanges(entry)}</td>
-                      </tr>
+                        </TableCell>
+                        <TableCell className="px-4 py-3 max-w-xs">{renderChanges(entry)}</TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* Mobile cards */}

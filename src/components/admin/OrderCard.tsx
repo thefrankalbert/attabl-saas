@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import type { Order, OrderStatus } from '@/types/admin.types';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 
 interface OrderCardProps {
   order: Order;
@@ -177,7 +178,7 @@ export default function OrderCard({
               <div key={i} className="flex justify-between text-sm">
                 <span className="flex gap-2">
                   <span className="font-bold w-5 text-app-text-secondary">{item.quantity}x</span>
-                  <span className="text-app-text truncate max-w-[140px]">{item.name}</span>
+                  <span className="text-app-text truncate max-w-36">{item.name}</span>
                 </span>
               </div>
             ))}
@@ -191,13 +192,13 @@ export default function OrderCard({
 
         {/* Action Button */}
         {config.nextStatus && (
-          <button
+          <Button
             onClick={(e) => {
               e.stopPropagation();
               onStatusChange(order.id, config.nextStatus!);
             }}
             className={cn(
-              'w-full mt-2 py-3 min-h-[44px] rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-accent-text transition-opacity hover:opacity-90',
+              'w-full mt-2 py-3 min-h-[44px] rounded-lg flex items-center justify-center gap-2 text-xs font-bold uppercase text-accent-text hover:opacity-90',
               order.status === 'pending'
                 ? 'bg-status-warning'
                 : order.status === 'preparing'
@@ -206,7 +207,7 @@ export default function OrderCard({
             )}
           >
             {config.nextLabel} <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          </Button>
         )}
       </div>
     </motion.div>

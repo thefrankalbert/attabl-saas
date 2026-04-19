@@ -344,11 +344,15 @@ export function usePOSData(tenantId: string) {
       if (!code.trim()) return;
       setCouponLoading(true);
       setCouponError('');
+      // BUG-38: Abort coupon validation after 10s to prevent hanging requests
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       try {
         const res = await fetch('/api/coupons/validate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ code, subtotal: total }),
+          signal: controller.signal,
         });
         const data: {
           valid: boolean;
@@ -377,6 +381,7 @@ export function usePOSData(tenantId: string) {
         logger.error('Coupon validation failed', err);
         setCouponError('Erreur de validation');
       } finally {
+        clearTimeout(timeoutId);
         setCouponLoading(false);
       }
     },
