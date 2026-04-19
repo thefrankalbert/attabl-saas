@@ -46,6 +46,10 @@ export type NavGroupConfig = {
   highlight?: boolean;
   requiredPermission?: NavItemPermission;
   permissionCode?: PermissionCode;
+  /** Section bucket used by the redesigned sidebar (mono uppercase header).
+   * Groups with the same section label are grouped under that heading.
+   * If omitted the group is rendered alone above the sections. */
+  sectionKey?: 'operations' | 'catalog' | 'marketing';
 };
 
 // ─── Navigation Configuration ───────────────────────────
@@ -57,6 +61,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     icon: LayoutDashboard,
     directPath: '',
     items: [],
+    sectionKey: 'operations',
   },
   {
     id: 'orders',
@@ -65,11 +70,13 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     directPath: '/orders',
     items: [],
     permissionCode: 'orders.view',
+    sectionKey: 'operations',
   },
   {
     id: 'organization',
     titleKey: 'groupOrganization',
     icon: ClipboardList,
+    sectionKey: 'catalog',
     items: [
       {
         path: '/menus',
@@ -119,6 +126,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     id: 'marketing',
     titleKey: 'groupMarketing',
     icon: Megaphone,
+    sectionKey: 'marketing',
     items: [
       {
         path: '/announcements',
@@ -152,6 +160,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     items: [],
     requiredPermission: 'canConfigurePOS',
     permissionCode: 'pos.use',
+    sectionKey: 'operations',
   },
   {
     id: 'kitchen',
@@ -162,6 +171,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     items: [],
     requiredPermission: 'canConfigureKitchen',
     permissionCode: 'orders.manage',
+    sectionKey: 'operations',
   },
   {
     id: 'service',
@@ -171,6 +181,7 @@ export const NAV_GROUPS: NavGroupConfig[] = [
     items: [],
     requiredPermission: 'canManageUsers',
     permissionCode: 'team.view',
+    sectionKey: 'operations',
   },
   {
     id: 'analyse',

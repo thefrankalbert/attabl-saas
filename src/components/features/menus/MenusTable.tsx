@@ -99,6 +99,7 @@ function MenuRow({
       )}
     >
       {/* Selection checkbox */}
+      {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
       <input
         type="checkbox"
         checked={isSelected}

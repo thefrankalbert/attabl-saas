@@ -141,6 +141,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
+            {/* eslint-disable-next-line react/forbid-elements -- <input type="range"> is the native zoom slider for image cropping; shadcn Slider would require rewiring the zoom controls */}
             <input
               type="range"
               min={1}

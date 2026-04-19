@@ -89,6 +89,7 @@ export default function KitchenClient({
     return filtered;
   }, [kitchen.allOrders, footerFilter, searchQuery]);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars -- pagination placeholder; signature preserved for when board pagination lands
   const handlePageChange = useCallback((_direction: 'prev' | 'next') => {
     // Pagination placeholder - no-op until board pagination is implemented
   }, []);

@@ -147,6 +147,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                   <ImageIcon className="h-4 w-4 text-app-text-muted" />
                   {t('logoLabel') || 'Logo'}
                 </Label>
+                {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
                 <input
                   ref={fileInputRef}
                   type="file"

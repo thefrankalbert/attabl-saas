@@ -399,6 +399,7 @@ export default function ItemsClient({
             <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
               {/* Select all header */}
               <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
+                {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
                 <input
                   type="checkbox"
                   checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
@@ -423,6 +424,7 @@ export default function ItemsClient({
                   onClick={() => setSelectedItem(item)}
                   className="flex flex-wrap @md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
+                  {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
                   <input
                     type="checkbox"
                     checked={selectedIds.has(item.id)}

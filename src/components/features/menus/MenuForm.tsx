@@ -140,6 +140,7 @@ export default function MenuForm({
 
       {venues.length > 0 && (
         <div className="flex items-center gap-3 p-3 bg-accent/5 border border-accent/15 rounded-lg">
+          {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
           <input
             type="checkbox"
             id="menu-shared"
@@ -209,6 +210,7 @@ export default function MenuForm({
       </div>
 
       <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
         <input
           type="checkbox"
           id="menu-active"

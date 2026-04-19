@@ -21,6 +21,11 @@ const eslintConfig = defineConfig([
     'scripts/**',
     // Claude Code worktrees (isolated development branches)
     '.claude/**',
+    '.worktrees/**',
+    // Skill/template assets bundled with plugins (not part of our codebase)
+    '.agents/**',
+    // Root-level prototype / scratch files
+    'prototype-*.{js,jsx,ts,tsx}',
   ]),
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui
   // Les fichiers dans src/components/ui/ sont exclus (ce sont les composants shadcn eux-memes)
