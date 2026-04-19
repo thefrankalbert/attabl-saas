@@ -26,8 +26,7 @@ export function LocationsGrid({
     if (!query.trim()) return locations;
     const q = query.toLowerCase();
     return locations.filter(
-      (l) =>
-        l.tenant_name.toLowerCase().includes(q) || l.tenant_slug.toLowerCase().includes(q),
+      (l) => l.tenant_name.toLowerCase().includes(q) || l.tenant_slug.toLowerCase().includes(q),
     );
   }, [locations, query]);
 
@@ -74,9 +73,7 @@ export function LocationsGrid({
         <div className="min-h-0 flex-1 divide-y divide-app-border overflow-y-auto scrollbar-hide">
           {filtered.map((location) => {
             const isTop =
-              topTenant &&
-              location.tenant_id === topTenant.tenant_id &&
-              location.revenue_today > 0;
+              topTenant && location.tenant_id === topTenant.tenant_id && location.revenue_today > 0;
             const isWarn = !isTop && !location.is_active;
             return (
               <LocationRow

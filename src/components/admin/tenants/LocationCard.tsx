@@ -32,12 +32,7 @@ interface LocationRowProps {
   onOpenMenu: (slug: string) => void;
 }
 
-export function LocationRow({
-  location,
-  rank,
-  onOpenDashboard,
-  onOpenMenu,
-}: LocationRowProps) {
+export function LocationRow({ location, rank, onOpenDashboard, onOpenMenu }: LocationRowProps) {
   const revenueDelta = computeDelta(location.revenue_today, location.revenue_yesterday);
   const sparkData = location.sparkline.map((v, i) => ({ i, v }));
   const showSpark = sparkData.some((d) => d.v > 0);
