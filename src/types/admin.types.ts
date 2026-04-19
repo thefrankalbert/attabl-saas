@@ -57,7 +57,7 @@ export type PaymentMethod = 'cash' | 'card' | 'mobile_money';
 export type PaymentStatus = 'pending' | 'paid' | 'refunded';
 export type ItemStatus = 'pending' | 'preparing' | 'ready' | 'served';
 export type Course = 'appetizer' | 'main' | 'dessert' | 'drink';
-export type CurrencyCode = 'XAF' | 'EUR' | 'USD';
+export type CurrencyCode = 'XAF' | 'XOF' | 'EUR' | 'USD';
 
 // ─── Types principaux (avec tenant_id) ─────────────────────
 
@@ -100,7 +100,13 @@ export interface Tenant {
   idle_timeout_minutes?: number | null;
   screen_lock_mode?: 'overlay' | 'password';
   bar_display_enabled?: boolean;
+  // ─── Opening hours ─────────────────────────────────────
+  opening_hours?: OpeningHoursMap | null;
 }
+
+export type OpeningHoursDay = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+
+export type OpeningHoursMap = Partial<Record<OpeningHoursDay, { open: string; close: string }>>;
 
 export interface AdminUser {
   id: string;
@@ -192,6 +198,7 @@ export interface Menu {
   description_en?: string;
   image_url?: string;
   is_active: boolean;
+  is_transversal_menu?: boolean;
   display_order: number;
   created_at: string;
   updated_at?: string;
@@ -215,6 +222,7 @@ export interface Category {
   name_en?: string;
   display_order?: number;
   is_active?: boolean;
+  is_featured_on_home?: boolean;
   preparation_zone?: PreparationZone;
   created_at: string;
 }
@@ -239,6 +247,8 @@ export interface MenuItem {
   is_drink?: boolean;
   allergens?: string[];
   calories?: number;
+  rating?: number;
+  rating_count?: number;
   category_id: string;
   category?: Category;
   display_order?: number;
@@ -282,6 +292,7 @@ export interface ItemModifier {
   price: number;
   prices?: MultiCurrencyPrices;
   is_available: boolean;
+  is_required?: boolean;
   display_order: number;
   created_at: string;
 }

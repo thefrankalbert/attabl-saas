@@ -279,10 +279,11 @@ export default function POSProductBrowser({
                 </div>
                 <div className="grid grid-cols-1 @sm:grid-cols-2 @md:grid-cols-2 @lg:grid-cols-3 @xl:grid-cols-3 @2xl:grid-cols-4 gap-2 pb-4">
                   {catItems.map((item) => (
-                    <button
+                    <Button
                       key={item.id}
+                      variant="outline"
                       onClick={() => handleItemClick(item)}
-                      className="text-left group bg-app-elevated hover:bg-app-hover border border-app-border hover:border-accent/30 rounded-xl p-2 transition-all active:scale-95 flex items-center gap-2.5 relative z-0"
+                      className="text-left group bg-app-elevated hover:bg-app-hover hover:border-accent/30 rounded-xl p-2 active:scale-95 flex items-center gap-2.5 relative z-0 h-auto whitespace-normal"
                     >
                       <div className="h-14 w-14 shrink-0 bg-app-card rounded-lg flex items-center justify-center relative overflow-hidden">
                         {item.image_url ? (
@@ -309,7 +310,7 @@ export default function POSProductBrowser({
                           {cartQuantityMap.get(item.id) || 0}
                         </div>
                       )}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </section>

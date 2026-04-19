@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import MenusClient from '@/components/admin/MenusClient';
+import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +17,7 @@ export default async function MenusPage({ params }: MenusPageProps) {
 
   const tenant = await getTenant(tenantSlug);
 
-  if (!tenant) redirect('/login');
+  if (!tenant) redirectToLogin();
 
   const supabase = await createClient();
 

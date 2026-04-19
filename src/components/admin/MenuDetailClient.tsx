@@ -35,6 +35,16 @@ import { cn } from '@/lib/utils';
 import { actionUpdateMenu } from '@/app/actions/menus';
 import { actionToggleCategoryActive } from '@/app/actions/categories';
 import { revalidateMenuCache } from '@/lib/revalidate';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Menu, Category, MenuItem } from '@/types/admin.types';
 import { createCategoryService } from '@/services/category.service';
 import { createMenuItemService } from '@/services/menu-item.service';
@@ -96,6 +106,7 @@ export default function MenuDetailClient({
 
   // Modifier editor state
   const [editingModifiersItem, setEditingModifiersItem] = useState<MenuItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const { toast } = useToast();
   const t = useTranslations('menus');
@@ -213,7 +224,7 @@ export default function MenuDetailClient({
     }
   };
 
-  const handleDeleteCategory = async (cat: Category) => {
+  const handleDeleteCategory = (cat: Category) => {
     const catItems = items.filter((it) => it.category_id === cat.id);
     if (catItems.length > 0) {
       toast({
@@ -222,14 +233,20 @@ export default function MenuDetailClient({
       });
       return;
     }
-    if (!confirm(tCat('deleteCategoryConfirm', { name: cat.name }))) return;
+    setDeleteTarget({ id: cat.id, name: cat.name });
+  };
+
+  const confirmDeleteCategory = async () => {
+    if (!deleteTarget) return;
     try {
       const categoryService = createCategoryService(supabase);
-      await categoryService.deleteCategory(cat.id);
+      await categoryService.deleteCategory(deleteTarget.id);
       toast({ title: t('categoryDeleted') });
       loadData();
     } catch {
       toast({ title: t('deleteError'), variant: 'destructive' });
+    } finally {
+      setDeleteTarget(null);
     }
   };
 
@@ -381,10 +398,11 @@ export default function MenuDetailClient({
           <span className="text-app-text-secondary">/</span>
           <h1 className="text-app-text font-semibold break-words">{menu.name}</h1>
         </div>
-        <button
+        <Button
+          variant="outline"
           onClick={toggleMenuActive}
           className={cn(
-            'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all shrink-0',
+            'px-3 py-1.5 rounded-full text-xs font-semibold h-auto shrink-0',
             menu.is_active
               ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
               : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -401,7 +419,7 @@ export default function MenuDetailClient({
               {t('inactive')}
             </>
           )}
-        </button>
+        </Button>
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide">
@@ -438,13 +456,14 @@ export default function MenuDetailClient({
                       />
                       <div className="absolute right-0 top-full mt-1 z-50 w-64 max-h-60 overflow-y-auto bg-app-card border border-app-border rounded-lg shadow-lg">
                         {availableCategories.map((cat) => (
-                          <button
+                          <Button
                             key={cat.id}
+                            variant="ghost"
                             onClick={() => handleAssignCategory(cat)}
-                            className="w-full text-left px-3 py-2 text-sm text-app-text hover:bg-app-bg transition-colors first:rounded-t-lg last:rounded-b-lg"
+                            className="w-full justify-start px-3 py-2 text-sm text-app-text hover:bg-app-bg rounded-none first:rounded-t-lg last:rounded-b-lg h-auto"
                           >
                             {cat.name}
-                          </button>
+                          </Button>
                         ))}
                       </div>
                     </>
@@ -560,10 +579,10 @@ export default function MenuDetailClient({
 
                             {/* Inline price editing */}
                             {editingPriceId === item.id ? (
-                              <input
+                              <Input
                                 ref={priceInputRef}
                                 type="number"
-                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30"
+                                className="w-24 text-sm font-bold text-app-text tabular-nums bg-app-card border border-app-border rounded px-2 py-0.5 text-right focus:outline-none focus:ring-1 focus:ring-accent/30 h-auto shadow-none"
                                 value={editingPriceValue}
                                 onChange={(e) => setEditingPriceValue(e.target.value)}
                                 onBlur={() => saveInlinePrice(item)}
@@ -574,13 +593,14 @@ export default function MenuDetailClient({
                                 min={0}
                               />
                             ) : (
-                              <button
+                              <Button
+                                variant="ghost"
                                 onClick={() => startEditingPrice(item)}
-                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline transition-colors cursor-pointer"
+                                className="text-sm font-bold text-app-text tabular-nums hover:text-accent hover:underline h-auto px-1 py-0"
                                 title={t('editItem')}
                               >
                                 {t('priceFcfa', { count: item.price })}
-                              </button>
+                              </Button>
                             )}
 
                             {(item.modifiers?.length ?? 0) > 0 && (
@@ -590,27 +610,30 @@ export default function MenuDetailClient({
                             )}
 
                             {/* Action buttons */}
-                            <button
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => openEditItemModal(item)}
-                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('editItem')}
                             >
                               <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingModifiersItem(item);
                               }}
-                              className="p-2 rounded-md text-app-text-muted hover:text-app-text hover:bg-app-card transition-colors"
                               title={t('manageModifiers')}
                             >
                               <Settings2 className="w-4 h-4" />
-                            </button>
-                            <button
+                            </Button>
+                            <Button
+                              variant="outline"
                               onClick={() => toggleItemAvailable(item)}
                               className={cn(
-                                'px-2 py-0.5 rounded-full text-xs font-semibold border transition-all',
+                                'px-2 py-0.5 rounded-full text-xs font-semibold h-auto',
                                 item.is_available
                                   ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                                   : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -627,7 +650,7 @@ export default function MenuDetailClient({
                                   {t('exhaustedLabel')}
                                 </>
                               )}
-                            </button>
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -738,11 +761,12 @@ export default function MenuDetailClient({
               />
             </div>
             <div className="flex items-center gap-3">
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => setItemFormAvailable(!itemFormAvailable)}
                 className={cn(
-                  'px-3 py-1.5 rounded-full text-xs font-semibold border transition-all',
+                  'px-3 py-1.5 rounded-full text-xs font-semibold h-auto',
                   itemFormAvailable
                     ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
                     : 'bg-app-bg text-app-text-secondary border-app-border',
@@ -759,7 +783,7 @@ export default function MenuDetailClient({
                     {t('exhaustedLabel')}
                   </>
                 )}
-              </button>
+              </Button>
             </div>
             <div className="flex justify-end gap-3 pt-4 border-t border-app-border">
               <Button type="button" variant="outline" onClick={() => setEditingItem(null)}>
@@ -791,6 +815,30 @@ export default function MenuDetailClient({
           />
         )}
       </AdminModal>
+
+      {/* Delete confirmation dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open: boolean) => !open && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tc('confirmDelete')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteTarget ? tCat('deleteCategoryConfirm', { name: deleteTarget.name }) : ''}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteCategory}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {tc('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -7,15 +7,22 @@ import { actionSubmitContactForm } from '@/app/actions/contact';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
   const t = useTranslations('contact');
   return (
-    <button
+    <Button
       type="submit"
       disabled={pending}
-      className="w-full rounded-xl bg-neutral-900 px-6 py-3.5 text-sm font-semibold text-white transition-all hover:bg-neutral-800 disabled:opacity-50 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+      className="w-full rounded-xl px-6 py-3.5 text-sm font-semibold text-white hover:bg-neutral-800 dark:hover:bg-neutral-100"
+      style={{
+        backgroundColor: pending ? 'rgba(0, 0, 0, 0.5)' : undefined,
+      }}
     >
       {pending ? (
         <span className="flex items-center justify-center gap-2">
@@ -28,7 +35,7 @@ function SubmitButton() {
           <ArrowRight className="h-4 w-4" />
         </span>
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -40,7 +47,7 @@ export default function ContactPage() {
   });
 
   return (
-    <div className="flex min-h-screen w-full bg-white dark:bg-neutral-950">
+    <div className="flex min-h-dvh w-full bg-white dark:bg-neutral-950">
       {/* Left - Form on white */}
       <div className="flex w-full items-center justify-center bg-white px-4 dark:bg-neutral-950 sm:px-8 md:px-16 lg:w-7/12 lg:px-20">
         <div className="w-full max-w-md">
@@ -81,13 +88,14 @@ export default function ContactPage() {
                 <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
                   {formState.message}
                 </p>
-                <button
+                <Button
                   type="button"
+                  variant="outline"
                   onClick={() => window.location.reload()}
-                  className="mt-6 rounded-lg border border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 transition-colors hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
+                  className="mt-6 rounded-lg border-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-900 hover:bg-neutral-50 dark:border-neutral-800 dark:text-white dark:hover:bg-neutral-900"
                 >
                   {t('newMessage')}
-                </button>
+                </Button>
               </motion.div>
             ) : (
               <form action={formAction} className="mt-8 flex flex-col gap-5">
@@ -98,13 +106,13 @@ export default function ContactPage() {
 
                 <div className="grid gap-5 sm:grid-cols-2">
                   <div className="space-y-1.5">
-                    <label
+                    <Label
                       htmlFor="name"
                       className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                     >
                       {t('labelName')}
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       name="name"
                       id="name"
@@ -117,13 +125,13 @@ export default function ContactPage() {
                     )}
                   </div>
                   <div className="space-y-1.5">
-                    <label
+                    <Label
                       htmlFor="company"
                       className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                     >
                       {t('labelCompany')}
-                    </label>
-                    <input
+                    </Label>
+                    <Input
                       type="text"
                       name="company"
                       id="company"
@@ -134,13 +142,13 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label
+                  <Label
                     htmlFor="email"
                     className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                   >
                     {t('labelEmail')}
-                  </label>
-                  <input
+                  </Label>
+                  <Input
                     type="email"
                     name="email"
                     id="email"
@@ -154,13 +162,13 @@ export default function ContactPage() {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label
+                  <Label
                     htmlFor="message"
                     className="text-xs font-semibold text-neutral-500 dark:text-neutral-400"
                   >
                     {t('labelMessage')}
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
                     name="message"
                     id="message"
                     rows={3}

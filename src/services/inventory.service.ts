@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { ServiceError } from '@/services/errors';
+import { logger } from '@/lib/logger';
 import type {
   Ingredient,
   Recipe,
@@ -76,6 +77,18 @@ export function createInventoryService(supabase: SupabaseClient) {
     // ─── Recipes (Fiches techniques) ──────────────────────
 
     async getRecipesForItem(menuItemId: string, tenantId: string): Promise<Recipe[]> {
+      // BUG-34: Validate menu_item_id belongs to this tenant before querying recipes
+      const { data: menuItem } = await supabase
+        .from('menu_items')
+        .select('id')
+        .eq('id', menuItemId)
+        .eq('tenant_id', tenantId)
+        .maybeSingle();
+
+      if (!menuItem) {
+        throw new ServiceError('Article non trouve dans ce restaurant', 'NOT_FOUND');
+      }
+
       const { data, error } = await supabase
         .from('recipes')
         .select('*, ingredient:ingredients(id, name, unit, current_stock)')
@@ -122,7 +135,11 @@ export function createInventoryService(supabase: SupabaseClient) {
       });
 
       if (error) throw new ServiceError('Erreur déstockage commande', 'INTERNAL', error);
-      return (data as number) ?? 0;
+      const count = (data as number) ?? 0;
+      if (count === 0) {
+        logger.warn('destockOrder returned 0 items updated', { orderId, tenantId });
+      }
+      return count;
     },
 
     async adjustStock(tenantId: string, input: AdjustStockInput): Promise<void> {

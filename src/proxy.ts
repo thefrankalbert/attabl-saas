@@ -2,6 +2,7 @@ import { createMiddlewareClient } from '@/lib/supabase/middleware';
 import { getCachedTenantByDomain, getCachedTenant } from '@/lib/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { buildCspHeader } from '@/lib/csp';
 
 // Routes qui nécessitent une authentification
 // Note: /sites/{slug}/admin is protected, but /sites/{slug}/ (client pages) are public
@@ -54,6 +55,15 @@ function isPublicMainDomainPath(pathname: string): boolean {
 }
 
 export async function proxy(request: NextRequest) {
+  // SECURITY: Block x-middleware-subrequest header to prevent middleware bypass (CVE-2025-29927)
+  if (request.headers.get('x-middleware-subrequest')) {
+    return new NextResponse(null, { status: 403 });
+  }
+
+  // Generate a per-request CSP nonce (replaces static unsafe-inline in script-src)
+  const nonce = Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString('base64');
+  request.headers.set('x-csp-nonce', nonce);
+
   // SECURITY: Strip any client-injected x-tenant-slug - only the proxy should set this
   request.headers.delete('x-tenant-slug');
 
@@ -70,6 +80,8 @@ export async function proxy(request: NextRequest) {
 
   if (!subdomain && !isMainDomain && !isLocalhost && !isVercelPreview) {
     // Might be a custom domain (e.g., theblutable.com)
+    // BUG-32: Negative results (null) are cached for 5 min by unstable_cache (revalidate: 300)
+    // in getCachedTenantByDomain, preventing repeated DB lookups for unknown domains.
     const tenantSlug = await getCachedTenantByDomain(hostWithoutPort);
     if (tenantSlug) {
       // Custom domain matched - treat like a subdomain rewrite
@@ -104,7 +116,18 @@ export async function proxy(request: NextRequest) {
   //    n'ont pas besoin de rafraîchir la session → skip createMiddlewareClient entièrement
   if (!subdomain || subdomain === 'www') {
     if (isPublicMainDomainPath(pathname)) {
-      return NextResponse.next();
+      // For API calls originating from /sites/{slug}/ pages (e.g. cart → /api/orders),
+      // inject x-tenant-slug from the Referer before returning early.
+      if (pathname.startsWith('/api/')) {
+        const referer = request.headers.get('referer') || '';
+        const refererSitesMatch = referer.match(/\/sites\/([^/]+)/);
+        if (refererSitesMatch) {
+          request.headers.set('x-tenant-slug', refererSitesMatch[1]);
+        }
+      }
+      const resp = NextResponse.next({ request: { headers: request.headers } });
+      resp.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+      return resp;
     }
   }
 
@@ -196,8 +219,27 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // 6. Direct /sites/{slug}/... access on main domain - set x-tenant-slug header
-  //    Must be set on REQUEST headers (not response) so headers() in server components can read it
+  // 6a. API calls from /sites/{slug}/ pages on main domain (no subdomain)
+  //     The Referer header contains /sites/{slug}/ but the API path is just /api/...
+  //     Derive the tenant from the Referer so the API can identify the tenant.
+  if (pathname.startsWith('/api/') && !subdomain) {
+    const referer = request.headers.get('referer') || '';
+    const refererMatch = referer.match(/\/sites\/([^/]+)/);
+    if (refererMatch) {
+      request.headers.set('x-tenant-slug', refererMatch[1]);
+      const response = NextResponse.next({
+        request: { headers: request.headers },
+      });
+      sessionResponse.cookies.getAll().forEach((cookie: { name: string; value: string }) => {
+        response.cookies.set(cookie.name, cookie.value);
+      });
+      response.headers.set('Content-Security-Policy', buildCspHeader(nonce));
+      return response;
+    }
+  }
+
+  // 6b. Direct /sites/{slug}/... access on main domain - set x-tenant-slug header
+  //     Must be set on REQUEST headers (not response) so headers() in server components can read it
   const sitesMatch = pathname.match(/^\/sites\/([^/]+)(\/.*)?$/);
   if (sitesMatch) {
     const tenantSlug = sitesMatch[1];
@@ -250,6 +292,7 @@ export async function proxy(request: NextRequest) {
   }
 
   // 8. Pas de subdomain → retourner la réponse avec session rafraîchie
+  sessionResponse.headers.set('Content-Security-Policy', buildCspHeader(nonce));
   return sessionResponse;
 }
 

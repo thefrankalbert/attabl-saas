@@ -18,6 +18,14 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ColorPicker } from '@/components/qr/ColorPicker';
 import { FeatureGate } from '@/components/qr/FeatureGate';
 import type {
@@ -211,13 +219,14 @@ export function QRCustomizerPanel({
               const isFree = FREE_TEMPLATES.includes(id);
 
               const card = (
-                <button
+                <Button
                   key={id}
                   type="button"
+                  variant="outline"
                   onClick={() => setTemplate(id)}
                   className={`
                     relative flex flex-col items-start gap-1.5 p-4 rounded-xl border-2 text-left
-                    transition-all duration-150 cursor-pointer
+                    h-auto whitespace-normal
                     ${isSelected ? 'border-accent bg-app-bg' : 'border-app-border hover:border-app-text-muted bg-app-card'}
                   `}
                 >
@@ -238,7 +247,7 @@ export function QRCustomizerPanel({
                   <span className="text-xs text-app-text-muted leading-tight">
                     {defaults.description}
                   </span>
-                </button>
+                </Button>
               );
 
               if (isFree) {
@@ -279,12 +288,13 @@ export function QRCustomizerPanel({
             <Section title="Correction d'erreur">
               <div className="grid grid-cols-2 gap-2">
                 {ERROR_CORRECTION_LEVELS.map(({ value, label }) => (
-                  <button
+                  <Button
                     key={value}
                     type="button"
+                    variant={config.errorCorrection === value ? 'default' : 'outline'}
                     onClick={() => updateField('errorCorrection', value)}
                     className={`
-                      px-3 py-2 rounded-lg text-xs font-medium border transition-all
+                      px-3 py-2 rounded-lg text-xs font-medium h-auto
                       ${
                         config.errorCorrection === value
                           ? 'border-accent bg-accent text-white'
@@ -295,7 +305,7 @@ export function QRCustomizerPanel({
                     <span className="font-bold">{value}</span>
                     {' \u2014 '}
                     {label}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </Section>
@@ -383,15 +393,17 @@ export function QRCustomizerPanel({
                                 ? 'Image importée'
                                 : config.logo.src}
                             </span>
-                            <button
+                            <Button
                               type="button"
+                              variant="ghost"
+                              size="icon"
                               onClick={() => updateLogo('src', '')}
-                              className="p-1 rounded-lg text-app-text-muted hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                              className="p-1 h-auto w-auto text-app-text-muted hover:text-red-500 hover:bg-red-500/10"
                               title="Supprimer"
                               aria-label="Supprimer le logo"
                             >
                               <X className="h-3.5 w-3.5" />
-                            </button>
+                            </Button>
                           </div>
                         </div>
                       )}
@@ -400,7 +412,6 @@ export function QRCustomizerPanel({
                     <div className="space-y-1">
                       <Label className="text-xs text-app-text-muted">Ou entrer une URL</Label>
                       <Input
-                        type="url"
                         value={config.logo.src.startsWith('data:') ? '' : config.logo.src}
                         onChange={(e) => updateLogo('src', e.target.value)}
                         placeholder="https://example.com/logo.png"
@@ -537,12 +548,13 @@ export function QRCustomizerPanel({
                   <Label className="text-xs text-app-text-muted">Ombre</Label>
                   <div className="grid grid-cols-4 gap-2">
                     {SHADOW_OPTIONS.map(({ value, label }) => (
-                      <button
+                      <Button
                         key={value}
                         type="button"
+                        variant={config.shadow === value ? 'default' : 'outline'}
                         onClick={() => updateField('shadow', value)}
                         className={`
-                          px-2 py-1.5 rounded-lg text-xs font-medium border transition-all
+                          px-2 py-1.5 rounded-lg text-xs font-medium h-auto
                           ${
                             config.shadow === value
                               ? 'border-accent bg-accent text-white'
@@ -551,7 +563,7 @@ export function QRCustomizerPanel({
                         `}
                       >
                         {label}
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -567,31 +579,34 @@ export function QRCustomizerPanel({
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label className="text-xs text-app-text-muted">Texte pr\u00e9d\u00e9fini</Label>
-                <select
+                <Select
                   value={config.ctaPreset}
-                  onChange={(e) => {
-                    const preset = e.target.value as QRCTAPreset;
+                  onValueChange={(val) => {
+                    const preset = val as QRCTAPreset;
                     updateField('ctaPreset', preset);
                     if (preset !== 'custom') {
                       updateField('ctaText', CTA_PRESETS[preset]);
                     }
                   }}
-                  className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
                 >
-                  {CTA_PRESET_ENTRIES.map(([key, text]) => (
-                    <option key={key} value={key}>
-                      {text}
-                    </option>
-                  ))}
-                  <option value="custom">Personnalis\u00e9...</option>
-                </select>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {CTA_PRESET_ENTRIES.map(([key, text]) => (
+                      <SelectItem key={key} value={key}>
+                        {text}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="custom">Personnalis\u00e9...</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <FeatureGate feature="canAccessQrCustomization">
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Texte personnalis\u00e9</Label>
                   <Input
-                    type="text"
                     value={config.ctaText}
                     onChange={(e) => {
                       updateField('ctaText', e.target.value);
@@ -610,7 +625,7 @@ export function QRCustomizerPanel({
             <Section title="Description">
               <div className="space-y-2">
                 <Label className="text-xs text-app-text-muted">Description additionnelle</Label>
-                <textarea
+                <Textarea
                   value={config.descriptionText}
                   onChange={(e) => updateField('descriptionText', e.target.value)}
                   placeholder="Ajoutez une description..."
@@ -628,7 +643,6 @@ export function QRCustomizerPanel({
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Texte de pied de page</Label>
                   <Input
-                    type="text"
                     value={config.footerText}
                     onChange={(e) => updateField('footerText', e.target.value)}
                     placeholder="Ex: Wi-Fi: MonReseau / mdp123"
@@ -707,7 +721,6 @@ export function QRCustomizerPanel({
                       <div className="space-y-1">
                         <Label className="text-xs text-app-text-muted">URL de l&apos;image</Label>
                         <Input
-                          type="url"
                           value={config.backgroundImage.src}
                           onChange={(e) => updateBackgroundImage('src', e.target.value)}
                           placeholder="https://example.com/bg.jpg"
@@ -732,17 +745,21 @@ export function QRCustomizerPanel({
               <Section title="Typographie">
                 <div className="space-y-2">
                   <Label className="text-xs text-app-text-muted">Police</Label>
-                  <select
+                  <Select
                     value={config.fontFamily}
-                    onChange={(e) => updateField('fontFamily', e.target.value)}
-                    className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-1 focus:ring-accent/30"
+                    onValueChange={(val) => updateField('fontFamily', val)}
                   >
-                    {FONT_OPTIONS.map((font) => (
-                      <option key={font.value} value={font.value}>
-                        {font.label}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_OPTIONS.map((font) => (
+                        <SelectItem key={font.value} value={font.value}>
+                          {font.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </Section>
 

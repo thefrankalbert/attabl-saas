@@ -29,9 +29,9 @@ function createSettingsSchema(messages: { nameMinLength: string; invalidColor: s
     establishmentType: z.string().optional(),
     tableCount: z.number().int().min(0).max(500).optional(),
     // Billing fields
-    currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+    currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
     supportedCurrencies: z
-      .array(z.enum(['XAF', 'EUR', 'USD']))
+      .array(z.enum(['XAF', 'XOF', 'EUR', 'USD']))
       .min(1)
       .optional(),
     enableTax: z.boolean().optional(),

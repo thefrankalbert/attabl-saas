@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { Clock, ArrowRight, X } from 'lucide-react';
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 
 interface TrialBannerProps {
   tenantSlug: string;
@@ -42,13 +43,15 @@ export function TrialBanner({ tenantSlug }: TrialBannerProps) {
         </Link>
       </div>
 
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         onClick={() => setIsDismissed(true)}
-        className={`flex-shrink-0 p-0.5 rounded-full transition-colors ${styleConfig.closeClass}`}
+        className={`flex-shrink-0 p-0.5 h-auto w-auto rounded-full transition-colors ${styleConfig.closeClass}`}
         aria-label={t('closeAriaLabel')}
       >
         <X className="w-4 h-4" />
-      </button>
+      </Button>
     </div>
   );
 }

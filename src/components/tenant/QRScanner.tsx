@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { X, Camera, CameraOff, CheckCircle2, Hash } from 'lucide-react';
+import { X, Camera, CameraOff, CheckCircle2, Hash, RotateCcw } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { logger } from '@/lib/logger';
 import { Table } from '@/types/admin.types';
 
@@ -81,6 +83,7 @@ export default function QRScanner({
   const hasScannedRef = useRef(false);
   const [scanStatus, setScanStatus] = useState<ScanStatus>('loading');
   const [matchedTable, setMatchedTable] = useState<string | null>(null);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Process the decoded QR text
   const processQRCode = useCallback(
@@ -181,7 +184,7 @@ export default function QRScanner({
         html5QrCodeRef.current = null;
       }
     };
-  }, [isOpen, processQRCode]);
+  }, [isOpen, processQRCode, retryCount]);
 
   if (!isOpen) return null;
 
@@ -190,12 +193,14 @@ export default function QRScanner({
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent">
         <h2 className="text-white font-semibold text-lg">{t('title')}</h2>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+          className="p-2 rounded-full bg-white/10 hover:bg-white/20"
         >
           <X className="w-5 h-5 text-white" />
-        </button>
+        </Button>
       </div>
 
       {/* Scanner Container */}
@@ -269,24 +274,62 @@ export default function QRScanner({
                 <p className="text-white/40 text-xs mt-1">{t('cameraHint')}</p>
               </div>
               <div className="flex gap-3 mt-1">
+                <Button
+                  variant="ghost"
+                  onClick={() => {
+                    setScanStatus('loading');
+                    setRetryCount((c) => c + 1);
+                  }}
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 flex items-center gap-2"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  {t('retry') || 'Reessayer'}
+                </Button>
                 {onManualEntry && (
-                  <button
+                  <Button
+                    variant="default"
                     onClick={() => {
                       onClose();
                       onManualEntry();
                     }}
-                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2"
+                    className="px-5 py-2.5 bg-white text-black rounded-xl text-sm font-semibold flex items-center gap-2 hover:bg-white/90"
                   >
                     <Hash className="w-4 h-4" />
                     {t('enterManually')}
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  variant="ghost"
                   onClick={onClose}
-                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20 transition-colors"
+                  className="px-5 py-2.5 bg-white/10 text-white rounded-xl text-sm font-medium hover:bg-white/20"
                 >
                   {t('close')}
-                </button>
+                </Button>
+              </div>
+              {/* Manual table number input fallback */}
+              <div className="mt-4 w-full max-w-xs mx-auto">
+                <p className="text-sm text-center mb-2" style={{ color: '#737373' }}>
+                  {t('manualTableEntry') || 'Ou saisissez votre numero de table :'}
+                </p>
+                <Input
+                  type="text"
+                  placeholder="Ex: 12"
+                  className="text-center bg-white/10 text-white border-white/20 placeholder:text-white/30"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const value = (e.target as HTMLInputElement).value.trim();
+                      if (value) {
+                        onScan({
+                          tableNumber: value,
+                          menuSlug: null,
+                          rawData: value,
+                          isUrl: false,
+                        });
+                        onClose();
+                      }
+                    }
+                  }}
+                />
               </div>
             </div>
           )}

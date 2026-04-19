@@ -19,7 +19,7 @@ export function createMenuService(supabase: SupabaseClient) {
       const { data, error } = await supabase
         .from('menus')
         .select(
-          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at, venue:venues(id, name, slug), children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
         )
         .eq('tenant_id', tenantId)
         .is('parent_menu_id', null)
@@ -40,13 +40,36 @@ export function createMenuService(supabase: SupabaseClient) {
       const { data, error } = await supabase
         .from('menus')
         .select(
-          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
         )
         .eq('tenant_id', tenantId)
         .order('display_order', { ascending: true });
 
       if (error) {
         throw new ServiceError('Erreur lors du chargement des cartes', 'INTERNAL');
+      }
+
+      return data || [];
+    },
+
+    /**
+     * Get transversal menus for a tenant (is_transversal_menu = TRUE, is_active).
+     * These are exposed as sub-tabs across every other top-level menu.
+     */
+    async getTransversalMenusByTenant(tenantId: string) {
+      const { data, error } = await supabase
+        .from('menus')
+        .select(
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
+        )
+        .eq('tenant_id', tenantId)
+        .eq('is_transversal_menu', true)
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+
+      if (error) {
+        logger.error('Failed to fetch transversal menus', { error: error.message });
+        throw new ServiceError('Erreur lors du chargement des cartes transversales', 'INTERNAL');
       }
 
       return data || [];
@@ -61,7 +84,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .from('menus')
         .select(
           `
-          id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at,
+          id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at,
           venue:venues(id, name, slug),
           children:menus!parent_menu_id(
             id, name, name_en, slug, description, is_active, display_order
@@ -86,7 +109,7 @@ export function createMenuService(supabase: SupabaseClient) {
       const { data, error } = await supabase
         .from('menus')
         .select(
-          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at, children:menus!parent_menu_id(id, name, name_en, slug, is_active, display_order)',
         )
         .eq('tenant_id', tenantId)
         .eq('slug', slug)
@@ -132,10 +155,11 @@ export function createMenuService(supabase: SupabaseClient) {
             parent_menu_id: input.parent_menu_id || null,
             image_url: input.image_url || null,
             is_active: input.is_active ?? true,
+            is_transversal_menu: input.is_transversal_menu ?? false,
             display_order: input.display_order ?? 0,
           })
           .select(
-            'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+            'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
           )
           .single();
 
@@ -160,10 +184,11 @@ export function createMenuService(supabase: SupabaseClient) {
           parent_menu_id: input.parent_menu_id || null,
           image_url: input.image_url || null,
           is_active: input.is_active ?? true,
+          is_transversal_menu: input.is_transversal_menu ?? false,
           display_order: input.display_order ?? 0,
         })
         .select(
-          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
         )
         .single();
 
@@ -204,6 +229,8 @@ export function createMenuService(supabase: SupabaseClient) {
         payload.parent_menu_id = updates.parent_menu_id || null;
       if (updates.image_url !== undefined) payload.image_url = updates.image_url || null;
       if (updates.is_active !== undefined) payload.is_active = updates.is_active;
+      if (updates.is_transversal_menu !== undefined)
+        payload.is_transversal_menu = updates.is_transversal_menu;
       if (updates.display_order !== undefined) payload.display_order = updates.display_order;
 
       const { data, error } = await supabase
@@ -212,7 +239,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .eq('id', id)
         .eq('tenant_id', tenantId)
         .select(
-          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, display_order, created_at, updated_at',
+          'id, tenant_id, venue_id, parent_menu_id, name, name_en, slug, description, description_en, image_url, is_active, is_transversal_menu, display_order, created_at, updated_at',
         )
         .single();
 

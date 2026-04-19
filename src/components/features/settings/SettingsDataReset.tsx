@@ -124,11 +124,12 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
 
         <div className="space-y-2">
           {resetOptions.map((option) => (
-            <button
+            <Button
               key={option.type}
               type="button"
+              variant="outline"
               onClick={() => openDialog(option.type)}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-app-border hover:border-status-error/40 bg-app-elevated hover:bg-app-status-error-bg/30 transition-all text-left group min-h-[44px]"
+              className="w-full flex items-center gap-3 p-3 rounded-xl hover:border-status-error/40 bg-app-elevated hover:bg-app-status-error-bg/30 text-left group min-h-[44px] h-auto whitespace-normal"
             >
               <div className="p-1.5 rounded-lg bg-app-status-error-bg text-status-error group-hover:bg-status-error/20 transition-colors">
                 {option.icon}
@@ -141,7 +142,7 @@ export default function SettingsDataReset({ tenantSlug }: { tenantSlug: string }
                   {t(`reset_${option.type}_description`)}
                 </div>
               </div>
-            </button>
+            </Button>
           ))}
         </div>
       </div>

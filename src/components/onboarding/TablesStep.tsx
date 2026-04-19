@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Plus, X, Zap, Settings, Clock } from 'lucide-react';
 import type { OnboardingData } from '@/app/onboarding/page';
 
@@ -135,11 +136,12 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                 const isActive = mode === id;
                 const Icon = modeIcons[idx];
                 return (
-                  <button
+                  <Button
                     key={id}
                     type="button"
+                    variant="outline"
                     onClick={() => handleModeChange(id)}
-                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 ${
+                    className={`flex items-start gap-3 p-4 rounded-xl border text-left transition-all duration-200 h-auto whitespace-normal ${
                       isActive
                         ? 'border-accent bg-accent/10'
                         : 'border-app-border hover:border-app-border-hover bg-app-elevated/30 hover:bg-app-elevated/60'
@@ -164,7 +166,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         {t(modeDescKeys[id])}
                       </p>
                     </div>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -210,11 +212,13 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         className="h-11 bg-app-bg rounded-xl border-app-border text-sm text-center"
                       />
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => removeZone(index)}
                       disabled={zones.length === 1}
-                      className={`p-2.5 rounded-xl transition-colors ${
+                      className={`p-2.5 rounded-xl transition-colors h-10 w-10 ${
                         zones.length === 1
                           ? 'text-app-text-muted cursor-not-allowed'
                           : 'text-app-text-muted hover:text-red-500 hover:bg-red-500/10'
@@ -222,19 +226,20 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                       aria-label={t('deleteZone')}
                     >
                       <X className="h-4 w-4" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
 
                 {zones.length < 20 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
+                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                   >
                     <Plus className="h-4 w-4" />
                     {t('addZone')}
-                  </button>
+                  </Button>
                 )}
 
                 {/* Preview */}
@@ -287,11 +292,13 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                       <span className="text-xs font-bold text-app-text-muted uppercase tracking-wider">
                         Zone {index + 1}
                       </span>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="icon"
                         onClick={() => removeZone(index)}
                         disabled={zones.length === 1}
-                        className={`p-1.5 rounded-lg transition-colors ${
+                        className={`p-1.5 rounded-lg transition-colors h-7 w-7 ${
                           zones.length === 1
                             ? 'text-app-text-muted cursor-not-allowed'
                             : 'text-app-text-muted hover:text-red-500 hover:bg-red-500/10'
@@ -299,7 +306,7 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                         aria-label={t('deleteZone')}
                       >
                         <X className="h-3.5 w-3.5" />
-                      </button>
+                      </Button>
                     </div>
 
                     {/* Zone fields */}
@@ -393,14 +400,15 @@ export function TablesStep({ data, updateData }: TablesStepProps) {
                 ))}
 
                 {zones.length < 20 && (
-                  <button
+                  <Button
                     type="button"
+                    variant="outline"
                     onClick={addZone}
-                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium"
+                    className="flex items-center gap-2 px-4 py-3 w-full rounded-xl border border-dashed border-app-border text-app-text-secondary hover:border-accent/40 hover:text-app-text transition-colors text-sm font-medium h-auto"
                   >
                     <Plus className="h-4 w-4" />
                     {t('addZone')}
-                  </button>
+                  </Button>
                 )}
               </div>
             </div>

@@ -8,9 +8,9 @@ import type { Order, ItemStatus, Course } from '@/types/admin.types';
  * Fetch orders for a tenant, with optional status filter.
  * Includes order_items joined. Ordered by created_at desc, limited to 200.
  */
-export function useOrders(tenantId: string, statusFilter?: string) {
+export function useOrders(tenantId: string, statusFilter?: string, page = 0, pageSize = 50) {
   return useQuery<Order[]>({
-    queryKey: ['orders', tenantId, statusFilter],
+    queryKey: ['orders', tenantId, statusFilter, page, pageSize],
     queryFn: async () => {
       const supabase = createClient();
       let query = supabase
@@ -20,7 +20,7 @@ export function useOrders(tenantId: string, statusFilter?: string) {
         )
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: false })
-        .limit(200);
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
       if (statusFilter && statusFilter !== 'all') {
         query = query.eq('status', statusFilter);

@@ -33,6 +33,14 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { logger } from '@/lib/logger';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import AnalyseTabs from '@/components/admin/AnalyseTabs';
 import { format } from 'date-fns';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -288,21 +296,22 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
         </div>
 
         {/* ── Period pills ── */}
-        <div className="flex items-center gap-1.5 lg:gap-2.5 xl:gap-3 overflow-x-auto pb-0.5">
+        <div className="flex items-center gap-1.5 @lg:gap-2.5 @xl:gap-3 overflow-x-auto pb-0.5">
           {PERIOD_PILLS.map((pill) => (
-            <button
+            <Button
               key={pill.value}
               type="button"
+              variant="outline"
               onClick={() => setPeriod(pill.value)}
               className={cn(
-                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap transition-all border',
+                'px-3 py-1.5 text-[11px] font-semibold rounded-lg whitespace-nowrap h-auto',
                 period === pill.value
                   ? 'bg-app-text text-app-bg border-app-text shadow-sm'
                   : 'bg-app-card text-app-text-secondary border-app-border/50 hover:border-app-border hover:bg-app-elevated',
               )}
             >
               {t(pill.labelKey)}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -468,47 +477,45 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
           {topItems.length > 0 && (
             <div className="bg-app-card border border-app-border/60 rounded-xl p-4">
               <h3 className="text-sm font-bold text-app-text mb-3">{t('productRanking')}</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-app-border/60">
-                      <th className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                        #
-                      </th>
-                      <th className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                        {t('productName')}
-                      </th>
-                      <th className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                        {t('ordersCount')}
-                      </th>
-                      <th className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                        {t('revenueLabel')}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {topItems.map((item, index) => (
-                      <tr
-                        key={item.id}
-                        className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
-                      >
-                        <td className="py-2.5 px-2 tabular-nums text-app-text-muted font-bold text-xs">
-                          {index + 1}
-                        </td>
-                        <td className="py-2.5 px-2 font-medium text-app-text text-sm">
-                          {item.name}
-                        </td>
-                        <td className="py-2.5 px-2 text-right tabular-nums text-app-text-secondary text-sm">
-                          {item.quantity}
-                        </td>
-                        <td className="py-2.5 px-2 text-right tabular-nums text-app-text font-semibold text-sm">
-                          {fmt(item.revenue)}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <Table className="text-sm">
+                <TableHeader>
+                  <TableRow className="border-b border-app-border/60">
+                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                      #
+                    </TableHead>
+                    <TableHead className="text-left py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                      {t('productName')}
+                    </TableHead>
+                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                      {t('ordersCount')}
+                    </TableHead>
+                    <TableHead className="text-right py-2.5 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                      {t('revenueLabel')}
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {topItems.map((item, index) => (
+                    <TableRow
+                      key={item.id}
+                      className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
+                    >
+                      <TableCell className="py-2.5 px-2 tabular-nums text-app-text-muted font-bold text-xs">
+                        {index + 1}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-2 font-medium text-app-text text-sm">
+                        {item.name}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-2 text-right tabular-nums text-app-text-secondary text-sm">
+                        {item.quantity}
+                      </TableCell>
+                      <TableCell className="py-2.5 px-2 text-right tabular-nums text-app-text font-semibold text-sm">
+                        {fmt(item.revenue)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
 
@@ -624,47 +631,45 @@ export default function ReportsClient({ tenantId, currency = 'XAF' }: ReportsCli
                   </ResponsiveContainer>
 
                   {/* Compact server table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b border-app-border/60">
-                          <th className="text-left py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                            {t('serverName')}
-                          </th>
-                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                            {t('ordersCount')}
-                          </th>
-                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                            {t('revenueLabel')}
-                          </th>
-                          <th className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
-                            {t('avgOrderValue')}
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {serverStats.map((s) => (
-                          <tr
-                            key={s.serverName}
-                            className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
-                          >
-                            <td className="py-2 px-2 font-medium text-app-text text-sm">
-                              {s.serverName}
-                            </td>
-                            <td className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
-                              {s.orders}
-                            </td>
-                            <td className="py-2 px-2 text-right tabular-nums text-app-text font-semibold">
-                              {fmt(s.revenue)}
-                            </td>
-                            <td className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
-                              {fmt(s.avgOrder)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="text-sm">
+                    <TableHeader>
+                      <TableRow className="border-b border-app-border/60">
+                        <TableHead className="text-left py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                          {t('serverName')}
+                        </TableHead>
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                          {t('ordersCount')}
+                        </TableHead>
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                          {t('revenueLabel')}
+                        </TableHead>
+                        <TableHead className="text-right py-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-app-text-muted">
+                          {t('avgOrderValue')}
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {serverStats.map((s) => (
+                        <TableRow
+                          key={s.serverName}
+                          className="border-b border-app-border/30 hover:bg-app-elevated/50 transition-colors"
+                        >
+                          <TableCell className="py-2 px-2 font-medium text-app-text text-sm">
+                            {s.serverName}
+                          </TableCell>
+                          <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                            {s.orders}
+                          </TableCell>
+                          <TableCell className="py-2 px-2 text-right tabular-nums text-app-text font-semibold">
+                            {fmt(s.revenue)}
+                          </TableCell>
+                          <TableCell className="py-2 px-2 text-right tabular-nums text-app-text-secondary">
+                            {fmt(s.avgOrder)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               )}
             </div>

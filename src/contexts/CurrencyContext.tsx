@@ -13,7 +13,7 @@ import { getUsdXafRate } from '@/lib/exchange-rate';
 
 // ─── Types ──────────────────────────────────────────────
 
-export type DisplayCurrency = 'XAF' | 'EUR' | 'USD';
+export type DisplayCurrency = 'XAF' | 'XOF' | 'EUR' | 'USD';
 
 interface CurrencyContextValue {
   /** The user's chosen display currency */
@@ -57,6 +57,10 @@ const STORAGE_KEY = 'attabl_display_currency';
  */
 const DEFAULT_RATES_TO_XAF: Record<string, number> = {
   XAF: 1,
+  // XOF (BCEAO franc CFA) and XAF (BEAC franc CFA) are both pegged 1:1 to each
+  // other via their shared peg to the euro (655.957). Treat them as equivalent
+  // for conversion purposes - they share the same user-facing "FCFA" label.
+  XOF: 1,
   EUR: 655.957,
   USD: 605,
 };
@@ -65,7 +69,11 @@ const DEFAULT_RATES_TO_XAF: Record<string, number> = {
 
 function readStored(fallback: string): DisplayCurrency {
   if (typeof window === 'undefined') return fallback as DisplayCurrency;
-  return (localStorage.getItem(STORAGE_KEY) as DisplayCurrency) || (fallback as DisplayCurrency);
+  const stored = localStorage.getItem(STORAGE_KEY) as DisplayCurrency | null;
+  // Normalize: XAF and XOF are both "FCFA" — treat legacy XAF stored values
+  // as XOF so the currency selector shows the correct active state.
+  if (stored === 'XAF') return 'XOF' as DisplayCurrency;
+  return stored || (fallback as DisplayCurrency);
 }
 
 function convert(amount: number, from: string, to: string, rates: Record<string, number>): number {
@@ -86,13 +94,16 @@ function formatWithThinSpace(n: number, decimals = 0): string {
 function formatConverted(amount: number, currency: DisplayCurrency): string {
   switch (currency) {
     case 'XAF':
-      return `${formatWithThinSpace(Math.round(amount))} XAF`;
+    case 'XOF':
+      // Both ISO codes (XAF = BEAC / central Africa, XOF = BCEAO / west Africa)
+      // are known by users as "FCFA" (franc CFA). Display the common name.
+      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
     case 'EUR':
       return `${formatWithThinSpace(amount, 2)} EUR`;
     case 'USD':
       return `${formatWithThinSpace(amount, 2)} USD`;
     default:
-      return `${formatWithThinSpace(Math.round(amount))} XAF`;
+      return `${formatWithThinSpace(Math.round(amount))} FCFA`;
   }
 }
 
@@ -193,9 +204,9 @@ export function useDisplayCurrency() {
     return {
       displayCurrency: 'XAF' as DisplayCurrency,
       setDisplayCurrency: () => {},
-      formatDisplayPrice: (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} XAF`,
+      formatDisplayPrice: (amount: number) => `${Math.round(amount).toLocaleString('fr-FR')} FCFA`,
       resolveAndFormatPrice: (amount: number) =>
-        `${Math.round(amount).toLocaleString('fr-FR')} XAF`,
+        `${Math.round(amount).toLocaleString('fr-FR')} FCFA`,
       supportedCurrencies: ['XAF'] as DisplayCurrency[],
     };
   }

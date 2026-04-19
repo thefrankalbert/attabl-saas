@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Printer } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
 import type { Order, OrderItem, OrderStatus, ItemStatus, KDSZoneFilter } from '@/types/admin.types';
 import { printKitchenTicket } from '@/lib/printing/kitchen-ticket';
 
@@ -224,14 +225,14 @@ export default function KDSTicket({
         <div className="flex items-center justify-between gap-2 mt-0.5">
           <div className="flex items-center gap-1 min-w-0 text-xs text-app-text-muted truncate">
             {serverName && (
-              <span className="font-medium text-app-text-secondary truncate max-w-[100px]">
+              <span className="font-medium text-app-text-secondary truncate max-w-24">
                 {serverName}
               </span>
             )}
             {order.customer_name && (
               <>
                 <span aria-hidden="true">-</span>
-                <span className="truncate max-w-[100px]">{order.customer_name}</span>
+                <span className="truncate max-w-24">{order.customer_name}</span>
               </>
             )}
             {serviceLabel && (
@@ -300,22 +301,24 @@ export default function KDSTicket({
         })}
 
         {!expanded && items.length > 4 && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setExpanded(true)}
-            className="w-full text-center py-1 text-xs font-medium text-accent hover:underline"
+            className="w-full text-center py-1 text-xs font-medium text-accent hover:underline h-auto"
           >
             +{items.length - 4} {t('moreItems')}
-          </button>
+          </Button>
         )}
         {expanded && items.length > 4 && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setExpanded(false)}
-            className="w-full text-center py-1 text-xs font-medium text-app-text-muted hover:underline"
+            className="w-full text-center py-1 text-xs font-medium text-app-text-muted hover:underline h-auto"
           >
             {t('showLess')}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -323,26 +326,28 @@ export default function KDSTicket({
       {cta && (
         <div className="flex items-stretch border-t border-app-border">
           {/* CTA button */}
-          <button
+          <Button
             onClick={handleAction}
             disabled={isMock}
             className={cn(
-              'flex-1 min-h-[44px] flex items-center justify-between px-3 font-bold text-sm uppercase tracking-wide transition-all active:scale-[0.98]',
+              'flex-1 min-h-[44px] flex items-center justify-between px-3 font-bold text-sm uppercase tracking-wide active:scale-[0.98] rounded-none',
               isDelayed ? 'bg-red-500 hover:bg-red-400 active:bg-red-600 text-white' : cta.bg,
             )}
           >
             <span>{t(cta.labelKey)}</span>
             <span className="font-mono text-xs opacity-80">{elapsedStr}</span>
-          </button>
+          </Button>
 
           {/* Print button */}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => printKitchenTicket(order, { zoneFilter, barDisplayEnabled })}
-            className="flex items-center justify-center w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover transition-colors"
+            className="w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover rounded-none"
             title="Print"
           >
             <Printer className="w-4 h-4 text-app-text-muted" />
-          </button>
+          </Button>
         </div>
       )}
     </div>

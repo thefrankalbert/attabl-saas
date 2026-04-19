@@ -7,6 +7,7 @@ interface CreateCategoryInput {
   name_en?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
+  is_featured_on_home?: boolean;
   tenant_id: string;
   menu_id?: string | null;
 }
@@ -16,6 +17,7 @@ interface UpdateCategoryInput {
   name_en?: string | null;
   display_order?: number;
   preparation_zone?: PreparationZone;
+  is_featured_on_home?: boolean;
   tenant_id: string;
   menu_id?: string | null;
 }

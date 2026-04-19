@@ -15,6 +15,14 @@ import { useState } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
 import { ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
 // ─── SortableHeader helper ──────────────────────────────
@@ -33,11 +41,12 @@ export function SortableHeader<TData, TValue>({
   const sorted = column.getIsSorted();
 
   return (
-    <button
+    <Button
       type="button"
+      variant="ghost"
       onClick={() => column.toggleSorting(sorted === 'asc')}
       className={cn(
-        'inline-flex items-center gap-1 hover:text-app-text transition-colors',
+        'inline-flex items-center gap-1 hover:text-app-text h-auto px-1 py-0.5',
         className,
       )}
     >
@@ -49,7 +58,7 @@ export function SortableHeader<TData, TValue>({
       ) : (
         <ArrowUpDown className="w-3 h-3 text-app-text-muted" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -105,16 +114,16 @@ export function DataTable<TData>({
     <div className="border border-app-border rounded-xl overflow-hidden flex flex-col h-full min-w-0 max-w-[120rem] mx-auto w-full">
       {/* Scrollable table area - thead sticks at top */}
       <div className="flex-1 min-h-0 overflow-auto scrollbar-hide">
-        <table className="w-full text-sm min-w-0">
+        <Table className="text-sm min-w-0">
           {/* Sticky Header */}
-          <thead className="bg-app-bg sticky top-0 z-10">
+          <TableHeader className="bg-app-bg sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr
+              <TableRow
                 key={headerGroup.id}
                 className="border-b border-app-border shadow-[0_1px_0_0_var(--app-border)]"
               >
                 {headerGroup.headers.map((header) => (
-                  <th
+                  <TableHead
                     key={header.id}
                     className="px-4 xl:px-6 py-3 text-left text-xs font-medium text-app-text-secondary uppercase tracking-wider"
                     style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
@@ -122,28 +131,31 @@ export function DataTable<TData>({
                     {header.isPlaceholder
                       ? null
                       : flexRender(header.column.columnDef.header, header.getContext())}
-                  </th>
+                  </TableHead>
                 ))}
-              </tr>
+              </TableRow>
             ))}
-          </thead>
+          </TableHeader>
 
           {/* Body */}
-          <tbody className="divide-y divide-app-border">
+          <TableBody className="divide-y divide-app-border">
             {isLoading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, i) => (
-                <tr key={`skeleton-${String(i)}`}>
+                <TableRow key={`skeleton-${String(i)}`}>
                   {columns.map((_, j) => (
-                    <td key={`skeleton-cell-${String(i)}-${String(j)}`} className="px-4 py-3">
+                    <TableCell
+                      key={`skeleton-cell-${String(i)}-${String(j)}`}
+                      className="px-4 py-3"
+                    >
                       <div className="animate-pulse bg-app-elevated rounded h-4 w-3/4" />
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
             ) : table.getRowModel().rows.length > 0 ? (
               table.getRowModel().rows.map((row) => (
-                <tr
+                <TableRow
                   key={row.id}
                   className={cn(
                     'hover:bg-app-bg transition-colors',
@@ -152,22 +164,25 @@ export function DataTable<TData>({
                   onClick={() => onRowClick?.(row.original)}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <td key={cell.id} className="px-4 py-3">
+                    <TableCell key={cell.id} className="px-4 py-3">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
+                    </TableCell>
                   ))}
-                </tr>
+                </TableRow>
               ))
             ) : (
               // Empty state
-              <tr>
-                <td colSpan={columns.length} className="px-4 py-12 text-center text-app-text-muted">
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="px-4 py-12 text-center text-app-text-muted"
+                >
                   {emptyMessage}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Pagination footer - fixed at bottom, outside scroll */}

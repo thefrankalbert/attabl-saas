@@ -6,6 +6,7 @@ import { QrCode, ExternalLink } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
 
@@ -85,16 +86,16 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
             {t('buttonPreview')}
           </p>
           <div className="flex items-center justify-center h-24 rounded-lg border border-app-border">
-            <button
+            <Button
               type="button"
-              className="px-6 py-2.5 rounded-lg font-medium transition-transform active:scale-95"
+              className="px-6 py-2.5 transition-transform active:scale-95"
               style={{
                 backgroundColor: watchedPrimaryColor,
                 color: watchedSecondaryColor,
               }}
             >
               {t('orderButtonPreview')}
-            </button>
+            </Button>
           </div>
         </div>
       </div>

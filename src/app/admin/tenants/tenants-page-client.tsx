@@ -1,97 +1,27 @@
 'use client';
 
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import {
-  Building2,
-  ExternalLink,
-  Shield,
-  LogOut,
-  Search,
-  Plus,
-  ShoppingBag,
-  ArrowRight,
-  CalendarDays,
-  Receipt,
-} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
-import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
+import { createClient } from '@/lib/supabase/client';
 import { LoadingIndicator } from '@/components/application/loading-indicator/LoadingIndicator';
-import { ThemeToggle } from '@/components/shared/ThemeToggle';
-import {
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-} from 'recharts';
-
-// ─── Currency formatter (West African CFA) ──────────────────
-function formatCFA(amount: number): string {
-  return new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(amount) + ' F';
-}
-
-function formatCompactCFA(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}k`;
-  return String(value);
-}
-
-// ─── Interfaces ─────────────────────────────────────────────
-interface Tenant {
-  id: string;
-  slug: string;
-  name: string;
-  subscription_status: string;
-  subscription_plan: string;
-  is_active: boolean;
-}
-
-interface ChartDataPoint {
-  label: string;
-  revenue: number;
-  orders: number;
-}
-
-interface RecentOrder {
-  id: string;
-  order_number: string;
-  total: number;
-  status: string;
-  created_at: string;
-  tenant_name: string;
-  tenant_slug: string;
-}
-
-// ─── Status helpers ─────────────────────────────────────────
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-amber-400/15 text-amber-400 border-amber-400/20',
-  confirmed: 'bg-blue-400/15 text-blue-400 border-blue-400/20',
-  preparing: 'bg-violet-400/15 text-violet-400 border-violet-400/20',
-  ready: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/20',
-  served: 'bg-emerald-400/15 text-emerald-300 border-emerald-400/20',
-  completed: 'bg-app-text-muted/10 text-app-text-muted border-app-border',
-  cancelled: 'bg-red-400/15 text-red-400 border-red-400/20',
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'En attente',
-  confirmed: 'Confirmée',
-  preparing: 'En préparation',
-  ready: 'Prête',
-  served: 'Servie',
-  completed: 'Terminée',
-  cancelled: 'Annulée',
-};
+import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
+import { CommandCenterTopBar } from '@/components/admin/tenants/CommandCenterTopBar';
+import { CommandCenterHero } from '@/components/admin/tenants/CommandCenterHero';
+import { NetworkTrendCard } from '@/components/admin/tenants/NetworkTrendCard';
+import { LocationsGrid } from '@/components/admin/tenants/LocationsGrid';
+import { AlertCenterCard } from '@/components/admin/tenants/AlertCenterCard';
+import { LiveFeedCard } from '@/components/admin/tenants/LiveFeedCard';
+import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
+import type {
+  ChartDataPoint,
+  ChartMode,
+  ChartPeriod,
+  CommandCenterAlert,
+  CommandCenterGlobals,
+  LocationStat,
+  RecentOrder,
+  Tenant,
+} from '@/types/command-center.types';
 
 interface TenantsPageClientProps {
   serverMode: 'superadmin' | 'owner';
@@ -100,50 +30,226 @@ interface TenantsPageClientProps {
   serverRestaurants?: OwnerDashboardRow[];
 }
 
+interface OrderRow {
+  id: string;
+  order_number: string | null;
+  total: number | string | null;
+  status: string | null;
+  created_at: string;
+  tenant_id: string;
+}
+
 export default function TenantsPageClient({
   serverMode,
   serverUserName,
   serverTenants,
   serverRestaurants,
 }: TenantsPageClientProps) {
-  const [mode] = useState<'loading' | 'superadmin' | 'owner'>(serverMode);
-
-  // Super admin state
-  const [tenants] = useState<Tenant[]>(serverTenants || []);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Owner hub state
-  const [restaurants] = useState<OwnerDashboardRow[]>(serverRestaurants || []);
-  const [showWizard, setShowWizard] = useState(false);
-  const [userName] = useState(serverUserName);
-
-  // Chart & orders state
-  const [chartPeriod, setChartPeriod] = useState<'day' | 'month'>('day');
-  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
-  const [chartMode, setChartMode] = useState<'revenue' | 'orders'>('revenue');
-
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
-  // ─── Fetch chart data for owner ───────────────────────────
-  const fetchChartData = useCallback(
-    async (tenantIds: string[], period: 'day' | 'month') => {
+  const baseTenants: Tenant[] = useMemo(() => {
+    if (serverMode === 'superadmin') return serverTenants || [];
+    return (serverRestaurants || []).map((r) => ({
+      id: r.tenant_id,
+      slug: r.tenant_slug,
+      name: r.tenant_name,
+      subscription_status: r.tenant_status || '',
+      subscription_plan: r.tenant_plan || '',
+      is_active: r.tenant_is_active,
+    }));
+  }, [serverMode, serverTenants, serverRestaurants]);
+
+  const logoBySlug = useMemo(() => {
+    const map = new Map<string, string | null>();
+    (serverRestaurants || []).forEach((r) => map.set(r.tenant_slug, r.tenant_logo_url));
+    return map;
+  }, [serverRestaurants]);
+
+  const [loading, setLoading] = useState(baseTenants.length > 0);
+  const [locations, setLocations] = useState<LocationStat[]>([]);
+  const [globals, setGlobals] = useState<CommandCenterGlobals>({
+    total_locations: baseTenants.length,
+    active_locations: baseTenants.filter((t) => t.is_active).length,
+    revenue_today: 0,
+    revenue_yesterday: 0,
+    orders_today: 0,
+    orders_yesterday: 0,
+    alerts_count: 0,
+  });
+  const [chartData, setChartData] = useState<ChartDataPoint[]>([]);
+  const [chartPeriod, setChartPeriod] = useState<ChartPeriod>('day');
+  const [chartMode, setChartMode] = useState<ChartMode>('revenue');
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [alerts, setAlerts] = useState<CommandCenterAlert[]>([]);
+  const [showWizard, setShowWizard] = useState(false);
+
+  const tenantIds = useMemo(() => baseTenants.map((t) => t.id), [baseTenants]);
+  const tenantById = useMemo(() => {
+    const map = new Map<string, Tenant>();
+    baseTenants.forEach((t) => map.set(t.id, t));
+    return map;
+  }, [baseTenants]);
+
+  const fetchAll = useCallback(async () => {
+    if (tenantIds.length === 0) return;
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startYesterday = new Date(startToday);
+    startYesterday.setDate(startYesterday.getDate() - 1);
+
+    const [todayRes, yesterdayRes, recentRes] = await Promise.all([
+      supabase
+        .from('orders')
+        .select('id, order_number, total, status, created_at, tenant_id')
+        .in('tenant_id', tenantIds)
+        .gte('created_at', startToday.toISOString()),
+      supabase
+        .from('orders')
+        .select('id, total, status, tenant_id, created_at')
+        .in('tenant_id', tenantIds)
+        .gte('created_at', startYesterday.toISOString())
+        .lt('created_at', startToday.toISOString()),
+      supabase
+        .from('orders')
+        .select('id, order_number, total, status, created_at, tenant_id, tenants(name, slug)')
+        .in('tenant_id', tenantIds)
+        .order('created_at', { ascending: false })
+        .limit(8),
+    ]);
+
+    const todayOrders = (todayRes.data || []) as OrderRow[];
+    const yesterdayOrders = (yesterdayRes.data || []) as OrderRow[];
+
+    const byTenant = new Map<string, { revenue: number; orders: number; sparkline: number[] }>();
+    tenantIds.forEach((id) =>
+      byTenant.set(id, { revenue: 0, orders: 0, sparkline: new Array(24).fill(0) }),
+    );
+    for (const o of todayOrders) {
+      if (o.status === 'cancelled') continue;
+      const bucket = byTenant.get(o.tenant_id);
+      if (!bucket) continue;
+      bucket.revenue += Number(o.total) || 0;
+      bucket.orders += 1;
+      const h = new Date(o.created_at).getHours();
+      bucket.sparkline[h] = (bucket.sparkline[h] || 0) + (Number(o.total) || 0);
+    }
+
+    const byTenantYesterday = new Map<string, { revenue: number; orders: number }>();
+    tenantIds.forEach((id) => byTenantYesterday.set(id, { revenue: 0, orders: 0 }));
+    for (const o of yesterdayOrders) {
+      if (o.status === 'cancelled') continue;
+      const bucket = byTenantYesterday.get(o.tenant_id);
+      if (!bucket) continue;
+      bucket.revenue += Number(o.total) || 0;
+      bucket.orders += 1;
+    }
+
+    const computedLocations: LocationStat[] = baseTenants.map((t) => {
+      const today = byTenant.get(t.id) || { revenue: 0, orders: 0, sparkline: [] };
+      const yesterday = byTenantYesterday.get(t.id) || { revenue: 0, orders: 0 };
+      return {
+        tenant_id: t.id,
+        tenant_slug: t.slug,
+        tenant_name: t.name,
+        tenant_plan: t.subscription_plan || null,
+        tenant_logo_url: logoBySlug.get(t.slug) || null,
+        is_active: t.is_active,
+        revenue_today: today.revenue,
+        revenue_yesterday: yesterday.revenue,
+        orders_today: today.orders,
+        orders_yesterday: yesterday.orders,
+        sparkline: today.sparkline.slice(0, now.getHours() + 1),
+      };
+    });
+    setLocations(computedLocations);
+
+    const totalRevenueToday = computedLocations.reduce((s, l) => s + l.revenue_today, 0);
+    const totalRevenueYesterday = computedLocations.reduce((s, l) => s + l.revenue_yesterday, 0);
+    const totalOrdersToday = computedLocations.reduce((s, l) => s + l.orders_today, 0);
+    const totalOrdersYesterday = computedLocations.reduce((s, l) => s + l.orders_yesterday, 0);
+
+    const cancelledAlerts: CommandCenterAlert[] = todayOrders
+      .filter((o) => o.status === 'cancelled')
+      .slice(0, 4)
+      .map((o) => {
+        const t = tenantById.get(o.tenant_id);
+        return {
+          id: o.id,
+          kind: 'payment' as const,
+          label: `Commande #${o.order_number || o.id.slice(0, 6)} annulee`,
+          tenant_name: t?.name || '',
+          tenant_slug: t?.slug || '',
+          severity: 'error' as const,
+          created_at: o.created_at,
+        };
+      });
+    const offlineAlerts: CommandCenterAlert[] = baseTenants
+      .filter((t) => !t.is_active)
+      .slice(0, 4)
+      .map((t) => ({
+        id: `offline-${t.id}`,
+        kind: 'offline' as const,
+        label: 'Site desactive',
+        tenant_name: t.name,
+        tenant_slug: t.slug,
+        severity: 'warn' as const,
+        created_at: new Date().toISOString(),
+      }));
+    const allAlerts = [...offlineAlerts, ...cancelledAlerts];
+    setAlerts(allAlerts);
+
+    setGlobals({
+      total_locations: baseTenants.length,
+      active_locations: baseTenants.filter((t) => t.is_active).length,
+      revenue_today: totalRevenueToday,
+      revenue_yesterday: totalRevenueYesterday,
+      orders_today: totalOrdersToday,
+      orders_yesterday: totalOrdersYesterday,
+      alerts_count: allAlerts.length,
+    });
+
+    const recentRaw = (recentRes.data || []) as unknown as Array<
+      OrderRow & { tenants: { name: string; slug: string } | null }
+    >;
+    setRecentOrders(
+      recentRaw.map((o) => {
+        const joined = o.tenants as unknown as { name: string; slug: string } | null;
+        return {
+          id: o.id,
+          order_number: o.order_number || ' - ',
+          total: Number(o.total) || 0,
+          status: o.status || 'pending',
+          created_at: o.created_at,
+          tenant_name: joined?.name || tenantById.get(o.tenant_id)?.name || '',
+          tenant_slug: joined?.slug || tenantById.get(o.tenant_id)?.slug || '',
+        };
+      }),
+    );
+
+    setLoading(false);
+  }, [supabase, tenantIds, baseTenants, logoBySlug, tenantById]);
+
+  const fetchChart = useCallback(
+    async (period: ChartPeriod) => {
       if (tenantIds.length === 0) return;
-
       const now = new Date();
       let startDate: Date;
       let groupBy: 'hour' | 'day';
-
       if (period === 'day') {
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         groupBy = 'hour';
+      } else if (period === 'week') {
+        startDate = new Date(now);
+        startDate.setDate(startDate.getDate() - 6);
+        startDate.setHours(0, 0, 0, 0);
+        groupBy = 'day';
       } else {
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
         groupBy = 'day';
       }
 
-      const { data: orders } = await supabase
+      const { data } = await supabase
         .from('orders')
         .select('total, created_at, status')
         .in('tenant_id', tenantIds)
@@ -151,35 +257,11 @@ export default function TenantsPageClient({
         .neq('status', 'cancelled')
         .order('created_at', { ascending: true });
 
-      if (!orders || orders.length === 0) {
-        // Generate empty chart data
-        if (groupBy === 'hour') {
-          const points: ChartDataPoint[] = [];
-          for (let h = 0; h <= now.getHours(); h++) {
-            points.push({ label: `${h}h`, revenue: 0, orders: 0 });
-          }
-          setChartData(points);
-        } else {
-          const points: ChartDataPoint[] = [];
-          const daysInMonth = now.getDate();
-          for (let d = 1; d <= daysInMonth; d++) {
-            points.push({ label: `${d}`, revenue: 0, orders: 0 });
-          }
-          setChartData(points);
-        }
-        return;
-      }
-
-      // Aggregate by hour or day
       const buckets = new Map<string, { revenue: number; orders: number }>();
-
       if (groupBy === 'hour') {
-        for (let h = 0; h <= now.getHours(); h++) {
-          buckets.set(`${h}h`, { revenue: 0, orders: 0 });
-        }
-        for (const o of orders) {
-          const h = new Date(o.created_at).getHours();
-          const key = `${h}h`;
+        for (let h = 0; h <= now.getHours(); h++) buckets.set(`${h}h`, { revenue: 0, orders: 0 });
+        for (const o of data || []) {
+          const key = `${new Date(o.created_at).getHours()}h`;
           const b = buckets.get(key);
           if (b) {
             b.revenue += Number(o.total) || 0;
@@ -187,13 +269,15 @@ export default function TenantsPageClient({
           }
         }
       } else {
-        const daysInMonth = now.getDate();
-        for (let d = 1; d <= daysInMonth; d++) {
-          buckets.set(`${d}`, { revenue: 0, orders: 0 });
+        const cursor = new Date(startDate);
+        while (cursor <= now) {
+          const key = `${cursor.getDate()}/${cursor.getMonth() + 1}`;
+          buckets.set(key, { revenue: 0, orders: 0 });
+          cursor.setDate(cursor.getDate() + 1);
         }
-        for (const o of orders) {
-          const d = new Date(o.created_at).getDate();
-          const key = `${d}`;
+        for (const o of data || []) {
+          const d = new Date(o.created_at);
+          const key = `${d.getDate()}/${d.getMonth() + 1}`;
           const b = buckets.get(key);
           if (b) {
             b.revenue += Number(o.total) || 0;
@@ -201,638 +285,89 @@ export default function TenantsPageClient({
           }
         }
       }
-
-      const points: ChartDataPoint[] = Array.from(buckets.entries()).map(([label, v]) => ({
-        label,
-        revenue: v.revenue,
-        orders: v.orders,
-      }));
-      setChartData(points);
+      setChartData(
+        Array.from(buckets.entries()).map(([label, v]) => ({
+          label,
+          revenue: v.revenue,
+          orders: v.orders,
+        })),
+      );
     },
-    [supabase],
+    [supabase, tenantIds],
   );
 
-  // ─── Fetch recent orders for owner ────────────────────────
-  const fetchRecentOrders = useCallback(
-    async (tenantIds: string[]) => {
-      if (tenantIds.length === 0) return;
-
-      const { data } = await supabase
-        .from('orders')
-        .select('id, order_number, total, status, created_at, tenant_id, tenants(name, slug)')
-        .in('tenant_id', tenantIds)
-        .order('created_at', { ascending: false })
-        .limit(8);
-
-      if (data) {
-        setRecentOrders(
-          data.map((o) => {
-            // Supabase join type gap
-            const t = o.tenants as unknown as { name: string; slug: string } | null;
-            return {
-              id: o.id,
-              order_number: o.order_number || ' - ',
-              total: Number(o.total) || 0,
-              status: o.status || 'pending',
-              created_at: o.created_at,
-              tenant_name: t?.name || '',
-              tenant_slug: t?.slug || '',
-            };
-          }),
-        );
-      }
-    },
-    [supabase],
-  );
-
-  // Fetch chart data and recent orders on mount (for owner mode)
+  // Initial multi-query data load. All setState calls inside fetchAll / fetchChart
+  // happen after an `await` boundary; the react-hooks/set-state-in-effect rule does
+  // not trace async control flow so it flags the call site. Accepted deviation for
+  // initial data fetching pattern.
   useEffect(() => {
-    if (mode !== 'owner' || restaurants.length === 0) return;
-    const tIds = restaurants.map((r) => r.tenant_id);
-    const load = async () => {
-      await Promise.all([fetchChartData(tIds, 'day'), fetchRecentOrders(tIds)]);
-    };
-    load();
-  }, [mode, restaurants, fetchChartData, fetchRecentOrders]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchAll();
+  }, [fetchAll]);
 
-  // Refetch chart data when period changes
   useEffect(() => {
-    if (mode !== 'owner' || restaurants.length === 0) return;
-    const tIds = restaurants.map((r) => r.tenant_id);
-    const refetch = async () => {
-      await fetchChartData(tIds, chartPeriod);
-    };
-    refetch();
-  }, [chartPeriod, mode, restaurants, fetchChartData]);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void fetchChart(chartPeriod);
+  }, [fetchChart, chartPeriod]);
 
-  // ─── Super admin helpers ────────────────────────────────────
-  const filteredTenants = useMemo(() => {
-    if (!searchQuery.trim()) return tenants;
-    const q = searchQuery.toLowerCase();
-    return tenants.filter(
-      (t) => t.name.toLowerCase().includes(q) || t.slug.toLowerCase().includes(q),
-    );
-  }, [tenants, searchQuery]);
-
-  const stats = useMemo(
-    () => ({
-      total: tenants.length,
-      active: tenants.filter((t) => t.is_active).length,
-      paid: tenants.filter((t) =>
-        ['pro', 'business', 'enterprise'].includes(t.subscription_plan?.toLowerCase() || ''),
-      ).length,
-      trial: tenants.filter((t) => t.subscription_status?.toLowerCase() === 'trial').length,
-    }),
-    [tenants],
+  const handleOpenDashboard = useCallback(
+    (slug: string) => router.push(`/sites/${slug}/admin`),
+    [router],
   );
-
-  // ─── Owner hub helpers ──────────────────────────────────────
-  const ownerGlobals = useMemo(
-    () => ({
-      totalRestaurants: restaurants.length,
-      totalOrdersToday: restaurants.reduce((sum, r) => sum + Number(r.orders_today), 0),
-      totalRevenueToday: restaurants.reduce((sum, r) => sum + Number(r.revenue_today), 0),
-      totalOrdersMonth: restaurants.reduce((sum, r) => sum + Number(r.orders_month), 0),
-      totalRevenueMonth: restaurants.reduce((sum, r) => sum + Number(r.revenue_month), 0),
-    }),
-    [restaurants],
-  );
-
-  // ─── Navigation helpers ─────────────────────────────────────
-  const handleSelectTenant = (slug: string) => {
-    router.push(`/sites/${slug}/admin`);
-  };
-
-  const handleViewMenu = (slug: string) => {
-    router.push(`/sites/${slug}`);
-  };
-
-  const handleLogout = async () => {
+  const handleOpenMenu = useCallback((slug: string) => router.push(`/sites/${slug}`), [router]);
+  const handleLogout = useCallback(async () => {
     await supabase.auth.signOut();
     router.push('/login');
-  };
+  }, [router, supabase]);
 
-  // ─── Greeting ─────────────────────────────────────────────
-  const hour = new Date().getHours();
-  const greetKey = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
-
-  // ─── Time formatter ───────────────────────────────────────
-  const formatTime = (dateStr: string) => {
-    const d = new Date(dateStr);
-    return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
-  };
-
-  // ─── Loading state ─────────────────────────────────────────
-  if (mode === 'loading') {
+  if (loading) {
     return (
-      /* Standalone page - h-dvh is intentional */
       <div className="flex h-dvh items-center justify-center bg-app-bg">
         <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
       </div>
     );
   }
 
-  // ─── SUPER ADMIN MODE ──────────────────────────────────────
-  if (mode === 'superadmin') {
-    return (
-      /* Standalone page - h-dvh is intentional */
-      <div className="h-dvh flex flex-col bg-app-bg">
-        <header className="shrink-0 border-b border-app-border px-4 sm:px-6 py-3">
-          <div className="mx-auto flex max-w-6xl items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="rounded-xl bg-accent p-2">
-                <Shield className="h-4 w-4 text-accent-text" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-app-text">ATTABL</h1>
-                  <span className="text-app-text-muted">/</span>
-                  <span className="text-xs font-medium text-app-text-secondary">Super Admin</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <ThemeToggle />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleLogout}
-                className="gap-2 rounded-xl border-app-border"
-              >
-                <LogOut className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline text-xs">Déconnexion</span>
-              </Button>
-            </div>
-          </div>
-        </header>
-
-        <div className="flex-1 overflow-y-auto scrollbar-hide">
-          <div className="mx-auto max-w-6xl px-4 sm:px-6 py-5">
-            <div className="flex items-center gap-4 sm:gap-6 mb-4 pb-3 border-b border-app-border">
-              {[
-                { label: 'Total', value: stats.total, color: 'bg-accent' },
-                { label: 'Actifs', value: stats.active, color: 'bg-status-success' },
-                { label: 'Premium', value: stats.paid, color: 'bg-amber-500' },
-                { label: 'Trial', value: stats.trial, color: 'bg-app-text-muted' },
-              ].map((stat) => (
-                <div key={stat.label} className="flex items-center gap-1.5">
-                  <span className={`w-2 h-2 rounded-full shrink-0 ${stat.color}`} />
-                  <span className="text-xs text-app-text-muted">{stat.label}</span>
-                  <span className="text-sm font-bold text-app-text tabular-nums">{stat.value}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-3 mb-4">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-app-text-muted" />
-                <Input
-                  placeholder="Rechercher par nom ou slug..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 h-9 text-sm rounded-xl bg-app-elevated border-app-border"
-                />
-              </div>
-              <span className="text-[10px] text-app-text-muted shrink-0">
-                {filteredTenants.length} établissement{filteredTenants.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-
-            {filteredTenants.length > 0 ? (
-              <div>
-                {filteredTenants.map((tenant) => (
-                  <div
-                    key={tenant.id}
-                    className="flex items-center justify-between gap-3 py-2.5 border-b border-app-border last:border-b-0 hover:bg-app-hover/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <span
-                        className={`inline-block h-2 w-2 rounded-full shrink-0 ${
-                          tenant.is_active ? 'bg-status-success' : 'bg-app-text-muted'
-                        }`}
-                      />
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-sm font-semibold text-app-text break-words">
-                            {tenant.name}
-                          </h3>
-                          <Badge
-                            variant="outline"
-                            className="hidden sm:inline-flex text-[9px] font-semibold rounded-md border-app-border px-1 py-0"
-                          >
-                            {tenant.subscription_plan || 'N/A'}
-                          </Badge>
-                        </div>
-                        <p className="text-[10px] text-app-text-muted">{tenant.slug}.attabl.com</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Button
-                        size="sm"
-                        onClick={() => handleSelectTenant(tenant.slug)}
-                        className="rounded-xl gap-1.5 h-8 text-xs"
-                      >
-                        Dashboard
-                        <ArrowRight className="h-3 w-3" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewMenu(tenant.slug)}
-                        className="rounded-xl h-8 border-app-border"
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16">
-                <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
-                <h3 className="text-sm font-semibold text-app-text mb-1">
-                  {searchQuery ? 'Aucun resultat' : 'Aucun etablissement'}
-                </h3>
-                <p className="text-xs text-app-text-muted text-center max-w-xs">
-                  {searchQuery
-                    ? `Aucun etablissement ne correspond a "${searchQuery}".`
-                    : 'Aucun etablissement enregistre pour le moment.'}
-                </p>
-                {searchQuery && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSearchQuery('')}
-                    className="mt-3 rounded-xl text-xs"
-                  >
-                    Effacer
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // ─── OWNER HUB MODE ────────────────────────────────────────
   return (
-    /* Standalone page - h-dvh is intentional */
-    <div className="h-dvh flex flex-col bg-app-bg p-3 sm:p-5 lg:p-6 overflow-hidden">
-      {/* Greeting + stats inline row - matches dashboard style */}
-      <div className="shrink-0 mb-2 flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-baseline gap-2 flex-wrap min-w-0">
-          <h1 className="text-base sm:text-lg font-bold text-app-text">
-            {greetKey}, {userName}
-          </h1>
-          <span
-            className="text-xs text-app-text-muted capitalize hidden sm:inline"
-            suppressHydrationWarning
-          >
-            {new Date().toLocaleDateString('fr-FR', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-            })}
-          </span>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <ThemeToggle />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 rounded-xl border-app-border"
-          >
-            <LogOut className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline text-xs">Deconnexion</span>
-          </Button>
-        </div>
-      </div>
+    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg">
+      <CommandCenterTopBar
+        mode={serverMode}
+        userName={serverUserName}
+        ordersLiveCount={globals.orders_today}
+        onLogout={handleLogout}
+      />
 
-      {/* Stats row - inline with border separator */}
-      <div className="shrink-0 px-1 py-2 mb-2 border-b border-app-border">
-        <div className="flex items-center gap-4 sm:gap-6">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 shrink-0" />
-            <span className="text-xs text-app-text-muted">CA</span>
-            <span className="text-sm font-bold text-app-text tabular-nums">
-              {formatCFA(ownerGlobals.totalRevenueToday)}
-            </span>
-            <span className="text-[10px] text-app-text-muted hidden sm:inline">
-              / mois {formatCFA(ownerGlobals.totalRevenueMonth)}
-            </span>
+      <div className="flex min-h-0 flex-1 flex-col">
+        <CommandCenterHero globals={globals} />
+
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-3">
+          <div className="flex min-h-0 flex-col px-3 py-2 sm:px-4 lg:col-span-2 lg:border-r lg:border-app-border">
+            <NetworkTrendCard
+              data={chartData}
+              period={chartPeriod}
+              mode={chartMode}
+              onPeriodChange={setChartPeriod}
+              onModeChange={setChartMode}
+            />
+            <LocationsGrid
+              locations={locations}
+              onOpenDashboard={handleOpenDashboard}
+              onOpenMenu={handleOpenMenu}
+              onAdd={serverMode === 'owner' ? () => setShowWizard(true) : undefined}
+            />
           </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-blue-400 shrink-0" />
-            <span className="text-xs text-app-text-muted">Cmd</span>
-            <span className="text-sm font-bold text-app-text tabular-nums">
-              {ownerGlobals.totalOrdersToday}
-            </span>
-            <span className="text-[10px] text-app-text-muted hidden sm:inline">
-              / mois {ownerGlobals.totalOrdersMonth}
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-violet-400 shrink-0" />
-            <span className="text-xs text-app-text-muted">Sites</span>
-            <span className="text-sm font-bold text-app-text tabular-nums">
-              {ownerGlobals.totalRestaurants}
-            </span>
+
+          <div className="flex min-h-0 flex-col px-3 py-2 sm:px-4">
+            <AlertCenterCard alerts={alerts} onSelectTenant={handleOpenDashboard} />
+            <LiveFeedCard
+              orders={recentOrders}
+              multiTenant={baseTenants.length > 1}
+              onSelectTenant={handleOpenDashboard}
+            />
           </div>
         </div>
       </div>
 
-      {/* Two-column: left (chart), right (orders + establishments) */}
-      <div className="flex-1 min-h-0 flex flex-col md:flex-row gap-3">
-        {/* Left: Chart */}
-        <div className="md:w-[50%] overflow-hidden flex flex-col min-h-0">
-          <div className="px-1 pt-1 pb-1.5 flex items-center justify-between shrink-0">
-            <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
-              {(['revenue', 'orders'] as const).map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setChartMode(m)}
-                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartMode === m ? 'bg-app-card text-accent shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
-                >
-                  {m === 'revenue' ? 'CA' : 'Commandes'}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center bg-app-elevated rounded-lg p-0.5">
-              {(['day', 'month'] as const).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setChartPeriod(p)}
-                  className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider rounded-md transition-all ${chartPeriod === p ? 'bg-app-card text-app-text shadow-sm' : 'text-app-text-muted hover:text-app-text-secondary'}`}
-                >
-                  <CalendarDays className="h-2.5 w-2.5" />
-                  {p === 'day' ? 'Jour' : 'Mois'}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div className="pb-2 flex-1 min-h-0 border-b border-app-border">
-            <ResponsiveContainer width="100%" height="100%">
-              {chartMode === 'revenue' ? (
-                <AreaChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="hubRevenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.35} />
-                      <stop offset="50%" stopColor="var(--accent)" stopOpacity={0.1} />
-                      <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--app-border)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                    dy={4}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                    tickFormatter={formatCompactCFA}
-                    width={40}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--app-elevated)',
-                      border: '1px solid var(--app-border)',
-                      borderRadius: '10px',
-                      fontSize: '11px',
-                      color: 'var(--app-text)',
-                      padding: '6px 10px',
-                    }}
-                    formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
-                    labelStyle={{
-                      color: 'var(--app-text-muted)',
-                      fontSize: '10px',
-                      marginBottom: '2px',
-                    }}
-                    cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="var(--accent)"
-                    fill="url(#hubRevenueGrad)"
-                    strokeWidth={2}
-                    dot={false}
-                    activeDot={{
-                      r: 3,
-                      fill: 'var(--accent)',
-                      stroke: 'var(--app-card)',
-                      strokeWidth: 2,
-                    }}
-                  />
-                </AreaChart>
-              ) : (
-                <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--app-border)"
-                    vertical={false}
-                  />
-                  <XAxis
-                    dataKey="label"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                    dy={4}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 11, fill: 'var(--app-text-muted)', fontWeight: 500 }}
-                    width={25}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      background: 'var(--app-elevated)',
-                      border: '1px solid var(--app-border)',
-                      borderRadius: '10px',
-                      fontSize: '11px',
-                      color: 'var(--app-text)',
-                      padding: '6px 10px',
-                    }}
-                    formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
-                    labelStyle={{
-                      color: 'var(--app-text-muted)',
-                      fontSize: '10px',
-                      marginBottom: '2px',
-                    }}
-                    cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
-                  />
-                  <Bar
-                    dataKey="orders"
-                    fill="var(--accent)"
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={24}
-                  />
-                </BarChart>
-              )}
-            </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* Right: Orders + Establishments stacked */}
-        <div className="md:w-[50%] flex flex-col gap-3 min-h-0">
-          {/* Recent orders */}
-          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="px-1 py-2 border-b border-app-border flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-1.5">
-                <Receipt className="h-3.5 w-3.5 text-app-text-muted" />
-                <h2 className="text-xs font-bold uppercase tracking-wider text-app-text-muted">
-                  Commandes recentes
-                </h2>
-              </div>
-              {recentOrders.length > 0 && (
-                <div className="flex items-center gap-1">
-                  <span className="relative flex h-1.5 w-1.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-status-success opacity-75" />
-                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-status-success" />
-                  </span>
-                  <span className="text-[11px] text-status-success font-medium">Live</span>
-                </div>
-              )}
-            </div>
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
-              {recentOrders.length > 0 ? (
-                <div className="divide-y divide-app-border">
-                  {recentOrders.map((order) => (
-                    <div
-                      key={order.id}
-                      onClick={() => handleSelectTenant(order.tenant_slug)}
-                      className="flex items-center gap-2 px-3 py-2 hover:bg-app-hover transition-colors cursor-pointer"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-bold text-app-text">
-                            #{order.order_number}
-                          </span>
-                          <span
-                            className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${STATUS_STYLES[order.status] || STATUS_STYLES.pending}`}
-                          >
-                            {STATUS_LABELS[order.status] || order.status}
-                          </span>
-                        </div>
-                        {restaurants.length > 1 && (
-                          <p className="text-[10px] text-app-text-muted">{order.tenant_name}</p>
-                        )}
-                      </div>
-                      <div className="text-right shrink-0">
-                        <p className="text-xs font-bold text-app-text tabular-nums">
-                          {formatCFA(order.total)}
-                        </p>
-                        <p className="text-[10px] text-app-text-muted tabular-nums">
-                          {formatTime(order.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-6">
-                  <ShoppingBag className="h-5 w-5 text-app-text-muted/30 mb-1.5" />
-                  <p className="text-xs text-app-text-muted">Aucune commande recente</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Establishments */}
-          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <div className="px-1 py-2 border-b border-app-border flex items-center justify-between shrink-0">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-app-text-muted">
-                Mes etablissements
-              </h2>
-              <button
-                onClick={() => setShowWizard(true)}
-                className="flex items-center gap-1 text-xs font-medium text-accent hover:text-accent-hover transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                Ajouter
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto scrollbar-hide">
-              <div className="divide-y divide-app-border">
-                {restaurants.map((r) => (
-                  <div
-                    key={r.tenant_id}
-                    onClick={() => handleSelectTenant(r.tenant_slug)}
-                    className="flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-app-hover transition-colors cursor-pointer group"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {r.tenant_logo_url ? (
-                        <Image
-                          src={r.tenant_logo_url}
-                          alt={r.tenant_name}
-                          width={32}
-                          height={32}
-                          className="h-8 w-8 rounded-lg object-cover shrink-0"
-                        />
-                      ) : (
-                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-app-elevated shrink-0">
-                          <Building2 className="h-3.5 w-3.5 text-app-text-muted" />
-                        </div>
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          <h3 className="text-xs font-semibold text-app-text">{r.tenant_name}</h3>
-                          <span
-                            className={`inline-block h-1.5 w-1.5 rounded-full shrink-0 ${r.tenant_is_active ? 'bg-status-success' : 'bg-app-text-muted'}`}
-                          />
-                          {r.tenant_plan && (
-                            <Badge
-                              variant="outline"
-                              className="text-[9px] font-semibold rounded-md border-app-border px-1 py-0"
-                            >
-                              {r.tenant_plan}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-[10px] text-app-text-muted">
-                          {r.tenant_slug}.attabl.com
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <div className="hidden sm:block text-right">
-                        <p className="text-[10px] text-app-text-muted uppercase">Cmd</p>
-                        <p className="text-xs font-bold text-app-text tabular-nums">
-                          {Number(r.orders_today)}
-                        </p>
-                      </div>
-                      <div className="hidden sm:block text-right">
-                        <p className="text-[10px] text-app-text-muted uppercase">CA</p>
-                        <p className="text-xs font-bold text-app-text tabular-nums">
-                          {formatCFA(Number(r.revenue_today))}
-                        </p>
-                      </div>
-                      <ArrowRight className="h-3.5 w-3.5 text-app-text-muted group-hover:text-accent transition-colors" />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Add Restaurant Wizard */}
       {showWizard && (
         <AddRestaurantWizard
           onClose={() => setShowWizard(false)}

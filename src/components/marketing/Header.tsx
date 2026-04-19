@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
 const segments = [
@@ -44,24 +45,26 @@ export default function Header() {
 
           {/* Navigation */}
           <nav className="ml-8 hidden items-center gap-6 lg:ml-16 md:flex lg:gap-10">
-            <button
+            <Button
               type="button"
+              variant="ghost"
               onMouseEnter={() => setActiveMegaMenu('solutions')}
               onClick={() =>
                 setActiveMegaMenu((prev) => (prev === 'solutions' ? null : 'solutions'))
               }
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
               Solutions
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
+              variant="ghost"
               onMouseEnter={() => setActiveMegaMenu('features')}
               onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
-              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
+              className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
               Fonctionnalités
-            </button>
+            </Button>
             <Link
               href="/pricing"
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
@@ -99,13 +102,15 @@ export default function Header() {
             </Link>
 
             {/* Mobile hamburger */}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => setMobileOpen((prev) => !prev)}
-              className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2 text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors md:hidden"
+              className="min-h-[44px] min-w-[44px] rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 md:hidden"
             >
               {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+            </Button>
           </div>
         </div>
       </header>

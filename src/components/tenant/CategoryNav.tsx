@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface Category {
   id: string;
@@ -8,32 +9,33 @@ interface Category {
 }
 
 const OBSERVER_OPTIONS: IntersectionObserverInit = {
-  rootMargin: '-80px 0px -70% 0px',
-  threshold: [0, 0.1, 0.3, 0.5, 0.7, 1.0],
+  rootMargin: '-140px 0px -60% 0px',
+  threshold: [0, 0.1, 0.25, 0.5, 0.75, 1.0],
 };
 
-/** Height of the sticky search header in ClientMenuPage */
-const STICKY_HEADER_HEIGHT = 56;
+/** Offset used for scrolling (sticky search header + sticky category nav) */
+const SCROLL_OFFSET = 112;
 
 interface CategoryNavProps {
   categories: Category[];
-  /** Show the sticky nav (e.g. when user has scrolled past the hero) */
-  visible?: boolean;
   /** Optional map of category id to item count */
   itemCounts?: Record<string, number>;
+  /** Top offset (px) where the nav becomes sticky - below search bar */
+  topOffset?: number;
 }
 
-export default function CategoryNav({ categories, visible = true, itemCounts }: CategoryNavProps) {
+export default function CategoryNav({ categories, topOffset = 0 }: CategoryNavProps) {
   const [activeCategory, setActiveCategory] = React.useState<string>('');
   const navRef = React.useRef<HTMLDivElement>(null);
+  const scrollerRef = React.useRef<HTMLDivElement>(null);
   const buttonRefs = React.useRef<Map<string, HTMLButtonElement>>(new Map());
 
   // Sync horizontal scroll when active category changes
   React.useEffect(() => {
     if (activeCategory && buttonRefs.current.has(activeCategory)) {
       const activeButton = buttonRefs.current.get(activeCategory);
-      if (activeButton && navRef.current) {
-        const container = navRef.current;
+      const container = scrollerRef.current;
+      if (activeButton && container) {
         const buttonLeft = activeButton.offsetLeft;
         const buttonWidth = activeButton.offsetWidth;
         const containerWidth = container.offsetWidth;
@@ -47,9 +49,10 @@ export default function CategoryNav({ categories, visible = true, itemCounts }: 
     }
   }, [activeCategory]);
 
+  // Scroll-spy: observe section headers to highlight active category
   React.useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
-      let bestEntry = entries[0];
+      let bestEntry: IntersectionObserverEntry | null = null;
       let bestRatio = 0;
 
       entries.forEach((entry) => {
@@ -59,8 +62,8 @@ export default function CategoryNav({ categories, visible = true, itemCounts }: 
         }
       });
 
-      if (bestEntry && bestEntry.isIntersecting) {
-        const id = bestEntry.target.id.replace('cat-', '');
+      if (bestEntry) {
+        const id = (bestEntry as IntersectionObserverEntry).target.id.replace('cat-', '');
         setActiveCategory(id);
       }
     }, OBSERVER_OPTIONS);
@@ -77,12 +80,9 @@ export default function CategoryNav({ categories, visible = true, itemCounts }: 
     setActiveCategory(id);
     const element = document.getElementById(`cat-${id}`);
     if (element) {
-      const navHeight = navRef.current?.offsetHeight || 48;
-      const offset = STICKY_HEADER_HEIGHT + navHeight + 16;
-
       const elementRect = element.getBoundingClientRect();
       const absoluteElementTop = elementRect.top + window.scrollY;
-      const offsetPosition = absoluteElementTop - offset;
+      const offsetPosition = absoluteElementTop - SCROLL_OFFSET;
 
       window.scrollTo({
         top: offsetPosition,
@@ -91,41 +91,42 @@ export default function CategoryNav({ categories, visible = true, itemCounts }: 
     }
   };
 
+  if (categories.length === 0) return null;
+
   return (
     <div
       ref={navRef}
       className="scrollbar-hide"
       style={{
-        position: 'fixed',
-        left: 0,
-        right: 0,
+        position: 'sticky',
+        top: `${topOffset}px`,
         zIndex: 30,
-        backgroundColor: 'var(--app-card)',
-        borderBottom: '1px solid var(--app-border)',
-        overflowX: 'auto',
-        padding: '12px 0',
-        top: `${STICKY_HEADER_HEIGHT}px`,
-        transform: visible ? 'translateY(0)' : 'translateY(-100%)',
-        opacity: visible ? 1 : 0,
-        pointerEvents: visible ? 'auto' : 'none',
-        transition: 'transform 0.2s ease, opacity 0.2s ease',
+        backgroundColor: '#FFFFFF',
+        borderBottom: '1px solid #EEEEEE',
+        height: '48px',
+        display: 'flex',
+        alignItems: 'center',
       }}
     >
       <div
+        ref={scrollerRef}
+        className="scrollbar-hide"
         style={{
-          maxWidth: '768px',
-          margin: '0 auto',
-          padding: '0 12px',
+          width: '100%',
+          overflowX: 'auto',
           display: 'flex',
+          alignItems: 'center',
+          paddingLeft: '16px',
+          paddingRight: '16px',
           gap: '8px',
-          minWidth: 'max-content',
         }}
       >
         {categories.map((category) => {
           const isActive = activeCategory === category.id;
           return (
-            <button
+            <Button
               key={category.id}
+              variant="ghost"
               ref={(el) => {
                 if (el) {
                   buttonRefs.current.set(category.id, el);
@@ -134,25 +135,23 @@ export default function CategoryNav({ categories, visible = true, itemCounts }: 
                 }
               }}
               onClick={() => scrollToCategory(category.id)}
-              className="whitespace-nowrap px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-150 border active:scale-[0.98]"
+              className="active:scale-[0.98] h-auto px-4 py-2"
               style={{
+                flexShrink: 0,
                 whiteSpace: 'nowrap',
-                padding: '8px 16px',
-                borderRadius: '9999px',
-                fontSize: '14px',
+                borderRadius: '24px',
+                fontSize: '11px',
                 fontWeight: 500,
-                border: isActive ? '1px solid var(--tenant-primary)' : '1px solid transparent',
-                cursor: 'pointer',
-                backgroundColor: isActive ? 'var(--tenant-primary)' : 'var(--app-elevated)',
-                color: isActive ? '#ffffff' : 'var(--app-text-secondary)',
-                transition: 'all 0.15s ease',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+                lineHeight: 1.4,
+                backgroundColor: isActive ? '#1A1A1A' : '#F6F6F6',
+                color: isActive ? '#FFFFFF' : '#737373',
+                transition: 'background-color 0.15s ease, color 0.15s ease',
               }}
             >
               {category.name}
-              {itemCounts && itemCounts[category.id] !== undefined && (
-                <span style={{ opacity: 0.7, marginLeft: '4px' }}>({itemCounts[category.id]})</span>
-              )}
-            </button>
+            </Button>
           );
         })}
       </div>

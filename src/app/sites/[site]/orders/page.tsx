@@ -5,10 +5,16 @@ import ClientOrders from '@/components/tenant/ClientOrders';
 import BottomNav from '@/components/tenant/BottomNav';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { getTranslations } from 'next-intl/server';
-
-export default async function OrdersPage({ params }: { params: Promise<{ site: string }> }) {
+export default async function OrdersPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ site: string }>;
+  searchParams: Promise<{ history?: string }>;
+}) {
   const { site } = await params;
+  const resolvedSearch = await searchParams;
+  const showHistory = resolvedSearch.history === 'true';
   const headersList = await headers();
   const tenantSlug = headersList.get('x-tenant-slug') || site;
 
@@ -23,30 +29,27 @@ export default async function OrdersPage({ params }: { params: Promise<{ site: s
 
   if (!tenant) return notFound();
 
-  const t = await getTranslations('tenant');
-
   return (
-    <div className="min-h-screen bg-app-bg">
-      <header className="sticky top-0 z-40 bg-app-card border-b border-app-border">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+    <div className="h-full bg-white" style={{ color: '#1A1A1A' }}>
+      {/* Header: sticky back button, same bg as page, no title */}
+      <div className="sticky top-0 z-40 bg-white">
+        <div className="max-w-lg mx-auto px-3 py-2">
           <Link
-            href={`/sites/${tenantSlug}/menu`}
-            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
+            href={showHistory ? `/sites/${tenantSlug}/settings` : `/sites/${tenantSlug}`}
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-app-text">{t('navOrders')}</h1>
-          </div>
-          <div className="w-9" />
         </div>
-      </header>
+      </div>
 
       <main className="max-w-lg mx-auto px-4 pt-4 pb-28">
         <ClientOrders
           tenantSlug={tenantSlug}
           tenantId={tenant.id}
           currency={tenant.currency || 'XAF'}
+          showHistory={showHistory}
         />
       </main>
 

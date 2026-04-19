@@ -6,6 +6,13 @@ import { Loader2, Upload, Download, CheckCircle2, AlertCircle } from 'lucide-rea
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
 
@@ -147,20 +154,18 @@ export default function MenuImportExcel({
         <Label htmlFor="import-menu" className="text-app-text">
           {t('targetMenu')}
         </Label>
-        <select
-          id="import-menu"
-          value={importMenuId}
-          onChange={(e) => setImportMenuId(e.target.value)}
-          className="w-full rounded-lg border border-app-border bg-app-card px-3 py-2 text-sm text-app-text focus:outline-none focus:ring-2 focus:ring-lime-400"
-          required
-        >
-          <option value="">{t('selectTargetMenu')}</option>
-          {menus.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </select>
+        <Select value={importMenuId || undefined} onValueChange={setImportMenuId}>
+          <SelectTrigger id="import-menu" className="w-full">
+            <SelectValue placeholder={t('selectTargetMenu')} />
+          </SelectTrigger>
+          <SelectContent>
+            {menus.map((m) => (
+              <SelectItem key={m.id} value={m.id}>
+                {m.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* File upload drop zone */}

@@ -55,7 +55,7 @@ export const createOrderSchema = z.object({
   delivery_address: z.string().max(500).optional(),
   coupon_code: z.string().max(50).optional(),
   server_id: z.string().uuid().optional(),
-  display_currency: z.enum(['XAF', 'EUR', 'USD']).optional(),
+  display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   tip_amount: z.number().min(0).optional(),
 });
 

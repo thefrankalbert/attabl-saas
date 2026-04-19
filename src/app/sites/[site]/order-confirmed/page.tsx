@@ -7,6 +7,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { useTranslations } from 'next-intl';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
 import { Check, Loader2, ArrowLeft, ChefHat, Bell, BellRing, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import BottomNav from '@/components/tenant/BottomNav';
 import { useClientOrderNotification } from '@/hooks/useClientOrderNotification';
@@ -19,6 +20,10 @@ interface OrderData {
   table_number: string | null;
   total: number;
   tip_amount: number;
+  subtotal: number | null;
+  discount_amount: number;
+  tax_amount: number;
+  service_charge_amount: number;
   status: string;
   created_at: string;
   items: Array<{ name: string; name_en?: string; quantity: number; price: number }>;
@@ -78,7 +83,7 @@ function OrderConfirmedContent() {
     supabase
       .from('orders')
       .select(
-        'id, order_number, table_number, total, tip_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
+        'id, order_number, table_number, total, tip_amount, subtotal, discount_amount, tax_amount, service_charge_amount, status, created_at, order_items(item_name, item_name_en, quantity, price_at_order)',
       )
       .eq('id', orderId)
       .eq('tenant_id', tenantId)
@@ -88,6 +93,10 @@ function OrderConfirmedContent() {
           const mapped: OrderData = {
             ...data,
             tip_amount: data.tip_amount ?? 0,
+            subtotal: data.subtotal ?? null,
+            discount_amount: data.discount_amount ?? 0,
+            tax_amount: data.tax_amount ?? 0,
+            service_charge_amount: data.service_charge_amount ?? 0,
             items: (data.order_items || []).map(
               (oi: {
                 item_name: string;
@@ -122,6 +131,12 @@ function OrderConfirmedContent() {
           event: 'UPDATE',
           schema: 'public',
           table: 'orders',
+          // NOTE: Supabase Realtime filter only supports single-column conditions.
+          // Cross-tenant eavesdropping is mitigated by:
+          // 1) UUIDs are unguessable (122 bits of entropy)
+          // 2) The orders table SELECT policy is intentionally public (customers
+          //    track their order without auth — same as Uber Eats/Deliveroo)
+          // 3) Order data is non-sensitive (status + table number, no PII)
           filter: `id=eq.${orderId}`,
         },
         (payload) => {
@@ -160,22 +175,25 @@ function OrderConfirmedContent() {
   // ─── Success animation overlay ─────────────────────────
   if (showSuccess) {
     return (
-      <main className="min-h-screen bg-app-bg flex flex-col items-center justify-center px-4">
+      <main
+        className="h-full bg-white flex flex-col items-center justify-center px-4"
+        style={{ color: '#1A1A1A' }}
+      >
         <div className="flex flex-col items-center animate-fade-up">
           <div
             className="w-16 h-16 rounded-full flex items-center justify-center"
             style={{
-              backgroundColor: 'color-mix(in srgb, var(--tenant-primary) 12%, transparent)',
+              backgroundColor: '#F6F6F6',
             }}
           >
-            <Check
-              className="w-7 h-7"
-              style={{ color: 'var(--tenant-primary)' }}
-              strokeWidth={2.5}
-            />
+            <Check className="w-7 h-7" style={{ color: '#1A1A1A' }} strokeWidth={2.5} />
           </div>
-          <p className="mt-5 text-lg font-bold text-app-text">{t('orderSent')}</p>
-          <p className="mt-1 text-sm text-app-text-muted">{t('orderBeingPrepared')}</p>
+          <p className="mt-5 text-lg font-bold" style={{ color: '#1A1A1A' }}>
+            {t('orderSent')}
+          </p>
+          <p className="mt-1 text-sm" style={{ color: '#B0B0B0' }}>
+            {t('orderBeingPrepared')}
+          </p>
         </div>
 
         <style jsx>{`
@@ -200,8 +218,8 @@ function OrderConfirmedContent() {
   // ─── Loading ───────────────────────────────────────────
   if (loading) {
     return (
-      <main className="min-h-screen bg-app-bg flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
+      <main className="h-full bg-white flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#B0B0B0' }} />
       </main>
     );
   }
@@ -209,12 +227,17 @@ function OrderConfirmedContent() {
   // ─── Order not found ──────────────────────────────────
   if (!order) {
     return (
-      <main className="min-h-screen bg-app-bg flex flex-col items-center justify-center px-4">
-        <p className="text-app-text-muted mb-4">{t('orderNotFound')}</p>
+      <main
+        className="h-full bg-white flex flex-col items-center justify-center px-4"
+        style={{ color: '#1A1A1A' }}
+      >
+        <p className="mb-4" style={{ color: '#B0B0B0' }}>
+          {t('orderNotFound')}
+        </p>
         <Link
           href={menuPath}
           className="text-white px-6 py-3 rounded-xl font-medium"
-          style={{ backgroundColor: 'var(--tenant-primary)' }}
+          style={{ backgroundColor: '#1A1A1A' }}
         >
           {t('backToMenu')}
         </Link>
@@ -224,30 +247,28 @@ function OrderConfirmedContent() {
 
   // ─── Order confirmed view ─────────────────────────────
   return (
-    <main className="min-h-screen bg-app-bg pb-24">
+    <main className="h-full bg-white pb-24" style={{ color: '#1A1A1A' }}>
       {/* Header */}
-      <div className="sticky top-0 z-40 bg-app-card border-b border-app-border">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center">
+      {/* Header: sticky back button, no title */}
+      <div className="sticky top-0 z-40 bg-white">
+        <div className="max-w-lg mx-auto px-3 py-2">
           <Link
             href={menuPath}
-            className="p-2 -ml-2 text-app-text-secondary hover:text-app-text transition-colors"
+            className="w-9 h-9 rounded-full flex items-center justify-center transition-colors"
+            style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
           >
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <div className="flex-1 text-center">
-            <h1 className="text-base font-bold text-app-text">{t('orderSent')}</h1>
-            <p className="text-xs text-app-text-muted">
-              {t('orderNumber', { number: order.order_number || order.id.slice(0, 5) })}
-            </p>
-          </div>
-          <div className="w-9" />
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 pt-4 space-y-4">
         {/* Order ready banner - prominent notification */}
         {showReadyBanner && (
-          <div className="relative bg-emerald-500 text-white rounded-xl px-4 py-4 flex items-center gap-3 shadow-lg animate-pulse-once">
+          <div
+            className="relative text-white rounded-xl px-4 py-4 flex items-center gap-3 animate-pulse-once"
+            style={{ backgroundColor: '#1A1A1A' }}
+          >
             <BellRing className="w-6 h-6 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold">{t('orderReadyNotifTitle')}</p>
@@ -255,13 +276,15 @@ function OrderConfirmedContent() {
                 {t('orderReadyNotifBody', { number: readyOrderNumber || '' })}
               </p>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={dismissBanner}
-              className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0"
+              className="p-1.5 rounded-full hover:bg-white/20 transition-colors shrink-0 h-8 w-8 text-white"
               aria-label="Dismiss"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
         )}
 
@@ -270,43 +293,57 @@ function OrderConfirmedContent() {
           permissionState === 'default' &&
           order.status !== 'ready' &&
           order.status !== 'delivered' && (
-            <button
+            <Button
+              variant="ghost"
               onClick={requestPermission}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-blue-50 text-blue-700 text-sm font-medium hover:bg-blue-100 transition-colors"
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors h-auto justify-start"
+              style={{ backgroundColor: '#F6F6F6', color: '#1A1A1A' }}
             >
               <Bell className="w-4 h-4 shrink-0" />
               <span>{t('enableNotifications')}</span>
-            </button>
+            </Button>
           )}
 
         {/* Simple status message - no detailed tracking visible to customer */}
         <OrderStatusMessage status={order.status} />
 
         {/* Order summary card - same style as cart */}
-        <section className="bg-app-card rounded-xl border border-app-border overflow-hidden">
+        <section
+          className="bg-white rounded-xl overflow-hidden"
+          style={{ border: '1px solid #EEEEEE' }}
+        >
           {order.table_number && (
-            <div className="px-4 py-3 border-b border-app-border/50 flex items-center justify-between">
-              <span className="text-xs text-app-text-muted uppercase tracking-wider font-semibold">
+            <div
+              className="px-4 py-3 flex items-center justify-between"
+              style={{ borderBottom: '1px solid rgba(238,238,238,0.5)' }}
+            >
+              <span className="text-[13px] font-semibold" style={{ color: '#737373' }}>
                 {t('tableLabel')}
               </span>
-              <span className="text-sm font-bold text-app-text font-mono">
+              <span className="text-sm font-bold font-mono" style={{ color: '#1A1A1A' }}>
                 {order.table_number}
               </span>
             </div>
           )}
 
           {/* Items */}
-          <div className="divide-y divide-app-border/50">
+          <div>
             {(order.items || []).map((item, idx) => (
-              <div key={idx} className="px-4 py-3 flex items-center gap-3">
-                <span
-                  className="text-sm font-bold w-6 text-center"
-                  style={{ color: 'var(--tenant-primary)' }}
-                >
+              <div
+                key={idx}
+                className="px-4 py-3 flex items-center gap-3"
+                style={{
+                  borderBottom:
+                    idx < order.items.length - 1 ? '1px solid rgba(238,238,238,0.5)' : 'none',
+                }}
+              >
+                <span className="text-sm font-bold w-6 text-center" style={{ color: '#1A1A1A' }}>
                   {item.quantity}
                 </span>
-                <span className="flex-1 text-sm text-app-text">{item.name}</span>
-                <span className="text-sm font-bold text-app-text whitespace-nowrap">
+                <span className="flex-1 text-sm" style={{ color: '#1A1A1A' }}>
+                  {item.name}
+                </span>
+                <span className="text-sm font-bold whitespace-nowrap" style={{ color: '#1A1A1A' }}>
                   {formatDisplayPrice(item.price * item.quantity)}
                 </span>
               </div>
@@ -314,18 +351,52 @@ function OrderConfirmedContent() {
           </div>
 
           {/* Tip + Total */}
-          <div className="px-4 py-3 border-t border-app-border space-y-2">
+          <div className="px-4 py-3 space-y-2" style={{ borderTop: '1px solid #EEEEEE' }}>
+            {order.subtotal && order.subtotal !== order.total && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('subtotal')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.subtotal)}
+                </span>
+              </div>
+            )}
+            {order.discount_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('discount')}</span>
+                <span className="font-medium" style={{ color: '#22C55E' }}>
+                  -{formatDisplayPrice(order.discount_amount)}
+                </span>
+              </div>
+            )}
+            {order.tax_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('tax')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.tax_amount)}
+                </span>
+              </div>
+            )}
+            {order.service_charge_amount > 0 && (
+              <div className="flex items-center justify-between text-sm">
+                <span style={{ color: '#B0B0B0' }}>{t('serviceCharge')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
+                  {formatDisplayPrice(order.service_charge_amount)}
+                </span>
+              </div>
+            )}
             {order.tip_amount > 0 && (
               <div className="flex items-center justify-between text-sm">
-                <span className="text-app-text-muted">{t('tip')}</span>
-                <span className="text-emerald-600 font-medium">
+                <span style={{ color: '#B0B0B0' }}>{t('tip')}</span>
+                <span className="font-medium" style={{ color: '#1A1A1A' }}>
                   +{formatDisplayPrice(order.tip_amount)}
                 </span>
               </div>
             )}
             <div className="flex items-center justify-between">
-              <span className="text-base font-bold text-app-text">{t('total')}</span>
-              <span className="text-xl font-black text-app-text">
+              <span className="text-base font-bold" style={{ color: '#1A1A1A' }}>
+                {t('total')}
+              </span>
+              <span className="text-[15px] font-bold" style={{ color: '#1A1A1A' }}>
                 {formatDisplayPrice(order.total + order.tip_amount)}
               </span>
             </div>
@@ -334,13 +405,13 @@ function OrderConfirmedContent() {
 
         {/* Back to menu */}
         <Link href={menuPath} className="block">
-          <button
+          <Button
             className="w-full h-14 rounded-xl text-white font-bold text-base transition-all active:scale-[0.98] flex items-center justify-center gap-2"
-            style={{ backgroundColor: 'var(--tenant-primary)' }}
+            style={{ backgroundColor: '#1A1A1A' }}
           >
             <ArrowLeft className="w-4 h-4" />
             {t('backToMenu')}
-          </button>
+          </Button>
         </Link>
       </div>
 
@@ -354,50 +425,48 @@ function OrderConfirmedContent() {
 function OrderStatusMessage({ status }: { status: string }) {
   const t = useTranslations('tenant');
 
-  const config: Record<string, { message: string; bg: string; textColor: string }> = {
+  const config: Record<string, { message: string; bg: string; color: string }> = {
     pending: {
       message: t('orderStatusSent'),
-      bg: 'bg-amber-50',
-      textColor: 'text-amber-700',
+      bg: '#FFF7ED',
+      color: '#D97706',
+    },
+    confirmed: {
+      message: t('orderStatusConfirmed') || t('orderStatusSent'),
+      bg: '#EFF6FF',
+      color: '#2563EB',
     },
     preparing: {
       message: t('orderStatusInKitchen'),
-      bg: 'color-mix(in srgb, var(--tenant-primary) 8%, transparent)',
-      textColor: '',
+      bg: '#EFF6FF',
+      color: '#2563EB',
     },
     ready: {
       message: t('orderStatusReady'),
-      bg: 'bg-emerald-50',
-      textColor: 'text-emerald-700',
+      bg: '#F0FDF4',
+      color: '#16A34A',
     },
     delivered: {
       message: t('orderStatusServed'),
-      bg: 'bg-app-elevated',
-      textColor: 'text-app-text-muted',
+      bg: '#F6F6F6',
+      color: '#B0B0B0',
     },
     cancelled: {
       message: t('statusCancelled'),
-      bg: 'bg-red-50',
-      textColor: 'text-red-600',
+      bg: '#FFEBEE',
+      color: '#FF3008',
     },
   };
 
   const c = config[status] || config.pending;
-  const usePrimaryColor = status === 'preparing';
 
   return (
     <div
-      className={`flex items-center gap-3 px-4 py-3.5 rounded-xl ${!usePrimaryColor ? c.bg : ''}`}
-      style={usePrimaryColor ? { backgroundColor: c.bg } : undefined}
+      className="flex items-center gap-3 px-4 py-3.5 rounded-xl"
+      style={{ backgroundColor: c.bg }}
     >
-      <ChefHat
-        className={`w-5 h-5 shrink-0 ${c.textColor}`}
-        style={usePrimaryColor ? { color: 'var(--tenant-primary)' } : undefined}
-      />
-      <span
-        className={`text-sm font-semibold ${c.textColor}`}
-        style={usePrimaryColor ? { color: 'var(--tenant-primary)' } : undefined}
-      >
+      <ChefHat className="w-5 h-5 shrink-0" style={{ color: c.color }} />
+      <span className="text-sm font-semibold" style={{ color: c.color }}>
         {c.message}
       </span>
     </div>
@@ -409,8 +478,8 @@ export default function OrderConfirmedPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-app-bg flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-app-text-muted" />
+        <div className="h-full bg-white flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin" style={{ color: '#B0B0B0' }} />
         </div>
       }
     >

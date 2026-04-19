@@ -35,7 +35,9 @@ export async function POST(request: Request) {
     // who may have multiple admin_users entries across tenants
     const { data: adminUser, error: adminUserError } = await supabase
       .from('admin_users')
-      .select('tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id)')
+      .select(
+        'tenant_id, tenants(name, stripe_customer_id, stripe_subscription_id, trial_ends_at, subscription_status)',
+      )
       .eq('user_id', user.id)
       .order('created_at', { ascending: true })
       .limit(1)
@@ -65,6 +67,8 @@ export async function POST(request: Request) {
       name: string;
       stripe_customer_id: string | null;
       stripe_subscription_id: string | null;
+      trial_ends_at: string | null;
+      subscription_status: string | null;
     } | null;
 
     // B1: If tenant already has an active subscription, reject and direct to update endpoint
@@ -77,6 +81,9 @@ export async function POST(request: Request) {
         { status: 409 },
       );
     }
+
+    // NOTE: Rate limiting (line 12-19) prevents rapid concurrent checkout attempts.
+    // For additional protection, consider adding a checkout_started_at column to tenants.
 
     // B1: Reuse existing Stripe customer if available
     const existingCustomerId = tenantData?.stripe_customer_id ?? null;
@@ -109,6 +116,16 @@ export async function POST(request: Request) {
       process.env.NEXT_PUBLIC_APP_URL ||
       (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : 'https://attabl.com');
 
+    // Compute remaining trial days from DB (prevents trial extension exploit)
+    const trialDays = (() => {
+      if (tenantData?.subscription_status !== 'trial' || !tenantData?.trial_ends_at)
+        return undefined;
+      const remaining = Math.ceil(
+        (new Date(tenantData.trial_ends_at).getTime() - Date.now()) / 86400000,
+      );
+      return remaining > 0 ? remaining : undefined;
+    })();
+
     // Créer la session Stripe Checkout
     const session = await withStripeBreaker(() =>
       stripe.checkout.sessions.create({
@@ -129,7 +146,7 @@ export async function POST(request: Request) {
         success_url: `${baseUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${baseUrl}/checkout/cancel`,
         subscription_data: {
-          trial_period_days: 14,
+          ...(trialDays ? { trial_period_days: trialDays } : {}),
           metadata: {
             tenant_id: tenantId,
             plan: plan,

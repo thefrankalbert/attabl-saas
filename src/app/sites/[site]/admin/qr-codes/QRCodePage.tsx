@@ -9,6 +9,16 @@ import { QRExportBar } from '@/components/qr/QRExportBar';
 import { QrCode, Info, Table2, BookOpen, Layers, Download, Sparkles } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { logger } from '@/lib/logger';
 import type { Table, Zone } from '@/types/admin.types';
 import type { QRDesignConfig } from '@/types/qr-design.types';
@@ -141,59 +151,66 @@ export function QRCodePage({ tenant, menuUrl, zones, tables, menus }: QRCodePage
                   {/* Table Selector */}
                   {tables.length > 0 && (
                     <div>
-                      <label
+                      <Label
                         htmlFor="qr-table-select"
                         className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
                       >
                         <Table2 className="w-3.5 h-3.5" />
                         {t('table')}
-                      </label>
-                      <select
-                        id="qr-table-select"
-                        value={selectedTableId}
-                        onChange={(e) => setSelectedTableId(e.target.value)}
-                        className="w-full px-3 py-2 border border-app-border rounded-xl text-sm focus:ring-2 focus:ring-accent/10 focus:border-app-border-hover transition-all"
+                      </Label>
+                      <Select
+                        value={selectedTableId || '__none__'}
+                        onValueChange={(val) => setSelectedTableId(val === '__none__' ? '' : val)}
                       >
-                        <option value="">{t('noTable')}</option>
-                        {tablesByZone.map(({ zone, tables: zoneTables }) => (
-                          <optgroup key={zone.id} label={zone.name}>
-                            {zoneTables.map((table) => (
-                              <option key={table.id} value={table.id}>
-                                {table.display_name}
-                                {table.capacity > 0
-                                  ? ` (${t('seats', { count: table.capacity })})`
-                                  : ''}
-                              </option>
-                            ))}
-                          </optgroup>
-                        ))}
-                      </select>
+                        <SelectTrigger id="qr-table-select" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__none__">{t('noTable')}</SelectItem>
+                          {tablesByZone.map(({ zone, tables: zoneTables }) => (
+                            <SelectGroup key={zone.id}>
+                              <SelectLabel>{zone.name}</SelectLabel>
+                              {zoneTables.map((table) => (
+                                <SelectItem key={table.id} value={table.id}>
+                                  {table.display_name}
+                                  {table.capacity > 0
+                                    ? ` (${t('seats', { count: table.capacity })})`
+                                    : ''}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
 
                   {/* Menu Selector */}
                   {menus.length > 0 && (
                     <div>
-                      <label
+                      <Label
                         htmlFor="qr-menu-select"
                         className="flex items-center gap-1.5 text-xs font-medium text-app-text-secondary mb-1.5"
                       >
                         <BookOpen className="w-3.5 h-3.5" />
                         {t('menuLabel')}
-                      </label>
-                      <select
-                        id="qr-menu-select"
-                        value={selectedMenuId}
-                        onChange={(e) => setSelectedMenuId(e.target.value)}
-                        className="w-full px-3 py-2 border border-app-border rounded-xl text-sm focus:ring-2 focus:ring-accent/10 focus:border-app-border-hover transition-all"
+                      </Label>
+                      <Select
+                        value={selectedMenuId || '__all__'}
+                        onValueChange={(val) => setSelectedMenuId(val === '__all__' ? '' : val)}
                       >
-                        <option value="">{t('allMenus')}</option>
-                        {menus.map((menu) => (
-                          <option key={menu.id} value={menu.id}>
-                            {menu.name}
-                          </option>
-                        ))}
-                      </select>
+                        <SelectTrigger id="qr-menu-select" className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="__all__">{t('allMenus')}</SelectItem>
+                          {menus.map((menu) => (
+                            <SelectItem key={menu.id} value={menu.id}>
+                              {menu.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   )}
                 </div>

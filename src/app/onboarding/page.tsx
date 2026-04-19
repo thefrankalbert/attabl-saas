@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 import {
   Palette,
@@ -107,6 +107,33 @@ export interface OnboardingData {
   tenantId: string;
   tenantSlug: string;
   tenantName: string;
+}
+
+// ─── Step Error Boundary ──────────────────────────────────────────────────────
+
+class StepErrorBoundary extends React.Component<
+  { children: React.ReactNode; fallback?: React.ReactNode },
+  { hasError: boolean }
+> {
+  constructor(props: { children: React.ReactNode; fallback?: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        this.props.fallback || (
+          <div className="p-8 text-center">
+            <p className="text-red-500">Une erreur est survenue. Rechargez la page.</p>
+          </div>
+        )
+      );
+    }
+    return this.props.children;
+  }
 }
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -290,7 +317,12 @@ export default function OnboardingPage() {
 
   useEffect(() => {
     if (loading || phase === 0) return;
-    const handleBeforeUnload = () => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // Warn user about unsaved data when they have progressed past welcome
+      if (phase > 0) {
+        e.preventDefault();
+      }
+      // Persist draft via beacon regardless
       const draftPayload = {
         ...data,
         _phase: phase,
@@ -519,13 +551,14 @@ export default function OnboardingPage() {
             const Icon = phaseDef.icon;
 
             return (
-              <button
+              <Button
                 key={phaseNum}
                 type="button"
+                variant="ghost"
                 onClick={() => {
                   if (isCompleted && phaseIsComplete(phaseNum)) goToPhase(phaseNum);
                 }}
-                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
+                className={`relative flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors h-auto ${
                   isActive
                     ? 'text-accent'
                     : isCompleted
@@ -541,7 +574,7 @@ export default function OnboardingPage() {
                 {isActive && (
                   <span className="absolute -bottom-px left-3 right-3 h-0.5 rounded-full bg-accent" />
                 )}
-              </button>
+              </Button>
             );
           })}
         </div>
@@ -591,20 +624,24 @@ export default function OnboardingPage() {
                   : 'animate-in slide-in-from-left-4 fade-in duration-200'
               }
             >
-              {renderScreen()}
+              <StepErrorBoundary key={`eb-${phase}-${subScreen}`}>
+                {renderScreen()}
+              </StepErrorBoundary>
 
               {error && (
                 <div className="px-4 sm:px-6 lg:px-8 pb-2">
                   <Alert variant="destructive">
                     <AlertDescription className="flex items-center justify-between">
                       <span>{error}</span>
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => setError(null)}
-                        className="text-destructive/60 hover:text-destructive ml-3 shrink-0"
+                        className="text-destructive/60 hover:text-destructive ml-3 shrink-0 h-8 w-8"
                       >
                         <span className="sr-only">Close</span>
                         &times;
-                      </button>
+                      </Button>
                     </AlertDescription>
                   </Alert>
                 </div>
@@ -620,14 +657,15 @@ export default function OnboardingPage() {
             <div className="flex items-center justify-between">
               {/* Back button */}
               {canGoBack ? (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={goPrev}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors"
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-app-text-secondary hover:text-app-text hover:bg-app-hover transition-colors h-auto"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   <span className="hidden sm:inline">{t('back')}</span>
-                </button>
+                </Button>
               ) : (
                 <span />
               )}

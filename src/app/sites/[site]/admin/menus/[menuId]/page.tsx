@@ -1,8 +1,9 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
-import { redirect, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import MenuDetailClient from '@/components/admin/MenuDetailClient';
+import { redirectToLogin } from '@/lib/auth/redirect-to-main';
 import type { Category, MenuItem } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,7 @@ export default async function MenuDetailPage({ params }: MenuDetailPageProps) {
 
   const tenant = await getTenant(tenantSlug);
 
-  if (!tenant) redirect('/login');
+  if (!tenant) redirectToLogin();
 
   const supabase = await createClient();
 

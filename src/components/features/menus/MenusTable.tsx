@@ -107,16 +107,18 @@ function MenuRow({
       />
 
       {/* Drag handle */}
-      <button
+      <Button
         type="button"
+        variant="ghost"
+        size="icon"
         ref={setActivatorNodeRef}
-        className="touch-none cursor-grab active:cursor-grabbing focus:outline-none shrink-0"
+        className="touch-none cursor-grab active:cursor-grabbing shrink-0 h-auto w-auto p-0"
         aria-label="Drag to reorder"
         {...attributes}
         {...listeners}
       >
         <GripVertical className="w-4 h-4 text-app-text-muted" />
-      </button>
+      </Button>
 
       {/* Menu name + badge */}
       <div className="flex-1 min-w-0 flex items-center gap-3 py-1">

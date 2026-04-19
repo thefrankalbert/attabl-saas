@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import Image from 'next/image';
 import { X, Utensils, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import type { MenuItem, ItemPriceVariant, ItemModifier, CurrencyCode } from '@/types/admin.types';
@@ -110,13 +111,15 @@ export default function POSItemCustomizer({
               <p className="text-xs text-app-text-muted mt-0.5 line-clamp-2">{item.description}</p>
             )}
           </div>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="w-9 h-9 flex items-center justify-center rounded-lg text-app-text-muted hover:text-app-text hover:bg-app-hover transition-colors shrink-0 touch-manipulation"
+            className="w-9 h-9 rounded-lg text-app-text-muted hover:text-app-text shrink-0 touch-manipulation"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         </div>
 
         {/* ━━━ Scrollable content ━━━ */}
@@ -124,17 +127,18 @@ export default function POSItemCustomizer({
           {/* ─── Price Variants ──────────────────────────── */}
           {sortedVariants.length > 0 && (
             <div>
-              <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectVariant')}
-              </label>
+              </Label>
               <div className="flex flex-wrap gap-2">
                 {sortedVariants.map((variant) => (
-                  <button
+                  <Button
                     key={variant.id}
                     type="button"
+                    variant={selectedVariantId === variant.id ? 'default' : 'outline'}
                     onClick={() => setSelectedVariantId(variant.id)}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-sm font-medium transition-all border',
+                      'flex items-center gap-2 rounded-lg px-3 py-2 min-h-[44px] text-sm font-medium h-auto',
                       selectedVariantId === variant.id
                         ? 'bg-accent text-accent-text border-accent'
                         : 'border-app-border text-app-text-secondary hover:bg-app-hover hover:border-accent/30',
@@ -144,7 +148,7 @@ export default function POSItemCustomizer({
                     <span className="text-xs opacity-80">
                       {formatCurrency(variant.price, currency)}
                     </span>
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -153,19 +157,20 @@ export default function POSItemCustomizer({
           {/* ─── Modifiers ──────────────────────────────── */}
           {sortedModifiers.length > 0 && (
             <div>
-              <label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
+              <Label className="text-xs font-semibold text-app-text-muted uppercase tracking-wider mb-2 block">
                 {t('selectModifiers')}
-              </label>
+              </Label>
               <div className="space-y-1.5">
                 {sortedModifiers.map((modifier) => {
                   const isSelected = selectedModifierIds.has(modifier.id);
                   return (
-                    <button
+                    <Button
                       key={modifier.id}
                       type="button"
+                      variant="outline"
                       onClick={() => toggleModifier(modifier.id)}
                       className={cn(
-                        'w-full flex items-center justify-between rounded-lg px-3 py-2.5 min-h-[44px] text-sm transition-all border',
+                        'w-full flex items-center justify-between rounded-lg px-3 py-2.5 min-h-[44px] text-sm h-auto',
                         isSelected
                           ? 'bg-accent/10 text-app-text border-accent/40'
                           : 'border-app-border text-app-text-secondary hover:bg-app-hover',
@@ -187,7 +192,7 @@ export default function POSItemCustomizer({
                       <span className="text-xs text-app-text-muted font-mono">
                         +{formatCurrency(modifier.price, currency)}
                       </span>
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

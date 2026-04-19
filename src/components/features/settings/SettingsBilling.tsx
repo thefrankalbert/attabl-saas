@@ -2,6 +2,13 @@
 
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { TabsContent } from '@/components/ui/tabs';
 import type { UseFormReturn } from 'react-hook-form';
 import type { SettingsFormValues } from '@/hooks/useSettingsData';
@@ -48,15 +55,21 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
         {/* Currency Selector */}
         <div className="space-y-2">
           <Label htmlFor="currency">{t('currency')}</Label>
-          <select
-            id="currency"
-            {...register('currency')}
-            className="flex h-10 min-h-[44px] w-full sm:max-w-xs rounded-lg border border-app-border bg-app-elevated text-app-text px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          <Select
+            value={watchCurrency}
+            onValueChange={(val) =>
+              setValue('currency', val as CurrencyCode, { shouldDirty: true })
+            }
           >
-            <option value="XAF">{t('currencyXAF')}</option>
-            <option value="EUR">{t('currencyEUR')}</option>
-            <option value="USD">{t('currencyUSD')}</option>
-          </select>
+            <SelectTrigger id="currency" className="h-10 min-h-[44px] w-full sm:max-w-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="XAF">{t('currencyXAF')}</SelectItem>
+              <SelectItem value="EUR">{t('currencyEUR')}</SelectItem>
+              <SelectItem value="USD">{t('currencyUSD')}</SelectItem>
+            </SelectContent>
+          </Select>
           <p className="text-xs text-app-text-secondary">{t('currencyUsedForPriceDisplay')}</p>
         </div>
 
@@ -69,7 +82,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               const isBase = code === watchCurrency;
               const isChecked = (watchSupportedCurrencies as string[]).includes(code);
               return (
-                <label
+                <Label
                   key={code}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm cursor-pointer transition-colors ${
                     isChecked
@@ -107,7 +120,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                       ({t('baseCurrencyAlwaysIncluded')})
                     </span>
                   )}
-                </label>
+                </Label>
               );
             })}
           </div>
@@ -122,7 +135,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               </Label>
               <p className="text-xs text-app-text-secondary mt-0.5">{t('applyTaxOnOrders')}</p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <Label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 id="enableTax"
@@ -130,7 +143,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent-text after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-accent-text after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-            </label>
+            </Label>
           </div>
 
           {watchEnableTax && (
@@ -171,7 +184,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               </Label>
               <p className="text-xs text-app-text-secondary mt-0.5">{t('addServiceFeeToOrders')}</p>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
+            <Label className="relative inline-flex items-center cursor-pointer">
               <input
                 type="checkbox"
                 id="enableServiceCharge"
@@ -179,7 +192,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-app-elevated peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-accent/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-accent-text after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-accent-text after:border-app-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-accent"></div>
-            </label>
+            </Label>
           </div>
 
           {watchEnableServiceCharge && (
@@ -220,7 +233,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
             </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
+          <Label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
               id="enableCoupons"
@@ -228,7 +241,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-          </label>
+          </Label>
         </div>
       </div>
 
@@ -241,7 +254,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
             </Label>
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableBarDisplayDesc')}</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
+          <Label className="relative inline-flex items-center cursor-pointer">
             <input
               type="checkbox"
               id="barDisplayEnabled"
@@ -249,7 +262,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               className="sr-only peer"
             />
             <div className="w-11 h-6 bg-app-elevated rounded-full peer peer-checked:bg-accent transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent/40 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-app-card after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full" />
-          </label>
+          </Label>
         </div>
       </div>
     </TabsContent>

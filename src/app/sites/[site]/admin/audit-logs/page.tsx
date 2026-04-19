@@ -1,8 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { getTenant } from '@/lib/cache';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import AuditLogClient from '@/components/admin/AuditLogClient';
+import { redirectToLogin, redirectToUnauthorized } from '@/lib/auth/redirect-to-main';
 import TenantNotFound from '@/components/admin/TenantNotFound';
 
 export const dynamic = 'force-dynamic';
@@ -25,7 +25,7 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
-    redirect('/login');
+    redirectToLogin();
   }
   const { data: adminUser } = await supabase
     .from('admin_users')
@@ -34,7 +34,7 @@ export default async function AuditLogsPage({ params }: { params: Promise<{ site
     .eq('tenant_id', tenant.id)
     .single();
   if (!adminUser || !['owner', 'admin'].includes(adminUser.role)) {
-    redirect('/unauthorized');
+    redirectToUnauthorized();
   }
 
   // Pre-fetch initial audit logs server-side (avoids RLS issues with anon client)
