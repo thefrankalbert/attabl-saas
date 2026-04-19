@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import { useSessionState } from '@/hooks/useSessionState';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useFormatter } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { useOrders } from '@/hooks/queries';
 import { useUpdateOrderStatus } from '@/hooks/mutations';
@@ -13,9 +13,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogFooter,
@@ -64,6 +66,9 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
   const seg = useSegmentTerms();
   const tk = useTranslations('kitchen');
   const ts = useTranslations('shortcuts');
+  const format = useFormatter();
+  // Stable number formatter for SSR/CSR parity (avoids toLocaleString() hydration mismatches)
+  const formatNumber = useCallback((n: number) => format.number(n), [format]);
 
   // filteredOrders is derived via useMemo below
   const [statusFilter, setStatusFilter] = useSessionState<string>('orders:statusFilter', 'all');
@@ -129,7 +134,10 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
 
   // TanStack Query for orders - use || to handle empty arrays from persistent cache
   const { data: queryOrders } = useOrders(tenantId, undefined, page, PAGE_SIZE);
-  const orders = queryOrders?.length ? queryOrders : page === 0 ? initialOrders : [];
+  const orders = useMemo(
+    () => (queryOrders?.length ? queryOrders : page === 0 ? initialOrders : []),
+    [queryOrders, page, initialOrders],
+  );
 
   // Realtime subscription via shared hook
   useRealtimeSubscription<Record<string, unknown>>({
@@ -184,7 +192,9 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     // Search filter (debounced)
     if (debouncedSearch.trim()) {
       const q = debouncedSearch.toLowerCase();
-      result = result.filter((o) => o.table_number.toLowerCase().includes(q) || o.id.includes(q));
+      result = result.filter(
+        (o) => (o.table_number ?? '').toLowerCase().includes(q) || o.id.includes(q),
+      );
     }
 
     return result;
@@ -247,64 +257,76 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     [t],
   );
 
+  // Safe lookup: unknown/null status falls back to a neutral terminal config
+  // so the component never crashes on unexpected DB values.
+  const getStatusConfig = useCallback(
+    (status: string | null | undefined) =>
+      (status && statusConfig[status]) || {
+        label: status ?? '-',
+        bg: 'bg-app-elevated',
+        text: 'text-app-text-muted',
+        nextStatus: null as OrderStatus | null,
+        nextLabel: null as string | null,
+        actionDot: '',
+      },
+    [statusConfig],
+  );
+
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<Order, unknown>[]>(
     () => [
       {
         id: 'select',
         header: () => (
-          <input
-            type="checkbox"
+          <Checkbox
+            aria-label={tc('selectAll')}
             checked={
               filteredOrders.length > 0 && filteredOrders.every((o) => selectedIds.has(o.id))
             }
-            onChange={(e) => {
+            onCheckedChange={(checked) => {
               const next = new Set(selectedIds);
-              if (e.target.checked) {
+              if (checked) {
                 filteredOrders.forEach((o) => next.add(o.id));
               } else {
                 filteredOrders.forEach((o) => next.delete(o.id));
               }
               setSelectedIds(next);
             }}
-            className="rounded border-app-border text-accent focus:ring-accent/30"
           />
         ),
         cell: ({ row }: { row: { original: Order } }) => (
-          <input
-            type="checkbox"
+          <Checkbox
+            aria-label={tc('select')}
             checked={selectedIds.has(row.original.id)}
-            onChange={(e) => {
-              e.stopPropagation();
+            onCheckedChange={(checked) => {
               const next = new Set(selectedIds);
-              if (e.target.checked) next.add(row.original.id);
+              if (checked) next.add(row.original.id);
               else next.delete(row.original.id);
               setSelectedIds(next);
             }}
             onClick={(e) => e.stopPropagation()}
-            className="rounded border-app-border text-accent focus:ring-accent/30"
           />
         ),
         enableSorting: false,
       },
       {
         accessorKey: 'table_number',
-        header: ({ column }) => (
-          <SortableHeader column={column}>{t('searchTable').replace('...', '')}</SortableHeader>
-        ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
-              {row.original.table_number}
-            </div>
-            <span className="font-medium text-app-text">{row.original.table_number}</span>
-            {row.original.preparation_zone === 'bar' && (
-              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400">
-                BAR
+        header: ({ column }) => <SortableHeader column={column}>{t('tableHeader')}</SortableHeader>,
+        cell: ({ row }) => {
+          const label = row.original.table_number?.trim() || '-';
+          return (
+            <div className="flex items-center gap-2">
+              <span className="inline-flex min-w-[2rem] h-8 px-2 items-center justify-center font-bold text-app-text text-xs bg-app-bg rounded-lg">
+                {label}
               </span>
-            )}
-          </div>
-        ),
+              {row.original.preparation_zone === 'bar' && (
+                <span className="px-1.5 py-0.5 rounded text-xs font-bold bg-purple-500/10 text-purple-400">
+                  BAR
+                </span>
+              )}
+            </div>
+          );
+        },
         enableSorting: false,
       },
       {
@@ -320,12 +342,10 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           const tip = row.original.tip_amount ?? 0;
           return (
             <div className="text-right">
-              <span className="font-mono font-bold text-app-text">
-                {(total + tip).toLocaleString()}
-              </span>
+              <span className="font-mono font-bold text-app-text">{formatNumber(total + tip)}</span>
               {tip > 0 && (
-                <span className="block text-[10px] text-emerald-500 font-medium">
-                  +{tip.toLocaleString()} {ta('tipLabel')}
+                <span className="block text-xs text-emerald-500 font-medium">
+                  +{formatNumber(tip)} {ta('tipLabel')}
                 </span>
               )}
             </div>
@@ -338,7 +358,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
         header: () => <span className="w-full text-right block">{tc('actions')}</span>,
         cell: ({ row }) => {
           const order = row.original;
-          const config = statusConfig[order.status];
+          const config = getStatusConfig(order.status);
           return (
             <div className="flex justify-end gap-1">
               <Button
@@ -375,7 +395,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, tc, statusConfig, selectedIds, filteredOrders],
+    [t, tc, ta, getStatusConfig, formatNumber, selectedIds, filteredOrders],
   );
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
@@ -591,7 +611,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               }
 
               eligibleOrders.forEach((order) => {
-                const config = statusConfig[order.status];
+                const config = getStatusConfig(order.status);
                 if (config.nextStatus) {
                   handleStatusChange(order.id, config.nextStatus);
                 }
@@ -632,8 +652,10 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               <DialogTitle className="text-lg font-bold text-app-text">
                 {t('bulkDeleteConfirm', { count: selectedIds.size })}
               </DialogTitle>
+              <DialogDescription className="text-sm text-app-text-muted py-2">
+                {t('bulkDeleteDesc')}
+              </DialogDescription>
             </DialogHeader>
-            <p className="text-sm text-app-text-muted py-2">{t('bulkDeleteDesc')}</p>
             <DialogFooter className="gap-2 sm:gap-0">
               <Button
                 variant="outline"
@@ -677,7 +699,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               columnVisibility={columnVisibility}
               mobileConfig={{
                 renderCard: (order) => {
-                  const config = statusConfig[order.status];
+                  const config = getStatusConfig(order.status);
                   const total =
                     (order.total_price ?? order.total ?? order.total_amount ?? 0) +
                     (order.tip_amount ?? 0);
@@ -687,10 +709,9 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                       {/* Row 1: Table + Status + Time */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-app-bg rounded-lg flex items-center justify-center font-bold text-app-text text-xs">
-                            {order.table_number}
-                          </div>
-                          <span className="font-semibold text-app-text">{order.table_number}</span>
+                          <span className="inline-flex min-w-[2rem] h-8 px-2 items-center justify-center font-bold text-app-text text-xs bg-app-bg rounded-lg">
+                            {order.table_number?.trim() || '-'}
+                          </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-app-text-muted">
@@ -735,11 +756,11 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
                           </span>
                           <div className="text-right">
                             <span className="font-mono font-bold text-app-text">
-                              {total.toLocaleString()}
+                              {formatNumber(total)}
                             </span>
                             {(order.tip_amount ?? 0) > 0 && (
-                              <span className="block text-[10px] text-emerald-500 font-medium">
-                                +{(order.tip_amount ?? 0).toLocaleString()} {ta('tipLabel')}
+                              <span className="block text-xs text-emerald-500 font-medium">
+                                +{formatNumber(order.tip_amount ?? 0)} {ta('tipLabel')}
                               </span>
                             )}
                           </div>

@@ -101,11 +101,7 @@ describe('Securite', () => {
     const actionsDir = path.resolve(SRC_DIR, 'app/actions');
     if (!fs.existsSync(actionsDir)) return; // Skip si le dossier n'existe pas
 
-    const files = findTsxFiles(actionsDir, []).concat(
-      findTsxFiles(actionsDir, []).length === 0 ? [] : [],
-    );
-
-    // Aussi chercher dans les fichiers .ts
+    // Chercher dans les fichiers .ts
     const tsFiles = fs.readdirSync(actionsDir, { recursive: true }).toString().split(',');
 
     for (const file of tsFiles) {

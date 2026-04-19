@@ -1,12 +1,19 @@
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  description?: string;
   children: React.ReactNode;
   size?: 'sm' | 'md' | 'lg';
 }
@@ -21,6 +28,7 @@ export default function AdminModal({
   isOpen,
   onClose,
   title,
+  description,
   children,
   size = 'md',
 }: AdminModalProps) {
@@ -36,6 +44,9 @@ export default function AdminModal({
           <DialogTitle className="text-lg font-bold tracking-tight text-app-text">
             {title}
           </DialogTitle>
+          <DialogDescription className={description ? 'text-sm text-app-text-muted' : 'sr-only'}>
+            {description ?? title}
+          </DialogDescription>
         </DialogHeader>
         <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
           {children}

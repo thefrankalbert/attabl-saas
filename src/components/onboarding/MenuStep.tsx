@@ -282,6 +282,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                           >
                             {/* Photo upload */}
                             <div className="relative shrink-0">
+                              {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
                               <input
                                 type="file"
                                 accept="image/*"

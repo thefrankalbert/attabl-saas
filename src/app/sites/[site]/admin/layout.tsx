@@ -16,6 +16,9 @@ import { NotificationCenter } from '@/components/admin/NotificationCenter';
 import { AdminContentWrapper } from '@/components/admin/AdminContentWrapper';
 import { OnboardingResumeDialog } from '@/components/admin/OnboardingResumeDialog';
 import { SoundProvider } from '@/contexts/SoundContext';
+import { getMonthlyOrdersCount } from '@/lib/admin/monthly-orders-count';
+import { getPlanLimits } from '@/lib/plans/features';
+import { getTenantMonthStart } from '@/lib/timezones';
 import type { AdminRole } from '@/types/admin.types';
 
 export const dynamic = 'force-dynamic';
@@ -70,7 +73,7 @@ export default async function AdminLayout({
       .single();
 
     if (adminData) {
-      adminUser = adminData;
+      adminUser = { ...adminData, name: adminData.full_name ?? adminData.email ?? undefined };
     } else {
       // Not a direct member - check if the user is a super_admin (can access any tenant)
       const { data: superAdminCheck } = await supabase
@@ -103,6 +106,29 @@ export default async function AdminLayout({
     .select('tenant_id, tenants(id, name, slug)')
     .eq('user_id', user.id);
 
+  // Monthly orders usage for the sidebar footer card.
+  //
+  // - Quota is derived from the tenant's effective plan
+  //   (see src/lib/plans/features.ts PLAN_LIMITS.maxMonthlyOrders).
+  //   `-1` means unlimited → the bar collapses to 0%.
+  // - Month start is computed in the tenant's local timezone (best-effort
+  //   resolved from tenant.country) so the bar rolls over at local midnight.
+  // - The count query is wrapped in unstable_cache (5 min TTL per tenant)
+  //   so admin-to-admin navigation doesn't hit Postgres every time.
+  // - All failure paths return 0 % rather than crashing the admin shell.
+  const planLimits = getPlanLimits(
+    tenant.subscription_plan,
+    tenant.subscription_status,
+    tenant.trial_ends_at,
+  );
+  const monthlyQuota = planLimits.maxMonthlyOrders;
+  let ordersUsagePercent = 0;
+  if (monthlyQuota > 0) {
+    const monthStart = getTenantMonthStart({ country: tenant.country });
+    const monthlyOrdersCount = await getMonthlyOrdersCount(tenant.id, monthStart);
+    ordersUsagePercent = Math.min(100, Math.round((monthlyOrdersCount / monthlyQuota) * 100));
+  }
+
   const userTenants = (userTenantLinks ?? [])
     .map((link) => {
       // Supabase join type gap
@@ -133,6 +159,8 @@ export default async function AdminLayout({
               establishment_type: tenant.establishment_type ?? undefined,
             }}
             userName={adminUser?.name || user.email || ''}
+            userEmail={user.email ?? undefined}
+            ordersUsagePercent={ordersUsagePercent}
             userTenants={userTenants}
             notifications={<NotificationCenter tenantId={tenant.id} userId={adminUser?.user_id} />}
             breadcrumbs={<AdminBreadcrumbs />}

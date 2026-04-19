@@ -352,6 +352,7 @@ export function SoundSettings({
       {canUpload ? (
         <div className="pt-2">
           {/* Hidden file input */}
+          {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
           <input
             ref={fileInputRef}
             type="file"

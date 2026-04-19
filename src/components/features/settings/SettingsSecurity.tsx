@@ -39,6 +39,7 @@ export default function SettingsSecurity({ form, t, tenantSlug }: SettingsSecuri
             <p className="text-xs text-app-text-secondary mt-0.5">{t('screenLockedAfterIdle')}</p>
           </div>
           <Label className="relative inline-flex items-center cursor-pointer">
+            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch */}
             <input
               type="checkbox"
               checked={watchIdleTimeoutMinutes !== null && watchIdleTimeoutMinutes !== undefined}

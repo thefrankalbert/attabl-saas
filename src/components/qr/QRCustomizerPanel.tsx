@@ -360,6 +360,7 @@ export function QRCustomizerPanel({
                     {/* File upload for custom logo */}
                     <div className="space-y-2">
                       <Label className="text-xs text-app-text-muted">Importer une image</Label>
+                      {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
                       <input
                         ref={logoFileInputRef}
                         type="file"

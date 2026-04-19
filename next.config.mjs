@@ -30,46 +30,52 @@ const nextConfig = {
     ],
   },
   async headers() {
+    const isProd = process.env.NODE_ENV === 'production';
+    const baseHeaders = [
+      {
+        key: 'X-Frame-Options',
+        value: 'DENY',
+      },
+      {
+        key: 'X-Content-Type-Options',
+        value: 'nosniff',
+      },
+      {
+        key: 'Referrer-Policy',
+        value: 'strict-origin-when-cross-origin',
+      },
+      {
+        key: 'Permissions-Policy',
+        value: 'camera=(), microphone=(), geolocation=()',
+      },
+      {
+        key: 'Cross-Origin-Opener-Policy',
+        value: 'same-origin',
+      },
+      {
+        key: 'Cross-Origin-Resource-Policy',
+        value: 'same-origin',
+      },
+    ];
+    // RFC 6797: HSTS must only be served over HTTPS. Sending it over HTTP (dev)
+    // poisons the browser's HSTS cache and blocks local dev navigation.
+    if (isProd) {
+      baseHeaders.push({
+        key: 'Strict-Transport-Security',
+        value: 'max-age=63072000; includeSubDomains; preload',
+      });
+    }
+    // Content-Security-Policy is now set dynamically in src/proxy.ts
+    // with per-request nonces (replaces 'unsafe-inline' in script-src).
+    // CORS: /api/* routes are same-origin (called from *.attabl.com subdomains).
+    // Cross-Origin-Resource-Policy: same-origin (above) restricts cross-origin
+    // embedding. No Access-Control-Allow-Origin header is needed because all
+    // API calls are first-party. If third-party API access is added later,
+    // add explicit CORS headers scoped to those routes only.
     return [
       {
         source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=63072000; includeSubDomains; preload',
-          },
-          {
-            key: 'Cross-Origin-Opener-Policy',
-            value: 'same-origin',
-          },
-          {
-            key: 'Cross-Origin-Resource-Policy',
-            value: 'same-origin',
-          },
-          // Content-Security-Policy is now set dynamically in src/proxy.ts
-          // with per-request nonces (replaces 'unsafe-inline' in script-src)
-          // CORS: /api/* routes are same-origin (called from *.attabl.com subdomains).
-          // Cross-Origin-Resource-Policy: same-origin (above) restricts cross-origin
-          // embedding. No Access-Control-Allow-Origin header is needed because all
-          // API calls are first-party. If third-party API access is added later,
-          // add explicit CORS headers scoped to those routes only.
-        ],
+        headers: baseHeaders,
       },
     ];
   },

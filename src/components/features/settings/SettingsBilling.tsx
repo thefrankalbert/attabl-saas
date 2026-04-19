@@ -90,6 +90,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
                       : 'border-app-border bg-app-elevated text-app-text-secondary'
                   } ${isBase ? 'opacity-80 cursor-default' : ''}`}
                 >
+                  {/* eslint-disable-next-line react/forbid-elements -- sr-only trigger backing a custom-styled Label toggle; shadcn Checkbox would break visual design */}
                   <input
                     type="checkbox"
                     checked={isChecked}
@@ -136,6 +137,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               <p className="text-xs text-app-text-secondary mt-0.5">{t('applyTaxOnOrders')}</p>
             </div>
             <Label className="relative inline-flex items-center cursor-pointer">
+              {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
               <input
                 type="checkbox"
                 id="enableTax"
@@ -185,6 +187,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
               <p className="text-xs text-app-text-secondary mt-0.5">{t('addServiceFeeToOrders')}</p>
             </div>
             <Label className="relative inline-flex items-center cursor-pointer">
+              {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
               <input
                 type="checkbox"
                 id="enableServiceCharge"
@@ -234,6 +237,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableCouponsDesc')}</p>
           </div>
           <Label className="relative inline-flex items-center cursor-pointer">
+            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
             <input
               type="checkbox"
               id="enableCoupons"
@@ -255,6 +259,7 @@ export default function SettingsBilling({ form, t }: SettingsBillingProps) {
             <p className="text-xs text-app-text-secondary mt-0.5">{t('enableBarDisplayDesc')}</p>
           </div>
           <Label className="relative inline-flex items-center cursor-pointer">
+            {/* eslint-disable-next-line react/forbid-elements -- sr-only peer backing a custom-styled toggle switch; shadcn Switch is not wired to react-hook-form register() here */}
             <input
               type="checkbox"
               id="barDisplayEnabled"
