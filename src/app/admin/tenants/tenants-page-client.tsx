@@ -121,10 +121,7 @@ export default function TenantsPageClient({
     const todayOrders = (todayRes.data || []) as OrderRow[];
     const yesterdayOrders = (yesterdayRes.data || []) as OrderRow[];
 
-    const byTenant = new Map<
-      string,
-      { revenue: number; orders: number; sparkline: number[] }
-    >();
+    const byTenant = new Map<string, { revenue: number; orders: number; sparkline: number[] }>();
     tenantIds.forEach((id) =>
       byTenant.set(id, { revenue: 0, orders: 0, sparkline: new Array(24).fill(0) }),
     );

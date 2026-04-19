@@ -63,7 +63,7 @@ export function NetworkTrendCard({
             Performance reseau
           </h2>
           <span className="hidden text-[11px] text-app-text-muted sm:inline">
-            {mode === 'revenue' ? 'Chiffre d\'affaires' : 'Commandes'}
+            {mode === 'revenue' ? "Chiffre d'affaires" : 'Commandes'}
           </span>
         </div>
 
@@ -142,7 +142,11 @@ export function NetworkTrendCard({
                   padding: '6px 10px',
                 }}
                 formatter={(value: number | undefined) => [formatCFA(value ?? 0), 'CA']}
-                labelStyle={{ color: 'var(--app-text-muted)', fontSize: '10px', marginBottom: '2px' }}
+                labelStyle={{
+                  color: 'var(--app-text-muted)',
+                  fontSize: '10px',
+                  marginBottom: '2px',
+                }}
                 cursor={{ stroke: 'var(--accent)', strokeWidth: 1, strokeDasharray: '4 4' }}
               />
               <Area
@@ -152,7 +156,12 @@ export function NetworkTrendCard({
                 fill="url(#networkRevenueGrad)"
                 strokeWidth={2}
                 dot={false}
-                activeDot={{ r: 3, fill: 'var(--accent)', stroke: 'var(--app-card)', strokeWidth: 2 }}
+                activeDot={{
+                  r: 3,
+                  fill: 'var(--accent)',
+                  stroke: 'var(--app-card)',
+                  strokeWidth: 2,
+                }}
               />
             </AreaChart>
           ) : (
@@ -183,7 +192,11 @@ export function NetworkTrendCard({
                   padding: '6px 10px',
                 }}
                 formatter={(value: number | undefined) => [value ?? 0, 'Commandes']}
-                labelStyle={{ color: 'var(--app-text-muted)', fontSize: '10px', marginBottom: '2px' }}
+                labelStyle={{
+                  color: 'var(--app-text-muted)',
+                  fontSize: '10px',
+                  marginBottom: '2px',
+                }}
                 cursor={{ fill: 'var(--accent)', fillOpacity: 0.06 }}
               />
               <Bar dataKey="orders" fill="var(--accent)" radius={[4, 4, 0, 0]} maxBarSize={28} />

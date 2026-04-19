@@ -88,9 +88,7 @@ export function LiveFeedCard({ orders, multiTenant, onSelectTenant }: LiveFeedCa
                     </span>
                   </div>
                   {multiTenant && order.tenant_name && (
-                    <p className="truncate text-[10px] text-app-text-muted">
-                      {order.tenant_name}
-                    </p>
+                    <p className="truncate text-[10px] text-app-text-muted">{order.tenant_name}</p>
                   )}
                 </div>
                 <div className="shrink-0 text-right">

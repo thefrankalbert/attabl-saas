@@ -37,9 +37,7 @@ function Stat({ icon: Icon, label, value, sub, delta, alert }: StatProps) {
       <div
         className={cn(
           'flex h-9 w-9 shrink-0 items-center justify-center rounded-xl',
-          alert
-            ? 'bg-red-500/10 text-red-400'
-            : 'bg-app-elevated text-app-text-secondary',
+          alert ? 'bg-red-500/10 text-red-400' : 'bg-app-elevated text-app-text-secondary',
         )}
       >
         <Icon className="h-4 w-4" />

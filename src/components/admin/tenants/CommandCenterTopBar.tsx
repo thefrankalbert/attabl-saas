@@ -28,9 +28,7 @@ export function CommandCenterTopBar({
             <ModeIcon className="h-3.5 w-3.5 text-app-text" />
           </div>
           <div className="flex min-w-0 items-baseline gap-2">
-            <h1 className="text-sm font-bold tracking-tight text-app-text sm:text-base">
-              ATTABL
-            </h1>
+            <h1 className="text-sm font-bold tracking-tight text-app-text sm:text-base">ATTABL</h1>
             <span className="text-app-text-muted">/</span>
             <span className="truncate text-[11px] font-semibold uppercase tracking-wider text-app-text-secondary">
               {modeLabel}
