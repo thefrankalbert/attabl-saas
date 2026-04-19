@@ -33,6 +33,9 @@ interface AdminLayoutInnerProps {
     establishment_type?: string;
   };
   userName?: string;
+  userEmail?: string;
+  /** 0..100 — passed to the sidebar usage card in the footer */
+  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
@@ -45,6 +48,8 @@ function AdminLayoutInner({
   role,
   tenant,
   userName,
+  userEmail,
+  ordersUsagePercent,
   userTenants,
   notifications,
   breadcrumbs,
@@ -96,13 +101,15 @@ function AdminLayoutInner({
   }, []);
 
   return (
-    <div className="h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
+    <div className="admin-shell h-dvh overflow-hidden flex bg-app-bg transition-colors duration-200 relative z-0">
       {/* Sidebar - tablet & desktop, hidden on immersive pages */}
       {!immersive && (
         <AdminSidebar
           basePath={basePath}
           tenant={tenant}
           userName={userName}
+          userEmail={userEmail}
+          ordersUsagePercent={ordersUsagePercent}
           userTenants={userTenants}
           className="hidden lg:flex"
           collapsed={sidebarCollapsed}
@@ -111,7 +118,7 @@ function AdminLayoutInner({
       )}
 
       <div className="flex-1 flex flex-col min-w-0 min-h-0">
-        <AdminTopBar basePath={basePath} notifications={notifications} breadcrumbs={breadcrumbs} />
+        <AdminTopBar notifications={notifications} breadcrumbs={breadcrumbs} />
 
         <a
           href="#main-content"
@@ -122,11 +129,7 @@ function AdminLayoutInner({
 
         <main
           id="main-content"
-          className={cn(
-            'flex-1 min-h-0 @container',
-            isHome ? 'overflow-hidden' : 'overflow-y-auto',
-            isDevMode && 'pt-6',
-          )}
+          className={cn('flex-1 min-h-0 @container overflow-y-auto', isDevMode && 'pt-6')}
         >
           <div className="max-w-screen-2xl mx-auto h-full">{children}</div>
         </main>
@@ -158,6 +161,8 @@ interface AdminLayoutClientProps {
     establishment_type?: string;
   };
   userName?: string;
+  userEmail?: string;
+  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;
   breadcrumbs?: React.ReactNode;
@@ -170,6 +175,8 @@ export function AdminLayoutClient({
   role,
   tenant,
   userName,
+  userEmail,
+  ordersUsagePercent,
   userTenants,
   notifications,
   breadcrumbs,
@@ -182,6 +189,8 @@ export function AdminLayoutClient({
         role={role}
         tenant={tenant}
         userName={userName}
+        userEmail={userEmail}
+        ordersUsagePercent={ordersUsagePercent}
         userTenants={userTenants}
         notifications={notifications}
         breadcrumbs={breadcrumbs}

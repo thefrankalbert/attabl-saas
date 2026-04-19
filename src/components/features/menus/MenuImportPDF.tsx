@@ -242,6 +242,7 @@ export default function MenuImportPDF({ menus, onImportComplete, onCancel }: Men
                 : 'border-app-border bg-app-elevated hover:border-app-border hover:bg-app-hover',
             )}
           >
+            {/* eslint-disable-next-line react/forbid-elements -- <input type="file"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
             <input
               ref={fileInputRef}
               type="file"

@@ -584,6 +584,7 @@ export function TablesClient({
 
                       {/* Active toggle */}
                       <Label className="flex items-center gap-2 cursor-pointer">
+                        {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
                         <input
                           type="checkbox"
                           checked={table.is_active}

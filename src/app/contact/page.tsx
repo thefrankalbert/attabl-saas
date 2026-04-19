@@ -101,6 +101,7 @@ export default function ContactPage() {
               <form action={formAction} className="mt-8 flex flex-col gap-5">
                 {/* Honeypot */}
                 <div className="absolute -left-[9999px]" aria-hidden="true">
+                  {/* eslint-disable-next-line react/forbid-elements -- honeypot field: native <input> to stay invisible to shadcn abstractions and bot scrapers */}
                   <input type="text" name="website" tabIndex={-1} autoComplete="off" />
                 </div>
 

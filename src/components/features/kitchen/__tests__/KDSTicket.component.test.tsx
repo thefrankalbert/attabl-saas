@@ -129,9 +129,7 @@ describe('KDSTicket', () => {
 
   it('shows late styling for orders 20+ min old', () => {
     const twentyFiveMinAgo = new Date(Date.now() - 25 * 60 * 1000).toISOString();
-    const { container } = render(
-      <KDSTicket order={makeOrder({ created_at: twentyFiveMinAgo })} {...mockCallbacks} />,
-    );
+    render(<KDSTicket order={makeOrder({ created_at: twentyFiveMinAgo })} {...mockCallbacks} />);
 
     // Critical orders show DELAYED badge in red
     expect(screen.getByText('FOOTERDELAYED')).toBeInTheDocument();

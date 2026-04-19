@@ -5,12 +5,10 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
+  ChevronDown,
   ChevronUp,
   Settings,
-  ChevronsUpDown,
   Check,
-  ArrowLeft,
-  LayoutGrid,
   LogOut,
   PanelLeftClose,
   PanelLeftOpen,
@@ -23,11 +21,14 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { isAdminHome, getTenantUrl } from '@/lib/constants';
+import { getTenantUrl } from '@/lib/constants';
 import { NAV_GROUPS } from '@/lib/layout/navigation-config';
 import type { NavGroupConfig, NavItemConfig } from '@/lib/layout/navigation-config';
+import { computeSidebarSections } from '@/lib/layout/nav-sections';
 import { getHiddenNav } from '@/lib/segment-features';
 import { getSegmentFamily } from '@/lib/segment-terms';
+import { SidebarBrand } from './sidebar/SidebarBrand';
+import { SidebarUsageCard } from './sidebar/SidebarUsageCard';
 
 // ─── Types ──────────────────────────────────────────────
 
@@ -47,26 +48,20 @@ interface AdminSidebarProps {
     establishment_type?: string;
   };
   userName?: string;
+  userEmail?: string;
+  /** Optional: current monthly orders usage (0..100) shown in the footer card */
+  ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   className?: string;
-  /** Controlled collapsed state (lifted to layout for persistence) */
   collapsed?: boolean;
-  /** Callback when user toggles collapsed state */
   onToggleCollapsed?: () => void;
 }
 
 // ─── Helpers ────────────────────────────────────────────
 
-/** IDs of groups that render at the bottom of the sidebar */
-const BOTTOM_GROUP_IDS = new Set(['pos', 'kitchen', 'service']);
-
-/** ID of the analyse group - rendered inside account popover */
 const ANALYSE_GROUP_ID = 'analyse';
-
-/** Item paths that move from organization into the account popover */
 const POPOVER_ITEM_PATHS = new Set(['/inventory', '/recipes', '/suppliers']);
 
-/** Settings link rendered inside account popover */
 const SETTINGS_ITEM = {
   path: '/settings',
   icon: Settings,
@@ -87,6 +82,8 @@ export function AdminSidebar({
   basePath,
   tenant,
   userName,
+  userEmail,
+  ordersUsagePercent,
   userTenants = [],
   className,
   collapsed: controlledCollapsed,
@@ -101,24 +98,22 @@ export function AdminSidebar({
   const handleToggleCollapsed = onToggleCollapsed ?? (() => setInternalCollapsed((prev) => !prev));
   const [accountPopoverOpen, setAccountPopoverOpen] = useState(false);
 
-  // Segment-aware label overrides: nav keys → segment term keys
+  // Segment-aware label overrides
   const family = getSegmentFamily(tenant.establishment_type);
   const segmentLabelOverrides: Record<string, string> = {
     navDishes: tSeg(`${family}.items`),
     navKitchen: tSeg(`${family}.productionKds`),
     navRecipes: tSeg(`${family}.recipes`),
   };
-  /** Resolve a sidebar label key, using segment override if available */
   const label = (key: string) => segmentLabelOverrides[key] ?? t(key);
 
-  // Segment-based visibility: hide groups/items based on establishment type
+  // Segment-based visibility
   const { groupIds: hiddenGroupIds, itemPaths: hiddenItemPaths } = getHiddenNav(
     tenant.establishment_type,
   );
 
-  // Split groups: all nav in one list (bottom shortcuts after dashboard), analyse goes into popover
-  // Also filter out popover items and segment-hidden items from organization group
-  const nonAnalyseGroups = NAV_GROUPS.filter(
+  // Trim organization items that belong to the account popover and drop hidden groups
+  const visibleGroups = NAV_GROUPS.filter(
     (g) => g.id !== ANALYSE_GROUP_ID && !hiddenGroupIds.has(g.id),
   ).map((g) => {
     if (g.id === 'organization') {
@@ -132,236 +127,229 @@ export function AdminSidebar({
     return g;
   });
 
-  // Reorder: dashboard first, then POS/Kitchen/Service, then the rest
-  const dashboardGroup = nonAnalyseGroups.filter((g) => g.id === 'dashboard');
-  const bottomGroups = nonAnalyseGroups.filter((g) => BOTTOM_GROUP_IDS.has(g.id));
-  const restGroups = nonAnalyseGroups.filter(
-    (g) => g.id !== 'dashboard' && !BOTTOM_GROUP_IDS.has(g.id),
-  );
-  const mainGroups = [...dashboardGroup, ...bottomGroups, ...restGroups];
+  const sections = computeSidebarSections(visibleGroups);
 
   const analyseGroup = NAV_GROUPS.find((g) => g.id === ANALYSE_GROUP_ID);
-
-  // Items moved from organization to popover
   const organizationGroup = NAV_GROUPS.find((g) => g.id === 'organization');
   const popoverOrgItems = organizationGroup
     ? organizationGroup.items.filter((item) => POPOVER_ITEM_PATHS.has(item.path))
     : [];
 
-  // Client-facing URL for QR code (subdomain format)
+  // Client-facing URL for QR code
   const clientUrl = getTenantUrl(tenant.slug);
 
   // Plan display label
-  const planLabel = tenant.subscription_plan
-    ? `Plan ${tenant.subscription_plan.charAt(0).toUpperCase()}${tenant.subscription_plan.slice(1)}`
-    : 'Plan Gratuit';
+  const planRaw = tenant.subscription_plan?.toUpperCase() || 'GRATUIT';
+  const planLabel = `plan ${planRaw}`;
 
-  // Switch to another tenant
   const switchTenant = (slug: string) => {
     router.push(`/sites/${slug}/admin`);
   };
 
+  // Footer usage data
+  const usagePercent = Math.max(0, Math.min(100, ordersUsagePercent ?? 0));
+  const usageSubtitle = userEmail ? `${userEmail} · ${planLabel}` : planLabel;
+
   return (
     <aside
       className={cn(
-        'shrink-0 bg-app-card flex-col transition-all duration-200 overflow-hidden',
-        collapsed ? 'w-16 xl:w-20' : 'w-56 xl:w-64 2xl:w-72',
+        'shrink-0 bg-app-bg border-r border-app-border flex-col transition-all duration-200 overflow-hidden',
+        collapsed ? 'w-[68px]' : 'w-[224px]',
         className,
       )}
     >
-      {/* ── Tenant switcher header + collapse toggle ── */}
-      <div className="shrink-0 border-b border-app-border">
-        <div
-          className={cn(
-            'flex items-center py-3',
-            collapsed ? 'px-2 justify-center' : 'pl-3 pr-1 gap-2',
-          )}
-        >
-          {/* Back arrow / spaces grid */}
-          <Link
-            href={isAdminHome(pathname, basePath) ? '/admin/tenants' : basePath}
-            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-app-hover transition-colors shrink-0"
-            title={isAdminHome(pathname, basePath) ? 'Mes espaces' : 'Retour'}
-          >
-            {isAdminHome(pathname, basePath) ? (
-              <LayoutGrid className="w-4 h-4 text-app-text-muted" />
-            ) : (
-              <ArrowLeft className="w-4 h-4 text-app-text-muted" />
-            )}
-          </Link>
+      {/* ── Brand + org switcher + collapse toggle ── */}
+      <div className="shrink-0 px-3 pt-4 pb-3 flex flex-col gap-3">
+        <SidebarBrand
+          name={tenant.name}
+          slug={tenant.slug}
+          logoUrl={tenant.logo_url}
+          collapsed={collapsed}
+        />
 
-          {/* Tenant switcher popover */}
-          {!collapsed && (
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="ghost"
-                  suppressHydrationWarning
-                  className="flex-1 flex items-center gap-2 min-w-0 px-2 py-1 rounded-lg text-left justify-start"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-app-text truncate">{tenant.name}</p>
-                    <p className="text-[10px] text-app-text-muted truncate">
-                      {tenant.slug}.attabl.com
-                    </p>
-                  </div>
-                  <ChevronsUpDown className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent
-                side="bottom"
-                align="center"
-                sideOffset={4}
-                className="w-[calc(var(--radix-popover-trigger-width)-16px)] p-0 bg-app-card border-app-border rounded-xl shadow-lg"
-              >
-                <div className="p-1.5">
-                  {userTenants.length > 0 ? (
-                    userTenants.map((t) => {
-                      const isCurrent = t.slug === tenant.slug;
-                      return (
-                        <Button
-                          key={t.id}
-                          variant="ghost"
-                          onClick={() => {
-                            if (!isCurrent) switchTenant(t.slug);
-                          }}
-                          className={cn(
-                            'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left justify-start',
-                            isCurrent
-                              ? 'bg-accent-muted text-accent'
-                              : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-                          )}
-                        >
-                          <div className="w-7 h-7 rounded-lg bg-app-elevated flex items-center justify-center font-bold text-[10px] shrink-0">
-                            {t.name.charAt(0).toUpperCase()}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{t.name}</p>
-                            <p className="text-[10px] text-app-text-muted truncate">
-                              {t.slug}.attabl.com
-                            </p>
-                          </div>
-                          {isCurrent && <Check className="w-4 h-4 shrink-0" />}
-                        </Button>
-                      );
-                    })
-                  ) : (
-                    <div className="px-3 py-2.5 text-sm text-app-text-muted">{tenant.name}</div>
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
-          )}
-        </div>
-
-        {/* Collapse toggle - directly under tenant info */}
-        <div className={cn('pb-2', collapsed ? 'px-2' : 'px-3')}>
-          <Button
-            variant="ghost"
-            onClick={handleToggleCollapsed}
-            className={cn(
-              'w-full gap-3 py-1.5 text-app-text-muted opacity-40 hover:opacity-100 overflow-hidden',
-              collapsed ? 'justify-center px-0' : 'px-3',
-            )}
-            title={collapsed ? t('expand') : t('collapse')}
-          >
-            {collapsed ? (
-              <PanelLeftOpen className="w-4 h-4 shrink-0" />
-            ) : (
-              <PanelLeftClose className="w-4 h-4 shrink-0" />
-            )}
-            {!collapsed && <span className="text-xs whitespace-nowrap">{t('collapse')}</span>}
-          </Button>
-        </div>
-      </div>
-
-      {/* ── Scrollable navigation ── */}
-      <nav className={cn('flex-1 overflow-y-auto py-3 space-y-1', collapsed ? 'px-2' : 'px-3')}>
-        {mainGroups.map((group, index) => (
-          <SidebarGroup
-            key={group.id}
-            group={group}
-            basePath={basePath}
-            pathname={pathname}
-            collapsed={collapsed}
-            label={label}
-            showSeparator={index > 0 && group.items.length > 0}
-          />
-        ))}
-      </nav>
-
-      {/* ── Bottom card: QR + user + popover ── */}
-      <div className="shrink-0">
-        <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
-          {!collapsed ? (
-            <div className="px-3 pb-3 pt-2">
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  suppressHydrationWarning
-                  className="w-full flex items-center gap-3 p-2.5 rounded-xl border-app-border bg-app-elevated/50 hover:bg-app-hover text-left justify-start"
-                >
-                  {/* Scannable QR code */}
-                  <div className="w-11 h-11 rounded-lg bg-white shrink-0 flex items-center justify-center p-1">
-                    <QRCodeSVG
-                      value={clientUrl}
-                      size={36}
-                      bgColor="#ffffff"
-                      fgColor="#000000"
-                      level="M"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-semibold text-app-text truncate">
-                      {userName || 'Utilisateur'}
-                    </p>
-                    <span className="text-[9px] font-semibold text-accent">{planLabel}</span>
-                  </div>
-                  <ChevronUp className="w-3.5 h-3.5 text-app-text-muted shrink-0" />
-                </Button>
-              </PopoverTrigger>
-              <div className="hidden qr-download-source">
-                <QRCodeSVG
-                  value={clientUrl}
-                  size={512}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                  level="H"
-                />
-              </div>
-            </div>
-          ) : (
+        {!collapsed && (
+          <Popover>
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
                 suppressHydrationWarning
-                className="w-full py-3 flex justify-center hover:bg-app-hover px-0"
+                className="w-full flex items-center justify-between px-2.5 py-2 rounded-lg border border-app-border bg-app-card hover:bg-app-elevated text-[13px] text-app-text-secondary text-left justify-start h-auto"
               >
-                <div className="w-10 h-10 rounded-lg bg-accent-muted flex items-center justify-center">
-                  <QrCode className="w-5 h-5 text-accent" />
-                </div>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-accent shrink-0 admin-pulse"
+                    aria-hidden
+                  />
+                  <span className="truncate">{t('switchSpace')}</span>
+                </span>
+                <ChevronDown className="w-3 h-3 shrink-0 text-app-text-muted" />
               </Button>
             </PopoverTrigger>
-          )}
+            <PopoverContent
+              side="bottom"
+              align="start"
+              sideOffset={6}
+              className="w-[calc(var(--radix-popover-trigger-width))] p-0 bg-app-card border-app-border rounded-lg shadow-lg"
+            >
+              <div className="p-1.5">
+                {userTenants.length > 0 ? (
+                  userTenants.map((opt) => {
+                    const isCurrent = opt.slug === tenant.slug;
+                    return (
+                      <Button
+                        key={opt.id}
+                        variant="ghost"
+                        onClick={() => {
+                          if (!isCurrent) switchTenant(opt.slug);
+                        }}
+                        className={cn(
+                          'w-full flex items-center gap-3 px-3 py-2 rounded-md text-[13px] text-left justify-start h-auto',
+                          isCurrent
+                            ? 'bg-accent-muted text-accent'
+                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
+                        )}
+                      >
+                        <div className="w-6 h-6 rounded-md bg-app-elevated grid place-items-center font-bold text-[10px] shrink-0">
+                          {opt.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{opt.name}</p>
+                          <p className="font-mono text-[10px] text-app-text-muted truncate">
+                            {opt.slug}.attabl.com
+                          </p>
+                        </div>
+                        {isCurrent && <Check className="w-4 h-4 shrink-0" />}
+                      </Button>
+                    );
+                  })
+                ) : (
+                  <div className="px-3 py-2 text-[13px] text-app-text-muted">{tenant.name}</div>
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
+      </div>
+
+      {/* ── Scrollable sections ── */}
+      <nav
+        className={cn(
+          'flex-1 overflow-y-auto flex flex-col gap-5 pb-3',
+          collapsed ? 'px-2' : 'px-3',
+        )}
+      >
+        {sections.map((section) => (
+          <div key={section.key} className="flex flex-col gap-0.5">
+            {!collapsed && (
+              <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-app-text-muted px-2.5 mb-1.5">
+                {t(section.labelKey)}
+              </p>
+            )}
+            {section.groups.map((group) => (
+              <SidebarGroup
+                key={group.id}
+                group={group}
+                basePath={basePath}
+                pathname={pathname}
+                collapsed={collapsed}
+                label={label}
+              />
+            ))}
+          </div>
+        ))}
+      </nav>
+
+      {/* ── Footer: usage card + account popover + collapse toggle ── */}
+      <div className="shrink-0 border-t border-app-border px-3 py-3 flex flex-col gap-2.5">
+        {!collapsed && (
+          <SidebarUsageCard
+            label={t('usageMonthlyOrders')}
+            percent={usagePercent}
+            subtitle={usageSubtitle}
+          />
+        )}
+
+        <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="ghost"
+              suppressHydrationWarning
+              className={cn(
+                'w-full flex items-center gap-2.5 rounded-lg text-left justify-start h-auto hover:bg-app-elevated',
+                collapsed ? 'justify-center p-1.5' : 'px-2 py-2',
+              )}
+            >
+              <div
+                className={cn(
+                  'grid place-items-center rounded-md bg-accent-muted text-accent shrink-0',
+                  collapsed ? 'w-8 h-8' : 'w-7 h-7',
+                )}
+              >
+                <QrCode className="w-4 h-4" />
+              </div>
+              {!collapsed && (
+                <>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[12px] font-semibold text-app-text truncate">
+                      {userName || t('accountMenu')}
+                    </p>
+                    <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                      {planLabel}
+                    </p>
+                  </div>
+                  <ChevronUp className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
+                </>
+              )}
+            </Button>
+          </PopoverTrigger>
           <PopoverContent
             side={collapsed ? 'right' : 'top'}
             align={collapsed ? 'end' : 'center'}
             sideOffset={8}
             className={cn(
-              'p-0 bg-app-card border-app-border rounded-xl shadow-lg',
-              collapsed ? 'w-56' : 'w-[calc(var(--radix-popover-trigger-width)-16px)]',
+              'p-0 bg-app-card border-app-border rounded-lg shadow-lg',
+              collapsed ? 'w-56' : 'w-[calc(var(--radix-popover-trigger-width))]',
             )}
           >
-            {/* Settings & Subscription links */}
+            {/* QR code preview for downloading */}
+            <div className="p-3 flex items-center gap-3 border-b border-app-border">
+              <div className="w-12 h-12 rounded-md bg-white p-1 grid place-items-center shrink-0">
+                <QRCodeSVG
+                  value={clientUrl}
+                  size={40}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  level="M"
+                />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-medium text-app-text truncate">
+                  {userName || t('accountMenu')}
+                </p>
+                <p className="font-mono text-[10px] text-app-text-muted truncate">
+                  {userEmail || `${tenant.slug}.attabl.com`}
+                </p>
+              </div>
+            </div>
+            <div className="hidden qr-download-source">
+              <QRCodeSVG
+                value={clientUrl}
+                size={512}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                level="H"
+              />
+            </div>
+
             <div className="p-1.5">
               <Link
                 href={`${basePath}${SETTINGS_ITEM.path}`}
                 onClick={() => setAccountPopoverOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-colors',
                   isPathActive(pathname, basePath, SETTINGS_ITEM.path)
                     ? 'text-accent bg-accent-muted'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
                 )}
               >
                 <SETTINGS_ITEM.icon className="w-4 h-4 shrink-0" />
@@ -371,10 +359,10 @@ export function AdminSidebar({
                 href={`${basePath}/subscription`}
                 onClick={() => setAccountPopoverOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-colors',
                   isPathActive(pathname, basePath, '/subscription')
                     ? 'text-accent bg-accent-muted'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
                 )}
               >
                 <CreditCard className="w-4 h-4 shrink-0" />
@@ -384,24 +372,22 @@ export function AdminSidebar({
                 href={`${basePath}/support`}
                 onClick={() => setAccountPopoverOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                  'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-colors',
                   isPathActive(pathname, basePath, '/support')
                     ? 'text-accent bg-accent-muted'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
                 )}
               >
                 <LifeBuoy className="w-4 h-4 shrink-0" />
                 <span>{t('navSupport')}</span>
               </Link>
-              {/* Dark/light mode toggle */}
               <ThemeToggle label={t('navTheme')} />
             </div>
 
-            {/* Organization items moved to popover (Inventaire, Fiches techniques, Fournisseurs) */}
             {popoverOrgItems.length > 0 && (
               <>
-                <div className="px-4 pt-2 pb-1">
-                  <p className="text-[10px] font-medium uppercase tracking-widest text-app-text-muted">
+                <div className="px-3 pt-2 pb-1">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.08em] text-app-text-muted">
                     {t('groupOrganization')}
                   </p>
                 </div>
@@ -417,10 +403,10 @@ export function AdminSidebar({
                         href={href}
                         onClick={() => setAccountPopoverOpen(false)}
                         className={cn(
-                          'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                          'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-colors',
                           active
                             ? 'text-accent bg-accent-muted'
-                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                            : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
                         )}
                       >
                         <Icon className="w-4 h-4 shrink-0" />
@@ -432,17 +418,16 @@ export function AdminSidebar({
               </>
             )}
 
-            {/* Analyse - single link to reports page (sub-features are tabs there) */}
             {analyseGroup && (
-              <div className="p-1.5 pt-0 border-t border-app-border mt-1">
+              <div className="p-1.5 border-t border-app-border">
                 <Link
                   href={`${basePath}/reports`}
                   onClick={() => setAccountPopoverOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors',
+                    'flex items-center gap-3 px-3 py-2 rounded-md text-[13px] transition-colors',
                     analyseGroup.items.some((item) => isPathActive(pathname, basePath, item.path))
                       ? 'text-accent bg-accent-muted'
-                      : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
+                      : 'text-app-text-secondary hover:text-app-text hover:bg-app-elevated',
                   )}
                 >
                   <analyseGroup.icon className="w-4 h-4 shrink-0" />
@@ -451,13 +436,12 @@ export function AdminSidebar({
               </div>
             )}
 
-            {/* Logout */}
             <div className="p-1.5 border-t border-app-border">
               <form action="/api/auth/signout" method="post">
                 <Button
                   type="submit"
                   variant="ghost"
-                  className="w-full justify-start gap-3 text-sm text-status-error hover:bg-status-error-bg"
+                  className="w-full justify-start gap-3 text-[13px] text-status-error hover:bg-status-error-bg"
                 >
                   <LogOut className="w-4 h-4 shrink-0" />
                   <span>{t('logout')}</span>
@@ -466,6 +450,23 @@ export function AdminSidebar({
             </div>
           </PopoverContent>
         </Popover>
+
+        <Button
+          variant="ghost"
+          onClick={handleToggleCollapsed}
+          className={cn(
+            'w-full gap-2 py-1.5 text-app-text-muted opacity-60 hover:opacity-100 h-auto',
+            collapsed ? 'justify-center px-0' : 'px-2 justify-start',
+          )}
+          title={collapsed ? t('expand') : t('collapse')}
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="w-4 h-4 shrink-0" />
+          ) : (
+            <PanelLeftClose className="w-4 h-4 shrink-0" />
+          )}
+          {!collapsed && <span className="text-[11px] whitespace-nowrap">{t('collapse')}</span>}
+        </Button>
       </div>
     </aside>
   );
@@ -478,103 +479,68 @@ interface SidebarGroupProps {
   basePath: string;
   pathname: string;
   collapsed: boolean;
-  /** Segment-aware label resolver (overrides sidebar t for segment-specific keys) */
   label: (key: string) => string;
-  showSeparator?: boolean;
 }
 
-function SidebarGroup({
-  group,
-  basePath,
-  pathname,
-  collapsed,
-  label,
-  showSeparator,
-}: SidebarGroupProps) {
-  // Direct link groups (no sub-items) - render as a single link
+function SidebarGroup({ group, basePath, pathname, collapsed, label }: SidebarGroupProps) {
+  // Direct-link group (dashboard, pos, kitchen, service, orders) → one entry
   if (group.directPath !== undefined && group.items.length === 0) {
-    const href = `${basePath}${group.directPath}`;
-    const active = isPathActive(pathname, basePath, group.directPath);
-    const Icon = group.icon;
-
     return (
-      <Link
-        href={href}
-        className={cn(
-          'flex items-center py-1.5 rounded-lg text-sm transition-colors',
-          active
-            ? 'text-accent bg-accent-muted'
-            : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-          collapsed ? 'justify-center px-0' : 'gap-3 px-3',
-        )}
-        title={collapsed ? label(group.titleKey) : undefined}
-      >
-        <Icon className="w-4 h-4 shrink-0" />
-        {!collapsed && <span className="truncate">{label(group.titleKey)}</span>}
-      </Link>
+      <SidebarLink
+        href={`${basePath}${group.directPath}`}
+        active={isPathActive(pathname, basePath, group.directPath)}
+        icon={group.icon}
+        labelText={label(group.titleKey)}
+        collapsed={collapsed}
+      />
     );
   }
 
-  // When sidebar is collapsed, just show icons
-  if (collapsed) {
-    return (
-      <>
-        {showSeparator && <hr className="border-app-border my-2" />}
-        <div className="space-y-0.5">
-          {group.items.map((item) => {
-            const href = `${basePath}${item.path}`;
-            const active = isPathActive(pathname, basePath, item.path);
-            const Icon = item.icon;
-
-            return (
-              <Link
-                key={item.path}
-                href={href}
-                className={cn(
-                  'flex items-center justify-center py-1.5 rounded-lg text-sm transition-colors',
-                  active
-                    ? 'text-accent bg-accent-muted'
-                    : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-                )}
-                title={label(item.labelKey)}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-              </Link>
-            );
-          })}
-        </div>
-      </>
-    );
-  }
-
+  // Multi-item group (organization, marketing) → item list, no group title
   return (
-    <div>
-      {/* Separator line instead of group title */}
-      {showSeparator && <hr className="border-app-border my-2" />}
+    <>
+      {group.items.map((item) => (
+        <SidebarLink
+          key={item.path}
+          href={`${basePath}${item.path}`}
+          active={isPathActive(pathname, basePath, item.path)}
+          icon={item.icon}
+          labelText={label(item.labelKey)}
+          collapsed={collapsed}
+        />
+      ))}
+    </>
+  );
+}
 
-      <div className="space-y-0.5">
-        {group.items.map((item) => {
-          const href = `${basePath}${item.path}`;
-          const active = isPathActive(pathname, basePath, item.path);
-          const Icon = item.icon;
+// ─── Sidebar Link ──────────────────────────────────────
 
-          return (
-            <Link
-              key={item.path}
-              href={href}
-              className={cn(
-                'flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm transition-colors',
-                active
-                  ? 'text-accent bg-accent-muted'
-                  : 'text-app-text-secondary hover:text-app-text hover:bg-app-hover',
-              )}
-            >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="truncate">{label(item.labelKey)}</span>
-            </Link>
-          );
-        })}
-      </div>
-    </div>
+interface SidebarLinkProps {
+  href: string;
+  active: boolean;
+  icon: typeof Settings;
+  labelText: string;
+  collapsed: boolean;
+}
+
+function SidebarLink({ href, active, icon: Icon, labelText, collapsed }: SidebarLinkProps) {
+  return (
+    <Link
+      href={href}
+      title={collapsed ? labelText : undefined}
+      className={cn(
+        'flex items-center rounded-md text-[13px] transition-colors gap-2.5',
+        active
+          ? 'bg-app-elevated text-app-text'
+          : 'text-app-text-secondary hover:bg-app-card hover:text-app-text',
+        collapsed ? 'justify-center px-0 py-2' : 'px-2.5 py-1.5',
+      )}
+    >
+      <Icon
+        className={cn('shrink-0', 'w-[14px] h-[14px]', active ? 'opacity-100' : 'opacity-80')}
+        strokeWidth={2}
+      />
+      {!collapsed && <span className="truncate">{labelText}</span>}
+    </Link>
   );
 }

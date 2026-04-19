@@ -40,6 +40,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
           <div className="space-y-2">
             <Label htmlFor="primaryColor">{t('primaryColor')}</Label>
             <div className="flex gap-3">
+              {/* eslint-disable-next-line react/forbid-elements -- <input type="color"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
               <input
                 type="color"
                 value={watchedPrimaryColor}
@@ -61,6 +62,7 @@ export default function SettingsBranding({ form, t }: SettingsBrandingProps) {
           <div className="space-y-2">
             <Label htmlFor="secondaryColor">{t('secondaryColor')}</Label>
             <div className="flex gap-3">
+              {/* eslint-disable-next-line react/forbid-elements -- <input type="color"> is the CLAUDE.md-documented exception (no shadcn equivalent) */}
               <input
                 type="color"
                 value={watchedSecondaryColor}

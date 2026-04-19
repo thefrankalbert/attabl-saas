@@ -110,34 +110,34 @@
 :root {
   color-scheme: dark;
 
-  --app-bg: #0f1117;
-  --app-card: #1a1d27;
-  --app-elevated: #242836;
-  --app-hover: #2a2f3d;
+  --app-bg: #0a0a0a;
+  --app-card: #111111;
+  --app-elevated: #161616;
+  --app-hover: #1c1c1c;
 
-  --app-border: rgba(255, 255, 255, 0.06);
+  --app-border: rgba(255, 255, 255, 0.07);
   --app-border-hover: rgba(255, 255, 255, 0.12);
 
-  --app-text: #f0f0f0;
-  --app-text-secondary: rgba(255, 255, 255, 0.55);
-  --app-text-muted: rgba(255, 255, 255, 0.3);
+  --app-text: #f5f5f4;
+  --app-text-secondary: #a8a29e;
+  --app-text-muted: #6b6560;
 
-  --app-accent: #ccff00;
-  --app-accent-hover: #b8e600;
-  --app-accent-muted: rgba(204, 255, 0, 0.12);
-  --app-accent-text: #111111;
+  --app-accent: #c2f542;
+  --app-accent-hover: #d1ff5c;
+  --app-accent-muted: rgba(194, 245, 66, 0.12);
+  --app-accent-text: #0a0a0a;
 
-  /* Accent ramp -- single hue, variable lightness */
+  /* Accent ramp -- aligned on mockup lime #c2f542 */
   --accent-50: #f7ffe0;
-  --accent-100: #eeffc2;
-  --accent-200: #ddff85;
-  --accent-300: #ccff00;
-  --accent-400: #b8e600;
-  --accent-500: #99cc00;
-  --accent-600: #7ab300;
-  --accent-700: #5c9900;
-  --accent-800: #3d8000;
-  --accent-900: #1f6600;
+  --accent-100: #edfbc7;
+  --accent-200: #dcf78f;
+  --accent-300: #c2f542;
+  --accent-400: #a3e635;
+  --accent-500: #84cc16;
+  --accent-600: #6aa512;
+  --accent-700: #527f0e;
+  --accent-800: #3d5f0a;
+  --accent-900: #273f07;
 
   --app-status-success-bg: rgba(5, 150, 105, 0.15);
   --app-status-warning-bg: rgba(217, 119, 6, 0.15);
@@ -156,21 +156,21 @@
 .light {
   color-scheme: light;
 
-  --app-bg: #f5f5f7;
-  --app-card: #ffffff;
-  --app-elevated: #f0f0f2;
-  --app-hover: #eaeaec;
+  --app-bg: #ffffff;
+  --app-card: #fafafa;
+  --app-elevated: #f4f4f5;
+  --app-hover: #ededec;
 
-  --app-border: rgba(0, 0, 0, 0.08);
-  --app-border-hover: rgba(0, 0, 0, 0.15);
+  --app-border: #e7e5e4;
+  --app-border-hover: #d6d3d1;
 
-  --app-text: #111111;
-  --app-text-secondary: rgba(0, 0, 0, 0.55);
-  --app-text-muted: rgba(0, 0, 0, 0.3);
+  --app-text: #1c1917;
+  --app-text-secondary: #57534e;
+  --app-text-muted: #a8a29e;
 
-  --app-accent: #4d7c0f;
-  --app-accent-hover: #3f6212;
-  --app-accent-muted: rgba(77, 124, 15, 0.1);
+  --app-accent: #65a30d;
+  --app-accent-hover: #4d7c0f;
+  --app-accent-muted: rgba(101, 163, 13, 0.12);
   --app-accent-text: #ffffff;
 
   /* Accent ramp (light mode) */
@@ -196,21 +196,21 @@
   :root:not(.dark) {
     color-scheme: light;
 
-    --app-bg: #f5f5f7;
-    --app-card: #ffffff;
-    --app-elevated: #f0f0f2;
-    --app-hover: #eaeaec;
+    --app-bg: #ffffff;
+    --app-card: #fafafa;
+    --app-elevated: #f4f4f5;
+    --app-hover: #ededec;
 
-    --app-border: rgba(0, 0, 0, 0.08);
-    --app-border-hover: rgba(0, 0, 0, 0.15);
+    --app-border: #e7e5e4;
+    --app-border-hover: #d6d3d1;
 
-    --app-text: #111111;
-    --app-text-secondary: rgba(0, 0, 0, 0.55);
-    --app-text-muted: rgba(0, 0, 0, 0.3);
+    --app-text: #1c1917;
+    --app-text-secondary: #57534e;
+    --app-text-muted: #a8a29e;
 
-    --app-accent: #4d7c0f;
-    --app-accent-hover: #3f6212;
-    --app-accent-muted: rgba(77, 124, 15, 0.1);
+    --app-accent: #65a30d;
+    --app-accent-hover: #4d7c0f;
+    --app-accent-muted: rgba(101, 163, 13, 0.12);
     --app-accent-text: #ffffff;
 
     --accent-50: #f7fee7;
@@ -501,4 +501,61 @@ body {
       background-position: var(--bg-size, 300%) 0;
     }
   }
+}
+
+/* ===== ADMIN SHELL (dashboard + sidebar + topbar) ===== */
+/* Geist + Geist Mono scoped to admin pages. Fonts are declared in
+   src/app/layout.tsx via next/font. Variables --font-geist-sans and
+   --font-geist-mono are set on <body>. We only redirect the CSS vars
+   used by Tailwind utilities here, scoped to .admin-shell. */
+.admin-shell {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: 'ss01', 'cv11';
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.admin-shell .font-mono,
+.admin-shell .mono {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-feature-settings: 'tnum';
+}
+
+/* Keyframe used by live orders feed to flash newly arrived rows */
+@keyframes adminFlashIn {
+  0% {
+    background-color: var(--app-accent-muted);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.admin-shell .admin-flash-in {
+  animation: adminFlashIn 1.6s ease-out;
+}
+
+/* Soft lime pulse used by the live indicator dots */
+@keyframes adminLimePulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--app-accent-muted);
+  }
+  50% {
+    box-shadow: 0 0 0 4px transparent;
+  }
+}
+.admin-shell .admin-pulse {
+  animation: adminLimePulse 1.8s infinite;
+}
+
+/* Thin feed scrollbar for the live orders column */
+.admin-shell .admin-thin-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.admin-shell .admin-thin-scroll::-webkit-scrollbar-thumb {
+  background: var(--app-border);
+  border-radius: 3px;
+}
+.admin-shell .admin-thin-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--app-border-hover);
 }
