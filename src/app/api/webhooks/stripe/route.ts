@@ -92,6 +92,38 @@ export async function POST(request: Request) {
     // Utiliser admin client pour bypass RLS
     const supabase = createAdminClient();
 
+    // Idempotency: short-circuit replayed events. INSERT ON CONFLICT DO NOTHING
+    // atomically inserts the event id. If a row is returned, this is the first
+    // time we see this event. If null/empty, Stripe is replaying (retries up to
+    // 3 days, or manual dashboard resend) — return 200 without re-applying side
+    // effects to the tenant state.
+    const stripeCreatedAt = event.created ? new Date(event.created * 1000).toISOString() : null;
+    const { data: insertedEvent, error: idempotencyError } = await supabase
+      .from('stripe_events')
+      .insert({
+        id: event.id,
+        type: event.type,
+        stripe_created_at: stripeCreatedAt,
+      })
+      .select('id')
+      .maybeSingle();
+
+    if (idempotencyError && idempotencyError.code !== '23505') {
+      logger.error('Failed to record Stripe event for idempotency', idempotencyError, {
+        eventId: event.id,
+        eventType: event.type,
+      });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+
+    if (!insertedEvent) {
+      logger.info('Stripe event already processed, skipping', {
+        eventId: event.id,
+        eventType: event.type,
+      });
+      return NextResponse.json({ received: true, idempotent: true });
+    }
+
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;

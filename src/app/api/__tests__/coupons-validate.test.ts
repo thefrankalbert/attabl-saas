@@ -9,8 +9,8 @@ vi.mock('@/lib/rate-limit', () => ({
   getClientIp: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
-vi.mock('@/lib/supabase/admin', () => ({
-  createAdminClient: vi.fn(),
+vi.mock('@/lib/supabase/server', () => ({
+  createClient: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -41,7 +41,7 @@ vi.mock('next-intl/server', () => ({
 
 import { POST } from '../coupons/validate/route';
 import { orderLimiter } from '@/lib/rate-limit';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { headers } from 'next/headers';
 import { createCouponService } from '@/services/coupon.service';
 
@@ -80,12 +80,12 @@ function createMockSupabase(overrides?: {
   const tenant = overrides?.tenant ?? { id: 'tenant-1' };
   const tenantError = overrides?.tenantError ?? null;
 
-  const tenantSingle = vi.fn().mockResolvedValue({ data: tenant, error: tenantError });
-  const tenantEq = vi.fn().mockReturnValue({ single: tenantSingle });
-  const tenantSelect = vi.fn().mockReturnValue({ eq: tenantEq });
+  // Tenant lookup now goes through the security-definer RPC get_tenant_by_slug,
+  // which returns an array (TABLE function) — null means not found.
+  const rpcResult = tenant ? [tenant] : null;
 
   return {
-    from: vi.fn().mockReturnValue({ select: tenantSelect }),
+    rpc: vi.fn().mockResolvedValue({ data: rpcResult, error: tenantError }),
   };
 }
 
@@ -128,7 +128,7 @@ describe('POST /api/coupons/validate', () => {
   it('returns 404 with masked error when tenant is not found', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase({ tenant: null, tenantError: { message: 'Not found' } });
-    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(mock as never);
 
     const res = await POST(buildRequest({ code: 'SAVE10', subtotal: 5000 }));
     const json = (await res.json()) as { error: string };
@@ -141,7 +141,7 @@ describe('POST /api/coupons/validate', () => {
   it('returns 400 when body is malformed JSON', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();
-    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(mock as never);
 
     const res = await POST(buildRequest(undefined, { malformed: true }));
     const json = (await res.json()) as { error: string };
@@ -153,7 +153,7 @@ describe('POST /api/coupons/validate', () => {
   it('returns 400 when code is missing', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();
-    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(mock as never);
 
     const res = await POST(buildRequest({ subtotal: 5000 }));
     const json = (await res.json()) as { error: string };
@@ -165,7 +165,7 @@ describe('POST /api/coupons/validate', () => {
   it('returns coupon validation result on success', async () => {
     mockRateLimit(true);
     const mock = createMockSupabase();
-    vi.mocked(createAdminClient).mockReturnValue(mock as never);
+    vi.mocked(createClient).mockResolvedValue(mock as never);
     vi.mocked(createCouponService).mockReturnValue({
       validateCoupon: vi.fn().mockResolvedValue({
         valid: true,
