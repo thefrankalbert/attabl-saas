@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { createPOSOrderSchema } from '@/lib/validations/order.schema';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createOrderService } from '@/services/order.service';
 import { createCouponService } from '@/services/coupon.service';
 import { calculateOrderTotal } from '@/lib/pricing/tax';
@@ -14,6 +15,9 @@ import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);

@@ -163,19 +163,16 @@ describe('POST /api/forgot-password', () => {
     });
   });
 
-  it('falls back to confirmation link when recovery fails for unconfirmed email', async () => {
+  it('does NOT fall back to signup link when recovery fails (anti-enumeration)', async () => {
     mockRateLimit(true);
-    // Recovery fails, then signup succeeds (unconfirmed user)
+    // Recovery fails. The previous behavior was to attempt a type:'signup'
+    // link which could silently create a user for a non-existent email.
+    // The route now returns success (anti-enumeration) without any fallback.
     const mock = createMockAdminClient({
-      generateLinkImpl: async (params: { type: string }) => {
-        if (params.type === 'recovery') {
-          return { data: null, error: { message: 'Email not confirmed' } };
-        }
-        return {
-          data: { properties: { hashed_token: 'confirm_token_456' } },
-          error: null,
-        };
-      },
+      generateLinkImpl: async () => ({
+        data: null,
+        error: { message: 'User not found' },
+      }),
     });
     vi.mocked(createAdminClient).mockReturnValue(mock as never);
 
@@ -184,7 +181,11 @@ describe('POST /api/forgot-password', () => {
 
     expect(res.status).toBe(200);
     expect(json.success).toBe(true);
-    expect(mock.auth.admin.generateLink).toHaveBeenCalledTimes(2);
+    // Recovery attempted once, no second call for the removed signup fallback.
+    expect(mock.auth.admin.generateLink).toHaveBeenCalledTimes(1);
+    expect(mock.auth.admin.generateLink).toHaveBeenCalledWith(
+      expect.objectContaining({ type: 'recovery' }),
+    );
   });
 
   it('does not call listUsers (scalability fix)', async () => {
