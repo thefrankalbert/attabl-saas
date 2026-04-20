@@ -65,10 +65,12 @@ const TERMINAL_STATUSES = new Set(['delivered', 'served', 'cancelled']);
 
 // --- Helpers ------------------------------------------------
 
-function getStoredOrderIds(): string[] {
+function getStoredOrderIds(tenantSlug: string): string[] {
   if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(localStorage.getItem('attabl_order_ids') || '[]');
+    // Namespaced per tenant so customers who order from multiple ATTABL
+    // restaurants on the same device don't see ID leak across tenants.
+    return JSON.parse(localStorage.getItem(`attabl_${tenantSlug}_order_ids`) || '[]');
   } catch {
     return [];
   }
@@ -112,7 +114,7 @@ export default function ClientOrders({
   useEffect(() => {
     let cancelled = false;
     const supabase = supabaseRef.current;
-    const storedIds = getStoredOrderIds();
+    const storedIds = getStoredOrderIds(tenantSlug);
 
     if (storedIds.length === 0) {
       Promise.resolve().then(() => {
@@ -162,7 +164,7 @@ export default function ClientOrders({
     return () => {
       cancelled = true;
     };
-  }, [tenantId]);
+  }, [tenantId, tenantSlug]);
 
   // --- Realtime: listen for status changes on ACTIVE orders only --
 
