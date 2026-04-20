@@ -3,12 +3,16 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { signupSchema } from '@/lib/validations/auth.schema';
 import { signupLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const t = await getTranslations('errors');
 
     // 1. Rate limiting

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
 import { forgotPasswordLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { sendPasswordResetEmail } from '@/services/email.service';
 
 /**
@@ -16,6 +17,9 @@ import { sendPasswordResetEmail } from '@/services/email.service';
  */
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await forgotPasswordLimiter.check(ip);

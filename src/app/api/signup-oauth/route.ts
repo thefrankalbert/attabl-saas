@@ -4,11 +4,15 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { signupOAuthSchema } from '@/lib/validations/auth.schema';
 import { oauthSignupLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createSignupService } from '@/services/signup.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await oauthSignupLimiter.check(ip);
