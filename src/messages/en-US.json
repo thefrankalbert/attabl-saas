@@ -217,6 +217,78 @@
     "panorama": "Panorama",
     "lobbyBar": "Lobby Bar"
   },
+  "auth": {
+    "layout": {
+      "headlineLine1": "Your customers get a",
+      "headlineLine2": "5-star experience.",
+      "headlineLine3": "Your operations too.",
+      "stat1Value": "+35%",
+      "stat1Label": "more orders",
+      "stat2Value": "-50%",
+      "stat2Label": "fewer errors",
+      "stat3Value": "10 min",
+      "stat3Label": "to launch",
+      "previewRevenueLabel": "Today's revenue",
+      "previewLiveLabel": "Live",
+      "previewOrdersLabel": "Recent orders",
+      "previewStatusInProgress": "In progress",
+      "previewStatusServed": "Served"
+    },
+    "form": {
+      "loginTitle": "Your venue is waiting for you.",
+      "loginSubtitle": "Orders, inventory, revenue. It's all here.",
+      "signupTitle": "Create your account in 2 minutes. 14-day free trial.",
+      "signupSubtitle": "No credit card required. Cancel anytime.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholderLogin": "••••••••",
+      "passwordPlaceholderSignup": "Minimum 8 characters",
+      "forgotPassword": "Forgot?",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "submitLogin": "Sign in",
+      "submitSignup": "Get started",
+      "submittingLogin": "Signing in...",
+      "submittingSignup": "Creating account...",
+      "trustSignup": "14 days free - no commitment",
+      "divider": "or",
+      "google": "Continue with Google",
+      "trustBadge": "Secure connection · Encrypted data",
+      "noAccount": "No account yet?",
+      "hasAccount": "Already have an account?",
+      "emailConfirmedSuccess": "Your email has been confirmed successfully. You can now sign in.",
+      "emailNotConfirmed": "Your email address hasn't been confirmed yet.",
+      "resendLink": "Resend link",
+      "resendSending": "Sending..."
+    },
+    "confirm": {
+      "title": "Check your inbox",
+      "sentTo": "A confirmation email has been sent to",
+      "instructions": "Click the link in the email to activate your account and configure your venue.",
+      "resendButton": "Resend confirmation email",
+      "resendSending": "Sending...",
+      "resendCooldown": "Resend in {seconds}s",
+      "spamHint": "Can't find the email? Check your spam folder or",
+      "resendHere": "resend it",
+      "resendHereCooldown": "resend it ({seconds}s)",
+      "backToLogin": "Back to sign in"
+    },
+    "errors": {
+      "signupGeneric": "Sign-up failed",
+      "resendGeneric": "Send failed",
+      "loginGeneric": "Sign-in failed",
+      "oauthGeneric": "Sign-in failed. Please try again.",
+      "oauthFailed": "OAuth sign-in failed. Please try again.",
+      "authFailed": "Authentication error. Please try again.",
+      "sessionExpired": "Your session has expired. Please sign in again.",
+      "emailNotConfirmedUrl": "Please confirm your email before signing in.",
+      "accessDenied": "Access denied.",
+      "invalidToken": "The link has expired or is invalid. Please try again.",
+      "expiredLink": "This link has expired. Please request a new one.",
+      "generic": "An error occurred. Please try again."
+    }
+  },
   "admin": {
     "tenants": {
       "commandCenter": {
