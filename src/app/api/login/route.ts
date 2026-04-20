@@ -59,8 +59,13 @@ export async function POST(request: Request) {
       .select('tenant_id, is_super_admin, role, tenants(slug, onboarding_completed)')
       .eq('user_id', authData.user.id);
 
+    // Anti-enumeration: don't expose that the email is valid but has no tenant.
+    // A successful signInWithPassword on an email with no admin_users row is a
+    // recoverable state (user dropped out mid-onboarding). Route them to the
+    // onboarding flow so the front end can re-seed the tenant instead of
+    // leaking "ce compte existe mais n'a pas d'etablissement".
     if (!adminUsers || adminUsers.length === 0) {
-      return NextResponse.json({ error: t('noEstablishment') }, { status: 403 });
+      return NextResponse.json({ success: true, redirect: '/onboarding' });
     }
 
     // 4. Determine redirect

@@ -2,13 +2,25 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { permissionLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { z } from 'zod';
+import { PERMISSION_CODES } from '@/types/permission.types';
 
 const VALID_ROLES = ['admin', 'manager', 'cashier', 'chef', 'waiter'] as const;
 
+// Whitelist the permission keys to the PERMISSION_CODES enum. Previously the
+// schema accepted z.record(z.string(), z.boolean()), which let a compromised
+// owner account inject arbitrary keys into role_permissions.permissions that a
+// lax front-end check might honor as "granted".
+const permissionsMapSchema = z
+  .record(z.enum(PERMISSION_CODES), z.boolean())
+  .refine((val) => Object.keys(val).length > 0, {
+    message: 'At least one permission must be provided',
+  });
+
 const updatePermissionsSchema = z.object({
   role: z.enum(VALID_ROLES, { error: 'Rôle invalide' }),
-  permissions: z.record(z.string(), z.boolean()),
+  permissions: permissionsMapSchema,
 });
 
 const deletePermissionsSchema = z.object({
@@ -29,6 +41,9 @@ async function verifyOwner(supabase: Awaited<ReturnType<typeof createClient>>, u
 
 export async function PUT(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const ip = getClientIp(request);
     const { success: allowed } = await permissionLimiter.check(ip);
     if (!allowed)
@@ -86,6 +101,9 @@ export async function PUT(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const ip = getClientIp(request);
     const { success: allowed } = await permissionLimiter.check(ip);
     if (!allowed)

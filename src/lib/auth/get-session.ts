@@ -54,11 +54,16 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser> {
 export async function getAuthenticatedUserWithTenant(): Promise<AuthenticatedUserWithTenant> {
   const { user, supabase } = await getAuthenticatedUser();
 
+  // Use limit(1).maybeSingle() instead of single() so this helper also works
+  // for super_admin users who can have multiple admin_users rows. single()
+  // would raise PGRST116 in that case and return a misleading 403.
   const { data: adminUser, error } = await supabase
     .from('admin_users')
     .select('tenant_id, role')
     .eq('user_id', user.id)
-    .single();
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   if (error || !adminUser) {
     logger.warn('User has no tenant association', { userId: user.id });

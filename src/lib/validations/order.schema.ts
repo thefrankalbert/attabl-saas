@@ -53,8 +53,18 @@ export const createOrderSchema = z.object({
   service_type: z.enum(['dine_in', 'takeaway', 'delivery', 'room_service']).default('dine_in'),
   room_number: z.string().max(20).optional(),
   delivery_address: z.string().max(500).optional(),
-  coupon_code: z.string().max(50).optional(),
-  server_id: z.string().uuid().optional(),
+  coupon_code: z
+    .string()
+    .max(50)
+    .regex(
+      /^[A-Z0-9_-]+$/i,
+      'Le code ne peut contenir que lettres, chiffres, tirets et underscores',
+    )
+    .optional(),
+  // server_id is intentionally excluded from the client-accepted schema.
+  // POS orders derive the server from the authenticated session, and QR orders
+  // (this schema) are anonymous. Accepting server_id from the client would let
+  // an attacker attribute orders to an arbitrary staff member.
   display_currency: z.enum(['XAF', 'XOF', 'EUR', 'USD']).optional(),
   tip_amount: z.number().min(0).optional(),
 });

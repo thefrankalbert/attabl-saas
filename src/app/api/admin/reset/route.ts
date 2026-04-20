@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { z } from 'zod';
 import { adminResetLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { getAuthenticatedUserWithTenant, AuthError } from '@/lib/auth/get-session';
 
 /**
@@ -19,6 +20,9 @@ const resetSchema = z.object({
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await adminResetLimiter.check(ip);
