@@ -272,6 +272,13 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
     [statusConfig],
   );
 
+  const handleStatusChange = useCallback(
+    (orderId: string, newStatus: OrderStatus) => {
+      updateOrderStatus.mutate({ orderId, status: newStatus });
+    },
+    [updateOrderStatus],
+  );
+
   // TanStack Table column definitions
   const columns = useMemo<ColumnDef<Order, unknown>[]>(
     () => [
@@ -394,13 +401,8 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
         enableSorting: false,
       },
     ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [t, tc, ta, getStatusConfig, formatNumber, selectedIds, filteredOrders],
+    [t, tc, ta, getStatusConfig, formatNumber, selectedIds, filteredOrders, handleStatusChange],
   );
-
-  const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
-    updateOrderStatus.mutate({ orderId, status: newStatus });
-  };
 
   // NOTE: order_items and related records are deleted via ON DELETE CASCADE
   // in the database schema. No manual cleanup needed.
