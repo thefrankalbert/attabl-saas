@@ -5,12 +5,14 @@ import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingIndicator } from '@/components/application/loading-indicator/LoadingIndicator';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
-import { CommandCenterTopBar } from '@/components/admin/tenants/CommandCenterTopBar';
-import { CommandCenterHero } from '@/components/admin/tenants/CommandCenterHero';
-import { NetworkTrendCard } from '@/components/admin/tenants/NetworkTrendCard';
-import { LocationsGrid } from '@/components/admin/tenants/LocationsGrid';
-import { AlertCenterCard } from '@/components/admin/tenants/AlertCenterCard';
-import { LiveFeedCard } from '@/components/admin/tenants/LiveFeedCard';
+import { CommandCenterShell } from '@/components/admin/tenants/v2/CommandCenterShell';
+import { TopbarMinimal } from '@/components/admin/tenants/v2/TopbarMinimal';
+import { Hero } from '@/components/admin/tenants/v2/Hero';
+import { MicroRow } from '@/components/admin/tenants/v2/MicroRow';
+import { ChartPanelMinimal } from '@/components/admin/tenants/v2/ChartPanelMinimal';
+import { EstablishmentsList } from '@/components/admin/tenants/v2/EstablishmentsList';
+import { FluxList } from '@/components/admin/tenants/v2/FluxList';
+import { TenantsListDialog } from '@/components/admin/tenants/v2/TenantsListDialog';
 import type { OwnerDashboardRow } from '@/types/restaurant-group.types';
 import type {
   ChartDataPoint,
@@ -28,6 +30,8 @@ interface TenantsPageClientProps {
   serverUserName: string;
   serverTenants?: Tenant[];
   serverRestaurants?: OwnerDashboardRow[];
+  /** Theme read server-side from the attabl-cc-theme cookie (FOUC fix). */
+  initialTheme?: 'light' | 'dark';
 }
 
 interface OrderRow {
@@ -39,11 +43,19 @@ interface OrderRow {
   tenant_id: string;
 }
 
+function initialsFor(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '??';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 export default function TenantsPageClient({
   serverMode,
   serverUserName,
   serverTenants,
   serverRestaurants,
+  initialTheme = 'light',
 }: TenantsPageClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -83,6 +95,7 @@ export default function TenantsPageClient({
   const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
   const [alerts, setAlerts] = useState<CommandCenterAlert[]>([]);
   const [showWizard, setShowWizard] = useState(false);
+  const [showFullList, setShowFullList] = useState(false);
 
   const tenantIds = useMemo(() => baseTenants.map((t) => t.id), [baseTenants]);
   const tenantById = useMemo(() => {
@@ -162,7 +175,12 @@ export default function TenantsPageClient({
         sparkline: today.sparkline.slice(0, now.getHours() + 1),
       };
     });
-    setLocations(computedLocations);
+    // Sort for the right-column list: active first, then by revenue_today DESC
+    const sortedLocations = [...computedLocations].sort((a, b) => {
+      if (a.is_active !== b.is_active) return a.is_active ? -1 : 1;
+      return b.revenue_today - a.revenue_today;
+    });
+    setLocations(sortedLocations);
 
     const totalRevenueToday = computedLocations.reduce((s, l) => s + l.revenue_today, 0);
     const totalRevenueYesterday = computedLocations.reduce((s, l) => s + l.revenue_yesterday, 0);
@@ -259,9 +277,11 @@ export default function TenantsPageClient({
 
       const buckets = new Map<string, { revenue: number; orders: number }>();
       if (groupBy === 'hour') {
-        for (let h = 0; h <= now.getHours(); h++) buckets.set(`${h}h`, { revenue: 0, orders: 0 });
+        for (let h = 0; h <= now.getHours(); h++) {
+          buckets.set(`${String(h).padStart(2, '0')}h`, { revenue: 0, orders: 0 });
+        }
         for (const o of data || []) {
-          const key = `${new Date(o.created_at).getHours()}h`;
+          const key = `${String(new Date(o.created_at).getHours()).padStart(2, '0')}h`;
           const b = buckets.get(key);
           if (b) {
             b.revenue += Number(o.total) || 0;
@@ -296,10 +316,6 @@ export default function TenantsPageClient({
     [supabase, tenantIds],
   );
 
-  // Initial multi-query data load. All setState calls inside fetchAll / fetchChart
-  // happen after an `await` boundary; the react-hooks/set-state-in-effect rule does
-  // not trace async control flow so it flags the call site. Accepted deviation for
-  // initial data fetching pattern.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     void fetchAll();
@@ -320,53 +336,81 @@ export default function TenantsPageClient({
     router.push('/login');
   }, [router, supabase]);
 
+  const crumb = serverMode === 'superadmin' ? 'Plateforme' : 'Mes etablissements';
+  const userInitials = initialsFor(serverUserName || 'US');
+  const displayName = serverUserName || 'Utilisateur';
+  const lastOrderAt = recentOrders[0]?.created_at ?? null;
+
   if (loading) {
     return (
-      <div className="flex h-dvh items-center justify-center bg-app-bg">
-        <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
-      </div>
+      <CommandCenterShell defaultTheme={initialTheme}>
+        <div
+          className="flex h-full items-center justify-center"
+          style={{ background: 'var(--cc-bg)' }}
+        >
+          <LoadingIndicator type="dot-circle" size="lg" className="text-app-text-muted" />
+        </div>
+      </CommandCenterShell>
     );
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-app-bg">
-      <CommandCenterTopBar
-        mode={serverMode}
-        userName={serverUserName}
-        ordersLiveCount={globals.orders_today}
+    <CommandCenterShell defaultTheme={initialTheme}>
+      <TopbarMinimal
+        crumb={crumb}
+        userInitials={userInitials}
+        userName={displayName}
         onLogout={handleLogout}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col">
-        <CommandCenterHero globals={globals} />
+      <main
+        id="main-content"
+        className="mx-auto grid w-full max-w-[1400px] min-h-0 flex-1 grid-cols-1 gap-y-6 overflow-y-auto px-5 pb-10 pt-3 sm:px-8 lg:grid-cols-[1.15fr_1fr] lg:gap-x-10"
+      >
+        <section className="flex min-h-0 flex-col gap-6">
+          <Hero
+            revenueToday={globals.revenue_today}
+            revenueYesterday={globals.revenue_yesterday}
+            lastOrderAt={lastOrderAt}
+          />
+          <MicroRow
+            ordersToday={globals.orders_today}
+            sitesOnline={globals.active_locations}
+            sitesTotal={globals.total_locations}
+            alertsCount={alerts.length}
+          />
+          <ChartPanelMinimal
+            data={chartData}
+            mode={chartMode}
+            period={chartPeriod}
+            onModeChange={setChartMode}
+            onPeriodChange={setChartPeriod}
+          />
+        </section>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-3">
-          <div className="flex min-h-0 flex-col px-3 py-2 sm:px-4 lg:col-span-2 lg:border-r lg:border-app-border">
-            <NetworkTrendCard
-              data={chartData}
-              period={chartPeriod}
-              mode={chartMode}
-              onPeriodChange={setChartPeriod}
-              onModeChange={setChartMode}
-            />
-            <LocationsGrid
-              locations={locations}
-              onOpenDashboard={handleOpenDashboard}
-              onOpenMenu={handleOpenMenu}
-              onAdd={serverMode === 'owner' ? () => setShowWizard(true) : undefined}
-            />
-          </div>
+        <aside className="flex min-h-0 flex-col gap-7">
+          <EstablishmentsList
+            locations={locations}
+            onOpenDashboard={handleOpenDashboard}
+            onOpenMenu={handleOpenMenu}
+            onAdd={serverMode === 'owner' ? () => setShowWizard(true) : undefined}
+            onSeeAll={() => setShowFullList(true)}
+          />
+          <FluxList
+            orders={recentOrders}
+            onSelect={handleOpenDashboard}
+            multiTenant={baseTenants.length > 1}
+          />
+        </aside>
+      </main>
 
-          <div className="flex min-h-0 flex-col px-3 py-2 sm:px-4">
-            <AlertCenterCard alerts={alerts} onSelectTenant={handleOpenDashboard} />
-            <LiveFeedCard
-              orders={recentOrders}
-              multiTenant={baseTenants.length > 1}
-              onSelectTenant={handleOpenDashboard}
-            />
-          </div>
-        </div>
-      </div>
+      <TenantsListDialog
+        open={showFullList}
+        onOpenChange={setShowFullList}
+        locations={locations}
+        onOpenDashboard={handleOpenDashboard}
+        onOpenMenu={handleOpenMenu}
+      />
 
       {showWizard && (
         <AddRestaurantWizard
@@ -377,6 +421,6 @@ export default function TenantsPageClient({
           }}
         />
       )}
-    </div>
+    </CommandCenterShell>
   );
 }
