@@ -200,6 +200,62 @@ SEULE EXCEPTION : les fichiers Markdown (\*.md) et les documents generes (.docx,
 - Si une adaptation est necessaire (typage TS, imports manquants), la faire a la marge sans toucher au rendu visuel.
 - En cas de doute, demander confirmation AVANT de modifier.
 
+## ZERO DETTE TECHNIQUE - REGLE ABSOLUE
+
+REGLE : aucune tache, refonte, fix, ou feature n'est consideree TERMINEE tant que 100 % des problemes identifies sont corriges. Laisser des items "non bloquants" pour plus tard = dette technique = INTERDIT.
+
+### Definition d'une tache "terminee"
+
+Une tache est terminee si et seulement si :
+
+1. **Les 5 portes CI passent** : typecheck, lint (`--max-warnings 0`), prettier, tests, build. Un seul warning laisse la tache non terminee.
+2. **Aucun item d'audit n'est reporte** : chaque finding d'un audit (critical, high, medium, low, info) est soit corrige, soit explicitement marque "N/A" avec justification ecrite dans le PR/commit.
+3. **Aucun fichier mort** : aucun composant, fonction, import, hook, ou asset non reference. Si quelque chose n'est plus utilise, il est SUPPRIME dans le meme commit.
+4. **Aucun placeholder** : pas de `// TODO`, `// FIXME`, `// XXX`, `throw new Error('not implemented')`, `return null` fake, ni console.log de debug. Si la feature n'est pas finie, elle n'est pas shippee.
+5. **Aucun `eslint-disable`** non justifie en commentaire (pourquoi + date + issue) - voir section ESLint ci-dessus.
+6. **Aucune regression** : la tache DOIT preserver toutes les features pre-existantes. Si la refonte enleve une feature, c'est documente ET justifie en amont avec l'utilisateur.
+7. **Aucune race condition / fuite de memoire / listener non nettoye** : chaque `addEventListener`, `setInterval`, `setTimeout`, abonnement Supabase/TanStack a sa fonction de cleanup.
+8. **Typographie ASCII respectee partout** (code, i18n, commentaires) - pas d'em-dash `—`, smart quotes `"` `"`, ellipsis `...`, guillemets francais `«` `»`.
+9. **Aucune inclusion silencieuse de donnees cross-tenant** : chaque requete DB sur une table multi-tenant filtre par `tenant_id`.
+10. **Zero nested interactive** : pas de `<button>` dans un `<button>`, pas d'`<a>` dans un `<a>`, pas de `<Button>` dans un `<Button>`.
+
+### Procedure post-modification OBLIGATOIRE
+
+Apres CHAQUE tache, executer systematiquement :
+
+```bash
+pnpm typecheck                                  # 0 erreur
+pnpm lint --max-warnings 0                      # 0 warning
+pnpm format:check                               # pas de diff
+pnpm test                                       # tous passent
+pnpm build                                      # build clean
+```
+
+Si l'un de ces checks echoue : corriger, ne pas considerer la tache terminee, ne pas reporter "pour plus tard". La CI enforcera ces portes de toute facon - autant les corriger avant de commiter.
+
+### Interdiction absolue d'accepter la dette
+
+Les formulations suivantes sont BANNIES comme excuses pour laisser du code dans un etat non termine :
+
+- "non bloquant pour prod"
+- "follow-up dans un autre PR"
+- "on verra plus tard"
+- "scope out pour ce sprint"
+- "acceptable pour le MVP"
+- "assez bon pour l'instant"
+
+Si un probleme est identifie il est corrige maintenant, ou il est explicitement retire de la tache (scope reel, demande utilisateur ecrite, justification de regression assumee).
+
+### Exceptions documentees
+
+Les seules exceptions tolerees sont :
+
+- Limitations de la plateforme (Supabase, Next.js) documentees avec le numero d'issue upstream.
+- Blocages exterieurs (waiting for design validation, waiting for DB migration review) mais dans ce cas la tache est marquee BLOQUEE, pas terminee.
+- Decisions produit explicites de l'utilisateur, ecrites dans le commit ou le PR.
+
+Dans tous les autres cas : zero dette technique, point.
+
 ## Design
 
 Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md

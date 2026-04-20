@@ -3,6 +3,7 @@ import {
   Geist,
   Geist_Mono,
   DM_Serif_Display,
+  Instrument_Serif,
   Inter,
   Poppins,
   Montserrat,
@@ -36,6 +37,13 @@ const geistMono = Geist_Mono({
 
 const dmSerifDisplay = DM_Serif_Display({
   variable: '--font-dm-serif-display',
+  subsets: ['latin'],
+  weight: ['400'],
+  display: 'swap',
+});
+
+const instrumentSerif = Instrument_Serif({
+  variable: '--font-instrument-serif',
   subsets: ['latin'],
   weight: ['400'],
   display: 'swap',
@@ -154,6 +162,7 @@ export default async function RootLayout({
           geistSans.variable,
           geistMono.variable,
           dmSerifDisplay.variable,
+          instrumentSerif.variable,
           inter.variable,
           poppins.variable,
           montserrat.variable,

@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { notFound } from 'next/navigation';
 import TenantsPageClient from './tenants-page-client';
@@ -7,6 +8,12 @@ import TenantsPageClient from './tenants-page-client';
 export const dynamic = 'force-dynamic';
 
 export default async function TenantsPage() {
+  // Read the Command Center theme cookie server-side so the shell renders
+  // with the correct data-cc-theme on first paint (no FOUC).
+  const cookieStore = await cookies();
+  const themeCookie = cookieStore.get('attabl-cc-theme')?.value;
+  const initialTheme: 'light' | 'dark' = themeCookie === 'dark' ? 'dark' : 'light';
+
   const supabase = await createClient();
 
   const {
@@ -50,6 +57,7 @@ export default async function TenantsPage() {
         serverMode="superadmin"
         serverUserName={userName}
         serverTenants={allTenants || []}
+        initialTheme={initialTheme}
       />
     );
   }
@@ -81,6 +89,7 @@ export default async function TenantsPage() {
       serverMode="owner"
       serverUserName={userName}
       serverRestaurants={serverRestaurants}
+      initialTheme={initialTheme}
     />
   );
 }
