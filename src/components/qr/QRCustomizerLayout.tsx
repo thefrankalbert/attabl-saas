@@ -52,7 +52,7 @@ export function QRCustomizerLayout({
         </div>
 
         {/* Left panel: customizer controls */}
-        <div className="w-full md:w-96 md:shrink-0 md:max-h-[calc(100vh-200px)] md:overflow-y-auto">
+        <div className="w-full md:w-96 md:shrink-0 md:max-h-[calc(100dvh-200px)] md:overflow-y-auto">
           <QRCustomizerPanel
             config={config}
             updateField={updateField}
