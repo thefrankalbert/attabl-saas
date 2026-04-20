@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations, useLocale } from 'next-intl';
 import Link from 'next/link';
 import { BarChart3, Package, QrCode } from 'lucide-react';
@@ -10,15 +11,27 @@ import { formatCurrency, getCurrencyConfig } from '@/lib/utils/currency';
 import type { CurrencyCode } from '@/types/admin.types';
 import { usePermissions } from '@/hooks/usePermissions';
 import { MetricsRow, type MetricDescriptor, type MetricKey } from './dashboard/MetricsRow';
-import {
-  OverviewChart,
-  type ChartMetric,
-  type ChartRange,
-  type SeriesPoint,
-} from './dashboard/OverviewChart';
+// OverviewChart brings in recharts (~200KB). Defer with next/dynamic so it
+// doesn't block the initial admin shell render. Types still imported eagerly
+// — type imports are erased at build time.
+import type { ChartMetric, ChartRange, SeriesPoint } from './dashboard/OverviewChart';
+const OverviewChart = dynamic(
+  () => import('./dashboard/OverviewChart').then((m) => m.OverviewChart),
+  {
+    ssr: false,
+    loading: () => <div className="h-[300px] w-full animate-pulse rounded-xl bg-app-elevated" />,
+  },
+);
 import { TopDishesCard, type TopDish } from './dashboard/TopDishesCard';
 import { StockAlertsCard, type StockAlert } from './dashboard/StockAlertsCard';
-import { LiveOrdersFeed } from './dashboard/LiveOrdersFeed';
+// LiveOrdersFeed subscribes to Supabase realtime — only needed once hydrated.
+const LiveOrdersFeed = dynamic(
+  () => import('./dashboard/LiveOrdersFeed').then((m) => m.LiveOrdersFeed),
+  {
+    ssr: false,
+    loading: () => <div className="h-[200px] w-full animate-pulse rounded-xl bg-app-elevated" />,
+  },
+);
 import type {
   DashboardBucketSeries,
   DashboardDayBucket,
