@@ -10,9 +10,11 @@
  * (inline styles cannot execute code, so this is acceptable).
  */
 export function buildCspHeader(nonce: string): string {
+  const isDev = process.env.NODE_ENV !== 'production';
+  const devScriptExtras = isDev ? " 'unsafe-eval'" : '';
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' https://*.stripe.com https://*.sentry.io`,
+    `script-src 'self' 'nonce-${nonce}'${devScriptExtras} https://*.stripe.com https://*.sentry.io`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://*.supabase.co https://*.stripe.com https://cdn.jsdelivr.net https://images.unsplash.com",
     "font-src 'self'",
