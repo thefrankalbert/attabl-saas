@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -39,6 +40,10 @@ interface AuthFormProps {
 }
 
 function AuthForm({ mode }: AuthFormProps) {
+  const tForm = useTranslations('auth.form');
+  const tConfirm = useTranslations('auth.confirm');
+  const tErr = useTranslations('auth.errors');
+
   const searchParams = useSearchParams();
   const urlEmail = searchParams.get('email') || '';
   const isConfirmed = searchParams.get('confirmed') === 'true';
@@ -78,7 +83,7 @@ function AuthForm({ mode }: AuthFormProps) {
       if (error) throw error;
     } catch (err) {
       logger.error('OAuth login failed', err);
-      setError('Erreur de connexion. Veuillez réessayer.');
+      setError(tErr('oauthGeneric'));
       setOauthLoading(null);
     }
   };
@@ -105,7 +110,7 @@ function AuthForm({ mode }: AuthFormProps) {
         const data = await response.json();
 
         if (!response.ok) {
-          throw new Error(data.error || "Erreur lors de l'inscription");
+          throw new Error(data.error || tErr('signupGeneric'));
         }
 
         // Account created - show confirmation message
@@ -124,7 +129,7 @@ function AuthForm({ mode }: AuthFormProps) {
           if (data.error === 'email_not_confirmed') {
             throw new Error('Email not confirmed');
           }
-          throw new Error(data.error || 'Erreur de connexion');
+          throw new Error(data.error || tErr('loginGeneric'));
         }
 
         // Redirect based on server response
@@ -161,7 +166,7 @@ function AuthForm({ mode }: AuthFormProps) {
       });
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.error || "Erreur lors de l'envoi");
+        throw new Error(data.error || tErr('resendGeneric'));
       }
       // Start 60s cooldown
       setResendCooldown(60);
@@ -202,15 +207,14 @@ function AuthForm({ mode }: AuthFormProps) {
             <MailCheck className="h-8 w-8 text-accent" />
           </div>
           <h1 className="text-2xl font-bold tracking-tight text-app-text mb-3">
-            Vérifiez votre boîte mail
+            {tConfirm('title')}
           </h1>
           <p className="text-app-text-secondary text-sm leading-relaxed mb-2">
-            Un email de confirmation a été envoyé à
+            {tConfirm('sentTo')}
           </p>
           <p className="text-app-text font-semibold text-sm mb-6">{email}</p>
           <p className="text-app-text-secondary text-sm leading-relaxed mb-8">
-            Cliquez sur le lien dans l&apos;email pour activer votre compte et accéder à la
-            configuration de votre établissement.
+            {tConfirm('instructions')}
           </p>
 
           <div className="space-y-3">
@@ -224,20 +228,20 @@ function AuthForm({ mode }: AuthFormProps) {
               {resending ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Envoi en cours...
+                  {tConfirm('resendSending')}
                 </>
               ) : resendCooldown > 0 ? (
-                <>Renvoyer dans {resendCooldown}s</>
+                <>{tConfirm('resendCooldown', { seconds: resendCooldown })}</>
               ) : (
                 <>
                   <RefreshCw className="mr-2 h-4 w-4" />
-                  Renvoyer l&apos;email de confirmation
+                  {tConfirm('resendButton')}
                 </>
               )}
             </Button>
 
             <p className="text-xs text-app-text-muted">
-              Vous ne trouvez pas l&apos;email ? Vérifiez vos spams ou{' '}
+              {tConfirm('spamHint')}{' '}
               <Button
                 type="button"
                 variant="ghost"
@@ -245,7 +249,9 @@ function AuthForm({ mode }: AuthFormProps) {
                 disabled={resendCooldown > 0}
                 className="text-accent hover:text-accent-hover font-medium transition-colors disabled:opacity-50 h-auto p-0 inline"
               >
-                {resendCooldown > 0 ? `renvoyez-le (${resendCooldown}s)` : 'renvoyez-le'}
+                {resendCooldown > 0
+                  ? tConfirm('resendHereCooldown', { seconds: resendCooldown })
+                  : tConfirm('resendHere')}
               </Button>
               .
             </p>
@@ -256,7 +262,7 @@ function AuthForm({ mode }: AuthFormProps) {
               href="/login"
               className="text-sm font-bold text-accent hover:text-accent-hover transition-colors"
             >
-              Retour à la connexion
+              {tConfirm('backToLogin')}
             </Link>
           </div>
         </div>
@@ -281,14 +287,10 @@ function AuthForm({ mode }: AuthFormProps) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold tracking-tight text-app-text mb-2">
-          {isLogin
-            ? 'Votre établissement vous attend.'
-            : 'Créez votre compte en 2 minutes. 14 jours gratuits.'}
+          {isLogin ? tForm('loginTitle') : tForm('signupTitle')}
         </h1>
         <p className="text-app-text-secondary text-sm leading-relaxed">
-          {isLogin
-            ? "Commandes, stock, chiffre d'affaires. Tout est là."
-            : 'Aucune carte bancaire requise. Annulez quand vous voulez.'}
+          {isLogin ? tForm('loginSubtitle') : tForm('signupSubtitle')}
         </p>
       </div>
 
@@ -302,7 +304,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <Alert className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 rounded-xl">
             <MailCheck className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.
+              {tForm('emailConfirmedSuccess')}
             </AlertDescription>
           </Alert>
         </motion.div>
@@ -314,16 +316,15 @@ function AuthForm({ mode }: AuthFormProps) {
         !error &&
         (() => {
           const ERROR_MESSAGES: Record<string, string> = {
-            oauth_failed: 'La connexion OAuth a echoue. Veuillez reessayer.',
-            auth_failed: "Erreur d'authentification. Veuillez reessayer.",
-            session_expired: 'Votre session a expire. Veuillez vous reconnecter.',
-            email_not_confirmed: 'Veuillez confirmer votre email avant de vous connecter.',
-            access_denied: 'Acces refuse.',
-            invalid_token: 'Le lien a expire ou est invalide. Veuillez reessayer.',
-            expired_link: 'Ce lien a expire. Veuillez en demander un nouveau.',
+            oauth_failed: tErr('oauthFailed'),
+            auth_failed: tErr('authFailed'),
+            session_expired: tErr('sessionExpired'),
+            email_not_confirmed: tErr('emailNotConfirmedUrl'),
+            access_denied: tErr('accessDenied'),
+            invalid_token: tErr('invalidToken'),
+            expired_link: tErr('expiredLink'),
           };
-          const safeMessage =
-            ERROR_MESSAGES[urlError] || 'Une erreur est survenue. Veuillez reessayer.';
+          const safeMessage = ERROR_MESSAGES[urlError] || tErr('generic');
           return (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -347,12 +348,12 @@ function AuthForm({ mode }: AuthFormProps) {
             htmlFor="email"
             className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
           >
-            Email
+            {tForm('emailLabel')}
           </Label>
           <Input
             id="email"
             type="email"
-            placeholder="vous@exemple.com"
+            placeholder={tForm('emailPlaceholder')}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -366,14 +367,14 @@ function AuthForm({ mode }: AuthFormProps) {
               htmlFor="password"
               className="text-app-text-secondary font-medium text-xs uppercase tracking-widest"
             >
-              Mot de passe
+              {tForm('passwordLabel')}
             </Label>
             {isLogin && (
               <Link
                 href="/forgot-password"
                 className="text-xs text-accent hover:text-accent-hover font-medium transition-colors whitespace-nowrap"
               >
-                Oublié ?
+                {tForm('forgotPassword')}
               </Link>
             )}
           </div>
@@ -381,7 +382,9 @@ function AuthForm({ mode }: AuthFormProps) {
             <Input
               id="password"
               type={showPassword ? 'text' : 'password'}
-              placeholder={isLogin ? '••••••••' : 'Minimum 8 caractères'}
+              placeholder={
+                isLogin ? tForm('passwordPlaceholderLogin') : tForm('passwordPlaceholderSignup')
+              }
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
@@ -394,7 +397,7 @@ function AuthForm({ mode }: AuthFormProps) {
               size="icon"
               onClick={() => setShowPassword(!showPassword)}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-app-text-muted hover:text-app-text-secondary transition-colors h-8 w-8"
-              aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+              aria-label={showPassword ? tForm('hidePassword') : tForm('showPassword')}
               aria-pressed={showPassword}
             >
               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -411,7 +414,7 @@ function AuthForm({ mode }: AuthFormProps) {
               <AlertDescription className="text-sm">
                 {error === 'email_not_confirmed' ? (
                   <span>
-                    Votre adresse email n&apos;a pas encore été confirmée.{' '}
+                    {tForm('emailNotConfirmed')}{' '}
                     <Button
                       type="button"
                       variant="ghost"
@@ -419,7 +422,7 @@ function AuthForm({ mode }: AuthFormProps) {
                       disabled={resending}
                       className="font-bold underline hover:no-underline h-auto p-0 inline"
                     >
-                      {resending ? 'Envoi...' : 'Renvoyer le lien'}
+                      {resending ? tForm('resendSending') : tForm('resendLink')}
                     </Button>
                   </span>
                 ) : (
@@ -438,20 +441,18 @@ function AuthForm({ mode }: AuthFormProps) {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              {isLogin ? 'Connexion...' : 'Création en cours...'}
+              {isLogin ? tForm('submittingLogin') : tForm('submittingSignup')}
             </>
           ) : isLogin ? (
-            'Se connecter'
+            tForm('submitLogin')
           ) : (
-            'Commencer gratuitement'
+            tForm('submitSignup')
           )}
         </Button>
 
         {/* Trust signal for signup */}
         {!isLogin && (
-          <p className="text-center text-xs text-app-text-muted">
-            14 jours gratuits - aucun engagement
-          </p>
+          <p className="text-center text-xs text-app-text-muted">{tForm('trustSignup')}</p>
         )}
       </form>
 
@@ -461,7 +462,7 @@ function AuthForm({ mode }: AuthFormProps) {
           <div className="w-full border-t border-app-border" />
         </div>
         <div className="relative flex justify-center text-[10px] uppercase tracking-[0.2em] font-medium">
-          <span className="bg-app-bg px-4 text-app-text-muted">ou</span>
+          <span className="bg-app-bg px-4 text-app-text-muted">{tForm('divider')}</span>
         </div>
       </div>
 
@@ -479,24 +480,24 @@ function AuthForm({ mode }: AuthFormProps) {
           ) : (
             <GoogleIcon />
           )}
-          <span className="ml-3 text-sm">Continuer avec Google</span>
+          <span className="ml-3 text-sm">{tForm('google')}</span>
         </Button>
       </div>
 
       {/* Trust badge */}
       <div className="flex items-center justify-center gap-1.5 mt-6 text-app-text-muted">
         <Lock className="w-3 h-3" />
-        <span className="text-[10px]">Connexion sécurisée &middot; Données chiffrées</span>
+        <span className="text-[10px]">{tForm('trustBadge')}</span>
       </div>
 
       {/* Footer Link */}
       <p className="mt-4 text-center text-sm text-app-text-muted">
-        {isLogin ? 'Pas encore de compte ?' : 'Déjà un compte ?'}{' '}
+        {isLogin ? tForm('noAccount') : tForm('hasAccount')}{' '}
         <Link
           href={isLogin ? '/signup' : '/login'}
           className="font-bold text-accent hover:text-accent-hover transition-colors"
         >
-          {isLogin ? 'Commencer gratuitement' : 'Se connecter'}
+          {isLogin ? tForm('submitSignup') : tForm('submitLogin')}
         </Link>
       </p>
     </motion.div>
