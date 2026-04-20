@@ -7,9 +7,13 @@ import { createRestaurantGroupService } from '@/services/restaurant-group.servic
 import { createSlugService } from '@/services/slug.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { restaurantCreateLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 0. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await restaurantCreateLimiter.check(ip);

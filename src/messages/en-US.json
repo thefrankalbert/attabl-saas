@@ -218,6 +218,14 @@
     "lobbyBar": "Lobby Bar"
   },
   "admin": {
+    "tenants": {
+      "commandCenter": {
+        "alerts": {
+          "orderCancelled": "Order #{number} cancelled",
+          "siteOffline": "Site offline"
+        }
+      }
+    },
     "dashboard": "Dashboard",
     "ordersMgmt": "Orders Management",
     "menusMgmt": "Menus & Cards",

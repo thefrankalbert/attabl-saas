@@ -5,10 +5,14 @@ import { canAccessFeature } from '@/lib/plans/features';
 import { checkAndNotifyLowStock } from '@/services/notification.service';
 import type { SubscriptionPlan, SubscriptionStatus } from '@/types/billing';
 import { stockAlertLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await stockAlertLimiter.check(ip);

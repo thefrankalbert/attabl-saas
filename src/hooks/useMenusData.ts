@@ -27,9 +27,14 @@ export interface MenuFormData {
   is_transversal_menu?: boolean;
 }
 
+/** Async confirmation callback — typically from useConfirmDialog. */
+export type ConfirmFn = (message: string) => Promise<boolean>;
+
 interface UseMenusDataParams {
   tenantId: string;
   initialMenus: Menu[];
+  /** No-window.confirm fallback. */
+  confirm: ConfirmFn;
 }
 
 export interface UseMenusDataReturn {
@@ -50,7 +55,11 @@ export interface UseMenusDataReturn {
 
 // ─── Hook ───────────────────────────────────────────────
 
-export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): UseMenusDataReturn {
+export function useMenusData({
+  tenantId,
+  initialMenus,
+  confirm,
+}: UseMenusDataParams): UseMenusDataReturn {
   const [searchQuery, setSearchQuery] = useSessionState('menus:searchQuery', '');
 
   const { toast } = useToast();
@@ -110,7 +119,8 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
   };
 
   const deleteMenu = async (menu: Menu) => {
-    if (!confirm(t('deleteConfirm', { name: menu.name }))) return;
+    const ok = await confirm(t('deleteConfirm', { name: menu.name }));
+    if (!ok) return;
 
     try {
       const result = await actionDeleteMenu(tenantId, menu.id);
@@ -127,7 +137,8 @@ export function useMenusData({ tenantId, initialMenus }: UseMenusDataParams): Us
 
   const deleteMultiple = async (menuIds: string[]) => {
     if (menuIds.length === 0) return;
-    if (!confirm(t('deleteMultipleConfirm', { count: menuIds.length }))) return;
+    const ok = await confirm(t('deleteMultipleConfirm', { count: menuIds.length }));
+    if (!ok) return;
 
     let errors = 0;
     for (const id of menuIds) {

@@ -3,10 +3,14 @@ import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { logger } from '@/lib/logger';
 import { assignmentLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createAssignmentService } from '@/services/assignment.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const ip = getClientIp(request);
     const { success: allowed } = await assignmentLimiter.check(ip);
     if (!allowed)

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient as createServerClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { uploadLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 
 /** Validate file magic bytes to prevent Content-Type spoofing (stored XSS via file upload) */
 function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
@@ -34,6 +35,9 @@ function validateMagicBytes(buffer: Buffer, declaredType: string): boolean {
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await uploadLimiter.check(ip);
