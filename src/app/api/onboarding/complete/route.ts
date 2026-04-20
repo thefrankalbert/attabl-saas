@@ -5,10 +5,14 @@ import { CACHE_TAG_MENUS, CACHE_TAG_TENANT_CONFIG } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { onboardingCompleteSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingCompleteLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await onboardingCompleteLimiter.check(ip);

@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import AdminModal from '@/components/admin/AdminModal';
 import { DatePickerField } from '@/components/ui/date-picker-field';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { logger } from '@/lib/logger';
 import type { Announcement } from '@/types/admin.types';
 import { createAnnouncementService } from '@/services/announcement.service';
@@ -114,8 +115,17 @@ export default function AnnouncementsClient({
     setIsModalOpen(true);
   };
 
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
+
   const handleDelete = async (id: string) => {
-    if (!confirm(t('deleteConfirm'))) return;
+    const ok = await confirm({
+      title: t('deleteAnnouncement') || tc('delete'),
+      description: t('deleteConfirm'),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       const announcementService = createAnnouncementService(supabase);
@@ -301,6 +311,7 @@ export default function AnnouncementsClient({
           </div>
         </div>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }
