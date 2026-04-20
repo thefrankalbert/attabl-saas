@@ -4,10 +4,14 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const ip = getClientIp(request);
     const { success: allowed } = await invitationLimiter.check(ip);
     if (!allowed) {

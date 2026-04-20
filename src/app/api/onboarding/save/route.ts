@@ -3,10 +3,14 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { onboardingSaveSchema } from '@/lib/validations/onboarding.schema';
 import { onboardingSaveLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createOnboardingService } from '@/services/onboarding.service';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await onboardingSaveLimiter.check(ip);

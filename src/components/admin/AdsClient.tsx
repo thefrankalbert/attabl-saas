@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import AdminModal from '@/components/admin/AdminModal';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import Image from 'next/image';
@@ -35,6 +36,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
   const t = useTranslations('ads');
   const tc = useTranslations('common');
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
   const { toast } = useToast();
   const supabase = createClient();
 
@@ -102,7 +104,14 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm(t('confirmDelete'))) return;
+    const ok = await confirm({
+      title: tc('delete'),
+      description: t('confirmDelete'),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       const adService = createAdService(supabase);
@@ -298,6 +307,7 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
           </div>
         </div>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

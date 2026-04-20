@@ -23,10 +23,19 @@ export interface CreateUserFormData {
   role: AdminRole;
 }
 
+/**
+ * Async confirmation callback — typically from useConfirmDialog.
+ * Returns true when the user confirms, false otherwise. We keep the signature
+ * narrow (message string only) so callers can plug any dialog implementation.
+ */
+export type ConfirmFn = (message: string) => Promise<boolean>;
+
 export interface UseUsersDataParams {
   tenantId: string;
   currentUserRole: AdminRole;
   initialUsers: AdminUser[];
+  /** Required: no-window.confirm fallback to avoid the native prompt. */
+  confirm: ConfirmFn;
 }
 
 export interface UseUsersDataReturn {
@@ -104,6 +113,7 @@ export function useUsersData({
   tenantId,
   currentUserRole,
   initialUsers,
+  confirm,
 }: UseUsersDataParams): UseUsersDataReturn {
   const t = useTranslations('users');
   const tc = useTranslations('common');
@@ -278,7 +288,8 @@ export function useUsersData({
   };
 
   const handleDeleteUser = async (userId: string) => {
-    if (!confirm(t('confirmDeleteUser'))) return;
+    const ok = await confirm(t('confirmDeleteUser'));
+    if (!ok) return;
 
     try {
       const result = await actionDeleteAdminUser(tenantId, userId);

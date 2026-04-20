@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { subscribeSchema } from '@/lib/validations/push-subscription.schema';
 import { pushSubscriptionLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 
 const deleteSchema = z.object({ endpoint: z.string().url() });
 
@@ -12,6 +13,9 @@ const deleteSchema = z.object({ endpoint: z.string().url() });
  */
 export async function POST(request: NextRequest) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await pushSubscriptionLimiter.check(ip);
@@ -78,6 +82,9 @@ export async function POST(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const deleteIp = getClientIp(request);
     const { success: deleteAllowed } = await pushSubscriptionLimiter.check(deleteIp);

@@ -12,7 +12,9 @@ export async function isSuperAdmin(userId: string): Promise<boolean> {
     .from('admin_users')
     .select('is_super_admin, role')
     .eq('user_id', userId)
-    .single();
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   return data?.is_super_admin === true || data?.role === 'super_admin';
 }
@@ -41,7 +43,9 @@ export async function getSuperAdminInfo(userId: string) {
     `,
     )
     .eq('user_id', userId)
-    .single();
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
 
   return data;
 }

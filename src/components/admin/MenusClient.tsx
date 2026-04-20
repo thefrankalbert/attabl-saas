@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import AdminModal from '@/components/admin/AdminModal';
 import { useMenusData } from '@/hooks/useMenusData';
 import type { MenuFormData } from '@/hooks/useMenusData';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import MenuForm from '@/components/features/menus/MenuForm';
 import MenuCreationWizard from '@/components/features/menus/MenuCreationWizard';
 import MenuImportExcel from '@/components/features/menus/MenuImportExcel';
@@ -33,6 +34,20 @@ export default function MenusClient({
   currency = 'XAF',
 }: MenusClientProps) {
   const t = useTranslations('menus');
+  const tc = useTranslations('common');
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
+
+  const confirmWithMessage = useCallback(
+    (message: string) =>
+      confirm({
+        title: tc('delete'),
+        description: message,
+        confirmLabel: tc('delete'),
+        cancelLabel: tc('cancel'),
+        destructive: true,
+      }),
+    [confirm, tc],
+  );
 
   // Modal state
   const [showModal, setShowModal] = useState(false);
@@ -58,7 +73,7 @@ export default function MenusClient({
     toggleActive,
     reorder,
     loadMenus,
-  } = useMenusData({ tenantId, initialMenus });
+  } = useMenusData({ tenantId, initialMenus, confirm: confirmWithMessage });
 
   // ─── Selection ────────────────────────────────────────
 
@@ -272,6 +287,7 @@ export default function MenusClient({
           onCreateMenu={createMenu}
           onComplete={loadMenus}
         />
+        {ConfirmDialog}
       </div>
     </RoleGuard>
   );

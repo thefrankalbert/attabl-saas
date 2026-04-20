@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { UserPlus, Loader2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
 import { useUsersData } from '@/hooks/useUsersData';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { useToast } from '@/components/ui/use-toast';
 import UsersTable from '@/components/features/users/UsersTable';
 import UserForm from '@/components/features/users/UserForm';
@@ -41,8 +42,28 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
   const t = useTranslations('users');
   const tc = useTranslations('common');
   const { toast } = useToast();
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
 
-  const data = useUsersData({ tenantId, currentUserRole, initialUsers });
+  // Wrap the hook-local dialog to expose the narrow "message -> Promise<boolean>"
+  // shape that useUsersData expects, without leaking shadcn internals into the hook.
+  const confirmWithMessage = useCallback(
+    (message: string) =>
+      confirm({
+        title: tc('delete'),
+        description: message,
+        confirmLabel: tc('delete'),
+        cancelLabel: tc('cancel'),
+        destructive: true,
+      }),
+    [confirm, tc],
+  );
+
+  const data = useUsersData({
+    tenantId,
+    currentUserRole,
+    initialUsers,
+    confirm: confirmWithMessage,
+  });
 
   // Edit user state
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
@@ -229,6 +250,7 @@ export default function UsersClient({ tenantId, currentUserRole, initialUsers }:
             </div>
           </div>
         </AdminModal>
+        {ConfirmDialog}
       </div>
     </RoleGuard>
   );

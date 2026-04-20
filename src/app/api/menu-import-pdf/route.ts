@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { pdfImportLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createPdfImportService } from '@/services/pdf-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
@@ -24,6 +25,9 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await pdfImportLimiter.check(ip);

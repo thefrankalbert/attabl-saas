@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { LoadingIndicator } from '@/components/application/loading-indicator/LoadingIndicator';
 import { AddRestaurantWizard } from '@/components/admin/AddRestaurantWizard';
@@ -59,6 +60,7 @@ export default function TenantsPageClient({
 }: TenantsPageClientProps) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+  const tAlerts = useTranslations('admin.tenants.commandCenter.alerts');
 
   const baseTenants: Tenant[] = useMemo(() => {
     if (serverMode === 'superadmin') return serverTenants || [];
@@ -195,7 +197,9 @@ export default function TenantsPageClient({
         return {
           id: o.id,
           kind: 'payment' as const,
-          label: `Commande #${o.order_number || o.id.slice(0, 6)} annulee`,
+          label: tAlerts('orderCancelled', {
+            number: o.order_number || o.id.slice(0, 6),
+          }),
           tenant_name: t?.name || '',
           tenant_slug: t?.slug || '',
           severity: 'error' as const,
@@ -208,7 +212,7 @@ export default function TenantsPageClient({
       .map((t) => ({
         id: `offline-${t.id}`,
         kind: 'offline' as const,
-        label: 'Site desactive',
+        label: tAlerts('siteOffline'),
         tenant_name: t.name,
         tenant_slug: t.slug,
         severity: 'warn' as const,
@@ -246,7 +250,7 @@ export default function TenantsPageClient({
     );
 
     setLoading(false);
-  }, [supabase, tenantIds, baseTenants, logoBySlug, tenantById]);
+  }, [supabase, tenantIds, baseTenants, logoBySlug, tenantById, tAlerts]);
 
   const fetchChart = useCallback(
     async (period: ChartPeriod) => {
