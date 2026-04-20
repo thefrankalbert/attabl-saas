@@ -42,11 +42,15 @@ export async function POST(request: Request) {
     });
 
     if (authError) {
-      // Generic error message to prevent user enumeration
-      if (authError.message.includes('Invalid login credentials')) {
+      // Prefer Supabase's error.code (stable, locale-independent) over
+      // error.message (localized by Supabase, changes across versions).
+      // authError is AuthApiError which exposes a code property.
+      const authCode = (authError as { code?: string }).code;
+
+      if (authCode === 'invalid_credentials') {
         return NextResponse.json({ error: t('invalidCredentials') }, { status: 401 });
       }
-      if (authError.message.includes('Email not confirmed')) {
+      if (authCode === 'email_not_confirmed') {
         return NextResponse.json({ error: t('emailNotConfirmed'), email }, { status: 403 });
       }
       logger.error('Login failed', authError);
