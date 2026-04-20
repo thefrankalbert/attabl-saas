@@ -5,6 +5,16 @@ import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Plus, Trash2, Tag, ToggleLeft, ToggleRight, ListFilter } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils/currency';
 import CouponForm from '@/components/admin/CouponForm';
@@ -20,6 +30,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
   const [coupons, setCoupons] = useState<Coupon[]>(initialCoupons);
   const [showForm, setShowForm] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<Coupon | null>(null);
+  const [couponPendingDelete, setCouponPendingDelete] = useState<string | null>(null);
   const [, setLoading] = useState(false);
   const { toast } = useToast();
   const t = useTranslations('coupons');
@@ -42,8 +53,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
     setLoading(false);
   }, [tenantId, toast, t]);
 
-  const handleDelete = async (couponId: string) => {
-    if (!window.confirm(t('deleteConfirmCoupon'))) return;
+  const performDelete = async (couponId: string) => {
     const supabase = createClient();
     const { error } = await supabase
       .from('coupons')
@@ -199,7 +209,7 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDelete(coupon.id)}
+                      onClick={() => setCouponPendingDelete(coupon.id)}
                       className="text-red-500 hover:text-red-700 hover:bg-red-500/10"
                       title={t('deleteAction')}
                     >
@@ -274,6 +284,35 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
         }}
         initialData={editingCoupon}
       />
+
+      {/* Delete confirmation (replaces window.confirm) */}
+      <AlertDialog
+        open={couponPendingDelete !== null}
+        onOpenChange={(open) => {
+          if (!open) setCouponPendingDelete(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t('deleteAction')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('deleteConfirmCoupon')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (couponPendingDelete) {
+                  performDelete(couponPendingDelete);
+                  setCouponPendingDelete(null);
+                }
+              }}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {t('deleteAction')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
