@@ -217,6 +217,70 @@
     "panorama": "Panorama",
     "lobbyBar": "Lobby Bar"
   },
+  "marketing": {
+    "landings": {
+      "shared": {
+        "ctaPrimary": "Démarrer gratuitement",
+        "ctaSecondary": "Voir les tarifs",
+        "ctaSubtitle": "Essayez gratuitement."
+      },
+      "quickService": {
+        "heroTitle": "200 commandes. Zéro temps mort.",
+        "heroSubtitle": "Comptoir, drive, livraison - chaque commande est tracée du client à la cuisine.",
+        "feature1Title": "Écran cuisine (KDS)",
+        "feature1Description": "Les commandes s'affichent en temps réel. Priorité automatique. Temps de préparation visible.",
+        "feature2Title": "POS rapide",
+        "feature2Description": "Encaissement en 3 clics. Cash, carte, mobile money. Chaque transaction est tracée.",
+        "feature3Title": "Notifications en temps reel",
+        "feature3Description": "Vos clients et votre equipe sont informes a chaque etape de la commande.",
+        "ctaTitle": "La vitesse sans le chaos."
+      },
+      "barsCafes": {
+        "heroTitle": "Votre comptoir. Votre terrasse. Tout sous contrôle.",
+        "heroSubtitle": "Carte cocktails, service terrasse, stock de boissons - tout en un.",
+        "feature1Title": "Menu QR terrasse",
+        "feature1Description": "Le client scanne depuis sa table, commande sans attendre le serveur. Plus de va-et-vient inutile.",
+        "feature2Title": "Suivi boissons",
+        "feature2Description": "Chaque verre servi est déduit du stock. Vous voyez le coulage en temps réel. Fini les pertes invisibles.",
+        "feature3Title": "Best-sellers en direct",
+        "feature3Description": "Quels cocktails marchent ce soir ? Quelles bières stagnent ? Ajustez votre carte en temps réel.",
+        "ctaTitle": "Votre bar mérite mieux qu'un tableur."
+      },
+      "fastFood": {
+        "heroTitle": "1 point de vente ou 10. Même contrôle.",
+        "heroSubtitle": "Ecran cuisine, stock centralise. La vitesse a grande echelle.",
+        "feature1Title": "Dashboard multi-sites",
+        "feature1Description": "Performances de chaque point de vente en temps réel. Comparez, identifiez, optimisez.",
+        "feature2Title": "KDS intelligent",
+        "feature2Description": "Commandes directes vers la cuisine. Priorite automatique, zero erreur.",
+        "feature3Title": "Stock centralisé",
+        "feature3Description": "Approvisionnement centralisé pour tous vos points de vente. Alertes par site, par ingrédient.",
+        "ctaTitle": "Grandissez sans perdre le contrôle."
+      },
+      "hotels": {
+        "heroTitle": "Un hôtel. Plusieurs restaurants. Une seule plateforme.",
+        "heroSubtitle": "Room service, bar, restaurant - vos clients commandent dans leur langue, vous gérez tout au même endroit.",
+        "feature1Title": "Chambre par chambre",
+        "feature1Description": "QR code unique par chambre. Le client commande depuis son lit, dans sa langue. Zéro appel à la réception.",
+        "feature2Title": "Tout sous un toit",
+        "feature2Description": "Restaurant, bar lounge, piscine, room service. Un seul dashboard pour tout piloter.",
+        "feature3Title": "Accueillez le monde",
+        "feature3Description": "Menu en français, anglais, et plus. Paiement en XAF, EUR, USD. Vos clients internationaux se sentent chez eux.",
+        "ctaTitle": "Vos clients viennent de partout. Votre service doit suivre."
+      },
+      "restaurants": {
+        "heroTitle": "Votre salle. Votre cuisine. Tout connecté.",
+        "heroSubtitle": "De la commande à l'assiette, plus rien ne se perd.",
+        "feature1Title": "Votre carte, numérisée",
+        "feature1Description": "Catégories, sous-catégories, allergènes, photos. Vos clients consultent tout depuis leur téléphone.",
+        "feature2Title": "La cuisine voit tout",
+        "feature2Description": "Entrées, plats, desserts - chaque station reçoit ses commandes au bon moment. Plus besoin de crier.",
+        "feature3Title": "Vos recettes, vos marges",
+        "feature3Description": "Ingrédients, proportions, coût matière. Vous savez exactement combien vous gagnez par plat.",
+        "ctaTitle": "Votre restaurant mérite un service sans faille."
+      }
+    }
+  },
   "auth": {
     "layout": {
       "headlineLine1": "Vos clients vivent une",
