@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { headers } from 'next/headers';
-import { createAdminClient } from '@/lib/supabase/admin';
+import { createClient } from '@/lib/supabase/server';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
 import { validateCouponSchema } from '@/lib/validations/coupon.schema';
@@ -72,13 +72,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
     }
 
-    const supabase = createAdminClient();
+    // Use anon server client + security-definer RPC for tenant lookup (no RLS bypass).
+    // Coupon SELECT is covered by the "Public can validate active coupons" RLS policy
+    // which allows read of is_active = true coupons — sufficient for customer checkout.
+    const supabase = await createClient();
 
-    const { data: tenant, error: tenantError } = await supabase
-      .from('tenants')
-      .select('id')
-      .eq('slug', tenantSlug)
-      .single();
+    const { data: tenantRows, error: tenantError } = await supabase.rpc('get_tenant_by_slug', {
+      p_slug: tenantSlug,
+    });
+    const tenant = Array.isArray(tenantRows) ? tenantRows[0] : null;
 
     if (tenantError || !tenant) {
       // Same masking
