@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { invitationLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createInvitationService } from '@/services/invitation.service';
 import { createInvitationSchema } from '@/lib/validations/invitation.schema';
 import { sendInvitationEmail } from '@/services/email.service';
@@ -74,6 +75,9 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const ip = getClientIp(request);
     const { success: allowed } = await invitationLimiter.check(ip);
     if (!allowed) {
