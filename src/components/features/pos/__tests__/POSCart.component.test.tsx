@@ -21,15 +21,38 @@ vi.mock('@/components/ui/dialog', () => ({
   DialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
 }));
 
+// AlertDialog is now used instead of window.confirm for cart clear. Mock it so
+// the trigger renders children (we drive the dialog via onOpenChange / state).
+vi.mock('@/components/ui/alert-dialog', () => {
+  const Noop = ({ children }: { children?: React.ReactNode }) => <>{children}</>;
+  return {
+    AlertDialog: ({ children, open }: { children: React.ReactNode; open: boolean }) =>
+      open ? <div data-testid="alert-dialog">{children}</div> : null,
+    AlertDialogContent: Noop,
+    AlertDialogHeader: Noop,
+    AlertDialogTitle: ({ children }: { children: React.ReactNode }) => <h2>{children}</h2>,
+    AlertDialogDescription: ({ children }: { children: React.ReactNode }) => <p>{children}</p>,
+    AlertDialogFooter: Noop,
+    AlertDialogCancel: ({ children }: { children: React.ReactNode }) => (
+      <button type="button">{children}</button>
+    ),
+    AlertDialogAction: ({
+      children,
+      onClick,
+    }: {
+      children: React.ReactNode;
+      onClick?: () => void;
+    }) => (
+      <button type="button" data-testid="alert-dialog-confirm" onClick={onClick}>
+        {children}
+      </button>
+    ),
+  };
+});
+
 vi.mock('@/lib/utils/currency', () => ({
   formatCurrency: (amount: number) => `${amount} FCFA`,
 }));
-
-// Mock window.confirm for cart clear confirmation
-vi.stubGlobal(
-  'confirm',
-  vi.fn(() => true),
-);
 
 // ─── Test Data ──────────────────────────────────────────
 
@@ -161,7 +184,7 @@ describe('POSCart', () => {
     }
   });
 
-  it('calls onClearCart when trash button clicked', () => {
+  it('calls onClearCart when trash button + dialog confirm clicked', () => {
     renderCart({
       cart: [cartItem1],
       pricing: {
@@ -170,6 +193,33 @@ describe('POSCart', () => {
         serviceChargeAmount: 0,
         discountAmount: 0,
         total: 10000,
+      },
+    });
+
+    const allButtons = screen.getAllByRole('button');
+    const trashBtn = allButtons.find((btn) => btn.querySelector('.lucide-trash-2'));
+    expect(trashBtn).toBeDefined();
+    if (!trashBtn) return;
+
+    // First click opens the AlertDialog without clearing.
+    fireEvent.click(trashBtn);
+    expect(mockCallbacks.onClearCart).not.toHaveBeenCalled();
+
+    // Confirming in the dialog triggers the clear.
+    const confirmBtn = screen.getByTestId('alert-dialog-confirm');
+    fireEvent.click(confirmBtn);
+    expect(mockCallbacks.onClearCart).toHaveBeenCalled();
+  });
+
+  it('clears immediately without dialog when cart is empty', () => {
+    renderCart({
+      cart: [],
+      pricing: {
+        subtotal: 0,
+        taxAmount: 0,
+        serviceChargeAmount: 0,
+        discountAmount: 0,
+        total: 0,
       },
     });
 

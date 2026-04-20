@@ -27,6 +27,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import { formatCurrency } from '@/lib/utils/currency';
@@ -120,6 +130,7 @@ export default function POSCart({
   // ─── Table Picker Dialog ────────────────────────────────
   const [showTablePicker, setShowTablePicker] = useState(false);
   const [pickerZoneId, setPickerZoneId] = useState<string | null>(null);
+  const [showClearCartConfirm, setShowClearCartConfirm] = useState(false);
 
   // Initialize picker zone when dialog opens
   useEffect(() => {
@@ -175,8 +186,10 @@ export default function POSCart({
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (cart.length === 0 || window.confirm(t('confirmClearCart'))) {
+            if (cart.length === 0) {
               onClearCart();
+            } else {
+              setShowClearCartConfirm(true);
             }
           }}
           title={tc('delete')}
@@ -604,6 +617,33 @@ export default function POSCart({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Clear cart confirmation (replaces window.confirm) */}
+      <AlertDialog
+        open={showClearCartConfirm}
+        onOpenChange={(open) => {
+          if (!open) setShowClearCartConfirm(false);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{tc('delete')}</AlertDialogTitle>
+            <AlertDialogDescription>{t('confirmClearCart')}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{tc('cancel')}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onClearCart();
+                setShowClearCartConfirm(false);
+              }}
+              className="bg-red-500 text-white hover:bg-red-600"
+            >
+              {tc('delete')}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
