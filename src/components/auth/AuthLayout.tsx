@@ -1,3 +1,4 @@
+import { useTranslations } from 'next-intl';
 import { TestimonialCarousel } from './TestimonialCarousel';
 
 interface AuthLayoutProps {
@@ -5,6 +6,7 @@ interface AuthLayoutProps {
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const t = useTranslations('auth.layout');
   return (
     <div className="h-full w-full flex bg-white dark:bg-neutral-950 relative">
       {/* ── Left - Form panel ─────────────────────────────── */}
@@ -18,11 +20,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* ── Top: Impact headline ────────────────────── */}
           <div className="shrink-0 mb-8">
             <h2 className="text-2xl lg:text-3xl font-bold leading-tight font-[family-name:var(--font-sora)]">
-              <span className="text-white">Vos clients vivent une</span>
+              <span className="text-white">{t('headlineLine1')}</span>
               <br />
-              <span className="text-[#CCFF00]">expérience 5 étoiles.</span>
+              <span className="text-[#CCFF00]">{t('headlineLine2')}</span>
               <br />
-              <span className="text-neutral-400">Votre gestion aussi.</span>
+              <span className="text-neutral-400">{t('headlineLine3')}</span>
             </h2>
           </div>
 
@@ -30,9 +32,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="shrink-0 mb-8">
             <div className="grid grid-cols-3 gap-3">
               {[
-                { value: '+35%', label: 'de commandes' },
-                { value: '-50%', label: "d'erreurs" },
-                { value: '10 min', label: 'pour lancer' },
+                { value: t('stat1Value'), label: t('stat1Label') },
+                { value: t('stat2Value'), label: t('stat2Label') },
+                { value: t('stat3Value'), label: t('stat3Label') },
               ].map((stat) => (
                 <div
                   key={stat.value}
@@ -54,7 +56,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                 <div>
                   <div className="text-[8px] text-neutral-500 uppercase tracking-widest font-medium mb-0.5">
-                    Chiffre du jour
+                    {t('previewRevenueLabel')}
                   </div>
                   <div className="text-base font-black text-white tabular-nums">
                     1 847 000{' '}
@@ -97,27 +99,29 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               <div className="px-3 py-2 space-y-1">
                 <div className="flex items-center justify-between px-1 mb-0.5">
                   <span className="text-[8px] font-semibold text-neutral-500 uppercase tracking-widest">
-                    Commandes récentes
+                    {t('previewOrdersLabel')}
                   </span>
                   <div className="flex items-center gap-1">
                     <span className="relative flex h-1.5 w-1.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#4ade80]" />
                     </span>
-                    <span className="text-[8px] text-[#4ade80] font-medium">Live</span>
+                    <span className="text-[8px] text-[#4ade80] font-medium">
+                      {t('previewLiveLabel')}
+                    </span>
                   </div>
                 </div>
                 {[
                   {
                     table: 'Table 4',
                     total: '32 500 FCFA',
-                    status: 'En cours',
+                    status: t('previewStatusInProgress'),
                     cls: 'bg-amber-500/10 text-amber-400',
                   },
                   {
                     table: 'Table 7',
                     total: '78 000 FCFA',
-                    status: 'Servi',
+                    status: t('previewStatusServed'),
                     cls: 'bg-[#4ade80]/10 text-[#4ade80]',
                   },
                 ].map((order, i) => (
