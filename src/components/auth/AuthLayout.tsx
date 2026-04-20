@@ -6,7 +6,7 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   return (
-    <div className="min-h-dvh md:h-dvh w-full flex bg-white dark:bg-neutral-950 relative">
+    <div className="h-full w-full flex bg-white dark:bg-neutral-950 relative">
       {/* ── Left - Form panel ─────────────────────────────── */}
       <div className="w-full md:w-[55%] lg:w-[50%] flex flex-col px-6 sm:px-10 lg:px-16 py-8 md:overflow-y-auto">
         <div className="w-full max-w-md m-auto">{children}</div>
