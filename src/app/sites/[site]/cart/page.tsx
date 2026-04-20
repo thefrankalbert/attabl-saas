@@ -530,10 +530,14 @@ export default function CartPage() {
         return;
       }
 
-      const storedIds: string[] = JSON.parse(localStorage.getItem('attabl_order_ids') || '[]');
+      // Namespace the stored order IDs per tenant slug so a customer visiting
+      // multiple ATTABL restaurants on the same device doesn't see their order
+      // history mixed across tenants (cross-tenant UI leak).
+      const orderIdsStorageKey = `attabl_${tenantSlug}_order_ids`;
+      const storedIds: string[] = JSON.parse(localStorage.getItem(orderIdsStorageKey) || '[]');
       if (data.orderId && !storedIds.includes(data.orderId)) {
         storedIds.push(data.orderId);
-        localStorage.setItem('attabl_order_ids', JSON.stringify(storedIds));
+        localStorage.setItem(orderIdsStorageKey, JSON.stringify(storedIds));
       }
 
       clearCart();
