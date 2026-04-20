@@ -64,7 +64,8 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
     const { error } = await supabase
       .from('coupons')
       .update({ is_active: !coupon.is_active })
-      .eq('id', coupon.id);
+      .eq('id', coupon.id)
+      .eq('tenant_id', tenantId);
 
     if (error) {
       toast({ title: t('updateError'), variant: 'destructive' });
