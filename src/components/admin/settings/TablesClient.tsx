@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import AdminModal from '@/components/admin/AdminModal';
+import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 import { createTableConfigService } from '@/services/table-config.service';
@@ -57,6 +58,8 @@ export function TablesClient({
   const supabase = createClient();
   const { toast } = useToast();
   const t = useTranslations('tables');
+  const tc = useTranslations('common');
+  const { confirm, Dialog: ConfirmDialog } = useConfirmDialog();
 
   // ─── State ──────────────────────────────────────────────
   const [zones, setZones] = useState<Zone[]>(initialZones);
@@ -186,7 +189,14 @@ export function TablesClient({
   };
 
   const handleDeleteZone = async (zone: Zone) => {
-    if (!confirm(t('confirmDeleteZone', { name: zone.name }))) return;
+    const ok = await confirm({
+      title: tc('delete'),
+      description: t('confirmDeleteZone', { name: zone.name }),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       const tableConfigService = createTableConfigService(supabase);
@@ -311,7 +321,14 @@ export function TablesClient({
   };
 
   const handleDeleteTable = async (table: Table) => {
-    if (!confirm(t('confirmDeleteTable', { name: table.display_name }))) return;
+    const ok = await confirm({
+      title: tc('delete'),
+      description: t('confirmDeleteTable', { name: table.display_name }),
+      confirmLabel: tc('delete'),
+      cancelLabel: tc('cancel'),
+      destructive: true,
+    });
+    if (!ok) return;
 
     try {
       const tableConfigService = createTableConfigService(supabase);
@@ -758,6 +775,7 @@ export function TablesClient({
           </div>
         </form>
       </AdminModal>
+      {ConfirmDialog}
     </div>
   );
 }

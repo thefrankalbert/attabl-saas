@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache';
 import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { logger } from '@/lib/logger';
 import { excelImportLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { createExcelImportService } from '@/services/excel-import.service';
 import { ServiceError, serviceErrorToStatus } from '@/services/errors';
 import { createPlanEnforcementService } from '@/services/plan-enforcement.service';
@@ -18,6 +19,9 @@ const ALLOWED_MIME_TYPES = [
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await excelImportLimiter.check(ip);

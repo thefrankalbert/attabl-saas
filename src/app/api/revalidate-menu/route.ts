@@ -3,6 +3,7 @@ import { CACHE_TAG_MENUS } from '@/lib/cache-tags';
 import { getAuthenticatedUser, AuthError } from '@/lib/auth/get-session';
 import { NextResponse } from 'next/server';
 import { revalidateMenuLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request) {
   const ip = getClientIp(request);
