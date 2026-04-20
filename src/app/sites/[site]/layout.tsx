@@ -7,11 +7,12 @@ import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { getCachedTenant } from '@/lib/cache';
 import { getFontById } from '@/lib/config/fonts';
 
+// WCAG 2.1 SC 1.4.4 requires that users can scale text up to 200%.
+// We keep initial-scale=1 but allow user zoom (no maximum-scale / user-scalable=no)
+// to comply. viewport-fit=cover is kept for iOS notch / safe-area support.
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: 'cover',
 };
 
