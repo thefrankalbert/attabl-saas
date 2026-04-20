@@ -217,6 +217,78 @@
     "panorama": "Panorama",
     "lobbyBar": "Lobby Bar"
   },
+  "auth": {
+    "layout": {
+      "headlineLine1": "Vos clients vivent une",
+      "headlineLine2": "expérience 5 étoiles.",
+      "headlineLine3": "Votre gestion aussi.",
+      "stat1Value": "+35%",
+      "stat1Label": "de commandes",
+      "stat2Value": "-50%",
+      "stat2Label": "d'erreurs",
+      "stat3Value": "10 min",
+      "stat3Label": "pour lancer",
+      "previewRevenueLabel": "Chiffre du jour",
+      "previewLiveLabel": "Live",
+      "previewOrdersLabel": "Commandes récentes",
+      "previewStatusInProgress": "En cours",
+      "previewStatusServed": "Servi"
+    },
+    "form": {
+      "loginTitle": "Votre établissement vous attend.",
+      "loginSubtitle": "Commandes, stock, chiffre d'affaires. Tout est là.",
+      "signupTitle": "Créez votre compte en 2 minutes. 14 jours gratuits.",
+      "signupSubtitle": "Aucune carte bancaire requise. Annulez quand vous voulez.",
+      "emailLabel": "Email",
+      "emailPlaceholder": "vous@exemple.com",
+      "passwordLabel": "Mot de passe",
+      "passwordPlaceholderLogin": "••••••••",
+      "passwordPlaceholderSignup": "Minimum 8 caractères",
+      "forgotPassword": "Oublié ?",
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "submitLogin": "Se connecter",
+      "submitSignup": "Commencer gratuitement",
+      "submittingLogin": "Connexion...",
+      "submittingSignup": "Création en cours...",
+      "trustSignup": "14 jours gratuits - aucun engagement",
+      "divider": "ou",
+      "google": "Continuer avec Google",
+      "trustBadge": "Connexion sécurisée · Données chiffrées",
+      "noAccount": "Pas encore de compte ?",
+      "hasAccount": "Déjà un compte ?",
+      "emailConfirmedSuccess": "Votre email a été confirmé avec succès. Vous pouvez maintenant vous connecter.",
+      "emailNotConfirmed": "Votre adresse email n'a pas encore été confirmée.",
+      "resendLink": "Renvoyer le lien",
+      "resendSending": "Envoi..."
+    },
+    "confirm": {
+      "title": "Vérifiez votre boîte mail",
+      "sentTo": "Un email de confirmation a été envoyé à",
+      "instructions": "Cliquez sur le lien dans l'email pour activer votre compte et accéder à la configuration de votre établissement.",
+      "resendButton": "Renvoyer l'email de confirmation",
+      "resendSending": "Envoi en cours...",
+      "resendCooldown": "Renvoyer dans {seconds}s",
+      "spamHint": "Vous ne trouvez pas l'email ? Vérifiez vos spams ou",
+      "resendHere": "renvoyez-le",
+      "resendHereCooldown": "renvoyez-le ({seconds}s)",
+      "backToLogin": "Retour à la connexion"
+    },
+    "errors": {
+      "signupGeneric": "Erreur lors de l'inscription",
+      "resendGeneric": "Erreur lors de l'envoi",
+      "loginGeneric": "Erreur de connexion",
+      "oauthGeneric": "Erreur de connexion. Veuillez réessayer.",
+      "oauthFailed": "La connexion OAuth a échoué. Veuillez réessayer.",
+      "authFailed": "Erreur d'authentification. Veuillez réessayer.",
+      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+      "emailNotConfirmedUrl": "Veuillez confirmer votre email avant de vous connecter.",
+      "accessDenied": "Accès refusé.",
+      "invalidToken": "Le lien a expiré ou est invalide. Veuillez réessayer.",
+      "expiredLink": "Ce lien a expiré. Veuillez en demander un nouveau.",
+      "generic": "Une erreur est survenue. Veuillez réessayer."
+    }
+  },
   "admin": {
     "tenants": {
       "commandCenter": {
