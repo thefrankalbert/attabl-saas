@@ -80,6 +80,7 @@ function makeRequest(body = 'raw_body'): Request {
 function setupSupabaseChain(options: {
   selectResult?: { data: Record<string, unknown> | null; error: unknown };
   updateResult?: { error: unknown };
+  idempotencyResult?: { data: { id: string } | null; error: unknown };
 }) {
   const eqAfterUpdate = vi.fn().mockResolvedValue(options.updateResult ?? { error: null });
   const updateFn = vi.fn().mockReturnValue({ eq: eqAfterUpdate });
@@ -88,12 +89,30 @@ function setupSupabaseChain(options: {
   const eqAfterSelect = vi.fn().mockReturnValue({ single: singleFn });
   const selectFn = vi.fn().mockReturnValue({ eq: eqAfterSelect });
 
-  mockFrom.mockReturnValue({
-    select: selectFn,
-    update: updateFn,
+  // stripe_events idempotency chain: insert().select('id').maybeSingle()
+  // Default: event is new (insert returns a row).
+  const idempotencyMaybeSingle = vi
+    .fn()
+    .mockResolvedValue(options.idempotencyResult ?? { data: { id: 'evt_test' }, error: null });
+  const idempotencySelect = vi.fn().mockReturnValue({ maybeSingle: idempotencyMaybeSingle });
+  const idempotencyInsert = vi.fn().mockReturnValue({ select: idempotencySelect });
+
+  mockFrom.mockImplementation((table: string) => {
+    if (table === 'stripe_events') {
+      return { insert: idempotencyInsert };
+    }
+    return { select: selectFn, update: updateFn };
   });
 
-  return { selectFn, eqAfterSelect, singleFn, updateFn, eqAfterUpdate };
+  return {
+    selectFn,
+    eqAfterSelect,
+    singleFn,
+    updateFn,
+    eqAfterUpdate,
+    idempotencyInsert,
+    idempotencyMaybeSingle,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -293,6 +312,52 @@ describe('Stripe Webhook - POST /api/webhooks/stripe', () => {
       expect(logger.warn).toHaveBeenCalledWith('Payment failed for tenant', {
         tenantId: 'tenant-pay',
       });
+    });
+  });
+
+  // =========================================================================
+  // Idempotency (replay protection)
+  // =========================================================================
+
+  describe('idempotency', () => {
+    it('short-circuits and returns 200 when event id has already been processed', async () => {
+      // Simulate ON CONFLICT DO NOTHING: insert returns data: null
+      const chain = setupSupabaseChain({
+        idempotencyResult: { data: null, error: null },
+      });
+
+      const event = makeStripeEvent('customer.subscription.updated', {
+        customer: 'cus_replay',
+        status: 'active',
+        items: { data: [] },
+      });
+      mockConstructEvent.mockReturnValue(event);
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(200);
+
+      const body = (await response.json()) as { received: boolean; idempotent: boolean };
+      expect(body.idempotent).toBe(true);
+
+      // Verify the handler never touched tenant state
+      expect(chain.updateFn).not.toHaveBeenCalled();
+      expect(chain.selectFn).not.toHaveBeenCalled();
+    });
+
+    it('returns 500 when idempotency insert fails with a non-conflict error', async () => {
+      setupSupabaseChain({
+        idempotencyResult: { data: null, error: { code: '42501', message: 'permission denied' } },
+      });
+
+      const event = makeStripeEvent('customer.subscription.updated', {
+        customer: 'cus_x',
+        status: 'active',
+        items: { data: [] },
+      });
+      mockConstructEvent.mockReturnValue(event);
+
+      const response = await POST(makeRequest());
+      expect(response.status).toBe(500);
     });
   });
 
