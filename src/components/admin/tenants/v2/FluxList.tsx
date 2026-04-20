@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RecentOrder } from '@/types/command-center.types';
@@ -26,12 +27,6 @@ function mapStatus(raw: string): FluxStatus {
   return 'attente';
 }
 
-const LABELS: Record<FluxStatus, string> = {
-  delivered: 'Livree',
-  prep: 'En preparation',
-  attente: 'En attente',
-};
-
 function formatAmount(value: number): string {
   return Math.round(value).toLocaleString('fr-FR');
 }
@@ -44,7 +39,13 @@ function formatTime(iso: string): string {
 }
 
 export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: FluxListProps) {
+  const t = useTranslations('admin.tenants.commandCenter.flux');
   const visible = orders.slice(0, max);
+  const labels: Record<FluxStatus, string> = {
+    delivered: t('statusDelivered'),
+    prep: t('statusPreparing'),
+    attente: t('statusPending'),
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -53,15 +54,15 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
           className="flex items-center gap-2 text-[12px] font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
-          Activite recente
-          <span className="cc-live-dot">en direct</span>
+          {t('title')}
+          <span className="cc-live-dot">{t('live')}</span>
         </div>
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col">
         {visible.length === 0 ? (
           <div className="py-6 text-center text-[12px]" style={{ color: 'var(--cc-text-3)' }}>
-            Aucune commande encore
+            {t('empty')}
           </div>
         ) : (
           visible.map((order, idx) => (
@@ -71,6 +72,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
               isFirst={idx === 0}
               showTenant={multiTenant}
               onClick={onSelect ? () => onSelect(order.tenant_slug) : undefined}
+              statusLabel={labels[mapStatus(order.status)]}
             />
           ))
         )}
@@ -84,9 +86,10 @@ interface FluxRowProps {
   isFirst: boolean;
   showTenant: boolean;
   onClick?: () => void;
+  statusLabel: string;
 }
 
-function FluxRow({ order, isFirst, showTenant, onClick }: FluxRowProps) {
+function FluxRow({ order, isFirst, showTenant, onClick, statusLabel }: FluxRowProps) {
   const status = mapStatus(order.status);
   const statusBg: Record<FluxStatus, string> = {
     delivered: 'var(--cc-accent-ink)',
@@ -113,7 +116,7 @@ function FluxRow({ order, isFirst, showTenant, onClick }: FluxRowProps) {
           className="mt-[1px] flex items-center gap-2 whitespace-nowrap text-[11px]"
           style={{ color: 'var(--cc-text-3)' }}
         >
-          <span>{LABELS[status]}</span>
+          <span>{statusLabel}</span>
           <span style={{ color: 'var(--cc-text-3)' }}>·</span>
           <span className="cc-mono">{formatTime(order.created_at)}</span>
           {showTenant && order.tenant_name && (

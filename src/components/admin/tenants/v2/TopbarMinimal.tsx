@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Moon, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -15,6 +16,7 @@ interface TopbarMinimalProps {
 }
 
 export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: TopbarMinimalProps) {
+  const t = useTranslations('admin.tenants.commandCenter.topbar');
   const handleThemeToggle = () => {
     window.dispatchEvent(new CustomEvent('cc:theme:toggle'));
   };
@@ -55,7 +57,7 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
         onClick={handleThemeToggle}
         className="h-7 w-7 shrink-0 rounded-md"
         style={{ color: 'var(--cc-text-2)' }}
-        aria-label="Basculer le theme"
+        aria-label={t('toggleTheme')}
       >
         <Moon className="size-[14px]" strokeWidth={1.8} />
       </Button>
@@ -85,7 +87,7 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
           onClick={onLogout}
           className="h-7 w-7 shrink-0 rounded-md"
           style={{ color: 'var(--cc-text-3)' }}
-          aria-label="Se deconnecter"
+          aria-label={t('logout')}
         >
           <LogOut className="size-[13px]" strokeWidth={1.8} />
         </Button>
