@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslations } from 'next-intl';
 
 interface HeroProps {
   /** Revenue today, in the display currency (FCFA by default). */
@@ -15,22 +16,27 @@ function formatMoney(value: number): string {
   return Math.round(value).toLocaleString('fr-FR');
 }
 
-function formatDelta(today: number, yesterday: number): string | null {
+function formatDelta(today: number, yesterday: number, vsLabel: string): string | null {
   if (yesterday <= 0) return null;
   const delta = ((today - yesterday) / yesterday) * 100;
   const sign = delta > 0 ? '+' : delta < 0 ? '-' : '';
-  return `${sign}${Math.abs(delta).toFixed(1).replace('.', ',')}% vs hier`;
+  return `${sign}${Math.abs(delta).toFixed(1).replace('.', ',')}% ${vsLabel}`;
 }
 
-function formatRelative(iso: string | null | undefined, now: number): string | null {
+type RelativeT = (
+  key: 'lastOrderJustNow' | 'lastOrderMinutesAgo' | 'lastOrderHoursAgo',
+  vars?: Record<string, string | number>,
+) => string;
+
+function formatRelative(iso: string | null | undefined, now: number, t: RelativeT): string | null {
   if (!iso) return null;
   const diffMs = now - new Date(iso).getTime();
   if (diffMs < 0) return null;
   const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return "Derniere commande a l'instant";
-  if (mins < 60) return `Derniere commande il y a ${mins} min`;
+  if (mins < 1) return t('lastOrderJustNow');
+  if (mins < 60) return t('lastOrderMinutesAgo', { minutes: mins });
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `Derniere commande il y a ${hours} h`;
+  if (hours < 24) return t('lastOrderHoursAgo', { hours });
   return null;
 }
 
@@ -40,6 +46,7 @@ export function Hero({
   lastOrderAt,
   currencyLabel = 'FCFA',
 }: HeroProps) {
+  const t = useTranslations('admin.tenants.commandCenter.hero');
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -47,8 +54,8 @@ export function Hero({
     return () => clearInterval(timer);
   }, []);
 
-  const delta = formatDelta(revenueToday, revenueYesterday);
-  const relative = formatRelative(lastOrderAt, now);
+  const delta = formatDelta(revenueToday, revenueYesterday, t('vsYesterday'));
+  const relative = formatRelative(lastOrderAt, now, t as unknown as RelativeT);
 
   return (
     <div className="pt-2">
@@ -56,9 +63,9 @@ export function Hero({
         className="flex items-center gap-2.5 text-[11.5px] font-medium uppercase tracking-[0.08em]"
         style={{ color: 'var(--cc-text-3)' }}
       >
-        <span>{`Chiffre d'affaires - aujourd'hui`}</span>
+        <span>{t('todayRevenue')}</span>
         <span className="cc-live-dot" style={{ textTransform: 'none' }}>
-          en direct
+          {t('live')}
         </span>
       </div>
 

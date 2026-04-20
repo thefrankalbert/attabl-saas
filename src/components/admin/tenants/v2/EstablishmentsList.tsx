@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { ArrowRight, ExternalLink, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,7 @@ export function EstablishmentsList({
   onSeeAll,
   max = 4,
 }: EstablishmentsListProps) {
+  const t = useTranslations('admin.tenants.commandCenter.establishments');
   const visible = locations.slice(0, max);
   const count = locations.length;
   const hasMore = count > max;
@@ -61,7 +63,7 @@ export function EstablishmentsList({
           className="flex items-center gap-2 text-[12px] font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
-          Etablissements
+          {t('title')}
           <span className="cc-mono text-[11px]" style={{ color: 'var(--cc-text-3)' }}>
             {count}
           </span>
@@ -75,7 +77,7 @@ export function EstablishmentsList({
               onClick={onAdd}
               className="h-6 w-6 rounded-md"
               style={{ color: 'var(--cc-text-3)' }}
-              aria-label="Ajouter un etablissement"
+              aria-label={t('add')}
             >
               <Plus className="size-3.5" strokeWidth={1.8} />
             </Button>
@@ -88,7 +90,7 @@ export function EstablishmentsList({
               className="h-auto gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-normal shadow-none"
               style={{ color: 'var(--cc-text-3)' }}
             >
-              Tout voir
+              {t('seeAll')}
               <ArrowRight className="size-3" strokeWidth={2} aria-hidden />
             </Button>
           )}
@@ -98,7 +100,7 @@ export function EstablishmentsList({
       <div className="flex flex-col gap-0.5">
         {visible.length === 0 ? (
           <div className="py-6 text-center text-[12px]" style={{ color: 'var(--cc-text-3)' }}>
-            Aucun etablissement
+            {t('empty')}
           </div>
         ) : (
           visible.map((loc, idx) => (
@@ -108,6 +110,9 @@ export function EstablishmentsList({
               gradient={GRADIENTS[idx % GRADIENTS.length]}
               onClick={() => onOpenDashboard(loc.tenant_slug)}
               onOpenMenu={onOpenMenu ? () => onOpenMenu(loc.tenant_slug) : undefined}
+              openDashboardLabel={t('openDashboard', { name: loc.tenant_name })}
+              openMenuLabel={t('openMenu', { name: loc.tenant_name })}
+              ordersLabel={t('ordersShort')}
             />
           ))
         )}
@@ -121,9 +126,20 @@ interface EstablishmentRowProps {
   gradient: string;
   onClick: () => void;
   onOpenMenu?: () => void;
+  openDashboardLabel: string;
+  openMenuLabel: string;
+  ordersLabel: string;
 }
 
-function EstablishmentRow({ location, gradient, onClick, onOpenMenu }: EstablishmentRowProps) {
+function EstablishmentRow({
+  location,
+  gradient,
+  onClick,
+  onOpenMenu,
+  openDashboardLabel,
+  openMenuLabel,
+  ordersLabel,
+}: EstablishmentRowProps) {
   const initials = initialsFor(location.tenant_name);
   const url = `${location.tenant_slug}.attabl.com`;
   const degraded = !location.is_active;
@@ -139,7 +155,7 @@ function EstablishmentRow({ location, gradient, onClick, onOpenMenu }: Establish
         type="button"
         variant="ghost"
         onClick={onClick}
-        aria-label={`Ouvrir le dashboard de ${location.tenant_name}`}
+        aria-label={openDashboardLabel}
         className={cn(
           '-mx-2.5 grid h-auto w-[calc(100%+1.25rem)] grid-cols-[auto_1fr_auto_auto] items-center gap-3.5 rounded-lg p-2.5 text-left font-normal shadow-none transition-colors',
           'justify-start hover:bg-[var(--cc-surface-2)]',
@@ -178,7 +194,7 @@ function EstablishmentRow({ location, gradient, onClick, onOpenMenu }: Establish
             className="mt-0.5 block text-[11px] font-normal"
             style={{ color: 'var(--cc-text-3)' }}
           >
-            {location.orders_today} cmd.
+            {location.orders_today} {ordersLabel}
           </span>
         </div>
         <ArrowRight
@@ -197,7 +213,7 @@ function EstablishmentRow({ location, gradient, onClick, onOpenMenu }: Establish
           onClick={onOpenMenu}
           className="absolute right-[18px] top-1/2 z-10 h-6 w-6 -translate-y-1/2 rounded-md opacity-0 transition-opacity focus-visible:opacity-100 group-hover:opacity-100"
           style={{ color: 'var(--cc-text-3)' }}
-          aria-label={`Ouvrir le menu client de ${location.tenant_name}`}
+          aria-label={openMenuLabel}
         >
           <ExternalLink className="size-3" strokeWidth={1.8} />
         </Button>

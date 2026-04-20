@@ -1,10 +1,14 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { signoutLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { logger } from '@/lib/logger';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await signoutLimiter.check(ip);

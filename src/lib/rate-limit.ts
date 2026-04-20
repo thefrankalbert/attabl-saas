@@ -150,20 +150,36 @@ export const contactLimiter = createLimiter('contact', Ratelimit.slidingWindow(3
 /** Newsletter: 3 requests / hour per IP */
 export const newsletterLimiter = createLimiter('newsletter', Ratelimit.slidingWindow(3, '1 h'));
 
-/** Excel menu import: 5 requests / hour per IP */
-export const excelImportLimiter = createLimiter('excel-import', Ratelimit.slidingWindow(5, '1 h'));
+/** Excel menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
+export const excelImportLimiter = createLimiter(
+  'excel-import',
+  Ratelimit.slidingWindow(5, '1 h'),
+  true,
+);
 
-/** PDF menu import: 5 requests / hour per IP */
-export const pdfImportLimiter = createLimiter('pdf-import', Ratelimit.slidingWindow(5, '1 h'));
+/** PDF menu import: 5 requests / hour per IP (fail-closed: costly ingest + abuse target) */
+export const pdfImportLimiter = createLimiter(
+  'pdf-import',
+  Ratelimit.slidingWindow(5, '1 h'),
+  true,
+);
 
 /** Assignments: 30 requests / minute per IP */
 export const assignmentLimiter = createLimiter('assignment', Ratelimit.slidingWindow(30, '1 m'));
 
-/** Invitations: 5 requests / 10 minutes per IP */
-export const invitationLimiter = createLimiter('invitation', Ratelimit.slidingWindow(5, '10 m'));
+/** Invitations: 5 requests / 10 minutes per IP (fail-closed: email-sending abuse target) */
+export const invitationLimiter = createLimiter(
+  'invitation',
+  Ratelimit.slidingWindow(5, '10 m'),
+  true,
+);
 
-/** Permissions: 20 requests / minute per IP */
-export const permissionLimiter = createLimiter('permission', Ratelimit.slidingWindow(20, '1 m'));
+/** Permissions: 20 requests / minute per IP (fail-closed: privilege-escalation surface) */
+export const permissionLimiter = createLimiter(
+  'permission',
+  Ratelimit.slidingWindow(20, '1 m'),
+  true,
+);
 
 /** Push subscriptions: 10 requests / minute per IP */
 export const pushSubscriptionLimiter = createLimiter(
@@ -171,16 +187,18 @@ export const pushSubscriptionLimiter = createLimiter(
   Ratelimit.slidingWindow(10, '1 m'),
 );
 
-/** Domain verification: 5 requests / 10 minutes per IP */
+/** Domain verification: 5 requests / 10 minutes per IP (fail-closed: external DNS calls) */
 export const domainVerifyLimiter = createLimiter(
   'domain-verify',
   Ratelimit.slidingWindow(5, '10 m'),
+  true,
 );
 
-/** Restaurant creation: 5 requests / 10 minutes per IP */
+/** Restaurant creation: 5 requests / 10 minutes per IP (fail-closed: tenant-factory abuse target) */
 export const restaurantCreateLimiter = createLimiter(
   'restaurant-create',
   Ratelimit.slidingWindow(5, '10 m'),
+  true,
 );
 
 /** Stock alerts: 10 requests / minute per IP */
@@ -196,14 +214,15 @@ export const forgotPasswordLimiter = createLimiter(
   true,
 );
 
-/** Resend confirmation email: 3 requests / 10 minutes per IP */
+/** Resend confirmation email: 3 requests / 10 minutes per IP (fail-closed: email enumeration + abuse) */
 export const resendConfirmationLimiter = createLimiter(
   'resend-confirmation',
   Ratelimit.slidingWindow(3, '10 m'),
+  true,
 );
 
-/** File upload: 20 requests / minute per IP */
-export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20, '1 m'));
+/** File upload: 20 requests / minute per IP (fail-closed: Storage quota / cost abuse) */
+export const uploadLimiter = createLimiter('upload', Ratelimit.slidingWindow(20, '1 m'), true);
 
 /** Admin reset: 3 requests / hour per IP (fail-closed: destructive action) */
 export const adminResetLimiter = createLimiter(

@@ -223,6 +223,35 @@
         "alerts": {
           "orderCancelled": "Commande #{number} annulée",
           "siteOffline": "Site désactivé"
+        },
+        "hero": {
+          "todayRevenue": "Chiffre d'affaires - aujourd'hui",
+          "live": "en direct",
+          "vsYesterday": "vs hier",
+          "lastOrderJustNow": "Derniere commande a l'instant",
+          "lastOrderMinutesAgo": "Derniere commande il y a {minutes} min",
+          "lastOrderHoursAgo": "Derniere commande il y a {hours} h"
+        },
+        "flux": {
+          "title": "Activite recente",
+          "live": "en direct",
+          "empty": "Aucune commande encore",
+          "statusDelivered": "Livree",
+          "statusPreparing": "En preparation",
+          "statusPending": "En attente"
+        },
+        "establishments": {
+          "title": "Etablissements",
+          "seeAll": "Tout voir",
+          "empty": "Aucun etablissement",
+          "add": "Ajouter un etablissement",
+          "openDashboard": "Ouvrir le dashboard de {name}",
+          "openMenu": "Ouvrir le menu client de {name}",
+          "ordersShort": "cmd."
+        },
+        "topbar": {
+          "toggleTheme": "Basculer le theme",
+          "logout": "Se deconnecter"
         }
       }
     },

@@ -3,6 +3,7 @@ import { headers } from 'next/headers';
 import { createClient } from '@/lib/supabase/server';
 import { createCouponService } from '@/services/coupon.service';
 import { orderLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { validateCouponSchema } from '@/lib/validations/coupon.schema';
 import { getTranslations } from 'next-intl/server';
 import { logger } from '@/lib/logger';
@@ -34,6 +35,9 @@ export async function POST(request: Request) {
     t = (key: string) => FALLBACK_ERRORS[key] || key;
   }
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     // 1. Rate limiting
     const ip = getClientIp(request);
     const { success: allowed } = await orderLimiter.check(ip);

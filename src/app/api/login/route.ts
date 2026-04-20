@@ -3,10 +3,14 @@ import { createClient } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { loginSchema } from '@/lib/validations/auth.schema';
 import { loginLimiter, getClientIp } from '@/lib/rate-limit';
+import { verifyOrigin } from '@/lib/csrf';
 import { getTranslations } from 'next-intl/server';
 
 export async function POST(request: Request) {
   try {
+    const originErr = verifyOrigin(request);
+    if (originErr) return originErr;
+
     const t = await getTranslations('errors');
 
     // 0. Rate limiting
