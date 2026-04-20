@@ -33,16 +33,33 @@ export default function KitchenClient({
   const ts = useTranslations('shortcuts');
   const isChefView = (CHEF_VIEW_ROLES as readonly string[]).includes(role);
 
-  // Zone filter state - persisted per tenant in localStorage
-  const [zoneFilter, setZoneFilter] = useState<KDSZoneFilter>(() => {
-    if (typeof window === 'undefined') return 'all';
-    return (localStorage.getItem(`kds_zone_${tenantId}`) as KDSZoneFilter) || 'all';
-  });
+  // Zone filter state - persisted per tenant in localStorage.
+  // SSR default is 'all'; the stored value is hydrated in a useEffect after mount
+  // to avoid hydration mismatch (server cannot read localStorage).
+  const [zoneFilter, setZoneFilter] = useState<KDSZoneFilter>('all');
+
+  useEffect(() => {
+    let initial: KDSZoneFilter = 'all';
+    try {
+      const stored = localStorage.getItem(`kds_zone_${tenantId}`);
+      if (stored) initial = stored as KDSZoneFilter;
+    } catch {
+      // localStorage unavailable (private mode, embedded contexts) - keep default
+    }
+    // Hydrating from localStorage after SSR default - the documented pattern for
+    // avoiding hydration mismatch. One setState per mount, not a render cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setZoneFilter(initial);
+  }, [tenantId]);
 
   const handleZoneChange = useCallback(
     (zone: KDSZoneFilter) => {
       setZoneFilter(zone);
-      localStorage.setItem(`kds_zone_${tenantId}`, zone);
+      try {
+        localStorage.setItem(`kds_zone_${tenantId}`, zone);
+      } catch {
+        // Storage write failed - state still updates in memory
+      }
     },
     [tenantId],
   );
@@ -55,14 +72,28 @@ export default function KitchenClient({
   });
 
   // -- Sound unlock interstitial (browser blocks audio until user gesture) --
-  const [soundUnlocked, setSoundUnlocked] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return sessionStorage.getItem('kds-sound-unlocked') === 'true';
-  });
+  // SSR default is false; sessionStorage is hydrated post-mount.
+  const [soundUnlocked, setSoundUnlocked] = useState(false);
+
+  useEffect(() => {
+    let initial = false;
+    try {
+      initial = sessionStorage.getItem('kds-sound-unlocked') === 'true';
+    } catch {
+      // sessionStorage unavailable
+    }
+    // Same hydration-from-storage pattern as zoneFilter above.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSoundUnlocked(initial);
+  }, []);
 
   const handleUnlock = useCallback(() => {
     setSoundUnlocked(true);
-    sessionStorage.setItem('kds-sound-unlocked', 'true');
+    try {
+      sessionStorage.setItem('kds-sound-unlocked', 'true');
+    } catch {
+      // Storage write failed
+    }
   }, []);
 
   // -- Search state --
