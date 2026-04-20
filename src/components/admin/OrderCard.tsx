@@ -113,7 +113,15 @@ export default function OrderCard({
     [t],
   );
 
-  const config = statusConfig[order.status];
+  const config = statusConfig[order.status] ?? {
+    color: 'var(--color-app-text-muted)',
+    bg: 'bg-app-elevated',
+    text: 'text-app-text-muted',
+    label: (order.status as string) ?? '-',
+    border: 'border-l-app-text-muted',
+    nextStatus: null,
+    nextLabel: null,
+  };
   const elapsed = useElapsedTime(order.created_at, order.status);
   const isUrgent = elapsed >= 600 && ['pending', 'preparing'].includes(order.status);
 
