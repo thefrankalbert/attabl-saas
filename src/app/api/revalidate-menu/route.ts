@@ -6,6 +6,9 @@ import { revalidateMenuLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
 
 export async function POST(request: Request) {
+  const originErr = verifyOrigin(request);
+  if (originErr) return originErr;
+
   const ip = getClientIp(request);
   const { success: allowed } = await revalidateMenuLimiter.check(ip);
   if (!allowed) {

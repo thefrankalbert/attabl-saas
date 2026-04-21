@@ -344,7 +344,7 @@ export default function ImageUpload({
         {/* Image preview */}
         <div className="relative w-full h-56 bg-black/5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={value} alt="Image preview" className="object-cover w-full h-full" />
+          <img src={value} alt="" className="object-cover w-full h-full" />
         </div>
 
         {/* Action toolbar */}
