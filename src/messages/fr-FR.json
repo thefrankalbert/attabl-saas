@@ -218,6 +218,36 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "about": {
+      "metaTitle": "À propos",
+      "metaDescription": "Découvrez ATTABL, la plateforme SaaS de gestion digitale pour la restauration et l'hôtellerie.",
+      "heading": "À propos d'ATTABL",
+      "intro": "ATTABL est une plateforme SaaS conçue pour digitaliser la gestion des restaurants, hôtels et établissements de restauration. Notre mission : simplifier le quotidien des restaurateurs grâce à des outils modernes et intuitifs.",
+      "visionTitle": "Notre vision",
+      "visionBody": "Nous croyons que chaque établissement, du petit bistrot au grand hôtel, mérite des outils digitaux performants. ATTABL offre un menu QR code, un système de commandes en temps réel, un POS tactile, un affichage cuisine (KDS), et des analytics avancés - le tout dans une seule plateforme.",
+      "techTitle": "Technologie",
+      "techBody": "Construite avec les technologies les plus récentes (Next.js, React, Supabase, Tailwind CSS), ATTABL est rapide, sécurisée et disponible en tant que Progressive Web App (PWA) sur tous les appareils.",
+      "contactButton": "Nous contacter",
+      "pricingButton": "Voir les tarifs"
+    },
+    "legal": {
+      "metaTitle": "Conditions Générales d'Utilisation",
+      "metaDescription": "Conditions générales d'utilisation de la plateforme ATTABL.",
+      "heading": "Conditions Générales d'Utilisation",
+      "lastUpdate": "Dernière mise à jour : 28 février 2026",
+      "section1Title": "1. Objet",
+      "section1Body": "Les présentes Conditions Générales d'Utilisation (CGU) régissent l'accès et l'utilisation de la plateforme ATTABL, un service SaaS de gestion digitale pour la restauration et l'hôtellerie.",
+      "section2Title": "2. Accès au service",
+      "section2Body": "L'accès à ATTABL nécessite la création d'un compte utilisateur. L'utilisateur s'engage à fournir des informations exactes et à jour lors de son inscription.",
+      "section3Title": "3. Abonnements et tarifs",
+      "section3Body": "ATTABL propose des plans d'abonnement mensuels et annuels. Les tarifs en vigueur sont disponibles sur la page",
+      "section3BodyCont": ". Toute modification tarifaire sera communiquée 30 jours à l'avance.",
+      "section3Link": "Tarifs",
+      "section4Title": "4. Propriété des données",
+      "section4Body": "Les données saisies par l'utilisateur (menus, commandes, clients) restent sa propriété exclusive. ATTABL s'engage à ne pas commercialiser ces données.",
+      "section5Title": "5. Contact",
+      "section5Body": "Pour toute question relative aux présentes CGU, contactez-nous à"
+    },
     "nouveautes": {
       "pageTitle": "Nouveautés",
       "pageSubtitle": "Les dernières fonctionnalités et améliorations d'Attabl.",

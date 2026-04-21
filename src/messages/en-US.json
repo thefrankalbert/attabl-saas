@@ -218,6 +218,36 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "about": {
+      "metaTitle": "About",
+      "metaDescription": "Discover ATTABL, the SaaS platform for digital restaurant and hospitality management.",
+      "heading": "About ATTABL",
+      "intro": "ATTABL is a SaaS platform designed to digitize the management of restaurants, hotels and dining venues. Our mission: simplify operators' daily work with modern, intuitive tools.",
+      "visionTitle": "Our vision",
+      "visionBody": "We believe every venue, from the small bistro to the large hotel, deserves high-performance digital tools. ATTABL provides a QR code menu, a real-time order system, a touch POS, a kitchen display (KDS), and advanced analytics - all in one platform.",
+      "techTitle": "Technology",
+      "techBody": "Built on the latest technologies (Next.js, React, Supabase, Tailwind CSS), ATTABL is fast, secure and available as a Progressive Web App (PWA) across all devices.",
+      "contactButton": "Contact us",
+      "pricingButton": "View pricing"
+    },
+    "legal": {
+      "metaTitle": "Terms of Service",
+      "metaDescription": "Terms of service for the ATTABL platform.",
+      "heading": "Terms of Service",
+      "lastUpdate": "Last updated: February 28, 2026",
+      "section1Title": "1. Purpose",
+      "section1Body": "These Terms of Service (ToS) govern access to and use of the ATTABL platform, a SaaS service for digital restaurant and hospitality management.",
+      "section2Title": "2. Access to the service",
+      "section2Body": "Access to ATTABL requires the creation of a user account. The user undertakes to provide accurate and up-to-date information when registering.",
+      "section3Title": "3. Subscriptions and pricing",
+      "section3Body": "ATTABL offers monthly and annual subscription plans. Current pricing is available on the",
+      "section3BodyCont": " page. Any pricing change will be communicated 30 days in advance.",
+      "section3Link": "Pricing",
+      "section4Title": "4. Ownership of data",
+      "section4Body": "Data entered by the user (menus, orders, customers) remains their exclusive property. ATTABL undertakes not to commercialize this data.",
+      "section5Title": "5. Contact",
+      "section5Body": "For any question regarding these ToS, contact us at"
+    },
     "nouveautes": {
       "pageTitle": "What's new",
       "pageSubtitle": "The latest features and improvements from Attabl.",
