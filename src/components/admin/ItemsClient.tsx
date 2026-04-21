@@ -32,6 +32,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -399,20 +400,17 @@ export default function ItemsClient({
             <div className="bg-app-card rounded-xl border border-app-border overflow-hidden">
               {/* Select all header */}
               <div className="flex items-center gap-3 px-4 py-2 border-b border-app-border bg-app-bg/30">
-                {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-                <input
-                  type="checkbox"
+                <Checkbox
                   checked={items.length > 0 && items.every((i) => selectedIds.has(i.id))}
-                  onChange={(e) => {
+                  onCheckedChange={(checked) => {
                     const next = new Set(selectedIds);
-                    if (e.target.checked) {
+                    if (checked) {
                       items.forEach((i) => next.add(i.id));
                     } else {
                       items.forEach((i) => next.delete(i.id));
                     }
                     setSelectedIds(next);
                   }}
-                  className="rounded border-app-border text-accent focus:ring-accent/30"
                 />
                 <span className="text-xs text-app-text-muted">
                   {tc('selectAll') || 'Select all'}
@@ -424,19 +422,16 @@ export default function ItemsClient({
                   onClick={() => setSelectedItem(item)}
                   className="flex flex-wrap @md:flex-nowrap items-center gap-2 sm:gap-3 md:gap-4 px-3 sm:px-4 py-3 border-b border-app-border last:border-b-0 hover:bg-app-bg/50 transition-colors group cursor-pointer"
                 >
-                  {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-                  <input
-                    type="checkbox"
+                  <Checkbox
                     checked={selectedIds.has(item.id)}
-                    onChange={(e) => {
-                      e.stopPropagation();
+                    onCheckedChange={(checked) => {
                       const next = new Set(selectedIds);
-                      if (e.target.checked) next.add(item.id);
+                      if (checked) next.add(item.id);
                       else next.delete(item.id);
                       setSelectedIds(next);
                     }}
                     onClick={(e) => e.stopPropagation()}
-                    className="rounded border-app-border text-accent focus:ring-accent/30 shrink-0"
+                    className="shrink-0"
                   />
                   {item.image_url ? (
                     <Image

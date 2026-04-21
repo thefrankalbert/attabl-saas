@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -601,12 +602,9 @@ export function TablesClient({
 
                       {/* Active toggle */}
                       <Label className="flex items-center gap-2 cursor-pointer">
-                        {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           checked={table.is_active}
-                          onChange={() => handleToggleActive(table)}
-                          className="w-4 h-4 rounded border-app-border-hover accent-accent focus:ring-accent"
+                          onCheckedChange={() => handleToggleActive(table)}
                         />
                         <span className="text-xs text-app-text-secondary">
                           {table.is_active ? t('active') : t('inactive')}

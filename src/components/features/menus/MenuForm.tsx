@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -140,16 +141,14 @@ export default function MenuForm({
 
       {venues.length > 0 && (
         <div className="flex items-center gap-3 p-3 bg-accent/5 border border-accent/15 rounded-lg">
-          {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-          <input
-            type="checkbox"
+          <Checkbox
             id="menu-shared"
             checked={formIsShared}
-            onChange={(e) => {
-              setFormIsShared(e.target.checked);
-              if (e.target.checked) setFormVenueId(null);
+            onCheckedChange={(checked) => {
+              const next = checked === true;
+              setFormIsShared(next);
+              if (next) setFormVenueId(null);
             }}
-            className="rounded border-app-border text-lime-500 focus:ring-lime-400"
           />
           <Globe className="w-4 h-4 text-lime-600 flex-shrink-0" />
           <div>
@@ -210,13 +209,10 @@ export default function MenuForm({
       </div>
 
       <div className="flex items-center gap-3">
-        {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-        <input
-          type="checkbox"
+        <Checkbox
           id="menu-active"
           checked={formIsActive}
-          onChange={(e) => setFormIsActive(e.target.checked)}
-          className="rounded border-app-border text-lime-500 focus:ring-lime-400"
+          onCheckedChange={(checked) => setFormIsActive(checked === true)}
         />
         <Label htmlFor="menu-active" className="text-app-text">
           {t('activeVisibleToClients')}

@@ -25,6 +25,7 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 
 import { cn } from '@/lib/utils';
 import type { Menu } from '@/types/admin.types';
@@ -99,12 +100,10 @@ function MenuRow({
       )}
     >
       {/* Selection checkbox */}
-      {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-      <input
-        type="checkbox"
+      <Checkbox
         checked={isSelected}
-        onChange={onToggleSelect}
-        className="w-4 h-4 rounded border-app-border accent-accent focus:ring-accent/30 shrink-0 cursor-pointer"
+        onCheckedChange={() => onToggleSelect()}
+        className="shrink-0 cursor-pointer"
       />
 
       {/* Drag handle */}

@@ -1,7 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { logger } from '@/lib/logger';
+import { logger, hashEmail } from '@/lib/logger';
 import { contactLimiter, getClientIpFromHeaders } from '@/lib/rate-limit';
 import { contactSchema } from '@/lib/validations/contact.schema';
 import { sendContactFormEmail } from '@/services/email.service';
@@ -60,7 +60,8 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
   const { name, email, company, date, message } = validatedFields.data;
 
   logger.info('New appointment request', {
-    from: `${name} (${email})`,
+    nameLength: name.length,
+    emailHash: hashEmail(email),
     company,
     preferredDate: date,
     messageLength: message.length,
@@ -69,7 +70,10 @@ export async function actionSubmitContactForm(prevState: ContactState, formData:
   const emailSent = await sendContactFormEmail({ name, email, company, date, message });
 
   if (!emailSent) {
-    logger.warn('Contact form email could not be sent', { name, email });
+    logger.warn('Contact form email could not be sent', {
+      nameLength: name.length,
+      emailHash: hashEmail(email),
+    });
   }
 
   return {
