@@ -66,21 +66,9 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
   const { data: recipeData, isLoading: loading } = useQuery({
     queryKey: ['recipes-data', tenantId],
     queryFn: async () => {
-      const localSupabase = createClient();
-      const [itemsRes, recipesRes] = await Promise.all([
-        localSupabase
-          .from('menu_items')
-          .select('id, name, category_id, is_available')
-          .eq('tenant_id', tenantId)
-          .order('name'),
-        localSupabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
-      ]);
-
-      const menuItemsList = (itemsRes.data as MenuItem[]) || [];
-      const recipeIds = new Set(
-        (recipesRes.data || []).map((r: { menu_item_id: string }) => r.menu_item_id),
-      );
-      return { menuItems: menuItemsList, recipeIds };
+      const svc = createInventoryService(createClient());
+      const { menuItems, recipeItemIds } = await svc.getRecipesOverview(tenantId);
+      return { menuItems: menuItems as MenuItem[], recipeIds: recipeItemIds };
     },
     enabled: !!tenantId,
   });

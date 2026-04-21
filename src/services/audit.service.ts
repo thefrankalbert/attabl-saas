@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { logger } from '@/lib/logger';
+import { ServiceError } from './errors';
 
 export type AuditAction = 'create' | 'update' | 'delete';
 export type AuditEntityType =
@@ -50,6 +51,47 @@ export function createAuditService(
         // Audit logging should NEVER fail the parent operation
         logger.error('Audit log insert failed', error, { action, entityType, entityId });
       }
+    },
+  };
+}
+
+interface ListAuditInput {
+  tenantId: string;
+  page: number;
+  pageSize: number;
+  action?: string;
+  entityType?: string;
+  searchEmail?: string;
+}
+
+interface ListAuditResult {
+  logs: unknown[];
+  count: number;
+}
+
+/**
+ * Read-side service for the audit log admin dashboard. Separate factory
+ * because listing audit logs has no write context (no userId/userEmail).
+ */
+export function createAuditReadService(supabase: SupabaseClient) {
+  return {
+    async listLogs(input: ListAuditInput): Promise<ListAuditResult> {
+      let query = supabase
+        .from('audit_log')
+        .select('*', { count: 'exact' })
+        .eq('tenant_id', input.tenantId)
+        .order('created_at', { ascending: false })
+        .range(input.page * input.pageSize, (input.page + 1) * input.pageSize - 1);
+
+      if (input.action) query = query.eq('action', input.action);
+      if (input.entityType) query = query.eq('entity_type', input.entityType);
+      if (input.searchEmail) query = query.ilike('user_email', `%${input.searchEmail}%`);
+
+      const { data, count, error } = await query;
+      if (error) {
+        throw new ServiceError("Erreur lors du chargement de l'audit log", 'INTERNAL', error);
+      }
+      return { logs: (data as unknown[]) || [], count: count || 0 };
     },
   };
 }

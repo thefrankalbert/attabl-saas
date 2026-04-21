@@ -337,5 +337,77 @@ export function createMenuService(supabase: SupabaseClient) {
 
       return items || [];
     },
+
+    /**
+     * Load everything needed to render the admin MenuDetail page in a
+     * single call: the menu with venue relation, its categories, the
+     * unassigned categories (for the "add existing category" picker)
+     * and the items belonging to its categories.
+     */
+    async getMenuDetailBundle(tenantId: string, menuId: string) {
+      const menuRes = await supabase
+        .from('menus')
+        .select('*, venue:venues(id, name, slug)')
+        .eq('id', menuId)
+        .single();
+      if (menuRes.error) {
+        throw new ServiceError('Erreur lors du chargement du menu', 'INTERNAL', menuRes.error);
+      }
+
+      const catsRes = await supabase
+        .from('categories')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .eq('menu_id', menuId)
+        .order('display_order', { ascending: true });
+      if (catsRes.error) {
+        throw new ServiceError(
+          'Erreur lors du chargement des categories',
+          'INTERNAL',
+          catsRes.error,
+        );
+      }
+      const categories = catsRes.data || [];
+
+      const availRes = await supabase
+        .from('categories')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .is('menu_id', null)
+        .order('name', { ascending: true });
+      if (availRes.error) {
+        throw new ServiceError(
+          'Erreur lors du chargement des categories disponibles',
+          'INTERNAL',
+          availRes.error,
+        );
+      }
+
+      const catIds = categories.map((c: { id: string }) => c.id);
+      let items: unknown[] = [];
+      if (catIds.length > 0) {
+        const itemsRes = await supabase
+          .from('menu_items')
+          .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
+          .eq('tenant_id', tenantId)
+          .in('category_id', catIds)
+          .order('created_at', { ascending: true });
+        if (itemsRes.error) {
+          throw new ServiceError(
+            'Erreur lors du chargement des articles',
+            'INTERNAL',
+            itemsRes.error,
+          );
+        }
+        items = itemsRes.data || [];
+      }
+
+      return {
+        menu: menuRes.data,
+        categories,
+        availableCategories: availRes.data || [],
+        items,
+      };
+    },
   };
 }

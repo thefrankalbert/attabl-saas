@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { createOrderService } from '@/services/order.service';
+import { createServiceManagerService } from '@/services/service-manager.service';
 import { useAssignments } from '@/hooks/queries/useAssignments';
 import { useAssignServer, useReleaseAssignment } from '@/hooks/mutations/useAssignment';
 import { useRealtimeSubscription } from '@/hooks/useRealtimeSubscription';
@@ -60,55 +62,30 @@ export default function ServiceManager({ tenantId }: Props) {
   const releaseAssignment = useReleaseAssignment(tenantId);
 
   const loadReadyOrders = useCallback(async () => {
-    const supabase = createClient();
-    const todayStart = new Date();
-    todayStart.setHours(0, 0, 0, 0);
-    const { data, error } = await supabase
-      .from('orders')
-      .select('*, order_items(*)')
-      .eq('tenant_id', tenantId)
-      .eq('status', 'ready')
-      .gte('created_at', todayStart.toISOString())
-      .order('created_at', { ascending: true });
-    if (error) {
-      logger.error('Failed to load ready orders', error);
-    } else {
+    try {
+      const orderService = createOrderService(createClient());
+      const data = await orderService.listReadyOrdersToday(tenantId);
       setReadyOrders(data as Order[]);
+    } catch (error) {
+      logger.error('Failed to load ready orders', error);
     }
   }, [tenantId]);
 
   useEffect(() => {
     let cancelled = false;
     async function fetchData() {
-      const supabase = createClient();
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const [zonesResult, serversResult, ordersResult] = await Promise.all([
-        supabase
-          .from('zones')
-          .select('*, tables(*), venues!inner(tenant_id)')
-          .eq('venues.tenant_id', tenantId)
-          .order('display_order'),
-        supabase
-          .from('admin_users')
-          .select('*')
-          .eq('tenant_id', tenantId)
-          .in('role', ['waiter', 'manager', 'admin', 'owner'])
-          .order('full_name'),
-        supabase
-          .from('orders')
-          .select('*, order_items(*)')
-          .eq('tenant_id', tenantId)
-          .eq('status', 'ready')
-          .gte('created_at', todayStart.toISOString())
-          .order('created_at', { ascending: true }),
-      ]);
-      if (cancelled) return;
-      if (zonesResult.data) setZones(zonesResult.data as ZoneWithTables[]);
-      if (serversResult.data) setServers(serversResult.data as AdminUser[]);
-      if (ordersResult.data) setReadyOrders(ordersResult.data as Order[]);
-      if (ordersResult.error) logger.error('Failed to load ready orders', ordersResult.error);
-      setLoading(false);
+      try {
+        const svc = createServiceManagerService(createClient());
+        const { zones, servers, readyOrders } = await svc.loadDashboard(tenantId);
+        if (cancelled) return;
+        setZones(zones as ZoneWithTables[]);
+        setServers(servers as AdminUser[]);
+        setReadyOrders(readyOrders as Order[]);
+      } catch (error) {
+        if (!cancelled) logger.error('Failed to load service dashboard', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     }
     void fetchData();
     return () => {
@@ -172,38 +149,31 @@ export default function ServiceManager({ tenantId }: Props) {
       return;
     }
     void (async () => {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .eq('tenant_id', tenantId)
-        .eq('table_id', selectedId)
-        .not('status', 'in', '(delivered,cancelled)')
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (cancelled) return;
-      if (error) {
+      try {
+        const orderService = createOrderService(createClient());
+        const data = await orderService.getCurrentOrderForTable(tenantId, selectedId);
+        if (cancelled) return;
+        if (!data) {
+          setCurrentOrder(null);
+          return;
+        }
+        const raw = data as Record<string, unknown>;
+        const orderItems = (raw.order_items ?? []) as Array<Record<string, unknown>>;
+        const transformed: Order = {
+          ...(raw as unknown as Order),
+          items: orderItems.map((oi) => ({
+            id: (oi.id as string) ?? '',
+            name: (oi.item_name as string) || 'Item',
+            quantity: (oi.quantity as number) || 0,
+            price: (oi.price_at_order as number) || 0,
+          })),
+        };
+        setCurrentOrder(transformed);
+      } catch (error) {
+        if (cancelled) return;
         logger.error('Failed to load current order for table', error);
         setCurrentOrder(null);
-        return;
       }
-      if (!data) {
-        setCurrentOrder(null);
-        return;
-      }
-      const raw = data as Record<string, unknown>;
-      const orderItems = (raw.order_items ?? []) as Array<Record<string, unknown>>;
-      const transformed: Order = {
-        ...(raw as unknown as Order),
-        items: orderItems.map((oi) => ({
-          id: (oi.id as string) ?? '',
-          name: (oi.item_name as string) || 'Item',
-          quantity: (oi.quantity as number) || 0,
-          price: (oi.price_at_order as number) || 0,
-        })),
-      };
-      setCurrentOrder(transformed);
     })();
     return () => {
       cancelled = true;
@@ -222,18 +192,14 @@ export default function ServiceManager({ tenantId }: Props) {
   const handleMarkDelivered = useCallback(
     async (orderId: string) => {
       setReadyOrders((prev) => prev.filter((o) => o.id !== orderId));
-      const supabase = createClient();
-      const { error } = await supabase
-        .from('orders')
-        .update({ status: 'delivered' })
-        .eq('id', orderId)
-        .eq('tenant_id', tenantId);
-      if (error) {
+      try {
+        const orderService = createOrderService(createClient());
+        await orderService.updateStatus(orderId, tenantId, 'delivered');
+        toast({ title: t('markDelivered') });
+      } catch (error) {
         logger.error('Failed to mark order as delivered', error);
         toast({ title: tc('error'), variant: 'destructive' });
         void loadReadyOrders();
-      } else {
-        toast({ title: t('markDelivered') });
       }
     },
     [tenantId, loadReadyOrders, toast, tc, t],

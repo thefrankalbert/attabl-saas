@@ -90,21 +90,16 @@ export function TablesClient({
 
   const loadZones = useCallback(
     async (vId: string) => {
-      const { data, error } = await supabase
-        .from('zones')
-        .select('*')
-        .eq('venue_id', vId)
-        .order('display_order');
-
-      if (error) {
+      try {
+        const svc = createTableConfigService(supabase);
+        const zoneData = (await svc.listZonesForVenue(vId)) as Zone[];
+        setZones(zoneData);
+        return zoneData;
+      } catch (error) {
         logger.error('Failed to load zones', { error });
         toast({ title: t('errorLoadZones'), variant: 'destructive' });
         return [];
       }
-
-      const zoneData = (data || []) as Zone[];
-      setZones(zoneData);
-      return zoneData;
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],
@@ -113,19 +108,17 @@ export function TablesClient({
   const loadTables = useCallback(
     async (zoneId: string) => {
       setTablesLoading(true);
-      const { data, error } = await supabase
-        .from('tables')
-        .select('*')
-        .eq('zone_id', zoneId)
-        .order('table_number');
-
-      if (error) {
+      try {
+        const svc = createTableConfigService(supabase);
+        const tableData = (await svc.listTablesForZone(zoneId)) as Table[];
+        setTables(tableData);
+      } catch (error) {
         logger.error('Failed to load tables', { error });
         toast({ title: t('errorLoadTables'), variant: 'destructive' });
+        setTables([]);
+      } finally {
+        setTablesLoading(false);
       }
-
-      setTables((data || []) as Table[]);
-      setTablesLoading(false);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [],

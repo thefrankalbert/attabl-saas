@@ -103,25 +103,13 @@ export default function SuggestionsClient({
 
   const loadData = useCallback(async () => {
     try {
-      const [itemsRes, suggestionsRes] = await Promise.all([
-        supabase
-          .from('menu_items')
-          .select('id, name')
-          .eq('tenant_id', tenantId)
-          .eq('is_available', true)
-          .order('name'),
-        supabase
-          .from('item_suggestions')
-          .select(
-            '*, menu_item:menu_items!item_suggestions_menu_item_id_fkey(name), suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(name)',
-          )
-          .eq('tenant_id', tenantId)
-          .eq('is_active', true)
-          .order('display_order'),
+      const service = createSuggestionService(supabase);
+      const [items, activeSuggestions] = await Promise.all([
+        service.listAvailableItems(tenantId),
+        service.listActiveSuggestions(tenantId),
       ]);
-
-      if (itemsRes.data) setMenuItems(itemsRes.data as MenuItem[]);
-      if (suggestionsRes.data) setSuggestions(suggestionsRes.data as Suggestion[]);
+      setMenuItems(items as MenuItem[]);
+      setSuggestions(activeSuggestions as Suggestion[]);
     } catch {
       toast({ title: tc('loadingError'), variant: 'destructive' });
     } finally {

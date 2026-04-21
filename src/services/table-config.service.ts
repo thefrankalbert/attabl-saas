@@ -311,5 +311,37 @@ export function createTableConfigService(supabase: SupabaseClient) {
         throw new ServiceError(`Erreur suppression table: ${error.message}`, 'INTERNAL', error);
       }
     },
+
+    /**
+     * List all zones for a venue (ordered by display_order).
+     */
+    async listZonesForVenue(venueId: string): Promise<unknown[]> {
+      const { data, error } = await supabase
+        .from('zones')
+        .select('*')
+        .eq('venue_id', venueId)
+        .order('display_order');
+
+      if (error) {
+        throw new ServiceError(`Erreur chargement zones: ${error.message}`, 'INTERNAL', error);
+      }
+      return (data as unknown[]) || [];
+    },
+
+    /**
+     * List all tables for a zone (ordered by table_number).
+     */
+    async listTablesForZone(zoneId: string): Promise<unknown[]> {
+      const { data, error } = await supabase
+        .from('tables')
+        .select('*')
+        .eq('zone_id', zoneId)
+        .order('table_number');
+
+      if (error) {
+        throw new ServiceError(`Erreur chargement tables: ${error.message}`, 'INTERNAL', error);
+      }
+      return (data as unknown[]) || [];
+    },
   };
 }

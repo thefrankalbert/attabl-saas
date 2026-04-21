@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Loader2, ChevronLeft, ChevronRight, Filter, Search, ScrollText } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { createAuditReadService } from '@/services/audit.service';
 import { useSessionState } from '@/hooks/useSessionState';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -90,21 +91,17 @@ export default function AuditLogClient({
     setLoading(true);
     setError(null);
     try {
-      const supabase = createClient();
-      let query = supabase
-        .from('audit_log')
-        .select('*', { count: 'exact' })
-        .eq('tenant_id', tenantId)
-        .order('created_at', { ascending: false })
-        .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
-
-      if (filterAction) query = query.eq('action', filterAction);
-      if (filterEntity) query = query.eq('entity_type', filterEntity);
-      if (searchEmail) query = query.ilike('user_email', `%${searchEmail}%`);
-
-      const { data, count } = await query;
+      const service = createAuditReadService(createClient());
+      const { logs: data, count } = await service.listLogs({
+        tenantId,
+        page,
+        pageSize: PAGE_SIZE,
+        action: filterAction || undefined,
+        entityType: filterEntity || undefined,
+        searchEmail: searchEmail || undefined,
+      });
       setLogs((data as AuditLogEntry[]) || []);
-      setTotalCount(count || 0);
+      setTotalCount(count);
     } catch {
       setError(t('loadError'));
     } finally {
