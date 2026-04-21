@@ -218,6 +218,36 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "nouveautes": {
+      "pageTitle": "Nouveautés",
+      "pageSubtitle": "Les dernières fonctionnalités et améliorations d'Attabl.",
+      "ctaTitle": "Prêt à essayer ?",
+      "ctaSubtitle": "14 jours gratuits. Sans carte bancaire.",
+      "ctaButton": "Commencer gratuitement",
+      "tagNew": "Nouveau",
+      "tagImprovement": "Amélioration",
+      "dateFeb2026": "Février 2026",
+      "dateJan2026": "Janvier 2026",
+      "dateDec2025": "Décembre 2025",
+      "updates": {
+        "rbacTitle": "Système de permissions par rôle",
+        "rbacDescription": "6 rôles (propriétaire, admin, manager, caissier, chef, serveur) avec des permissions granulaires. Chaque équipier voit exactement ce dont il a besoin.",
+        "i18nTitle": "Internationalisation (2 langues)",
+        "i18nDescription": "Interface disponible en francais et anglais. Changez la langue de l'interface en un clic.",
+        "autolockTitle": "Verrouillage automatique par inactivité",
+        "autolockDescription": "Protégez les données sensibles : l'écran se verrouille après une période d'inactivité configurable.",
+        "stockAlertTitle": "Alertes de stock par email",
+        "stockAlertDescription": "Recevez un email automatique quand un ingrédient passe sous le seuil critique. Intégration Resend.",
+        "suppliersTitle": "Module fournisseurs",
+        "suppliersDescription": "Gérez vos fournisseurs, contacts et références produits directement depuis le dashboard.",
+        "stockHistoryTitle": "Historique des mouvements de stock",
+        "stockHistoryDescription": "Traçabilité complète : chaque entrée, sortie et ajustement est enregistré avec l'auteur et la raison.",
+        "landingTitle": "Landing page redesignée",
+        "landingDescription": "Nouvelle identité visuelle avec vidéo hero, mega-menu, pages par segment et animations Framer Motion.",
+        "qrTitle": "QR Code personnalisé premium",
+        "qrDescription": "6 templates de QR codes avec prévisualisation en temps réel et export PDF."
+      }
+    },
     "landings": {
       "shared": {
         "ctaPrimary": "Démarrer gratuitement",
