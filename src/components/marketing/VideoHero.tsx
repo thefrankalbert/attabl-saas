@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { UtensilsCrossed, Hotel, Zap, Wine, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -9,15 +10,16 @@ import DashboardPreview from './DashboardPreview';
 
 type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
 
-const segments: { key: Segment; label: string; icon: React.ElementType }[] = [
-  { key: 'restaurant', label: 'Restaurant', icon: UtensilsCrossed },
-  { key: 'hotel', label: 'Hôtel', icon: Hotel },
-  { key: 'quickservice', label: 'Quick-Service', icon: Zap },
-  { key: 'bar', label: 'Bar & Café', icon: Wine },
-  { key: 'fastfood', label: 'Fast-Food', icon: Flame },
+const segmentDefs: { key: Segment; icon: React.ElementType }[] = [
+  { key: 'restaurant', icon: UtensilsCrossed },
+  { key: 'hotel', icon: Hotel },
+  { key: 'quickservice', icon: Zap },
+  { key: 'bar', icon: Wine },
+  { key: 'fastfood', icon: Flame },
 ];
 
 export default function VideoHero() {
+  const t = useTranslations('marketing.home.videoHero');
   const [activeSegment, setActiveSegment] = useState<Segment>('restaurant');
 
   return (
@@ -26,12 +28,12 @@ export default function VideoHero() {
         {/* Centered text */}
         <div className="text-center">
           <h1 className="mx-auto max-w-4xl font-[family-name:var(--font-sora)] text-5xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-6xl lg:text-7xl">
-            <span className="block">Petit comptoir</span>
-            <span className="block">ou grande enseigne.</span>
-            <span className="block">Marquez votre territoire.</span>
+            <span className="block">{t('titleLine1')}</span>
+            <span className="block">{t('titleLine2')}</span>
+            <span className="block">{t('titleLine3')}</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-xl text-neutral-500 dark:text-neutral-400">
-            Menu, commandes, stocks, finances - tout piloté depuis un seul outil.
+            {t('subtitle')}
           </p>
 
           {/* CTA row */}
@@ -40,19 +42,19 @@ export default function VideoHero() {
               href="/signup"
               className="rounded-lg bg-neutral-900 px-8 py-4 text-base font-semibold text-white transition-colors hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200"
             >
-              Commencer
+              {t('ctaPrimary')}
             </Link>
             <Link
               href="/contact"
               className="rounded-lg border border-neutral-300 dark:border-neutral-700 px-8 py-4 text-base font-semibold text-neutral-900 dark:text-white transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
             >
-              Contacter l{"'"}équipe
+              {t('ctaSecondary')}
             </Link>
           </div>
 
           {/* Segment pills */}
           <div className="mt-8 flex flex-wrap justify-center gap-2">
-            {segments.map(({ key, label, icon: Icon }) => (
+            {segmentDefs.map(({ key, icon: Icon }) => (
               <Button
                 key={key}
                 variant="ghost"
@@ -64,7 +66,7 @@ export default function VideoHero() {
                 }`}
               >
                 <Icon className="h-4 w-4" />
-                {label}
+                {t(`segments.${key}`)}
               </Button>
             ))}
           </div>
