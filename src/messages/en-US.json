@@ -904,6 +904,14 @@
   "admin": {
     "tenants": {
       "commandCenter": {
+        "tenantsDialog": {
+          "title": "All establishments",
+          "subtitleSingle": "{count} establishment registered",
+          "subtitlePlural": "{count} establishments registered",
+          "searchPlaceholder": "Search by name or subdomain...",
+          "noResults": "No result for \"{query}\"",
+          "menu": "Menu"
+        },
         "alerts": {
           "orderCancelled": "Order #{number} cancelled",
           "siteOffline": "Site offline"

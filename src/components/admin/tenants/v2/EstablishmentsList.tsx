@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { ArrowRight, ExternalLink, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -39,8 +39,8 @@ function initialsFor(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-function formatFull(value: number): string {
-  return Math.round(value).toLocaleString('fr-FR');
+function formatFull(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 export function EstablishmentsList({
@@ -52,6 +52,7 @@ export function EstablishmentsList({
   max = 4,
 }: EstablishmentsListProps) {
   const t = useTranslations('admin.tenants.commandCenter.establishments');
+  const locale = useLocale();
   const visible = locations.slice(0, max);
   const count = locations.length;
   const hasMore = count > max;
@@ -113,6 +114,7 @@ export function EstablishmentsList({
               openDashboardLabel={t('openDashboard', { name: loc.tenant_name })}
               openMenuLabel={t('openMenu', { name: loc.tenant_name })}
               ordersLabel={t('ordersShort')}
+              locale={locale}
             />
           ))
         )}
@@ -129,6 +131,7 @@ interface EstablishmentRowProps {
   openDashboardLabel: string;
   openMenuLabel: string;
   ordersLabel: string;
+  locale: string;
 }
 
 function EstablishmentRow({
@@ -139,6 +142,7 @@ function EstablishmentRow({
   openDashboardLabel,
   openMenuLabel,
   ordersLabel,
+  locale,
 }: EstablishmentRowProps) {
   const initials = initialsFor(location.tenant_name);
   const url = `${location.tenant_slug}.attabl.com`;
@@ -189,12 +193,12 @@ function EstablishmentRow({
           </div>
         </div>
         <div className="cc-mono whitespace-nowrap text-[13px]" style={{ color: 'var(--cc-text)' }}>
-          {formatFull(location.revenue_today)} F
+          {formatFull(location.revenue_today, locale)} F
           <span
             className="mt-0.5 block text-[11px] font-normal"
             style={{ color: 'var(--cc-text-3)' }}
           >
-            {location.orders_today} {ordersLabel}
+            {new Intl.NumberFormat(locale).format(location.orders_today)} {ordersLabel}
           </span>
         </div>
         <ArrowRight

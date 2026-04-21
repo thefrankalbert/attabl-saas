@@ -1,6 +1,6 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RecentOrder } from '@/types/command-center.types';
@@ -27,8 +27,8 @@ function mapStatus(raw: string): FluxStatus {
   return 'attente';
 }
 
-function formatAmount(value: number): string {
-  return Math.round(value).toLocaleString('fr-FR');
+function formatAmount(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 function formatTime(iso: string): string {
@@ -40,6 +40,7 @@ function formatTime(iso: string): string {
 
 export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: FluxListProps) {
   const t = useTranslations('admin.tenants.commandCenter.flux');
+  const locale = useLocale();
   const visible = orders.slice(0, max);
   const labels: Record<FluxStatus, string> = {
     delivered: t('statusDelivered'),
@@ -73,6 +74,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
               showTenant={multiTenant}
               onClick={onSelect ? () => onSelect(order.tenant_slug) : undefined}
               statusLabel={labels[mapStatus(order.status)]}
+              locale={locale}
             />
           ))
         )}
@@ -87,9 +89,10 @@ interface FluxRowProps {
   showTenant: boolean;
   onClick?: () => void;
   statusLabel: string;
+  locale: string;
 }
 
-function FluxRow({ order, isFirst, showTenant, onClick, statusLabel }: FluxRowProps) {
+function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: FluxRowProps) {
   const status = mapStatus(order.status);
   const statusBg: Record<FluxStatus, string> = {
     delivered: 'var(--cc-accent-ink)',
@@ -128,7 +131,7 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel }: FluxRowPr
         </div>
       </div>
       <div className="cc-mono whitespace-nowrap text-[12.5px]" style={{ color: 'var(--cc-text)' }}>
-        {formatAmount(order.total)} F
+        {formatAmount(order.total, locale)} F
       </div>
     </>
   );

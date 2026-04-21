@@ -1,4 +1,4 @@
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface MicroRowProps {
   ordersToday: number;
@@ -17,6 +17,8 @@ interface MicroRowProps {
  */
 export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: MicroRowProps) {
   const t = useTranslations('admin.tenants.commandCenter.micro');
+  const locale = useLocale();
+  const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
   return (
     <div className="-mt-2 flex items-end gap-8">
       <MicroCell label={t('orders')}>
@@ -24,7 +26,7 @@ export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: 
           className="cc-mono block whitespace-nowrap text-[22px] font-normal tracking-tight"
           style={{ color: 'var(--cc-text)' }}
         >
-          {ordersToday.toLocaleString('fr-FR')}
+          {nf.format(ordersToday)}
         </span>
       </MicroCell>
 
@@ -48,7 +50,7 @@ export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: 
             className="cc-mono block whitespace-nowrap text-[22px] font-normal tracking-tight"
             style={{ color: 'var(--cc-warn)' }}
           >
-            {alertsCount.toLocaleString('fr-FR')}
+            {nf.format(alertsCount)}
           </span>
         ) : (
           <span
