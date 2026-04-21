@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { createClient } from '@/lib/supabase/client';
+import { createCouponService } from '@/services/coupon.service';
+import { logger } from '@/lib/logger';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import {
@@ -38,50 +40,38 @@ export default function CouponsClient({ tenantId, initialCoupons, currency }: Co
 
   const refetch = useCallback(async () => {
     setLoading(true);
-    const supabase = createClient();
-    const { data, error } = await supabase
-      .from('coupons')
-      .select('*')
-      .eq('tenant_id', tenantId)
-      .order('created_at', { ascending: false });
-
-    if (error) {
+    try {
+      const service = createCouponService(createClient());
+      setCoupons(await service.listCoupons(tenantId));
+    } catch (err) {
+      logger.error('Failed to list coupons', err);
       toast({ title: t('loadError'), variant: 'destructive' });
-    } else {
-      setCoupons(data || []);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [tenantId, toast, t]);
 
   const performDelete = async (couponId: string) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('coupons')
-      .delete()
-      .eq('id', couponId)
-      .eq('tenant_id', tenantId);
-
-    if (error) {
-      toast({ title: t('deleteError'), variant: 'destructive' });
-    } else {
+    try {
+      const service = createCouponService(createClient());
+      await service.deleteCoupon(couponId, tenantId);
       toast({ title: t('couponDeleted') });
       refetch();
+    } catch (err) {
+      logger.error('Failed to delete coupon', err);
+      toast({ title: t('deleteError'), variant: 'destructive' });
     }
   };
 
   const toggleActive = async (coupon: Coupon) => {
-    const supabase = createClient();
-    const { error } = await supabase
-      .from('coupons')
-      .update({ is_active: !coupon.is_active })
-      .eq('id', coupon.id)
-      .eq('tenant_id', tenantId);
-
-    if (error) {
-      toast({ title: t('updateError'), variant: 'destructive' });
-    } else {
+    try {
+      const service = createCouponService(createClient());
+      await service.toggleActive(coupon.id, tenantId, !coupon.is_active);
       toast({ title: coupon.is_active ? t('couponDeactivated') : t('couponActivated') });
       refetch();
+    } catch (err) {
+      logger.error('Failed to toggle coupon', err);
+      toast({ title: t('updateError'), variant: 'destructive' });
     }
   };
 
