@@ -27,7 +27,7 @@ export interface MenuFormData {
   is_transversal_menu?: boolean;
 }
 
-/** Async confirmation callback — typically from useConfirmDialog. */
+/** Async confirmation callback - typically from useConfirmDialog. */
 export type ConfirmFn = (message: string) => Promise<boolean>;
 
 interface UseMenusDataParams {

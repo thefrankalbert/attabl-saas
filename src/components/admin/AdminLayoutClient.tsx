@@ -34,7 +34,7 @@ interface AdminLayoutInnerProps {
   };
   userName?: string;
   userEmail?: string;
-  /** 0..100 — passed to the sidebar usage card in the footer */
+  /** 0..100 - passed to the sidebar usage card in the footer */
   ordersUsagePercent?: number;
   userTenants?: TenantSwitchOption[];
   notifications?: React.ReactNode;

@@ -24,7 +24,7 @@ export interface CreateUserFormData {
 }
 
 /**
- * Async confirmation callback — typically from useConfirmDialog.
+ * Async confirmation callback - typically from useConfirmDialog.
  * Returns true when the user confirms, false otherwise. We keep the signature
  * narrow (message string only) so callers can plug any dialog implementation.
  */

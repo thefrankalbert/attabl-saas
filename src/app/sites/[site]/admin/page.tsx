@@ -164,7 +164,7 @@ export default async function AdminDashboard({ params }: { params: Promise<{ sit
         .gte('created_at', ninetyDaysAgo.toISOString()),
 
       // Top dishes over the last 7 days.
-      // order_items has no tenant_id column and no indexable created_at —
+      // order_items has no tenant_id column and no indexable created_at -
       // filter both tenant AND time-range via the parent orders join
       // (matches prod pattern in src/hooks/queries/useReportData.ts:147-151).
       supabase

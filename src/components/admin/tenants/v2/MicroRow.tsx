@@ -11,7 +11,7 @@ interface MicroRowProps {
  * Three sober indicators under the hero: Commandes / Sites / Alertes.
  * Matches Dashboard ATTABL.html :: .micro.
  *
- * No interactive state — imports useTranslations from a client ancestor
+ * No interactive state - imports useTranslations from a client ancestor
  * but doesn't declare 'use client' itself so Next can include it in the
  * parent's client bundle without marking it a boundary of its own.
  */

@@ -5,7 +5,7 @@
  * Ils scannent le code source pour detecter les violations AVANT le build.
  *
  * Si un test echoue, c'est qu'un pattern protege a ete modifie.
- * NE PAS modifier ces tests pour les faire passer — corriger le code source.
+ * NE PAS modifier ces tests pour les faire passer - corriger le code source.
  */
 
 import { describe, it, expect } from 'vitest';
