@@ -218,6 +218,240 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "pricing": {
+      "metaTitle": "Attabl - Simple pricing for hospitality",
+      "metaDescription": "Plans for every business. Essential from 39,800 FCFA/month, Premium from 79,800 FCFA/month. 14-day free trial.",
+      "hero": {
+        "title": "Clear pricing. No surprises.",
+        "subtitle": "14-day free trial on the PRO plan. No credit card required."
+      },
+      "billing": {
+        "monthly": "Monthly",
+        "yearly": "Yearly",
+        "yearlyDiscount": "-20%"
+      },
+      "priceSuffix": "XAF/month",
+      "customPrice": "Custom",
+      "plans": {
+        "starter": {
+          "badge": "To get started",
+          "title": "STARTER",
+          "subtitle": "Digitize your menu and your orders.",
+          "button": "Get started",
+          "featuresTitle": "Included in STARTER",
+          "benefits": {
+            "b1": "Bilingual QR menu (FR/EN)",
+            "b2": "Basic POS (cash + card)",
+            "b3": "1 admin, 3 staff",
+            "b4": "Email support"
+          },
+          "features": {
+            "f1": "Bilingual digital QR menu",
+            "f2": "Dine-in and takeaway orders",
+            "f3": "Cash and card POS",
+            "f4": "Dashboard (revenue, orders)",
+            "f5": "1 establishment, 2 menus"
+          }
+        },
+        "pro": {
+          "badge": "14-day free trial",
+          "title": "PRO",
+          "subtitle": "Run your restaurant like a pro.",
+          "button": "Try for free",
+          "featuresTitle": "Included in PRO",
+          "benefits": {
+            "b1": "Everything in STARTER + KDS, tables, stock",
+            "b2": "Multi-currency (XAF, EUR, USD)",
+            "b3": "14-day free trial, no credit card",
+            "b4": "24h WhatsApp support"
+          },
+          "features": {
+            "f1": "Everything in STARTER",
+            "f2": "KDS (kitchen display)",
+            "f3": "Table management and server assignment",
+            "f4": "Stock management and alerts",
+            "f5": "Recipes (cost of ingredients)",
+            "f6": "Supplier tracking",
+            "f7": "Mobile money and tips",
+            "f8": "Sales reports and best-sellers",
+            "f9": "Team management (roles, permissions)",
+            "f10": "10 menus, 10 staff"
+          }
+        },
+        "business": {
+          "badge": "Multi-site",
+          "title": "BUSINESS",
+          "subtitle": "Run a hotel or a chain, all in one place.",
+          "primaryButton": "Get started",
+          "secondaryButton": "Watch a demo",
+          "featuresTitle": "Included in BUSINESS",
+          "benefits": {
+            "b1": "Everything in PRO + up to 10 sites",
+            "b2": "Room service and delivery",
+            "b3": "Advanced and multi-site reports",
+            "b4": "Priority 4h support"
+          },
+          "features": {
+            "f1": "Everything in PRO",
+            "f2": "Digital room service",
+            "f3": "Delivery orders",
+            "f4": "Advanced reports",
+            "f5": "Multi-site reports",
+            "f6": "Up to 10 establishments",
+            "f7": "99 admins, 999 staff, 99 menus"
+          }
+        },
+        "enterprise": {
+          "badge": "Custom",
+          "title": "ENTERPRISE",
+          "subtitle": "Tailored solution for large groups.",
+          "button": "Contact us",
+          "featuresTitle": "Included in ENTERPRISE",
+          "benefits": {
+            "b1": "Everything in BUSINESS + unlimited sites",
+            "b2": "99.9% SLA guaranteed",
+            "b3": "Dedicated account manager",
+            "b4": "1h phone support + custom API"
+          },
+          "features": {
+            "f1": "Everything in BUSINESS",
+            "f2": "Unlimited establishments",
+            "f3": "99.9% SLA",
+            "f4": "Account manager",
+            "f5": "Custom API integrations",
+            "f6": "Priority 1h phone support"
+          }
+        }
+      },
+      "comparison": {
+        "title": "Full feature comparison",
+        "featureColumn": "Feature",
+        "unlimited": "Unlimited",
+        "categories": {
+          "menu": {
+            "title": "Menu & Orders",
+            "features": {
+              "qrMenu": "Bilingual digital QR menu",
+              "onsiteOrders": "Dine-in orders",
+              "takeawayOrders": "Takeaway orders",
+              "deliveryOrders": "Delivery orders",
+              "roomService": "Digital room service"
+            }
+          },
+          "checkout": {
+            "title": "Checkout",
+            "features": {
+              "pos": "POS (cash + card)",
+              "mobileMoney": "Mobile money",
+              "multiCurrency": "Multi-currency (XAF, EUR, USD)",
+              "tips": "Built-in tips"
+            }
+          },
+          "kitchen": {
+            "title": "Kitchen & Production",
+            "features": {
+              "kds": "KDS (kitchen display)",
+              "tables": "Table management",
+              "assignments": "Server assignment"
+            }
+          },
+          "stock": {
+            "title": "Stock & Suppliers",
+            "features": {
+              "stock": "Stock management",
+              "recipes": "Recipes (cost of ingredients)",
+              "suppliers": "Supplier tracking",
+              "restockAlerts": "Restock alerts"
+            }
+          },
+          "analytics": {
+            "title": "Analytics & Reports",
+            "features": {
+              "dashboard": "Dashboard (revenue, orders)",
+              "salesReports": "Sales reports",
+              "bestSellers": "Best-sellers",
+              "advancedReports": "Advanced reports",
+              "multiSiteReports": "Multi-site reports"
+            }
+          },
+          "team": {
+            "title": "Team & Organization",
+            "features": {
+              "establishments": "Establishments",
+              "admins": "Admins",
+              "staff": "Staff"
+            }
+          },
+          "support": {
+            "title": "Support",
+            "features": {
+              "email": "Email support",
+              "whatsapp": "WhatsApp support",
+              "whatsappPro": "24h",
+              "whatsappBusiness": "4h priority",
+              "whatsappEnterprise": "1h phone",
+              "manager": "Account manager",
+              "sla": "SLA guaranteed"
+            }
+          }
+        }
+      },
+      "faq": {
+        "title": "Frequently asked questions",
+        "items": {
+          "q1": {
+            "question": "How does the free trial work?",
+            "answer": "14 days of full access to the PRO plan. No credit card required. You test everything: KDS, POS, stock, tables."
+          },
+          "q2": {
+            "question": "What happens after the 14 days?",
+            "answer": "Your menu stays visible to your customers. Your dashboard goes read-only. Pick a plan to regain control."
+          },
+          "q3": {
+            "question": "Can I change plans?",
+            "answer": "Yes, at any time. Upgrades are immediate. Downgrades apply at the end of the current period."
+          },
+          "q4": {
+            "question": "Is there a commitment?",
+            "answer": "Monthly = no commitment. Yearly = -20%."
+          },
+          "q5": {
+            "question": "How do I pay?",
+            "answer": "By card (Visa, Mastercard) via Stripe. Secure payment."
+          },
+          "q6": {
+            "question": "Do I need to buy hardware?",
+            "answer": "No. ATTABL is software. Use your existing phone, tablet or computer."
+          }
+        }
+      },
+      "testimonials": {
+        "t1": {
+          "name": "Amadou K.",
+          "role": "Manager",
+          "company": "Le Jardin, N'Djamena",
+          "content": "We cut order mistakes by 40% in 2 months. The kitchen gets everything on screen - no more lost tickets."
+        },
+        "t2": {
+          "name": "Grace M.",
+          "role": "Owner",
+          "company": "Chez Mama, Douala",
+          "content": "200 orders a day, zero stress. The KDS sorts, we prep, we ship."
+        },
+        "t3": {
+          "name": "Ibrahim D.",
+          "role": "Director",
+          "company": "Hotel Prestige, Abidjan",
+          "content": "Digital room service changed our Booking ranking. Guests order from bed, in English or French."
+        },
+        "t4": {
+          "name": "Fatou S.",
+          "role": "Manager",
+          "company": "La Terrasse, Dakar",
+          "content": "In 3 months, our revenue grew 25%. The digital menu pushes customers to order more."
+        }
+      }
+    },
     "privacy": {
       "metaTitle": "Privacy Policy",
       "metaDescription": "Privacy policy and personal data protection for ATTABL.",
