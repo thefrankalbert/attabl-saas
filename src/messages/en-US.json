@@ -217,6 +217,70 @@
     "panorama": "Panorama",
     "lobbyBar": "Lobby Bar"
   },
+  "marketing": {
+    "landings": {
+      "shared": {
+        "ctaPrimary": "Get started",
+        "ctaSecondary": "View pricing",
+        "ctaSubtitle": "Try it free."
+      },
+      "quickService": {
+        "heroTitle": "200 orders. Zero downtime.",
+        "heroSubtitle": "Counter, drive-thru, delivery - every order tracked from customer to kitchen.",
+        "feature1Title": "Kitchen Display (KDS)",
+        "feature1Description": "Orders show in real time. Automatic priority. Prep time visible.",
+        "feature2Title": "Fast POS",
+        "feature2Description": "Checkout in 3 clicks. Cash, card, mobile money. Every transaction tracked.",
+        "feature3Title": "Real-time notifications",
+        "feature3Description": "Your customers and your team are informed at every stage of the order.",
+        "ctaTitle": "Speed without the chaos."
+      },
+      "barsCafes": {
+        "heroTitle": "Your bar. Your terrace. Everything under control.",
+        "heroSubtitle": "Cocktail menu, terrace service, drink inventory - all in one.",
+        "feature1Title": "Terrace QR menu",
+        "feature1Description": "Customers scan from their table, order without waiting for a server. No more back and forth.",
+        "feature2Title": "Drink tracking",
+        "feature2Description": "Every glass served is deducted from stock. See spillage in real time. No more invisible losses.",
+        "feature3Title": "Live best-sellers",
+        "feature3Description": "Which cocktails are selling tonight? Which beers are stagnating? Adjust your menu in real time.",
+        "ctaTitle": "Your bar deserves better than a spreadsheet."
+      },
+      "fastFood": {
+        "heroTitle": "1 location or 10. Same control.",
+        "heroSubtitle": "Kitchen display, centralized inventory. Speed at scale.",
+        "feature1Title": "Multi-site dashboard",
+        "feature1Description": "Performance of each location in real time. Compare, identify, optimize.",
+        "feature2Title": "Smart KDS",
+        "feature2Description": "Orders go straight to the kitchen. Automatic priority, zero errors.",
+        "feature3Title": "Centralized inventory",
+        "feature3Description": "Centralized procurement for all your locations. Alerts per site, per ingredient.",
+        "ctaTitle": "Grow without losing control."
+      },
+      "hotels": {
+        "heroTitle": "One hotel. Several restaurants. One platform.",
+        "heroSubtitle": "Room service, bar, restaurant - your guests order in their language, you manage everything in one place.",
+        "feature1Title": "Room by room",
+        "feature1Description": "Unique QR code per room. Guests order from their bed, in their language. Zero front-desk calls.",
+        "feature2Title": "All under one roof",
+        "feature2Description": "Restaurant, lounge bar, pool, room service. One dashboard to control everything.",
+        "feature3Title": "Welcome the world",
+        "feature3Description": "Menu in French, English, and more. Payment in XAF, EUR, USD. Your international guests feel at home.",
+        "ctaTitle": "Your guests come from everywhere. Your service should keep up."
+      },
+      "restaurants": {
+        "heroTitle": "Your floor. Your kitchen. All connected.",
+        "heroSubtitle": "From the order to the plate, nothing gets lost.",
+        "feature1Title": "Your menu, digitized",
+        "feature1Description": "Categories, subcategories, allergens, photos. Your customers see everything from their phone.",
+        "feature2Title": "The kitchen sees it all",
+        "feature2Description": "Starters, mains, desserts - each station gets its orders at the right time. No more shouting.",
+        "feature3Title": "Your recipes, your margins",
+        "feature3Description": "Ingredients, proportions, material cost. You know exactly how much you make per dish.",
+        "ctaTitle": "Your restaurant deserves flawless service."
+      }
+    }
+  },
   "auth": {
     "layout": {
       "headlineLine1": "Your customers get a",
