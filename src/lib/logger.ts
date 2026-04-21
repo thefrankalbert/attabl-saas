@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/nextjs';
+import { createHash } from 'crypto';
 
 /**
  * Centralized logger utility.
@@ -11,6 +12,16 @@ import * as Sentry from '@sentry/nextjs';
  *   logger.warn('Slow query detected', { duration: 5000 });
  *   logger.info('User signed up', { tenantId: 'abc' });
  */
+
+/**
+ * Hash an email for logging. Returns the first 12 hex chars of a SHA-256
+ * digest, which is unique enough to correlate events about the same email
+ * while making it non-reversible and non-PII.
+ * Use this instead of logging raw email addresses.
+ */
+export function hashEmail(email: string): string {
+  return createHash('sha256').update(email.toLowerCase().trim()).digest('hex').slice(0, 12);
+}
 
 const isDev = process.env.NODE_ENV === 'development';
 

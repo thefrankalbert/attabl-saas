@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger, hashEmail } from '@/lib/logger';
 import { resendConfirmationSchema } from '@/lib/validations/auth.schema';
 import { resendConfirmationLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -69,7 +69,9 @@ export async function POST(request: Request) {
         errorMsg.includes('not found') ||
         errorMsg.includes('confirmed')
       ) {
-        logger.info('Resend confirmation: user not found or already confirmed', { email });
+        logger.info('Resend confirmation: user not found or already confirmed', {
+          emailHash: hashEmail(email),
+        });
         return NextResponse.json({ success: true, message: SAFE_MSG });
       }
       logger.error('Failed to generate confirmation link for resend', { error: linkError });
