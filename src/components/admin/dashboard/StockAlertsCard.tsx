@@ -1,5 +1,6 @@
-'use client';
-
+// No 'use client': pure presentational component (no hooks, no handlers).
+// Imported from a client parent so it still ships in the same client bundle,
+// without marking its own boundary.
 import { AlertTriangle, Info, OctagonAlert } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
