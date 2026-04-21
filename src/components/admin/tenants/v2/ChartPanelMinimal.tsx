@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useRef, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ChartDataPoint, ChartMode, ChartPeriod } from '@/types/command-center.types';
@@ -20,8 +21,8 @@ const PAD_R = 8;
 const PAD_T = 10;
 const PAD_B = 24;
 
-function formatMoney(v: number): string {
-  return v.toLocaleString('fr-FR');
+function formatMoney(v: number, locale: string): string {
+  return new Intl.NumberFormat(locale).format(v);
 }
 
 export function ChartPanelMinimal({
@@ -31,6 +32,8 @@ export function ChartPanelMinimal({
   onModeChange,
   onPeriodChange,
 }: ChartPanelMinimalProps) {
+  const tEst = useTranslations('admin.tenants.commandCenter.establishments');
+  const locale = useLocale();
   const hostRef = useRef<HTMLDivElement>(null);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
@@ -194,7 +197,9 @@ export function ChartPanelMinimal({
           >
             <div className="cc-t-time">{hoveredLabel}</div>
             <div className="cc-t-val">
-              {mode === 'orders' ? `${hovered} cmd.` : `${formatMoney(hovered)} F`}
+              {mode === 'orders'
+                ? `${new Intl.NumberFormat(locale).format(hovered)} ${tEst('ordersShort')}`
+                : `${formatMoney(hovered, locale)} F`}
             </div>
           </div>
         )}
