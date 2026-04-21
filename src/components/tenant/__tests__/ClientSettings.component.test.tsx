@@ -27,6 +27,17 @@ vi.mock('@/contexts/CartContext', () => ({
   useCart: () => ({ totalItems: 0 }),
 }));
 
+// next/image triggers a `new URL()` validation step that fails in happy-dom
+// when the page has no real document URL. Mock to a simple <img> for tests.
+vi.mock('next/image', () => ({
+  __esModule: true,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default: ({ src, alt, className }: any) => (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={typeof src === 'string' ? src : ''} alt={alt} className={className} />
+  ),
+}));
+
 let mockDisplayCurrency = 'XAF';
 const mockSetDisplayCurrency = vi.fn((code: string) => {
   mockDisplayCurrency = code;

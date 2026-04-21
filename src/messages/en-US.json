@@ -218,6 +218,36 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "nouveautes": {
+      "pageTitle": "What's new",
+      "pageSubtitle": "The latest features and improvements from Attabl.",
+      "ctaTitle": "Ready to try?",
+      "ctaSubtitle": "14 days free. No credit card.",
+      "ctaButton": "Get started",
+      "tagNew": "New",
+      "tagImprovement": "Improvement",
+      "dateFeb2026": "February 2026",
+      "dateJan2026": "January 2026",
+      "dateDec2025": "December 2025",
+      "updates": {
+        "rbacTitle": "Role-based permissions",
+        "rbacDescription": "6 roles (owner, admin, manager, cashier, chef, server) with granular permissions. Each teammate sees exactly what they need.",
+        "i18nTitle": "Internationalization (2 languages)",
+        "i18nDescription": "Interface available in French and English. Switch language with one click.",
+        "autolockTitle": "Auto-lock on inactivity",
+        "autolockDescription": "Protect sensitive data: the screen locks after a configurable period of inactivity.",
+        "stockAlertTitle": "Stock alerts by email",
+        "stockAlertDescription": "Receive an automatic email when an ingredient drops below the critical threshold. Resend integration.",
+        "suppliersTitle": "Suppliers module",
+        "suppliersDescription": "Manage your suppliers, contacts and product references directly from the dashboard.",
+        "stockHistoryTitle": "Stock movement history",
+        "stockHistoryDescription": "Complete traceability: every entry, exit and adjustment is recorded with author and reason.",
+        "landingTitle": "Landing page redesign",
+        "landingDescription": "New visual identity with hero video, mega-menu, segment pages and Framer Motion animations.",
+        "qrTitle": "Premium custom QR Code",
+        "qrDescription": "6 QR code templates with real-time preview and PDF export."
+      }
+    },
     "landings": {
       "shared": {
         "ctaPrimary": "Get started",
