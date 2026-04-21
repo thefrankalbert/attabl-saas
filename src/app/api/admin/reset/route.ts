@@ -73,130 +73,65 @@ export async function POST(request: Request) {
       );
     }
 
-    // tenantId already derived from session above
+    // tenantId already derived from session above.
+    // Single atomic SQL transaction via the reset_tenant_data RPC.
+    // Replaces the previous 3-4 batched JS deletes that could leave the
+    // tenant in a partial state if the Vercel function runtime timed out
+    // between batches (order_items orphaned, coupon counters not reset,
+    // etc.). See migration 20260421000000_admin_reset_rpc.sql.
+    const { data: resetResult, error: rpcError } = await adminSupabase.rpc('reset_tenant_data', {
+      p_tenant_id: tenantId,
+      p_reset_type: resetType,
+    });
 
-    // 5. Execute reset based on type
+    if (rpcError) {
+      logger.error('Reset RPC failed', rpcError, { tenantId, resetType, userId: user.id });
+      return NextResponse.json(
+        { error: 'Erreur lors de la reinitialisation des donnees' },
+        { status: 500 },
+      );
+    }
+
+    const summary = (resetResult || {}) as {
+      orders_deleted?: number;
+      items_deleted?: number;
+      movements_deleted?: number;
+      coupons_reset?: number;
+    };
+
+    logger.info('Reset completed', {
+      tenantId,
+      resetType,
+      userId: user.id,
+      ...summary,
+    });
+
     switch (resetType) {
-      case 'orders': {
-        // Delete order items first (FK constraint), then orders
-        // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
-        const { data: orderData } = await adminSupabase
-          .from('orders')
-          .select('id')
-          .eq('tenant_id', tenantId);
-        const orderIdsForItems = orderData?.map((o) => o.id) || [];
-        for (let i = 0; i < orderIdsForItems.length; i += 200) {
-          const batch = orderIdsForItems.slice(i, i + 200);
-          const { error: itemsErr } = await adminSupabase
-            .from('order_items')
-            .delete()
-            .in('order_id', batch);
-          if (itemsErr) {
-            logger.error('Reset: Failed to delete order items batch', itemsErr);
-          }
-        }
-
-        const { error: ordersErr, count } = await adminSupabase
-          .from('orders')
-          .delete({ count: 'exact' })
-          .eq('tenant_id', tenantId);
-
-        if (ordersErr) {
-          logger.error('Reset: Failed to delete orders', ordersErr);
-          return NextResponse.json(
-            { error: 'Erreur lors de la suppression des commandes' },
-            { status: 500 },
-          );
-        }
-
-        logger.info(`Reset: Deleted ${count} orders for tenant ${tenantId} by user ${user.id}`);
+      case 'orders':
         return NextResponse.json({
           success: true,
-          message: `${count || 0} commandes supprimées avec succès.`,
+          message: `${summary.orders_deleted ?? 0} commandes supprimées avec succès.`,
           resetType,
         });
-      }
 
       case 'statistics': {
-        // Reset only delivered/completed orders (keeps pending ones)
-        const { data: deliveredOrders } = await adminSupabase
-          .from('orders')
-          .select('id')
-          .eq('tenant_id', tenantId)
-          .in('status', ['delivered', 'cancelled']);
-
-        const orderIds = deliveredOrders?.map((o) => o.id) || [];
-
-        if (orderIds.length > 0) {
-          // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
-          for (let i = 0; i < orderIds.length; i += 200) {
-            const batch = orderIds.slice(i, i + 200);
-            await adminSupabase.from('order_items').delete().in('order_id', batch);
-          }
-          let count = 0;
-          for (let i = 0; i < orderIds.length; i += 200) {
-            const batch = orderIds.slice(i, i + 200);
-            const { count: batchCount } = await adminSupabase
-              .from('orders')
-              .delete({ count: 'exact' })
-              .in('id', batch);
-            count += batchCount || 0;
-          }
-
-          logger.info(
-            `Reset stats: Deleted ${count} delivered/cancelled orders for tenant ${tenantId}`,
-          );
-          return NextResponse.json({
-            success: true,
-            message: `${count || 0} commandes livrées/annulées supprimées. Les commandes en cours sont conservées.`,
-            resetType,
-          });
-        }
-
+        const n = summary.orders_deleted ?? 0;
         return NextResponse.json({
           success: true,
-          message: 'Aucune commande livrée/annulée à supprimer.',
+          message:
+            n > 0
+              ? `${n} commandes livrées/annulées supprimées. Les commandes en cours sont conservées.`
+              : 'Aucune commande livrée/annulée à supprimer.',
           resetType,
         });
       }
 
-      case 'all': {
-        // Full reset: orders + order items + inventory movements + coupon usage
-        const { data: allOrders } = await adminSupabase
-          .from('orders')
-          .select('id')
-          .eq('tenant_id', tenantId);
-
-        const orderIds = allOrders?.map((o) => o.id) || [];
-
-        if (orderIds.length > 0) {
-          // Batch deletes in chunks of 200 to avoid Supabase URL/query limits
-          for (let i = 0; i < orderIds.length; i += 200) {
-            const batch = orderIds.slice(i, i + 200);
-            await adminSupabase.from('order_items').delete().in('order_id', batch);
-          }
-        }
-
-        const { count: ordersCount } = await adminSupabase
-          .from('orders')
-          .delete({ count: 'exact' })
-          .eq('tenant_id', tenantId);
-
-        // Reset inventory movements
-        await adminSupabase.from('inventory_movements').delete().eq('tenant_id', tenantId);
-
-        // Reset coupon usage counts
-        await adminSupabase.from('coupons').update({ current_uses: 0 }).eq('tenant_id', tenantId);
-
-        logger.info(
-          `Reset all: Full data reset for tenant ${tenantId} by user ${user.id} - ${ordersCount} orders deleted`,
-        );
+      case 'all':
         return NextResponse.json({
           success: true,
-          message: `Réinitialisation complète effectuée : ${ordersCount || 0} commandes, mouvements de stock et compteurs de coupons réinitialisés.`,
+          message: `Réinitialisation complète effectuée : ${summary.orders_deleted ?? 0} commandes, mouvements de stock et compteurs de coupons réinitialisés.`,
           resetType,
         });
-      }
     }
   } catch (error) {
     if (error instanceof AuthError) {
