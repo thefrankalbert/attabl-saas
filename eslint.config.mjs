@@ -53,9 +53,11 @@ const eslintConfig = defineConfig([
   },
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui
   // Les fichiers dans src/components/ui/ sont exclus (ce sont les composants shadcn eux-memes)
+  // Les fichiers __tests__ sont exclus : les mocks natifs <button> y sont
+  // intentionnels pour court-circuiter les primitives shadcn complexes.
   {
     files: ['src/**/*.tsx'],
-    ignores: ['src/components/ui/**'],
+    ignores: ['src/components/ui/**', '**/__tests__/**'],
     rules: {
       'react/forbid-elements': [
         'warn',
