@@ -531,6 +531,48 @@
           "quickservice": "Quick-Service",
           "bar": "Bar & Café",
           "fastfood": "Fast-Food"
+        },
+        "preview": {
+          "greeting": "Bon après-midi,",
+          "date": "Dimanche 16 mars",
+          "dashboard": "Dashboard",
+          "revenue7Days": "Revenu - 7 jours",
+          "revenue": "Revenu",
+          "ordersShort": "Cmd",
+          "avgBasket": "Panier moyen",
+          "orders": "Commandes",
+          "viewAll": "Tout voir",
+          "status": {
+            "ready": "Prêt",
+            "inProgress": "En cours",
+            "pending": "En attente"
+          },
+          "days": {
+            "mon": "Lun",
+            "tue": "Mar",
+            "wed": "Mer",
+            "thu": "Jeu",
+            "fri": "Ven",
+            "sat": "Sam",
+            "sun": "Dim"
+          },
+          "quickActions": {
+            "qrCodes": "QR Codes",
+            "reports": "Rapports",
+            "stock": "Stock"
+          },
+          "stats": {
+            "revenue": "Revenu",
+            "orders": "Commandes",
+            "articles": "Articles",
+            "tables": "Tables",
+            "checkins": "Check-ins",
+            "rooms": "Chambres",
+            "occupancy": "Occup.",
+            "avgTime": "Temps moy.",
+            "cocktails": "Cocktails",
+            "drive": "Drive"
+          }
         }
       },
       "productShowcase": {

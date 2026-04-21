@@ -531,6 +531,48 @@
           "quickservice": "Quick-Service",
           "bar": "Bar & Cafe",
           "fastfood": "Fast-Food"
+        },
+        "preview": {
+          "greeting": "Good afternoon,",
+          "date": "Sunday, March 16",
+          "dashboard": "Dashboard",
+          "revenue7Days": "Revenue - 7 days",
+          "revenue": "Revenue",
+          "ordersShort": "Orders",
+          "avgBasket": "Avg basket",
+          "orders": "Orders",
+          "viewAll": "View all",
+          "status": {
+            "ready": "Ready",
+            "inProgress": "In progress",
+            "pending": "Pending"
+          },
+          "days": {
+            "mon": "Mon",
+            "tue": "Tue",
+            "wed": "Wed",
+            "thu": "Thu",
+            "fri": "Fri",
+            "sat": "Sat",
+            "sun": "Sun"
+          },
+          "quickActions": {
+            "qrCodes": "QR Codes",
+            "reports": "Reports",
+            "stock": "Stock"
+          },
+          "stats": {
+            "revenue": "Revenue",
+            "orders": "Orders",
+            "articles": "Items",
+            "tables": "Tables",
+            "checkins": "Check-ins",
+            "rooms": "Rooms",
+            "occupancy": "Occup.",
+            "avgTime": "Avg time",
+            "cocktails": "Cocktails",
+            "drive": "Drive"
+          }
         }
       },
       "productShowcase": {

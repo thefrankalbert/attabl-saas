@@ -1,52 +1,67 @@
+'use client';
+
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 
 type Segment = 'restaurant' | 'hotel' | 'quickservice' | 'bar' | 'fastfood';
+
+type StatKey =
+  | 'revenue'
+  | 'orders'
+  | 'articles'
+  | 'tables'
+  | 'checkins'
+  | 'rooms'
+  | 'occupancy'
+  | 'avgTime'
+  | 'cocktails'
+  | 'drive';
 
 interface DashboardPreviewProps {
   segment: Segment;
   className?: string;
 }
 
-// --- Segment-specific data ---
-
-const greetings: Record<Segment, string> = {
-  restaurant: 'Bon après-midi, Le Jardin',
-  hotel: 'Bon après-midi, Prestige Hotel',
-  quickservice: 'Bon après-midi, Chez Mama',
-  bar: 'Bon après-midi, Le Zinc',
-  fastfood: 'Bon après-midi, Flame Burger',
+// Brand / demo display names kept in French since they represent the
+// fictive African francophone establishments ATTABL targets. Not i18n.
+const brandNames: Record<Segment, string> = {
+  restaurant: 'Le Jardin',
+  hotel: 'Prestige Hotel',
+  quickservice: 'Chez Mama',
+  bar: 'Le Zinc',
+  fastfood: 'Flame Burger',
 };
 
-const gaugeData: Record<Segment, { label: string; value: string; color: string }[]> = {
+const gaugeData: Record<Segment, { statKey: StatKey; value: string; color: string }[]> = {
   restaurant: [
-    { label: 'Revenu', value: '847K', color: '#4ade80' },
-    { label: 'Commandes', value: '152', color: '#60a5fa' },
-    { label: 'Articles', value: '48', color: '#f97316' },
-    { label: 'Tables', value: '24', color: '#a78bfa' },
+    { statKey: 'revenue', value: '847K', color: '#4ade80' },
+    { statKey: 'orders', value: '152', color: '#60a5fa' },
+    { statKey: 'articles', value: '48', color: '#f97316' },
+    { statKey: 'tables', value: '24', color: '#a78bfa' },
   ],
   hotel: [
-    { label: 'Revenu', value: '2.8M', color: '#4ade80' },
-    { label: 'Check-ins', value: '31', color: '#60a5fa' },
-    { label: 'Chambres', value: '42', color: '#f97316' },
-    { label: 'Occup.', value: '87%', color: '#a78bfa' },
+    { statKey: 'revenue', value: '2.8M', color: '#4ade80' },
+    { statKey: 'checkins', value: '31', color: '#60a5fa' },
+    { statKey: 'rooms', value: '42', color: '#f97316' },
+    { statKey: 'occupancy', value: '87%', color: '#a78bfa' },
   ],
   quickservice: [
-    { label: 'Revenu', value: '1.2M', color: '#4ade80' },
-    { label: 'Commandes', value: '312', color: '#60a5fa' },
-    { label: 'Articles', value: '24', color: '#f97316' },
-    { label: 'Temps moy.', value: '4min', color: '#a78bfa' },
+    { statKey: 'revenue', value: '1.2M', color: '#4ade80' },
+    { statKey: 'orders', value: '312', color: '#60a5fa' },
+    { statKey: 'articles', value: '24', color: '#f97316' },
+    { statKey: 'avgTime', value: '4min', color: '#a78bfa' },
   ],
   bar: [
-    { label: 'Revenu', value: '680K', color: '#4ade80' },
-    { label: 'Commandes', value: '189', color: '#60a5fa' },
-    { label: 'Cocktails', value: '35', color: '#f97316' },
-    { label: 'Tables', value: '18', color: '#a78bfa' },
+    { statKey: 'revenue', value: '680K', color: '#4ade80' },
+    { statKey: 'orders', value: '189', color: '#60a5fa' },
+    { statKey: 'cocktails', value: '35', color: '#f97316' },
+    { statKey: 'tables', value: '18', color: '#a78bfa' },
   ],
   fastfood: [
-    { label: 'Revenu', value: '2.1M', color: '#4ade80' },
-    { label: 'Commandes', value: '487', color: '#60a5fa' },
-    { label: 'Articles', value: '18', color: '#f97316' },
-    { label: 'Drive', value: '156', color: '#a78bfa' },
+    { statKey: 'revenue', value: '2.1M', color: '#4ade80' },
+    { statKey: 'orders', value: '487', color: '#60a5fa' },
+    { statKey: 'articles', value: '18', color: '#f97316' },
+    { statKey: 'drive', value: '156', color: '#a78bfa' },
   ],
 };
 
@@ -66,6 +81,8 @@ const avgBasket: Record<Segment, { value: string; points: number[] }> = {
   fastfood: { value: '4 800 F', points: [42, 48, 45, 50, 52, 48, 55] },
 };
 
+// Brand-specific demo orders. Table codes + menu items kept as-is since
+// they represent the real menu content of the targeted market.
 const orderData: Record<
   Segment,
   {
@@ -74,7 +91,7 @@ const orderData: Record<
     items: string;
     price: string;
     time: string;
-    status: 'success' | 'info' | 'warning';
+    status: 'ready' | 'inProgress' | 'pending';
   }[]
 > = {
   restaurant: [
@@ -84,7 +101,7 @@ const orderData: Record<
       items: '2x Poulet, 1x Jus',
       price: '18 500 F',
       time: '2 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'T12',
@@ -92,7 +109,7 @@ const orderData: Record<
       items: '1x Ndole, 2x Biere',
       price: '14 200 F',
       time: '8 min',
-      status: 'info',
+      status: 'inProgress',
     },
     {
       table: 'T7',
@@ -100,7 +117,7 @@ const orderData: Record<
       items: '3x Pizza, 1x Coca',
       price: '22 000 F',
       time: '15 min',
-      status: 'warning',
+      status: 'pending',
     },
     {
       table: 'T2',
@@ -108,7 +125,7 @@ const orderData: Record<
       items: '1x Poisson grille',
       price: '31 800 F',
       time: '22 min',
-      status: 'success',
+      status: 'ready',
     },
   ],
   hotel: [
@@ -118,7 +135,7 @@ const orderData: Record<
       items: 'Suite junior',
       price: '85 000 F',
       time: '1 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'Ch.105',
@@ -126,7 +143,7 @@ const orderData: Record<
       items: 'Chambre double',
       price: '45 000 F',
       time: '15 min',
-      status: 'info',
+      status: 'inProgress',
     },
     {
       table: 'Room',
@@ -134,7 +151,7 @@ const orderData: Record<
       items: '2x Petit-dej',
       price: '25 000 F',
       time: '30 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'Ch.312',
@@ -142,7 +159,7 @@ const orderData: Record<
       items: 'Chambre simple',
       price: '32 000 F',
       time: '1h',
-      status: 'warning',
+      status: 'pending',
     },
   ],
   quickservice: [
@@ -152,7 +169,7 @@ const orderData: Record<
       items: '2x Burger, 1x Frites',
       price: '8 500 F',
       time: '1 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'Cmd',
@@ -160,7 +177,7 @@ const orderData: Record<
       items: '1x Wrap poulet',
       price: '4 200 F',
       time: '3 min',
-      status: 'info',
+      status: 'inProgress',
     },
     {
       table: 'Cmd',
@@ -168,7 +185,7 @@ const orderData: Record<
       items: '3x Tacos, 2x Jus',
       price: '12 800 F',
       time: '5 min',
-      status: 'warning',
+      status: 'pending',
     },
     {
       table: 'Cmd',
@@ -176,7 +193,7 @@ const orderData: Record<
       items: '1x Salade, 1x Smoothie',
       price: '6 500 F',
       time: '7 min',
-      status: 'success',
+      status: 'ready',
     },
   ],
   bar: [
@@ -186,7 +203,7 @@ const orderData: Record<
       items: '2x Mojito, 1x Biere',
       price: '12 500 F',
       time: '2 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'T8',
@@ -194,7 +211,7 @@ const orderData: Record<
       items: '1x Whisky, 1x Tapas',
       price: '9 800 F',
       time: '5 min',
-      status: 'info',
+      status: 'inProgress',
     },
     {
       table: 'Bar',
@@ -202,15 +219,15 @@ const orderData: Record<
       items: '3x Cocktail maison',
       price: '15 000 F',
       time: '8 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'T5',
       id: '#B04',
-      items: '2x Café, 1x Pâtisserie',
+      items: '2x Cafe, 1x Patisserie',
       price: '4 200 F',
       time: '12 min',
-      status: 'warning',
+      status: 'pending',
     },
   ],
   fastfood: [
@@ -220,7 +237,7 @@ const orderData: Record<
       items: '3x Menu Classic',
       price: '13 500 F',
       time: '1 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'Drive',
@@ -228,7 +245,7 @@ const orderData: Record<
       items: '2x Menu XL, 1x Sundae',
       price: '16 200 F',
       time: '3 min',
-      status: 'info',
+      status: 'inProgress',
     },
     {
       table: 'Borne',
@@ -236,7 +253,7 @@ const orderData: Record<
       items: '1x Nuggets, 2x Frites',
       price: '7 800 F',
       time: '4 min',
-      status: 'success',
+      status: 'ready',
     },
     {
       table: 'Drive',
@@ -244,22 +261,19 @@ const orderData: Record<
       items: '4x Menu Enfant',
       price: '18 000 F',
       time: '6 min',
-      status: 'warning',
+      status: 'pending',
     },
   ],
 };
 
 const statusColors = {
-  success: { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-500' },
-  info: { dot: 'bg-blue-500', bg: 'bg-blue-500/10', text: 'text-blue-500' },
-  warning: { dot: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-500' },
+  ready: { dot: 'bg-emerald-500', bg: 'bg-emerald-500/10', text: 'text-emerald-500' },
+  inProgress: { dot: 'bg-blue-500', bg: 'bg-blue-500/10', text: 'text-blue-500' },
+  pending: { dot: 'bg-amber-500', bg: 'bg-amber-500/10', text: 'text-amber-500' },
 };
 
-const statusLabels = { success: 'Pret', info: 'En cours', warning: 'En attente' };
+const dayKeys = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const;
 
-const days = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
-
-// --- SVG mini area chart (reproduces the AreaChart from real dashboard) ---
 function MiniAreaChart({
   points,
   color,
@@ -301,7 +315,6 @@ function MiniAreaChart({
   );
 }
 
-// --- Semi-circular gauge (reproduces the PieChart gauge from real dashboard) ---
 function MiniGauge({ data }: { data: { color: string }[] }) {
   const total = data.length;
   const r = 20;
@@ -335,13 +348,13 @@ function MiniGauge({ data }: { data: { color: string }[] }) {
   );
 }
 
-// --- Main Component ---
-
 export default function DashboardPreview({ segment, className }: DashboardPreviewProps) {
+  const t = useTranslations('marketing.home.videoHero.preview');
   const gauge = gaugeData[segment];
   const chart = chartValues[segment];
   const basket = avgBasket[segment];
   const orders = orderData[segment];
+  const brand = brandNames[segment];
 
   return (
     <div
@@ -393,7 +406,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         <div className="flex flex-1 flex-col bg-app-bg min-w-0">
           {/* Top Bar */}
           <div className="flex h-8 items-center justify-between border-b border-app-border px-3 shrink-0">
-            <span className="text-[9px] text-app-text-muted">Dashboard</span>
+            <span className="text-[9px] text-app-text-muted">{t('dashboard')}</span>
             <div className="flex items-center gap-2">
               <span className="text-[8px] font-mono text-app-text-muted">14:32</span>
               <div className="h-5 w-5 rounded-full bg-app-elevated" />
@@ -405,11 +418,9 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
             {/* Greeting */}
             <div className="flex items-center justify-between mb-2">
               <span className="text-[9px] sm:text-[10px] font-bold text-app-text">
-                {greetings[segment]}
+                {t('greeting')} {brand}
               </span>
-              <span className="text-[8px] text-app-text-muted hidden sm:inline">
-                Dimanche 16 mars
-              </span>
+              <span className="text-[8px] text-app-text-muted hidden sm:inline">{t('date')}</span>
             </div>
 
             {/* Two columns */}
@@ -423,12 +434,14 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                   </div>
                   <div className="flex-1 grid grid-cols-2 gap-x-2 gap-y-0.5 min-w-0">
                     {gauge.map((g) => (
-                      <div key={g.label} className="flex items-center gap-1 min-w-0">
+                      <div key={g.statKey} className="flex items-center gap-1 min-w-0">
                         <span
                           className="h-1.5 w-1.5 rounded-full shrink-0"
                           style={{ backgroundColor: g.color }}
                         />
-                        <span className="text-[7px] text-app-text-muted truncate">{g.label}</span>
+                        <span className="text-[7px] text-app-text-muted truncate">
+                          {t(`stats.${g.statKey}`)}
+                        </span>
                         <span className="text-[7px] font-bold text-app-text tabular-nums ml-auto shrink-0">
                           {g.value}
                         </span>
@@ -442,7 +455,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div>
                       <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
-                        Revenu - 7 jours
+                        {t('revenue7Days')}
                       </span>
                       <div className="flex items-baseline gap-1 mt-0.5">
                         <span className="text-[11px] font-black text-app-text tabular-nums">
@@ -452,10 +465,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                     </div>
                     <div className="flex rounded bg-app-elevated p-0.5 shrink-0">
                       <span className="rounded bg-accent px-1.5 py-0.5 text-[6px] font-bold text-accent-text">
-                        Revenu
+                        {t('revenue')}
                       </span>
                       <span className="px-1.5 py-0.5 text-[6px] font-bold text-app-text-muted">
-                        Cmd
+                        {t('ordersShort')}
                       </span>
                     </div>
                   </div>
@@ -463,9 +476,9 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                     <MiniAreaChart points={chart.points} color="#4ade80" height={60} />
                   </div>
                   <div className="flex justify-between mt-0.5">
-                    {days.map((d) => (
+                    {dayKeys.map((d) => (
                       <span key={d} className="text-[5px] text-app-text-muted flex-1 text-center">
-                        {d}
+                        {t(`days.${d}`)}
                       </span>
                     ))}
                   </div>
@@ -475,7 +488,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                 <div className="rounded-lg border border-app-border bg-app-card p-2">
                   <div className="flex items-center justify-between mb-0.5">
                     <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
-                      Panier moyen
+                      {t('avgBasket')}
                     </span>
                     <span className="text-[10px] font-black text-app-text tabular-nums">
                       {basket.value}
@@ -486,14 +499,14 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
 
                 {/* Quick Action Buttons */}
                 <div className="hidden sm:flex gap-1">
-                  {['QR Codes', 'Rapports', 'Stock'].map((label) => (
+                  {(['qrCodes', 'reports', 'stock'] as const).map((key) => (
                     <div
-                      key={label}
+                      key={key}
                       className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 border border-app-border rounded-lg"
                     >
                       <div className="h-2 w-2 rounded-sm bg-app-text-muted/20" />
                       <span className="text-[7px] text-app-text-secondary font-medium">
-                        {label}
+                        {t(`quickActions.${key}`)}
                       </span>
                     </div>
                   ))}
@@ -504,9 +517,9 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
               <div className="w-[42%] flex flex-col rounded-lg border border-app-border overflow-hidden bg-app-card">
                 <div className="flex items-center justify-between px-2 py-1.5 border-b border-app-border shrink-0">
                   <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
-                    Commandes
+                    {t('orders')}
                   </span>
-                  <span className="text-[7px] font-semibold text-accent">Tout voir</span>
+                  <span className="text-[7px] font-semibold text-accent">{t('viewAll')}</span>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   {orders.map((order, i) => {
@@ -535,7 +548,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                                 sc.text,
                               )}
                             >
-                              {statusLabels[order.status]}
+                              {t(`status.${order.status}`)}
                             </span>
                           </div>
                           <p className="text-[6px] text-app-text-muted mt-0.5 truncate">
