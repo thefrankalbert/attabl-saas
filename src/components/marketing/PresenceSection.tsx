@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { MapPin } from 'lucide-react';
 import { GlobeAnalytics } from '@/components/ui/cobe-globe-analytics';
 
@@ -12,20 +13,21 @@ const markers = [
 ];
 
 export default function PresenceSection() {
+  const t = useTranslations('marketing.home.presenceSection');
+
   return (
     <section className="bg-white dark:bg-neutral-950 py-20 sm:py-28 overflow-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="text-center">
           <div className="inline-flex items-center gap-2 rounded-full bg-neutral-100 dark:bg-white/10 px-4 py-1.5 text-sm font-medium text-neutral-600 dark:text-white/70 mb-6">
             <MapPin className="h-4 w-4" />
-            Presence en Afrique
+            {t('badge')}
           </div>
           <h2 className="font-[family-name:var(--font-sora)] text-3xl font-bold text-neutral-900 dark:text-white sm:text-4xl">
-            Deja present dans 3 pays
+            {t('title')}
           </h2>
           <p className="mt-4 text-lg text-neutral-500 dark:text-neutral-400 max-w-2xl mx-auto">
-            ATTABL accompagne les professionnels de la restauration et de {"l'"}hotellerie en
-            Afrique francophone.
+            {t('subtitle')}
           </p>
         </div>
 

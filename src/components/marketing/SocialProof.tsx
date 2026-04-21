@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { motion } from 'motion/react';
 import { TestimonialsColumn, type Testimonial } from '@/components/ui/testimonials-columns';
 
@@ -73,6 +74,8 @@ const secondColumn = testimonials.slice(3, 6);
 const thirdColumn = testimonials.slice(6, 9);
 
 export default function SocialProof() {
+  const t = useTranslations('marketing.home.socialProof');
+
   return (
     <section className="bg-white dark:bg-neutral-950 py-20 sm:py-28 relative">
       <div className="container z-10 mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,15 +88,15 @@ export default function SocialProof() {
         >
           <div className="flex justify-center">
             <div className="border border-neutral-200 dark:border-neutral-800 py-1 px-4 rounded-lg text-sm text-neutral-600 dark:text-neutral-400">
-              Temoignages
+              {t('badge')}
             </div>
           </div>
 
           <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tighter mt-5 text-neutral-900 dark:text-white text-center">
-            Ils nous font confiance
+            {t('title')}
           </h2>
           <p className="text-center mt-5 opacity-75 text-neutral-600 dark:text-neutral-400">
-            Restaurants, hotels et cafes qui ont transforme leur service avec ATTABL.
+            {t('subtitle')}
           </p>
         </motion.div>
 

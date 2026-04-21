@@ -218,6 +218,130 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "home": {
+      "videoHero": {
+        "titleLine1": "Small counter",
+        "titleLine2": "or big brand.",
+        "titleLine3": "Claim your turf.",
+        "subtitle": "Menu, orders, stock, finance - all driven from one single tool.",
+        "ctaPrimary": "Get started",
+        "ctaSecondary": "Talk to the team",
+        "segments": {
+          "restaurant": "Restaurant",
+          "hotel": "Hotel",
+          "quickservice": "Quick-Service",
+          "bar": "Bar & Cafe",
+          "fastfood": "Fast-Food"
+        }
+      },
+      "productShowcase": {
+        "title": "Five modules. One tool.",
+        "subtitle": "From your first customer to your hundredth, ATTABL grows with you.",
+        "revenueLabel": "Monthly revenue",
+        "ordersLabel": "Orders / day",
+        "cards": {
+          "pilot": {
+            "verb": "PILOT",
+            "title": "Your revenue, live",
+            "description": "Today's sales, top dishes, weekly trends. You know exactly where you stand, at any moment."
+          },
+          "sell": {
+            "verb": "SELL",
+            "title": "Your menu, no paper",
+            "description": "Customers scan, browse, order. Bilingual, with photos. No more laminated menus lying around."
+          },
+          "prepare": {
+            "verb": "PREPARE",
+            "title": "Zero misses in the kitchen",
+            "description": "Every order lands on the kitchen screen in real time. No more shouting between the floor and the stoves."
+          },
+          "cashIn": {
+            "verb": "COLLECT",
+            "title": "Cash, card or mobile money",
+            "description": "Take payment the way your customers pay. XAF, EUR, USD. Automatic reconciliation."
+          },
+          "manage": {
+            "verb": "MANAGE",
+            "title": "Stock under control",
+            "description": "Every dish sold deducts the ingredients. Alerts when stock runs low. No more delivery surprises."
+          }
+        }
+      },
+      "segmentsSection": {
+        "title": "One tool. Your business.",
+        "subtitle": "From the counter to the palace, Attabl speaks your language.",
+        "learnMore": "Learn more",
+        "cards": {
+          "restaurants": {
+            "title": "Restaurants",
+            "description": "Manage your floor, your menus and your kitchen from a single screen."
+          },
+          "hotels": {
+            "title": "Hotels",
+            "description": "Room service, restaurant, pool bar - all unified, multilingual."
+          },
+          "quickService": {
+            "title": "Quick-Service",
+            "description": "Counter, drive-thru, express orders. Every second counts."
+          },
+          "barsCafes": {
+            "title": "Bars & Cafes",
+            "description": "Cocktail menu, terrace service, real-time drink tracking."
+          },
+          "fastFood": {
+            "title": "Fast-Food",
+            "description": "Kitchen display, kiosks, multi-site. Speed without chaos."
+          }
+        }
+      },
+      "presenceSection": {
+        "badge": "Presence in Africa",
+        "title": "Already in 3 countries",
+        "subtitle": "ATTABL supports restaurant and hospitality professionals across francophone Africa."
+      },
+      "featuresShowcase": {
+        "title": "Not just a tool. An ecosystem.",
+        "subtitle": "Everything you need to run your kitchen, your floor and your books.",
+        "cards": {
+          "menu": {
+            "title": "QR Menu",
+            "description": "Your customers scan and order from their table. Bilingual, with photos. Paper menus are done."
+          },
+          "pos": {
+            "title": "Point of Sale",
+            "description": "Fast touch checkout. Cash, card, mobile money - one screen for everything."
+          },
+          "payments": {
+            "title": "Payments",
+            "description": "XAF, EUR, USD. Mobile money built in. Automatic reconciliation every evening."
+          },
+          "analytics": {
+            "title": "Analytics & AI",
+            "description": "Your sales, your trends, your alerts. Answers, not spreadsheets."
+          },
+          "stock": {
+            "title": "Stock & Ingredients",
+            "description": "Every dish sold deducts its ingredients. Alerts when it is time to restock."
+          },
+          "team": {
+            "title": "Team & Service",
+            "description": "Roles, shifts, performance. Manage your crew, not your paperwork."
+          }
+        }
+      },
+      "socialProof": {
+        "badge": "Testimonials",
+        "title": "They trust us",
+        "subtitle": "Restaurants, hotels and cafes who transformed their service with ATTABL."
+      },
+      "cta": {
+        "title": "Your business deserves better than a notebook and a calculator.",
+        "subtitle": "Create your account in 2 minutes.",
+        "primary": "Create my free account",
+        "secondary": "Talk to an advisor",
+        "footer": "14 free days - No credit card required - 24/7 WhatsApp support"
+      }
+    },
     "header": {
       "solutions": "Solutions",
       "features": "Features",
