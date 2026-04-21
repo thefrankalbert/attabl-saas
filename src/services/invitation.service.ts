@@ -17,7 +17,7 @@ interface AcceptInvitationInput {
   password?: string;
 }
 
-// Reduced from 72h to 24h per security audit — shorter window limits exposure
+// Reduced from 72h to 24h per security audit - shorter window limits exposure
 // if the token leaks via browser history, CDN logs, or Referer headers.
 const TOKEN_EXPIRY_HOURS = 24;
 

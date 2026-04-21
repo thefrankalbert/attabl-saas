@@ -383,7 +383,7 @@ export default function ClientOrders({
         </div>
       )}
 
-      {/* ALL active orders as expandable cards — no separate banner,
+      {/* ALL active orders as expandable cards - no separate banner,
           every order shows its tracker + can be expanded to see items */}
       {displayedOrders.map((order) => {
         const canEdit = EDITABLE_STATUSES.has(order.status) && isWithinEditWindow(order.created_at);

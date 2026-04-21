@@ -13,7 +13,7 @@ import { usePermissions } from '@/hooks/usePermissions';
 import { MetricsRow, type MetricDescriptor, type MetricKey } from './dashboard/MetricsRow';
 // OverviewChart brings in recharts (~200KB). Defer with next/dynamic so it
 // doesn't block the initial admin shell render. Types still imported eagerly
-// — type imports are erased at build time.
+// - type imports are erased at build time.
 import type { ChartMetric, ChartRange, SeriesPoint } from './dashboard/OverviewChart';
 const OverviewChart = dynamic(
   () => import('./dashboard/OverviewChart').then((m) => m.OverviewChart),
@@ -24,7 +24,7 @@ const OverviewChart = dynamic(
 );
 import { TopDishesCard, type TopDish } from './dashboard/TopDishesCard';
 import { StockAlertsCard, type StockAlert } from './dashboard/StockAlertsCard';
-// LiveOrdersFeed subscribes to Supabase realtime — only needed once hydrated.
+// LiveOrdersFeed subscribes to Supabase realtime - only needed once hydrated.
 const LiveOrdersFeed = dynamic(
   () => import('./dashboard/LiveOrdersFeed').then((m) => m.LiveOrdersFeed),
   {
@@ -120,7 +120,7 @@ export default function DashboardClient(props: DashboardClientProps) {
     hour < 12 ? 'goodMorning' : hour < 18 ? 'goodAfternoon' : 'goodEvening';
 
   // ── Metrics row
-  // Depend on primitive stat values, not the whole `stats` object —
+  // Depend on primitive stat values, not the whole `stats` object -
   // TanStack Query returns a fresh reference on every refetch even when
   // values are unchanged, which would defeat the memo otherwise.
   const revenueToday = stats.revenueToday;

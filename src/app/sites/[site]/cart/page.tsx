@@ -173,7 +173,7 @@ export default function CartPage() {
           const collected: UpsellItem[] = [];
 
           // Strategy 0 (highest priority): Co-occurrence from past orders.
-          // "People who ordered X also ordered Y" — uses the tenant's own order
+          // "People who ordered X also ordered Y" - uses the tenant's own order
           // history via the get_co_ordered_items RPC. No external service.
           const { data: coOrdered } = await supabase.rpc('get_co_ordered_items', {
             p_tenant_id: currentRestaurantId,
@@ -603,7 +603,7 @@ export default function CartPage() {
       style={{
         // Stop scroll just after the CTA clears the order summary. CTA top edge is
         // at 128px from viewport bottom (76 bottom-anchor + 52 button height) so 144
-        // gives ~16px breathing — content's last line sits just above the CTA, no
+        // gives ~16px breathing - content's last line sits just above the CTA, no
         // wasted empty space below.
         paddingBottom: 'calc(144px + env(safe-area-inset-bottom, 0px))',
       }}

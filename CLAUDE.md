@@ -330,6 +330,85 @@ Pour toute tache frontend/design, voir .claude/skills/design-fidelity/SKILL.md
 
 ---
 
+## Discipline d'iteration - mode autonome
+
+Regles inspirees du playbook `program.md` de karpathy/autoresearch. Elles s'appliquent
+quand Claude travaille en auto-mode, loop, ou sur des taches longues de refactor/audit.
+Objectif : comportement previsible, pas de thrashing, pas de derive, pas de pauses
+inutiles.
+
+### 1. Critere de simplicite (subtraction bias)
+
+- Suppression de code a resultat egal = **keep automatique**.
+- Ajout de code pour un gain marginal (`< 5 %` de la valeur, ou < amelioration mesurable) = **discard**.
+- 20 lignes de code ajoutees pour un gain minime = non rentable, revert.
+- Avant de refactorer, se demander "est-ce que je peux supprimer au lieu d'ajouter ?".
+
+### 2. Boucle keep-or-revert
+
+Apres chaque modification non-triviale :
+
+1. Lancer les 5 portes CI (typecheck, lint, format:check, test, build).
+2. Si tout passe ET la tache est accomplie -> `git commit` et advance.
+3. Si une porte echoue et que c'est un fix evident (< 3 tentatives) -> corriger.
+4. Si apres 3 tentatives ca ne passe pas ou que l'approche est fondamentalement cassee -> `git reset --hard HEAD` (OU `git restore`) et essayer une autre approche.
+
+Ne pas accumuler de dette "je reviens plus tard" sur des changements qui ne passent pas les portes.
+
+### 3. Triage des echecs (3-strike rule)
+
+- **Echec evident** (typo, import manquant, refactor incomplet, types mal appeles) : corriger directement, max 3 tentatives.
+- **Echec fondamental** (approche mal choisie, API incompatible, cascade d'erreurs qui grossit) : abandonner, reset, proposer une autre approche a l'utilisateur.
+- Ne jamais forcer un fix sur une approche cassee : preferer `git reset` et repartir.
+
+### 4. Boucle autonome - NEVER STOP sauf interruption
+
+Quand l'utilisateur lance une boucle ou un batch (`/loop`, auto-mode, "fais toute la liste") :
+
+- **Ne PAS demander "je continue ?"** entre chaque item. L'utilisateur peut etre absent et attend un resultat complet.
+- **Ne PAS pauser sur un succes partiel.** Si les 3 premiers items passent, enchainer les suivants sans recapituler.
+- **Pauser UNIQUEMENT** si :
+  - une action destructive non autorisee est requise (DELETE en prod, push --force, drop de DB),
+  - un secret est necessaire et absent,
+  - l'approche fondamentale doit changer.
+- **Condition d'arret** : l'utilisateur interrompt, OU la liste est vide, OU 3 echecs fondamentaux consecutifs.
+
+### 5. Hygiene du contexte (context budget)
+
+- Tout output long (build, tests complets, migrations, logs) = **rediriger dans un fichier**, puis `grep` ou `tail` sur le resume.
+  - INTERDIT : `pnpm test` (flood du contexte avec 550 lignes).
+  - CORRECT : `pnpm test > /tmp/test.log 2>&1 && grep -E "(passed|failed|Tests)" /tmp/test.log`.
+- Ne jamais `cat` un fichier > 200 lignes dans la conversation - utiliser `Read` avec offset/limit ou `Grep` avec pattern.
+- Ne jamais utiliser `tee` sauf necessite absolue (dedouble la sortie dans le contexte).
+
+### 6. Contrat de sortie structure (machine-readable)
+
+Pour permettre a l'agent de decider sans parser du texte, les scripts critiques DOIVENT imprimer un resume grep-friendly :
+
+```
+pnpm typecheck -> ^typecheck: PASS|FAIL
+pnpm lint --max-warnings 0 -> ^lint: 0 warnings|N warnings
+pnpm format:check -> ^format: OK|DIFF
+pnpm test -> ^tests: N/N passed|F failed
+pnpm build -> ^build: OK|FAIL
+```
+
+Si un de ces scripts change de format, mettre a jour cette section en meme temps.
+
+### 7. Scope fige vs mutable (in-scope / frozen)
+
+- **Mutable** par defaut : code applicatif (`src/`), tests, i18n, migrations.
+- **Fige** sans demande explicite de l'utilisateur : fichiers listes dans "Fichiers proteges" + `src/components/ui/*` + `next.config.mjs`.
+- Si une tache force a toucher un fichier fige, **demander confirmation avant**, meme en auto-mode.
+
+### 8. Rollback sparingly
+
+- `git reset --hard` est un outil de derniere recourse, pas un workflow.
+- Preferer : reverter un fichier precis (`git restore path`), annuler une hunk (`git restore -p`), corriger en avant.
+- Ne jamais reset plus d'1 commit sans instruction explicite de l'utilisateur.
+
+---
+
 ## REGLES ANTI-REGRESSION - OBLIGATOIRES
 
 REGLE ABSOLUE : Toute modification de code doit respecter les contraintes ci-dessous. Ces regles existent parce que des regressions ont ete introduites a plusieurs reprises par des agents IA qui modifiaient du code fonctionnel sans le vouloir.

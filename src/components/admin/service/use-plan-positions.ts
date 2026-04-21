@@ -31,7 +31,7 @@ function safeWrite(tenantId: string, zoneId: string, positions: PlanPositions): 
   try {
     window.localStorage.setItem(storageKey(tenantId, zoneId), JSON.stringify(positions));
   } catch {
-    // storage full or unavailable — silent fail
+    // storage full or unavailable - silent fail
   }
 }
 

@@ -141,7 +141,7 @@ function AuthForm({ mode }: AuthFormProps) {
       // The 'Email not confirmed' path re-throws with that literal string
       // (line 125). All other errors come pre-translated from /api/login or
       // /api/signup (rate limiting, validation, invalid credentials). No
-      // longer match the Supabase English message — that was dead code
+      // longer match the Supabase English message - that was dead code
       // since the client never sees raw Supabase errors.
       if (errorMessage === 'Email not confirmed') {
         setError('email_not_confirmed');

@@ -261,7 +261,7 @@ export async function POST(request: Request) {
       );
     }
     // Log the error object (Sentry captures the full stack automatically).
-    // Do NOT log raw stack traces as structured JSON fields — they leak file
+    // Do NOT log raw stack traces as structured JSON fields - they leak file
     // paths and internal structure in log aggregators.
     const errMsg = error instanceof Error ? error.message : String(error);
     logger.error('Order creation error', error, { message: errMsg });

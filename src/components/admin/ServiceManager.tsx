@@ -144,7 +144,6 @@ export default function ServiceManager({ tenantId }: Props) {
   useEffect(() => {
     let cancelled = false;
     if (!selectedId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCurrentOrder(null);
       return;
     }

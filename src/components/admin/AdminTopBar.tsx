@@ -50,12 +50,12 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
 
   return (
     <header className="shrink-0 h-[52px] bg-app-bg/85 backdrop-blur-md border-b border-app-border flex items-center px-4 sm:px-6 transition-colors duration-200 relative z-40 overflow-hidden">
-      {/* Breadcrumbs — left side */}
+      {/* Breadcrumbs - left side */}
       <div className="flex-1 min-w-0 overflow-hidden text-[13px] text-app-text-secondary">
         {breadcrumbs}
       </div>
 
-      {/* Right rail — search + bell + theme + fullscreen */}
+      {/* Right rail - search + bell + theme + fullscreen */}
       <div className="flex items-center gap-2 shrink-0">
         <TopbarSearch />
         {notifications}
