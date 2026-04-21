@@ -1,42 +1,47 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
 
-const footerColumns = [
-  {
-    title: 'Produit',
-    links: [
-      { label: 'Fonctionnalités', href: '/features' },
-      { label: 'Tarifs', href: '/pricing' },
-      { label: 'Démo', href: '/signup' },
-    ],
-  },
-  {
-    title: 'Solutions',
-    links: [
-      { label: 'Restaurants', href: '/restaurants' },
-      { label: 'Hôtels', href: '/hotels' },
-      { label: 'Quick-Service', href: '/quick-service' },
-      { label: 'Bars & Cafés', href: '/bars-cafes' },
-      { label: 'Fast-Food', href: '/fast-food' },
-    ],
-  },
-  {
-    title: 'Entreprise',
-    links: [
-      { label: 'À propos', href: '/about' },
-      { label: 'Contact', href: '/contact' },
-      { label: 'Blog', href: '/blog' },
-    ],
-  },
-  {
-    title: 'Légal',
-    links: [
-      { label: 'CGU', href: '/legal' },
-      { label: 'Confidentialité', href: '/privacy' },
-    ],
-  },
-] as const;
+export default async function Footer() {
+  const t = await getTranslations('marketing.footer');
 
-export default function Footer() {
+  const footerColumns = [
+    {
+      title: t('columns.product.title'),
+      links: [
+        { label: t('columns.product.links.features'), href: '/features' },
+        { label: t('columns.product.links.pricing'), href: '/pricing' },
+        { label: t('columns.product.links.demo'), href: '/signup' },
+      ],
+    },
+    {
+      title: t('columns.solutions.title'),
+      links: [
+        { label: t('columns.solutions.links.restaurants'), href: '/restaurants' },
+        { label: t('columns.solutions.links.hotels'), href: '/hotels' },
+        { label: t('columns.solutions.links.quickService'), href: '/quick-service' },
+        { label: t('columns.solutions.links.barsCafes'), href: '/bars-cafes' },
+        { label: t('columns.solutions.links.fastFood'), href: '/fast-food' },
+      ],
+    },
+    {
+      title: t('columns.company.title'),
+      links: [
+        { label: t('columns.company.links.about'), href: '/about' },
+        { label: t('columns.company.links.contact'), href: '/contact' },
+        { label: t('columns.company.links.blog'), href: '/blog' },
+      ],
+    },
+    {
+      title: t('columns.legal.title'),
+      links: [
+        { label: t('columns.legal.links.terms'), href: '/legal' },
+        { label: t('columns.legal.links.privacy'), href: '/privacy' },
+      ],
+    },
+  ];
+
+  const taglineLines = t('tagline').split('\n');
+
   return (
     <footer className="border-t border-white/10 bg-black">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
@@ -51,9 +56,12 @@ export default function Footer() {
               Attabl
             </Link>
             <p className="mt-1 text-xs text-neutral-400">
-              La plateforme moderne
-              <br />
-              pour la restauration
+              {taglineLines.map((line, idx) => (
+                <span key={idx}>
+                  {line}
+                  {idx < taglineLines.length - 1 && <br />}
+                </span>
+              ))}
             </p>
           </div>
 
@@ -83,7 +91,9 @@ export default function Footer() {
 
         {/* Copyright */}
         <div className="mt-8 border-t border-white/10 pt-6">
-          <p className="text-xs text-neutral-500">&copy; 2026 Attabl. Tous droits réservés.</p>
+          <p className="text-xs text-neutral-500">
+            {t('copyright', { year: new Date().getFullYear() })}
+          </p>
         </div>
       </div>
     </footer>
