@@ -218,6 +218,240 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "pricing": {
+      "metaTitle": "Attabl - Tarifs simples pour la restauration",
+      "metaDescription": "Découvrez nos offres adaptées à chaque établissement. Essentiel dès 39 800 FCFA/mois, Premium dès 79 800 FCFA/mois. Essai gratuit 14 jours.",
+      "hero": {
+        "title": "Un prix clair. Pas de surprise.",
+        "subtitle": "14 jours d'essai gratuit sur le plan PRO. Sans carte bancaire."
+      },
+      "billing": {
+        "monthly": "Mensuel",
+        "yearly": "Annuel",
+        "yearlyDiscount": "-20%"
+      },
+      "priceSuffix": "XAF/mois",
+      "customPrice": "Sur mesure",
+      "plans": {
+        "starter": {
+          "badge": "Pour démarrer",
+          "title": "STARTER",
+          "subtitle": "Digitalisez votre menu et vos commandes.",
+          "button": "Commencer",
+          "featuresTitle": "Inclus dans STARTER",
+          "benefits": {
+            "b1": "Menu QR bilingue (FR/EN)",
+            "b2": "POS basique (cash + carte)",
+            "b3": "1 admin, 3 staff",
+            "b4": "Support email"
+          },
+          "features": {
+            "f1": "Menu QR digital bilingue",
+            "f2": "Commandes sur place et à emporter",
+            "f3": "POS cash et carte bancaire",
+            "f4": "Dashboard (CA, commandes)",
+            "f5": "1 établissement, 2 menus"
+          }
+        },
+        "pro": {
+          "badge": "Essai gratuit 14 jours",
+          "title": "PRO",
+          "subtitle": "Pilotez votre restaurant comme un pro.",
+          "button": "Essayer gratuitement",
+          "featuresTitle": "Inclus dans PRO",
+          "benefits": {
+            "b1": "Tout STARTER + KDS, tables, stock",
+            "b2": "Multi-devises (XAF, EUR, USD)",
+            "b3": "Essai gratuit 14 jours sans CB",
+            "b4": "Support WhatsApp 24h"
+          },
+          "features": {
+            "f1": "Tout ce qui est dans STARTER",
+            "f2": "KDS (écran cuisine)",
+            "f3": "Gestion des tables et assignation serveurs",
+            "f4": "Gestion de stock et alertes",
+            "f5": "Fiches techniques (coût matière)",
+            "f6": "Suivi fournisseurs",
+            "f7": "Mobile money et pourboires",
+            "f8": "Rapports de vente et best-sellers",
+            "f9": "Gestion équipe (rôles, permissions)",
+            "f10": "10 menus, 10 staff"
+          }
+        },
+        "business": {
+          "badge": "Multi-sites",
+          "title": "BUSINESS",
+          "subtitle": "Gérez un hôtel ou une chaîne, tout au même endroit.",
+          "primaryButton": "Commencer",
+          "secondaryButton": "Voir une démo",
+          "featuresTitle": "Inclus dans BUSINESS",
+          "benefits": {
+            "b1": "Tout PRO + jusqu'à 10 sites",
+            "b2": "Room service et delivery",
+            "b3": "Rapports avancés et multi-sites",
+            "b4": "Support prioritaire 4h"
+          },
+          "features": {
+            "f1": "Tout ce qui est dans PRO",
+            "f2": "Room service digital",
+            "f3": "Commandes delivery",
+            "f4": "Rapports avancés",
+            "f5": "Rapports multi-sites",
+            "f6": "Jusqu'à 10 établissements",
+            "f7": "99 admins, 999 staff, 99 menus"
+          }
+        },
+        "enterprise": {
+          "badge": "Sur mesure",
+          "title": "ENTERPRISE",
+          "subtitle": "Solution sur mesure pour les grands groupes.",
+          "button": "Contactez-nous",
+          "featuresTitle": "Inclus dans ENTERPRISE",
+          "benefits": {
+            "b1": "Tout BUSINESS + sites illimités",
+            "b2": "SLA 99.9% garanti",
+            "b3": "Account manager dédié",
+            "b4": "Support téléphone 1h + API sur mesure"
+          },
+          "features": {
+            "f1": "Tout ce qui est dans BUSINESS",
+            "f2": "Établissements illimités",
+            "f3": "SLA 99.9%",
+            "f4": "Account manager",
+            "f5": "Intégrations API sur mesure",
+            "f6": "Support téléphone prioritaire 1h"
+          }
+        }
+      },
+      "comparison": {
+        "title": "Comparatif complet des fonctionnalités",
+        "featureColumn": "Fonctionnalité",
+        "unlimited": "Illimité",
+        "categories": {
+          "menu": {
+            "title": "Menu & Commandes",
+            "features": {
+              "qrMenu": "Menu QR digital bilingue",
+              "onsiteOrders": "Commandes sur place",
+              "takeawayOrders": "Commandes à emporter",
+              "deliveryOrders": "Commandes delivery",
+              "roomService": "Room service digital"
+            }
+          },
+          "checkout": {
+            "title": "Encaissement",
+            "features": {
+              "pos": "POS (cash + carte)",
+              "mobileMoney": "Mobile money",
+              "multiCurrency": "Multi-devises (XAF, EUR, USD)",
+              "tips": "Pourboires intégrés"
+            }
+          },
+          "kitchen": {
+            "title": "Cuisine & Production",
+            "features": {
+              "kds": "KDS (écran cuisine)",
+              "tables": "Gestion des tables",
+              "assignments": "Assignation serveurs"
+            }
+          },
+          "stock": {
+            "title": "Stock & Fournisseurs",
+            "features": {
+              "stock": "Gestion de stock",
+              "recipes": "Fiches techniques (coût matière)",
+              "suppliers": "Suivi fournisseurs",
+              "restockAlerts": "Alertes réapprovisionnement"
+            }
+          },
+          "analytics": {
+            "title": "Analytics & Rapports",
+            "features": {
+              "dashboard": "Dashboard (CA, commandes)",
+              "salesReports": "Rapports de vente",
+              "bestSellers": "Best-sellers",
+              "advancedReports": "Rapports avancés",
+              "multiSiteReports": "Rapports multi-sites"
+            }
+          },
+          "team": {
+            "title": "Équipe & Organisation",
+            "features": {
+              "establishments": "Établissements",
+              "admins": "Admins",
+              "staff": "Staff"
+            }
+          },
+          "support": {
+            "title": "Support",
+            "features": {
+              "email": "Support email",
+              "whatsapp": "Support WhatsApp",
+              "whatsappPro": "24h",
+              "whatsappBusiness": "4h prioritaire",
+              "whatsappEnterprise": "1h téléphone",
+              "manager": "Account manager",
+              "sla": "SLA garanti"
+            }
+          }
+        }
+      },
+      "faq": {
+        "title": "Questions fréquentes",
+        "items": {
+          "q1": {
+            "question": "Comment fonctionne l'essai gratuit ?",
+            "answer": "14 jours d'accès complet au plan PRO. Sans carte bancaire. Vous testez tout : KDS, POS, stock, tables."
+          },
+          "q2": {
+            "question": "Que se passe-t-il après les 14 jours ?",
+            "answer": "Votre menu reste visible pour vos clients. Votre dashboard passe en lecture seule. Choisissez un plan pour reprendre le contrôle."
+          },
+          "q3": {
+            "question": "Puis-je changer de plan ?",
+            "answer": "Oui, à tout moment. Montée en gamme immédiate. Retour en arrière à la fin de la période en cours."
+          },
+          "q4": {
+            "question": "Y a-t-il un engagement ?",
+            "answer": "Mensuel = sans engagement. Annuel = -20%."
+          },
+          "q5": {
+            "question": "Comment je paie ?",
+            "answer": "Par carte bancaire (Visa, Mastercard) via Stripe. Paiement sécurisé."
+          },
+          "q6": {
+            "question": "Je dois acheter du matériel ?",
+            "answer": "Non. ATTABL est un logiciel. Utilisez votre téléphone, tablette ou ordinateur existant."
+          }
+        }
+      },
+      "testimonials": {
+        "t1": {
+          "name": "Amadou K.",
+          "role": "Gérant",
+          "company": "Le Jardin, N'Djamena",
+          "content": "On a réduit les erreurs de commande de 40% en 2 mois. La cuisine reçoit tout sur l'écran, plus de tickets perdus."
+        },
+        "t2": {
+          "name": "Grace M.",
+          "role": "Propriétaire",
+          "company": "Chez Mama, Douala",
+          "content": "200 commandes par jour, zéro stress. Le KDS fait le tri, on prépare, on envoie."
+        },
+        "t3": {
+          "name": "Ibrahim D.",
+          "role": "Directeur",
+          "company": "Hotel Prestige, Abidjan",
+          "content": "Le room service digital a changé notre classement Booking. Les clients commandent depuis le lit, en anglais ou en français."
+        },
+        "t4": {
+          "name": "Fatou S.",
+          "role": "Gérante",
+          "company": "La Terrasse, Dakar",
+          "content": "En 3 mois, notre chiffre d'affaires a augmenté de 25%. Le menu digital pousse les clients à commander plus."
+        }
+      }
+    },
     "privacy": {
       "metaTitle": "Politique de Confidentialité",
       "metaDescription": "Politique de confidentialité et protection des données personnelles d'ATTABL.",
