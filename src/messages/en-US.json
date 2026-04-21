@@ -218,6 +218,71 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "privacy": {
+      "metaTitle": "Privacy Policy",
+      "metaDescription": "Privacy policy and personal data protection for ATTABL.",
+      "heading": "Privacy Policy",
+      "lastUpdate": "Last updated: February 28, 2026",
+      "section1Title": "1. Data controller",
+      "section1Body": "ATTABL, a SaaS platform for digital restaurant management, is the data controller for personal data collected via the attabl.com website.",
+      "section2Title": "2. Data collected",
+      "section2Body": "We collect the following data: name, email address, establishment information (name, address, phone), and browsing data (analytics cookies). Payment data is handled directly by Stripe and is not stored on our servers.",
+      "section3Title": "3. Purposes",
+      "section3Body": "Data is used for: managing your account, providing the service, billing, customer support, and improving the platform.",
+      "section4Title": "4. Hosting and security",
+      "section4Body": "Data is hosted by Supabase (secure cloud infrastructure). The application is deployed on Vercel. All communications are encrypted (HTTPS/TLS).",
+      "section5Title": "5. Your rights",
+      "section5Body": "Under the GDPR, you have a right of access, rectification, deletion and portability of your data. Contact us at",
+      "section6Title": "6. Cookies",
+      "section6Body": "We use cookies essential to the operation of the service (authentication, language preferences). No advertising cookies are used."
+    },
+    "features": {
+      "metaTitle": "Features",
+      "metaDescription": "Discover all ATTABL features: digital menu, orders, stock, analytics and more.",
+      "heroTitle": "Everything you need",
+      "heroSubtitle": "A complete platform to run your business.",
+      "categories": {
+        "menu": {
+          "title": "Menu & Orders",
+          "items": {
+            "digitalMenu": {
+              "title": "Bilingual digital menu",
+              "description": "QR code, FR/EN, paid modifiers"
+            },
+            "serviceModes": {
+              "title": "4 service modes",
+              "description": "Dine-in, takeaway, delivery, room service"
+            }
+          }
+        },
+        "stock": {
+          "title": "Stock & Recipes",
+          "items": {
+            "autoStock": {
+              "title": "Automatic stock",
+              "description": "Real-time deduction per ingredient"
+            }
+          }
+        },
+        "business": {
+          "title": "Business",
+          "items": {
+            "analytics": {
+              "title": "Real-time analytics",
+              "description": "Revenue, best-sellers, trends"
+            },
+            "multiCurrency": {
+              "title": "Multi-currency",
+              "description": "XAF, EUR, USD"
+            },
+            "multiTenant": {
+              "title": "Multi-tenant",
+              "description": "Manage several establishments"
+            }
+          }
+        }
+      }
+    },
     "home": {
       "videoHero": {
         "titleLine1": "Small counter",

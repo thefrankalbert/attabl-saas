@@ -1,65 +1,49 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Politique de Confidentialité',
-  description: "Politique de confidentialité et protection des données personnelles d'ATTABL.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.privacy');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const t = await getTranslations('marketing.privacy');
+
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">
-        Politique de Confidentialit&eacute;
-      </h1>
+      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">{t('heading')}</h1>
 
       <div className="prose prose-neutral max-w-none space-y-6 text-neutral-600 dark:text-neutral-400">
-        <p className="text-sm text-neutral-400 dark:text-neutral-500">
-          Derni&egrave;re mise &agrave; jour : 28 f&eacute;vrier 2026
-        </p>
+        <p className="text-sm text-neutral-400 dark:text-neutral-500">{t('lastUpdate')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          1. Responsable du traitement
+          {t('section1Title')}
         </h2>
-        <p>
-          ATTABL, plateforme SaaS de gestion digitale pour la restauration, est responsable du
-          traitement des donn&eacute;es personnelles collect&eacute;es via le site attabl.com.
-        </p>
+        <p>{t('section1Body')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          2. Donn&eacute;es collect&eacute;es
+          {t('section2Title')}
         </h2>
-        <p>
-          Nous collectons les donn&eacute;es suivantes : nom, adresse email, informations de
-          l&apos;&eacute;tablissement (nom, adresse, t&eacute;l&eacute;phone), et donn&eacute;es de
-          navigation (cookies analytiques). Les donn&eacute;es de paiement sont trait&eacute;es
-          directement par Stripe et ne sont pas stock&eacute;es sur nos serveurs.
-        </p>
+        <p>{t('section2Body')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          3. Finalit&eacute;s
+          {t('section3Title')}
         </h2>
-        <p>
-          Les donn&eacute;es sont utilis&eacute;es pour : la gestion de votre compte, la fourniture
-          du service, la facturation, le support client, et l&apos;am&eacute;lioration de la
-          plateforme.
-        </p>
+        <p>{t('section3Body')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          4. H&eacute;bergement et s&eacute;curit&eacute;
+          {t('section4Title')}
         </h2>
-        <p>
-          Les donn&eacute;es sont h&eacute;berg&eacute;es par Supabase (infrastructure cloud
-          s&eacute;curis&eacute;e). L&apos;application est d&eacute;ploy&eacute;e sur Vercel. Toutes
-          les communications sont chiffr&eacute;es (HTTPS/TLS).
-        </p>
+        <p>{t('section4Body')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          5. Vos droits
+          {t('section5Title')}
         </h2>
         <p>
-          Conform&eacute;ment au RGPD, vous disposez d&apos;un droit d&apos;acc&egrave;s, de
-          rectification, de suppression et de portabilit&eacute; de vos donn&eacute;es.
-          Contactez-nous &agrave;{' '}
+          {t('section5Body')}{' '}
           <a
             href="mailto:contact@attabl.com"
             className="text-neutral-900 dark:text-white font-semibold hover:underline"
@@ -69,11 +53,10 @@ export default function PrivacyPage() {
           .
         </p>
 
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">6. Cookies</h2>
-        <p>
-          Nous utilisons des cookies essentiels au fonctionnement du service (authentification,
-          pr&eacute;f&eacute;rences de langue). Aucun cookie publicitaire n&apos;est utilis&eacute;.
-        </p>
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+          {t('section6Title')}
+        </h2>
+        <p>{t('section6Body')}</p>
       </div>
     </div>
   );
