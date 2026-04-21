@@ -15,6 +15,7 @@ vi.mock('@/lib/supabase/admin', () => ({
 
 vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn(), warn: vi.fn(), info: vi.fn() },
+  hashEmail: (email: string) => `hash_${email}`,
 }));
 
 vi.mock('@/services/email.service', () => ({

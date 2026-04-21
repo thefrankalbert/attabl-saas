@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger, hashEmail } from '@/lib/logger';
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
@@ -125,7 +125,7 @@ export async function GET(request: Request) {
         if (signupData.error?.includes('already') || signupData.error?.includes('existe')) {
           logger.warn('OAuth user exists but has no tenant - redirecting to signup', {
             userId: session.user.id,
-            email: session.user.email,
+            emailHash: session.user.email ? hashEmail(session.user.email) : undefined,
           });
         } else {
           logger.error('Signup OAuth API error', { error: signupData.error });

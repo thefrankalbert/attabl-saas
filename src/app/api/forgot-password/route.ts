@@ -1,6 +1,6 @@
 import { createAdminClient } from '@/lib/supabase/admin';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/logger';
+import { logger, hashEmail } from '@/lib/logger';
 import { forgotPasswordSchema } from '@/lib/validations/auth.schema';
 import { forgotPasswordLimiter, getClientIp } from '@/lib/rate-limit';
 import { verifyOrigin } from '@/lib/csrf';
@@ -72,7 +72,7 @@ export async function POST(request: Request) {
       // this endpoint will simply not receive an email; they can re-request
       // signup confirmation through the /signup flow instead.
       logger.info('Forgot password: recovery link generation failed', {
-        email,
+        emailHash: hashEmail(email),
         error: linkError?.message,
       });
       return successResponse;
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
     // 5. Send custom branded email via Resend
     const emailSent = await sendPasswordResetEmail(email, { resetUrl });
     if (!emailSent) {
-      logger.warn('Password reset email failed to send', { email });
+      logger.warn('Password reset email failed to send', { emailHash: hashEmail(email) });
     }
 
     return successResponse;

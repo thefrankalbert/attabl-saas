@@ -8,6 +8,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import AdminModal from '@/components/admin/AdminModal';
 import { useConfirmDialog } from '@/hooks/useConfirmDialog';
 import { cn } from '@/lib/utils';
@@ -283,13 +284,10 @@ export default function AdsClient({ tenantId, initialAds }: AdsClientProps) {
 
           {/* Active */}
           <div className="flex items-center gap-2">
-            {/* eslint-disable-next-line react/forbid-elements -- kept as native to preserve existing styling; TODO: migrate to ui/checkbox in a dedicated PR */}
-            <input
-              type="checkbox"
+            <Checkbox
               id="active"
               checked={isActive}
-              onChange={(e) => setIsActive(e.target.checked)}
-              className="w-4 h-4 rounded border-app-border-hover text-primary focus:ring-primary"
+              onCheckedChange={(checked) => setIsActive(checked === true)}
             />
             <Label htmlFor="active" className="cursor-pointer">
               {t('enableImmediately')}
