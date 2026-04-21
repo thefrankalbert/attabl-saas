@@ -1,5 +1,5 @@
-'use client';
-
+// Pure presentational component — no hooks, no handlers. Dropping 'use client'
+// lets Next inline it in the parent bundle without a separate boundary.
 import { cn } from '@/lib/utils';
 import type { ServiceTableVM } from './service.types';
 
