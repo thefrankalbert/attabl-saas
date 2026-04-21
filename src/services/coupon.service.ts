@@ -218,5 +218,36 @@ export function createCouponService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la suppression', 'INTERNAL', error);
       }
     },
+
+    /**
+     * List all coupons for a tenant, newest first.
+     */
+    async listCoupons(tenantId: string): Promise<Coupon[]> {
+      const { data, error } = await supabase
+        .from('coupons')
+        .select('*')
+        .eq('tenant_id', tenantId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw new ServiceError('Erreur lors du chargement', 'INTERNAL', error);
+      }
+      return (data || []) as Coupon[];
+    },
+
+    /**
+     * Toggle the is_active flag on a coupon.
+     */
+    async toggleActive(couponId: string, tenantId: string, newValue: boolean): Promise<void> {
+      const { error } = await supabase
+        .from('coupons')
+        .update({ is_active: newValue })
+        .eq('id', couponId)
+        .eq('tenant_id', tenantId);
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la mise a jour', 'INTERNAL', error);
+      }
+    },
   };
 }
