@@ -370,7 +370,7 @@ export default function ClientMenuDetailPage({
   const hideVenueRow = filteredMenus.length > 1 && filteredMenus.every((m) => !!m.venue_id);
 
   // Hide the menu-tabs row when the user entered via a specific carte URL
-  // (?menu=slug). They already chose a carte — showing all the other cartes
+  // (?menu=slug). They already chose a carte - showing all the other cartes
   // again is navigation noise. A back link to the cartes list is offered
   // instead via the header back button.
   const hideMenuTabsRow = !!initialMenuSlug && filteredMenus.length > 1;
@@ -621,7 +621,7 @@ export default function ClientMenuDetailPage({
           </div>
         )}
 
-      {/* ═══ FILTER CHIPS (diet / price) — hidden on carte-detail view ═══
+      {/* ═══ FILTER CHIPS (diet / price) - hidden on carte-detail view ═══
           Rule: on a specific ?menu=X view we keep a SINGLE navigation row
           (CategoryNav). Diet filters stay accessible via the search overlay. */}
       {!initialMenuSlug && (

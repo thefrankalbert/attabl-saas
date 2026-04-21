@@ -66,7 +66,7 @@ export async function POST(request: Request) {
     });
 
     if (linkError || !linkData?.properties?.hashed_token) {
-      // No fallback to type:'signup' with an empty password — that path would
+      // No fallback to type:'signup' with an empty password - that path would
       // silently create a user when the email did not exist (ghost user
       // creation via forgot-password enumeration). Unverified users who hit
       // this endpoint will simply not receive an email; they can re-request

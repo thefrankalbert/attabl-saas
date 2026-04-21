@@ -96,7 +96,7 @@ afterEach(() => {
 describe('ClientSettings', () => {
   // ─── Rendering ──────────────────────────────────────
 
-  // Header title was removed per UX feedback — only a back button remains
+  // Header title was removed per UX feedback - only a back button remains
   it.skip('renders the header with settings title', () => {
     renderSettings();
     expect(screen.getByText('settingsTitle')).toBeInTheDocument();
@@ -308,7 +308,7 @@ describe('ClientSettings', () => {
   it('renders all key labels via translation keys', () => {
     renderSettings();
 
-    // settingsTitle removed from header — skip
+    // settingsTitle removed from header - skip
     expect(screen.getByText('preferencesSection')).toBeInTheDocument();
     expect(screen.getByText('supportSection')).toBeInTheDocument();
     expect(screen.getByText('languageLabel')).toBeInTheDocument();

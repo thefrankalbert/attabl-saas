@@ -81,7 +81,7 @@ function createMockSupabase(overrides?: {
   const tenantError = overrides?.tenantError ?? null;
 
   // Tenant lookup now goes through the security-definer RPC get_tenant_by_slug,
-  // which returns an array (TABLE function) — null means not found.
+  // which returns an array (TABLE function) - null means not found.
   const rpcResult = tenant ? [tenant] : null;
 
   return {

@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
     // Use anon server client + security-definer RPC for tenant lookup (no RLS bypass).
     // Coupon SELECT is covered by the "Public can validate active coupons" RLS policy
-    // which allows read of is_active = true coupons — sufficient for customer checkout.
+    // which allows read of is_active = true coupons - sufficient for customer checkout.
     const supabase = await createClient();
 
     const { data: tenantRows, error: tenantError } = await supabase.rpc('get_tenant_by_slug', {
@@ -97,7 +97,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error: unknown) {
-    // Mask internal error details from the client — log the real message
+    // Mask internal error details from the client - log the real message
     // server-side only. Raw error.message can leak DB errors, timeouts, etc.
     logger.error('Coupon validate unexpected error', error);
     return NextResponse.json({ valid: false, error: 'Code promo invalide' }, { status: 400 });
