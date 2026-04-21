@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: 'Attabl - Tarifs simples pour la restauration',
-  description:
-    'Découvrez nos offres adaptées à chaque établissement. Essentiel dès 39 800 FCFA/mois, Premium dès 79 800 FCFA/mois. Essai gratuit 14 jours.',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.pricing');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
 export default function PricingLayout({ children }: { children: React.ReactNode }) {
   return children;
