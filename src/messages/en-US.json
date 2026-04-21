@@ -448,6 +448,12 @@
         "topbar": {
           "toggleTheme": "Toggle theme",
           "logout": "Sign out"
+        },
+        "micro": {
+          "orders": "Orders",
+          "sites": "Sites",
+          "alerts": "Alerts",
+          "sitesOnline": "{online} / {total} online"
         }
       }
     },
