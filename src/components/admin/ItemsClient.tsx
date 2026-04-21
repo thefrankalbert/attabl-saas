@@ -5,12 +5,10 @@ import { useSessionState } from '@/hooks/useSessionState';
 import { useTranslations } from 'next-intl';
 import {
   Plus,
-  Loader2,
   Star,
   Check,
   X,
   Image as ImageIcon,
-  AlertTriangle,
   Edit2,
   Trash2,
   Package,
@@ -28,10 +26,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
@@ -40,14 +34,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import AdminModal from '@/components/admin/AdminModal';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/utils/currency';
 import { actionCheckCanAddMenuItem } from '@/app/actions/menu-items';
 import RoleGuard from '@/components/admin/RoleGuard';
-import ImageUpload from '@/components/shared/ImageUpload';
-import { ALLERGENS } from '@/lib/config/allergens';
 import { logger } from '@/lib/logger';
 import { revalidateMenuCache } from '@/lib/revalidate';
 import {
@@ -63,6 +54,8 @@ import {
 import { useSegmentTerms } from '@/hooks/useSegmentTerms';
 import type { MenuItem, Category, CurrencyCode } from '@/types/admin.types';
 import { createMenuItemService } from '@/services/menu-item.service';
+import { ItemDetailPanel } from './items/ItemDetailPanel';
+import { ItemFormModal, type FormStep } from './items/ItemFormModal';
 
 interface ItemsClientProps {
   tenantId: string;
@@ -79,7 +72,6 @@ export default function ItemsClient({
   currency = 'XAF',
   supportedCurrencies = [],
 }: ItemsClientProps) {
-  // Secondary currencies = supported minus the base currency
   const secondaryCurrencies = supportedCurrencies.filter((c) => c !== currency);
   const [categories] = useState<Category[]>(initialCategories);
   const [showModal, setShowModal] = useState(false);
@@ -104,12 +96,11 @@ export default function ItemsClient({
   const [allergens, setAllergens] = useState<string[]>([]);
   const [calories, setCalories] = useState<number | ''>('');
   const [prices, setPrices] = useState<Record<string, number>>({});
-  const [formStep, setFormStep] = useState<1 | 2 | 3>(1);
+  const [formStep, setFormStep] = useState<FormStep>(1);
 
   const { toast } = useToast();
   const t = useTranslations('items');
   const tc = useTranslations('common');
-  const ta = useTranslations('allergens');
   const seg = useSegmentTerms();
   const supabase = createClient();
   const router = useRouter();
@@ -220,7 +211,6 @@ export default function ItemsClient({
         await menuItemService.updateMenuItem(editingItem.id, payload);
         toast({ title: t('itemUpdated') });
       } else {
-        // Verifier les limites du plan avant la creation
         const limitCheck = await actionCheckCanAddMenuItem(tenantId);
         if (limitCheck.error) {
           toast({ title: limitCheck.error, variant: 'destructive' });
@@ -298,14 +288,12 @@ export default function ItemsClient({
     <RoleGuard permission="canManageMenus">
       <div className="h-full flex flex-col overflow-hidden">
         <div className="shrink-0">
-          {/* Header - single row like inventory */}
           <div className="flex flex-col @lg:flex-row @lg:items-center gap-3">
             <h1 className="text-lg sm:text-xl font-bold text-app-text flex items-center gap-2 shrink-0">
               {seg.items}
               <span className="text-sm font-normal text-app-text-muted">({items.length})</span>
             </h1>
 
-            {/* Filters inline */}
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Select value={filterCategory} onValueChange={setFilterCategory}>
                 <SelectTrigger className="h-9 w-full sm:w-44 text-xs rounded-lg border border-app-border text-app-text focus:ring-accent/30">
@@ -536,462 +524,57 @@ export default function ItemsClient({
 
         {/* Detail Side Panel */}
         {selectedItem && (
-          <>
-            {/* Backdrop */}
-            <div className="fixed inset-0 z-40 bg-black/20" onClick={closePanel} />
-            {/* Panel */}
-            <div
-              className={cn(
-                'fixed right-0 top-0 h-full w-full sm:w-96 z-50 bg-app-card border-l border-app-border rounded-l-xl overflow-y-auto',
-                'transition-transform duration-300 ease-out translate-x-0',
-              )}
-            >
-              {/* Panel Header */}
-              <div className="flex items-center justify-between p-5 border-b border-app-border">
-                <h2 className="text-base font-bold text-app-text">{t('details')}</h2>
-                <Button variant="ghost" size="icon" onClick={closePanel}>
-                  <X className="w-4 h-4 text-app-text-secondary" />
-                </Button>
-              </div>
-
-              {/* Panel Content */}
-              <div className="p-5 space-y-5">
-                {/* Image */}
-                {selectedItem.image_url ? (
-                  <div className="relative w-full h-48">
-                    <Image
-                      src={selectedItem.image_url}
-                      alt={selectedItem.name}
-                      fill
-                      sizes="(max-width: 640px) 100vw, 400px"
-                      className="rounded-xl object-cover border border-app-border"
-                    />
-                  </div>
-                ) : (
-                  <div className="w-full h-48 rounded-xl bg-app-bg border border-app-border flex items-center justify-center">
-                    <ImageIcon className="w-12 h-12 text-app-text-muted" />
-                  </div>
-                )}
-
-                {/* Name */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('nameFr')}</p>
-                  <p className="text-sm font-semibold text-app-text">{selectedItem.name}</p>
-                </div>
-
-                {/* Name EN */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('nameEn')}</p>
-                  <p className="text-sm text-app-text">{selectedItem.name_en || '-'}</p>
-                </div>
-
-                {/* Description */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('descriptionFr')}</p>
-                  <p className="text-sm text-app-text">
-                    {selectedItem.description || t('noDescription')}
-                  </p>
-                </div>
-
-                {/* Price */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('price')}</p>
-                  <p className="text-lg font-bold text-app-text tabular-nums">
-                    {formatCurrency(selectedItem.price, currency)}
-                  </p>
-                  {selectedItem.prices && Object.keys(selectedItem.prices).length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {Object.entries(selectedItem.prices as Record<string, number>).map(
-                        ([cur, val]) => (
-                          <span
-                            key={cur}
-                            className="text-xs text-app-text-secondary bg-app-elevated px-2 py-0.5 rounded"
-                          >
-                            {formatCurrency(val, cur as CurrencyCode)}
-                          </span>
-                        ),
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Category */}
-                <div className="space-y-1">
-                  <p className="text-xs text-app-text-muted font-medium">{t('category')}</p>
-                  <p className="text-sm text-app-text">
-                    {selectedItem.category?.name || t('uncategorized')}
-                  </p>
-                </div>
-
-                {/* Allergens */}
-                {selectedItem.allergens && selectedItem.allergens.length > 0 && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-app-text-muted font-medium flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      {ta('title')}
-                    </p>
-                    <div className="flex flex-wrap gap-1">
-                      {selectedItem.allergens.map((a) => (
-                        <span
-                          key={a}
-                          className="px-2 py-0.5 rounded-full text-xs font-medium bg-orange-500/10 text-orange-500 border border-orange-500/20"
-                        >
-                          {ta(a)}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Calories */}
-                {selectedItem.calories != null && (
-                  <div className="space-y-1">
-                    <p className="text-xs text-app-text-muted font-medium">{ta('calories')}</p>
-                    <p className="text-sm text-app-text">{selectedItem.calories} kcal</p>
-                  </div>
-                )}
-
-                {/* Availability & Featured badges */}
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      'px-2.5 py-1 rounded-full text-xs font-semibold border',
-                      selectedItem.is_available
-                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                        : 'bg-app-bg text-app-text-secondary border-app-border',
-                    )}
-                  >
-                    {selectedItem.is_available ? (
-                      <>
-                        <Check className="w-3 h-3 inline mr-1" />
-                        {t('stock')}
-                      </>
-                    ) : (
-                      <>
-                        <X className="w-3 h-3 inline mr-1" />
-                        {t('exhausted')}
-                      </>
-                    )}
-                  </span>
-                  {selectedItem.is_featured && (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/20 inline-flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-current" />
-                      {t('featured')}
-                    </span>
-                  )}
-                </div>
-
-                {/* Edit Button */}
-                <Button
-                  variant="default"
-                  className="w-full mt-2"
-                  onClick={() => {
-                    openEditModal(selectedItem);
-                    closePanel();
-                  }}
-                >
-                  {t('edit')}
-                </Button>
-              </div>
-            </div>
-          </>
+          <ItemDetailPanel
+            item={selectedItem}
+            currency={currency}
+            onClose={closePanel}
+            onEdit={openEditModal}
+          />
         )}
 
-        {/* Modal */}
-        <AdminModal
+        {/* Form Modal */}
+        <ItemFormModal
           isOpen={showModal}
           onClose={() => {
             setShowModal(false);
             resetForm();
           }}
-          title={editingItem ? t('editItemTitle') : t('newItemTitle')}
-          size="lg"
-        >
-          <div className="pt-2">
-            {/* Step indicator */}
-            <div className="flex items-center gap-2 mb-6">
-              {([1, 2, 3] as const).map((step) => {
-                const isActive = formStep === step;
-                const isCompleted = formStep > step;
-                const labels = [t('stepBasicInfo'), t('stepPricing'), t('stepPhotoDetails')];
-                return (
-                  <Button
-                    key={step}
-                    type="button"
-                    variant="outline"
-                    onClick={() => {
-                      // Allow navigating back to completed steps freely
-                      if (step < formStep) setFormStep(step);
-                    }}
-                    className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium h-auto',
-                      isActive
-                        ? 'bg-accent/10 text-accent border-accent/30'
-                        : isCompleted
-                          ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 cursor-pointer'
-                          : 'bg-app-bg text-app-text-muted border-app-border cursor-default',
-                    )}
-                  >
-                    {isCompleted ? (
-                      <Check className="w-3 h-3" />
-                    ) : (
-                      <span
-                        className={cn(
-                          'w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold',
-                          isActive ? 'bg-accent text-white' : 'bg-app-border text-app-text-muted',
-                        )}
-                      >
-                        {step}
-                      </span>
-                    )}
-                    <span className="hidden sm:inline">{labels[step - 1]}</span>
-                  </Button>
-                );
-              })}
-            </div>
-
-            {/* Step 1 - Basic Info */}
-            {formStep === 1 && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-app-text">{t('nameFr')}</Label>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder={t('nameFrPlaceholder')}
-                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-app-text">{t('nameEn')}</Label>
-                    <Input
-                      value={nameEn}
-                      onChange={(e) => setNameEn(e.target.value)}
-                      placeholder={t('nameEnPlaceholder')}
-                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-app-text">{t('descriptionFr')}</Label>
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder={t('descriptionFrPlaceholder')}
-                      rows={3}
-                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-app-text">{t('descriptionEn')}</Label>
-                    <Textarea
-                      value={descriptionEn}
-                      onChange={(e) => setDescriptionEn(e.target.value)}
-                      placeholder={t('descriptionEnPlaceholder')}
-                      rows={3}
-                      className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-app-text">{t('category')}</Label>
-                  <Select value={categoryId} onValueChange={setCategoryId}>
-                    <SelectTrigger className="rounded-lg border border-app-border text-app-text focus:ring-accent/30 w-full sm:w-64">
-                      <SelectValue placeholder={t('selectCategory')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id}>
-                          {c.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            )}
-
-            {/* Step 2 - Pricing & Availability */}
-            {formStep === 2 && (
-              <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label className="text-app-text">{t('price')}</Label>
-                  <Input
-                    type="number"
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value === '' ? '' : Number(e.target.value))}
-                    min={0}
-                    className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
-                  />
-                </div>
-                {secondaryCurrencies.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-xs text-app-text-muted">{t('optionalPriceHint')}</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                      {secondaryCurrencies.map((cur) => (
-                        <div key={cur} className="space-y-1">
-                          <Label className="text-app-text text-xs">
-                            {t('priceInCurrency', { currency: cur })}
-                          </Label>
-                          <Input
-                            type="number"
-                            value={prices[cur] ?? ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setPrices((prev) => {
-                                if (val === '' || Number(val) === 0) {
-                                  const next = { ...prev };
-                                  delete next[cur];
-                                  return next;
-                                }
-                                return { ...prev, [cur]: Number(val) };
-                              });
-                            }}
-                            min={0}
-                            step={cur === 'XAF' ? 1 : 0.01}
-                            placeholder="0"
-                            className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 text-sm"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-                <div className="flex items-center gap-6 pt-2">
-                  <div className="flex items-center gap-2">
-                    <Switch checked={isAvailable} onCheckedChange={setIsAvailable} />
-                    <Label className="text-sm text-app-text">{t('available')}</Label>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Switch checked={isFeatured} onCheckedChange={setIsFeatured} />
-                    <Label className="text-sm text-app-text">{t('featured')}</Label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3 - Photo & Details */}
-            {formStep === 3 && (
-              <div className="space-y-5">
-                <div className="space-y-1.5">
-                  <Label className="text-app-text">{t('imageUrl')}</Label>
-                  <ImageUpload
-                    value={imageUrl}
-                    onChange={(url) => setImageUrl(url)}
-                    onRemove={() => setImageUrl('')}
-                    bucket="menu-items"
-                  />
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-app-text flex items-center gap-1">
-                    <AlertTriangle className="w-3.5 h-3.5 text-orange-500" />
-                    {ta('title')}
-                  </Label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {ALLERGENS.map((a) => {
-                      const selected = allergens.includes(a);
-                      return (
-                        <Button
-                          key={a}
-                          type="button"
-                          variant="outline"
-                          onClick={() =>
-                            setAllergens((prev) =>
-                              selected ? prev.filter((x) => x !== a) : [...prev, a],
-                            )
-                          }
-                          className={cn(
-                            'px-2.5 py-1 rounded-full text-xs font-medium h-auto',
-                            selected
-                              ? 'bg-orange-500/10 text-orange-500 border-orange-500/20'
-                              : 'bg-app-bg text-app-text-secondary border-app-border hover:border-app-border-hover',
-                          )}
-                        >
-                          {ta(a)}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <Label className="text-app-text">{ta('calories')}</Label>
-                  <Input
-                    type="number"
-                    value={calories}
-                    onChange={(e) =>
-                      setCalories(e.target.value === '' ? '' : Number(e.target.value))
-                    }
-                    min={0}
-                    placeholder={ta('caloriesPlaceholder')}
-                    className="rounded-lg border border-app-border text-app-text focus-visible:ring-1 focus-visible:ring-accent/30 w-full sm:w-48"
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Navigation buttons */}
-            <div className="flex justify-between gap-3 pt-5 mt-5 border-t border-app-border">
-              <div>
-                {formStep > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => setFormStep((s) => (s - 1) as 1 | 2 | 3)}
-                  >
-                    {t('previous')}
-                  </Button>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => {
-                    setShowModal(false);
-                    resetForm();
-                  }}
-                >
-                  {t('cancel')}
-                </Button>
-                {formStep < 3 ? (
-                  <Button
-                    type="button"
-                    variant="default"
-                    onClick={() => {
-                      // Validation before advancing
-                      if (formStep === 1) {
-                        if (!name.trim()) {
-                          toast({ title: t('validationNameRequired'), variant: 'destructive' });
-                          return;
-                        }
-                        if (!categoryId) {
-                          toast({ title: t('validationCategoryRequired'), variant: 'destructive' });
-                          return;
-                        }
-                      }
-                      if (formStep === 2) {
-                        if (!price || Number(price) <= 0) {
-                          toast({ title: t('validationPriceRequired'), variant: 'destructive' });
-                          return;
-                        }
-                      }
-                      setFormStep((s) => (s + 1) as 1 | 2 | 3);
-                    }}
-                  >
-                    {t('next')}
-                  </Button>
-                ) : (
-                  <Button type="button" disabled={saving} variant="default" onClick={handleSubmit}>
-                    {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    {editingItem ? t('update') : t('create')}
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </AdminModal>
+          editingItem={editingItem}
+          categories={categories}
+          secondaryCurrencies={secondaryCurrencies}
+          saving={saving}
+          onSubmit={handleSubmit}
+          state={{
+            name,
+            nameEn,
+            description,
+            descriptionEn,
+            price,
+            categoryId,
+            imageUrl,
+            isAvailable,
+            isFeatured,
+            allergens,
+            calories,
+            prices,
+            formStep,
+          }}
+          setters={{
+            setName,
+            setNameEn,
+            setDescription,
+            setDescriptionEn,
+            setPrice,
+            setCategoryId,
+            setImageUrl,
+            setIsAvailable,
+            setIsFeatured,
+            setAllergens,
+            setCalories,
+            setPrices,
+            setFormStep,
+          }}
+        />
 
         {/* Delete confirmation dialog */}
         <AlertDialog
