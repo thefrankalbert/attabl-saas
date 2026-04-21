@@ -225,5 +225,47 @@ export function createInventoryService(supabase: SupabaseClient) {
       if (error) throw new ServiceError('Erreur historique mouvements', 'INTERNAL', error);
       return (data as StockMovement[]) || [];
     },
+
+    /**
+     * Load the menu items and the set of items that already have a recipe
+     * configured. Used by the RecipesClient dashboard.
+     */
+    async getRecipesOverview(tenantId: string): Promise<{
+      menuItems: {
+        id: string;
+        name: string;
+        category_id: string | null;
+        is_available: boolean;
+      }[];
+      recipeItemIds: Set<string>;
+    }> {
+      const [itemsRes, recipesRes] = await Promise.all([
+        supabase
+          .from('menu_items')
+          .select('id, name, category_id, is_available')
+          .eq('tenant_id', tenantId)
+          .order('name'),
+        supabase.from('recipes').select('menu_item_id').eq('tenant_id', tenantId),
+      ]);
+
+      if (itemsRes.error) {
+        throw new ServiceError('Erreur chargement articles', 'INTERNAL', itemsRes.error);
+      }
+      if (recipesRes.error) {
+        throw new ServiceError('Erreur chargement recettes', 'INTERNAL', recipesRes.error);
+      }
+
+      const menuItems =
+        (itemsRes.data as {
+          id: string;
+          name: string;
+          category_id: string | null;
+          is_available: boolean;
+        }[]) || [];
+      const recipeItemIds = new Set(
+        (recipesRes.data || []).map((r: { menu_item_id: string }) => r.menu_item_id),
+      );
+      return { menuItems, recipeItemIds };
+    },
   };
 }
