@@ -1,65 +1,57 @@
 import type { Metadata } from 'next';
+import { getTranslations } from 'next-intl/server';
 
-export const metadata: Metadata = {
-  title: "Conditions Générales d'Utilisation",
-  description: "Conditions générales d'utilisation de la plateforme ATTABL.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations('marketing.legal');
+  return {
+    title: t('metaTitle'),
+    description: t('metaDescription'),
+  };
+}
 
-export default function LegalPage() {
+export default async function LegalPage() {
+  const t = await getTranslations('marketing.legal');
   return (
     <div className="mx-auto max-w-3xl px-4 py-16 sm:px-6 lg:px-8">
-      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">
-        Conditions G&eacute;n&eacute;rales d&apos;Utilisation
-      </h1>
+      <h1 className="text-3xl font-bold text-neutral-900 dark:text-white mb-8">{t('heading')}</h1>
 
       <div className="prose prose-neutral max-w-none space-y-6 text-neutral-600 dark:text-neutral-400">
-        <p className="text-sm text-neutral-400 dark:text-neutral-500">
-          Derni&egrave;re mise &agrave; jour : 28 f&eacute;vrier 2026
-        </p>
-
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">1. Objet</h2>
-        <p>
-          Les pr&eacute;sentes Conditions G&eacute;n&eacute;rales d&apos;Utilisation (CGU)
-          r&eacute;gissent l&apos;acc&egrave;s et l&apos;utilisation de la plateforme ATTABL, un
-          service SaaS de gestion digitale pour la restauration et l&apos;h&ocirc;tellerie.
-        </p>
+        <p className="text-sm text-neutral-400 dark:text-neutral-500">{t('lastUpdate')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          2. Acc&egrave;s au service
+          {t('section1Title')}
         </h2>
-        <p>
-          L&apos;acc&egrave;s &agrave; ATTABL n&eacute;cessite la cr&eacute;ation d&apos;un compte
-          utilisateur. L&apos;utilisateur s&apos;engage &agrave; fournir des informations exactes et
-          &agrave; jour lors de son inscription.
-        </p>
+        <p>{t('section1Body')}</p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          3. Abonnements et tarifs
+          {t('section2Title')}
+        </h2>
+        <p>{t('section2Body')}</p>
+
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+          {t('section3Title')}
         </h2>
         <p>
-          ATTABL propose des plans d&apos;abonnement mensuels et annuels. Les tarifs en vigueur sont
-          disponibles sur la page{' '}
+          {t('section3Body')}{' '}
           <a
             href="/pricing"
             className="text-neutral-900 dark:text-white font-semibold hover:underline"
           >
-            Tarifs
+            {t('section3Link')}
           </a>
-          . Toute modification tarifaire sera communiqu&eacute;e 30 jours &agrave; l&apos;avance.
+          {t('section3BodyCont')}
         </p>
 
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
-          4. Propri&eacute;t&eacute; des donn&eacute;es
+          {t('section4Title')}
+        </h2>
+        <p>{t('section4Body')}</p>
+
+        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">
+          {t('section5Title')}
         </h2>
         <p>
-          Les donn&eacute;es saisies par l&apos;utilisateur (menus, commandes, clients) restent sa
-          propri&eacute;t&eacute; exclusive. ATTABL s&apos;engage &agrave; ne pas commercialiser ces
-          donn&eacute;es.
-        </p>
-
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white mt-8">5. Contact</h2>
-        <p>
-          Pour toute question relative aux pr&eacute;sentes CGU, contactez-nous &agrave;{' '}
+          {t('section5Body')}{' '}
           <a
             href="mailto:contact@attabl.com"
             className="text-neutral-900 dark:text-white font-semibold hover:underline"
