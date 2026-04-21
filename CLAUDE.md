@@ -417,6 +417,8 @@ REGLE ABSOLUE : Toute modification de code doit respecter les contraintes ci-des
 
 AVANT de modifier un fichier, lire le fichier EN ENTIER. Ne JAMAIS modifier un fichier sans l'avoir lu completement. Ne JAMAIS modifier une partie du fichier qui n'est pas directement liee a la tache demandee.
 
+**Test de tracabilite** : chaque ligne modifiee doit pouvoir etre reliee directement a la demande de l'utilisateur. Si une ligne changee ne peut pas etre justifiee par "l'utilisateur a demande X et cette ligne sert X", elle n'aurait pas du bouger.
+
 ### Checklist pre-modification (OBLIGATOIRE avant chaque edit)
 
 Avant de modifier un fichier, se poser ces questions :
