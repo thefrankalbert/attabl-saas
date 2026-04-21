@@ -218,6 +218,71 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "header": {
+      "solutions": "Solutions",
+      "features": "Fonctionnalités",
+      "pricing": "Tarifs",
+      "news": "Nouveautés",
+      "blog": "Blog",
+      "login": "Se connecter",
+      "getStarted": "Démarrer",
+      "getStartedFree": "Démarrer gratuitement",
+      "appearance": "Apparence",
+      "allFeatures": "Toutes les fonctionnalités",
+      "segments": {
+        "restaurants": { "label": "Restaurants", "description": "Gastronomie et service à table" },
+        "hotels": { "label": "Hôtels", "description": "Room service et multi-venues" },
+        "quickService": { "label": "Quick-Service", "description": "Rapidité et efficacité" },
+        "barsCafes": { "label": "Bars & Cafés", "description": "Comptoir et terrasse" },
+        "fastFood": { "label": "Fast-Food", "description": "Vitesse et volume optimisés" }
+      },
+      "featuresList": {
+        "menu": { "label": "Menu Digital", "description": "QR code, bilingue, modifiers" },
+        "orders": { "label": "Commandes", "description": "4 modes de service" },
+        "stock": { "label": "Stock & Recettes", "description": "Déstockage automatique" },
+        "analytics": { "label": "Analytics", "description": "Rapports en temps réel" },
+        "currencies": { "label": "Multi-devises", "description": "XAF, EUR, USD" }
+      }
+    },
+    "footer": {
+      "tagline": "La plateforme moderne\npour la restauration",
+      "copyright": "© {year} Attabl. Tous droits réservés.",
+      "columns": {
+        "product": {
+          "title": "Produit",
+          "links": {
+            "features": "Fonctionnalités",
+            "pricing": "Tarifs",
+            "demo": "Démo"
+          }
+        },
+        "solutions": {
+          "title": "Solutions",
+          "links": {
+            "restaurants": "Restaurants",
+            "hotels": "Hôtels",
+            "quickService": "Quick-Service",
+            "barsCafes": "Bars & Cafés",
+            "fastFood": "Fast-Food"
+          }
+        },
+        "company": {
+          "title": "Entreprise",
+          "links": {
+            "about": "À propos",
+            "contact": "Contact",
+            "blog": "Blog"
+          }
+        },
+        "legal": {
+          "title": "Légal",
+          "links": {
+            "terms": "CGU",
+            "privacy": "Confidentialité"
+          }
+        }
+      }
+    },
     "about": {
       "metaTitle": "À propos",
       "metaDescription": "Découvrez ATTABL, la plateforme SaaS de gestion digitale pour la restauration et l'hôtellerie.",

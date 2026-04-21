@@ -2,27 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/shared/ThemeToggle';
 
-const segments = [
-  { label: 'Restaurants', href: '/restaurants', description: 'Gastronomie et service à table' },
-  { label: 'Hôtels', href: '/hotels', description: 'Room service et multi-venues' },
-  { label: 'Quick-Service', href: '/quick-service', description: 'Rapidité et efficacité' },
-  { label: 'Bars & Cafés', href: '/bars-cafes', description: 'Comptoir et terrasse' },
-  { label: 'Fast-Food', href: '/fast-food', description: 'Vitesse et volume optimisés' },
-];
-
-const features = [
-  { label: 'Menu Digital', href: '/features#menu', description: 'QR code, bilingue, modifiers' },
-  { label: 'Commandes', href: '/features#orders', description: '4 modes de service' },
-  { label: 'Stock & Recettes', href: '/features#stock', description: 'Déstockage automatique' },
-  { label: 'Analytics', href: '/features#analytics', description: 'Rapports en temps réel' },
-  { label: 'Multi-devises', href: '/features#currencies', description: 'XAF, EUR, USD' },
-];
-
 export default function Header() {
+  const t = useTranslations('marketing.header');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeMegaMenu, setActiveMegaMenu] = useState<'solutions' | 'features' | null>(null);
 
@@ -32,6 +18,62 @@ export default function Header() {
       document.body.style.overflow = '';
     };
   }, [mobileOpen]);
+
+  const segments = [
+    {
+      label: t('segments.restaurants.label'),
+      href: '/restaurants',
+      description: t('segments.restaurants.description'),
+    },
+    {
+      label: t('segments.hotels.label'),
+      href: '/hotels',
+      description: t('segments.hotels.description'),
+    },
+    {
+      label: t('segments.quickService.label'),
+      href: '/quick-service',
+      description: t('segments.quickService.description'),
+    },
+    {
+      label: t('segments.barsCafes.label'),
+      href: '/bars-cafes',
+      description: t('segments.barsCafes.description'),
+    },
+    {
+      label: t('segments.fastFood.label'),
+      href: '/fast-food',
+      description: t('segments.fastFood.description'),
+    },
+  ];
+
+  const features = [
+    {
+      label: t('featuresList.menu.label'),
+      href: '/features#menu',
+      description: t('featuresList.menu.description'),
+    },
+    {
+      label: t('featuresList.orders.label'),
+      href: '/features#orders',
+      description: t('featuresList.orders.description'),
+    },
+    {
+      label: t('featuresList.stock.label'),
+      href: '/features#stock',
+      description: t('featuresList.stock.description'),
+    },
+    {
+      label: t('featuresList.analytics.label'),
+      href: '/features#analytics',
+      description: t('featuresList.analytics.description'),
+    },
+    {
+      label: t('featuresList.currencies.label'),
+      href: '/features#currencies',
+      description: t('featuresList.currencies.description'),
+    },
+  ];
 
   return (
     <>
@@ -54,7 +96,7 @@ export default function Header() {
               }
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
-              Solutions
+              {t('solutions')}
             </Button>
             <Button
               type="button"
@@ -63,25 +105,25 @@ export default function Header() {
               onClick={() => setActiveMegaMenu((prev) => (prev === 'features' ? null : 'features'))}
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white h-auto px-2 py-1"
             >
-              Fonctionnalités
+              {t('features')}
             </Button>
             <Link
               href="/pricing"
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
-              Tarifs
+              {t('pricing')}
             </Link>
             <Link
               href="/nouveautes"
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
-              Nouveautés
+              {t('news')}
             </Link>
             <Link
               href="/blog"
               className="text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors"
             >
-              Blog
+              {t('blog')}
             </Link>
           </nav>
 
@@ -92,13 +134,13 @@ export default function Header() {
               href="/login"
               className="hidden text-sm font-medium text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors md:block"
             >
-              Se connecter
+              {t('login')}
             </Link>
             <Link
               href="/signup"
               className="hidden bg-neutral-900 text-white rounded-lg px-5 py-2.5 text-sm font-semibold hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors md:block"
             >
-              Démarrer
+              {t('getStarted')}
             </Link>
 
             {/* Mobile hamburger */}
@@ -163,7 +205,7 @@ export default function Header() {
                   onClick={() => setActiveMegaMenu(null)}
                   className="rounded-lg p-4 text-sm font-semibold text-neutral-900 dark:text-white hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
                 >
-                  Toutes les fonctionnalités &rarr;
+                  {t('allFeatures')} &rarr;
                 </Link>
               </div>
             )}
@@ -177,7 +219,7 @@ export default function Header() {
           <div className="flex h-full flex-col overflow-y-auto px-4 py-20 pb-[env(safe-area-inset-bottom,20px)] sm:px-6">
             <div className="space-y-1">
               <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                Solutions
+                {t('solutions')}
               </p>
               {segments.map((seg) => (
                 <Link
@@ -196,40 +238,42 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Fonctionnalités
+                {t('features')}
               </Link>
               <Link
                 href="/pricing"
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Tarifs
+                {t('pricing')}
               </Link>
               <Link
                 href="/nouveautes"
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Nouveautés
+                {t('news')}
               </Link>
               <Link
                 href="/blog"
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Blog
+                {t('blog')}
               </Link>
               <Link
                 href="/login"
                 onClick={() => setMobileOpen(false)}
                 className="block rounded-lg px-4 py-3 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Se connecter
+                {t('login')}
               </Link>
             </div>
             <div className="mt-auto pt-6 space-y-4">
               <div className="flex items-center justify-between px-4 py-2">
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">Apparence</span>
+                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                  {t('appearance')}
+                </span>
                 <ThemeToggle className="w-9 h-9 flex items-center justify-center rounded-lg text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors" />
               </div>
               <Link
@@ -237,7 +281,7 @@ export default function Header() {
                 onClick={() => setMobileOpen(false)}
                 className="block w-full rounded-lg bg-neutral-900 px-6 py-3 text-center text-sm font-semibold text-white hover:bg-neutral-800 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 transition-colors"
               >
-                Démarrer gratuitement
+                {t('getStartedFree')}
               </Link>
             </div>
           </div>

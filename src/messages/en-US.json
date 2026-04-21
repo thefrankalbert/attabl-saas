@@ -218,6 +218,71 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "header": {
+      "solutions": "Solutions",
+      "features": "Features",
+      "pricing": "Pricing",
+      "news": "What's new",
+      "blog": "Blog",
+      "login": "Sign in",
+      "getStarted": "Get started",
+      "getStartedFree": "Start for free",
+      "appearance": "Appearance",
+      "allFeatures": "All features",
+      "segments": {
+        "restaurants": { "label": "Restaurants", "description": "Fine dining and table service" },
+        "hotels": { "label": "Hotels", "description": "Room service and multi-venues" },
+        "quickService": { "label": "Quick-Service", "description": "Speed and efficiency" },
+        "barsCafes": { "label": "Bars & Cafes", "description": "Counter and terrace" },
+        "fastFood": { "label": "Fast-Food", "description": "Optimized speed and volume" }
+      },
+      "featuresList": {
+        "menu": { "label": "Digital Menu", "description": "QR code, bilingual, modifiers" },
+        "orders": { "label": "Orders", "description": "4 service modes" },
+        "stock": { "label": "Stock & Recipes", "description": "Automatic inventory deduction" },
+        "analytics": { "label": "Analytics", "description": "Real-time reports" },
+        "currencies": { "label": "Multi-currency", "description": "XAF, EUR, USD" }
+      }
+    },
+    "footer": {
+      "tagline": "The modern platform\nfor hospitality",
+      "copyright": "© {year} Attabl. All rights reserved.",
+      "columns": {
+        "product": {
+          "title": "Product",
+          "links": {
+            "features": "Features",
+            "pricing": "Pricing",
+            "demo": "Demo"
+          }
+        },
+        "solutions": {
+          "title": "Solutions",
+          "links": {
+            "restaurants": "Restaurants",
+            "hotels": "Hotels",
+            "quickService": "Quick-Service",
+            "barsCafes": "Bars & Cafes",
+            "fastFood": "Fast-Food"
+          }
+        },
+        "company": {
+          "title": "Company",
+          "links": {
+            "about": "About",
+            "contact": "Contact",
+            "blog": "Blog"
+          }
+        },
+        "legal": {
+          "title": "Legal",
+          "links": {
+            "terms": "Terms",
+            "privacy": "Privacy"
+          }
+        }
+      }
+    },
     "about": {
       "metaTitle": "About",
       "metaDescription": "Discover ATTABL, the SaaS platform for digital restaurant and hospitality management.",
