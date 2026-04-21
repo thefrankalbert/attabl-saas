@@ -1,4 +1,4 @@
-'use client';
+import { useTranslations } from 'next-intl';
 
 interface MicroRowProps {
   ordersToday: number;
@@ -10,11 +10,16 @@ interface MicroRowProps {
 /**
  * Three sober indicators under the hero: Commandes / Sites / Alertes.
  * Matches Dashboard ATTABL.html :: .micro.
+ *
+ * No interactive state — imports useTranslations from a client ancestor
+ * but doesn't declare 'use client' itself so Next can include it in the
+ * parent's client bundle without marking it a boundary of its own.
  */
 export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: MicroRowProps) {
+  const t = useTranslations('admin.tenants.commandCenter.micro');
   return (
     <div className="-mt-2 flex items-end gap-8">
-      <MicroCell label="Commandes">
+      <MicroCell label={t('orders')}>
         <span
           className="cc-mono block whitespace-nowrap text-[22px] font-normal tracking-tight"
           style={{ color: 'var(--cc-text)' }}
@@ -23,7 +28,7 @@ export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: 
         </span>
       </MicroCell>
 
-      <MicroCell label="Sites">
+      <MicroCell label={t('sites')}>
         <span
           className="cc-mono mt-2 inline-flex items-center gap-1.5 whitespace-nowrap text-[13px]"
           style={{ color: 'var(--cc-accent-ink)' }}
@@ -33,11 +38,11 @@ export function MicroRow({ ordersToday, sitesOnline, sitesTotal, alertsCount }: 
             className="size-1.5 rounded-full"
             style={{ background: 'var(--cc-accent-ink)' }}
           />
-          {sitesOnline} / {sitesTotal} en ligne
+          {t('sitesOnline', { online: sitesOnline, total: sitesTotal })}
         </span>
       </MicroCell>
 
-      <MicroCell label="Alertes">
+      <MicroCell label={t('alerts')}>
         {alertsCount > 0 ? (
           <span
             className="cc-mono block whitespace-nowrap text-[22px] font-normal tracking-tight"
