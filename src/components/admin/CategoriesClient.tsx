@@ -246,19 +246,12 @@ export default function CategoriesClient({
       setIsReordering(true);
       try {
         const previousIndexMap = new Map(previous.map((c, i) => [c.id, i]));
-        const updatePromises = reordered
-          .map((cat, i) => ({ cat, i }))
-          .filter(({ cat, i }) => previousIndexMap.get(cat.id) !== i)
-          .map(({ cat, i }) =>
-            supabase
-              .from('categories')
-              .update({ display_order: i })
-              .eq('id', cat.id)
-              .eq('tenant_id', tenantId),
-          );
-        const results = await Promise.all(updatePromises);
-        const error = results.find((r) => r.error)?.error;
-        if (error) throw error;
+        const updates = reordered
+          .map((cat, i) => ({ id: cat.id, display_order: i, idx: i }))
+          .filter((u) => previousIndexMap.get(u.id) !== u.idx)
+          .map(({ id, display_order }) => ({ id, display_order }));
+        const service = createCategoryService(supabase);
+        await service.reorderCategories(tenantId, updates);
         revalidateMenuCache();
       } catch (err: unknown) {
         // Rollback on error
@@ -339,13 +332,10 @@ export default function CategoriesClient({
     }
 
     // Check if category is linked to any menu
-    const { data: menuLinks } = await supabase
-      .from('menu_categories')
-      .select('id')
-      .eq('category_id', cat.id)
-      .limit(1);
+    const service = createCategoryService(supabase);
+    const isLinked = await service.isCategoryLinkedToMenu(cat.id);
 
-    if (menuLinks && menuLinks.length > 0) {
+    if (isLinked) {
       toast({
         title: t('categoryLinkedToMenu') || 'Cette categorie est liee a un menu',
         variant: 'destructive',

@@ -356,18 +356,15 @@ export default function ItemsClient({
                     const item = items.find((i) => i.id === id);
                     return item && !item.is_available;
                   });
-                  const results = await Promise.all(
+                  const menuItemService = createMenuItemService(supabase);
+                  const results = await Promise.allSettled(
                     [...selectedIds].map((id) => {
                       const item = items.find((i) => i.id === id);
-                      if (!item) return Promise.resolve(null);
-                      return supabase
-                        .from('menu_items')
-                        .update({ is_available: targetAvailability })
-                        .eq('id', item.id)
-                        .eq('tenant_id', tenantId);
+                      if (!item) return Promise.resolve();
+                      return menuItemService.toggleAvailable(item.id, targetAvailability, tenantId);
                     }),
                   );
-                  const failed = results.filter((r) => r?.error);
+                  const failed = results.filter((r) => r.status === 'rejected');
                   if (failed.length > 0) {
                     toast({ title: tc('error'), variant: 'destructive' });
                   } else {

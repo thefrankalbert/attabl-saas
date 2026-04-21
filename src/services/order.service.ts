@@ -391,5 +391,95 @@ export function createOrderService(supabase: SupabaseClient) {
         total: result.total,
       };
     },
+
+    /**
+     * Update an order's status. Always filters by tenant_id for isolation.
+     */
+    async updateStatus(orderId: string, tenantId: string, status: string): Promise<void> {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status })
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
+
+      if (error) {
+        throw new ServiceError('Erreur lors de la mise a jour du statut', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * Mark an order as paid - updates payment_method, payment_status,
+     * paid_at, status to 'delivered', and optionally tip_amount.
+     * Always filters by tenant_id for isolation.
+     */
+    async markPaid(
+      orderId: string,
+      tenantId: string,
+      payload: { method: string; tipAmount?: number },
+    ): Promise<void> {
+      const update: Record<string, unknown> = {
+        payment_method: payload.method,
+        payment_status: 'paid',
+        paid_at: new Date().toISOString(),
+        status: 'delivered',
+      };
+      if (payload.tipAmount && payload.tipAmount > 0) {
+        update.tip_amount = payload.tipAmount;
+      }
+
+      const { error } = await supabase
+        .from('orders')
+        .update(update)
+        .eq('id', orderId)
+        .eq('tenant_id', tenantId);
+
+      if (error) {
+        throw new ServiceError('Erreur lors du paiement', 'INTERNAL', error);
+      }
+    },
+
+    /**
+     * List orders in 'ready' status created since midnight for a tenant.
+     * Used by the ServiceManager dashboard.
+     */
+    async listReadyOrdersToday(tenantId: string): Promise<unknown[]> {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('tenant_id', tenantId)
+        .eq('status', 'ready')
+        .gte('created_at', todayStart.toISOString())
+        .order('created_at', { ascending: true });
+      if (error) {
+        throw new ServiceError('Erreur chargement commandes pretes', 'INTERNAL', error);
+      }
+      return (data as unknown[]) || [];
+    },
+
+    /**
+     * Return the current (not delivered, not cancelled) order for a
+     * specific table, if any. Used by ServiceManager table detail panel.
+     */
+    async getCurrentOrderForTable(tenantId: string, tableId: string): Promise<unknown | null> {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('tenant_id', tenantId)
+        .eq('table_id', tableId)
+        .not('status', 'in', '(delivered,cancelled)')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) {
+        throw new ServiceError(
+          'Erreur chargement commande courante pour cette table',
+          'INTERNAL',
+          error,
+        );
+      }
+      return data || null;
+    },
   };
 }

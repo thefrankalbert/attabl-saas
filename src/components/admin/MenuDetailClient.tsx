@@ -23,6 +23,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { createMenuService } from '@/services/menu.service';
 import { useToast } from '@/components/ui/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,41 +118,12 @@ export default function MenuDetailClient({
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: menuData } = await supabase
-        .from('menus')
-        .select('*, venue:venues(id, name, slug)')
-        .eq('id', menu.id)
-        .single();
-      if (menuData) setMenu(menuData as Menu);
-
-      const { data: catData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .eq('menu_id', menu.id)
-        .order('display_order', { ascending: true });
-      if (catData) setCategories(catData as Category[]);
-
-      const { data: availData } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('tenant_id', tenantId)
-        .is('menu_id', null)
-        .order('name', { ascending: true });
-      if (availData) setAvailableCategories(availData as Category[]);
-
-      const catIds = (catData || []).map((c: { id: string }) => c.id);
-      if (catIds.length > 0) {
-        const { data: itemsData } = await supabase
-          .from('menu_items')
-          .select('*, category:categories(id, name), modifiers:item_modifiers(*)')
-          .eq('tenant_id', tenantId)
-          .in('category_id', catIds)
-          .order('created_at', { ascending: true });
-        setItems((itemsData as MenuItem[]) || []);
-      } else {
-        setItems([]);
-      }
+      const service = createMenuService(supabase);
+      const bundle = await service.getMenuDetailBundle(tenantId, menu.id);
+      setMenu(bundle.menu as Menu);
+      setCategories(bundle.categories as Category[]);
+      setAvailableCategories(bundle.availableCategories as Category[]);
+      setItems(bundle.items as MenuItem[]);
     } catch {
       toast({ title: t('loadingError'), variant: 'destructive' });
     } finally {

@@ -17,6 +17,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { createClient } from '@/lib/supabase/client';
+import { createOrderService } from '@/services/order.service';
 import { useToast } from '@/components/ui/use-toast';
 import type { Order, OrderStatus, Tenant, CurrencyCode } from '@/types/admin.types';
 import { STATUS_STYLES } from '@/lib/design-tokens';
@@ -49,19 +50,14 @@ export default function OrderDetails({
   const seg = useSegmentTerms();
   const locale = useLocale();
   const { toast } = useToast();
-  const supabase = createClient();
 
   const fmt = (amount: number) => formatCurrency(amount, currency);
 
   const handleStatusUpdate = async (status: OrderStatus) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('orders')
-        .update({ status })
-        .eq('id', order.id)
-        .eq('tenant_id', order.tenant_id);
-      if (error) throw error;
+      const service = createOrderService(createClient());
+      await service.updateStatus(order.id, order.tenant_id, status);
       toast({ title: t('statusUpdated') });
       onUpdate();
       if (status === 'delivered') onClose();

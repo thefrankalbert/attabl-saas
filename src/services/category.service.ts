@@ -92,5 +92,52 @@ export function createCategoryService(supabase: SupabaseClient) {
         throw new ServiceError("Erreur lors de l'assignation de la categorie", 'INTERNAL', error);
       }
     },
+
+    /**
+     * Update the display_order of many categories in a single batch.
+     * Only the categories whose order actually changed need to be passed.
+     */
+    async reorderCategories(
+      tenantId: string,
+      updates: { id: string; display_order: number }[],
+    ): Promise<void> {
+      const promises = updates.map(({ id, display_order }) =>
+        supabase
+          .from('categories')
+          .update({ display_order })
+          .eq('id', id)
+          .eq('tenant_id', tenantId),
+      );
+      const results = await Promise.all(promises);
+      const error = results.find((r) => r.error)?.error;
+      if (error) {
+        throw new ServiceError(
+          'Erreur lors du re-ordonnancement des categories',
+          'INTERNAL',
+          error,
+        );
+      }
+    },
+
+    /**
+     * Returns true if the category is linked to at least one menu via
+     * the menu_categories pivot table.
+     */
+    async isCategoryLinkedToMenu(categoryId: string): Promise<boolean> {
+      const { data, error } = await supabase
+        .from('menu_categories')
+        .select('id')
+        .eq('category_id', categoryId)
+        .limit(1);
+
+      if (error) {
+        throw new ServiceError(
+          'Erreur lors de la verification du menu de la categorie',
+          'INTERNAL',
+          error,
+        );
+      }
+      return (data || []).length > 0;
+    },
   };
 }

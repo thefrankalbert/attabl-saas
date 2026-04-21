@@ -64,6 +64,41 @@ export function createSuggestionService(supabase: SupabaseClient) {
         throw new ServiceError('Erreur lors de la suppression des suggestions', 'INTERNAL', error);
       }
     },
+
+    /**
+     * List all available menu items for a tenant (id + name only).
+     */
+    async listAvailableItems(tenantId: string): Promise<{ id: string; name: string }[]> {
+      const { data, error } = await supabase
+        .from('menu_items')
+        .select('id, name')
+        .eq('tenant_id', tenantId)
+        .eq('is_available', true)
+        .order('name');
+      if (error) {
+        throw new ServiceError('Erreur lors du chargement des articles', 'INTERNAL', error);
+      }
+      return (data as { id: string; name: string }[]) || [];
+    },
+
+    /**
+     * List active suggestions for a tenant with joined source/target
+     * menu item names for display.
+     */
+    async listActiveSuggestions(tenantId: string): Promise<unknown[]> {
+      const { data, error } = await supabase
+        .from('item_suggestions')
+        .select(
+          '*, menu_item:menu_items!item_suggestions_menu_item_id_fkey(name), suggested_item:menu_items!item_suggestions_suggested_item_id_fkey(name)',
+        )
+        .eq('tenant_id', tenantId)
+        .eq('is_active', true)
+        .order('display_order');
+      if (error) {
+        throw new ServiceError('Erreur lors du chargement des suggestions', 'INTERNAL', error);
+      }
+      return (data as unknown[]) || [];
+    },
   };
 }
 
