@@ -27,6 +27,30 @@ const eslintConfig = defineConfig([
     // Root-level prototype / scratch files
     'prototype-*.{js,jsx,ts,tsx}',
   ]),
+  // Accessibility: promote critical jsx-a11y rules from warning to error so
+  // CI rejects regressions (alt text, role/aria mismatches, labels, kbd
+  // interaction). Less-objective rules (click-events-have-key-events,
+  // no-static-element-interactions) stay as warnings because they
+  // over-trigger on framer-motion and drag-drop surfaces.
+  {
+    files: ['src/**/*.{ts,tsx}'],
+    ignores: ['src/components/ui/**', 'src/__tests__/**', '**/__tests__/**'],
+    rules: {
+      'jsx-a11y/alt-text': 'error',
+      'jsx-a11y/anchor-has-content': 'error',
+      'jsx-a11y/aria-props': 'error',
+      'jsx-a11y/aria-proptypes': 'error',
+      'jsx-a11y/aria-unsupported-elements': 'error',
+      'jsx-a11y/role-has-required-aria-props': 'error',
+      'jsx-a11y/role-supports-aria-props': 'error',
+      'jsx-a11y/heading-has-content': 'error',
+      'jsx-a11y/iframe-has-title': 'error',
+      'jsx-a11y/img-redundant-alt': 'error',
+      'jsx-a11y/no-redundant-roles': 'error',
+      'jsx-a11y/tabindex-no-positive': 'error',
+      'jsx-a11y/scope': 'error',
+    },
+  },
   // Anti-regression: bloquer les elements HTML natifs en faveur de shadcn/ui
   // Les fichiers dans src/components/ui/ sont exclus (ce sont les composants shadcn eux-memes)
   {
