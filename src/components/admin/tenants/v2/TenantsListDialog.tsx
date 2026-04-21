@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Search } from 'lucide-react';
 import {
   Dialog,
@@ -29,8 +30,8 @@ function initialsFor(name: string): string {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 }
 
-function formatFull(value: number): string {
-  return Math.round(value).toLocaleString('fr-FR');
+function formatFull(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
 const GRADIENTS = [
@@ -49,7 +50,11 @@ export function TenantsListDialog({
   onOpenDashboard,
   onOpenMenu,
 }: TenantsListDialogProps) {
+  const t = useTranslations('admin.tenants.commandCenter.tenantsDialog');
+  const tEst = useTranslations('admin.tenants.commandCenter.establishments');
+  const locale = useLocale();
   const [query, setQuery] = useState('');
+  const nf = new Intl.NumberFormat(locale, { maximumFractionDigits: 0 });
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -64,10 +69,11 @@ export function TenantsListDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl cc-shell" style={{ color: 'var(--cc-text)' }}>
         <DialogHeader>
-          <DialogTitle>Tous les etablissements</DialogTitle>
+          <DialogTitle>{t('title')}</DialogTitle>
           <DialogDescription>
-            {locations.length.toLocaleString('fr-FR')} etablissement
-            {locations.length > 1 ? 's' : ''} enregistre{locations.length > 1 ? 's' : ''}
+            {locations.length > 1
+              ? t('subtitlePlural', { count: nf.format(locations.length) })
+              : t('subtitleSingle', { count: nf.format(locations.length) })}
           </DialogDescription>
         </DialogHeader>
 
@@ -80,7 +86,7 @@ export function TenantsListDialog({
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher par nom ou sous-domaine..."
+            placeholder={t('searchPlaceholder')}
             className="pl-9"
             autoFocus
           />
@@ -92,7 +98,7 @@ export function TenantsListDialog({
               className="px-4 py-10 text-center text-[12px]"
               style={{ color: 'var(--cc-text-3)' }}
             >
-              {`Aucun resultat pour "${query}"`}
+              {t('noResults', { query })}
             </div>
           ) : (
             <ul className="flex flex-col gap-0.5">
@@ -107,7 +113,7 @@ export function TenantsListDialog({
                         onOpenDashboard(loc.tenant_slug);
                         onOpenChange(false);
                       }}
-                      aria-label={`Ouvrir le dashboard de ${loc.tenant_name}`}
+                      aria-label={tEst('openDashboard', { name: loc.tenant_name })}
                       className={cn(
                         'grid h-auto w-full grid-cols-[auto_1fr_auto] items-center gap-3 rounded-md px-2 py-2 text-left font-normal shadow-none transition-colors',
                         'justify-start hover:bg-[var(--cc-surface-2)]',
@@ -146,12 +152,12 @@ export function TenantsListDialog({
                         className="cc-mono whitespace-nowrap text-[13px]"
                         style={{ color: 'var(--cc-text)' }}
                       >
-                        {formatFull(loc.revenue_today)} F
+                        {formatFull(loc.revenue_today, locale)} F
                         <span
                           className="mt-0.5 block text-[11px] font-normal"
                           style={{ color: 'var(--cc-text-3)' }}
                         >
-                          {loc.orders_today} cmd.
+                          {nf.format(loc.orders_today)} {tEst('ordersShort')}
                         </span>
                       </div>
                     </Button>
@@ -164,11 +170,11 @@ export function TenantsListDialog({
                           onOpenMenu(loc.tenant_slug);
                           onOpenChange(false);
                         }}
-                        aria-label={`Ouvrir le menu client de ${loc.tenant_name}`}
+                        aria-label={tEst('openMenu', { name: loc.tenant_name })}
                         className="absolute right-3 top-1/2 z-10 h-6 -translate-y-1/2 rounded-md px-2 text-[11px] opacity-0 focus-visible:opacity-100 group-hover:opacity-100"
                         style={{ color: 'var(--cc-text-3)' }}
                       >
-                        Menu
+                        {t('menu')}
                       </Button>
                     )}
                   </li>

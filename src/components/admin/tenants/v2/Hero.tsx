@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface HeroProps {
   /** Revenue today, in the display currency (FCFA by default). */
@@ -12,15 +12,24 @@ interface HeroProps {
   currencyLabel?: string;
 }
 
-function formatMoney(value: number): string {
-  return Math.round(value).toLocaleString('fr-FR');
+function formatMoney(value: number, locale: string): string {
+  return new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(Math.round(value));
 }
 
-function formatDelta(today: number, yesterday: number, vsLabel: string): string | null {
+function formatDelta(
+  today: number,
+  yesterday: number,
+  vsLabel: string,
+  locale: string,
+): string | null {
   if (yesterday <= 0) return null;
   const delta = ((today - yesterday) / yesterday) * 100;
   const sign = delta > 0 ? '+' : delta < 0 ? '-' : '';
-  return `${sign}${Math.abs(delta).toFixed(1).replace('.', ',')}% ${vsLabel}`;
+  const formatted = new Intl.NumberFormat(locale, {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(Math.abs(delta));
+  return `${sign}${formatted}% ${vsLabel}`;
 }
 
 type RelativeT = (
@@ -47,6 +56,7 @@ export function Hero({
   currencyLabel = 'FCFA',
 }: HeroProps) {
   const t = useTranslations('admin.tenants.commandCenter.hero');
+  const locale = useLocale();
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
@@ -54,7 +64,7 @@ export function Hero({
     return () => clearInterval(timer);
   }, []);
 
-  const delta = formatDelta(revenueToday, revenueYesterday, t('vsYesterday'));
+  const delta = formatDelta(revenueToday, revenueYesterday, t('vsYesterday'), locale);
   const relative = formatRelative(lastOrderAt, now, t as unknown as RelativeT);
 
   return (
@@ -79,7 +89,7 @@ export function Hero({
           lineHeight: 1,
         }}
       >
-        <span>{formatMoney(revenueToday)}</span>
+        <span>{formatMoney(revenueToday, locale)}</span>
         <span
           className="text-[22px] font-normal tracking-tight"
           style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}

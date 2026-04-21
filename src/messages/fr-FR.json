@@ -946,6 +946,14 @@
   "admin": {
     "tenants": {
       "commandCenter": {
+        "tenantsDialog": {
+          "title": "Tous les etablissements",
+          "subtitleSingle": "{count} etablissement enregistre",
+          "subtitlePlural": "{count} etablissements enregistres",
+          "searchPlaceholder": "Rechercher par nom ou sous-domaine...",
+          "noResults": "Aucun resultat pour \"{query}\"",
+          "menu": "Menu"
+        },
         "alerts": {
           "orderCancelled": "Commande #{number} annulée",
           "siteOffline": "Site désactivé"
