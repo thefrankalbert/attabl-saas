@@ -3,6 +3,7 @@
 import { useState, useCallback, useSyncExternalStore } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Globe,
   ChevronRight,
@@ -245,8 +246,14 @@ export default function ClientSettings({
               style={{ backgroundColor: 'rgb(246, 246, 246)' }}
             >
               {tenantLogo ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={tenantLogo} alt={tenantName} className="w-full h-full object-cover" />
+                <Image
+                  src={tenantLogo}
+                  alt={tenantName}
+                  width={80}
+                  height={80}
+                  className="w-full h-full object-cover"
+                  unoptimized={tenantLogo.startsWith('data:') || tenantLogo.startsWith('blob:')}
+                />
               ) : (
                 <span className="text-2xl font-bold" style={{ color: 'rgb(176, 176, 176)' }}>
                   {tenantName.slice(0, 1).toUpperCase()}
