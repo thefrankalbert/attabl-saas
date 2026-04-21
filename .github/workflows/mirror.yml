@@ -1,0 +1,53 @@
+name: Mirror to GitLab
+
+# Pushes every branch + every tag of this GitHub repo to a GitLab mirror.
+# This is the "branche de choco" safety net: even if this GitHub repo is
+# lost, compromised, or force-pushed by mistake, the GitLab mirror still
+# holds an intact copy of every commit and tag.
+#
+# Secrets required (Settings -> Secrets and variables -> Actions):
+#   GITLAB_USERNAME  the GitLab username that owns the access token (for
+#                    a Personal Access Token this is your login; for a
+#                    Project Access Token the literal string "oauth2").
+#   GITLAB_TOKEN     a Personal or Project Access Token with the
+#                    write_repository scope.
+#
+# The GitLab target URL is hardcoded below. Update GITLAB_URL if the
+# GitLab project owner/name ever changes.
+
+on:
+  push:
+    branches: ['**']
+    tags: ['**']
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+env:
+  GITLAB_URL: https://gitlab.com/odcsupportagency/odc-support-agency-project.git
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push every ref to GitLab
+        env:
+          GITLAB_USERNAME: ${{ secrets.GITLAB_USERNAME }}
+          GITLAB_TOKEN: ${{ secrets.GITLAB_TOKEN }}
+          GITLAB_URL: ${{ env.GITLAB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GITLAB_USERNAME}" ] || [ -z "${GITLAB_TOKEN}" ]; then
+            echo "::error::GITLAB_USERNAME and/or GITLAB_TOKEN secrets are not set."
+            exit 1
+          fi
+          REMOTE="https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@${GITLAB_URL#https://}"
+          git remote add gitlab "${REMOTE}"
+          git push --mirror gitlab
+          git remote remove gitlab

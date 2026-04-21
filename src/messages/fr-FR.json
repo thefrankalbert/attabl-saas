@@ -218,6 +218,71 @@
     "lobbyBar": "Lobby Bar"
   },
   "marketing": {
+    "privacy": {
+      "metaTitle": "Politique de Confidentialité",
+      "metaDescription": "Politique de confidentialité et protection des données personnelles d'ATTABL.",
+      "heading": "Politique de Confidentialité",
+      "lastUpdate": "Dernière mise à jour : 28 février 2026",
+      "section1Title": "1. Responsable du traitement",
+      "section1Body": "ATTABL, plateforme SaaS de gestion digitale pour la restauration, est responsable du traitement des données personnelles collectées via le site attabl.com.",
+      "section2Title": "2. Données collectées",
+      "section2Body": "Nous collectons les données suivantes : nom, adresse email, informations de l'établissement (nom, adresse, téléphone), et données de navigation (cookies analytiques). Les données de paiement sont traitées directement par Stripe et ne sont pas stockées sur nos serveurs.",
+      "section3Title": "3. Finalités",
+      "section3Body": "Les données sont utilisées pour : la gestion de votre compte, la fourniture du service, la facturation, le support client, et l'amélioration de la plateforme.",
+      "section4Title": "4. Hébergement et sécurité",
+      "section4Body": "Les données sont hébergées par Supabase (infrastructure cloud sécurisée). L'application est déployée sur Vercel. Toutes les communications sont chiffrées (HTTPS/TLS).",
+      "section5Title": "5. Vos droits",
+      "section5Body": "Conformément au RGPD, vous disposez d'un droit d'accès, de rectification, de suppression et de portabilité de vos données. Contactez-nous à",
+      "section6Title": "6. Cookies",
+      "section6Body": "Nous utilisons des cookies essentiels au fonctionnement du service (authentification, préférences de langue). Aucun cookie publicitaire n'est utilisé."
+    },
+    "features": {
+      "metaTitle": "Fonctionnalités",
+      "metaDescription": "Découvrez toutes les fonctionnalités d'ATTABL : menu digital, commandes, stock, analytics et plus.",
+      "heroTitle": "Tout ce dont vous avez besoin",
+      "heroSubtitle": "Une plateforme complète pour gérer votre activité.",
+      "categories": {
+        "menu": {
+          "title": "Menu & Commandes",
+          "items": {
+            "digitalMenu": {
+              "title": "Menu digital bilingue",
+              "description": "QR code, FR/EN, modifiers payants"
+            },
+            "serviceModes": {
+              "title": "4 modes de service",
+              "description": "Dine-in, takeaway, delivery, room service"
+            }
+          }
+        },
+        "stock": {
+          "title": "Stock & Recettes",
+          "items": {
+            "autoStock": {
+              "title": "Stock automatisé",
+              "description": "Déstockage en temps réel par ingrédient"
+            }
+          }
+        },
+        "business": {
+          "title": "Business",
+          "items": {
+            "analytics": {
+              "title": "Analytics temps réel",
+              "description": "Revenus, best-sellers, tendances"
+            },
+            "multiCurrency": {
+              "title": "Multi-devises",
+              "description": "XAF, EUR, USD"
+            },
+            "multiTenant": {
+              "title": "Multi-tenant",
+              "description": "Gérez plusieurs établissements"
+            }
+          }
+        }
+      }
+    },
     "home": {
       "videoHero": {
         "titleLine1": "Petit comptoir",
