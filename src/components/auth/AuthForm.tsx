@@ -185,7 +185,7 @@ function AuthForm({ mode }: AuthFormProps) {
     } finally {
       setResending(false);
     }
-  }, [email, resending, resendCooldown]);
+  }, [email, resending, resendCooldown, tErr]);
 
   // Show confirmation sent screen after signup
   if (confirmationSent) {
