@@ -157,7 +157,7 @@ export function PromoSection({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-2 text-[12px] text-[#FF3008] flex items-center gap-1"
+            className="mt-2 text-xs text-[#FF3008] flex items-center gap-1"
           >
             <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
             {promoError}
@@ -168,7 +168,7 @@ export function PromoSection({
             initial={{ opacity: 0, y: -4 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
-            className="mt-2 text-[12px] text-[#1A1A1A] flex items-center gap-1"
+            className="mt-2 text-xs text-[#1A1A1A] flex items-center gap-1"
           >
             <Check className="w-3.5 h-3.5 flex-shrink-0" />
             {labels.promoApplied}

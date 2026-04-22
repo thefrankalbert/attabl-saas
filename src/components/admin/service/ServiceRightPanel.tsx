@@ -303,7 +303,7 @@ function ServerCard({
             {vm.assignedTables.map((t) => (
               <span
                 key={t}
-                className="rounded-sm bg-app-bg px-1.5 py-0.5 font-mono text-[9px] text-app-text-secondary"
+                className="rounded-sm bg-app-bg px-1.5 py-0.5 font-mono text-[10px] text-app-text-secondary"
               >
                 {t}
               </span>
@@ -360,7 +360,7 @@ function OrderCard({
       </div>
       <div className="flex items-center justify-between border-t border-dashed border-app-border/60 pt-2">
         <span className="flex items-center gap-1.5">
-          <span className="rounded-sm bg-status-warning/15 px-1.5 py-px text-[9px] font-semibold tracking-wide uppercase text-status-warning">
+          <span className="rounded-sm bg-status-warning/15 px-1.5 py-px text-[10px] font-semibold tracking-wide uppercase text-status-warning">
             {labels.itemsCount(items.length)}
           </span>
           <span className="font-mono text-[10px] text-app-text-muted">

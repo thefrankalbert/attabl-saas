@@ -71,7 +71,7 @@ export function WelcomeStep({ tenantName, onStart }: WelcomeStepProps) {
                   <div className="flex flex-col items-center">
                     <div className="w-10 h-10 rounded-full border border-border bg-card flex items-center justify-center flex-shrink-0 relative">
                       <Icon className="h-[18px] w-[18px] text-primary" strokeWidth={1.8} />
-                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-[8px] font-bold text-muted-foreground leading-none">
+                      <span className="absolute -top-1 -right-1 w-[18px] h-[18px] rounded-full bg-muted border border-border flex items-center justify-center text-[10px] font-bold text-muted-foreground leading-none">
                         {phase.num}
                       </span>
                     </div>

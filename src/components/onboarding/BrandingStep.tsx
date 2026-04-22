@@ -284,7 +284,7 @@ export function BrandingStep({ data, updateData }: BrandingStepProps) {
                             style={{ backgroundColor: preset.primary }}
                           />
                         </div>
-                        <span className="text-[7px] font-semibold text-app-text-muted truncate w-full text-center">
+                        <span className="text-[10px] font-semibold text-app-text-muted truncate w-full text-center">
                           {preset.name}
                         </span>
                       </Button>

@@ -103,7 +103,7 @@ export function ChartPanelMinimal({
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-3 flex items-center justify-between">
         <div
-          className="text-[12px] font-medium tracking-[0.02em]"
+          className="text-xs font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
           {period === 'day'
@@ -141,7 +141,7 @@ export function ChartPanelMinimal({
       >
         {!hasEnoughData && (
           <div
-            className="absolute inset-0 flex items-center justify-center text-[12px]"
+            className="absolute inset-0 flex items-center justify-center text-xs"
             style={{ color: 'var(--cc-text-3)' }}
           >
             Pas encore assez de donnees

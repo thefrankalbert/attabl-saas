@@ -431,7 +431,7 @@ export default function ItemDetailSheet({
                       onClick={() => setQuantity((q) => Math.max(1, q - 1))}
                       className="w-9 h-9 active:opacity-60"
                       disabled={quantity <= 1}
-                      aria-label="Diminuer la quantite"
+                      aria-label={t('ariaDecrease')}
                     >
                       <Minus className="h-4 w-4 text-app-text" />
                     </Button>
@@ -445,7 +445,7 @@ export default function ItemDetailSheet({
                       size="icon"
                       onClick={() => setQuantity((q) => q + 1)}
                       className="w-9 h-9 active:opacity-60"
-                      aria-label="Augmenter la quantite"
+                      aria-label={t('ariaIncrease')}
                     >
                       <Plus className="h-4 w-4 text-app-text" />
                     </Button>

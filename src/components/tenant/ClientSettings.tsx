@@ -81,7 +81,7 @@ function SettingsRow({
           <p className="text-[13px] font-bold truncate" style={{ color: 'rgb(26, 26, 26)' }}>
             {label}
           </p>
-          <p className="text-[12px] font-medium truncate" style={{ color: 'rgb(115, 115, 115)' }}>
+          <p className="text-xs font-medium truncate" style={{ color: 'rgb(115, 115, 115)' }}>
             {subtitle}
           </p>
         </div>
@@ -338,7 +338,7 @@ export default function ClientSettings({
                   <p className="text-[13px] font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {t('languageLabel')}
                   </p>
-                  <p className="text-[12px] font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
+                  <p className="text-xs font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('currentLanguage')}
                   </p>
                 </div>
@@ -395,7 +395,7 @@ export default function ClientSettings({
                   <p className="text-[13px] font-bold" style={{ color: 'rgb(26, 26, 26)' }}>
                     {t('currencyLabel')}
                   </p>
-                  <p className="text-[12px] font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
+                  <p className="text-xs font-medium" style={{ color: 'rgb(115, 115, 115)' }}>
                     {t('priceDisplay')}
                   </p>
                 </div>
