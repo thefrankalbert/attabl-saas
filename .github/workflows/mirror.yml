@@ -49,5 +49,12 @@ jobs:
           fi
           REMOTE="https://${GITLAB_USERNAME}:${GITLAB_TOKEN}@${GITLAB_URL#https://}"
           git remote add gitlab "${REMOTE}"
-          git push --mirror gitlab
+          # actions/checkout fetches other branches as refs/remotes/origin/*,
+          # not as local branches. git push --mirror would try to push those
+          # remote-tracking refs verbatim, which GitLab rejects as hidden
+          # refs. We remap origin/<branch> to refs/heads/<branch> on the
+          # destination, and push tags separately. --force keeps GitLab a
+          # byte-for-byte mirror even after history-rewriting pushes.
+          git push --force gitlab 'refs/remotes/origin/*:refs/heads/*'
+          git push --force --tags gitlab
           git remote remove gitlab
