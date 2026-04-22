@@ -222,6 +222,7 @@ export function LaunchStep({ data, updateData, variant = 'qr' }: LaunchStepProps
                 <Button
                   variant="outline"
                   size="icon"
+                  aria-label="Confirm all"
                   onClick={handleCopyUrl}
                   className="p-2.5 bg-app-bg rounded-xl border border-app-border hover:border-accent/40 transition-colors h-10 w-10"
                   title={t('copyUrl')}

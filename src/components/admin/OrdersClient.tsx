@@ -504,6 +504,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
               <Button
                 variant="outline"
                 size="icon"
+                aria-label="Sound settings"
                 onPointerDown={handleSoundPointerDown}
                 onPointerUp={handleSoundPointerUp}
                 onPointerLeave={handleSoundPointerLeave}
@@ -585,6 +586,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Next"
             onClick={() => {
               const ids = Array.from(selectedIds);
               const selectedOrders = ids
@@ -628,6 +630,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Delete"
             onClick={() => setShowDeleteConfirm(true)}
             title={tc('delete')}
             className="h-8 w-8 text-red-400 hover:bg-red-500/15"
@@ -637,6 +640,7 @@ export default function OrdersClient({ tenantId, initialOrders }: OrdersClientPr
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Cancel selection"
             onClick={() => {
               setSelectedIds(new Set());
             }}

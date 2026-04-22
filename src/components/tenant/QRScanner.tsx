@@ -196,6 +196,7 @@ export default function QRScanner({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Close"
           onClick={onClose}
           className="p-2 rounded-full bg-white/10 hover:bg-white/20"
         >

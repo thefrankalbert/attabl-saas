@@ -80,7 +80,7 @@ export function Hero({
       </div>
 
       <div
-        className="mb-2.5 mt-[14px] flex items-baseline gap-[14px] whitespace-nowrap"
+        className="mb-2.5 mt-[14px] flex items-baseline gap-[14px] overflow-hidden"
         style={{
           fontFamily: 'var(--cc-serif)',
           fontSize: 84,
@@ -89,7 +89,7 @@ export function Hero({
           lineHeight: 1,
         }}
       >
-        <span>{formatMoney(revenueToday, locale)}</span>
+        <span className="truncate">{formatMoney(revenueToday, locale)}</span>
         <span
           className="text-[22px] font-normal tracking-tight"
           style={{ color: 'var(--cc-text-3)', fontFamily: 'var(--cc-sans)' }}

@@ -111,6 +111,7 @@ export function PromoSection({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Close"
           onClick={() => {
             setPromoOpen(false);
             setPromoInput('');

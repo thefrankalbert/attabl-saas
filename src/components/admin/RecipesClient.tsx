@@ -356,6 +356,7 @@ export default function RecipesClient({ tenantId }: RecipesClientProps) {
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Delete"
                               onClick={() => removeLine(idx)}
                               title="Supprimer"
                               className="p-1.5 h-auto w-auto text-status-error hover:text-status-error hover:bg-status-error-bg rounded transition-colors"

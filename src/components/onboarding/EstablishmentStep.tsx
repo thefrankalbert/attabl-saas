@@ -88,6 +88,7 @@ function NumberStepper({
         <Button
           variant="outline"
           size="icon"
+          aria-label="Decrease"
           type="button"
           onClick={() => onChange(Math.max(min, value - 1))}
           disabled={value <= min}
@@ -110,6 +111,7 @@ function NumberStepper({
         <Button
           variant="outline"
           size="icon"
+          aria-label="Increase"
           type="button"
           onClick={() => onChange(Math.min(max, value + 1))}
           disabled={value >= max}

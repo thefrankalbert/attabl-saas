@@ -474,6 +474,7 @@ export default function ItemsClient({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="More options"
                         onClick={(e) => e.stopPropagation()}
                         className="h-auto w-auto p-1.5 text-app-text-muted"
                       >

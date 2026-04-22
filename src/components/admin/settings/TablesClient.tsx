@@ -399,6 +399,7 @@ export function TablesClient({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Confirm"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSaveZoneName(zone.id);
@@ -410,6 +411,7 @@ export function TablesClient({
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Cancel edit"
                         onClick={(e) => {
                           e.stopPropagation();
                           setEditingZoneId(null);
@@ -436,6 +438,7 @@ export function TablesClient({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Edit"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleStartEditZone(zone);
@@ -447,6 +450,7 @@ export function TablesClient({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Delete"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteZone(zone);
@@ -534,6 +538,7 @@ export function TablesClient({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Delete"
                           onClick={() => handleDeleteTable(table)}
                           title="Supprimer"
                           className="h-7 w-7 text-app-text-muted hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -558,6 +563,7 @@ export function TablesClient({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Confirm"
                             onClick={() => handleSaveTableName(table.id)}
                             className="h-7 w-7 text-emerald-600 hover:text-emerald-700"
                           >

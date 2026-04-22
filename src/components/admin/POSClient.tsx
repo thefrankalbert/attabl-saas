@@ -85,6 +85,7 @@ export default function POSClient({ tenantId }: POSClientProps) {
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label="Back"
                 onClick={() => router.back()}
                 className="p-3 min-h-[44px] min-w-[44px] flex items-center justify-center text-app-text-secondary hover:text-app-text transition-colors"
               >

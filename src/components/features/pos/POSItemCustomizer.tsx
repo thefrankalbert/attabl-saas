@@ -115,6 +115,7 @@ export default function POSItemCustomizer({
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Close"
             onClick={onClose}
             className="w-9 h-9 rounded-lg text-app-text-muted hover:text-app-text shrink-0 touch-manipulation"
           >

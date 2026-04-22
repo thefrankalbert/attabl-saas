@@ -144,6 +144,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Close"
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary"
         >

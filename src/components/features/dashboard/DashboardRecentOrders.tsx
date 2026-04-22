@@ -127,6 +127,7 @@ export default function DashboardRecentOrders({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Mark in preparation"
                             onClick={() => onStatusChange(order.id, 'preparing')}
                             className="p-2.5 min-h-[44px] min-w-[44px] bg-status-info-bg text-status-info rounded-xl hover:bg-status-info-bg"
                             title={t('startPreparation')}
@@ -138,6 +139,7 @@ export default function DashboardRecentOrders({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Mark complete"
                             onClick={() => onStatusChange(order.id, 'ready')}
                             className="p-2.5 min-h-[44px] min-w-[44px] bg-status-success-bg text-status-success rounded-xl hover:bg-status-success-bg"
                             title={t('markReady')}
@@ -149,6 +151,7 @@ export default function DashboardRecentOrders({
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label="Mark complete"
                             onClick={() => onStatusChange(order.id, 'delivered')}
                             className="p-2.5 min-h-[44px] min-w-[44px] bg-app-bg text-app-text-secondary rounded-xl hover:bg-app-elevated"
                             title={t('markDelivered')}

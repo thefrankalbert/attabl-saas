@@ -220,6 +220,7 @@ export default function ImageUpload({
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Close"
             onClick={resetCrop}
             disabled={isLoading}
             className="p-1.5 rounded-lg text-app-text-muted hover:text-app-text hover:bg-app-elevated transition-colors h-8 w-8"
@@ -254,6 +255,7 @@ export default function ImageUpload({
               type="button"
               variant="ghost"
               size="icon"
+              aria-label="Zoom out"
               onClick={() => setZoom((z) => Math.max(1, z - 0.2))}
               className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
             >
@@ -273,6 +275,7 @@ export default function ImageUpload({
               type="button"
               variant="ghost"
               size="icon"
+              aria-label="Zoom in"
               onClick={() => setZoom((z) => Math.min(3, z + 0.2))}
               className="p-2 rounded-lg text-app-text-secondary hover:text-app-text hover:bg-app-elevated transition-colors h-9 w-9"
             >
@@ -285,6 +288,7 @@ export default function ImageUpload({
               type="button"
               variant="ghost"
               size="icon"
+              aria-label="Reset"
               onClick={() => {
                 setCrop({ x: 0, y: 0 });
                 setZoom(1);

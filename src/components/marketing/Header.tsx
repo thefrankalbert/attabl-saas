@@ -148,6 +148,7 @@ export default function Header() {
               type="button"
               variant="ghost"
               size="icon"
+              aria-label="Open menu"
               onClick={() => setMobileOpen((prev) => !prev)}
               className="min-h-[44px] min-w-[44px] rounded-lg text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 md:hidden"
             >

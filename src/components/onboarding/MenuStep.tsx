@@ -310,6 +310,7 @@ export function MenuStep({ data, updateData }: MenuStepProps) {
                                     type="button"
                                     variant="destructive"
                                     size="icon"
+                                    aria-label="Remove image"
                                     onClick={() =>
                                       updateArticle(category.id, item.id, 'imageUrl', '')
                                     }
