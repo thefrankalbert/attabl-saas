@@ -42,6 +42,7 @@ interface Table {
 }
 
 interface TablesClientProps {
+  tenantId: string;
   venueId: string;
   initialZones: Zone[];
   initialTables: Table[];
@@ -51,6 +52,7 @@ interface TablesClientProps {
 // ─── Component ──────────────────────────────────────────
 
 export function TablesClient({
+  tenantId,
   venueId,
   initialZones,
   initialTables,
@@ -92,7 +94,7 @@ export function TablesClient({
     async (vId: string) => {
       try {
         const svc = createTableConfigService(supabase);
-        const zoneData = (await svc.listZonesForVenue(vId)) as Zone[];
+        const zoneData = (await svc.listZonesForVenue(tenantId, vId)) as Zone[];
         setZones(zoneData);
         return zoneData;
       } catch (error) {
@@ -110,7 +112,7 @@ export function TablesClient({
       setTablesLoading(true);
       try {
         const svc = createTableConfigService(supabase);
-        const tableData = (await svc.listTablesForZone(zoneId)) as Table[];
+        const tableData = (await svc.listTablesForZone(tenantId, zoneId)) as Table[];
         setTables(tableData);
       } catch (error) {
         logger.error('Failed to load tables', { error });
