@@ -168,7 +168,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                     style={{ width: '10px', height: '10px', color: '#9ca3af' }}
                     strokeWidth={1.5}
                   />
-                  <span className="text-[8px] font-medium" style={{ color: '#9ca3af' }}>
+                  <span className="text-[10px] font-medium" style={{ color: '#9ca3af' }}>
                     Rechercher un plat...
                   </span>
                 </div>
@@ -186,7 +186,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
             <div className="px-3 pt-1 pb-3" style={{ backgroundColor: '#ffffff' }}>
               {hasMenu && categories.length > 0 ? (
                 <>
-                  <p className="text-[8px] font-semibold mb-2" style={{ color: '#1f2937' }}>
+                  <p className="text-[10px] font-semibold mb-2" style={{ color: '#1f2937' }}>
                     Nos saveurs
                   </p>
                   <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
@@ -255,11 +255,11 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
               {hasMenu && featured.length > 0 ? (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[8px] font-semibold" style={{ color: '#1f2937' }}>
+                    <p className="text-[10px] font-semibold" style={{ color: '#1f2937' }}>
                       À ne pas manquer
                     </p>
                     <span
-                      className="text-[5px] font-bold uppercase tracking-wider"
+                      className="text-[10px] font-bold uppercase tracking-wider"
                       style={{ color: '#9ca3af' }}
                     >
                       Voir tout →
@@ -385,7 +385,7 @@ export function PhonePreview({ data, phase }: PhonePreviewProps) {
                 }}
               >
                 <Utensils style={{ width: '8px', height: '8px' }} />
-                <span className="text-[8px] font-bold">Voir le menu complet</span>
+                <span className="text-[10px] font-bold">Voir le menu complet</span>
               </div>
             </div>
 

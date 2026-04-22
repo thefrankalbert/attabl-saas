@@ -18,10 +18,14 @@ const buttonVariants = cva(
         link: 'text-accent underline-offset-4 hover:underline',
       },
       size: {
+        // Touch target ladder per .claude/rules/03-responsive: 44px minimum
+        // for icon (Apple/Google a11y standard), 40px for default text buttons
+        // (text padding compensates), 36px small (compact admin tables only),
+        // 44px lg (CTA).
         default: 'h-10 px-4 py-2',
         sm: 'h-9 rounded-lg px-3',
         lg: 'h-11 rounded-lg px-8',
-        icon: 'h-10 w-10',
+        icon: 'h-11 w-11',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

@@ -152,7 +152,7 @@ export function ElegantTemplate({ config, url, tenantName, tableName, logoUrl }:
         {/* Powered by Attabl */}
         {config.showPoweredBy && (
           <p
-            className="mt-1 text-[8px] text-center opacity-30"
+            className="mt-1 text-[10px] text-center opacity-30"
             style={{ color: config.templateTextColor }}
           >
             Powered by Attabl

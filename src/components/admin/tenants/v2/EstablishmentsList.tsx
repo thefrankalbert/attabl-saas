@@ -61,7 +61,7 @@ export function EstablishmentsList({
     <div>
       <div className="mb-3 flex items-baseline justify-between">
         <div
-          className="flex items-center gap-2 text-[12px] font-medium tracking-[0.02em]"
+          className="flex items-center gap-2 text-xs font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
           {t('title')}
@@ -88,7 +88,7 @@ export function EstablishmentsList({
               type="button"
               variant="ghost"
               onClick={onSeeAll}
-              className="h-auto gap-1 whitespace-nowrap rounded-md px-2 py-1 text-[12px] font-normal shadow-none"
+              className="h-auto gap-1 whitespace-nowrap rounded-md px-2 py-1 text-xs font-normal shadow-none"
               style={{ color: 'var(--cc-text-3)' }}
             >
               {t('seeAll')}
@@ -100,7 +100,7 @@ export function EstablishmentsList({
 
       <div className="flex flex-col gap-0.5">
         {visible.length === 0 ? (
-          <div className="py-6 text-center text-[12px]" style={{ color: 'var(--cc-text-3)' }}>
+          <div className="py-6 text-center text-xs" style={{ color: 'var(--cc-text-3)' }}>
             {t('empty')}
           </div>
         ) : (
@@ -167,7 +167,7 @@ function EstablishmentRow({
         style={{ color: 'var(--cc-text)' }}
       >
         <div
-          className="cc-mono grid size-[34px] shrink-0 place-items-center rounded-lg text-[12px] font-semibold text-white"
+          className="cc-mono grid size-[34px] shrink-0 place-items-center rounded-lg text-xs font-semibold text-white"
           style={{
             background: gradient,
             boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',

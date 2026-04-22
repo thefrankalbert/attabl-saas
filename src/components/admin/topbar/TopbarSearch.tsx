@@ -31,7 +31,7 @@ export function TopbarSearch({ className }: { className?: string }) {
       variant="ghost"
       onClick={openPalette}
       className={cn(
-        'hidden md:inline-flex items-center justify-start gap-2 h-auto px-2.5 py-[5px] rounded-md border border-app-border bg-app-card text-[12px] font-normal text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary transition-colors w-[220px] shadow-none',
+        'hidden md:inline-flex items-center justify-start gap-2 h-auto px-2.5 py-[5px] rounded-md border border-app-border bg-app-card text-xs font-normal text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary transition-colors w-[220px] shadow-none',
         className,
       )}
     >

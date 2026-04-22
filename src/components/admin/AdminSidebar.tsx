@@ -290,7 +290,7 @@ export function AdminSidebar({
               {!collapsed && (
                 <>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[12px] font-semibold text-app-text truncate">
+                    <p className="text-xs font-semibold text-app-text truncate">
                       {userName || t('accountMenu')}
                     </p>
                     <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
@@ -323,7 +323,7 @@ export function AdminSidebar({
                 />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-medium text-app-text truncate">
+                <p className="text-xs font-medium text-app-text truncate">
                   {userName || t('accountMenu')}
                 </p>
                 <p className="font-mono text-[10px] text-app-text-muted truncate">

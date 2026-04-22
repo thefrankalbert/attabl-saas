@@ -191,7 +191,7 @@ function ServerMini({ vm }: { vm: ServiceServerVM | undefined }) {
       .join('') || '?';
   return (
     <div className="flex min-w-0 flex-1 items-center gap-1.5">
-      <div className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-app-border bg-app-elevated text-[8px] font-semibold text-app-text-secondary">
+      <div className="grid h-4 w-4 shrink-0 place-items-center rounded-full border border-app-border bg-app-elevated text-[10px] font-semibold text-app-text-secondary">
         {initials}
       </div>
       <span className="truncate text-app-text-secondary">{firstName}</span>

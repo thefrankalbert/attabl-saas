@@ -73,7 +73,7 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
 
         {/* Footer text */}
         {config.footerText && (
-          <p className="mt-2 text-[9px] opacity-50" style={{ color: config.templateTextColor }}>
+          <p className="mt-2 text-[10px] opacity-50" style={{ color: config.templateTextColor }}>
             {config.footerText}
           </p>
         )}
@@ -106,7 +106,7 @@ export function CarteTemplate({ config, url, tenantName, tableName }: QRTemplate
       {/* Powered by Attabl */}
       {config.showPoweredBy && (
         <p
-          className="absolute bottom-1 left-0 right-0 text-center text-[8px] opacity-30 z-10"
+          className="absolute bottom-1 left-0 right-0 text-center text-[10px] opacity-30 z-10"
           style={{ color: config.templateTextColor }}
         >
           Powered by Attabl

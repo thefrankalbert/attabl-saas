@@ -137,7 +137,7 @@ export default function FullscreenSplash({
       </div>
 
       {/* Powered by */}
-      <p className="absolute bottom-8 text-[12px] text-app-text-secondary">Powered by ATTABL</p>
+      <p className="absolute bottom-8 text-xs text-app-text-secondary">Powered by ATTABL</p>
     </div>
   );
 }

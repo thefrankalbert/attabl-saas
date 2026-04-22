@@ -94,10 +94,7 @@ export function TenantsListDialog({
 
         <div className="-mx-1 max-h-[60vh] overflow-y-auto">
           {filtered.length === 0 ? (
-            <div
-              className="px-4 py-10 text-center text-[12px]"
-              style={{ color: 'var(--cc-text-3)' }}
-            >
+            <div className="px-4 py-10 text-center text-xs" style={{ color: 'var(--cc-text-3)' }}>
               {t('noResults', { query })}
             </div>
           ) : (
@@ -121,7 +118,7 @@ export function TenantsListDialog({
                       style={{ color: 'var(--cc-text)' }}
                     >
                       <div
-                        className="cc-mono grid size-9 shrink-0 place-items-center rounded-lg text-[12px] font-semibold text-white"
+                        className="cc-mono grid size-9 shrink-0 place-items-center rounded-lg text-xs font-semibold text-white"
                         style={{
                           background: GRADIENTS[idx % GRADIENTS.length],
                           boxShadow: 'inset 0 0 0 1px rgba(0,0,0,0.04)',

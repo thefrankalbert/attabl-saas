@@ -302,7 +302,7 @@ export default function ClientMenuPage({
 
         {/* Trust signals */}
         {(ratingAgg || ordersThisWeek) && (
-          <div className="px-4 pt-1 pb-2 flex items-center gap-3 text-[12px] text-gray-600">
+          <div className="px-4 pt-1 pb-2 flex items-center gap-3 text-xs text-gray-600">
             {ratingAgg && (
               <span className="flex items-center gap-1">
                 <Star size={13} className="fill-amber-500 text-amber-500" />

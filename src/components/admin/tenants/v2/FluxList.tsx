@@ -52,7 +52,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="mb-3 flex items-baseline justify-between">
         <div
-          className="flex items-center gap-2 text-[12px] font-medium tracking-[0.02em]"
+          className="flex items-center gap-2 text-xs font-medium tracking-[0.02em]"
           style={{ color: 'var(--cc-text-2)' }}
         >
           {t('title')}
@@ -62,7 +62,7 @@ export function FluxList({ orders, onSelect, max = 5, multiTenant = true }: Flux
 
       <div className="flex min-h-0 flex-1 flex-col">
         {visible.length === 0 ? (
-          <div className="py-6 text-center text-[12px]" style={{ color: 'var(--cc-text-3)' }}>
+          <div className="py-6 text-center text-xs" style={{ color: 'var(--cc-text-3)' }}>
             {t('empty')}
           </div>
         ) : (
@@ -110,7 +110,7 @@ function FluxRow({ order, isFirst, showTenant, onClick, statusLabel, locale }: F
       />
       <div className="min-w-0">
         <div
-          className="cc-mono truncate whitespace-nowrap text-[12px]"
+          className="cc-mono truncate whitespace-nowrap text-xs"
           style={{ color: 'var(--cc-text)' }}
         >
           #{order.order_number || order.id.slice(0, 8)}

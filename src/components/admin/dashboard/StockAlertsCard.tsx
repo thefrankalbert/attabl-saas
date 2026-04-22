@@ -59,7 +59,7 @@ export function StockAlertsCard({
       </div>
 
       {count === 0 ? (
-        <div className="px-5 py-8 text-center text-[12px] text-app-text-muted">{emptyLabel}</div>
+        <div className="px-5 py-8 text-center text-xs text-app-text-muted">{emptyLabel}</div>
       ) : (
         <ul>
           {alerts.map((a) => {
@@ -67,7 +67,7 @@ export function StockAlertsCard({
             return (
               <li
                 key={a.id}
-                className="flex gap-3 items-center px-4 py-3 border-b border-app-border last:border-b-0 text-[12px]"
+                className="flex gap-3 items-center px-4 py-3 border-b border-app-border last:border-b-0 text-xs"
               >
                 <span
                   className={cn(
@@ -92,7 +92,7 @@ export function StockAlertsCard({
       {viewAllHref && viewAllLabel && count > 0 && (
         <Link
           href={viewAllHref}
-          className="block border-t border-app-border px-5 py-2.5 text-[12px] text-accent hover:bg-app-elevated transition-colors"
+          className="block border-t border-app-border px-5 py-2.5 text-xs text-accent hover:bg-app-elevated transition-colors"
         >
           {viewAllLabel}
         </Link>
