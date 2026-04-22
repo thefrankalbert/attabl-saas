@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useMemo, ReactNode } from 'react';
+import { useEffect, useMemo, ReactNode } from 'react';
 
 /**
  * Tenant brand color scope.
@@ -12,36 +12,17 @@ import { createContext, useContext, useEffect, useMemo, ReactNode } from 'react'
  *
  * `--tenant-primary` (and opacity variants 10/20/50 for hover/active/disabled)
  * is the ONLY customizable token. Text color is always forced to #1A1A1A.
+ *
+ * NOTE: this provider is independent from next-themes. next-themes manages
+ * dark/light at the app level (admin / marketing / auth); this provider only
+ * scopes a tenant's primary brand color in the public client (where dark
+ * mode is force-disabled via forcedTheme="light" on the parent provider).
  */
-interface ThemeColors {
+interface TenantBrandColors {
   primaryColor: string;
-  /**
-   * Retained for API compatibility but NOT injected into the DOM.
-   * Text color is hardcoded to #1A1A1A per market research.
-   */
-  secondaryColor?: string;
-}
-
-interface ThemeContextType {
-  colors: ThemeColors;
-  applyTheme: (colors: ThemeColors) => void;
 }
 
 const DEFAULT_PRIMARY = '#1A1A1A';
-
-const defaultColors: ThemeColors = {
-  primaryColor: DEFAULT_PRIMARY,
-  secondaryColor: '#1A1A1A',
-};
-
-const ThemeContext = createContext<ThemeContextType>({
-  colors: defaultColors,
-  applyTheme: () => {},
-});
-
-export function useTheme() {
-  return useContext(ThemeContext);
-}
 
 /**
  * Validate a hex color. Must be exactly 7 characters: `#` + 6 hex digits.
@@ -70,7 +51,7 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
  * Per market research, primary is the only customizable color - no secondary,
  * no background, no text color overrides. Text stays forced at #1A1A1A.
  */
-function applyColorsToDOM(colors: ThemeColors) {
+function applyColorsToDOM(colors: TenantBrandColors) {
   if (typeof document === 'undefined') return;
 
   const root = document.documentElement;
@@ -88,16 +69,15 @@ function applyColorsToDOM(colors: ThemeColors) {
   }
 }
 
-interface ThemeProviderProps {
+interface TenantBrandProviderProps {
   children: ReactNode;
-  initialColors?: ThemeColors;
+  initialColors?: TenantBrandColors;
 }
 
-export function ThemeProvider({ children, initialColors }: ThemeProviderProps) {
-  const colors: ThemeColors = useMemo(
+export function TenantBrandProvider({ children, initialColors }: TenantBrandProviderProps) {
+  const colors: TenantBrandColors = useMemo(
     () => ({
       primaryColor: sanitizePrimary(initialColors?.primaryColor),
-      secondaryColor: '#1A1A1A',
     }),
     [initialColors?.primaryColor],
   );
@@ -106,38 +86,5 @@ export function ThemeProvider({ children, initialColors }: ThemeProviderProps) {
     applyColorsToDOM(colors);
   }, [colors]);
 
-  const applyTheme = (newColors: ThemeColors) => {
-    applyColorsToDOM({
-      primaryColor: sanitizePrimary(newColors.primaryColor),
-      secondaryColor: '#1A1A1A',
-    });
-  };
-
-  return <ThemeContext.Provider value={{ colors, applyTheme }}>{children}</ThemeContext.Provider>;
-}
-
-/**
- * Server-side helper to generate inline CSS for the tenant primary color.
- * Only injects --tenant-primary and opacity variants - no secondary color.
- */
-export function generateTenantCSS(primaryColor: string, _secondaryColor?: string): string {
-  void _secondaryColor;
-  const primary = sanitizePrimary(primaryColor);
-  const primaryRGB = hexToRgb(primary);
-
-  return `
-    :root {
-      --tenant-primary: ${primary};
-      ${
-        primaryRGB
-          ? `
-        --tenant-primary-rgb: ${primaryRGB.r}, ${primaryRGB.g}, ${primaryRGB.b};
-        --tenant-primary-10: rgba(${primaryRGB.r}, ${primaryRGB.g}, ${primaryRGB.b}, 0.1);
-        --tenant-primary-20: rgba(${primaryRGB.r}, ${primaryRGB.g}, ${primaryRGB.b}, 0.2);
-        --tenant-primary-50: rgba(${primaryRGB.r}, ${primaryRGB.g}, ${primaryRGB.b}, 0.5);
-      `
-          : ''
-      }
-    }
-  `.trim();
+  return <>{children}</>;
 }
