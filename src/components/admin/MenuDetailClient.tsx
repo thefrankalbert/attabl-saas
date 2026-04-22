@@ -585,6 +585,7 @@ export default function MenuDetailClient({
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Edit"
                               onClick={() => openEditItemModal(item)}
                               title={t('editItem')}
                             >
@@ -593,6 +594,7 @@ export default function MenuDetailClient({
                             <Button
                               variant="ghost"
                               size="icon"
+                              aria-label="Settings"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingModifiersItem(item);

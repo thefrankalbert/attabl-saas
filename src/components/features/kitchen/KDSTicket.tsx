@@ -345,6 +345,7 @@ export default function KDSTicket({
           <Button
             variant="ghost"
             size="icon"
+            aria-label="Print"
             onClick={() => printKitchenTicket(order, { zoneFilter, barDisplayEnabled })}
             className="w-11 min-h-[44px] border-l border-app-border bg-app-elevated hover:bg-app-hover rounded-none"
             title="Print"

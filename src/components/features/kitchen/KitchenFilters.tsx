@@ -69,7 +69,13 @@ export default function KitchenFilters({
       {/* Left: back / search */}
       <div className="flex items-center gap-1">
         {!isFullscreen && (
-          <Button variant="ghost" size="icon" onClick={goBack} title={t('backToDashboard')}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Back"
+            onClick={goBack}
+            title={t('backToDashboard')}
+          >
             <ArrowLeft className="w-4 h-4" />
           </Button>
         )}
@@ -88,6 +94,7 @@ export default function KitchenFilters({
             <Button
               variant="ghost"
               size="icon"
+              aria-label="Close search"
               onClick={() => {
                 onSearchChange('');
                 setSearchOpen(false);
@@ -184,7 +191,7 @@ export default function KitchenFilters({
           <span className="capitalize">{dateStr}</span>
           <span>{timeStr}</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+        <Button variant="ghost" size="icon" aria-label="Minimize" onClick={toggleFullscreen}>
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
       </div>

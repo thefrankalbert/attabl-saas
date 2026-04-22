@@ -185,6 +185,7 @@ export default function POSCart({
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Delete"
           onClick={() => {
             if (cart.length === 0) {
               onClearCart();
@@ -307,6 +308,7 @@ export default function POSCart({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Decrease"
                           onClick={() => onUpdateQuantity(itemKey, -1)}
                           className="w-8 h-8 rounded-l-md text-app-text-muted touch-manipulation"
                         >
@@ -318,6 +320,7 @@ export default function POSCart({
                         <Button
                           variant="ghost"
                           size="icon"
+                          aria-label="Increase"
                           onClick={() => onUpdateQuantity(itemKey, 1)}
                           className="w-8 h-8 rounded-r-md text-app-text-muted touch-manipulation"
                         >
@@ -382,6 +385,7 @@ export default function POSCart({
                   <Button
                     variant="ghost"
                     size="icon"
+                    aria-label="Remove coupon"
                     onClick={onRemoveCoupon}
                     className="w-6 h-6 text-app-text-muted hover:text-status-error shrink-0"
                   >

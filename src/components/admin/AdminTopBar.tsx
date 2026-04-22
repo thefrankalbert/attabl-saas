@@ -66,6 +66,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
         <Button
           variant="ghost"
           size="icon"
+          aria-label="Minimize"
           onClick={toggleFullscreen}
           className="w-[30px] h-[30px] rounded-md border border-app-border bg-app-card text-app-text-secondary hover:bg-app-elevated hover:text-app-text"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
