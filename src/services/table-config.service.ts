@@ -314,12 +314,15 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * List all zones for a venue (ordered by display_order).
+     * Filters by venue's tenant to enforce multi-tenant isolation even if
+     * a venueId leaks or is guessed (defense-in-depth beyond RLS).
      */
-    async listZonesForVenue(venueId: string): Promise<unknown[]> {
+    async listZonesForVenue(tenantId: string, venueId: string): Promise<unknown[]> {
       const { data, error } = await supabase
         .from('zones')
-        .select('*')
+        .select('*, venue:venues!inner(tenant_id)')
         .eq('venue_id', venueId)
+        .eq('venues.tenant_id', tenantId)
         .order('display_order');
 
       if (error) {
@@ -330,12 +333,14 @@ export function createTableConfigService(supabase: SupabaseClient) {
 
     /**
      * List all tables for a zone (ordered by table_number).
+     * Filters by the zone's venue's tenant for multi-tenant isolation.
      */
-    async listTablesForZone(zoneId: string): Promise<unknown[]> {
+    async listTablesForZone(tenantId: string, zoneId: string): Promise<unknown[]> {
       const { data, error } = await supabase
         .from('tables')
-        .select('*')
+        .select('*, zone:zones!inner(venue:venues!inner(tenant_id))')
         .eq('zone_id', zoneId)
+        .eq('zones.venues.tenant_id', tenantId)
         .order('table_number');
 
       if (error) {
