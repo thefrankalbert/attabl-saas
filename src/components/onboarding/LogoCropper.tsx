@@ -106,6 +106,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             type="button"
             variant="ghost"
             size="icon"
+            aria-label="Close"
             onClick={onCancel}
             disabled={applying}
             className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors h-8 w-8"
@@ -136,6 +137,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               type="button"
               variant="outline"
               size="icon"
+              aria-label="Zoom out"
               onClick={() => setZoom((z) => Math.max(1, z - 0.1))}
               className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >
@@ -155,6 +157,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
               type="button"
               variant="outline"
               size="icon"
+              aria-label="Zoom in"
               onClick={() => setZoom((z) => Math.min(3, z + 0.1))}
               className="p-2 rounded-xl border border-app-border text-app-text-secondary hover:bg-app-elevated transition-colors h-10 w-10"
             >

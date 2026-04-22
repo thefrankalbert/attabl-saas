@@ -1,5 +1,28 @@
 {
   "common": {
+    "aria": {
+      "showPassword": "Afficher le mot de passe",
+      "hidePassword": "Masquer le mot de passe",
+      "more": "Plus d'options",
+      "next": "Suivant",
+      "previous": "Précédent",
+      "zoomIn": "Zoomer",
+      "zoomOut": "Dézoomer",
+      "rotate": "Tourner",
+      "play": "Lire",
+      "print": "Imprimer",
+      "minimize": "Réduire",
+      "openMenu": "Ouvrir le menu",
+      "settings": "Paramètres",
+      "soundSettings": "Paramètres son",
+      "markComplete": "Marquer terminé",
+      "markInPreparation": "Marquer en préparation",
+      "confirmAll": "Tout confirmer",
+      "select": "Sélectionner",
+      "remove": "Retirer",
+      "scanQr": "Scanner QR",
+      "addItem": "Ajouter un élément"
+    },
     "back": "Retour",
     "add": "Ajouter",
     "save": "Enregistrer",

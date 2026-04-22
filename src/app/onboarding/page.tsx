@@ -636,6 +636,7 @@ export default function OnboardingPage() {
                       <Button
                         variant="ghost"
                         size="icon"
+                        aria-label="Close"
                         onClick={() => setError(null)}
                         className="text-destructive/60 hover:text-destructive ml-3 shrink-0 h-8 w-8"
                       >
