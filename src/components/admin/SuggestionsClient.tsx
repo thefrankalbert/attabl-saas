@@ -310,6 +310,7 @@ export default function SuggestionsClient({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label="Select"
                         onClick={() => toggleSelect(suggestion.id)}
                         className="text-app-text-muted hover:text-app-text-secondary transition-colors shrink-0 h-auto w-auto p-1"
                       >

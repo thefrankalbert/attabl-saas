@@ -199,6 +199,7 @@ export function ScreenLock({
                         type="button"
                         variant="ghost"
                         size="icon"
+                        aria-label="Hide password"
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 h-auto w-auto p-0 text-app-text-muted hover:text-app-text-secondary transition-colors"
                       >
