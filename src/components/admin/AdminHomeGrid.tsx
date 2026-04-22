@@ -189,7 +189,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
                     'w-7 h-7 sm:w-8 sm:h-8',
                     tile.featured ? 'text-accent-text' : 'text-accent',
                   )}
-                  strokeWidth={1.6}
+                  strokeWidth={1.5}
                 />
                 <span
                   className={cn(
@@ -221,7 +221,7 @@ export default function AdminHomeGrid({ basePath, establishmentType }: AdminHome
               href={`${basePath}${tile.path}`}
               className="relative flex flex-col items-center justify-center gap-2 rounded-xl border border-app-border bg-app-card hover:border-app-border-hover hover:bg-app-hover transition-colors duration-150 active:scale-[0.97] touch-manipulation"
             >
-              <Icon className="w-5 h-5 text-app-text-secondary" strokeWidth={1.6} />
+              <Icon className="w-5 h-5 text-app-text-secondary" strokeWidth={1.5} />
               <span className="text-xs font-semibold text-center leading-tight px-2 text-app-text">
                 {t(tile.labelKey)}
               </span>

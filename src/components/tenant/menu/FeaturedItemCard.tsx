@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import { Plus, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { MenuItem } from '@/types/admin.types';
 import { MENU_COLORS as C, tr, triggerAddFeedback } from '@/lib/tenant/menu-tokens';
@@ -94,14 +95,7 @@ export function FeaturedItemCard({
           className="absolute -bottom-2 right-2 w-7 h-7 rounded-full flex items-center justify-center px-0 py-0 h-7 w-7 active:scale-95 transition-transform"
           style={{ background: C.primary }}
         >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path
-              d="M7 2v10M2 7h10"
-              stroke={C.textOnPrimary}
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
+          <Plus size={14} color={C.textOnPrimary} strokeWidth={2.5} aria-hidden />
         </Button>
       </div>
       <div className="p-3 pt-4 flex flex-col gap-1">
@@ -118,9 +112,7 @@ export function FeaturedItemCard({
           {name}
         </p>
         <div className="flex items-center gap-1">
-          <svg width="12" height="12" viewBox="0 0 12 12" fill={C.rating}>
-            <path d="M6 0l1.76 3.58L12 4.16 8.88 7.1l.74 4.32L6 9.27 2.38 11.42l.74-4.32L0 4.16l4.24-.58z" />
-          </svg>
+          <Star size={12} fill={C.rating} stroke="none" aria-hidden />
           <span className="text-[13px] font-medium" style={{ color: C.textPrimary }}>
             {rating.toFixed(1)}
           </span>

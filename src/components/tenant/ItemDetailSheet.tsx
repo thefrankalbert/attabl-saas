@@ -246,7 +246,7 @@ export default function ItemDetailSheet({
                   size="icon"
                   onClick={onClose}
                   className="absolute top-3 left-3 z-10 rounded-full bg-app-bg w-9 h-9 border-app-border active:bg-neutral-100"
-                  aria-label="Retour"
+                  aria-label={t('ariaGoBack')}
                 >
                   <ChevronLeft className="h-5 w-5 text-app-text" />
                 </Button>

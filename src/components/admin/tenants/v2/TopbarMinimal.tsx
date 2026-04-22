@@ -59,7 +59,7 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
         style={{ color: 'var(--cc-text-2)' }}
         aria-label={t('toggleTheme')}
       >
-        <Moon className="size-[14px]" strokeWidth={1.8} />
+        <Moon className="size-[14px]" strokeWidth={2} />
       </Button>
 
       <div
@@ -89,7 +89,7 @@ export function TopbarMinimal({ crumb, userInitials, userName, onLogout }: Topba
           style={{ color: 'var(--cc-text-3)' }}
           aria-label={t('logout')}
         >
-          <LogOut className="size-[13px]" strokeWidth={1.8} />
+          <LogOut className="size-[13px]" strokeWidth={2} />
         </Button>
       )}
     </header>

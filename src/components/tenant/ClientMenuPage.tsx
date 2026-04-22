@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
-import { UtensilsCrossed, Clock, Star, TrendingUp } from 'lucide-react';
+import { UtensilsCrossed, Clock, Star, TrendingUp, Search } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { useCartData } from '@/contexts/CartContext';
 import { useDisplayCurrency } from '@/contexts/CurrencyContext';
@@ -46,10 +46,7 @@ function SearchBar({ placeholder, onClick }: { placeholder: string; onClick: () 
       className="flex items-center gap-2 h-12 mt-2 mx-4 px-4 rounded-[10px] w-[calc(100%-32px)] justify-start"
       style={{ background: C.surfaceAlt }}
     >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-        <circle cx="11" cy="11" r="7" stroke={C.textMuted} strokeWidth="2" />
-        <path d="M16 16l4 4" stroke={C.textMuted} strokeWidth="2" strokeLinecap="round" />
-      </svg>
+      <Search size={20} color={C.textMuted} strokeWidth={2} aria-hidden />
       <span className="text-sm" style={{ color: C.textMuted }}>
         {placeholder}
       </span>

@@ -376,7 +376,7 @@ export default function ClientOrders({
             size="icon"
             onClick={dismissBanner}
             className="rounded-full hover:bg-white/20 shrink-0 min-h-[44px] min-w-[44px] text-white"
-            aria-label="Dismiss"
+            aria-label={t('close')}
           >
             <X className="w-4 h-4" />
           </Button>
