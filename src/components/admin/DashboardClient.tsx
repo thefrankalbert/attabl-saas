@@ -337,8 +337,12 @@ export default function DashboardClient(props: DashboardClientProps) {
       />
 
       {/* Main grid: chart + feed. On lg+, grid fills remaining space and
-          each column manages its own overflow independently. */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5 lg:flex-1 lg:min-h-0">
+          each column manages its own overflow independently.
+          `lg:grid-rows-1` + `lg:overflow-hidden` is REQUIRED to constrain
+          the row to the grid's computed height - without them the implicit
+          row is `auto` (content-sized), the left column never overflows
+          its parent, and `overflow-y-auto` never triggers a scrollbar. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-1 gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
         {/* Left column - scrolls internally on lg+ (chart + top dishes) */}
         <div className="flex flex-col gap-5 min-w-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
           <OverviewChart
