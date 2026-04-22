@@ -122,12 +122,16 @@ export function createCategoryService(supabase: SupabaseClient) {
     /**
      * Returns true if the category is linked to at least one menu via
      * the menu_categories pivot table.
+     * Filters via the joined category's tenant_id for defense-in-depth:
+     * even if a foreign categoryId is submitted, the join filter ensures
+     * we only see rows belonging to the current tenant.
      */
-    async isCategoryLinkedToMenu(categoryId: string): Promise<boolean> {
+    async isCategoryLinkedToMenu(categoryId: string, tenantId: string): Promise<boolean> {
       const { data, error } = await supabase
         .from('menu_categories')
-        .select('id')
+        .select('id, category:categories!inner(tenant_id)')
         .eq('category_id', categoryId)
+        .eq('categories.tenant_id', tenantId)
         .limit(1);
 
       if (error) {

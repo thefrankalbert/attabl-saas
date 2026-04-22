@@ -231,17 +231,24 @@ describe('category.service Wave 26 additions', () => {
     }
   });
 
-  it('isCategoryLinkedToMenu returns true when pivot has rows', async () => {
+  it('isCategoryLinkedToMenu returns true when pivot has rows + filters categories.tenant_id', async () => {
     const supabase = buildSupabase({ menu_categories: { data: [{ id: 'mc1' }], error: null } });
     const svc = createCategoryService(asSupabase(supabase));
-    const linked = await svc.isCategoryLinkedToMenu('cat-1');
+    const linked = await svc.isCategoryLinkedToMenu('cat-1', 'tenant-A');
     expect(linked).toBe(true);
+    const chain = supabase._chains.menu_categories[0];
+    expect(
+      chain._calls.some(
+        (c) =>
+          c.method === 'eq' && c.args[0] === 'categories.tenant_id' && c.args[1] === 'tenant-A',
+      ),
+    ).toBe(true);
   });
 
   it('isCategoryLinkedToMenu returns false when empty', async () => {
     const supabase = buildSupabase({ menu_categories: { data: [], error: null } });
     const svc = createCategoryService(asSupabase(supabase));
-    expect(await svc.isCategoryLinkedToMenu('cat-1')).toBe(false);
+    expect(await svc.isCategoryLinkedToMenu('cat-1', 'tenant-A')).toBe(false);
   });
 });
 
