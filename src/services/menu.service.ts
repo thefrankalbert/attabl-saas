@@ -349,6 +349,7 @@ export function createMenuService(supabase: SupabaseClient) {
         .from('menus')
         .select('*, venue:venues(id, name, slug)')
         .eq('id', menuId)
+        .eq('tenant_id', tenantId)
         .single();
       if (menuRes.error) {
         throw new ServiceError('Erreur lors du chargement du menu', 'INTERNAL', menuRes.error);

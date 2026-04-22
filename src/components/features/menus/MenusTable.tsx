@@ -101,6 +101,7 @@ function MenuRow({
     >
       {/* Selection checkbox */}
       <Checkbox
+        aria-label={`${t('select') || 'Select'} ${menu.name}`}
         checked={isSelected}
         onCheckedChange={() => onToggleSelect()}
         className="shrink-0 cursor-pointer"

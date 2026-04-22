@@ -59,6 +59,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
       // Fallback: render empty state
       return (
         <TablesClient
+          tenantId={tenantId}
           venueId=""
           initialZones={[]}
           initialTables={[]}
@@ -107,6 +108,7 @@ export default async function TablesPage({ params }: { params: Promise<{ site: s
   return (
     <div className="max-w-7xl xl:max-w-[90rem] 2xl:max-w-[100rem] mx-auto">
       <TablesClient
+        tenantId={tenantId}
         venueId={venueId}
         initialZones={zones}
         initialTables={initialTables}
