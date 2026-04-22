@@ -1160,7 +1160,6 @@
     "dishUnavailable": "rupture",
     "stockAlertsTitle": "Alertes stock",
     "stockAlertsWatching": "à surveiller",
-    "stockAlertsEmpty": "Aucune alerte de stock",
     "stockAlertsViewAll": "Voir tout le stock",
     "stockAlertSubtitle": "{current} {unit} restant · seuil {threshold}",
     "noOrdersHint": "Les nouvelles commandes apparaîtront ici",

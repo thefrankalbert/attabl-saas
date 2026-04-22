@@ -28,7 +28,7 @@ interface MetricsRowProps {
   tDown: string;
 }
 
-function buildSparklinePath(values: number[], width = 64, height = 24) {
+function buildSparklinePath(values: number[], width = 52, height = 18) {
   if (values.length < 2) return '';
   const max = Math.max(...values);
   const min = Math.min(...values);
@@ -69,7 +69,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             variant="ghost"
             onClick={() => onSelect?.(m.key)}
             className={cn(
-              'relative h-auto flex-col items-stretch justify-start rounded-none text-left px-4 sm:px-5 py-4 transition-colors group cursor-pointer shadow-none font-normal',
+              'relative h-auto flex-col items-stretch justify-start rounded-none text-left px-4 sm:px-5 py-2.5 transition-colors group cursor-pointer shadow-none font-normal',
               'border-app-border',
               idx < metrics.length - 1 && 'lg:border-r',
               idx % 2 === 0 && 'border-r lg:border-r',
@@ -81,7 +81,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
               <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-accent" aria-hidden />
             )}
 
-            <div className="flex items-center gap-2 mb-2.5">
+            <div className="flex items-center gap-2 mb-1">
               <span
                 className={cn(
                   'w-[5px] h-[5px] rounded-full',
@@ -95,33 +95,32 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-[28px] font-medium tracking-tight text-app-text tabular-nums">
+              <span className="text-[22px] leading-none font-medium tracking-tight text-app-text tabular-nums">
                 {m.value}
               </span>
               {m.unit && (
-                <span className="font-mono text-[13px] text-app-text-muted">{m.unit}</span>
+                <span className="font-mono text-[12px] text-app-text-muted">{m.unit}</span>
               )}
             </div>
 
             <div className="mt-1.5 flex items-center gap-2 font-mono text-[11px] text-app-text-muted">
               <span
                 className={cn(
-                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium',
+                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium leading-none',
                   deltaClass,
                 )}
               >
                 {delta > 0 ? '▲' : delta < 0 ? '▼' : '●'}
                 {delta !== 0 && <span>{Math.abs(delta)}%</span>}
               </span>
-              {m.compareText && <span className="truncate">{m.compareText}</span>}
             </div>
 
             {m.sparkline && m.sparkline.length > 1 && (
               <svg
-                className="absolute right-3 bottom-3 opacity-60 pointer-events-none"
-                width="64"
-                height="24"
-                viewBox="0 0 64 24"
+                className="absolute right-3 bottom-2 opacity-60 pointer-events-none"
+                width="52"
+                height="18"
+                viewBox="0 0 52 18"
                 aria-hidden
               >
                 <polyline
@@ -134,7 +133,10 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
                 />
               </svg>
             )}
-            <span className="sr-only">{deltaLabel}</span>
+            <span className="sr-only">
+              {deltaLabel}
+              {m.compareText ? ` - ${m.compareText}` : ''}
+            </span>
           </Button>
         );
       })}
