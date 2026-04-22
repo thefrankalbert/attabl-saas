@@ -34,8 +34,8 @@ export function TenantInfoSheet({ tenant, isOpen, onClose, closeLabel }: TenantI
               variant="ghost"
               size="icon"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-app-elevated"
-              aria-label={closeLabel || 'Fermer'}
+              className="rounded-full bg-app-elevated"
+              aria-label={closeLabel || 'Close'}
             >
               <X size={18} color={C.textPrimary} />
             </Button>

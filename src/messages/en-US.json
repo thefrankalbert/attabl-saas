@@ -1,6 +1,9 @@
 {
   "common": {
     "aria": {
+      "back": "Back",
+      "close": "Close",
+      "notifications": "Notifications",
       "showPassword": "Show password",
       "hidePassword": "Hide password",
       "more": "More options",

@@ -17,6 +17,7 @@ interface ItemDetailPanelProps {
 
 export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailPanelProps) {
   const t = useTranslations('items');
+  const tc = useTranslations('common');
   const ta = useTranslations('allergens');
 
   return (
@@ -33,7 +34,7 @@ export function ItemDetailPanel({ item, currency, onClose, onEdit }: ItemDetailP
         {/* Panel Header */}
         <div className="flex items-center justify-between p-5 border-b border-app-border">
           <h2 className="text-base font-bold text-app-text">{t('details')}</h2>
-          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label={tc('aria.close')}>
             <X className="w-4 h-4 text-app-text-secondary" />
           </Button>
         </div>

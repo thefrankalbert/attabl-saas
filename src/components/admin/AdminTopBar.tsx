@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { Maximize, Minimize } from 'lucide-react';
 import { isImmersivePage } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
@@ -15,6 +16,7 @@ interface AdminTopBarProps {
 
 export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
   const pathname = usePathname();
+  const tc = useTranslations('common');
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   useEffect(() => {
@@ -66,7 +68,7 @@ export function AdminTopBar({ notifications, breadcrumbs }: AdminTopBarProps) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Minimize"
+          aria-label={tc('aria.minimize')}
           onClick={toggleFullscreen}
           className="w-[30px] h-[30px] rounded-md border border-app-border bg-app-card text-app-text-secondary hover:bg-app-elevated hover:text-app-text"
           title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}

@@ -539,6 +539,7 @@ export default function ClientMenuPage({
         tenant={tenant}
         isOpen={isTenantInfoOpen}
         onClose={() => setIsTenantInfoOpen(false)}
+        closeLabel={t('close')}
       />
       <InstallPrompt
         appName={tenant.name}

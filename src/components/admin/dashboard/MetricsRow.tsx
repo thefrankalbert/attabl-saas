@@ -127,7 +127,7 @@ export function MetricsRow({ metrics, activeKey, onSelect, tUp, tDown }: Metrics
                 <polyline
                   fill="none"
                   stroke={isActive ? 'var(--app-accent)' : 'var(--app-text-muted)'}
-                  strokeWidth="1.2"
+                  strokeWidth="1.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   points={buildSparklinePath(m.sparkline)}
