@@ -76,7 +76,7 @@ export function LiveOrdersFeed({
   };
 
   return (
-    <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col">
+    <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col flex-1 min-h-0">
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border">
         <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
           <Zap className="w-[13px] h-[13px] text-app-text-muted" />
@@ -99,7 +99,7 @@ export function LiveOrdersFeed({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto admin-thin-scroll max-h-[660px]">
+      <div className="flex-1 overflow-y-auto admin-thin-scroll max-h-[calc(100dvh-240px)]">
         {visible.length === 0 ? (
           <div className="px-6 py-10 text-center">
             <p className="text-[13px] text-app-text">{labels.emptyTitle}</p>

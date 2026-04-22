@@ -384,7 +384,6 @@ export default function DashboardClient(props: DashboardClientProps) {
             alerts={stockAlerts}
             title={t('stockAlertsTitle')}
             watchingLabel={t('stockAlertsWatching')}
-            emptyLabel={t('stockAlertsEmpty')}
             viewAllHref={`${adminBase}/inventory`}
             viewAllLabel={t('stockAlertsViewAll')}
           />

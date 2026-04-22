@@ -1160,7 +1160,6 @@
     "dishUnavailable": "out of stock",
     "stockAlertsTitle": "Stock alerts",
     "stockAlertsWatching": "to watch",
-    "stockAlertsEmpty": "No stock alerts",
     "stockAlertsViewAll": "See all stock",
     "stockAlertSubtitle": "{current} {unit} left · threshold {threshold}",
     "noOrdersHint": "New orders will appear here",
