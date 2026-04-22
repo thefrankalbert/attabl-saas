@@ -14,7 +14,7 @@ export default async function CTASection() {
         <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
           <Link
             href="/signup"
-            className="inline-block rounded-lg bg-white dark:bg-white px-8 py-4 font-semibold text-neutral-900 dark:text-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-200"
+            className="inline-block rounded-lg bg-white px-8 py-4 font-semibold text-neutral-900 dark:text-neutral-900 transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-200"
           >
             {t('primary')}
           </Link>
