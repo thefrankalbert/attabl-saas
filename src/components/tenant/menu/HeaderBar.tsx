@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { ChevronDown, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MENU_COLORS as C } from '@/lib/tenant/menu-tokens';
 
@@ -29,24 +30,11 @@ export function HeaderBar({
         onClick={onLocationPress}
         className="flex items-center gap-1.5 px-0 h-auto"
       >
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path
-            d="M8 1C5.24 1 3 3.24 3 6c0 3.75 5 9 5 9s5-5.25 5-9c0-2.76-2.24-5-5-5zm0 6.75a1.75 1.75 0 110-3.5 1.75 1.75 0 010 3.5z"
-            fill={C.primary}
-          />
-        </svg>
+        <MapPin size={16} fill={C.primary} stroke="none" aria-hidden />
         <span className="text-[15px] font-semibold" style={{ color: C.textPrimary }}>
           {locationName}
         </span>
-        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-          <path
-            d="M3 4.5L6 7.5L9 4.5"
-            stroke={C.textPrimary}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <ChevronDown size={12} color={C.textPrimary} strokeWidth={2} aria-hidden />
       </Button>
 
       <Button

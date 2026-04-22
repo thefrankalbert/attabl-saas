@@ -32,6 +32,7 @@ interface PromoSectionProps {
     apply: string;
     promoApplied: string;
     ariaRemovePromo: string;
+    close: string;
   };
 }
 
@@ -111,7 +112,7 @@ export function PromoSection({
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Close"
+          aria-label={labels.close}
           onClick={() => {
             setPromoOpen(false);
             setPromoInput('');

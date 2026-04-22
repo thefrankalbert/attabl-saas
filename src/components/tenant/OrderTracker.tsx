@@ -110,7 +110,7 @@ export default function OrderTracker({ status, compact = false }: OrderTrackerPr
                     transition={{ duration: 1.6, repeat: Infinity, ease: 'easeOut' }}
                   />
                 )}
-                <Icon width={iconSize} height={iconSize} color={iconColor} strokeWidth={2.25} />
+                <Icon width={iconSize} height={iconSize} color={iconColor} strokeWidth={2} />
               </div>
 
               {/* Label */}

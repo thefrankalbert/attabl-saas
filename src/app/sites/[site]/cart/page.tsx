@@ -390,6 +390,7 @@ export default function CartPage() {
             apply: t('apply'),
             promoApplied: t('promoApplied'),
             ariaRemovePromo: t('ariaRemovePromo'),
+            close: t('close'),
           }}
         />
 
