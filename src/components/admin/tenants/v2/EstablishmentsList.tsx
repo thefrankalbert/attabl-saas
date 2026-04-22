@@ -80,7 +80,7 @@ export function EstablishmentsList({
               style={{ color: 'var(--cc-text-3)' }}
               aria-label={t('add')}
             >
-              <Plus className="size-3.5" strokeWidth={1.8} />
+              <Plus className="size-3.5" strokeWidth={2} />
             </Button>
           )}
           {onSeeAll && hasMore && (
@@ -204,7 +204,7 @@ function EstablishmentRow({
         <ArrowRight
           className="size-3.5 opacity-0 transition-[opacity,transform] duration-100 group-focus-within:opacity-100 group-hover:translate-x-0.5 group-hover:opacity-100"
           style={{ color: 'var(--cc-text-3)' }}
-          strokeWidth={1.8}
+          strokeWidth={2}
           aria-hidden
         />
       </Button>
@@ -219,7 +219,7 @@ function EstablishmentRow({
           style={{ color: 'var(--cc-text-3)' }}
           aria-label={openMenuLabel}
         >
-          <ExternalLink className="size-3" strokeWidth={1.8} />
+          <ExternalLink className="size-3" strokeWidth={2} />
         </Button>
       )}
     </div>

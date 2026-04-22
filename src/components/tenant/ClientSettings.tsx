@@ -136,6 +136,7 @@ export default function ClientSettings({
 }: ClientSettingsProps) {
   const locale = useLocale();
   const t = useTranslations('tenant');
+  const tc = useTranslations('common');
   const router = useRouter();
   const { displayCurrency, setDisplayCurrency } = useDisplayCurrency();
   const lang = locale.startsWith('fr') ? 'fr' : 'en';
@@ -227,7 +228,7 @@ export default function ClientSettings({
             size="icon"
             onClick={() => router.push(`/sites/${tenantSlug}`)}
             className="w-9 h-9 rounded-full bg-app-elevated text-app-text"
-            aria-label="Retour"
+            aria-label={t('ariaGoBack')}
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
@@ -595,7 +596,7 @@ export default function ClientSettings({
                 size="icon"
                 onClick={() => setShowPrivacyModal(false)}
                 className="rounded-full min-h-[44px] min-w-[44px] bg-app-elevated"
-                aria-label="Fermer"
+                aria-label={tc('close')}
               >
                 <X className="w-4 h-4" style={{ color: 'rgb(176, 176, 176)' }} />
               </Button>
@@ -663,7 +664,7 @@ export default function ClientSettings({
                 size="icon"
                 onClick={() => setShowAboutModal(false)}
                 className="rounded-full min-h-[44px] min-w-[44px] bg-app-elevated"
-                aria-label="Fermer"
+                aria-label={tc('close')}
               >
                 <X className="w-4 h-4" style={{ color: 'rgb(176, 176, 176)' }} />
               </Button>
@@ -716,7 +717,7 @@ export default function ClientSettings({
                 size="icon"
                 onClick={() => setShowHelpModal(false)}
                 className="rounded-full min-h-[44px] min-w-[44px] bg-app-elevated"
-                aria-label="Fermer"
+                aria-label={tc('close')}
               >
                 <X className="w-4 h-4" style={{ color: 'rgb(176, 176, 176)' }} />
               </Button>
