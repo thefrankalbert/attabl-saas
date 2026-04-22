@@ -43,7 +43,7 @@ export default async function Footer() {
   const taglineLines = t('tagline').split('\n');
 
   return (
-    <footer className="border-t border-white/10 bg-black">
+    <footer className="border-t border-neutral-200 dark:border-white/10 bg-white dark:bg-black">
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
         {/* Logo + Link columns on one row */}
         <div className="flex flex-col gap-8 sm:flex-row sm:gap-12">
@@ -51,11 +51,11 @@ export default async function Footer() {
           <div className="shrink-0">
             <Link
               href="/"
-              className="font-[family-name:var(--font-inter)] text-xl font-bold text-white"
+              className="font-[family-name:var(--font-inter)] text-xl font-bold text-neutral-900 dark:text-white"
             >
               Attabl
             </Link>
-            <p className="mt-1 text-xs text-neutral-400">
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               {taglineLines.map((line, idx) => (
                 <span key={idx}>
                   {line}
@@ -69,7 +69,7 @@ export default async function Footer() {
           <div className="flex flex-1 flex-wrap gap-8 sm:gap-12">
             {footerColumns.map((column) => (
               <div key={column.title}>
-                <h3 className="mb-2 font-[family-name:var(--font-inter)] text-sm font-semibold text-white">
+                <h3 className="mb-2 font-[family-name:var(--font-inter)] text-sm font-semibold text-neutral-900 dark:text-white">
                   {column.title}
                 </h3>
                 <ul className="space-y-1.5">
@@ -77,7 +77,7 @@ export default async function Footer() {
                     <li key={link.label}>
                       <Link
                         href={link.href}
-                        className="block text-xs text-neutral-400 transition-colors hover:text-white"
+                        className="block text-xs text-neutral-500 dark:text-neutral-400 transition-colors hover:text-neutral-900 dark:hover:text-white"
                       >
                         {link.label}
                       </Link>
@@ -90,7 +90,7 @@ export default async function Footer() {
         </div>
 
         {/* Copyright */}
-        <div className="mt-8 border-t border-white/10 pt-6">
+        <div className="mt-8 border-t border-neutral-200 dark:border-white/10 pt-6">
           <p className="text-xs text-neutral-500">
             {t('copyright', { year: new Date().getFullYear() })}
           </p>

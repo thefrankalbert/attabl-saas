@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import createGlobe from 'cobe';
+import { useTheme } from 'next-themes';
 
 interface AnalyticsMarker {
   id: string;
@@ -37,6 +38,7 @@ export function GlobeAnalytics({
   const thetaOffsetRef = useRef(0);
   const isPausedRef = useRef(false);
   const [data, setData] = useState(initialMarkers);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -96,26 +98,28 @@ export function GlobeAnalytics({
       const width = canvas.offsetWidth;
       if (width === 0 || globe) return;
 
+      const isDark = resolvedTheme === 'dark';
+
       globe = createGlobe(canvas, {
         devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2),
         width,
         height: width,
         phi: 0,
         theta: 0.2,
-        dark: 0,
+        dark: isDark ? 1 : 0,
         diffuse: 1.5,
         mapSamples: 16000,
-        mapBrightness: 10,
-        baseColor: [1, 1, 1],
+        mapBrightness: isDark ? 10 : 6,
+        baseColor: isDark ? [0.1, 0.1, 0.1] : [1, 1, 1],
         markerColor: [0.3, 0.85, 0.45],
-        glowColor: [0.94, 0.93, 0.91],
+        glowColor: isDark ? [0.2, 0.2, 0.2] : [0.94, 0.93, 0.91],
         markerElevation: 0,
         markers: initialMarkers.map((m) => ({ location: m.location, size: 0.04, id: m.id })),
         arcs: [],
         arcColor: [0.25, 0.9, 0.5],
         arcWidth: 0.5,
         arcHeight: 0.25,
-        opacity: 0.7,
+        opacity: isDark ? 0.9 : 0.7,
       });
 
       function animate() {
@@ -146,7 +150,7 @@ export function GlobeAnalytics({
       if (animationId) cancelAnimationFrame(animationId);
       if (globe) globe.destroy();
     };
-  }, [initialMarkers, speed]);
+  }, [initialMarkers, speed, resolvedTheme]);
 
   return (
     <div className={`relative aspect-square select-none ${className}`}>
