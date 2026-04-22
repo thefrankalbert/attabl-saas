@@ -101,14 +101,14 @@ export function TopDishesCard({
             {rangeBadge}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 bg-app-bg border border-app-border px-2.5 py-1 rounded-md text-[12px] text-app-text-secondary">
+        <div className="flex items-center gap-1.5 bg-app-bg border border-app-border px-2.5 py-1 rounded-md text-xs text-app-text-secondary">
           <Search className="w-3 h-3 text-app-text-muted shrink-0" />
           <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-[12px] w-[180px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
         <div className="ml-auto inline-flex p-[2px] rounded-md bg-app-bg border border-app-border">
@@ -182,14 +182,14 @@ export function TopDishesCard({
                   <div className="text-[10px] text-app-text-muted">{rangeBadge}</div>
                 </div>
                 <div>
-                  <span className="font-mono text-[9px] uppercase tracking-[0.1em] px-1.5 py-[3px] rounded border bg-accent-muted text-accent border-[rgba(194,245,66,0.25)]">
+                  <span className="font-mono text-[10px] uppercase tracking-[0.1em] px-1.5 py-[3px] rounded border bg-accent-muted text-accent border-[rgba(194,245,66,0.25)]">
                     {d.categoryLabel}
                   </span>
                 </div>
                 <div>
                   <span
                     className={cn(
-                      'font-mono text-[9px] uppercase tracking-[0.08em] inline-flex items-center gap-1 px-1.5 py-[3px] rounded',
+                      'font-mono text-[10px] uppercase tracking-[0.08em] inline-flex items-center gap-1 px-1.5 py-[3px] rounded',
                       d.available
                         ? 'bg-accent-muted text-accent'
                         : 'bg-status-error-bg text-status-error',

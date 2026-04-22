@@ -136,7 +136,7 @@ export function NeonTemplate({ config, url, tenantName, tableName }: QRTemplateP
 
         {/* Powered by Attabl */}
         {config.showPoweredBy && (
-          <p className="text-[8px] text-center opacity-30" style={{ color: accentColor }}>
+          <p className="text-[10px] text-center opacity-30" style={{ color: accentColor }}>
             Powered by Attabl
           </p>
         )}

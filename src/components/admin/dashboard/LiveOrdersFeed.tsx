@@ -129,11 +129,11 @@ export function LiveOrdersFeed({
                   <Clock className="w-3 h-3" />
                 </div>
                 <div className="min-w-0">
-                  <div className="font-mono text-[12px] text-app-text flex items-center gap-2 truncate">
+                  <div className="font-mono text-xs text-app-text flex items-center gap-2 truncate">
                     <span>{orderLabel}</span>
                     <span
                       className={cn(
-                        'inline-flex items-center gap-1 px-1.5 py-[2px] rounded text-[9px] uppercase tracking-[0.08em]',
+                        'inline-flex items-center gap-1 px-1.5 py-[2px] rounded text-[10px] uppercase tracking-[0.08em]',
                         sc.bg,
                         sc.text,
                       )}

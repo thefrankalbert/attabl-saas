@@ -368,7 +368,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         <div className="h-2.5 w-2.5 rounded-full bg-red-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-yellow-400" />
         <div className="h-2.5 w-2.5 rounded-full bg-green-400" />
-        <span className="ml-2 text-[9px] font-medium text-neutral-400 dark:text-neutral-500">
+        <span className="ml-2 text-[10px] font-medium text-neutral-400 dark:text-neutral-500">
           app.attabl.com
         </span>
       </div>
@@ -378,7 +378,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         {/* Sidebar */}
         <div className="hidden sm:flex w-14 flex-col items-center gap-1.5 border-r border-app-border bg-app-card py-3 px-1">
           <div className="mb-2 flex h-8 w-8 items-center justify-center rounded-lg bg-accent-muted">
-            <span className="text-[9px] font-black text-accent">A</span>
+            <span className="text-[10px] font-black text-accent">A</span>
           </div>
           {[0, 1, 2, 3, 4, 5].map((i) => (
             <div
@@ -406,9 +406,9 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
         <div className="flex flex-1 flex-col bg-app-bg min-w-0">
           {/* Top Bar */}
           <div className="flex h-8 items-center justify-between border-b border-app-border px-3 shrink-0">
-            <span className="text-[9px] text-app-text-muted">{t('dashboard')}</span>
+            <span className="text-[10px] text-app-text-muted">{t('dashboard')}</span>
             <div className="flex items-center gap-2">
-              <span className="text-[8px] font-mono text-app-text-muted">14:32</span>
+              <span className="text-[10px] font-mono text-app-text-muted">14:32</span>
               <div className="h-5 w-5 rounded-full bg-app-elevated" />
             </div>
           </div>
@@ -417,10 +417,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
           <div className="flex-1 overflow-hidden p-2 sm:p-3">
             {/* Greeting */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[9px] sm:text-[10px] font-bold text-app-text">
+              <span className="text-[10px] sm:text-[10px] font-bold text-app-text">
                 {t('greeting')} {brand}
               </span>
-              <span className="text-[8px] text-app-text-muted hidden sm:inline">{t('date')}</span>
+              <span className="text-[10px] text-app-text-muted hidden sm:inline">{t('date')}</span>
             </div>
 
             {/* Two columns */}
@@ -439,10 +439,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                           className="h-1.5 w-1.5 rounded-full shrink-0"
                           style={{ backgroundColor: g.color }}
                         />
-                        <span className="text-[7px] text-app-text-muted truncate">
+                        <span className="text-[10px] text-app-text-muted truncate">
                           {t(`stats.${g.statKey}`)}
                         </span>
-                        <span className="text-[7px] font-bold text-app-text tabular-nums ml-auto shrink-0">
+                        <span className="text-[10px] font-bold text-app-text tabular-nums ml-auto shrink-0">
                           {g.value}
                         </span>
                       </div>
@@ -454,7 +454,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                 <div className="flex-1 rounded-lg border border-app-border bg-app-card p-2 flex flex-col min-h-0">
                   <div className="flex items-center justify-between mb-1 shrink-0">
                     <div>
-                      <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                      <span className="text-[10px] font-semibold text-app-text-muted uppercase tracking-wider">
                         {t('revenue7Days')}
                       </span>
                       <div className="flex items-baseline gap-1 mt-0.5">
@@ -464,10 +464,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                       </div>
                     </div>
                     <div className="flex rounded bg-app-elevated p-0.5 shrink-0">
-                      <span className="rounded bg-accent px-1.5 py-0.5 text-[6px] font-bold text-accent-text">
+                      <span className="rounded bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-text">
                         {t('revenue')}
                       </span>
-                      <span className="px-1.5 py-0.5 text-[6px] font-bold text-app-text-muted">
+                      <span className="px-1.5 py-0.5 text-[10px] font-bold text-app-text-muted">
                         {t('ordersShort')}
                       </span>
                     </div>
@@ -477,7 +477,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                   </div>
                   <div className="flex justify-between mt-0.5">
                     {dayKeys.map((d) => (
-                      <span key={d} className="text-[5px] text-app-text-muted flex-1 text-center">
+                      <span key={d} className="text-[10px] text-app-text-muted flex-1 text-center">
                         {t(`days.${d}`)}
                       </span>
                     ))}
@@ -487,7 +487,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                 {/* Avg Basket (mini blue chart like real dashboard) */}
                 <div className="rounded-lg border border-app-border bg-app-card p-2">
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                    <span className="text-[10px] font-semibold text-app-text-muted uppercase tracking-wider">
                       {t('avgBasket')}
                     </span>
                     <span className="text-[10px] font-black text-app-text tabular-nums">
@@ -505,7 +505,7 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                       className="flex-1 flex items-center justify-center gap-1 px-1.5 py-1 border border-app-border rounded-lg"
                     >
                       <div className="h-2 w-2 rounded-sm bg-app-text-muted/20" />
-                      <span className="text-[7px] text-app-text-secondary font-medium">
+                      <span className="text-[10px] text-app-text-secondary font-medium">
                         {t(`quickActions.${key}`)}
                       </span>
                     </div>
@@ -516,10 +516,10 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
               {/* Right Column - Orders */}
               <div className="w-[42%] flex flex-col rounded-lg border border-app-border overflow-hidden bg-app-card">
                 <div className="flex items-center justify-between px-2 py-1.5 border-b border-app-border shrink-0">
-                  <span className="text-[7px] font-semibold text-app-text-muted uppercase tracking-wider">
+                  <span className="text-[10px] font-semibold text-app-text-muted uppercase tracking-wider">
                     {t('orders')}
                   </span>
-                  <span className="text-[7px] font-semibold text-accent">{t('viewAll')}</span>
+                  <span className="text-[10px] font-semibold text-accent">{t('viewAll')}</span>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   {orders.map((order, i) => {
@@ -537,13 +537,13 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1">
-                            <span className="text-[8px] font-bold text-app-text font-mono">
+                            <span className="text-[10px] font-bold text-app-text font-mono">
                               {order.table}
                             </span>
-                            <span className="text-[7px] text-app-text-muted">{order.id}</span>
+                            <span className="text-[10px] text-app-text-muted">{order.id}</span>
                             <span
                               className={cn(
-                                'text-[6px] font-bold px-1 py-0.5 rounded-full',
+                                'text-[10px] font-bold px-1 py-0.5 rounded-full',
                                 sc.bg,
                                 sc.text,
                               )}
@@ -551,15 +551,15 @@ export default function DashboardPreview({ segment, className }: DashboardPrevie
                               {t(`status.${order.status}`)}
                             </span>
                           </div>
-                          <p className="text-[6px] text-app-text-muted mt-0.5 truncate">
+                          <p className="text-[10px] text-app-text-muted mt-0.5 truncate">
                             {order.items}
                           </p>
                         </div>
                         <div className="shrink-0 text-right">
-                          <span className="text-[7px] font-bold text-app-text tabular-nums block">
+                          <span className="text-[10px] font-bold text-app-text tabular-nums block">
                             {order.price}
                           </span>
-                          <span className="text-[6px] text-app-text-muted">{order.time}</span>
+                          <span className="text-[10px] text-app-text-muted">{order.time}</span>
                         </div>
                       </div>
                     );

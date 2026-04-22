@@ -55,7 +55,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               {/* Revenue header */}
               <div className="px-4 pt-3 pb-2 flex items-start justify-between">
                 <div>
-                  <div className="text-[8px] text-neutral-500 uppercase tracking-widest font-medium mb-0.5">
+                  <div className="text-[10px] text-neutral-500 uppercase tracking-widest font-medium mb-0.5">
                     {t('previewRevenueLabel')}
                   </div>
                   <div className="text-base font-black text-white tabular-nums">
@@ -63,7 +63,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                     <span className="text-[10px] font-semibold text-neutral-500">FCFA</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-[#4ade80] text-[9px] bg-[#4ade80]/10 border border-[#4ade80]/20 px-1.5 py-0.5 rounded-full">
+                <div className="flex items-center gap-1 text-[#4ade80] text-[10px] bg-[#4ade80]/10 border border-[#4ade80]/20 px-1.5 py-0.5 rounded-full">
                   <span className="font-bold">+18%</span>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               {/* Live orders */}
               <div className="px-3 py-2 space-y-1">
                 <div className="flex items-center justify-between px-1 mb-0.5">
-                  <span className="text-[8px] font-semibold text-neutral-500 uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-neutral-500 uppercase tracking-widest">
                     {t('previewOrdersLabel')}
                   </span>
                   <div className="flex items-center gap-1">
@@ -106,7 +106,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#4ade80] opacity-75" />
                       <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-[#4ade80]" />
                     </span>
-                    <span className="text-[8px] text-[#4ade80] font-medium">
+                    <span className="text-[10px] text-[#4ade80] font-medium">
                       {t('previewLiveLabel')}
                     </span>
                   </div>
@@ -132,11 +132,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                     <span className="text-[10px] font-semibold text-neutral-300 w-12 shrink-0">
                       {order.table}
                     </span>
-                    <span className="text-[9px] text-neutral-500 tabular-nums flex-1">
+                    <span className="text-[10px] text-neutral-500 tabular-nums flex-1">
                       {order.total}
                     </span>
                     <span
-                      className={`text-[7px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${order.cls}`}
+                      className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full shrink-0 ${order.cls}`}
                     >
                       {order.status}
                     </span>

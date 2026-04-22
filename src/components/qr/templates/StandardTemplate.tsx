@@ -117,7 +117,7 @@ export function StandardTemplate({ config, url, tenantName, tableName, logoUrl }
         {/* Powered by Attabl */}
         {config.showPoweredBy && (
           <p
-            className="mt-1 text-[9px] text-center opacity-40"
+            className="mt-1 text-[10px] text-center opacity-40"
             style={{ color: config.templateTextColor }}
           >
             Powered by Attabl

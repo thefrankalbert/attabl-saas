@@ -103,7 +103,7 @@ export function MinimalTemplate({ config, url, tenantName, tableName }: QRTempla
         {/* Footer text */}
         {config.footerText && (
           <p
-            className="text-[9px] text-center opacity-30 -mt-2"
+            className="text-[10px] text-center opacity-30 -mt-2"
             style={{ color: config.templateTextColor }}
           >
             {config.footerText}
@@ -113,7 +113,7 @@ export function MinimalTemplate({ config, url, tenantName, tableName }: QRTempla
         {/* Powered by Attabl */}
         {config.showPoweredBy && (
           <p
-            className="text-[8px] text-center opacity-25 -mt-2"
+            className="text-[10px] text-center opacity-25 -mt-2"
             style={{ color: config.templateTextColor }}
           >
             Powered by Attabl
