@@ -18,7 +18,6 @@ interface StockAlertsCardProps {
   alerts: StockAlert[];
   title: string;
   watchingLabel: string;
-  emptyLabel: string;
   viewAllHref?: string;
   viewAllLabel?: string;
 }
@@ -39,11 +38,14 @@ export function StockAlertsCard({
   alerts,
   title,
   watchingLabel,
-  emptyLabel,
   viewAllHref,
   viewAllLabel,
 }: StockAlertsCardProps) {
   const count = alerts.length;
+
+  // Hide the card entirely when no stock is at risk so the right column
+  // gives its vertical space back to the orders feed.
+  if (count === 0) return null;
 
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden">
@@ -54,42 +56,38 @@ export function StockAlertsCard({
         </div>
         <span className="ml-auto inline-flex items-center gap-1.5 font-mono text-[11px] text-app-text-secondary">
           <span className="w-1.5 h-1.5 rounded-full bg-accent admin-pulse" aria-hidden />
-          {count > 0 ? `${count} ${watchingLabel}` : emptyLabel}
+          {count} {watchingLabel}
         </span>
       </div>
 
-      {count === 0 ? (
-        <div className="px-5 py-8 text-center text-xs text-app-text-muted">{emptyLabel}</div>
-      ) : (
-        <ul>
-          {alerts.map((a) => {
-            const Icon = ICO[a.level];
-            return (
-              <li
-                key={a.id}
-                className="flex gap-3 items-center px-4 py-3 border-b border-app-border last:border-b-0 text-xs"
+      <ul>
+        {alerts.map((a) => {
+          const Icon = ICO[a.level];
+          return (
+            <li
+              key={a.id}
+              className="flex gap-3 items-center px-4 py-3 border-b border-app-border last:border-b-0 text-xs"
+            >
+              <span
+                className={cn(
+                  'w-[22px] h-[22px] rounded-full grid place-items-center shrink-0',
+                  BG[a.level],
+                )}
               >
-                <span
-                  className={cn(
-                    'w-[22px] h-[22px] rounded-full grid place-items-center shrink-0',
-                    BG[a.level],
-                  )}
-                >
-                  <Icon className="w-3 h-3" strokeWidth={2.5} />
-                </span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-app-text truncate">{a.title}</p>
-                  <p className="font-mono text-[11px] text-app-text-muted mt-0.5 truncate">
-                    {a.subtitle}
-                  </p>
-                </div>
-              </li>
-            );
-          })}
-        </ul>
-      )}
+                <Icon className="w-3 h-3" strokeWidth={2.5} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-app-text truncate">{a.title}</p>
+                <p className="font-mono text-[11px] text-app-text-muted mt-0.5 truncate">
+                  {a.subtitle}
+                </p>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
 
-      {viewAllHref && viewAllLabel && count > 0 && (
+      {viewAllHref && viewAllLabel && (
         <Link
           href={viewAllHref}
           className="block border-t border-app-border px-5 py-2.5 text-xs text-accent hover:bg-app-elevated transition-colors"

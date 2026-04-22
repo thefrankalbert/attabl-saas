@@ -146,9 +146,10 @@ export function AdminSidebar({
     router.push(`/sites/${slug}/admin`);
   };
 
-  // Footer usage data
+  // Footer usage data. When the usage card is visible (not collapsed) the
+  // account row lives inside the same card, so the subtitle line becomes
+  // redundant with the plan label shown on the account trigger.
   const usagePercent = Math.max(0, Math.min(100, ordersUsagePercent ?? 0));
-  const usageSubtitle = userEmail ? `${userEmail} · ${planLabel}` : planLabel;
 
   return (
     <aside
@@ -259,49 +260,54 @@ export function AdminSidebar({
         ))}
       </nav>
 
-      {/* ── Footer: usage card + account popover + collapse toggle ── */}
+      {/* ── Footer: unified usage + account card + collapse toggle ── */}
       <div className="shrink-0 border-t border-app-border px-3 py-3 flex flex-col gap-2.5">
-        {!collapsed && (
-          <SidebarUsageCard
-            label={t('usageMonthlyOrders')}
-            percent={usagePercent}
-            subtitle={usageSubtitle}
-          />
-        )}
-
         <Popover open={accountPopoverOpen} onOpenChange={setAccountPopoverOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              variant="ghost"
-              suppressHydrationWarning
-              className={cn(
-                'w-full flex items-center gap-2.5 rounded-lg text-left justify-start h-auto hover:bg-app-elevated',
-                collapsed ? 'justify-center p-1.5' : 'px-2 py-2',
-              )}
-            >
-              <div
-                className={cn(
-                  'grid place-items-center rounded-md bg-accent-muted text-accent shrink-0',
-                  collapsed ? 'w-8 h-8' : 'w-7 h-7',
-                )}
+          {/*
+            When expanded, the usage bar and the account trigger share the
+            same card via SidebarUsageCard's footerSlot. When collapsed, the
+            usage card is hidden and only the icon-only account trigger shows.
+          */}
+          {!collapsed ? (
+            <SidebarUsageCard
+              label={t('usageMonthlyOrders')}
+              percent={usagePercent}
+              footerSlot={
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    suppressHydrationWarning
+                    className="w-full flex items-center gap-2.5 rounded-none text-left justify-start h-auto px-3 py-2 hover:bg-app-card"
+                  >
+                    <div className="grid place-items-center rounded-md bg-accent-muted text-accent shrink-0 w-7 h-7">
+                      <QrCode className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[12px] font-semibold text-app-text truncate">
+                        {userName || t('accountMenu')}
+                      </p>
+                      <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
+                        {planLabel}
+                      </p>
+                    </div>
+                    <ChevronUp className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
+                  </Button>
+                </PopoverTrigger>
+              }
+            />
+          ) : (
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                suppressHydrationWarning
+                className="w-full flex items-center gap-2.5 rounded-lg text-left justify-start h-auto hover:bg-app-elevated justify-center p-1.5"
               >
-                <QrCode className="w-4 h-4" />
-              </div>
-              {!collapsed && (
-                <>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-app-text truncate">
-                      {userName || t('accountMenu')}
-                    </p>
-                    <p className="font-mono text-[10px] uppercase tracking-wider text-accent">
-                      {planLabel}
-                    </p>
-                  </div>
-                  <ChevronUp className="w-3.5 h-3.5 shrink-0 text-app-text-muted" />
-                </>
-              )}
-            </Button>
-          </PopoverTrigger>
+                <div className="grid place-items-center rounded-md bg-accent-muted text-accent shrink-0 w-8 h-8">
+                  <QrCode className="w-4 h-4" />
+                </div>
+              </Button>
+            </PopoverTrigger>
+          )}
           <PopoverContent
             side={collapsed ? 'right' : 'top'}
             align={collapsed ? 'end' : 'center'}

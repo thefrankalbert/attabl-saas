@@ -93,25 +93,29 @@ export function TopDishesCard({
 
   return (
     <div className="rounded-[10px] border border-app-border bg-app-card overflow-hidden flex flex-col">
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-app-border flex-wrap">
-        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text">
+      {/* Header: title, search (filters the dish list by name), tabs.
+          On mobile the three groups wrap to stay readable; on lg+ they
+          stay on a single line to save vertical space. The search input
+          narrows on lg+ to keep everything on one line at common widths. */}
+      <div className="flex items-center gap-3 px-5 py-3 border-b border-app-border flex-wrap lg:flex-nowrap">
+        <div className="flex items-center gap-2 text-[13px] font-medium text-app-text shrink-0">
           <UtensilsCrossed className="w-[13px] h-[13px] text-app-text-muted" />
           <span>{title}</span>
           <span className="font-mono text-[11px] text-app-text-muted px-1.5 py-0.5 bg-app-elevated rounded">
             {rangeBadge}
           </span>
         </div>
-        <div className="flex items-center gap-1.5 bg-app-bg border border-app-border px-2.5 py-1 rounded-md text-xs text-app-text-secondary">
+        <div className="flex items-center gap-1.5 bg-app-bg border border-app-border px-2.5 py-1 rounded-md text-xs text-app-text-secondary min-w-0">
           <Search className="w-3 h-3 text-app-text-muted shrink-0" />
           <Input
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
-            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="bg-transparent border-none outline-none text-app-text placeholder:text-app-text-muted text-xs w-[180px] lg:w-[140px] h-auto p-0 shadow-none focus-visible:ring-0 focus-visible:ring-offset-0"
           />
         </div>
-        <div className="ml-auto inline-flex p-[2px] rounded-md bg-app-bg border border-app-border">
+        <div className="ml-auto inline-flex p-[2px] rounded-md bg-app-bg border border-app-border shrink-0">
           {allTabs.map((t) => (
             <Button
               key={t.key}

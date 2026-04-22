@@ -271,8 +271,12 @@ export default function DashboardClient(props: DashboardClientProps) {
   }
 
   return (
-    <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12">
-      {/* Page head */}
+    // On lg+: dashboard fills the viewport. The header (greeting + actions)
+    // and metrics row stay fixed at top; only the left column (chart + top
+    // dishes) scrolls internally. Right column is stationary on lg+.
+    // Below lg: plain stacked page scroll (mobile UX unchanged).
+    <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 lg:h-full lg:overflow-hidden lg:pb-6">
+      {/* Page head (greeting + quick-action Links) - full width, fixed on lg+ */}
       <div className="flex items-end justify-between gap-6 flex-wrap">
         <div>
           <h1 className="text-[22px] font-medium tracking-tight text-app-text">
@@ -321,7 +325,7 @@ export default function DashboardClient(props: DashboardClientProps) {
         </div>
       </div>
 
-      {/* Metrics row */}
+      {/* Metrics row - full width, fixed on lg+ */}
       <MetricsRow
         metrics={metrics}
         activeKey={metricKey}
@@ -332,9 +336,15 @@ export default function DashboardClient(props: DashboardClientProps) {
         tDown={t('trendDown')}
       />
 
-      {/* Main grid: chart + feed */}
-      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5">
-        <div className="flex flex-col gap-5 min-w-0">
+      {/* Main grid: chart + feed. On lg+, grid fills remaining space and
+          each column manages its own overflow independently.
+          `lg:grid-rows-1` + `lg:overflow-hidden` is REQUIRED to constrain
+          the row to the grid's computed height - without them the implicit
+          row is `auto` (content-sized), the left column never overflows
+          its parent, and `overflow-y-auto` never triggers a scrollbar. */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] lg:grid-rows-1 gap-5 lg:flex-1 lg:min-h-0 lg:overflow-hidden">
+        {/* Left column - scrolls internally on lg+ (chart + top dishes) */}
+        <div className="flex flex-col gap-5 min-w-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
           <OverviewChart
             metric={chartMetric}
             onMetricChange={(next) => setMetricKey(next === 'orders' ? 'orders' : 'revenue')}
@@ -379,12 +389,14 @@ export default function DashboardClient(props: DashboardClientProps) {
           />
         </div>
 
-        <div className="flex flex-col gap-5">
+        {/* Right column - fixed on lg+. StockAlertsCard is conditional
+            (only when alerts exist). LiveOrdersFeed uses flex-1 min-h-0
+            so it fills remaining space; its internal order list scrolls. */}
+        <div className="flex flex-col gap-5 lg:min-h-0 lg:overflow-hidden">
           <StockAlertsCard
             alerts={stockAlerts}
             title={t('stockAlertsTitle')}
             watchingLabel={t('stockAlertsWatching')}
-            emptyLabel={t('stockAlertsEmpty')}
             viewAllHref={`${adminBase}/inventory`}
             viewAllLabel={t('stockAlertsViewAll')}
           />
