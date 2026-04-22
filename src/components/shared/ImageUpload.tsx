@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, ChangeEvent, DragEvent } from 'react';
+import { useTranslations } from 'next-intl';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import {
@@ -83,6 +84,7 @@ export default function ImageUpload({
   aspect = 4 / 3,
   maxWidth = 1200,
 }: ImageUploadProps) {
+  const tc = useTranslations('common');
   const [isLoading, setIsLoading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -220,7 +222,7 @@ export default function ImageUpload({
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Close"
+            aria-label={tc('aria.close')}
             onClick={resetCrop}
             disabled={isLoading}
             className="p-1.5 rounded-lg text-app-text-muted hover:text-app-text hover:bg-app-elevated transition-colors h-8 w-8"

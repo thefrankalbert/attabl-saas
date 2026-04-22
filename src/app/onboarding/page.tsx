@@ -140,6 +140,7 @@ class StepErrorBoundary extends React.Component<
 
 export default function OnboardingPage() {
   const t = useTranslations('onboarding');
+  const tc = useTranslations('common');
   const { toast } = useToast();
 
   // Navigation state: phase 0 = welcome, 1-3 = studio phases
@@ -636,7 +637,7 @@ export default function OnboardingPage() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        aria-label="Close"
+                        aria-label={tc('aria.close')}
                         onClick={() => setError(null)}
                         className="text-destructive/60 hover:text-destructive ml-3 shrink-0 h-8 w-8"
                       >

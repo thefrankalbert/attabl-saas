@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import { useTranslations } from 'next-intl';
 import Cropper from 'react-easy-crop';
 import type { Area, Point } from 'react-easy-crop';
 import { X, Check, ZoomIn, ZoomOut, Loader2 } from 'lucide-react';
@@ -54,6 +55,7 @@ async function getCroppedBlob(imageSrc: string, pixelCrop: Area): Promise<Blob> 
 }
 
 export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCropperProps) {
+  const tc = useTranslations('common');
   const [crop, setCrop] = useState<Point>({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
@@ -106,7 +108,7 @@ export function LogoCropper({ imageSrc, onComplete, onCancel, onError }: LogoCro
             type="button"
             variant="ghost"
             size="icon"
-            aria-label="Close"
+            aria-label={tc('aria.close')}
             onClick={onCancel}
             disabled={applying}
             className="p-1.5 rounded-xl text-app-text-muted hover:text-app-text-secondary hover:bg-app-elevated transition-colors h-8 w-8"

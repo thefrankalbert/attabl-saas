@@ -64,6 +64,7 @@ export default function PaymentModal({
   pricing,
 }: PaymentModalProps) {
   const t = useTranslations('payment');
+  const tc = useTranslations('common');
 
   const finalTotal = total ?? order?.total_price ?? 0;
   const finalTable = tableNumber ?? order?.table_number ?? t('unknownTable');
@@ -167,7 +168,13 @@ export default function PaymentModal({
       {/* ━━━ HEADER ━━━ */}
       <header className="h-12 border-b border-app-border flex items-center justify-between px-3 sm:px-5 shrink-0">
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" aria-label="Back" onClick={onClose} className="-ml-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={tc('aria.back')}
+            onClick={onClose}
+            className="-ml-2"
+          >
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <h1 className="font-bold text-sm sm:text-base">{t('title')}</h1>

@@ -72,6 +72,7 @@ interface AddRestaurantWizardProps {
 
 export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardProps) {
   const t = useTranslations('admin');
+  const tc = useTranslations('common');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -144,7 +145,7 @@ export function AddRestaurantWizard({ onClose, onSuccess }: AddRestaurantWizardP
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Close"
+          aria-label={tc('aria.close')}
           onClick={onClose}
           className="absolute right-4 top-4 rounded-lg text-app-text-muted hover:bg-app-elevated hover:text-app-text-secondary"
         >

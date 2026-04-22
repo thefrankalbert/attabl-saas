@@ -41,6 +41,7 @@ export default function KitchenFilters({
   onSearchChange,
 }: KitchenFiltersProps) {
   const t = useTranslations('kitchen');
+  const tc = useTranslations('common');
   const locale = useLocale();
   const [now, setNow] = useState(() => new Date());
   const [searchOpen, setSearchOpen] = useState(false);
@@ -72,7 +73,7 @@ export default function KitchenFilters({
           <Button
             variant="ghost"
             size="icon"
-            aria-label="Back"
+            aria-label={tc('aria.back')}
             onClick={goBack}
             title={t('backToDashboard')}
           >
@@ -191,7 +192,12 @@ export default function KitchenFilters({
           <span className="capitalize">{dateStr}</span>
           <span>{timeStr}</span>
         </div>
-        <Button variant="ghost" size="icon" aria-label="Minimize" onClick={toggleFullscreen}>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={tc('aria.minimize')}
+          onClick={toggleFullscreen}
+        >
           {isFullscreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
         </Button>
       </div>
