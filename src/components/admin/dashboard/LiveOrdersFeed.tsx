@@ -99,7 +99,7 @@ export function LiveOrdersFeed({
         </Button>
       </div>
 
-      <div className="flex-1 overflow-y-auto admin-thin-scroll max-h-[calc(100dvh-240px)]">
+      <div className="flex-1 min-h-0 overflow-y-auto admin-thin-scroll">
         {visible.length === 0 ? (
           <div className="px-6 py-10 text-center">
             <p className="text-[13px] text-app-text">{labels.emptyTitle}</p>

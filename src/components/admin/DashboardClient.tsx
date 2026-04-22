@@ -271,11 +271,61 @@ export default function DashboardClient(props: DashboardClientProps) {
   }
 
   return (
-    // On lg+: the dashboard fills the viewport and its left column is the only
-    // scrollable region; metrics row + right column stay in place while chart
-    // and top dishes slide up under the metrics. Below lg: plain stacked scroll.
+    // On lg+: dashboard fills the viewport. The header (greeting + actions)
+    // and metrics row stay fixed at top; only the left column (chart + top
+    // dishes) scrolls internally. Right column is stationary on lg+.
+    // Below lg: plain stacked page scroll (mobile UX unchanged).
     <div className="flex flex-col gap-5 p-4 sm:p-6 pb-12 lg:h-full lg:overflow-hidden lg:pb-6">
-      {/* Metrics row - stays fixed at top on lg+ */}
+      {/* Page head (greeting + quick-action Links) - full width, fixed on lg+ */}
+      <div className="flex items-end justify-between gap-6 flex-wrap">
+        <div>
+          <h1 className="text-[22px] font-medium tracking-tight text-app-text">
+            {t(greetKey)}, {userName || tenantName}
+            <span className="text-app-text-muted font-normal"> - {t('pageSubtitle')}</span>
+          </h1>
+          <p
+            className="font-mono text-[13px] text-app-text-secondary mt-0.5"
+            suppressHydrationWarning
+          >
+            <span className="capitalize">
+              {currentTime.toLocaleDateString(locale, {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </span>
+            {' · '}
+            {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+            {' · '}
+            {t('liveLabel')}
+          </p>
+        </div>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Link
+            href={`${adminBase}/qr-codes`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
+          >
+            <QrCode className="w-3.5 h-3.5" />
+            {t('qrGenerator')}
+          </Link>
+          <Link
+            href={`${adminBase}/reports`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
+          >
+            <BarChart3 className="w-3.5 h-3.5" />
+            {t('reportsLabel')}
+          </Link>
+          <Link
+            href={`${adminBase}/stock-history`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
+          >
+            <Package className="w-3.5 h-3.5" />
+            {t('stockHistoryLabel')}
+          </Link>
+        </div>
+      </div>
+
+      {/* Metrics row - full width, fixed on lg+ */}
       <MetricsRow
         metrics={metrics}
         activeKey={metricKey}
@@ -287,61 +337,10 @@ export default function DashboardClient(props: DashboardClientProps) {
       />
 
       {/* Main grid: chart + feed. On lg+, grid fills remaining space and
-          each column manages its own overflow. */}
+          each column manages its own overflow independently. */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5 lg:flex-1 lg:min-h-0">
-        {/* Left column - scrollable on lg+. Greeting + quick action Links
-            live inside this column so they scroll away under the metrics
-            row, keeping the fixed header area tight. */}
+        {/* Left column - scrolls internally on lg+ (chart + top dishes) */}
         <div className="flex flex-col gap-5 min-w-0 lg:min-h-0 lg:overflow-y-auto lg:pr-1">
-          {/* Page head - moved inside scrollable column */}
-          <div className="flex items-end justify-between gap-6 flex-wrap">
-            <div>
-              <h1 className="text-[22px] font-medium tracking-tight text-app-text">
-                {t(greetKey)}, {userName || tenantName}
-                <span className="text-app-text-muted font-normal"> - {t('pageSubtitle')}</span>
-              </h1>
-              <p
-                className="font-mono text-[13px] text-app-text-secondary mt-0.5"
-                suppressHydrationWarning
-              >
-                <span className="capitalize">
-                  {currentTime.toLocaleDateString(locale, {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                  })}
-                </span>
-                {' · '}
-                {currentTime.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-                {' · '}
-                {t('liveLabel')}
-              </p>
-            </div>
-            <div className="flex gap-2 items-center flex-wrap">
-              <Link
-                href={`${adminBase}/qr-codes`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-              >
-                <QrCode className="w-3.5 h-3.5" />
-                {t('qrGenerator')}
-              </Link>
-              <Link
-                href={`${adminBase}/reports`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-              >
-                <BarChart3 className="w-3.5 h-3.5" />
-                {t('reportsLabel')}
-              </Link>
-              <Link
-                href={`${adminBase}/stock-history`}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-app-border bg-app-card text-[13px] text-app-text hover:bg-app-elevated transition-colors"
-              >
-                <Package className="w-3.5 h-3.5" />
-                {t('stockHistoryLabel')}
-              </Link>
-            </div>
-          </div>
-
           <OverviewChart
             metric={chartMetric}
             onMetricChange={(next) => setMetricKey(next === 'orders' ? 'orders' : 'revenue')}
