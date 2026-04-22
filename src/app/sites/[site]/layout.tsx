@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { CartProvider } from '@/contexts/CartContext';
 import { CurrencyProvider } from '@/contexts/CurrencyContext';
-import { ThemeProvider as TenantBrandProvider } from '@/components/theme/ThemeProvider';
+import { TenantBrandProvider } from '@/components/theme/TenantBrandProvider';
 import { ThemeProvider as NextThemesProvider } from 'next-themes';
 import { getCachedTenant } from '@/lib/cache';
 import { getFontById } from '@/lib/config/fonts';
@@ -49,9 +49,9 @@ export default async function SiteLayout({
         <TenantBrandProvider
           initialColors={{
             // Tenant can customize ONLY the primary (brand) color per 2025/2026
-            // market research. Secondary/text stays locked to #1A1A1A.
+            // market research. Secondary/text stays locked to #1A1A1A inside
+            // the .tenant-client scope (globals.css).
             primaryColor: tenant?.primary_color || '#1A1A1A',
-            secondaryColor: '#1A1A1A',
           }}
         >
           <CartProvider>
