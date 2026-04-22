@@ -206,7 +206,7 @@ export function OverviewChart({
             d={prevPath}
             fill="none"
             stroke="var(--app-text-muted)"
-            strokeWidth="1.2"
+            strokeWidth="1.5"
             strokeDasharray="3 3"
             opacity="0.5"
           />
@@ -214,7 +214,7 @@ export function OverviewChart({
             d={linePath}
             fill="none"
             stroke="var(--app-accent)"
-            strokeWidth="1.8"
+            strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />

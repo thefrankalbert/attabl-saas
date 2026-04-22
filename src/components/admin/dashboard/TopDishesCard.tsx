@@ -204,7 +204,7 @@ export function TopDishesCard({
                     <polyline
                       fill="none"
                       stroke="var(--app-accent)"
-                      strokeWidth="1.2"
+                      strokeWidth="1.5"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       points={sparkPoints(d.trend)}
